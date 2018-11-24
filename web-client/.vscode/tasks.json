@@ -13,7 +13,7 @@
     {
       "label": "deploy to surge only",
       "type": "shell",
-      "command": "yarn build-prod  && cd .. && git co master && git merge dev && surge --domain https://ebnis.surge.sh web-client/build",
+      "command": "yarn build-prod  && cd .. && git co master && git merge dev && surge --domain https://ebnis.surge.sh web-client/build && git co dev",
       "problemMatcher": []
     },
 
