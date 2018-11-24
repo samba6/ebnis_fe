@@ -86,7 +86,8 @@ export class SignUp extends React.Component<Props, State> {
             })}
 
             <Button
-              id="author-modal-submit"
+              id="sign-up-submit"
+              name="sign-up-submit"
               color="green"
               inverted={true}
               disabled={!dirty || isSubmitting}

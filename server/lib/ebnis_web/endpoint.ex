@@ -17,5 +17,9 @@ defmodule EbnisWeb.Endpoint do
   plug Plug.MethodOverride
   plug Plug.Head
 
+  if Application.get_env(:ebnis, :sql_sandbox) do
+    plug Phoenix.Ecto.SQL.Sandbox
+  end
+
   plug EbnisWeb.Router
 end

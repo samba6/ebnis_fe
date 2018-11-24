@@ -51,7 +51,8 @@ defmodule Ebnis.MixProject do
       {:guardian, "~> 1.1"},
       {:bcrypt_elixir, "~> 1.1"},
       {:comeonin, "~> 4.1"},
-      {:timex, "~> 3.4"}
+      {:timex, "~> 3.4"},
+      {:hound, "~> 1.0", only: :test}
     ]
   end
 

@@ -15,7 +15,7 @@ export class Login extends Component<Props> {
             })
           }
         >
-          Got to SignUp
+          Go to SignUp
         </button>
       </div>
     );

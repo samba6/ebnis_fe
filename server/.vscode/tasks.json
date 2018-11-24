@@ -24,14 +24,22 @@
       "label": "mix test file unit",
       "type": "shell",
       "command": "mix test ${file}",
-      "problemMatcher": ["$mixCompileError", "$mixCompileWarning"],
+      "problemMatcher": [
+        "$mixCompileError",
+        "$mixCompileWarning",
+        "$mixTestFailure"
+      ],
       "group": "test"
     },
     {
       "label": "mix test file unit trace",
       "type": "shell",
       "command": "mix test ${file}",
-      "problemMatcher": ["$mixCompileError", "$mixCompileWarning"],
+      "problemMatcher": [
+        "$mixCompileError",
+        "$mixCompileWarning",
+        "$mixTestFailure"
+      ],
       "group": "test"
     },
     {
@@ -41,7 +49,11 @@
       "windows": {
         "command": "dev.bat && mix test"
       },
-      "problemMatcher": ["$mixCompileError", "$mixCompileWarning"],
+      "problemMatcher": [
+        "$mixCompileError",
+        "$mixCompileWarning",
+        "$mixTestFailure"
+      ],
       "group": {
         "kind": "test",
         "isDefault": true
@@ -79,6 +91,39 @@
         "cwd": ".."
       },
       "problemMatcher": []
+    },
+
+    {
+      "label": "mix test ${file} integration",
+      "type": "shell",
+      "command": "yarn build-local-prod && cd ../server && mix test ${file}",
+      "problemMatcher": [
+        "$mixCompileError",
+        "$mixCompileWarning",
+        "$mixTestFailure"
+      ],
+      "options": {
+        "cwd": "../web-client",
+        "env": {
+          "EBNIS_PHOENIX_TEST_PORT": "4023"
+        }
+      }
+    },
+
+    {
+      "label": "mix test ${file} integration no build",
+      "type": "shell",
+      "command": "mix test ${file}",
+      "problemMatcher": [
+        "$mixCompileError",
+        "$mixCompileWarning",
+        "$mixTestFailure"
+      ],
+      "options": {
+        "env": {
+          "EBNIS_PHOENIX_TEST_PORT": "4023"
+        }
+      }
     }
   ]
 }
