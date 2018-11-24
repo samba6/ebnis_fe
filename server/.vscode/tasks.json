@@ -1,0 +1,84 @@
+{
+  "version": "2.0.0",
+  "presentation": {
+    "reveal": "always"
+    // "panel": "new"
+  },
+  "tasks": [
+    {
+      "label": "iex -S mix",
+      "type": "shell",
+      "command": "pg_ctl start && iex --dot-iex .iexa.exs -S mix phx.server",
+      "windows": {
+        "command": "iex --dot-iex .iexa.exs --werl -S mix phx.server"
+      },
+      "options": {
+        "env": {
+          "EBNIS_PHOENIX_PORT": "4022"
+        }
+      },
+      "problemMatcher": ["$mixCompileError", "$mixCompileWarning"],
+      "group": "build"
+    },
+    {
+      "label": "mix test file unit",
+      "type": "shell",
+      "command": "mix test ${file}",
+      "problemMatcher": ["$mixCompileError", "$mixCompileWarning"],
+      "group": "test"
+    },
+    {
+      "label": "mix test file unit trace",
+      "type": "shell",
+      "command": "mix test ${file}",
+      "problemMatcher": ["$mixCompileError", "$mixCompileWarning"],
+      "group": "test"
+    },
+    {
+      "label": "mix test all unit",
+      "type": "shell",
+      "command": "mix test",
+      "windows": {
+        "command": "dev.bat && mix test"
+      },
+      "problemMatcher": ["$mixCompileError", "$mixCompileWarning"],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "mix get compile",
+      "type": "shell",
+      "command": "mix do deps.get, compile",
+      "windows": {
+        "command": "dev.bat && mix do deps.get, compile"
+      },
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "mix compile",
+      "type": "shell",
+      "command": " mix compile",
+      "windows": {
+        "command": "dev.bat && mix compile"
+      },
+      "problemMatcher": ["$mixCompileError", "$mixCompileWarning"],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+
+    {
+      "label": "deploy to heroku server only",
+      "type": "shell",
+      "command": "git co master && git merge dev && git subtree push --prefix=server heroku master && heroku run \"POOL_SIZE=2 mix ecto.migrate\" && git co dev",
+      "options": {
+        "cwd": ".."
+      },
+      "problemMatcher": []
+    }
+  ]
+}

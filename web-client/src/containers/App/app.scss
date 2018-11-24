@@ -1,0 +1,21 @@
+@import "../../styles/variables";
+
+.containers-app {
+  display: flex;
+  flex-direction: column;
+
+  .header {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .app-main {
+    flex: 1;
+    overflow: hidden;
+  }
+
+  .link {
+    color: $app-color;
+  }
+}
