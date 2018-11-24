@@ -3,8 +3,8 @@ defmodule EbnisWeb.Endpoint do
   use Absinthe.Phoenix.Endpoint
 
   socket "/socket", EbnisWeb.UserSocket,
-    websocket: true,
-    longpoll: false
+    websocket: [timeout: 45_000],
+    longpoll: true
 
   plug Plug.RequestId
   plug Plug.Logger
