@@ -8,6 +8,8 @@ defmodule Ebnis.Schema.UserTest do
   alias Ebnis.Factory.User, as: Factory
   alias EbnisWeb.Auth.Guardian, as: GuardianApp
 
+  @moduletag :db
+
   describe "mutation" do
     # @tag :skip
     test "registers user succeeds" do
@@ -126,10 +128,10 @@ defmodule Ebnis.Schema.UserTest do
     test "login succeeds" do
       %{email: email, password: password} = params = RegFactory.params()
       RegFactory.insert(params)
-      queryMap = RegQuery.login()
+      queryMap = Query.login()
 
       query = """
-        mutation LoginUser(#{queryMap.parameters}) {
+        query LoginUser(#{queryMap.parameters}) {
           #{queryMap.query}
         }
 
@@ -161,10 +163,10 @@ defmodule Ebnis.Schema.UserTest do
       %{email: email, password: password} = params = RegFactory.params()
       RegFactory.insert(params)
 
-      queryMap = RegQuery.login()
+      queryMap = Query.login()
 
       query = """
-        mutation LoginUser(#{queryMap.parameters}) {
+        query LoginUser(#{queryMap.parameters}) {
           #{queryMap.query}
         }
 

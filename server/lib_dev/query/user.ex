@@ -49,4 +49,21 @@ defmodule EbnisWeb.Query.User do
       parameters: "$refresh: RefreshInput!"
     }
   end
+
+  @doc "Login"
+  def login do
+    {_, user_frag} = all_fields_fragment()
+
+    query = """
+        login(login: $login) {
+          ...#{@frag_name}
+        }
+    """
+
+    %{
+      query: query,
+      fragments: ~s(  #{user_frag} ),
+      parameters: "$login: LoginUser!"
+    }
+  end
 end
