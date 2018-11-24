@@ -43,3 +43,7 @@ export interface State {
   graphQlError?: ApolloError;
   formErrors?: FormikErrors<Registration>;
 }
+
+export const RouterThings = {
+  documentTitle: "Sign up"
+};

@@ -4,16 +4,21 @@
   box-shadow: 0 3px 3px $app-color;
   margin-bottom: 20px;
   display: flex;
+  padding: 5px 15px 0 15px;
+  flex-direction: row;
 
   &.wide {
     min-height: 20%;
     flex-direction: column;
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
   }
 
   .logo-container {
-    display: flex;
-    align-items: center;
-    justify-content: center;
     flex: 1;
   }
 
@@ -28,7 +33,6 @@
   @media (min-width: 600px) {
     flex-direction: row !important;
     min-height: initial !important;
-    padding: 5px 15px 0 15px;
 
     .logo-container {
       display: block;

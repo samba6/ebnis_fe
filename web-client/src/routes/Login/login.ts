@@ -29,3 +29,7 @@ export interface State {
   graphQlErrors?: ApolloError;
   formErrors?: FormikErrors<FormValues>;
 }
+
+export const RouterThings = {
+  documentTitle: "Log in"
+};

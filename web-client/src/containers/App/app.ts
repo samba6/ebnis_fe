@@ -6,9 +6,16 @@ export enum Route {
   SIGN_UP = "sign-up"
 }
 
+export interface RoutingRoute {
+  documentTitle: string;
+}
+
+export const defaultRt: RoutingRoute = {
+  documentTitle: "Ebnis"
+};
+
 export interface RoutingProps {
   name: Route;
-  header?: JSX.Element;
 }
 
 export interface AppContextProps {
@@ -36,7 +43,10 @@ export const mediaQueries = {
 type StateMediaQueries = { [k in MediaQueryKey]: boolean };
 
 export interface State {
-  component: React.LazyExoticComponent<any>;
+  router?: {
+    component: React.LazyExoticComponent<any>;
+    rt: RoutingRoute;
+  };
   mediaQueries: StateMediaQueries;
   header?: React.ComponentClass;
   cacheLoaded?: boolean;

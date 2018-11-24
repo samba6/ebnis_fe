@@ -10,24 +10,38 @@ import {
   initialMediaQueries,
   RoutingProps,
   MediaQueryKey,
-  mediaQueries
+  mediaQueries,
+  defaultRt,
+  setTitle
 } from "./app";
 import { client, persistCache } from "../../state/set-up";
 import logger from "../../logger";
+import { RouterThings as HomeRt } from "../../routes/Home/home";
+import { RouterThings as LoginRt } from "../../routes/Login/login";
+import { RouterThings as SignUpRt } from "../../routes/SignUp/sign-up";
 
 const routes = {
-  [Route.LOGIN]: lazy(() => import("./../../routes/Login")),
-  [Route.HOME]: lazy(() => import("./../../routes/Home")),
-  [Route.SIGN_UP]: lazy(() => import("./../../routes/SignUp"))
+  [Route.LOGIN]: {
+    component: lazy(() => import("./../../routes/Login")),
+    rt: LoginRt
+  },
+  [Route.HOME]: {
+    component: lazy(() => import("./../../routes/Home")),
+    rt: HomeRt
+  },
+  [Route.SIGN_UP]: {
+    component: lazy(() => import("./../../routes/SignUp")),
+    rt: SignUpRt
+  }
 };
 
 const Loading = () => <div>Loading</div>;
 
-const defaultHeader = <Header title="Ebnis" wide={true} />;
+const defaultHeader = <Header title="Ebnis" />;
 
 export class App extends React.Component<{}, State> {
   state: State = {
-    component: routes[Route.LOGIN],
+    router: routes[Route.HOME],
     mediaQueries: initialMediaQueries
   };
 
@@ -49,8 +63,20 @@ export class App extends React.Component<{}, State> {
   }
 
   render() {
-    const { component: Component, header = defaultHeader } = this.state;
+    const { router, header = defaultHeader } = this.state;
     const { routeTo, setHeader } = this;
+    let Component;
+    let documentTitle;
+
+    if (router) {
+      Component = router.component;
+      documentTitle = router.rt.documentTitle;
+    } else {
+      Component = routes[Route.HOME].component;
+      documentTitle = defaultRt.documentTitle;
+    }
+
+    setTitle(documentTitle);
 
     return (
       <div className="containers-app">
@@ -71,7 +97,7 @@ export class App extends React.Component<{}, State> {
 
   private routeTo = (props: RoutingProps) => {
     const { name } = props;
-    this.setState({ component: routes[name] });
+    this.setState({ router: routes[name] });
   };
 
   private setHeader = (header: React.ComponentClass) =>
