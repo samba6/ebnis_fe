@@ -4,6 +4,29 @@
 // This file was automatically generated and should not be edited.
 
 // ====================================================
+// GraphQL query operation: LoginQuery
+// ====================================================
+
+export interface LoginQuery_login {
+  id: string;
+  name: string;
+  email: string;
+  jwt: string;
+}
+
+export interface LoginQuery {
+  login: LoginQuery_login | null;
+}
+
+export interface LoginQueryVariables {
+  login: LoginUser;
+}
+
+
+/* tslint:disable */
+// This file was automatically generated and should not be edited.
+
+// ====================================================
 // GraphQL mutation operation: UserRegMutation
 // ====================================================
 
@@ -43,6 +66,12 @@ export interface UserFragment {
 //==============================================================
 // START Enums and Input Objects
 //==============================================================
+
+// Variables for login in User
+export interface LoginUser {
+  email: string;
+  password: string;
+}
 
 // Variables for creating User and credential
 export interface Registration {

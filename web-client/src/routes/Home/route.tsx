@@ -15,7 +15,7 @@ export class Home extends Component<Props> {
             })
           }
         >
-          Go to LOGIN
+          This is home. Please do not click!
         </button>
       </div>
     );

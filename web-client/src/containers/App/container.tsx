@@ -27,7 +27,7 @@ const defaultHeader = <Header title="Ebnis" wide={true} />;
 
 export class App extends React.Component<{}, State> {
   state: State = {
-    component: routes[Route.SIGN_UP],
+    component: routes[Route.LOGIN],
     mediaQueries: initialMediaQueries
   };
 

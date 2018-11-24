@@ -1,0 +1,5 @@
+@import "../SignUp//sign-up.scss";
+
+.routes-login {
+  @extend %auth-root-styles;
+}

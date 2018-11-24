@@ -1,6 +1,6 @@
 @import "../../styles/extensions";
 
-.routes-sign-up-route {
+%auth-root-styles {
   display: block !important;
   overflow-y: auto;
 
@@ -20,4 +20,8 @@
   }
 
   @extend %form;
+}
+
+.routes-sign-up-route {
+  @extend %auth-root-styles;
 }
