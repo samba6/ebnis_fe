@@ -8,12 +8,13 @@ export enum Route {
 
 export interface RoutingProps {
   name: Route;
-  header?: React.ComponentClass;
+  header?: JSX.Element;
 }
 
 export interface AppContextProps {
   className: string;
   routeTo: (props: RoutingProps) => void;
+  setHeader?: (header: JSX.Element) => void;
 }
 
 export const AppContext = React.createContext<AppContextProps>({

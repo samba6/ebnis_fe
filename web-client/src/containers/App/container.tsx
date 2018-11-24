@@ -23,6 +23,8 @@ const routes = {
 
 const Loading = () => <div>Loading</div>;
 
+const defaultHeader = <Header title="Ebnis" wide={true} />;
+
 export class App extends React.Component<{}, State> {
   state: State = {
     component: routes[Route.SIGN_UP],
@@ -47,15 +49,20 @@ export class App extends React.Component<{}, State> {
   }
 
   render() {
-    const { component: Component, header: HeaderComp = Header } = this.state;
-    const { routeTo } = this;
+    const { component: Component, header = defaultHeader } = this.state;
+    const { routeTo, setHeader } = this;
 
     return (
       <div className="containers-app">
         <ApolloProvider client={client}>
-          <HeaderComp />
+          {header}
           <Suspense fallback={<Loading />}>
-            <Component className="app-main" routeTo={routeTo} client={client} />
+            <Component
+              className="app-main"
+              routeTo={routeTo}
+              client={client}
+              setHeader={setHeader}
+            />
           </Suspense>
         </ApolloProvider>
       </div>
@@ -63,9 +70,12 @@ export class App extends React.Component<{}, State> {
   }
 
   private routeTo = (props: RoutingProps) => {
-    const { name, header } = props;
-    this.setState({ component: routes[name], header });
+    const { name } = props;
+    this.setState({ component: routes[name] });
   };
+
+  private setHeader = (header: React.ComponentClass) =>
+    this.setState({ header });
 
   private tearDownMediaListeners = () => this.mediaListeners.forEach(m => m());
 

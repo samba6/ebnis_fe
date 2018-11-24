@@ -20,6 +20,7 @@ import {
 import socket from "../../socket";
 import { Registration } from "../../graphql/apollo-gql";
 import { Route, setTitle } from "../../containers/App/app";
+import Header from "../../components/Header";
 
 const FORM_RENDER_PROPS = {
   name: ["Name", "text"],
@@ -34,6 +35,12 @@ export class SignUp extends React.Component<Props, State> {
   private mainRef = React.createRef<HTMLDivElement>();
 
   componentDidMount() {
+    const { setHeader } = this.props;
+
+    if (setHeader) {
+      setHeader(<Header title="Sign up for Ebnis" wide={true} />);
+    }
+
     setTitle("Sign up");
   }
 
@@ -67,10 +74,6 @@ export class SignUp extends React.Component<Props, State> {
 
     return (
       <Card>
-        <Card.Content className="form-title" extra={true}>
-          Sign up for Ebnis
-        </Card.Content>
-
         {this.renderSubmissionErrors()}
 
         <Card.Content>
