@@ -6,7 +6,14 @@
     {
       "label": "deploy to surge and heroku",
       "type": "shell",
-      "command": "yarn build-prod && cd .. && git co master && git merge dev && surge --domain https://ebnis.surge.sh client/build && git subtree push --prefix=server heroku master && heroku run \"POOL_SIZE=2 mix ecto.migrate\" && git co dev ",
+      "command": "yarn build-prod && cd .. && git co master && git merge dev && surge --domain https://ebnis.surge.sh web-client/build && git subtree push --prefix=server heroku master && heroku run \"POOL_SIZE=2 mix ecto.migrate\" && git co dev ",
+      "problemMatcher": []
+    },
+
+    {
+      "label": "deploy to surge only",
+      "type": "shell",
+      "command": "yarn build-prod  && cd .. && git co master && git merge dev && surge --domain https://ebnis.surge.sh web-client/build",
       "problemMatcher": []
     },
 
@@ -16,10 +23,16 @@
       "command": "apollo-codegen introspect-schema http://localhost:4022/api --output src/graphql/schema.json && apollo-codegen generate src/graphql/*.ts --schema src/graphql/schema.json --target typescript --output src/graphql/apollo-gql.d.ts",
       "problemMatcher": []
     },
-
     {
-      "type": "npm",
-      "script": "start",
+      "label": "Start frontend",
+      "type": "shell",
+      "command": "launch_with_cmder.bat \"yarn start\" ",
+      "problemMatcher": []
+    },
+    {
+      "label": "Serve and chrome",
+      "type": "shell",
+      "command": "yarn build-local-prod && cd build && launch_with_cmder.bat \"serve -l 4035\" && launch_with_cmder.bat \"chromedriver\" ",
       "problemMatcher": []
     }
   ]
