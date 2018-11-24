@@ -1,0 +1,23 @@
+@import "../../styles/extensions";
+
+.routes-sign-up-route {
+  display: block !important;
+  overflow-y: auto;
+
+  .card {
+    min-width: 318px;
+    margin: 0 auto 35px !important;
+  }
+
+  .form-title {
+    @extend %form-title;
+  }
+
+  @extend %msg-error-close;
+
+  .to-login-button {
+    @extend %auth-redirect-btn;
+  }
+
+  @extend %form;
+}

@@ -1,5 +1,6 @@
 defmodule EbnisWeb.Endpoint do
   use Phoenix.Endpoint, otp_app: :ebnis
+  use Absinthe.Phoenix.Endpoint
 
   socket "/socket", EbnisWeb.UserSocket,
     websocket: true,

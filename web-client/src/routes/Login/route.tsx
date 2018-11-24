@@ -11,11 +11,11 @@ export class Login extends Component<Props> {
         <button
           onClick={() =>
             this.props.routeTo({
-              name: Route.HOME
+              name: Route.SIGN_UP
             })
           }
         >
-          Got to Home
+          Got to SignUp
         </button>
       </div>
     );

@@ -11,9 +11,10 @@ defmodule Ebnis.Application do
       # Start the Ecto repository
       Ebnis.Repo,
       # Start the endpoint when the application starts
-      EbnisWeb.Endpoint
+      EbnisWeb.Endpoint,
       # Starts a worker by calling: Ebnis.Worker.start_link(arg)
       # {Ebnis.Worker, arg},
+      Supervisor.Spec.supervisor(Absinthe.Subscription, [EbnisWeb.Endpoint])
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

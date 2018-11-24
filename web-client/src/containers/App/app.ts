@@ -1,15 +1,14 @@
 import React from "react";
 
-import Header from "../../components/Header";
-
 export enum Route {
   LOGIN = "login",
-  HOME = "home"
+  HOME = "home",
+  SIGN_UP = "sign-up"
 }
 
 export interface RoutingProps {
   name: Route;
-  header?: Header;
+  header?: React.ComponentClass;
 }
 
 export interface AppContextProps {
@@ -39,9 +38,22 @@ export interface State {
   component: React.LazyExoticComponent<any>;
   mediaQueries: StateMediaQueries;
   header?: React.ComponentClass;
+  cacheLoaded?: boolean;
 }
 
 export const initialMediaQueries = Object.values(MediaQueryKey).reduce(
   (acc, k) => ({ ...acc, [k]: false }),
   {} as StateMediaQueries
 );
+
+let titleEl = document.getElementById("ebnis-title");
+
+export const setTitle = (title?: string) => {
+  if (!titleEl) {
+    titleEl = document.getElementById("ebnis-title");
+  }
+
+  if (titleEl) {
+    titleEl.innerText = title ? `Ebnis | ${title}` : "Ebnis";
+  }
+};

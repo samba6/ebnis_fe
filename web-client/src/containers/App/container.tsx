@@ -1,21 +1,50 @@
 import React, { lazy, Suspense } from "react";
+import { ApolloProvider } from "react-apollo";
+import update from "immutability-helper";
 
 import "./app.scss";
 import Header from "../../components/Header";
-import { Route, State, initialMediaQueries, RoutingProps } from "./app";
+import {
+  Route,
+  State,
+  initialMediaQueries,
+  RoutingProps,
+  MediaQueryKey,
+  mediaQueries
+} from "./app";
+import { client, persistCache } from "../../state/set-up";
+import logger from "../../logger";
 
 const routes = {
   [Route.LOGIN]: lazy(() => import("./../../routes/Login")),
-  [Route.HOME]: lazy(() => import("./../../routes/Home"))
+  [Route.HOME]: lazy(() => import("./../../routes/Home")),
+  [Route.SIGN_UP]: lazy(() => import("./../../routes/SignUp"))
 };
 
 const Loading = () => <div>Loading</div>;
 
-export class App extends React.Component {
+export class App extends React.Component<{}, State> {
   state: State = {
-    component: routes[Route.LOGIN],
+    component: routes[Route.SIGN_UP],
     mediaQueries: initialMediaQueries
   };
+
+  mediaListeners: Array<() => void> = [];
+
+  async componentDidMount() {
+    try {
+      await persistCache();
+    } catch (error) {
+      logger("error", "Error restoring Apollo cache", error);
+    }
+
+    this.setState({ cacheLoaded: true });
+    this.setUpMediaListeners();
+  }
+
+  componentWillUnmount() {
+    this.tearDownMediaListeners();
+  }
 
   render() {
     const { component: Component, header: HeaderComp = Header } = this.state;
@@ -23,10 +52,12 @@ export class App extends React.Component {
 
     return (
       <div className="containers-app">
-        <HeaderComp />
-        <Suspense fallback={<Loading />}>
-          <Component className="app-main" routeTo={routeTo} />
-        </Suspense>
+        <ApolloProvider client={client}>
+          <HeaderComp />
+          <Suspense fallback={<Loading />}>
+            <Component className="app-main" routeTo={routeTo} client={client} />
+          </Suspense>
+        </ApolloProvider>
       </div>
     );
   }
@@ -34,6 +65,42 @@ export class App extends React.Component {
   private routeTo = (props: RoutingProps) => {
     const { name, header } = props;
     this.setState({ component: routes[name], header });
+  };
+
+  private tearDownMediaListeners = () => this.mediaListeners.forEach(m => m());
+
+  private setUpMediaListeners = () => {
+    const queries = Object.values(mediaQueries);
+    // tslint:disable-next-line:no-any
+    const handleMediaQueryChange = this.handleMediaQueryChange as any;
+
+    for (let index = 0; index < queries.length; index++) {
+      const m = window.matchMedia(queries[index]) as MediaQueryList;
+      m.addListener(handleMediaQueryChange);
+      handleMediaQueryChange(m);
+      this.mediaListeners[index] = () =>
+        m.removeListener(handleMediaQueryChange);
+    }
+  };
+
+  private handleMediaQueryChange = (
+    mql: MediaQueryListEvent | MediaQueryList
+  ) => {
+    const { matches, media } = mql;
+    const acc1 = {} as { [k in MediaQueryKey]: { $set: boolean } };
+
+    const updates = Object.entries(mediaQueries).reduce((acc2, [k, v]) => {
+      const isMatchedMedia = v === media;
+
+      acc2[k] = { $set: isMatchedMedia ? matches : false };
+      return acc2;
+    }, acc1);
+
+    this.setState(s =>
+      update(s, {
+        mediaQueries: updates
+      })
+    );
   };
 }
 

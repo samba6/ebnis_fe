@@ -1,6 +1,7 @@
 @import "../../styles/variables";
 
 .containers-app {
+  height: 100%;
   display: flex;
   flex-direction: column;
 
@@ -11,8 +12,10 @@
   }
 
   .app-main {
+    position: relative;
     flex: 1;
-    overflow: hidden;
+    display: flex;
+    flex-direction: column;
   }
 
   .link {
