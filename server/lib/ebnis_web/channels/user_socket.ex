@@ -33,7 +33,7 @@ defmodule EbnisWeb.UserSocket do
           :ok,
           socket
           |> assign(:user, user)
-          |> Absinthe.Phoenix.Socket.put_opts(
+          |> Absinthe.Phoenix.Socket.put_options(
             context: %{
               current_user: user
             }
