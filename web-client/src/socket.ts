@@ -67,6 +67,12 @@ export const defineSocket = () => {
       ? { query: payload.query, variables: payload.variables }
       : {};
 
+    // will be removed when I later figure out how to sync user's offline
+    // data
+    if (CHANNEL.DATA_AUTH) {
+      return;
+    }
+
     dataAuthChannel = socket.channel(CHANNEL.DATA_AUTH, params);
 
     dataAuthChannel
