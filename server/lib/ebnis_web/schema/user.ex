@@ -33,8 +33,8 @@ defmodule EbnisWeb.Schema.User do
 
   @desc "Variables for login in User"
   input_object :login_user do
-    field(:password, :string)
-    field(:email, :string)
+    field(:password, non_null(:string))
+    field(:email, non_null(:string))
   end
 
   @desc "Input variables for refreshing user"

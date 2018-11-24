@@ -20,6 +20,7 @@
       "problemMatcher": ["$mixCompileError", "$mixCompileWarning"],
       "group": "build"
     },
+
     {
       "label": "mix test file unit",
       "type": "shell",
@@ -31,6 +32,19 @@
       ],
       "group": "test"
     },
+
+    {
+      "label": "mix test file unit db",
+      "type": "shell",
+      "command": "mix test --include db ${file}",
+      "problemMatcher": [
+        "$mixCompileError",
+        "$mixCompileWarning",
+        "$mixTestFailure"
+      ],
+      "group": "test"
+    },
+
     {
       "label": "mix test file unit trace",
       "type": "shell",
