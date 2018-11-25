@@ -249,6 +249,22 @@
           "EBNIS_PHOENIX_TEST_PORT": "4023"
         }
       }
+    },
+
+    {
+      "label": "mix test all",
+      "type": "shell",
+      "command": "mix test --include integration --include db",
+      "problemMatcher": [
+        "$mixCompileError",
+        "$mixCompileWarning",
+        "$mixTestFailure"
+      ],
+      "options": {
+        "env": {
+          "EBNIS_PHOENIX_TEST_PORT": "4023"
+        }
+      }
     }
   ]
 }
