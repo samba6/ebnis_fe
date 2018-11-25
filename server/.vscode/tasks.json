@@ -171,6 +171,72 @@
           "EBNIS_PHOENIX_TEST_PORT": "4023"
         }
       }
+    },
+
+    {
+      "label": "mix test only login feature",
+      "type": "shell",
+      "command": "yarn build-local-prod && cd ../server && mix test --only log_in_feature test/ebnis_web/features_test.exs ",
+      "problemMatcher": [
+        "$mixCompileError",
+        "$mixCompileWarning",
+        "$mixTestFailure"
+      ],
+      "options": {
+        "cwd": "../web-client",
+        "env": {
+          "EBNIS_PHOENIX_TEST_PORT": "4023"
+        }
+      }
+    },
+
+    {
+      "label": "mix test only login feature no build",
+      "type": "shell",
+      "command": "mix test --only log_in_feature test/ebnis_web/features_test.exs ",
+      "problemMatcher": [
+        "$mixCompileError",
+        "$mixCompileWarning",
+        "$mixTestFailure"
+      ],
+      "options": {
+        "env": {
+          "EBNIS_PHOENIX_TEST_PORT": "4023"
+        }
+      }
+    },
+
+    {
+      "label": "mix test only sign up feature",
+      "type": "shell",
+      "command": "yarn build-local-prod && cd ../server && mix test --only sign_up_feature test/ebnis_web/features_test.exs ",
+      "problemMatcher": [
+        "$mixCompileError",
+        "$mixCompileWarning",
+        "$mixTestFailure"
+      ],
+      "options": {
+        "cwd": "../web-client",
+        "env": {
+          "EBNIS_PHOENIX_TEST_PORT": "4023"
+        }
+      }
+    },
+
+    {
+      "label": "mix test only sign up feature no build",
+      "type": "shell",
+      "command": "mix test --only sign_up_feature test/ebnis_web/features_test.exs ",
+      "problemMatcher": [
+        "$mixCompileError",
+        "$mixCompileWarning",
+        "$mixTestFailure"
+      ],
+      "options": {
+        "env": {
+          "EBNIS_PHOENIX_TEST_PORT": "4023"
+        }
+      }
     }
   ]
 }
