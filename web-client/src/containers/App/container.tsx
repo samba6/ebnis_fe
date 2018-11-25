@@ -58,18 +58,24 @@ export class App extends React.Component<{}, State> {
                 <Route
                   exact={true}
                   path={SIGN_UP_URL}
-                  component={SignUp}
-                  {...childProps}
+                  render={renderProps => (
+                    <SignUp {...childProps} {...renderProps} />
+                  )}
                 />
 
                 <Route
                   exact={true}
                   path={LOGIN_URL}
-                  component={Login}
-                  {...childProps}
+                  render={renderProps => (
+                    <Login {...childProps} {...renderProps} />
+                  )}
                 />
 
-                <Route component={Login} {...childProps} />
+                <Route
+                  render={renderProps => (
+                    <Login {...childProps} {...renderProps} />
+                  )}
+                />
               </Switch>
             </Suspense>
           </BrowserRouter>

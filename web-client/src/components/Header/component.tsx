@@ -7,9 +7,8 @@ import { Props } from "./header";
 export class Header extends React.Component<Props> {
   render() {
     const { title, wide } = this.props;
-    const className = wide
-      ? "wide components-header-auth"
-      : "components-header-auth";
+    let className = "components-header";
+    className = wide ? "wide " + className : className;
 
     return (
       <header className={className}>

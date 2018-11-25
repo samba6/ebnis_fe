@@ -1,6 +1,6 @@
 @import "../../styles/variables";
 
-.components-header-auth {
+.components-header {
   box-shadow: 0 3px 3px $app-color;
   margin-bottom: 20px;
   display: flex;
@@ -32,10 +32,10 @@
 
   @media (min-width: 600px) {
     flex-direction: row !important;
-    min-height: initial !important;
+    min-height: 60px !important;
 
     .logo-container {
-      display: block;
+      display: block !important;
     }
 
     .title {
