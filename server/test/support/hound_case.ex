@@ -33,13 +33,14 @@ defmodule Ebnis.HoundCase do
   setup tags do
     alias Ebnis.Repo
 
+    parent = self()
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Repo)
 
-    unless tags[:async] do
-      Ecto.Adapters.SQL.Sandbox.mode(Repo, {:shared, self()})
-    end
+    # always use shared mode i.e. no concurrency because hound crashes on
+    # on async true in `use ExUnit.Case, async: true`
+    Ecto.Adapters.SQL.Sandbox.mode(Repo, {:shared, parent})
 
-    metadata = Phoenix.Ecto.SQL.Sandbox.metadata_for(Repo, self())
+    metadata = Phoenix.Ecto.SQL.Sandbox.metadata_for(Repo, parent)
 
     hound_meta_data =
       Hound.Browser.user_agent(:chrome)
@@ -64,8 +65,6 @@ defmodule Ebnis.HoundCase do
         chromeOptions: %{"args" => chrome_args}
       }
     )
-
-    parent = self()
 
     on_exit(fn ->
       Hound.end_session(parent)
