@@ -17,6 +17,11 @@ body,
   border: 2px solid $app-color;
 }
 
+body ::-webkit-scrollbar {
+  -webkit-appearance: none;
+  width: 3px;
+}
+
 .ui.modals.dimmer.visible.transition {
   display: flex !important;
   height: 100%;
