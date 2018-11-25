@@ -21,5 +21,11 @@ defmodule EbnisWeb.Endpoint do
     plug Phoenix.Ecto.SQL.Sandbox
   end
 
+  plug(
+    Corsica,
+    origins: "*",
+    allow_headers: ~w(Accept Content-Type Authorization Origin)
+  )
+
   plug EbnisWeb.Router
 end
