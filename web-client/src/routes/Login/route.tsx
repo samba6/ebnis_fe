@@ -66,8 +66,8 @@ export class Login extends React.Component<Props, State> {
             <FastField name="password" render={this.renderPwdInput} />
 
             <Button
-              id="sign-up-submit"
-              name="sign-up-submit"
+              id="login-submit"
+              name="login-submit"
               color="green"
               inverted={true}
               disabled={!dirty || isSubmitting}
@@ -82,11 +82,12 @@ export class Login extends React.Component<Props, State> {
 
         <Card.Content extra={true}>
           <Button
-            className="to-login-button"
+            className="to-sign-up-button"
             type="button"
             fluid={true}
             onClick={() => history.replace(SIGN_UP_URL)}
             disabled={isSubmitting}
+            name="to-sign-up"
           >
             Don't have an account? Sign Up
           </Button>

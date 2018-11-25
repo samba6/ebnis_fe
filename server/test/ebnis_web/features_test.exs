@@ -4,10 +4,18 @@ defmodule EbnisWeb.FeatureCase do
   alias Ebnis.Factory.Registration, as: RegFactory
   alias Ebnis.Accounts.User
 
+  @moduletag :integration
+
   # @tag :no_headless
-  test "1+1" do
+  test "Sign Up" do
     # Given that a user reaches our page
     path() |> navigate_to()
+
+    # She sees the login text in the page title
+    assert page_title() =~ "Log in"
+
+    # When she clicks on the sign up button
+    click({:name, "to-sign-up"})
 
     # She sees the sign up text in the page title
     assert page_title() =~ "Sign up"
@@ -23,8 +31,8 @@ defmodule EbnisWeb.FeatureCase do
     # And she submits the form
     submit_element({:name, "sign-up-submit"})
 
-    # She is directed to the login page
-    assert retries(true, fn -> visible_in_page?(~r/Go to LOGIN/) end, 100)
+    # She is directed to home page
+    assert retries(true, fn -> page_title() =~ "Home" end, 1_000)
 
     # And the user is created in our system
     assert %User{email: ^email, id: _} = Repo.get_by(User, email: email)

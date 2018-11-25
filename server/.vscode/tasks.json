@@ -110,7 +110,7 @@
     {
       "label": "mix test ${file} integration",
       "type": "shell",
-      "command": "yarn build-local-prod && cd ../server && mix test ${file}",
+      "command": "yarn build-local-prod && cd ../server && mix test --include integration ${file}",
       "problemMatcher": [
         "$mixCompileError",
         "$mixCompileWarning",
@@ -127,7 +127,40 @@
     {
       "label": "mix test ${file} integration no build",
       "type": "shell",
-      "command": "mix test ${file}",
+      "command": "mix test --include integration ${file}",
+      "problemMatcher": [
+        "$mixCompileError",
+        "$mixCompileWarning",
+        "$mixTestFailure"
+      ],
+      "options": {
+        "env": {
+          "EBNIS_PHOENIX_TEST_PORT": "4023"
+        }
+      }
+    },
+
+    {
+      "label": "mix test all integration",
+      "type": "shell",
+      "command": "yarn build-local-prod && cd ../server && mix test --only integration ",
+      "problemMatcher": [
+        "$mixCompileError",
+        "$mixCompileWarning",
+        "$mixTestFailure"
+      ],
+      "options": {
+        "cwd": "../web-client",
+        "env": {
+          "EBNIS_PHOENIX_TEST_PORT": "4023"
+        }
+      }
+    },
+
+    {
+      "label": "mix test all integration no build",
+      "type": "shell",
+      "command": "mix test --only integration",
       "problemMatcher": [
         "$mixCompileError",
         "$mixCompileWarning",

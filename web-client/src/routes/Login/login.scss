@@ -1,5 +1,10 @@
+@import "../../styles/extensions";
 @import "../SignUp//sign-up.scss";
 
 .routes-login {
   @extend %auth-root-styles;
+
+  .to-sign-up-button {
+    @extend %auth-redirect-btn;
+  }
 }

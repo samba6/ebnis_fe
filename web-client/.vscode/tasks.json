@@ -23,16 +23,25 @@
       "command": "apollo-codegen introspect-schema http://localhost:4022/api --output src/graphql/schema.json && apollo-codegen generate src/graphql/*.ts --schema src/graphql/schema.json --target typescript --output src/graphql/apollo-gql.d.ts",
       "problemMatcher": []
     },
+
     {
       "label": "Start frontend",
       "type": "shell",
       "command": "launch_with_cmder.bat \"yarn start\" ",
       "problemMatcher": []
     },
+
     {
       "label": "Serve and chrome",
       "type": "shell",
-      "command": "yarn build-local-prod && cd build && launch_with_cmder.bat \"serve -l 4035\" && launch_with_cmder.bat \"chromedriver\" ",
+      "command": "launch_with_cmder.bat \"chromedriver\" && yarn build-local-prod && cd build && launch_with_cmder.bat \"serve -s build -l 4035\"  ",
+      "problemMatcher": []
+    },
+
+    {
+      "label": "Serve only",
+      "type": "shell",
+      "command": "yarn build-local-prod && launch_with_cmder.bat \"serve -s build -l 4035\"  ",
       "problemMatcher": []
     }
   ]

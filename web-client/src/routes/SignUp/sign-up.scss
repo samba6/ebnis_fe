@@ -15,13 +15,13 @@
 
   @extend %msg-error-close;
 
-  .to-login-button {
-    @extend %auth-redirect-btn;
-  }
-
   @extend %form;
 }
 
 .routes-sign-up-route {
   @extend %auth-root-styles;
+
+  .to-login-button {
+    @extend %auth-redirect-btn;
+  }
 }
