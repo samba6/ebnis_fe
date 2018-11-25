@@ -19,7 +19,7 @@ import {
 } from "./sign-up";
 import socket from "../../socket";
 import { Registration } from "../../graphql/apollo-gql";
-import { Route, setTitle } from "../../containers/App/app";
+import { setTitle, ROOT_URL, LOGIN_URL } from "../../Routing";
 import Header from "../../components/Header";
 
 const FORM_RENDER_PROPS = {
@@ -70,7 +70,7 @@ export class SignUp extends React.Component<Props, State> {
     values,
     ...formikProps
   }: FormikProps<Registration>) => {
-    const { routeTo } = this.props;
+    const { history } = this.props;
 
     return (
       <Card>
@@ -108,7 +108,7 @@ export class SignUp extends React.Component<Props, State> {
             className="to-login-button"
             type="button"
             fluid={true}
-            onClick={() => routeTo({ name: Route.LOGIN })}
+            onClick={() => history.replace(LOGIN_URL)}
             disabled={isSubmitting}
           >
             Already have an account? Login
@@ -198,7 +198,7 @@ export class SignUp extends React.Component<Props, State> {
       return;
     }
 
-    const { regUser, routeTo } = this.props;
+    const { regUser, history } = this.props;
 
     if (!regUser) {
       return;
@@ -222,9 +222,7 @@ export class SignUp extends React.Component<Props, State> {
           variables: { user }
         });
 
-        routeTo({
-          name: Route.HOME
-        });
+        history.replace(ROOT_URL);
       }
     } catch (error) {
       formikBag.setSubmitting(false);

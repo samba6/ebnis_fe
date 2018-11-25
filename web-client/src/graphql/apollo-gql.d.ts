@@ -4,21 +4,21 @@
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL query operation: LoginQuery
+// GraphQL mutation operation: LoginMutation
 // ====================================================
 
-export interface LoginQuery_login {
+export interface LoginMutation_login {
   id: string;
   name: string;
   email: string;
   jwt: string;
 }
 
-export interface LoginQuery {
-  login: LoginQuery_login | null;
+export interface LoginMutation {
+  login: LoginMutation_login | null;
 }
 
-export interface LoginQueryVariables {
+export interface LoginMutationVariables {
   login: LoginUser;
 }
 

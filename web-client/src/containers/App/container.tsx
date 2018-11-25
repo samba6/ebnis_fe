@@ -1,39 +1,19 @@
 import React, { lazy, Suspense } from "react";
 import { ApolloProvider } from "react-apollo";
 import update from "immutability-helper";
+import { BrowserRouter, Switch, Route } from "react-router-dom";
 
 import "./app.scss";
 import Header from "../../components/Header";
-import {
-  Route,
-  State,
-  initialMediaQueries,
-  RoutingProps,
-  MediaQueryKey,
-  mediaQueries,
-  defaultRt,
-  setTitle
-} from "./app";
+import { State, initialMediaQueries, MediaQueryKey, mediaQueries } from "./app";
 import { client, persistCache } from "../../state/set-up";
 import logger from "../../logger";
-import { RouterThings as HomeRt } from "../../routes/Home/home";
-import { RouterThings as LoginRt } from "../../routes/Login/login";
-import { RouterThings as SignUpRt } from "../../routes/SignUp/sign-up";
+import AuthRequired from "../../components/AuthRequired";
+import { ROOT_URL, LOGIN_URL, SIGN_UP_URL } from "../../Routing";
 
-const routes = {
-  [Route.LOGIN]: {
-    component: lazy(() => import("./../../routes/Login")),
-    rt: LoginRt
-  },
-  [Route.HOME]: {
-    component: lazy(() => import("./../../routes/Home")),
-    rt: HomeRt
-  },
-  [Route.SIGN_UP]: {
-    component: lazy(() => import("./../../routes/SignUp")),
-    rt: SignUpRt
-  }
-};
+const Home = lazy(() => import("./../../routes/Home"));
+const Login = lazy(() => import("./../../routes/Login"));
+const SignUp = lazy(() => import("./../../routes/SignUp"));
 
 const Loading = () => <div>Loading</div>;
 
@@ -41,20 +21,13 @@ const defaultHeader = <Header title="Ebnis" />;
 
 export class App extends React.Component<{}, State> {
   state: State = {
-    router: routes[Route.HOME],
     mediaQueries: initialMediaQueries
   };
 
   mediaListeners: Array<() => void> = [];
 
-  async componentDidMount() {
-    try {
-      await persistCache();
-    } catch (error) {
-      logger("error", "Error restoring Apollo cache", error);
-    }
-
-    this.setState({ cacheLoaded: true });
+  componentDidMount() {
+    this.persistCache();
     this.setUpMediaListeners();
   }
 
@@ -63,45 +36,51 @@ export class App extends React.Component<{}, State> {
   }
 
   render() {
-    const { router, header = defaultHeader } = this.state;
-    const { routeTo, setHeader } = this;
-    let Component;
-    let documentTitle;
-
-    if (router) {
-      Component = router.component;
-      documentTitle = router.rt.documentTitle;
-    } else {
-      Component = routes[Route.HOME].component;
-      documentTitle = defaultRt.documentTitle;
-    }
-
-    setTitle(documentTitle);
+    const { header = defaultHeader } = this.state;
+    const { setHeader } = this;
+    const childProps = { setHeader };
 
     return (
       <div className="containers-app">
         <ApolloProvider client={client}>
           {header}
-          <Suspense fallback={<Loading />}>
-            <Component
-              className="app-main"
-              routeTo={routeTo}
-              client={client}
-              setHeader={setHeader}
-            />
-          </Suspense>
+          <BrowserRouter>
+            <Suspense fallback={<Loading />}>
+              <Switch>
+                <AuthRequired
+                  exact={true}
+                  path={ROOT_URL}
+                  component={Home}
+                  redirectTo={Login}
+                  {...childProps}
+                />
+
+                <Route
+                  exact={true}
+                  path={SIGN_UP_URL}
+                  component={SignUp}
+                  {...childProps}
+                />
+
+                <Route
+                  exact={true}
+                  path={LOGIN_URL}
+                  component={Login}
+                  {...childProps}
+                />
+
+                <Route component={Login} {...childProps} />
+              </Switch>
+            </Suspense>
+          </BrowserRouter>
         </ApolloProvider>
       </div>
     );
   }
 
-  private routeTo = (props: RoutingProps) => {
-    const { name } = props;
-    this.setState({ router: routes[name] });
-  };
-
-  private setHeader = (header: React.ComponentClass) =>
+  private setHeader = (header: React.ComponentClass) => {
     this.setState({ header });
+  };
 
   private tearDownMediaListeners = () => this.mediaListeners.forEach(m => m());
 
@@ -137,6 +116,16 @@ export class App extends React.Component<{}, State> {
         mediaQueries: updates
       })
     );
+  };
+
+  private persistCache = async () => {
+    try {
+      await persistCache();
+    } catch (error) {
+      logger("error", "Error restoring Apollo cache", error);
+    }
+
+    this.setState({ cacheLoaded: true });
   };
 }
 

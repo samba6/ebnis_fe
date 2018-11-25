@@ -1,13 +1,17 @@
 import { ApolloError } from "apollo-client";
 import * as Yup from "yup";
 import { FormikErrors } from "formik";
+import { RouteComponentProps } from "react-router-dom";
 
 import { AppContextProps } from "../../containers/App/app";
 import { RegMutationProps } from "../../graphql/user-reg.mutation";
 import { UserLocalMutationProps } from "../../state/user.local.mutation";
 import { Registration } from "../../graphql/apollo-gql";
 
-export type Props = AppContextProps & RegMutationProps & UserLocalMutationProps;
+export type Props = RouteComponentProps &
+  AppContextProps &
+  RegMutationProps &
+  UserLocalMutationProps;
 
 export type FormValuesKey = keyof Registration;
 

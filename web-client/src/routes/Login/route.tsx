@@ -10,22 +10,16 @@ import {
 
 import "./login.scss";
 import { Props, State, ValidationSchema } from "./login";
-import { Route, setTitle } from "../../containers/App/app";
 import Header from "../../components/Header";
-import {
-  LoginUser as FormValues,
-  LoginQuery,
-  LoginQueryVariables
-} from "../../graphql/apollo-gql";
-import LOGIN_QUERY from "../../graphql/login.query";
+import { LoginUser as FormValues } from "../../graphql/apollo-gql";
 import socket from "../../socket";
+import { setTitle, ROOT_URL, SIGN_UP_URL } from "../../Routing";
 
 export class Login extends React.Component<Props, State> {
   state: State = {};
 
   componentDidMount() {
     const { setHeader } = this.props;
-
     if (setHeader) {
       setHeader(<Header title="Login to your account" wide={true} />);
     }
@@ -41,7 +35,7 @@ export class Login extends React.Component<Props, State> {
     const { className } = this.props;
 
     return (
-      <div className={className + " routes-login"}>
+      <div className={className + "app-main routes-login"}>
         <Formik
           initialValues={{ email: "", password: "" }}
           onSubmit={() => null}
@@ -59,7 +53,7 @@ export class Login extends React.Component<Props, State> {
     values,
     ...formikProps
   }: FormikProps<FormValues>) => {
-    const { routeTo } = this.props;
+    const { history } = this.props;
 
     return (
       <Card>
@@ -91,7 +85,7 @@ export class Login extends React.Component<Props, State> {
             className="to-login-button"
             type="button"
             fluid={true}
-            onClick={() => routeTo({ name: Route.SIGN_UP })}
+            onClick={() => history.replace(SIGN_UP_URL)}
             disabled={isSubmitting}
           >
             Don't have an account? Sign Up
@@ -117,11 +111,14 @@ export class Login extends React.Component<Props, State> {
       return;
     }
 
-    const { client, routeTo } = this.props;
+    const { login, history } = this.props;
+
+    if (!login) {
+      return;
+    }
 
     try {
-      const result = await client.query<LoginQuery, LoginQueryVariables>({
-        query: LOGIN_QUERY,
+      const result = await login({
         variables: {
           login: values
         }
@@ -138,9 +135,7 @@ export class Login extends React.Component<Props, State> {
           variables: { user }
         });
 
-        routeTo({
-          name: Route.HOME
-        });
+        history.replace(ROOT_URL);
       }
     } catch (error) {
       formikBag.setSubmitting(false);

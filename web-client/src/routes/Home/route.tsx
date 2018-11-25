@@ -1,31 +1,30 @@
-import React, { Component } from "react";
+import React from "react";
+import { NavLink } from "react-router-dom";
 
 import { Props } from "./home";
-import { Route } from "../../containers/App/app";
 import Header from "../../components/Header";
+import { setTitle, LOGIN_URL } from "../../Routing";
 
-export class Home extends Component<Props> {
+export class Home extends React.Component<Props> {
   componentDidMount() {
     const { setHeader } = this.props;
 
     if (setHeader) {
       setHeader(<Header title="Home" />);
     }
+
+    setTitle("Home");
+  }
+
+  componentWillUnmount() {
+    setTitle();
   }
 
   render() {
     return (
-      <div className={this.props.className}>
+      <div className="app-main">
         Home
-        <button
-          onClick={() =>
-            this.props.routeTo({
-              name: Route.LOGIN
-            })
-          }
-        >
-          This is home. Please do not click!
-        </button>
+        <NavLink to={LOGIN_URL}>This is home. Please do not click!</NavLink>
       </div>
     );
   }

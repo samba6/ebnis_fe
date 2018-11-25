@@ -1,18 +1,21 @@
 import { AppContextProps } from "../../containers/App/app";
 import * as Yup from "yup";
 import { WithApolloClient } from "react-apollo";
+import { RouteComponentProps } from "react-router-dom";
 
 import { LoginUser as FormValues } from "../../graphql/apollo-gql";
-import { LoginQueryProps } from "../../graphql/login.query";
+import { LoginMutationProps } from "../../graphql/login.mutation";
 import { UserLocalMutationProps } from "../../state/user.local.mutation";
 import { LoggedOutUserProps } from "../../state/logged-out-user.local.query";
 import { ApolloError } from "apollo-client";
 import { FormikErrors } from "formik";
 
-export type OwnProps = WithApolloClient<{}> & AppContextProps;
+export type OwnProps = WithApolloClient<{}> &
+  AppContextProps &
+  RouteComponentProps<{}>;
 
 export type Props = OwnProps &
-  LoginQueryProps &
+  LoginMutationProps &
   UserLocalMutationProps &
   LoggedOutUserProps;
 
