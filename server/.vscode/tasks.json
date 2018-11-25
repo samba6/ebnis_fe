@@ -34,9 +34,21 @@
     },
 
     {
-      "label": "mix test file unit db",
+      "label": "mix test file unit db ${file}",
       "type": "shell",
-      "command": "mix test --include db ${file}",
+      "command": "mix test --only db ${file}",
+      "problemMatcher": [
+        "$mixCompileError",
+        "$mixCompileWarning",
+        "$mixTestFailure"
+      ],
+      "group": "test"
+    },
+
+    {
+      "label": "mix test all unit db",
+      "type": "shell",
+      "command": "mix test --only db",
       "problemMatcher": [
         "$mixCompileError",
         "$mixCompileWarning",
