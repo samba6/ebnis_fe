@@ -12,9 +12,9 @@ use Mix.Config
 config :ebnis, EbnisWeb.Endpoint,
   load_from_system_env: true,
   url: [
-    scheme: "https",
+    scheme: "http",
     host: "ebnis.herokuapp.com",
-    port: 443
+    port: 4023
   ],
   force_ssl: [rewrite_on: [:x_forwarded_proto]],
   secret_key_base: System.get_env("SECRET_KEY_BASE"),

@@ -7,13 +7,11 @@ defmodule EbnisWeb.Router do
     plug(EbnisWeb.Plug.AuthContexts)
   end
 
-
-
   scope "/" do
     pipe_through(:api)
 
     forward(
-      "/api",
+      "/",
       Absinthe.Plug,
       schema: EbnisWeb.Schema,
       context: %{pubsub: EbnisWeb.Endpoint},
