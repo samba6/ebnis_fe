@@ -51,6 +51,13 @@ defmodule EbnisWeb.Schema.User do
       resolve(&Resolver.create/3)
     end
 
+     @doc "Log in a user"
+     field :login, :user do
+      arg(:login, non_null(:login_user))
+
+      resolve(&Resolver.login/3)
+    end
+
     @doc "Update a user"
     field :update, :user do
       arg(:user, non_null(:update_user))
@@ -65,13 +72,6 @@ defmodule EbnisWeb.Schema.User do
     field :refresh, :user do
       arg(:refresh, non_null(:refresh_input))
       resolve(&Resolver.refresh/3)
-    end
-
-    @doc "Log in a user"
-    field :login, :user do
-      arg(:login, non_null(:login_user))
-
-      resolve(&Resolver.login/3)
     end
   end
 end

@@ -131,7 +131,7 @@ defmodule Ebnis.Schema.UserTest do
       queryMap = Query.login()
 
       query = """
-        query LoginUser(#{queryMap.parameters}) {
+        mutation LoginUser(#{queryMap.parameters}) {
           #{queryMap.query}
         }
 
@@ -166,7 +166,7 @@ defmodule Ebnis.Schema.UserTest do
       queryMap = Query.login()
 
       query = """
-        query LoginUser(#{queryMap.parameters}) {
+        mutation LoginUser(#{queryMap.parameters}) {
           #{queryMap.query}
         }
 
