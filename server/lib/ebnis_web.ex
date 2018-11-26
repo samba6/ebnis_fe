@@ -17,29 +17,6 @@ defmodule EbnisWeb do
   and import those modules here.
   """
 
-  def controller do
-    quote do
-      use Phoenix.Controller, namespace: EbnisWeb
-      import Plug.Conn
-      import EbnisWeb.Router.Helpers
-      import EbnisWeb.Gettext
-    end
-  end
-
-  def view do
-    quote do
-      use Phoenix.View, root: "lib/ebnis_web/templates",
-                        namespace: EbnisWeb
-
-      # Import convenience functions from controllers
-      import Phoenix.Controller, only: [get_flash: 2, view_module: 1]
-
-      import EbnisWeb.Router.Helpers
-      import EbnisWeb.ErrorHelpers
-      import EbnisWeb.Gettext
-    end
-  end
-
   def router do
     quote do
       use Phoenix.Router
