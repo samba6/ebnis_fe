@@ -4,9 +4,10 @@ import "./header.scss";
 import logo from "./logo.png";
 import { Props } from "./header";
 
+import { Icon } from "semantic-ui-react";
 export class Header extends React.Component<Props> {
   render() {
-    const { title, wide } = this.props;
+    const { title, wide, sideBar } = this.props;
     let className = "components-header";
     className = wide ? "wide " + className : className;
 
@@ -16,7 +17,13 @@ export class Header extends React.Component<Props> {
           <img src={logo} className="logo" alt="logo" />
         </div>
 
-        <div className="title">{title}</div>
+        <div className="title">
+          {title}
+
+          <a className={`${sideBar ? "" : "no"} sidebar-trigger item`}>
+            <Icon name="content" />
+          </a>
+        </div>
       </header>
     );
   }

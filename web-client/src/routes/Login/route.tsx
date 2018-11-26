@@ -21,7 +21,9 @@ export class Login extends React.Component<Props, State> {
   componentDidMount() {
     const { setHeader } = this.props;
     if (setHeader) {
-      setHeader(<Header title="Login to your account" wide={true} />);
+      setHeader(
+        <Header title="Login to your account" wide={true} sideBar={false} />
+      );
     }
 
     setTitle("Log in");
@@ -32,10 +34,8 @@ export class Login extends React.Component<Props, State> {
   }
 
   render() {
-    const { className } = this.props;
-
     return (
-      <div className={className + "app-main routes-login"}>
+      <div className="app-main routes-login">
         <Formik
           initialValues={{ email: "", password: "" }}
           onSubmit={() => null}
@@ -166,12 +166,12 @@ export class Login extends React.Component<Props, State> {
     return (
       <Form.Field
         {...field}
+        type="password"
         control={Input}
         placeholder="Password"
         autoComplete="off"
         label="Password"
         id="password"
-        autoFocus={true}
       />
     );
   };
