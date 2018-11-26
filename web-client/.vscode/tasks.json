@@ -34,14 +34,14 @@
     {
       "label": "Serve and chrome",
       "type": "shell",
-      "command": "launch_with_cmder.bat \"chromedriver\" && yarn build-local-prod && cd build && launch_with_cmder.bat \"serve -s build -l 4035\"  ",
+      "command": "launch_with_cmder.bat \"chromedriver\" && yarn build-local-prod && launch_with_cmder.bat \"serve -s build -l 4024\"  ",
       "problemMatcher": []
     },
 
     {
       "label": "Serve only",
       "type": "shell",
-      "command": "yarn build-local-prod && launch_with_cmder.bat \"serve -s build -l 4035\"  ",
+      "command": "yarn build-local-prod && launch_with_cmder.bat \"serve -s build -l 4024\"  ",
       "problemMatcher": []
     }
   ]

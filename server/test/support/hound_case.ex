@@ -14,7 +14,7 @@ defmodule Ebnis.HoundCase do
 
   use ExUnit.CaseTemplate
 
-  @test_path "http://localhost:4035"
+  @test_path "http://localhost:4024"
   @root_path "\\"
 
   using do
@@ -49,7 +49,7 @@ defmodule Ebnis.HoundCase do
     chrome_args = [
       "--user-agent=#{hound_meta_data}"
       # "--disable-gpu"
-      # "--port=4035"
+      # "--port=4024"
     ]
 
     chrome_args =
