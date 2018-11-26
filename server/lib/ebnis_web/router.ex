@@ -10,21 +10,22 @@ defmodule EbnisWeb.Router do
   scope "/" do
     pipe_through(:api)
 
-    forward(
-      "/api",
-      Absinthe.Plug,
-      schema: EbnisWeb.Schema,
-      context: %{pubsub: EbnisWeb.Endpoint},
-      json_codec: Jason
-    )
-
     if Mix.env() == :dev do
       forward(
         "/graphql",
         Absinthe.Plug.GraphiQL,
         schema: EbnisWeb.Schema,
-        context: %{pubsub: EbnisWeb.Endpoint}
+        context: %{pubsub: EbnisWeb.Endpoint},
+        json_codec: Jason
       )
     end
+
+    forward(
+      "/",
+      Absinthe.Plug,
+      schema: EbnisWeb.Schema,
+      context: %{pubsub: EbnisWeb.Endpoint},
+      json_codec: Jason
+    )
   end
 end

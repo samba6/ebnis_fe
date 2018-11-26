@@ -1,4 +1,4 @@
-const URL_ROOT = "/api";
+const URL_ROOT = "/";
 const URL_SOCKET = "/socket";
 
 export const getBackendUrls = () => {
@@ -26,9 +26,7 @@ export const getBackendUrls = () => {
     const httpHost = httpHostRegexExec[0];
     const websocketHost = httpHost === "https" ? "wss" : "ws";
 
-    websocketUrl = apiUrl
-      .replace(httpHost, websocketHost)
-      .replace(URL_ROOT, URL_SOCKET);
+    websocketUrl = apiUrl.replace(httpHost, websocketHost) + URL_SOCKET;
   }
 
   return {
