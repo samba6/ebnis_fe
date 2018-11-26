@@ -9,8 +9,10 @@ defmodule Ebnis.Accounts.Credential do
 
   schema "credentials" do
     field(:source, :string)
+    # the encrypted password or token from auth source e.g. google
     field(:token, :string)
 
+    # in case user chooses to use password as source
     field(:password, :string, virtual: true)
 
     belongs_to(:user, User)
