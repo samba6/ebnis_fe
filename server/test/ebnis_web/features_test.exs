@@ -19,7 +19,7 @@ defmodule EbnisWeb.FeatureCase do
     click({:name, "to-sign-up"})
 
     # She sees the sign up text in the page title
-    assert page_title() =~ "Sign up"
+    assert retries(true, fn -> page_title() =~ "Sign up" end, 1_000)
 
     %{email: email} = params = RegFactory.params()
 

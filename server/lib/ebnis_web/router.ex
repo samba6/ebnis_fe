@@ -2,7 +2,7 @@ defmodule EbnisWeb.Router do
   use EbnisWeb, :router
 
   pipeline :api do
-    plug :accepts, ["json"]
+    plug(:accepts, ["json"])
     plug(EbnisWeb.Auth.Pipeline)
     plug(EbnisWeb.Plug.AuthContexts)
   end
@@ -11,7 +11,7 @@ defmodule EbnisWeb.Router do
     pipe_through(:api)
 
     forward(
-      "/",
+      "/api",
       Absinthe.Plug,
       schema: EbnisWeb.Schema,
       context: %{pubsub: EbnisWeb.Endpoint},
