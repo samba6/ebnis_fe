@@ -10,7 +10,7 @@ export class Home extends React.Component<Props> {
     const { setHeader } = this.props;
 
     if (setHeader) {
-      setHeader(<Header title="Home" />);
+      setHeader(<Header title="Home" sideBar={true} />);
     }
 
     setTitle("Home");

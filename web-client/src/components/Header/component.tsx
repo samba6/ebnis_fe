@@ -1,10 +1,10 @@
 import React from "react";
+import { Icon } from "semantic-ui-react";
 
 import "./header.scss";
 import logo from "./logo.png";
 import { Props } from "./header";
 
-import { Icon } from "semantic-ui-react";
 export class Header extends React.Component<Props> {
   render() {
     const { title, wide, sideBar } = this.props;
