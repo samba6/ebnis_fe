@@ -7,9 +7,7 @@ defmodule EbnisWeb.UserSocket do
   alias EbnisWeb.Auth.Guardian, as: GuardianApp
 
   ## Channels
-  # channel "room:*", EbnisWeb.RoomChannel
-
-
+  channel("data:*", EbnisWeb.DataChannel)
 
   # Socket params are passed from the client and can
   # be used to verify and authenticate a user. After

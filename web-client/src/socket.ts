@@ -2,6 +2,7 @@ import { Socket, Channel } from "phoenix";
 import { logger } from "./logger";
 import { getToken } from "./state/resolvers";
 import getBackendUrls from "./state/get-backend-urls";
+import { disconnect } from "cluster";
 // import { AllQueries } from "./graphql/apollo-gql";
 
 type AllQueries = {};
@@ -19,6 +20,10 @@ enum ChannelTopic {
 let socket: Socket;
 
 export const defineSocket = () => {
+  // if we are disconnected, phoenix will keep trying to connect which means
+  // we will keep dispatching disconnect.  So we track if we already dispatched
+  // disconnect (socketDisconnectedCount = 1) and if so we do not send another
+  // message.  We only dispatch the message if socketDisconnectedCount = 0.
   let socketDisconnectedCount = 0;
   let dataAuthChannel: Channel;
   // let initialDataSynced = false
@@ -28,9 +33,11 @@ export const defineSocket = () => {
     socket = new Socket(getBackendUrls().websocketUrl, params);
     socket.connect();
 
-    if (token) {
-      socket.onOpen(() => joinDataAuthChannel(payload));
-    }
+    socket.onOpen(() => {
+      if (token) {
+        joinDataAuthChannel(payload);
+      }
+    });
 
     socket.onError(() => {
       dispatchDisconnected();
