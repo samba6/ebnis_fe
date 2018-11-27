@@ -2,8 +2,6 @@ import { Socket, Channel } from "phoenix";
 import { logger } from "./logger";
 import { getToken } from "./state/resolvers";
 import getBackendUrls from "./state/get-backend-urls";
-import { disconnect } from "cluster";
-// import { AllQueries } from "./graphql/apollo-gql";
 
 type AllQueries = {};
 

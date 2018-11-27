@@ -10,12 +10,11 @@ import { client, persistCache } from "../../state/set-up";
 import logger from "../../logger";
 import AuthRequired from "../../components/AuthRequired";
 import { ROOT_URL, LOGIN_URL, SIGN_UP_URL } from "../../Routing";
+import Loading from "../../components/Loading";
 
 const Home = lazy(() => import("./../../routes/Home"));
 const Login = lazy(() => import("./../../routes/Login"));
 const SignUp = lazy(() => import("./../../routes/SignUp"));
-
-const Loading = () => <div>Loading</div>;
 
 const defaultHeader = <Header title="Ebnis" />;
 
