@@ -5,12 +5,20 @@ import { BrowserRouter, Switch, Route } from "react-router-dom";
 
 import "./app.scss";
 import Header from "../../components/Header";
-import { State, initialMediaQueries, MediaQueryKey, mediaQueries } from "./app";
+import {
+  State,
+  initialMediaQueries,
+  MediaQueryKey,
+  mediaQueries,
+  AppContextProvider,
+  AppContextProps
+} from "./app";
 import { client, persistCache } from "../../state/set-up";
 import logger from "../../logger";
 import AuthRequired from "../../components/AuthRequired";
 import { ROOT_URL, LOGIN_URL, SIGN_UP_URL } from "../../Routing";
 import Loading from "../../components/Loading";
+import Sidebar from "../../components/Sidebar";
 
 const Home = lazy(() => import("./../../routes/Home"));
 const Login = lazy(() => import("./../../routes/Login"));
@@ -35,55 +43,62 @@ export class App extends React.Component<{}, State> {
   }
 
   render() {
-    const { header = defaultHeader } = this.state;
-    const { setHeader } = this;
-    const childProps = { setHeader };
+    const { header = defaultHeader, showSidebar } = this.state;
+    const { setHeader, onShowSidebar } = this;
+    const childProps: AppContextProps = {
+      onShowSidebar,
+      setHeader,
+      showSidebar
+    };
 
     return (
       <div className="containers-app">
         <ApolloProvider client={client}>
-          {header}
-          <BrowserRouter>
-            <Suspense fallback={<Loading />}>
-              <Switch>
-                <AuthRequired
-                  exact={true}
-                  path={ROOT_URL}
-                  component={Home}
-                  redirectTo={Login}
-                  {...childProps}
-                />
+          <AppContextProvider value={childProps}>
+            <Sidebar />
+            {header}
+            <BrowserRouter>
+              <Suspense fallback={<Loading />}>
+                <Switch>
+                  <AuthRequired
+                    exact={true}
+                    path={ROOT_URL}
+                    component={Home}
+                    redirectTo={Login}
+                    {...childProps}
+                  />
 
-                <Route
-                  exact={true}
-                  path={SIGN_UP_URL}
-                  render={renderProps => (
-                    <SignUp {...childProps} {...renderProps} />
-                  )}
-                />
+                  <Route
+                    exact={true}
+                    path={SIGN_UP_URL}
+                    render={renderProps => (
+                      <SignUp {...childProps} {...renderProps} />
+                    )}
+                  />
 
-                <Route
-                  exact={true}
-                  path={LOGIN_URL}
-                  render={renderProps => (
-                    <Login {...childProps} {...renderProps} />
-                  )}
-                />
+                  <Route
+                    exact={true}
+                    path={LOGIN_URL}
+                    render={renderProps => (
+                      <Login {...childProps} {...renderProps} />
+                    )}
+                  />
 
-                <Route
-                  render={renderProps => (
-                    <Login {...childProps} {...renderProps} />
-                  )}
-                />
-              </Switch>
-            </Suspense>
-          </BrowserRouter>
+                  <Route
+                    render={renderProps => (
+                      <Login {...childProps} {...renderProps} />
+                    )}
+                  />
+                </Switch>
+              </Suspense>
+            </BrowserRouter>
+          </AppContextProvider>
         </ApolloProvider>
       </div>
     );
   }
 
-  private setHeader = (header: React.ComponentClass) => {
+  private setHeader = (header: JSX.Element) => {
     this.setState({ header });
   };
 
@@ -132,6 +147,9 @@ export class App extends React.Component<{}, State> {
 
     this.setState({ cacheLoaded: true });
   };
+
+  private onShowSidebar = (showSidebar: boolean) =>
+    this.setState({ showSidebar });
 }
 
 export default App;

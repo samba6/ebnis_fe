@@ -1,16 +1,16 @@
 import React from "react";
 
 export interface AppContextProps {
-  className: string;
+  showSidebar?: boolean;
   setHeader?: (header: JSX.Element) => void;
+  onShowSidebar: (showSidebar: boolean) => void;
 }
 
 export const AppContext = React.createContext<AppContextProps>({
-  className: ""
+  onShowSidebar: val => null
 });
 
-export const AppConsumer = AppContext.Consumer;
-export const AppProvider = AppContext.Provider;
+export const AppContextProvider = AppContext.Provider;
 
 export enum MediaQueryKey {
   SCREEN_MIN_WIDTH_600 = "screenMinWidth600"
@@ -24,8 +24,9 @@ type StateMediaQueries = { [k in MediaQueryKey]: boolean };
 
 export interface State {
   mediaQueries: StateMediaQueries;
-  header?: React.ComponentClass;
+  header?: JSX.Element;
   cacheLoaded?: boolean;
+  showSidebar?: boolean;
 }
 
 export const initialMediaQueries: StateMediaQueries = Object.values(

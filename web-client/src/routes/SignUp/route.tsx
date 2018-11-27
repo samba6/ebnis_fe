@@ -49,10 +49,8 @@ export class SignUp extends React.Component<Props, State> {
   }
 
   render() {
-    const { className } = this.props;
-
     return (
-      <div className={className + " routes-sign-up-route"} ref={this.mainRef}>
+      <div className="app-main routes-sign-up-route" ref={this.mainRef}>
         <Formik
           initialValues={initialFormValues}
           onSubmit={() => null}

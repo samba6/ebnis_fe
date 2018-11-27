@@ -1,0 +1,96 @@
+@import "../../styles/extensions";
+
+.components-sidebar {
+  --main-container-height: 100vh;
+  --main-container-width: 100vw;
+
+  display: flex;
+  flex-direction: row-reverse;
+  position: fixed;
+  right: 0;
+  top: 0;
+  width: var(--main-container-width);
+  height: var(--main-container-height);
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 1;
+
+  &:before {
+    content: "";
+    display: block;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: var(--main-container-width);
+    height: var(--main-container-height);
+    background: rgba(0, 0, 0, 0.4);
+    opacity: 0;
+    transition: opacity 0.5s ease;
+  }
+
+  .container {
+    position: relative;
+    width: calc(var(--main-container-width) * 0.9);
+    max-width: 200px;
+    background: #ffffff;
+    height: var(--main-container-height);
+    // if we do less than 103%, the box-shadow will be visible at the left
+    // of the view port
+
+    transform: translate(105%);
+    transition: transform 0.5s ease;
+    box-shadow: 2px 0 12px rgba(0, 0, 0, 0.4);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+
+    &.animated {
+      transition: transform 0.5s ease;
+    }
+  }
+
+  &.visible {
+    pointer-events: auto;
+
+    &:before {
+      opacity: 0.6;
+    }
+
+    .container {
+      transform: none;
+    }
+  }
+
+  .sidebar__content {
+    flex: 1;
+    overflow-x: hidden;
+    overflow-y: auto;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+
+    & > li {
+      height: 32px;
+      line-height: 32px;
+      padding: 0 24px;
+      cursor: pointer;
+      margin-top: 3px;
+
+      &:hover {
+        background: #ccc;
+      }
+    }
+  }
+
+  .sidebar-hide {
+    @extend %header-box-shadow;
+    display: flex;
+    flex-direction: row-reverse;
+    cursor: pointer;
+    padding: 24px 17px 19px;
+
+    & > .icon {
+      font-size: 1.3em;
+    }
+  }
+}

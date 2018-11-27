@@ -1,8 +1,9 @@
 @import "../../styles/variables";
+@import "../../styles/extensions";
 
 .components-header {
+  @extend %header-box-shadow;
   flex-shrink: 0;
-  box-shadow: 0 3px 3px $app-color;
   margin-bottom: 20px;
   display: flex;
   padding: 5px 15px 0 15px;
@@ -51,10 +52,6 @@
     min-width: 40px;
     cursor: pointer;
     padding: 10px 0 10px 20px;
-
-    &:hover {
-      background-color: darken($color: $app-color, $amount: 8%);
-    }
 
     &.no {
       display: none;
