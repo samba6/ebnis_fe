@@ -5,23 +5,38 @@ defmodule Ebnis.Accounts do
   alias Ebnis.Accounts.Registration
   alias Ebnis.Repo
   alias Ebnis.Accounts.Credential
+  alias EbnisEmails
+  alias Ebnis.Accounts.User
 
-  def register(params) do
+  def register(%{} = params, opts \\ []) do
     Ecto.Multi.new()
     |> Registration.create(params)
     |> Repo.transaction()
     |> case do
       {:ok, %{user: user, credential: credential}} ->
-        {:ok,
-         Map.put(user, :credential, %{
-           credential
-           | token: nil,
-             password: nil
-         })}
+        user_with_credential =
+          Map.put(user, :credential, %{
+            credential
+            | token: nil,
+              password: nil
+          })
+
+        post_registration(user_with_credential, opts)
 
       {:error, failed_operations, changeset, _successes} ->
         {:error, failed_operations, changeset}
     end
+  end
+
+  defp post_registration(%User{} = user, []), do: {:ok, user}
+
+  defp post_registration(%User{} = user, opts) do
+    case Keyword.fetch(opts, :send_welcome) do
+      {:ok, _} ->
+        :ok = EbnisEmails.send_welcome(user.email)
+    end
+
+    {:ok, user}
   end
 
   def authenticate(%{email: email, password: password} = _params) do

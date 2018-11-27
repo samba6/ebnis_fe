@@ -1,5 +1,7 @@
 defmodule Ebnis.Schema.UserTest do
-  use Ebnis.DataCase, async: false
+  use Ebnis.DataCase
+
+  import Mox
 
   alias EbnisWeb.Schema
   alias Ebnis.Query.Registration, as: RegQuery
@@ -7,8 +9,11 @@ defmodule Ebnis.Schema.UserTest do
   alias EbnisWeb.Query.User, as: Query
   alias Ebnis.Factory.User, as: Factory
   alias EbnisWeb.Auth.Guardian, as: GuardianApp
+  alias EbnisEmails.MockEmails
 
   @moduletag :db
+
+  setup [:verify_on_exit!, :set_mox_from_context]
 
   describe "mutation" do
     # @tag :skip
@@ -20,6 +25,8 @@ defmodule Ebnis.Schema.UserTest do
         attrs =
         RegFactory.params()
         |> RegFactory.stringify()
+
+      expect(MockEmails, :send_welcome, fn ^email -> :ok end)
 
       queryMap = RegQuery.register()
 

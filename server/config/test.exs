@@ -30,3 +30,7 @@ config :hound,
   app_port: app_port,
   retry_time: 50_000,
   genserver_timeout: 480_000
+
+config :ebnis, EbnisEmails.DefaultImpl.Mailer, adapter: Swoosh.Adapters.Test
+
+config :constantizer, resolve_at_compile_time: false

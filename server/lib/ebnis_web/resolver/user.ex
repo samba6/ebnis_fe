@@ -6,7 +6,7 @@ defmodule EbnisWeb.User.Resolver do
   alias Ebnis.Accounts.Users
 
   def create(_root, %{registration: params}, _info) do
-    with {:ok, user} <- Accounts.register(params),
+    with {:ok, user} <- Accounts.register(params, send_welcome: true),
          {:ok, jwt, _claim} <- GuardianApp.encode_and_sign(user) do
       {:ok, %User{user | jwt: jwt}}
     else

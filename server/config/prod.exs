@@ -1,5 +1,7 @@
 use Mix.Config
 
+secret_key = System.get_env("SECRET_KEY_BASE")
+
 # For production, don't forget to configure the url host
 # to something meaningful, Phoenix uses this information
 # when generating URLs.
@@ -17,7 +19,7 @@ config :ebnis, EbnisWeb.Endpoint,
     port: 4023
   ],
   force_ssl: [rewrite_on: [:x_forwarded_proto]],
-  secret_key_base: System.get_env("SECRET_KEY_BASE"),
+  secret_key_base: secret_key,
   check_origin: [
     "https://ebnis.herokuapp.com",
     "https://ebnis.surge.sh"
@@ -28,6 +30,10 @@ config :ebnis, Ebnis.Repo,
   url: System.get_env("DATABASE_URL"),
   pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
   ssl: true
+
+config :ebnis, EbnisWeb.Auth.Guardian,
+  issuer: "ebnis",
+  secret_key: secret_key
 
 # Do not print debug messages in production
 config :logger, level: :info

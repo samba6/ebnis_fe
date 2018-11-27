@@ -1,10 +1,15 @@
 defmodule EbnisWeb.FeatureCase do
   use Ebnis.HoundCase, async: false
 
+  import Mox
+
   alias Ebnis.Factory.Registration, as: RegFactory
   alias Ebnis.Accounts.User
+  alias EbnisEmails.MockEmails
 
   @moduletag :integration
+
+  setup [:verify_on_exit!, :set_mox_from_context]
 
   # @tag :no_headless
   @tag :sign_up_feature
@@ -22,6 +27,7 @@ defmodule EbnisWeb.FeatureCase do
     assert retries(true, fn -> page_title() =~ "Sign up" end, 1_000)
 
     %{email: email} = params = RegFactory.params()
+    expect(MockEmails, :send_welcome, fn ^email -> :ok end)
 
     # When she fills in her name, email, password and password confirmation
     fill_field({:name, "name"}, params.name)

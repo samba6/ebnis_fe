@@ -52,7 +52,11 @@ defmodule Ebnis.MixProject do
       {:bcrypt_elixir, "~> 1.1"},
       {:comeonin, "~> 4.1"},
       {:timex, "~> 3.4"},
-      {:hound, "~> 1.0", only: :test}
+      {:hound, "~> 1.0", only: :test},
+      {:swoosh, "~> 0.20"},
+      {:gen_smtp, "~> 0.13.0"},
+      {:constantizer, "~> 0.2.0"},
+      {:mox, "~> 0.4.0", only: :test}
     ]
   end
 
