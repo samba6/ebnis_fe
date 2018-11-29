@@ -1,10 +1,20 @@
 defmodule Ebnis.Factory do
   @start_date ~D[1998-01-01]
   @end_date ~D[2018-12-31]
+  @now Timex.now()
+  @all_seconds_in_year 0..(360 * 24 * 60 * 60)
 
   def map(built), do: Map.from_struct(built)
 
   def random_date, do: Faker.Date.between(@start_date, @end_date)
+
+  def random_datetime,
+    do:
+      @now
+      |> Timex.beginning_of_year()
+      |> Timex.add(
+        Timex.Duration.from_seconds(Enum.random(@all_seconds_in_year))
+        )
 
   def to_camel_key(key) when is_atom(key) do
     [first | rest] =

@@ -1,14 +1,17 @@
 defmodule EbnisWeb.Schema.Experience do
   use Absinthe.Schema.Notation
 
-  alias EbnisWeb.Experience.Resolver
+  alias EbnisWeb.Resolver.Experience, as: Resolver
 
   @desc "A Experience"
   object :experience do
     field(:id, non_null(:id))
 
     field(:title, non_null(:string))
-    field(:fields, :exp_field |> list_of() |> non_null())
+
+    field :fields, :exp_field |> list_of() |> non_null() do
+      resolve(&Resolver.fields/3)
+    end
 
     field(:inserted_at, non_null(:iso_datetime))
     field(:updated_at, non_null(:iso_datetime))
@@ -35,7 +38,7 @@ defmodule EbnisWeb.Schema.Experience do
   object :experience_query do
     @desc "get all experiences belonging to a user"
     field :experiences, list_of(:experience) do
-      resolve(&Resolver.field/3)
+      resolve(&Resolver.get_experiences/3)
     end
   end
 end

@@ -20,7 +20,7 @@ defmodule Ebnis.Repo.Migrations.CreateExperienceFields do
       add(:multi_line_text, :text, comment: "Multi line text field")
       add(:integer, :integer)
       add(:decimal, :float)
-      add(:date, :float)
+      add(:date, :date)
       add(:datetime, :utc_datetime)
     end
 
@@ -30,20 +30,6 @@ defmodule Ebnis.Repo.Migrations.CreateExperienceFields do
 
     :exp_fields
     |> unique_index([:experience_id, :name])
-    |> create()
-
-    :exp_fields
-    |> constraint(
-      :exact_one_field_type_non_null,
-      check: """
-      (CASE WHEN single_line_text IS NULL THEN 0 ELSE 1 END) +
-      (CASE WHEN multi_line_text IS NULL THEN 0 ELSE 1 END) +
-      (CASE WHEN integer IS NULL THEN 0 ELSE 1 END) +
-      (CASE WHEN decimal IS NULL THEN 0 ELSE 1 END) +
-      (CASE WHEN date IS NULL THEN 0 ELSE 1 END) +
-      (CASE WHEN datetime IS NULL THEN 0 ELSE 1 END) = 1
-      """
-    )
     |> create()
   end
 end

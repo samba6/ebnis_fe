@@ -18,21 +18,21 @@ defmodule EbnisWeb.Resolver do
   def transaction_errors_to_string({:error, changeset}, failed_operation),
     do: transaction_errors_to_string(changeset, failed_operation)
 
-  def transaction_errors_to_string(%Ecto.Changeset{} = changeset, failed_operation) do
+  def transaction_errors_to_string(%{} = changeset, failed_operation) do
     %{
       name: failed_operation,
-      error: changeset_errors_to_map(changeset)
+      errors: changeset_errors_to_map(changeset)
     }
-    |> Poison.encode!()
+    |> Jason.encode!()
   end
 
   def changeset_errors_to_string(errors),
     do:
       errors
       |> changeset_errors_to_map()
-      |> Poison.encode!()
+      |> Jason.encode!()
 
-  defp changeset_errors_to_map(%Ecto.Changeset{errors: errors}),
+  defp changeset_errors_to_map(%{errors: errors}),
     do:
       errors
       |> Enum.map(fn

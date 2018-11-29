@@ -56,7 +56,8 @@ defmodule Ebnis.MixProject do
       {:swoosh, "~> 0.20"},
       {:gen_smtp, "~> 0.13.0"},
       {:constantizer, "~> 0.2.0"},
-      {:mox, "~> 0.4.0", only: :test}
+      {:mox, "~> 0.4.0", only: :test},
+      {:sequence, path: "../../elixir_sequence", only: [:dev, :test]}
     ]
   end
 

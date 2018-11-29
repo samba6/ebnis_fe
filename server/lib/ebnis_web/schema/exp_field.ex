@@ -32,7 +32,6 @@ defmodule EbnisWeb.Schema.ExpField do
   @desc "Variables for creating field for an existing experience"
   input_object :create_exp_field do
     @desc "The experience to which the field belongs"
-    field(:experience_id, non_null(:id))
     field(:name, non_null(:string))
 
     field(:single_line_text, :string)
