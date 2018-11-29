@@ -1,25 +1,34 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Button, Card, Input, Message, Icon, Form } from "semantic-ui-react";
 import {
   Formik,
   FastField,
   FieldProps,
   FormikProps,
-  FormikActions
+  FormikActions,
+  FormikErrors
 } from "formik";
+import { ApolloError } from "apollo-client";
 
 import "./login.scss";
-import { Props, State, ValidationSchema } from "./login";
+import { Props, ValidationSchema } from "./login";
 import Header from "../../components/Header";
 import { LoginUser as FormValues } from "../../graphql/apollo-gql";
 import socket from "../../socket";
 import { setTitle, ROOT_URL, SIGN_UP_URL } from "../../Routing";
 
-export class Login extends React.Component<Props, State> {
-  state: State = {};
+export const Login = (props: Props) => {
+  const { setHeader } = props;
 
-  componentDidMount() {
-    const { setHeader } = this.props;
+  const [formErrors, setFormErrors] = useState<
+    FormikErrors<FormValues> | undefined
+  >(undefined);
+
+  const [graphQlErrors, setGraphQlErrors] = useState<ApolloError | undefined>(
+    undefined
+  );
+
+  useEffect(() => {
     if (setHeader) {
       setHeader(
         <Header title="Login to your account" wide={true} sideBar={false} />
@@ -27,43 +36,25 @@ export class Login extends React.Component<Props, State> {
     }
 
     setTitle("Log in");
-  }
+  }, []);
 
-  componentWillMount() {
-    setTitle();
-  }
-
-  render() {
-    return (
-      <div className="app-main routes-login">
-        <Formik
-          initialValues={{ email: "", password: "" }}
-          onSubmit={() => null}
-          render={this.renderForm}
-          validationSchema={ValidationSchema}
-          validateOnChange={false}
-        />
-      </div>
-    );
-  }
-
-  private renderForm = ({
+  const renderForm = ({
     dirty,
     isSubmitting,
     values,
     ...formikProps
   }: FormikProps<FormValues>) => {
-    const { history } = this.props;
+    const { history } = props;
 
     return (
       <Card>
-        {this.renderSubmissionErrors()}
+        {renderSubmissionErrors()}
 
         <Card.Content>
-          <Form onSubmit={() => this.submit(values, formikProps)}>
-            <FastField name="email" render={this.renderEmailInput} />
+          <Form onSubmit={() => submit(values, formikProps)}>
+            <FastField name="email" render={renderEmailInput} />
 
-            <FastField name="password" render={this.renderPwdInput} />
+            <FastField name="password" render={renderPwdInput} />
 
             <Button
               id="login-submit"
@@ -96,11 +87,12 @@ export class Login extends React.Component<Props, State> {
     );
   };
 
-  private submit = async (
+  const submit = async (
     values: FormValues,
     formikBag: FormikActions<FormValues>
   ) => {
-    await this.setState({ formErrors: undefined, graphQlErrors: undefined });
+    setFormErrors(undefined);
+    setGraphQlErrors(undefined);
 
     const errors = await formikBag.validateForm(values);
 
@@ -108,11 +100,12 @@ export class Login extends React.Component<Props, State> {
 
     if (errors.email || errors.password) {
       formikBag.setSubmitting(false);
-      this.setState({ formErrors: errors });
+      setFormErrors(errors);
+
       return;
     }
 
-    const { login, history } = this.props;
+    const { login, history } = props;
 
     if (!login) {
       return;
@@ -132,7 +125,7 @@ export class Login extends React.Component<Props, State> {
           socket.connect(user.jwt);
         }
 
-        await this.props.updateLocalUser({
+        await props.updateLocalUser({
           variables: { user }
         });
 
@@ -140,11 +133,11 @@ export class Login extends React.Component<Props, State> {
       }
     } catch (error) {
       formikBag.setSubmitting(false);
-      this.setState({ graphQlErrors: error });
+      setGraphQlErrors(error);
     }
   };
 
-  private renderEmailInput = (formProps: FieldProps<FormValues>) => {
+  const renderEmailInput = (formProps: FieldProps<FormValues>) => {
     const { field } = formProps;
 
     return (
@@ -160,7 +153,7 @@ export class Login extends React.Component<Props, State> {
     );
   };
 
-  private renderPwdInput = (formProps: FieldProps<FormValues>) => {
+  const renderPwdInput = (formProps: FieldProps<FormValues>) => {
     const { field } = formProps;
 
     return (
@@ -176,9 +169,7 @@ export class Login extends React.Component<Props, State> {
     );
   };
 
-  private renderSubmissionErrors = () => {
-    const { graphQlErrors, formErrors } = this.state;
-
+  const renderSubmissionErrors = () => {
     if (formErrors) {
       const { email, password } = formErrors;
 
@@ -188,7 +179,7 @@ export class Login extends React.Component<Props, State> {
 
       return (
         <Card.Content extra={true}>
-          <Message error={true} onDismiss={this.handleFormErrorDismissed}>
+          <Message error={true} onDismiss={handleFormErrorDismissed}>
             <Message.Content>
               <span>Errors in fields: </span>
 
@@ -214,7 +205,7 @@ export class Login extends React.Component<Props, State> {
     if (graphQlErrors) {
       return (
         <Card.Content extra={true}>
-          <Message error={true} onDismiss={this.handleFormErrorDismissed}>
+          <Message error={true} onDismiss={handleFormErrorDismissed}>
             <Message.Content>{graphQlErrors.message}</Message.Content>
           </Message>
         </Card.Content>
@@ -224,8 +215,20 @@ export class Login extends React.Component<Props, State> {
     return undefined;
   };
 
-  private handleFormErrorDismissed = () =>
-    this.setState({ graphQlErrors: undefined, formErrors: undefined });
-}
+  const handleFormErrorDismissed = () => setFormErrors(undefined);
+  setGraphQlErrors(undefined);
+
+  return (
+    <div className="app-main routes-login">
+      <Formik
+        initialValues={{ email: "", password: "" }}
+        onSubmit={() => null}
+        render={renderForm}
+        validationSchema={ValidationSchema}
+        validateOnChange={false}
+      />
+    </div>
+  );
+};
 
 export default Login;
