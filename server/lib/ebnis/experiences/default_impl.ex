@@ -16,9 +16,16 @@ defmodule Ebnis.Experiences.DefaultImpl do
       |> Repo.insert()
     end)
     |> Multi.merge(fn %{experience: %Experience{id: id}} ->
-      fields = Enum.map(fields, &Map.put(&1, :experience_id, id))
-
-      Multi.insert_all(Multi.new(), :fields, Field, fields)
+      Enum.reduce(
+        fields,
+        Multi.new(),
+        fn field, acc ->
+          Multi.run(acc, field.name, fn _repo, _changes ->
+            Field.changeset(%Field{}, Map.put(field, :experience_id, id))
+            |> Repo.insert()
+          end)
+        end
+      )
     end)
     |> Repo.transaction()
     |> case do
