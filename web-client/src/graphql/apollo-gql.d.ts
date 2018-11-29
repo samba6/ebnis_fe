@@ -4,6 +4,39 @@
 // This file was automatically generated and should not be edited.
 
 // ====================================================
+// GraphQL mutation operation: ExperienceMutation
+// ====================================================
+
+export interface ExperienceMutation_experience_fields {
+  id: string;
+  name: string;                   // Name of field e.g start, end, meal
+  singleLineText: string | null;  // A single line text field
+  multiLineText: string | null;   // A multi line text field
+  integer: number | null;         // An integer field type
+  decimal: number | null;         // A floating point number field type
+  date: any | null;               // Date field type
+  datetime: any | null;           // Datetime field type
+}
+
+export interface ExperienceMutation_experience {
+  id: string;
+  title: string;
+  fields: (ExperienceMutation_experience_fields | null)[];
+}
+
+export interface ExperienceMutation {
+  experience: ExperienceMutation_experience | null;
+}
+
+export interface ExperienceMutationVariables {
+  experience: CreateExperience;
+}
+
+
+/* tslint:disable */
+// This file was automatically generated and should not be edited.
+
+// ====================================================
 // GraphQL mutation operation: LoginMutation
 // ====================================================
 
@@ -50,6 +83,38 @@ export interface UserRegMutationVariables {
 // This file was automatically generated and should not be edited.
 
 // ====================================================
+// GraphQL fragment: ExpFieldFragment
+// ====================================================
+
+export interface ExpFieldFragment {
+  id: string;
+  name: string;                   // Name of field e.g start, end, meal
+  singleLineText: string | null;  // A single line text field
+  multiLineText: string | null;   // A multi line text field
+  integer: number | null;         // An integer field type
+  decimal: number | null;         // A floating point number field type
+  date: any | null;               // Date field type
+  datetime: any | null;           // Datetime field type
+}
+
+
+/* tslint:disable */
+// This file was automatically generated and should not be edited.
+
+// ====================================================
+// GraphQL fragment: ExperienceFragment
+// ====================================================
+
+export interface ExperienceFragment {
+  id: string;
+  title: string;
+}
+
+
+/* tslint:disable */
+// This file was automatically generated and should not be edited.
+
+// ====================================================
 // GraphQL fragment: UserFragment
 // ====================================================
 
@@ -66,6 +131,24 @@ export interface UserFragment {
 //==============================================================
 // START Enums and Input Objects
 //==============================================================
+
+// Variables for creating Experience
+export interface CreateExperience {
+  fields: (CreateExpField | null)[];
+  title: string;
+  userId: string;
+}
+
+// Variables for creating field for an existing experience
+export interface CreateExpField {
+  date?: any | null;
+  datetime?: any | null;
+  decimal?: number | null;
+  integer?: number | null;
+  multiLineText?: string | null;
+  name: string;
+  singleLineText?: string | null;
+}
 
 // Variables for login in User
 export interface LoginUser {
