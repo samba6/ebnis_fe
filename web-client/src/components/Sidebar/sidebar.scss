@@ -39,7 +39,7 @@
 
     transform: translate(105%);
     transition: transform 0.5s ease;
-    box-shadow: 2px 0 12px rgba(0, 0, 0, 0.4);
+    box-shadow: -2px 0 12px rgba(0, 0, 0, 0.4);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -72,9 +72,10 @@
     & > li {
       height: 32px;
       line-height: 32px;
-      padding: 0 24px;
+      padding: 5px 24px;
       cursor: pointer;
       margin-top: 3px;
+      box-sizing: content-box;
 
       &:hover {
         background: #ccc;
