@@ -19,7 +19,6 @@ defmodule EbnisWeb.Schema.Experience do
 
   @desc "Variables for creating Experience"
   input_object :create_experience do
-    field(:user_id, non_null(:id))
     field(:title, non_null(:string))
     field(:fields, :create_exp_field |> list_of() |> non_null())
   end

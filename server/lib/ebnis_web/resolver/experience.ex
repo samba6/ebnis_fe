@@ -4,8 +4,10 @@ defmodule EbnisWeb.Resolver.Experience do
   alias EbnisWeb.Resolver
   alias Ebnis.Experiences
 
-  def create(_, %{experience: attrs}, _) do
-    case Experiences.create_experience(attrs) do
+  def create(_, %{experience: attrs}, %{context: %{current_user: user}}) do
+    case attrs
+         |> Map.put(:user_id, user.id)
+         |> Experiences.create_experience() do
       {:ok, exp} ->
         {:ok, exp}
 
