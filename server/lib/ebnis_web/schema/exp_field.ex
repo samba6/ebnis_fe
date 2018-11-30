@@ -1,6 +1,15 @@
 defmodule EbnisWeb.Schema.ExpField do
   use Absinthe.Schema.Notation
 
+  enum :field_type do
+    value(:single_line_text)
+    value(:multi_line_text)
+    value(:integer)
+    value(:decimal)
+    value(:date)
+    value(:datetime)
+  end
+
   @desc "A ExpField"
   object :exp_field do
     field(:id, non_null(:id))
@@ -31,14 +40,8 @@ defmodule EbnisWeb.Schema.ExpField do
 
   @desc "Variables for creating field for an existing experience"
   input_object :create_exp_field do
-    @desc "The experience to which the field belongs"
     field(:name, non_null(:string))
-
-    field(:single_line_text, :string)
-    field(:multi_line_text, :string)
-    field(:integer, :integer)
-    field(:decimal, :float)
-    field(:date, :date)
-    field(:datetime, :iso_datetime)
+    field(:type, non_null(:field_type))
+    field(:value, non_null(:string))
   end
 end

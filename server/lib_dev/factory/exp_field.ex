@@ -29,7 +29,7 @@ defmodule Ebnis.Factory.ExpField do
     field = Enum.random(@simple_attrs)
 
     %{
-      name: Sequence.next("") <> Enum.random(["F", "f"]) <> "ield "
+      name: Enum.random(["F", "f"]) <> "ield " <> Sequence.next("")
     }
     |> Map.put(field, field(field))
   end
@@ -47,16 +47,28 @@ defmodule Ebnis.Factory.ExpField do
   end
 
   def stringify(%{datetime: %DateTime{} = d, name: name}) do
-    %{"datetime" => DateTime.to_iso8601(d), "name" => name}
+    %{"type" => "DATETIME", "value" => DateTime.to_iso8601(d), "name" => name}
   end
 
   def stringify(%{date: %Date{} = d, name: name}) do
-    %{"date" => Date.to_iso8601(d), "name" => name}
+    %{"type" => "DATE", "value" => Date.to_iso8601(d), "name" => name}
   end
 
   def stringify(field) do
-    field
-    |> Enum.map(fn {k, v} -> {Factory.to_camel_key(k), v} end)
-    |> Enum.into(%{})
+    [{k, v}] =
+      field
+      |> Map.delete(:name)
+      |> Map.to_list()
+
+    k =
+      k
+      |> Atom.to_string()
+      |> String.upcase()
+
+    %{
+      "name" => field.name,
+      "type" => k,
+      "value" => to_string(v)
+    }
   end
 end

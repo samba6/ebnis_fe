@@ -9,7 +9,11 @@ defmodule EbnisWeb.Schema.ExperienceTest do
 
   @moduletag :db
 
+  @invalid_field_types for k <- [:integer, :date, :datetime, :decimal],
+                           do: Map.put(%{}, k, "a")
+
   describe "mutation" do
+    # @tag :skip
     test "create an experience succeeds" do
       %{title: title} = params = Factory.params()
       user = RegFactory.insert()
@@ -37,6 +41,7 @@ defmodule EbnisWeb.Schema.ExperienceTest do
                )
     end
 
+    # @tag :skip
     test "create an experience fails if title not unique for user regardless of case" do
       user = RegFactory.insert()
       Factory.insert(title: "Good experience", user_id: user.id)
@@ -72,6 +77,7 @@ defmodule EbnisWeb.Schema.ExperienceTest do
                )
     end
 
+    # @tag :skip
     test "create an experience fails if field not unique for experience case insensitive" do
       user = RegFactory.insert()
 
@@ -95,6 +101,50 @@ defmodule EbnisWeb.Schema.ExperienceTest do
         %{
           name: "field 0",
           errors: %{name: "has already been taken"}
+        }
+        |> Jason.encode!()
+
+      assert {:ok,
+              %{
+                errors: [
+                  %{
+                    message: ^error
+                  }
+                ]
+              }} =
+               Absinthe.run(
+                 query,
+                 Schema,
+                 variables: variables,
+                 context: context(user)
+               )
+    end
+
+    # @tag :skip
+    test "create an experience fails if field has wrong data type" do
+      user = RegFactory.insert()
+
+      attrs = %{
+        fields: [
+          @invalid_field_types
+          |> Enum.random()
+          |> Map.put(:name, "invalid field")
+        ]
+      }
+
+      variables = %{
+        "experience" =>
+          attrs
+          |> Factory.params()
+          |> Factory.stringify()
+      }
+
+      query = Query.create()
+
+      error =
+        %{
+          name: "invalid field",
+          errors: %{value: "is invalid"}
         }
         |> Jason.encode!()
 
