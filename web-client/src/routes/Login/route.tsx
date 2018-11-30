@@ -215,8 +215,11 @@ export const Login = (props: Props) => {
     return undefined;
   };
 
-  const handleFormErrorDismissed = () => setFormErrors(undefined);
-  setGraphQlErrors(undefined);
+  const handleFormErrorDismissed = () => {
+    setFormErrors(undefined);
+    setGraphQlErrors(undefined);
+  }
+
 
   return (
     <div className="app-main routes-login">
