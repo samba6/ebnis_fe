@@ -15,9 +15,7 @@ defmodule EbnisWeb.Schema.ExperienceTest do
       user = RegFactory.insert()
 
       variables = %{
-        "experience" =>
-          Factory.stringify(params)
-          |> Map.put("userId", user.id)
+        "experience" => Factory.stringify(params)
       }
 
       query = Query.create()
@@ -30,19 +28,22 @@ defmodule EbnisWeb.Schema.ExperienceTest do
                     "title" => ^title
                   }
                 }
-              }} = Absinthe.run(query, Schema, variables: variables)
+              }} =
+               Absinthe.run(
+                 query,
+                 Schema,
+                 variables: variables,
+                 context: context(user)
+               )
     end
 
     test "create an experience fails if title not unique for user regardless of case" do
       user = RegFactory.insert()
-      attrs = %{title: "Good experience", user_id: user.id}
-
-      Factory.insert(attrs)
+      Factory.insert(title: "Good experience", user_id: user.id)
 
       variables = %{
         "experience" =>
-          %{title: "good Experience", user_id: user.id}
-          |> Factory.params()
+          Factory.params(title: "good Experience")
           |> Factory.stringify()
       }
 
@@ -62,14 +63,19 @@ defmodule EbnisWeb.Schema.ExperienceTest do
                     message: ^error
                   }
                 ]
-              }} = Absinthe.run(query, Schema, variables: variables)
+              }} =
+               Absinthe.run(
+                 query,
+                 Schema,
+                 variables: variables,
+                 context: context(user)
+               )
     end
 
     test "create an experience fails if field not unique for experience case insensitive" do
       user = RegFactory.insert()
 
       attrs = %{
-        user_id: user.id,
         fields: [
           ExpFieldFactory.params(name: "Field 0"),
           ExpFieldFactory.params(name: "field 0")
@@ -99,7 +105,15 @@ defmodule EbnisWeb.Schema.ExperienceTest do
                     message: ^error
                   }
                 ]
-              }} = Absinthe.run(query, Schema, variables: variables)
+              }} =
+               Absinthe.run(
+                 query,
+                 Schema,
+                 variables: variables,
+                 context: context(user)
+               )
     end
   end
+
+  defp context(user), do: %{current_user: user}
 end
