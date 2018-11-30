@@ -14,7 +14,7 @@ defmodule EbnisWeb.Schema.ExperienceTest do
 
   describe "mutation" do
     # @tag :skip
-    test "create an experience succeeds" do
+    test "create an experience with field values succeeds" do
       %{title: title} = params = Factory.params()
       user = RegFactory.insert()
 
@@ -30,6 +30,42 @@ defmodule EbnisWeb.Schema.ExperienceTest do
                   "experience" => %{
                     "id" => _,
                     "title" => ^title
+                  }
+                }
+              }} =
+               Absinthe.run(
+                 query,
+                 Schema,
+                 variables: variables,
+                 context: context(user)
+               )
+    end
+
+    test "create an experience without field values succeeds" do
+      user = RegFactory.insert()
+
+      params =
+        Factory.params(
+          fields: [
+            %{
+              name: "Field x",
+              type: :decimal
+            }
+          ]
+        )
+
+      variables = %{
+        "experience" => Factory.stringify(params)
+      }
+
+      query = Query.create()
+
+      assert {:ok,
+              %{
+                data: %{
+                  "experience" => %{
+                    "id" => _,
+                    "title" => _title
                   }
                 }
               }} =

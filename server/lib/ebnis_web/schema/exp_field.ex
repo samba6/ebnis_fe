@@ -42,6 +42,6 @@ defmodule EbnisWeb.Schema.ExpField do
   input_object :create_exp_field do
     field(:name, non_null(:string))
     field(:type, non_null(:field_type))
-    field(:value, non_null(:string))
+    field(:value, :string)
   end
 end

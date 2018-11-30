@@ -54,21 +54,30 @@ defmodule Ebnis.Factory.ExpField do
     %{"type" => "DATE", "value" => Date.to_iso8601(d), "name" => name}
   end
 
+  def stringify(%{type: type} = field) do
+    stringify(field.name, type, field[:value])
+  end
+
   def stringify(field) do
     [{k, v}] =
       field
       |> Map.delete(:name)
       |> Map.to_list()
 
-    k =
-      k
+    stringify(field.name, k, v)
+  end
+
+  defp stringify(name, type, value) do
+    type =
+      type
       |> Atom.to_string()
       |> String.upcase()
 
-    %{
-      "name" => field.name,
-      "type" => k,
-      "value" => to_string(v)
+    field = %{
+      "name" => name,
+      "type" => type
     }
+
+    if value, do: Map.put(field, "value", to_string(value)), else: field
   end
 end

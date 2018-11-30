@@ -53,7 +53,7 @@ defmodule EbnisWeb.Resolver.Experience do
     try do
       val =
         field.type
-        |> parse_field(field.value)
+        |> parse_field(field[:value])
         |> Map.put(:name, name)
 
       {:ok, val}
@@ -70,6 +70,7 @@ defmodule EbnisWeb.Resolver.Experience do
     end
   end
 
+  defp parse_field(type, nil), do: Map.put(%{}, type, nil)
   defp parse_field(:integer, val), do: %{integer: String.to_integer(val)}
   defp parse_field(:date, val), do: %{date: Date.from_iso8601!(val)}
 
