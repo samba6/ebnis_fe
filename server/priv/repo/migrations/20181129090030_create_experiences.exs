@@ -4,8 +4,7 @@ defmodule Ebnis.Repo.Migrations.CreateExperiences do
   def change do
     execute("CREATE EXTENSION IF NOT EXISTS citext WITH SCHEMA public;")
 
-    create table(:experiences, primary_key: false) do
-      add(:id, :binary_id, primary_key: true, comment: "Primary key")
+    create table(:experiences) do
       add(:title, :citext, null: false)
 
       add(:user_id, references(:users, on_delete: :delete_all),

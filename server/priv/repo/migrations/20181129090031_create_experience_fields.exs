@@ -2,12 +2,10 @@ defmodule Ebnis.Repo.Migrations.CreateExperienceFields do
   use Ecto.Migration
 
   def change do
-    create table(:exp_fields, primary_key: false) do
-      add(:id, :binary_id, primary_key: true, comment: "Primary key")
-
+    create table(:exp_fields) do
       add(
         :experience_id,
-        references(:experiences, type: :binary_id, on_delete: :delete_all),
+        references(:experiences, on_delete: :delete_all),
         null: false,
         comment: "Experience to which the field belongs"
       )

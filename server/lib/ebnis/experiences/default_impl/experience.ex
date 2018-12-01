@@ -6,8 +6,6 @@ defmodule Ebnis.Experiences.DefaultImpl.Experience do
   alias Ebnis.Accounts.User
   alias Ebnis.Experiences.DefaultImpl.Field
 
-  @primary_key {:id, :binary_id, autogenerate: true}
-  # @foreign_key_type :binary_id - the type of user is not binary id
   schema "experiences" do
     field(:title, :string)
     belongs_to(:user, User)

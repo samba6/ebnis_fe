@@ -15,8 +15,7 @@ defmodule Ebnis.Experiences.DefaultImpl.Field do
     :datetime
   ]
 
-  @primary_key {:id, :binary_id, autogenerate: true}
-  @foreign_key_type :binary_id
+
   schema "exp_fields" do
     field(:name, :string)
     field(:single_line_text, :string)
