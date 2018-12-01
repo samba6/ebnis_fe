@@ -74,12 +74,20 @@ defmodule Ebnis.Schema.UserTest do
         #{queryMap.fragments}
       """
 
+      error =
+        %{
+          errors: %{
+            email: "has already been taken"
+          },
+          name: "user"
+        }
+        |> Jason.encode!()
+
       assert {:ok,
               %{
                 errors: [
                   %{
-                    message:
-                      "{\"name\":\"user\",\"error\":{\"email\":\"has already been taken\"}}",
+                    message: ^error,
                     path: ["registration"]
                   }
                 ]
