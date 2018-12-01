@@ -16,13 +16,14 @@ import {
 import { client, persistCache } from "../../state/set-up";
 import logger from "../../logger";
 import AuthRequired from "../../components/AuthRequired";
-import { ROOT_URL, LOGIN_URL, SIGN_UP_URL } from "../../Routing";
+import { ROOT_URL, LOGIN_URL, SIGN_UP_URL, NEW_EXP } from "../../Routing";
 import Loading from "../../components/Loading";
 import Sidebar from "../../components/Sidebar";
 
 const Home = lazy(() => import("./../../routes/Home"));
 const Login = lazy(() => import("./../../routes/Login"));
 const SignUp = lazy(() => import("./../../routes/SignUp"));
+const NewExp = lazy(() => import("./../../routes/NewExp"));
 
 const defaultHeader = <Header title="Ebnis" />;
 
@@ -62,6 +63,14 @@ export class App extends React.Component<{}, State> {
                 <Switch>
                   <AuthRequired
                     exact={true}
+                    path={NEW_EXP}
+                    component={NewExp}
+                    redirectTo={Login}
+                    {...childProps}
+                  />
+
+                  <AuthRequired
+                    exact={true}
                     path={ROOT_URL}
                     component={Home}
                     redirectTo={Login}
@@ -70,17 +79,17 @@ export class App extends React.Component<{}, State> {
 
                   <Route
                     exact={true}
-                    path={SIGN_UP_URL}
+                    path={LOGIN_URL}
                     render={renderProps => (
-                      <SignUp {...childProps} {...renderProps} />
+                      <Login {...childProps} {...renderProps} />
                     )}
                   />
 
                   <Route
                     exact={true}
-                    path={LOGIN_URL}
+                    path={SIGN_UP_URL}
                     render={renderProps => (
-                      <Login {...childProps} {...renderProps} />
+                      <SignUp {...childProps} {...renderProps} />
                     )}
                   />
 

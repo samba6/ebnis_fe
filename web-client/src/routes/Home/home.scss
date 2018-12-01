@@ -1,0 +1,26 @@
+@import "../../styles/variables";
+@import "../../styles/extensions";
+
+.routes-home {
+  padding: 0 5px 0 5px;
+  margin-top: -10px;
+
+  .new-exp-btn {
+    position: absolute;
+    border: 1px solid darken($color: $app-color, $amount: 10);
+    border-radius: 50%;
+    width: 55px;
+    height: 55px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    background: $app-color;
+    font-weight: bolder;
+    font-size: 2em;
+    bottom: 40px;
+    right: 15px;
+    cursor: pointer;
+    z-index: 1;
+  }
+}

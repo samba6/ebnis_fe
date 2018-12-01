@@ -7,8 +7,6 @@ import { LoginUser as FormValues } from "../../graphql/apollo-gql";
 import { LoginMutationProps } from "../../graphql/login.mutation";
 import { UserLocalMutationProps } from "../../state/user.local.mutation";
 import { LoggedOutUserProps } from "../../state/logged-out-user.local.query";
-import { ApolloError } from "apollo-client";
-import { FormikErrors } from "formik";
 
 export type OwnProps = WithApolloClient<{}> &
   AppContextProps &
@@ -27,11 +25,6 @@ export const ValidationSchema = Yup.object<FormValues>().shape({
     .required()
     .min(4, "Too short")
 });
-
-export interface State {
-  graphQlErrors?: ApolloError;
-  formErrors?: FormikErrors<FormValues>;
-}
 
 export const RouterThings = {
   documentTitle: "Log in"

@@ -132,22 +132,26 @@ export interface UserFragment {
 // START Enums and Input Objects
 //==============================================================
 
+export enum FieldType {
+  DATE = "DATE",
+  DATETIME = "DATETIME",
+  DECIMAL = "DECIMAL",
+  INTEGER = "INTEGER",
+  MULTI_LINE_TEXT = "MULTI_LINE_TEXT",
+  SINGLE_LINE_TEXT = "SINGLE_LINE_TEXT",
+}
+
 // Variables for creating Experience
 export interface CreateExperience {
   fields: (CreateExpField | null)[];
   title: string;
-  userId: string;
 }
 
 // Variables for creating field for an existing experience
 export interface CreateExpField {
-  date?: any | null;
-  datetime?: any | null;
-  decimal?: number | null;
-  integer?: number | null;
-  multiLineText?: string | null;
   name: string;
-  singleLineText?: string | null;
+  type: FieldType;
+  value?: string | null;
 }
 
 // Variables for login in User

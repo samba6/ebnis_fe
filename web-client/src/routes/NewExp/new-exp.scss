@@ -1,0 +1,25 @@
+@import "../../styles/variables";
+@import "../../styles/extensions";
+
+.routes-new-exp {
+  padding: 0 5px 20px 5px;
+  margin-top: -10px;
+  overflow-x: hidden;
+  overflow-y: auto;
+
+  .new-exp-submit {
+    margin-top: 20px;
+  }
+
+  .field-container {
+    border: 1px solid $app-color;
+    margin-bottom: 20px;
+    padding: 5px;
+    border-radius: 4px;
+  }
+
+  .field-controls {
+    display: flex;
+    justify-content: flex-end;
+  }
+}

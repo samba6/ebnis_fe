@@ -26,7 +26,7 @@
       "**/server/**/web-client/**": true,
       "**/client/**/build/**": true
     },
-    "typescript.tsdk": "client\\node_modules\\typescript\\lib",
+    "typescript.tsdk": "WebClient\\node_modules\\typescript\\lib",
     "advancedNewFile.exclude": {
       "node_modules": true,
       "node_modules_electron": true,
