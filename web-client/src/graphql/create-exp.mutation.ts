@@ -21,9 +21,11 @@ export const experienceMutation = gql`
 
 export default experienceMutation;
 
+export type ExperienceMutationFn = MutationFn<
+  ExperienceMutation,
+  ExperienceMutationVariables
+>;
+
 export interface ExperienceMutationProps {
-  createExperience?: MutationFn<
-    ExperienceMutation,
-    ExperienceMutationVariables
-  >;
+  createExperience?: ExperienceMutationFn;
 }

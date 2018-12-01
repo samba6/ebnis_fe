@@ -5,14 +5,14 @@ import {
   FormikProps,
   FieldProps,
   FieldArray,
-  ArrayHelpers
+  ArrayHelpers,
+  FormikErrors
 } from "formik";
 // import { Field } from "formik";
 import { Form, Button, Icon, Input } from "semantic-ui-react";
-// import lodashIsEmpty from "lodash/isEmpty";
 
 import "./new-exp.scss";
-import { Props, ValidationSchema, fieldTypes } from "./new-exp";
+import { Props, ValidationSchema, fieldTypes, SelectValue } from "./new-exp";
 import Header from "../../components/Header";
 import { setTitle } from "../../Routing";
 import {
@@ -21,13 +21,17 @@ import {
 } from "../../graphql/apollo-gql.d";
 import Select from "react-select";
 
-interface SelectValues {
-  [k: number]: null | { value: string };
-}
+type SelectFieldTypeStateVal = null | SelectValue;
+type SelectFieldTypeState = {
+  [k: number]: SelectFieldTypeStateVal;
+};
 
 export const NewExp = (props: Props) => {
-  const { setHeader } = props;
-  const [selectValues, setSelectValues] = useState({} as SelectValues);
+  const { setHeader, createExperience } = props;
+  const [selectValues, setSelectValues] = useState({} as SelectFieldTypeState);
+  const [submittedFormErrors, setSubmittedFormErrors] = useState<
+    undefined | FormikErrors<FormValues>
+  >(undefined);
 
   useEffect(() => {
     if (setHeader) {
@@ -40,18 +44,38 @@ export const NewExp = (props: Props) => {
   }, []);
 
   const makeFieldName = (index: number, key: keyof CreateExpField) =>
-    `fields.${index}.${key}`;
+    `fields[${index}].${key}`;
+
+  function getFieldContainerErrorClass(index: number) {
+    if (!submittedFormErrors) {
+      return "";
+    }
+
+    const { fields } = submittedFormErrors;
+
+    if (!fields) {
+      return "";
+    }
+
+    if (fields[index]) {
+      return "errors";
+    }
+    return "";
+  }
 
   const renderField = (values: FormValues, arrayHelpers: ArrayHelpers) => (
     field: CreateExpField | null,
     index: number
   ) => {
     if (!field) {
-      return undefined;
+      return null;
     }
 
     return (
-      <div key={index} className="field-container">
+      <div
+        key={index}
+        className={` ${getFieldContainerErrorClass(index)} fields-container`}
+      >
         {renderFieldBtnCtrl(index, values, arrayHelpers)}
 
         <FastField
@@ -71,41 +95,79 @@ export const NewExp = (props: Props) => {
     formProps: FieldProps<FormValues>
   ) => {
     const {
-      field: { value, name, ...rest },
+      field: { name, ...rest },
       form: { setFieldValue }
     } = formProps;
 
+    const error = getFieldError(name, "type");
+
     return (
-      <Form.Field>
+      <Form.Field error={!!error}>
         <Select
           {...rest}
           name={name}
           options={fieldTypes}
           value={selectValues[index]}
-          getOptionLabel={({ value }) => value}
-          getOptionValue={({ value }) => value}
+          getOptionLabel={({ value }) => {
+            return value;
+          }}
+          getOptionValue={({ value }) => {
+            return value;
+          }}
           onChange={data => {
-            data = data as { value: string } | null;
+            const data1 = data as SelectFieldTypeStateVal;
 
-            setFieldValue(name, (data && data.value) || "");
+            setFieldValue(name, (data1 && data1.value) || "");
 
             setSelectValues({
               ...selectValues,
-              [index]: data
+              [index]: data1
             });
           }}
+          onFocus={() => setSubmittedFormErrors(undefined)}
         />
+
+        {renderFormCtrlError(error)}
       </Form.Field>
     );
   };
+
+  function getFieldError(formikName: string, fieldName: keyof CreateExpField) {
+    if (!submittedFormErrors) {
+      return null;
+    }
+
+    const { fields } = submittedFormErrors;
+
+    if (!(fields && fields.length)) {
+      return null;
+    }
+
+    for (let i = 0; i < fields.length; i++) {
+      const field = (fields[i] || {}) as CreateExpField;
+      const val = field[fieldName] || "";
+
+      if (val.startsWith(formikName)) {
+        return val.replace(formikName, "");
+      }
+    }
+
+    return null;
+  }
+
+  function renderFormCtrlError(error: null | string) {
+    return error && <div className="form-control-error">{error}</div>;
+  }
 
   const renderFieldName = (formProps: FieldProps<FormValues>) => {
     const {
       field: { name, ...rest }
     } = formProps;
 
+    const error = getFieldError(name, "name");
+
     return (
-      <Form.Field>
+      <Form.Field error={!!error}>
         <label htmlFor={name}>Field Name</label>
 
         <Input
@@ -114,10 +176,62 @@ export const NewExp = (props: Props) => {
           autoComplete="off"
           name={name}
           id={name}
+          onFocus={() => setSubmittedFormErrors(undefined)}
         />
+
+        {renderFormCtrlError(error)}
       </Form.Field>
     );
   };
+
+  function swapSelectField(
+    fields: (CreateExpField | null)[],
+    a: number,
+    b: number
+  ) {
+    const values = {} as SelectFieldTypeState;
+    const fieldA = fields[a];
+    const fieldB = fields[b];
+
+    if (fieldA && fieldA.type) {
+      values[b] = { value: fieldA.type } as SelectFieldTypeStateVal;
+    } else {
+      values[b] = null;
+    }
+
+    if (fieldB && fieldB.type) {
+      values[a] = { value: fieldB.type } as SelectFieldTypeStateVal;
+    } else {
+      values[a] = null;
+    }
+
+    setSelectValues({
+      ...selectValues,
+      ...values
+    });
+  }
+
+  function removeSelectedField(
+    removedIndex: number,
+    fields: (null | CreateExpField)[]
+  ) {
+    const selected = {} as SelectFieldTypeState;
+    const len = fields.length - 1;
+
+    for (let i = removedIndex; i < len; i++) {
+      const nextIndex = i + 1;
+
+      const field = fields[nextIndex];
+
+      if (!field) {
+        continue;
+      }
+
+      selected[i] = { value: field.type || "" };
+    }
+
+    setSelectValues(selected);
+  }
 
   const renderFieldBtnCtrl = (
     index: number,
@@ -126,36 +240,6 @@ export const NewExp = (props: Props) => {
   ) => {
     const fields = (values.fields && values.fields) || [];
 
-    const swapSelectField = (a: number, b: number) => {
-      setSelectValues({
-        ...selectValues,
-        [a]: {
-          value: (fields[b] || { type: "" }).type
-        },
-        [b]: {
-          value: (fields[a] || { type: "" }).type
-        }
-      });
-    };
-
-    const removeSelectedField = (index: number) => {
-      const selected = Object.entries(selectValues).reduce(
-        (acc, [k, v]) => {
-          const k1 = Number(k);
-          if (k1 < index) {
-            acc[k1] = v;
-          } else if (k1 > index) {
-            acc[k1 - 1] = v;
-          }
-
-          return acc;
-        },
-        {} as SelectValues
-      );
-
-      setSelectValues(selected);
-    };
-
     const len = fields.length;
     const showUp = index > 0;
     const showDown = len - index !== 1;
@@ -163,14 +247,22 @@ export const NewExp = (props: Props) => {
     return (
       <div className="field-controls">
         <Button.Group className="control-buttons" basic={true} compact={true}>
-          <Button onClick={() => arrayHelpers.insert(index + 1, { name: "" })}>
+          <Button
+            type="button"
+            onClick={() => {
+              setSubmittedFormErrors(undefined);
+              arrayHelpers.insert(index + 1, { name: "" });
+            }}
+          >
             <Icon name="plus" />
           </Button>
 
           <Button
+            type="button"
             onClick={() => {
+              removeSelectedField(index, fields);
               arrayHelpers.remove(index);
-              removeSelectedField(index);
+              setSubmittedFormErrors(undefined);
             }}
           >
             <Icon name="minus" />
@@ -178,11 +270,12 @@ export const NewExp = (props: Props) => {
 
           {showUp && (
             <Button
+              type="button"
               onClick={() => {
                 const indexUp = index;
                 const indexDown = index - 1;
                 arrayHelpers.swap(indexUp, indexDown);
-                swapSelectField(indexUp, indexDown);
+                swapSelectField(fields, indexUp, indexDown);
               }}
             >
               <Icon name="arrow up" />
@@ -191,9 +284,10 @@ export const NewExp = (props: Props) => {
 
           {showDown && (
             <Button
+              type="button"
               onClick={() => {
                 arrayHelpers.swap(index, index + 1);
-                swapSelectField(index, index + 1);
+                swapSelectField(fields, index, index + 1);
               }}
             >
               <Icon name="arrow down" />
@@ -203,6 +297,12 @@ export const NewExp = (props: Props) => {
       </div>
     );
   };
+
+  function addEmptyFields(arrayHelpers: ArrayHelpers) {
+    return function onAddEmptyFields() {
+      arrayHelpers.push({ name: "", type: "" });
+    };
+  }
 
   const renderFields = (values: FormValues) => (arrayHelpers: ArrayHelpers) => {
     if (values.fields && values.fields.length) {
@@ -214,11 +314,12 @@ export const NewExp = (props: Props) => {
     if (title && title.length > 1) {
       return (
         <Button
+          type="button"
           id="add-field-button"
           name="add-field-button"
           color="green"
           inverted={true}
-          onClick={() => arrayHelpers.push({ name: "", type: "" })}
+          onClick={addEmptyFields(arrayHelpers)}
         >
           <Icon name="plus" /> Add field
         </Button>
@@ -244,55 +345,65 @@ export const NewExp = (props: Props) => {
     );
   }
 
-  const submit = (formikProps: FormikProps<FormValues>) => async () => {
-    const { values, validateForm, setSubmitting } = formikProps;
-    setSubmitting(true);
+  function submit(formikProps: FormikProps<FormValues>) {
+    return async function submitInner() {
+      setSubmittedFormErrors(undefined);
 
-    const errors = await validateForm(values);
+      const { values, validateForm, setSubmitting } = formikProps;
+      setSubmitting(true);
 
-    // tslint:disable-next-line:no-console
-    console.log(
-      `
+      const errors = await validateForm(values);
 
+      if (errors.title || errors.fields) {
+        setSubmittedFormErrors(errors);
+        setSubmitting(false);
+        return;
+      }
 
-    logging starts
+      if (createExperience) {
+        const result = await createExperience({
+          variables: {
+            experience: values
+          }
+        });
 
-
-    errors`,
-      errors,
-      `
-
-    logging ends
-
-
-    `
-    );
-
-    if (errors.title || errors.fields) {
-      return;
-    }
-
-    // tslint:disable-next-line:no-console
-    console.log(
-      `
+        // tslint:disable-next-line:no-console
+        console.log(
+          `
 
 
-    logging starts
+        logging starts
 
 
-    values`,
-      values,
-      `
+        const result = await createExperience({
+              label`,
+          result,
+          `
 
-    logging ends
+        logging ends
 
 
-    `
-    );
-  };
+        `
+        );
+      }
+
+      setSubmitting(false);
+    };
+  }
 
   function renderForm(formikProps: FormikProps<FormValues>) {
     const { dirty, isSubmitting, values } = formikProps;
+
+    const { title, fields } = values;
+    let formInvalid = false;
+
+    if (!title) {
+      formInvalid = true;
+    }
+
+    if (!(fields && fields.length)) {
+      formInvalid = true;
+    }
 
     return (
       <Form onSubmit={submit(formikProps)}>
@@ -306,7 +417,7 @@ export const NewExp = (props: Props) => {
           name="new-exp-submit"
           color="green"
           inverted={true}
-          disabled={!dirty || isSubmitting}
+          disabled={!dirty || formInvalid || isSubmitting}
           loading={isSubmitting}
           type="submit"
           fluid={true}
@@ -317,11 +428,15 @@ export const NewExp = (props: Props) => {
     );
   }
 
+  function nullSubmit() {
+    return null;
+  }
+
   return (
     <div className="app-main routes-new-exp">
       <Formik<FormValues>
         initialValues={{ title: "", fields: [] }}
-        onSubmit={() => null}
+        onSubmit={nullSubmit}
         render={renderForm}
         validationSchema={ValidationSchema}
         validateOnChange={false}

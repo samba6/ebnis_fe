@@ -11,15 +11,25 @@
     margin-top: 20px;
   }
 
-  .field-container {
+  .fields-container {
     border: 1px solid $app-color;
     margin-bottom: 20px;
     padding: 5px;
     border-radius: 4px;
+
+    &.errors {
+      border-color: $error-color;
+    }
   }
 
   .field-controls {
     display: flex;
     justify-content: flex-end;
+  }
+
+  .form-control-error {
+    background: $error-bg-color;
+    color: $error-color;
+    padding: 5px 2px 0 2px;
   }
 }

@@ -9,7 +9,7 @@ import {
   FieldType
 } from "../../graphql/apollo-gql.d";
 
-type OwnProps = AppContextProps & RouteComponentProps<{}>;
+export type OwnProps = AppContextProps & RouteComponentProps<{}>;
 
 export type Props = OwnProps & ExperienceMutationProps;
 
@@ -25,7 +25,10 @@ export const ValidationSchema = Yup.object<FormValues>().shape({
         name: Yup.string()
           .required()
           .min(2),
-        type: Yup.mixed().oneOf(fieldTypeKeys)
+        type: Yup.mixed().oneOf(
+          fieldTypeKeys,
+          "${path} please select from dropdown"
+        )
       })
     )
     .required()
@@ -33,6 +36,10 @@ export const ValidationSchema = Yup.object<FormValues>().shape({
     .ensure()
 });
 
-export const fieldTypes = fieldTypeKeys.map(v => ({
+export interface SelectValue {
+  value: string;
+}
+
+export const fieldTypes: SelectValue[] = fieldTypeKeys.map(v => ({
   value: v
 }));
