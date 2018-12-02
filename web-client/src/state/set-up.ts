@@ -9,21 +9,21 @@ import { createAbsintheSocketLink } from "@absinthe/socket-apollo-link";
 import initState, { getToken } from "./resolvers";
 import { AppSocket } from "../socket";
 
-let httpLink;
-httpLink = createAbsintheSocketLink(AbsintheSocket.create(AppSocket.socket));
+let socketLink;
+socketLink = createAbsintheSocketLink(AbsintheSocket.create(AppSocket.socket));
 
-httpLink = middlewareAuthLink().concat(httpLink);
-httpLink = middlewareErrorLink().concat(httpLink);
+socketLink = middlewareAuthLink().concat(socketLink);
+socketLink = middlewareErrorLink().concat(socketLink);
 
 if (process.env.NODE_ENV !== "production") {
-  httpLink = middlewareLoggerLink(httpLink);
+  socketLink = middlewareLoggerLink(socketLink);
 }
 
 const cache = new InMemoryCache();
 
 export const client = new ApolloClient({
   cache,
-  link: ApolloLink.from([initState(cache), httpLink])
+  link: ApolloLink.from([initState(cache), socketLink])
 });
 
 export default client;
