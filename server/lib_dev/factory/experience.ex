@@ -30,7 +30,7 @@ defmodule Ebnis.Factory.Experience do
   defp all do
     %{
       title: title(),
-      fields: fields()
+      fields: fields(Enum.random(@field_count))
     }
   end
 

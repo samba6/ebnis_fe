@@ -29,7 +29,8 @@ defmodule Ebnis.Factory.ExpField do
     field = Enum.random(@simple_attrs)
 
     %{
-      name: Enum.random(["F", "f"]) <> "ield " <> Sequence.next("")
+      name: Enum.random(["F", "f"]) <> "ield " <> Sequence.next(""),
+      type: Atom.to_string(field)
     }
     |> Map.put(field, field(field))
   end
@@ -68,14 +69,9 @@ defmodule Ebnis.Factory.ExpField do
   end
 
   defp stringify(name, type, value) do
-    type =
-      type
-      |> Atom.to_string()
-      |> String.upcase()
-
     field = %{
       "name" => name,
-      "type" => type
+      "type" => String.upcase(type)
     }
 
     if value, do: Map.put(field, "value", to_string(value)), else: field

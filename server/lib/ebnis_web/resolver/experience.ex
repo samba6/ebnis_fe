@@ -49,12 +49,13 @@ defmodule EbnisWeb.Resolver.Experience do
 
   defp parse_field(field) do
     name = field.name
+    type = field.type
 
     try do
       val =
-        field.type
+        type
         |> parse_field(field[:value])
-        |> Map.put(:name, name)
+        |> Map.merge(%{name: name, type: Atom.to_string(type)})
 
       {:ok, val}
     rescue

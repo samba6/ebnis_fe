@@ -9,7 +9,7 @@ defmodule EbnisWeb.Schema.ExperienceTest do
 
   @moduletag :db
 
-  @invalid_field_types for k <- [:integer, :date, :datetime, :decimal],
+  @invalid_field_types for k <- ["integer", "date", "datetime", "decimal"],
                            do: Map.put(%{}, k, "a")
 
   describe "mutation" do
@@ -41,6 +41,7 @@ defmodule EbnisWeb.Schema.ExperienceTest do
                )
     end
 
+    # @tag :skip
     test "create an experience without field values succeeds" do
       user = RegFactory.insert()
 
@@ -49,7 +50,7 @@ defmodule EbnisWeb.Schema.ExperienceTest do
           fields: [
             %{
               name: "Field x",
-              type: :decimal
+              type: "decimal"
             }
           ]
         )

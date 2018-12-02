@@ -10,7 +10,14 @@ defmodule Ebnis.Repo.Migrations.CreateExperienceFields do
         comment: "Experience to which the field belongs"
       )
 
-      add(:name, :citext, comment: "E.g sleep")
+      add(:name, :citext, null: false, comment: "E.g sleep")
+
+      add(
+        :type,
+        :citext,
+        null: false,
+        comment: "data type e.g single_line_text, integer etc"
+      )
 
       # FIELD TYPES OF EXPERIENCE
 

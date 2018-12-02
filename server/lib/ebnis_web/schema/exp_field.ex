@@ -17,6 +17,9 @@ defmodule EbnisWeb.Schema.ExpField do
     @desc "Name of field e.g start, end, meal "
     field(:name, non_null(:string))
 
+    @desc "The data type of the field"
+    field(:type, non_null(:string))
+
     # FIELD TYPES
 
     @desc "A single line text field"

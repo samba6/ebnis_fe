@@ -6,7 +6,7 @@ defmodule Ebnis.Experiences.DefaultImpl.Field do
   alias Ecto.Changeset
   alias Ebnis.Experiences.DefaultImpl.Experience
 
-  @field_types [
+  @field_types_atom [
     :single_line_text,
     :multi_line_text,
     :integer,
@@ -15,9 +15,11 @@ defmodule Ebnis.Experiences.DefaultImpl.Field do
     :datetime
   ]
 
+  @field_types_string Enum.map(@field_types_atom, &Atom.to_string/1)
 
   schema "exp_fields" do
     field(:name, :string)
+    field(:type, :string)
     field(:single_line_text, :string)
     field(:multi_line_text, :string)
     field(:integer, :integer)
@@ -43,6 +45,7 @@ defmodule Ebnis.Experiences.DefaultImpl.Field do
     exp_field
     |> cast(attrs, [
       :name,
+      :type,
       :single_line_text,
       :multi_line_text,
       :integer,
@@ -51,13 +54,14 @@ defmodule Ebnis.Experiences.DefaultImpl.Field do
       :datetime,
       :experience_id
     ])
-    |> validate_required([:name, :experience_id])
+    |> validate_required([:name, :experience_id, :type])
     |> assoc_constraint(:experience)
     |> unique_constraint(:name, name: :exp_fields_experience_id_name_index)
+    |> validate_inclusion(:type, @field_types_string)
   end
 
   defp validate_one_field_non_null(%Changeset{valid?: false} = changeset) do
-    changeset
+    add_error(changeset, :value, "You must provide a value for the field")
   end
 
   # exactly one of the fields types must be non null
@@ -67,7 +71,7 @@ defmodule Ebnis.Experiences.DefaultImpl.Field do
         {_, nil}, acc ->
           acc
 
-        {k, _val}, acc when k in @field_types ->
+        {k, _val}, acc when k in @field_types_atom ->
           acc + 1
 
         _, acc ->
