@@ -13,7 +13,7 @@ import {
   AppContextProvider,
   AppContextProps
 } from "./app";
-import { client, persistCache } from "../../state/set-up";
+import { makeClient, persistCache } from "../../state/set-up";
 import logger from "../../logger";
 import AuthRequired from "../../components/AuthRequired";
 import { ROOT_URL, LOGIN_URL, SIGN_UP_URL, NEW_EXP } from "../../Routing";
@@ -33,6 +33,7 @@ export class App extends React.Component<{}, State> {
   };
 
   mediaListeners: Array<() => void> = [];
+  client = makeClient();
 
   componentDidMount() {
     this.persistCache();
@@ -54,7 +55,7 @@ export class App extends React.Component<{}, State> {
 
     return (
       <div className="containers-app">
-        <ApolloProvider client={client}>
+        <ApolloProvider client={this.client}>
           <AppContextProvider value={childProps}>
             <Sidebar />
             {header}

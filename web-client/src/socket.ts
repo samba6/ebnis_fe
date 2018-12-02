@@ -15,7 +15,20 @@ enum ChannelTopic {
   "GRAPHQL_AUTH" = "graphql:pxz"
 }
 
-let socket: Socket;
+export interface AppSocket extends Socket {
+  sendDataAuth: <TVariables, TData, TError = {}>(
+    query: string,
+    variables: TVariables,
+    ok: OnChannelMessage<TData>,
+    error?: OnError<TError>
+  ) => void;
+  ebnisConnect: (
+    token?: string | null,
+    payload?: ConnectionPayload<{}> | undefined
+  ) => void;
+}
+
+let socket: AppSocket;
 
 export const defineSocket = () => {
   // if we are disconnected, phoenix will keep trying to connect which means
@@ -26,9 +39,11 @@ export const defineSocket = () => {
   let dataAuthChannel: Channel;
   // let initialDataSynced = false
 
-  function connect(token = getToken(), payload?: ConnectionPayload) {
+  function ebnisConnect(token = getToken(), payload?: ConnectionPayload) {
     const params = makeParams(token);
-    socket = new Socket(getBackendUrls().websocketUrl, params);
+    socket = new Socket(getBackendUrls().websocketUrl, params) as AppSocket;
+    socket.ebnisConnect = ebnisConnect;
+    socket.sendDataAuth = sendDataAuth;
     socket.connect();
 
     socket.onOpen(() => {
@@ -40,9 +55,11 @@ export const defineSocket = () => {
     socket.onError(() => {
       dispatchDisconnected();
     });
+
+    return socket;
   }
 
-  connect();
+  ebnisConnect();
 
   function sendDataAuth<TVariables, TData, TError = {}>(
     query: string,
@@ -162,15 +179,18 @@ export const defineSocket = () => {
     return { params };
   }
 
-  return {
-    sendDataAuth,
-    connect,
-    socket
-  };
+  return socket;
 };
 
-export const AppSocket = defineSocket();
-export default AppSocket;
+export function getSocket() {
+  if (socket) {
+    return socket;
+  }
+
+  return defineSocket();
+}
+
+export default getSocket;
 
 type OnChannelMessage<T> = (msg: T) => void;
 type OnError<T> = (reason: T) => void;

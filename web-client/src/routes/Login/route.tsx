@@ -14,7 +14,7 @@ import "./login.scss";
 import { Props, ValidationSchema } from "./login";
 import Header from "../../components/Header";
 import { LoginUser as FormValues } from "../../graphql/apollo-gql";
-import socket from "../../socket";
+import { getSocket } from "../../socket";
 import { setTitle, ROOT_URL, SIGN_UP_URL } from "../../Routing";
 
 export const Login = (props: Props) => {
@@ -122,7 +122,7 @@ export const Login = (props: Props) => {
         const user = result.data.login;
 
         if (user) {
-          socket.connect(user.jwt);
+          getSocket().ebnisConnect(user.jwt);
         }
 
         await props.updateLocalUser({
@@ -218,8 +218,7 @@ export const Login = (props: Props) => {
   const handleFormErrorDismissed = () => {
     setFormErrors(undefined);
     setGraphQlErrors(undefined);
-  }
-
+  };
 
   return (
     <div className="app-main routes-login">

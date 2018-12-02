@@ -7,26 +7,29 @@ import * as AbsintheSocket from "@absinthe/socket";
 import { createAbsintheSocketLink } from "@absinthe/socket-apollo-link";
 
 import initState, { getToken } from "./resolvers";
-import { AppSocket } from "../socket";
-
-let socketLink;
-socketLink = createAbsintheSocketLink(AbsintheSocket.create(AppSocket.socket));
-
-socketLink = middlewareAuthLink().concat(socketLink);
-socketLink = middlewareErrorLink().concat(socketLink);
-
-if (process.env.NODE_ENV !== "production") {
-  socketLink = middlewareLoggerLink(socketLink);
-}
+import { getSocket } from "../socket";
 
 const cache = new InMemoryCache();
+let client: ApolloClient<{}>;
 
-export const client = new ApolloClient({
-  cache,
-  link: ApolloLink.from([initState(cache), socketLink])
-});
+export function makeClient() {
+  let socketLink = createAbsintheSocketLink(AbsintheSocket.create(getSocket()));
 
-export default client;
+  socketLink = middlewareAuthLink().concat(socketLink);
+  socketLink = middlewareErrorLink().concat(socketLink);
+
+  if (process.env.NODE_ENV !== "production") {
+    socketLink = middlewareLoggerLink(socketLink);
+  }
+
+  client = new ApolloClient({
+    cache,
+    link: ApolloLink.from([initState(cache), socketLink])
+  });
+
+  return client;
+}
+
 const storage = localStorage as any;
 
 const persistor = new CachePersistor({
