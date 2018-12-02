@@ -16,16 +16,7 @@ defmodule Ebnis.Experiences.DefaultImpl do
       |> Repo.insert()
     end)
     |> Multi.merge(fn %{experience: %Experience{id: id}} ->
-      Enum.reduce(
-        fields,
-        Multi.new(),
-        fn field, acc ->
-          Multi.run(acc, field.name, fn _repo, _changes ->
-            Field.changeset(%Field{}, Map.put(field, :experience_id, id))
-            |> Repo.insert()
-          end)
-        end
-      )
+      fields_multi(fields, id)
     end)
     |> Repo.transaction()
     |> case do
@@ -35,6 +26,23 @@ defmodule Ebnis.Experiences.DefaultImpl do
       {:error, failed_operations, changeset, _successes} ->
         {:error, failed_operations, changeset}
     end
+  end
+
+  defp fields_multi(fields, experience_id) do
+    fields
+    |> Enum.with_index()
+    |> Enum.reduce(
+      Multi.new(),
+      fn {field, index}, acc ->
+        Multi.run(acc, "#{field.name}---#{index}", fn _repo, _changes ->
+          Field.changeset(
+            %Field{},
+            Map.put(field, :experience_id, experience_id)
+          )
+          |> Repo.insert()
+        end)
+      end
+    )
   end
 
   defp to_domain(%Experience{} = experience) do
