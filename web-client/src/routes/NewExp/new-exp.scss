@@ -32,4 +32,31 @@
     color: $error-color;
     padding: 5px 2px 0 2px;
   }
+
+  .graphql-errors-header.header {
+    margin-bottom: 1em;
+    position: relative;
+    left: -15px;
+  }
+
+  .graphql-fields-error-container {
+    font-weight: 900;
+    font-size: 1.1em;
+  }
+
+  .graphql-fields-error-inner {
+    padding-left: 5px;
+    & > span {
+      display: inline-block;
+
+      &:first-child {
+        width: 2em;
+        text-align: right;
+      }
+
+      &:last-child {
+        padding-left: 1em;
+      }
+    }
+  }
 }

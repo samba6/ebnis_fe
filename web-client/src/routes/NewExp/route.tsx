@@ -1,4 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, {
+  useEffect,
+  useState,
+  Fragment,
+  SetStateAction,
+  Dispatch,
+  useRef
+} from "react";
 import {
   Formik,
   FastField,
@@ -8,8 +15,7 @@ import {
   ArrayHelpers,
   FormikErrors
 } from "formik";
-// import { Field } from "formik";
-import { Form, Button, Icon, Input } from "semantic-ui-react";
+import { Form, Button, Icon, Input, Message } from "semantic-ui-react";
 
 import "./new-exp.scss";
 import { Props, ValidationSchema, fieldTypes, SelectValue } from "./new-exp";
@@ -20,6 +26,7 @@ import {
   CreateExpField
 } from "../../graphql/apollo-gql.d";
 import Select from "react-select";
+import { ApolloError } from "apollo-client";
 
 type SelectFieldTypeStateVal = null | SelectValue;
 type SelectFieldTypeState = {
@@ -29,6 +36,12 @@ type SelectFieldTypeState = {
 export const NewExp = (props: Props) => {
   const { setHeader, createExperience } = props;
   const [selectValues, setSelectValues] = useState({} as SelectFieldTypeState);
+  const routeRef = useRef<HTMLDivElement | null>(null);
+
+  const [graphQlError, setGraphQlError] = useState<
+    GraphQlErrorState | undefined
+  >(undefined);
+
   const [submittedFormErrors, setSubmittedFormErrors] = useState<
     undefined | FormikErrors<FormValues>
   >(undefined);
@@ -43,26 +56,6 @@ export const NewExp = (props: Props) => {
     return setTitle;
   }, []);
 
-  const makeFieldName = (index: number, key: keyof CreateExpField) =>
-    `fields[${index}].${key}`;
-
-  function getFieldContainerErrorClass(index: number) {
-    if (!submittedFormErrors) {
-      return "";
-    }
-
-    const { fields } = submittedFormErrors;
-
-    if (!fields) {
-      return "";
-    }
-
-    if (fields[index]) {
-      return "errors";
-    }
-    return "";
-  }
-
   const renderField = (values: FormValues, arrayHelpers: ArrayHelpers) => (
     field: CreateExpField | null,
     index: number
@@ -71,11 +64,15 @@ export const NewExp = (props: Props) => {
       return null;
     }
 
+    const errorClass =
+      getFieldContainerErrorClassFromForm(index, submittedFormErrors) ||
+      (graphQlError &&
+        graphQlError.fields &&
+        graphQlError.fields[index] &&
+        "errors");
+
     return (
-      <div
-        key={index}
-        className={` ${getFieldContainerErrorClass(index)} fields-container`}
-      >
+      <div key={index} className={` ${errorClass} fields-container`}>
         {renderFieldBtnCtrl(index, values, arrayHelpers)}
 
         <FastField
@@ -99,7 +96,7 @@ export const NewExp = (props: Props) => {
       form: { setFieldValue }
     } = formProps;
 
-    const error = getFieldError(name, "type");
+    const error = getFieldError(name, "type", submittedFormErrors);
 
     return (
       <Form.Field error={!!error}>
@@ -132,29 +129,6 @@ export const NewExp = (props: Props) => {
     );
   };
 
-  function getFieldError(formikName: string, fieldName: keyof CreateExpField) {
-    if (!submittedFormErrors) {
-      return null;
-    }
-
-    const { fields } = submittedFormErrors;
-
-    if (!(fields && fields.length)) {
-      return null;
-    }
-
-    for (let i = 0; i < fields.length; i++) {
-      const field = (fields[i] || {}) as CreateExpField;
-      const val = field[fieldName] || "";
-
-      if (val.startsWith(formikName)) {
-        return val.replace(formikName, "");
-      }
-    }
-
-    return null;
-  }
-
   function renderFormCtrlError(error: null | string) {
     return error && <div className="form-control-error">{error}</div>;
   }
@@ -164,7 +138,10 @@ export const NewExp = (props: Props) => {
       field: { name, ...rest }
     } = formProps;
 
-    const error = getFieldError(name, "name");
+    const error =
+      getFieldError(name, "name", submittedFormErrors) ||
+      (graphQlError && graphQlError[name]) ||
+      "";
 
     return (
       <Form.Field error={!!error}>
@@ -183,55 +160,6 @@ export const NewExp = (props: Props) => {
       </Form.Field>
     );
   };
-
-  function swapSelectField(
-    fields: (CreateExpField | null)[],
-    a: number,
-    b: number
-  ) {
-    const values = {} as SelectFieldTypeState;
-    const fieldA = fields[a];
-    const fieldB = fields[b];
-
-    if (fieldA && fieldA.type) {
-      values[b] = { value: fieldA.type } as SelectFieldTypeStateVal;
-    } else {
-      values[b] = null;
-    }
-
-    if (fieldB && fieldB.type) {
-      values[a] = { value: fieldB.type } as SelectFieldTypeStateVal;
-    } else {
-      values[a] = null;
-    }
-
-    setSelectValues({
-      ...selectValues,
-      ...values
-    });
-  }
-
-  function removeSelectedField(
-    removedIndex: number,
-    fields: (null | CreateExpField)[]
-  ) {
-    const selected = {} as SelectFieldTypeState;
-    const len = fields.length - 1;
-
-    for (let i = removedIndex; i < len; i++) {
-      const nextIndex = i + 1;
-
-      const field = fields[nextIndex];
-
-      if (!field) {
-        continue;
-      }
-
-      selected[i] = { value: field.type || "" };
-    }
-
-    setSelectValues(selected);
-  }
 
   const renderFieldBtnCtrl = (
     index: number,
@@ -260,7 +188,7 @@ export const NewExp = (props: Props) => {
           <Button
             type="button"
             onClick={() => {
-              removeSelectedField(index, fields);
+              setSelectValues(removeSelectedField(index, fields));
               arrayHelpers.remove(index);
               setSubmittedFormErrors(undefined);
             }}
@@ -275,7 +203,9 @@ export const NewExp = (props: Props) => {
                 const indexUp = index;
                 const indexDown = index - 1;
                 arrayHelpers.swap(indexUp, indexDown);
-                swapSelectField(fields, indexUp, indexDown);
+                setSelectValues(
+                  swapSelectField(fields, indexUp, indexDown, selectValues)
+                );
               }}
             >
               <Icon name="arrow up" />
@@ -287,7 +217,9 @@ export const NewExp = (props: Props) => {
               type="button"
               onClick={() => {
                 arrayHelpers.swap(index, index + 1);
-                swapSelectField(fields, index, index + 1);
+                setSelectValues(
+                  swapSelectField(fields, index, index + 1, selectValues)
+                );
               }}
             >
               <Icon name="arrow down" />
@@ -298,15 +230,13 @@ export const NewExp = (props: Props) => {
     );
   };
 
-  function addEmptyFields(arrayHelpers: ArrayHelpers) {
-    return function onAddEmptyFields() {
-      arrayHelpers.push({ name: "", type: "" });
-    };
-  }
-
   const renderFields = (values: FormValues) => (arrayHelpers: ArrayHelpers) => {
     if (values.fields && values.fields.length) {
-      return <div>{values.fields.map(renderField(values, arrayHelpers))}</div>;
+      return (
+        <Fragment>
+          {values.fields.map(renderField(values, arrayHelpers))}
+        </Fragment>
+      );
     }
 
     const { title } = values;
@@ -331,23 +261,29 @@ export const NewExp = (props: Props) => {
 
   function renderTitleInput(formProps: FieldProps<FormValues>) {
     const { field } = formProps;
+    const error = (graphQlError && graphQlError.title) || "";
 
     return (
-      <Form.Field
-        {...field}
-        control={Input}
-        placeholder="Title"
-        autoComplete="off"
-        label="Title"
-        id="title"
-        autoFocus={true}
-      />
+      <Form.Field error={!!error}>
+        <label htmlFor={field.name}>Title</label>
+
+        <Input
+          {...field}
+          autoFocus={true}
+          placeholder="Title"
+          autoComplete="off"
+          id={field.name}
+        />
+
+        {renderFormCtrlError(error)}
+      </Form.Field>
     );
   }
 
   function submit(formikProps: FormikProps<FormValues>) {
     return async function submitInner() {
       setSubmittedFormErrors(undefined);
+      setGraphQlError(undefined);
 
       const { values, validateForm, setSubmitting } = formikProps;
       setSubmitting(true);
@@ -360,7 +296,11 @@ export const NewExp = (props: Props) => {
         return;
       }
 
-      if (createExperience) {
+      if (!createExperience) {
+        return;
+      }
+
+      try {
         const result = await createExperience({
           variables: {
             experience: values
@@ -385,6 +325,13 @@ export const NewExp = (props: Props) => {
 
         `
         );
+      } catch (error) {
+        setGraphQlError(parseGraphQlError(error));
+        const { current } = routeRef;
+
+        if (current) {
+          current.scrollTop = 0;
+        }
       }
 
       setSubmitting(false);
@@ -407,6 +354,8 @@ export const NewExp = (props: Props) => {
 
     return (
       <Form onSubmit={submit(formikProps)}>
+        {renderGraphQlError(graphQlError, setGraphQlError)}
+
         <FastField name="title" render={renderTitleInput} />
 
         <FieldArray name="fields" render={renderFields(values)} />
@@ -428,12 +377,8 @@ export const NewExp = (props: Props) => {
     );
   }
 
-  function nullSubmit() {
-    return null;
-  }
-
   return (
-    <div className="app-main routes-new-exp">
+    <div className="app-main routes-new-exp" ref={routeRef}>
       <Formik<FormValues>
         initialValues={{ title: "", fields: [] }}
         onSubmit={nullSubmit}
@@ -446,3 +391,212 @@ export const NewExp = (props: Props) => {
 };
 
 export default NewExp;
+
+// ------------------------HELPER FUNCTIONS----------------------------
+
+interface GraphQlError {
+  name: string;
+  errors: { [k in keyof CreateExpField]: string };
+}
+
+type GraphQlErrorState = { [k: string]: string } & {
+  fields?: {
+    [k: number]: string;
+  };
+};
+
+function parseGraphQlError(error: ApolloError) {
+  const transformedError = {} as GraphQlErrorState;
+
+  for (const err of error.graphQLErrors) {
+    const { name, errors } = JSON.parse(err.message) as GraphQlError;
+    const [key, val] = Object.entries(errors)[0];
+    const val1 = val || ("" as string);
+
+    if (name === "experience") {
+      transformedError["title"] = val1;
+      continue;
+    }
+
+    const exec = /---(\d+)$/.exec(name);
+    if (!exec) {
+      continue;
+    }
+
+    const index = Number(exec[1]);
+    const key1 = (key || "") as keyof CreateExpField;
+
+    // we store the formik path names on the upper level so we can easily access
+    // them from render with transforming the error
+    transformedError[makeFieldName(index, key1)] = val1;
+
+    // we also store the field index and corresponding error so we can easily
+    // access error with field index
+    const fields = transformedError.fields || {};
+    fields[index] = key1 + " " + val1;
+
+    transformedError.fields = fields;
+  }
+
+  return transformedError;
+}
+
+function renderGraphQlError(
+  graphQlError: GraphQlErrorState | undefined,
+  setGraphQlError: Dispatch<SetStateAction<GraphQlErrorState | undefined>>
+) {
+  if (!graphQlError) {
+    return null;
+  }
+
+  const { fields, title } = graphQlError;
+
+  return (
+    <Message
+      style={{ display: "block" }}
+      error={true}
+      onDismiss={() => setGraphQlError(undefined)}
+    >
+      <Message.Header className="graphql-errors-header">
+        Error in submitted form!
+      </Message.Header>
+
+      {title && <div>Title {title}</div>}
+
+      <Message.Content>{renderGraphQlErrorFields(fields)}</Message.Content>
+    </Message>
+  );
+}
+
+function renderGraphQlErrorFields(fields?: { [k: string]: string }) {
+  if (!fields) {
+    return null;
+  }
+
+  return (
+    <Fragment>
+      <div className="graphql-fields-error-container">Fields</div>
+      {Object.entries(fields).map(([index, error]) => (
+        <div key={index} className="graphql-fields-error-inner">
+          <span>{Number(index) + 1}</span>
+          <span>{error}</span>
+        </div>
+      ))}
+    </Fragment>
+  );
+}
+
+function swapSelectField(
+  fields: (CreateExpField | null)[],
+  a: number,
+  b: number,
+  selectValues: SelectFieldTypeState
+) {
+  const values = {} as SelectFieldTypeState;
+  const fieldA = fields[a];
+  const fieldB = fields[b];
+
+  if (fieldA && fieldA.type) {
+    values[b] = { value: fieldA.type } as SelectFieldTypeStateVal;
+  } else {
+    values[b] = null;
+  }
+
+  if (fieldB && fieldB.type) {
+    values[a] = { value: fieldB.type } as SelectFieldTypeStateVal;
+  } else {
+    values[a] = null;
+  }
+
+  return {
+    ...selectValues,
+    ...values
+  };
+}
+
+function removeSelectedField(
+  removedIndex: number,
+  fields: (null | CreateExpField)[]
+) {
+  const selected = {} as SelectFieldTypeState;
+  const len = fields.length - 1;
+
+  for (let i = removedIndex; i < len; i++) {
+    const nextIndex = i + 1;
+
+    const field = fields[nextIndex];
+
+    if (!field) {
+      continue;
+    }
+
+    selected[i] = { value: field.type || "" };
+  }
+
+  return selected;
+}
+
+function makeFieldNameWithIndex(index: number) {
+  return `fields[${index}]`;
+}
+
+function makeFieldName(index: number, key: keyof CreateExpField) {
+  return `${makeFieldNameWithIndex(index)}.${key}`;
+}
+
+function addEmptyFields(arrayHelpers: ArrayHelpers) {
+  return function onAddEmptyFields() {
+    arrayHelpers.push({ name: "", type: "" });
+  };
+}
+
+function nullSubmit() {
+  return null;
+}
+
+function getFieldContainerErrorClassFromForm(
+  index: number,
+  submittedFormErrors: FormikErrors<FormValues> | undefined
+) {
+  if (!submittedFormErrors) {
+    return "";
+  }
+
+  const { fields } = submittedFormErrors;
+
+  if (!fields) {
+    return "";
+  }
+
+  if (fields[index]) {
+    return "errors";
+  }
+  return "";
+}
+
+function getFieldError(
+  formikName: string,
+  fieldName: keyof CreateExpField,
+  submittedFormErrors: FormikErrors<FormValues> | undefined
+) {
+  if (!submittedFormErrors) {
+    return null;
+  }
+
+  const { fields } = submittedFormErrors;
+
+  if (!(fields && fields.length)) {
+    return null;
+  }
+
+  for (let i = 0; i < fields.length; i++) {
+    const field = (fields[i] || {}) as CreateExpField;
+    const val = field[fieldName] || "";
+
+    if (val.startsWith(formikName)) {
+      return val.replace(formikName, "");
+    }
+  }
+
+  return null;
+}
