@@ -7,6 +7,8 @@ defmodule Ebnis.Repo.Migrations.CreateExperiences do
     create table(:experiences) do
       add(:title, :citext, null: false)
 
+      add(:description, :string)
+
       add(:user_id, references(:users, on_delete: :delete_all),
         null: false,
         comment: "The owner of experience"

@@ -16,11 +16,13 @@ export interface ExperienceMutation_experience_fields {
   decimal: number | null;         // A floating point number field type
   date: any | null;               // Date field type
   datetime: any | null;           // Datetime field type
+  type: string;                   // The data type of the field
 }
 
 export interface ExperienceMutation_experience {
   id: string;
   title: string;
+  description: string | null;
   fields: (ExperienceMutation_experience_fields | null)[];
 }
 
@@ -95,6 +97,7 @@ export interface ExpFieldFragment {
   decimal: number | null;         // A floating point number field type
   date: any | null;               // Date field type
   datetime: any | null;           // Datetime field type
+  type: string;                   // The data type of the field
 }
 
 
@@ -108,6 +111,7 @@ export interface ExpFieldFragment {
 export interface ExperienceFragment {
   id: string;
   title: string;
+  description: string | null;
 }
 
 
@@ -143,6 +147,7 @@ export enum FieldType {
 
 // Variables for creating Experience
 export interface CreateExperience {
+  description?: string | null;
   fields: (CreateExpField | null)[];
   title: string;
 }

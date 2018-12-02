@@ -7,6 +7,7 @@ defmodule Ebnis.Query.Experience do
     fragment #{@frag_name} on Experience {
       id
       title
+      description
     }
   """
 

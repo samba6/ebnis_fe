@@ -8,6 +8,7 @@ defmodule EbnisWeb.Schema.Experience do
     field(:id, non_null(:id))
 
     field(:title, non_null(:string))
+    field :description, :string
 
     field :fields, :exp_field |> list_of() |> non_null() do
       resolve(&Resolver.fields/3)
@@ -20,6 +21,7 @@ defmodule EbnisWeb.Schema.Experience do
   @desc "Variables for creating Experience"
   input_object :create_experience do
     field(:title, non_null(:string))
+    field(:description, :string)
     field(:fields, :create_exp_field |> list_of() |> non_null())
   end
 

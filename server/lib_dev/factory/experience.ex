@@ -27,10 +27,19 @@ defmodule Ebnis.Factory.Experience do
   def fields(count) when count > 0,
     do: Enum.map(1..count, fn _ -> ExpFieldFactory.params() end)
 
+  defp description do
+    case Enum.random(1..3) do
+      1 -> nil
+      2 -> Faker.Lorem.Shakespeare.En.as_you_like_it()
+      3 -> Faker.Lorem.Shakespeare.En.king_richard_iii()
+    end
+  end
+
   defp all do
     %{
       title: title(),
-      fields: fields(Enum.random(@field_count))
+      fields: fields(Enum.random(@field_count)),
+      description: description()
     }
   end
 
@@ -40,6 +49,9 @@ defmodule Ebnis.Factory.Experience do
     |> Enum.map(fn
       {:title, title} ->
         {"title", title}
+
+      {:description, description} ->
+        {"description", description}
 
       {:fields, fields} ->
         {"fields", Enum.map(fields, &ExpFieldFactory.stringify/1)}

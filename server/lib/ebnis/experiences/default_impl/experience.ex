@@ -8,6 +8,7 @@ defmodule Ebnis.Experiences.DefaultImpl.Experience do
 
   schema "experiences" do
     field(:title, :string)
+    field(:description, :string)
     belongs_to(:user, User)
     has_many(:fields, Field)
 
@@ -17,7 +18,8 @@ defmodule Ebnis.Experiences.DefaultImpl.Experience do
   @doc "changeset"
   def changeset(%__MODULE__{} = exp, %{} = attrs) do
     exp
-    |> cast(attrs, [:title, :user_id])
+    |> cast(attrs, [:description, :title, :user_id])
+    |> validate_required([:title, :user_id])
     |> assoc_constraint(:user)
     |> unique_constraint(:title, name: :experiences_user_id_title_index)
   end

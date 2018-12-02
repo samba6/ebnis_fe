@@ -136,7 +136,7 @@ defmodule EbnisWeb.Schema.ExperienceTest do
 
       error =
         %{
-          name: "field 0",
+          name: "field 0---1",
           errors: %{name: "has already been taken"}
         }
         |> Jason.encode!()

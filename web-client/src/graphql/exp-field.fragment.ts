@@ -10,6 +10,7 @@ export const expFieldFragment = gql`
     decimal
     date
     datetime
+    type
   }
 `;
 
