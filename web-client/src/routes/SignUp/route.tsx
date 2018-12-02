@@ -17,7 +17,6 @@ import {
   ValidationSchema,
   FormValuesKey
 } from "./sign-up";
-import { getSocket } from "../../socket";
 import { Registration } from "../../graphql/apollo-gql";
 import { setTitle, ROOT_URL, LOGIN_URL } from "../../Routing";
 import Header from "../../components/Header";
@@ -213,7 +212,7 @@ export class SignUp extends React.Component<Props, State> {
         const user = result.data.registration;
 
         if (user) {
-          getSocket().ebnisConnect(user.jwt);
+          this.props.reInitSocket(user.jwt);
         }
 
         await this.props.updateLocalUser({

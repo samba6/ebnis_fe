@@ -13,7 +13,9 @@ const cache = new InMemoryCache();
 let client: ApolloClient<{}>;
 
 export function makeClient(socket = getSocket()) {
-  let socketLink = createAbsintheSocketLink(AbsintheSocket.create(socket));
+  const absintheSocket = AbsintheSocket.create(socket);
+
+  let socketLink = createAbsintheSocketLink(absintheSocket);
 
   socketLink = middlewareAuthLink().concat(socketLink);
   socketLink = middlewareErrorLink().concat(socketLink);

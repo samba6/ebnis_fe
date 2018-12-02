@@ -25,7 +25,7 @@ export interface AppSocket extends Socket {
   ebnisConnect: (
     token?: string | null,
     payload?: ConnectionPayload<{}> | undefined
-  ) => void;
+  ) => AppSocket;
 }
 
 let socket: AppSocket;

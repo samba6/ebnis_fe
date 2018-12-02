@@ -4,10 +4,12 @@ export interface AppContextProps {
   showSidebar?: boolean;
   setHeader?: (header: JSX.Element) => void;
   onShowSidebar: (showSidebar: boolean) => void;
+  reInitSocket: (jwt: string) => void;
 }
 
 export const AppContext = React.createContext<AppContextProps>({
-  onShowSidebar: val => null
+  onShowSidebar: val => null,
+  reInitSocket: val => null
 });
 
 export const AppContextProvider = AppContext.Provider;

@@ -19,6 +19,7 @@ import AuthRequired from "../../components/AuthRequired";
 import { ROOT_URL, LOGIN_URL, SIGN_UP_URL, NEW_EXP } from "../../Routing";
 import Loading from "../../components/Loading";
 import Sidebar from "../../components/Sidebar";
+import { getSocket } from "../../socket";
 
 const Home = lazy(() => import("./../../routes/Home"));
 const Login = lazy(() => import("./../../routes/Login"));
@@ -50,7 +51,8 @@ export class App extends React.Component<{}, State> {
     const childProps: AppContextProps = {
       onShowSidebar,
       setHeader,
-      showSidebar
+      showSidebar,
+      reInitSocket: this.reInitSocket
     };
 
     return (
@@ -160,6 +162,11 @@ export class App extends React.Component<{}, State> {
 
   private onShowSidebar = (showSidebar: boolean) =>
     this.setState({ showSidebar });
+
+  private reInitSocket = (jwt: string) => {
+    const socket = getSocket().ebnisConnect(jwt);
+    this.client = makeClient(socket);
+  };
 }
 
 export default App;

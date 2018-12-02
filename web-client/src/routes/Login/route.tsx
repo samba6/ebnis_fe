@@ -14,7 +14,6 @@ import "./login.scss";
 import { Props, ValidationSchema } from "./login";
 import Header from "../../components/Header";
 import { LoginUser as FormValues } from "../../graphql/apollo-gql";
-import { getSocket } from "../../socket";
 import { setTitle, ROOT_URL, SIGN_UP_URL } from "../../Routing";
 
 export const Login = (props: Props) => {
@@ -122,7 +121,7 @@ export const Login = (props: Props) => {
         const user = result.data.login;
 
         if (user) {
-          getSocket().ebnisConnect(user.jwt);
+          props.reInitSocket(user.jwt);
         }
 
         await props.updateLocalUser({
