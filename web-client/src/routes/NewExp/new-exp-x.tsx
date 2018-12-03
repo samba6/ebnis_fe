@@ -31,7 +31,8 @@ import Header from "../../components/Header";
 import { setTitle } from "../../Routing";
 import {
   CreateExperience as FormValues,
-  CreateExpField
+  CreateExpField,
+  FieldType
 } from "../../graphql/apollo-gql";
 import Select from "react-select";
 import { ApolloError } from "apollo-client";
@@ -40,6 +41,9 @@ type SelectFieldTypeStateVal = null | SelectValue;
 type SelectFieldTypeState = {
   [k: number]: SelectFieldTypeStateVal;
 };
+
+const EMPTY_FIELD_TYPE = "" as FieldType;
+const EMPTY_FIELD = { name: "", type: EMPTY_FIELD_TYPE };
 
 export const NewExp = (props: Props) => {
   const { setHeader, createExperience } = props;
@@ -186,22 +190,24 @@ export const NewExp = (props: Props) => {
             type="button"
             onClick={() => {
               setSubmittedFormErrors(undefined);
-              arrayHelpers.insert(index + 1, { name: "" });
+              arrayHelpers.insert(index + 1, EMPTY_FIELD);
             }}
           >
             <Icon name="plus" />
           </Button>
 
-          <Button
-            type="button"
-            onClick={() => {
-              setSelectValues(removeSelectedField(index, fields));
-              arrayHelpers.remove(index);
-              setSubmittedFormErrors(undefined);
-            }}
-          >
-            <Icon name="minus" />
-          </Button>
+          {len > 1 && (
+            <Button
+              type="button"
+              onClick={() => {
+                setSelectValues(removeSelectedField(index, fields));
+                arrayHelpers.remove(index);
+                setSubmittedFormErrors(undefined);
+              }}
+            >
+              <Icon name="minus" />
+            </Button>
+          )}
 
           {showUp && (
             <Button
@@ -238,32 +244,11 @@ export const NewExp = (props: Props) => {
   };
 
   const renderFields = (values: FormValues) => (arrayHelpers: ArrayHelpers) => {
-    if (values.fields && values.fields.length) {
-      return (
-        <Fragment>
-          {values.fields.map(renderField(values, arrayHelpers))}
-        </Fragment>
-      );
-    }
-
-    const { title } = values;
-
-    if (title && title.length > 1) {
-      return (
-        <Button
-          type="button"
-          id="add-field-button"
-          name="add-field-button"
-          color="green"
-          inverted={true}
-          onClick={addEmptyFields(arrayHelpers)}
-        >
-          <Icon name="plus" /> Add field
-        </Button>
-      );
-    }
-
-    return null;
+    return (
+      <Fragment>
+        {values.fields.map(renderField(values, arrayHelpers))}
+      </Fragment>
+    );
   };
 
   function renderTitleInput(formProps: FieldProps<FormValues>) {
@@ -406,7 +391,7 @@ export const NewExp = (props: Props) => {
   return (
     <div className="app-main routes-new-exp" ref={routeRef}>
       <Formik<FormValues>
-        initialValues={{ title: "", description: "", fields: [] }}
+        initialValues={{ title: "", description: "", fields: [EMPTY_FIELD] }}
         onSubmit={nullSubmit}
         render={renderForm}
         validationSchema={ValidationSchema}
@@ -568,12 +553,6 @@ function makeFieldNameWithIndex(index: number) {
 
 function makeFieldName(index: number, key: keyof CreateExpField) {
   return `${makeFieldNameWithIndex(index)}.${key}`;
-}
-
-function addEmptyFields(arrayHelpers: ArrayHelpers) {
-  return function onAddEmptyFields() {
-    arrayHelpers.push({ name: "", type: "" });
-  };
 }
 
 function nullSubmit() {
