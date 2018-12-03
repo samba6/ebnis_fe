@@ -64,7 +64,7 @@ export const NewExp = (props: Props) => {
       setHeader(<Header title="New Experience" sideBar={true} />);
     }
 
-    setTitle("New");
+    setTitle("New Experience");
 
     return setTitle;
   }, []);
