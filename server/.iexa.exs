@@ -12,5 +12,5 @@ alias Ebnis.Factory.User, as: UserFactory
 alias Ebnis.Factory.Registration, as: RegFactory
 alias Ebnis.Factory.ExpField, as: ExpFieldFactory
 alias Ebnis.Factory.Experience, as: ExperienceFactory
-alias alias Ebnis.Experiences.DefaultImpl.Experience, as: ExperienceDefaultImpl
-alias alias Ebnis.Experiences.DefaultImpl.Field, as: ExpFieldDefaultImpl
+alias Ebnis.Experiences.DefaultImpl.Experience, as: ExperienceDefaultImpl
+alias Ebnis.Experiences.DefaultImpl.Field, as: ExpFieldDefaultImpl
