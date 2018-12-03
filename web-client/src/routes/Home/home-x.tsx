@@ -18,12 +18,19 @@ export const Home = (props: Props) => {
     return setTitle;
   }, []);
 
+  function goToCreateNewExp() {
+    history.push(NEW_EXP);
+  }
+
   return (
     <div className="app-main routes-home">
-      Home
-      <div className="new-exp-btn" onClick={() => history.push(NEW_EXP)}>
+      <button
+        className="new-exp-btn"
+        name="go-to-create-exp-def"
+        onClick={goToCreateNewExp}
+      >
         +
-      </div>
+      </button>
     </div>
   );
 };

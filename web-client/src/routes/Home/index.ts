@@ -1,3 +1,3 @@
-import Home from "./route";
+import Home from "./home-x";
 
 export default Home;
