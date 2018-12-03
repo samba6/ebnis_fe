@@ -24,10 +24,14 @@
   font-weight: bolder;
 }
 
+%field-margin-bottom {
+  margin-bottom: 20px !important;
+}
+
 %form {
   .form {
     .field {
-      margin-bottom: 15px !important;
+      @extend %field-margin-bottom;
     }
 
     .field.disabled {

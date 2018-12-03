@@ -1,6 +1,6 @@
 import { graphql } from "react-apollo";
 
-import NewExp from "./route";
+import NewExp from "./new-exp-x";
 import { OwnProps } from "./new-exp";
 import EXPERIENCE_MUTATION, {
   ExperienceMutationProps,

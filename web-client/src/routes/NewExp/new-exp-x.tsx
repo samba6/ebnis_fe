@@ -13,9 +13,17 @@ import {
   FieldProps,
   FieldArray,
   ArrayHelpers,
-  FormikErrors
+  FormikErrors,
+  Field
 } from "formik";
-import { Form, Button, Icon, Input, Message } from "semantic-ui-react";
+import {
+  Form,
+  Button,
+  Icon,
+  Input,
+  Message,
+  TextArea
+} from "semantic-ui-react";
 
 import "./new-exp.scss";
 import { Props, ValidationSchema, fieldTypes, SelectValue } from "./new-exp";
@@ -24,7 +32,7 @@ import { setTitle } from "../../Routing";
 import {
   CreateExperience as FormValues,
   CreateExpField
-} from "../../graphql/apollo-gql.d";
+} from "../../graphql/apollo-gql";
 import Select from "react-select";
 import { ApolloError } from "apollo-client";
 
@@ -37,6 +45,7 @@ export const NewExp = (props: Props) => {
   const { setHeader, createExperience } = props;
   const [selectValues, setSelectValues] = useState({} as SelectFieldTypeState);
   const routeRef = useRef<HTMLDivElement | null>(null);
+  const [showDescriptionInput, setShowDescriptionInput] = useState(false);
 
   const [graphQlError, setGraphQlError] = useState<
     GraphQlErrorState | undefined
@@ -100,6 +109,8 @@ export const NewExp = (props: Props) => {
 
     return (
       <Form.Field error={!!error}>
+        <label htmlFor={name}>Field Data Type</label>
+
         <Select
           {...rest}
           name={name}
@@ -128,10 +139,6 @@ export const NewExp = (props: Props) => {
       </Form.Field>
     );
   };
-
-  function renderFormCtrlError(error: null | string) {
-    return error && <div className="form-control-error">{error}</div>;
-  }
 
   const renderFieldName = (formProps: FieldProps<FormValues>) => {
     const {
@@ -280,6 +287,28 @@ export const NewExp = (props: Props) => {
     );
   }
 
+  function renderDescriptionInput(formProps: FieldProps<FormValues>) {
+    const { field } = formProps;
+
+    return (
+      <Form.Field>
+        <label
+          className="description-field-label"
+          htmlFor={field.name}
+          onClick={() => setShowDescriptionInput(!showDescriptionInput)}
+        >
+          Description
+          {!showDescriptionInput && <Icon name="caret left" />}
+          {showDescriptionInput && <Icon name="caret down" />}
+        </label>
+
+        {showDescriptionInput && (
+          <TextArea {...field} placeholder="Description" id={field.name} />
+        )}
+      </Form.Field>
+    );
+  }
+
   function submit(formikProps: FormikProps<FormValues>) {
     return async function submitInner() {
       setSubmittedFormErrors(undefined);
@@ -340,17 +369,10 @@ export const NewExp = (props: Props) => {
 
   function renderForm(formikProps: FormikProps<FormValues>) {
     const { dirty, isSubmitting, values } = formikProps;
-
     const { title, fields } = values;
-    let formInvalid = false;
-
-    if (!title) {
-      formInvalid = true;
-    }
-
-    if (!(fields && fields.length)) {
-      formInvalid = true;
-    }
+    const hasTitle = !!title;
+    const hasFields = !!fields.length;
+    const formInvalid = !(hasTitle && hasFields);
 
     return (
       <Form onSubmit={submit(formikProps)}>
@@ -358,7 +380,11 @@ export const NewExp = (props: Props) => {
 
         <FastField name="title" render={renderTitleInput} />
 
+        <Field name="description" render={renderDescriptionInput} />
+
         <FieldArray name="fields" render={renderFields(values)} />
+
+        {hasFields ? <hr className="submit-btn-hr" /> : undefined}
 
         <Button
           className="new-exp-submit"
@@ -380,7 +406,7 @@ export const NewExp = (props: Props) => {
   return (
     <div className="app-main routes-new-exp" ref={routeRef}>
       <Formik<FormValues>
-        initialValues={{ title: "", fields: [] }}
+        initialValues={{ title: "", description: "", fields: [] }}
         onSubmit={nullSubmit}
         render={renderForm}
         validationSchema={ValidationSchema}
@@ -599,4 +625,8 @@ function getFieldError(
   }
 
   return null;
+}
+
+function renderFormCtrlError(error: null | string) {
+  return error && <div className="form-control-error">{error}</div>;
 }

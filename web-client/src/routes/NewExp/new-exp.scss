@@ -7,6 +7,10 @@
   overflow-x: hidden;
   overflow-y: auto;
 
+  .field {
+    @extend %field-margin-bottom;
+  }
+
   .new-exp-submit {
     margin-top: 20px;
   }
@@ -58,5 +62,15 @@
         padding-left: 1em;
       }
     }
+  }
+
+  .description-field-label {
+    opacity: 0.6;
+    cursor: pointer;
+  }
+
+  .submit-btn-hr {
+    margin: 4em 0 1em;
+    opacity: 0.3;
   }
 }
