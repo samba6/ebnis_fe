@@ -25,7 +25,6 @@ export const mediaQueries = {
 type StateMediaQueries = { [k in MediaQueryKey]: boolean };
 
 export interface State {
-  mediaQueries: StateMediaQueries;
   header?: JSX.Element;
   cacheLoaded?: boolean;
   showSidebar?: boolean;
