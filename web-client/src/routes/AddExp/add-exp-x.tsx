@@ -8,6 +8,24 @@ import { setTitle } from "../../Routing";
 export const AddExp = (props: Props) => {
   const { setHeader } = props;
 
+  // tslint:disable-next-line:no-console
+  console.log(
+    `
+
+
+  logging starts
+
+
+  props`,
+    props,
+    `
+
+  logging ends
+
+
+  `
+  );
+
   useEffect(() => {
     if (setHeader) {
       setHeader(<Header title="Add Exp" sideBar={true} />);

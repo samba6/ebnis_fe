@@ -7,7 +7,27 @@
 // GraphQL mutation operation: ExperienceMutation
 // ====================================================
 
-export interface ExperienceMutation_experience_fields {
+export interface ExperienceMutation_experience {
+  id: string;
+}
+
+export interface ExperienceMutation {
+  experience: ExperienceMutation_experience | null;
+}
+
+export interface ExperienceMutationVariables {
+  experience: CreateExperience;
+}
+
+
+/* tslint:disable */
+// This file was automatically generated and should not be edited.
+
+// ====================================================
+// GraphQL query operation: GetAnExperience
+// ====================================================
+
+export interface GetAnExperience_experience_fields {
   id: string;
   name: string;                   // Name of field e.g start, end, meal
   singleLineText: string | null;  // A single line text field
@@ -19,19 +39,19 @@ export interface ExperienceMutation_experience_fields {
   type: string;                   // The data type of the field
 }
 
-export interface ExperienceMutation_experience {
+export interface GetAnExperience_experience {
   id: string;
   title: string;
   description: string | null;
-  fields: (ExperienceMutation_experience_fields | null)[];
+  fields: (GetAnExperience_experience_fields | null)[];
 }
 
-export interface ExperienceMutation {
-  experience: ExperienceMutation_experience | null;
+export interface GetAnExperience {
+  experience: GetAnExperience_experience | null;  // get an experience
 }
 
-export interface ExperienceMutationVariables {
-  experience: CreateExperience;
+export interface GetAnExperienceVariables {
+  experience: GetExperience;
 }
 
 
@@ -157,6 +177,11 @@ export interface CreateExpField {
   name: string;
   type: FieldType;
   value?: string | null;
+}
+
+// Variables for getting an experience
+export interface GetExperience {
+  id: string;
 }
 
 // Variables for login in User
