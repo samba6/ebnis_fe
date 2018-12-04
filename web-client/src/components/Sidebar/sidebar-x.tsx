@@ -1,5 +1,4 @@
 import React, { useContext } from "react";
-import { Icon } from "semantic-ui-react";
 
 import "./sidebar.scss";
 import { AppContext } from "../../containers/App/app";
@@ -22,9 +21,10 @@ export const Sidebar = () => {
       onClick={() => onShowSidebar(false)}
     >
       <nav className="container" onClick={blockClicks}>
-        <div className="sidebar-hide item" onClick={() => onShowSidebar(false)}>
-          <Icon name="content" />
-        </div>
+        <div
+          className="sidebar-hide item"
+          onClick={() => onShowSidebar(false)}
+        />
 
         <ul className="sidebar__content">
           <li>One</li>

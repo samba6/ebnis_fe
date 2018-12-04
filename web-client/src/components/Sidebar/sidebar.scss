@@ -37,6 +37,7 @@
     height: var(--main-container-height);
     border-top: 2px solid $app-color;
     border-bottom: 2px solid $app-color;
+    border-right: 2px solid $app-color;
     // if we do less than 103%, the box-shadow will be visible at the left
     // of the view port
 
@@ -91,10 +92,6 @@
     display: flex;
     flex-direction: row-reverse;
     cursor: pointer;
-    padding: 24px 17px 19px;
-
-    & > .icon {
-      font-size: 1.3em;
-    }
+    padding: 24px 17px 34px;
   }
 }

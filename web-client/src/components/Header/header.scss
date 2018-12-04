@@ -52,6 +52,7 @@
     min-width: 40px;
     cursor: pointer;
     padding: 10px 0 10px 20px;
+    z-index: 1;
 
     &.no {
       display: none;

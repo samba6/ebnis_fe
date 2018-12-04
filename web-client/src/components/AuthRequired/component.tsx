@@ -10,13 +10,13 @@ export const AuthRequired = ({
 }: Props) => {
   const render = (childProps: RouteProps) => {
     if (rest.user) {
-      return <AuthComponent {...childProps} {...rest} />;
+      return <AuthComponent {...rest} {...childProps} />;
     }
 
-    return <RedirectTo {...childProps} {...rest} />;
+    return <RedirectTo {...rest} {...childProps} />;
   };
 
-  return <Route render={render} />;
+  return <Route {...rest} render={render} />;
 };
 
 export default AuthRequired;
