@@ -45,10 +45,19 @@ defmodule Ebnis.Experiences.DefaultImpl do
     )
   end
 
+  def get_experience(id, user_id) do
+    Experience
+    |> where([e], e.id == ^id and e.user_id == ^user_id)
+    |> Repo.one()
+    |> to_domain()
+  end
+
   defp to_domain(%Experience{} = experience) do
     struct(
       Ebnis.Experiences.DefaultImpl.Experience,
       Map.from_struct(experience)
     )
   end
+
+  defp to_domain(data), do: data
 end

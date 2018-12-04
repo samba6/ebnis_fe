@@ -82,6 +82,20 @@ defmodule EbnisWeb.Resolver.Experience do
   defp parse_field(:single_line_text, val), do: %{single_line_text: val}
   defp parse_field(:multi_line_text, val), do: %{multi_line_text: val}
 
+  def get_experience(_, %{experience: %{id: id}}, %{context: %{current_user: user}}) do
+    case Experiences.get_experience(id, user.id) do
+      nil ->
+        {:error, "Experience does not exist"}
+
+      exp ->
+        {:ok, exp}
+    end
+  end
+
+  def get_experience(_, _, _) do
+    {:error, Resolver.unauthorized()}
+  end
+
   def get_experiences(_, _, _) do
   end
 

@@ -25,6 +25,11 @@ defmodule EbnisWeb.Schema.Experience do
     field(:fields, :create_exp_field |> list_of() |> non_null())
   end
 
+  @desc "Variables for getting an experience"
+  input_object :get_experience do
+    field(:id, non_null(:id))
+  end
+
   @desc "Mutations allowed on Experience object"
   object :experience_mutation do
     @doc "Create an experience"
@@ -40,6 +45,12 @@ defmodule EbnisWeb.Schema.Experience do
     @desc "get all experiences belonging to a user"
     field :experiences, list_of(:experience) do
       resolve(&Resolver.get_experiences/3)
+    end
+
+    @desc "get an experience"
+    field :experience, :experience do
+      arg(:experience, non_null(:get_experience))
+      resolve(&Resolver.get_experience/3)
     end
   end
 end

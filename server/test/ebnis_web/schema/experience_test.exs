@@ -202,5 +202,88 @@ defmodule EbnisWeb.Schema.ExperienceTest do
     end
   end
 
+  describe "get experience" do
+    test "get experience succeeds for existing experience" do
+      user = RegFactory.insert()
+      %{id: id} = Factory.insert(user_id: user.id)
+      id = Integer.to_string(id)
+
+      variables = %{
+        "experience" => %{
+          "id" => id
+        }
+      }
+
+      assert {:ok,
+              %{
+                data: %{
+                  "experience" => %{
+                    "id" => ^id
+                  }
+                }
+              }} =
+               Absinthe.run(
+                 Query.get(),
+                 Schema,
+                 variables: variables,
+                 context: context(user)
+               )
+    end
+
+    test "get experience fails for non existing experience" do
+      user = RegFactory.insert()
+
+      variables = %{
+        "experience" => %{
+          "id" => "0"
+        }
+      }
+
+      assert {:ok,
+              %{
+                errors: [
+                  %{
+                    message: "Experience does not exist"
+                  }
+                ]
+              }} =
+               Absinthe.run(
+                 Query.get(),
+                 Schema,
+                 variables: variables,
+                 context: context(user)
+               )
+    end
+
+    test "get experience fails for wrong user" do
+      user = RegFactory.insert()
+      %{id: id} = Factory.insert(user_id: user.id)
+      id = Integer.to_string(id)
+
+      variables = %{
+        "experience" => %{
+          "id" => id
+        }
+      }
+
+      another_user = RegFactory.insert()
+
+      assert {:ok,
+              %{
+                errors: [
+                  %{
+                    message: "Experience does not exist"
+                  }
+                ]
+              }} =
+               Absinthe.run(
+                 Query.get(),
+                 Schema,
+                 variables: variables,
+                 context: context(another_user)
+               )
+    end
+  end
+
   defp context(user), do: %{current_user: user}
 end

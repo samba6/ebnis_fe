@@ -36,4 +36,18 @@ defmodule Ebnis.Query.Experience do
     #{field_frag}
     """
   end
+
+  def get do
+    """
+    query GetAnExperience($experience: GetExperience!) {
+      experience(experience: $experience) {
+        ...#{@frag_name}
+
+      }
+    }
+
+    #{@fragment}
+
+    """
+  end
 end

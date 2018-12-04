@@ -9,6 +9,10 @@ defmodule Ebnis.Experiences do
     impl().create_experience(attrs)
   end
 
+  def get_experience(id, user_id) do
+    impl().get_experience(id, user_id)
+  end
+
   defconstp impl do
     Application.get_env(:ebnis, :experiences_impl, DefaultImpl)
   end
