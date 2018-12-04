@@ -1,7 +1,7 @@
 import { RouteComponentProps } from "react-router-dom";
 import * as Yup from "yup";
 
-import { AppContextProps } from "../../containers/App/app";
+import { AppRouteProps } from "../../containers/App/app";
 import { ExperienceMutationProps } from "../../graphql/create-exp.mutation";
 import {
   CreateExperience as FormValues,
@@ -9,7 +9,7 @@ import {
   FieldType
 } from "../../graphql/apollo-gql.d";
 
-export type OwnProps = AppContextProps & RouteComponentProps<{}>;
+export type OwnProps = AppRouteProps & RouteComponentProps<{}>;
 
 export type Props = OwnProps & ExperienceMutationProps;
 

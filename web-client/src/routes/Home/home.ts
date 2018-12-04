@@ -1,5 +1,5 @@
 import { RouteComponentProps } from "react-router-dom";
 
-import { AppContextProps } from "../../containers/App/app";
+import { AppRouteProps } from "../../containers/App/app";
 
-export type Props = AppContextProps & RouteComponentProps;
+export type Props = AppRouteProps & RouteComponentProps;

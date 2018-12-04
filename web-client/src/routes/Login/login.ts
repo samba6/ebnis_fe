@@ -1,4 +1,4 @@
-import { AppContextProps } from "../../containers/App/app";
+import { AppRouteProps } from "../../containers/App/app";
 import * as Yup from "yup";
 import { WithApolloClient } from "react-apollo";
 import { RouteComponentProps } from "react-router-dom";
@@ -9,7 +9,7 @@ import { UserLocalMutationProps } from "../../state/user.local.mutation";
 import { LoggedOutUserProps } from "../../state/logged-out-user.local.query";
 
 export type OwnProps = WithApolloClient<{}> &
-  AppContextProps &
+  AppRouteProps &
   RouteComponentProps<{}>;
 
 export type Props = OwnProps &

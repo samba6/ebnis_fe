@@ -12,7 +12,11 @@ import { getSocket } from "../socket";
 const cache = new InMemoryCache();
 let client: ApolloClient<{}>;
 
-export function makeClient(socket = getSocket()) {
+export function makeClient(socket = getSocket(), reNew = false) {
+  if (client && !reNew) {
+    return client;
+  }
+
   const absintheSocket = AbsintheSocket.create(socket);
 
   let socketLink = createAbsintheSocketLink(absintheSocket);

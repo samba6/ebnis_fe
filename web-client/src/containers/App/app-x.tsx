@@ -4,7 +4,6 @@ import { BrowserRouter, Switch, Route } from "react-router-dom";
 
 import "./app.scss";
 import Header from "../../components/Header";
-import { AppContextProvider, AppContextProps } from "./app";
 import { makeClient, persistCache } from "../../state/set-up";
 import logger from "../../logger";
 import AuthRequired from "../../components/AuthRequired";
@@ -18,6 +17,8 @@ import {
 import Loading from "../../components/Loading";
 import Sidebar from "../../components/Sidebar";
 import { getSocket } from "../../socket";
+import { AppRouteProps } from "./app";
+import { AppContextParent } from "./app-context";
 
 const Home = lazy(() => import("../../routes/Home"));
 const Login = lazy(() => import("../../routes/Login"));
@@ -30,12 +31,11 @@ const loading = <Loading />;
 
 function reInitSocket(jwt: string) {
   const socket = getSocket().ebnisConnect(jwt);
-  client = makeClient(socket);
+  client = makeClient(socket, true);
 }
 
 export function App() {
   const [header, setHeader] = useState(<Header title="Ebnis" />);
-  const [showSidebar, onShowSidebar] = useState(false);
   const [cacheLoaded, setCacheLoaded] = useState(false);
 
   useEffect(() => {
@@ -49,17 +49,15 @@ export function App() {
     })();
   }, []);
 
-  const childProps: AppContextProps = {
-    onShowSidebar,
+  const childProps: AppRouteProps = {
     setHeader,
-    showSidebar,
     reInitSocket
   };
 
   return (
     <div className="containers-app">
       <ApolloProvider client={client}>
-        <AppContextProvider value={childProps}>
+        <AppContextParent>
           <Sidebar />
 
           {header}
@@ -119,7 +117,7 @@ export function App() {
               )}
             </Suspense>
           </BrowserRouter>
-        </AppContextProvider>
+        </AppContextParent>
       </ApolloProvider>
     </div>
   );

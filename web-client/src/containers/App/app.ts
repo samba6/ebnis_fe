@@ -1,18 +1,19 @@
 import React from "react";
 
 export interface AppContextProps {
-  showSidebar?: boolean;
-  setHeader?: (header: JSX.Element) => void;
+  showSidebar: boolean;
   onShowSidebar: (showSidebar: boolean) => void;
-  reInitSocket: (jwt: string) => void;
 }
 
 export const AppContext = React.createContext<AppContextProps>({
-  onShowSidebar: val => null,
-  reInitSocket: val => null
+  showSidebar: false,
+  onShowSidebar: () => null
 });
 
-export const AppContextProvider = AppContext.Provider;
+export interface AppRouteProps {
+  setHeader: React.Dispatch<React.SetStateAction<JSX.Element>>;
+  reInitSocket: (jwt: string) => void;
+}
 
 export enum MediaQueryKey {
   SCREEN_MIN_WIDTH_600 = "screenMinWidth600"
