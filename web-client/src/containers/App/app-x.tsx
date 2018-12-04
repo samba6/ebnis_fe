@@ -16,15 +16,22 @@ import {
 import { makeClient, persistCache } from "../../state/set-up";
 import logger from "../../logger";
 import AuthRequired from "../../components/AuthRequired";
-import { ROOT_URL, LOGIN_URL, SIGN_UP_URL, NEW_EXP } from "../../Routing";
+import {
+  ROOT_URL,
+  LOGIN_URL,
+  SIGN_UP_URL,
+  EXP_DEF,
+  ADD_EXP
+} from "../../Routing";
 import Loading from "../../components/Loading";
 import Sidebar from "../../components/Sidebar";
 import { getSocket } from "../../socket";
 
-const Home = lazy(() => import("./../../routes/Home"));
-const Login = lazy(() => import("./../../routes/Login"));
-const SignUp = lazy(() => import("./../../routes/SignUp"));
-const NewExp = lazy(() => import("./../../routes/NewExp"));
+const Home = lazy(() => import("../../routes/Home"));
+const Login = lazy(() => import("../../routes/Login"));
+const SignUp = lazy(() => import("../../routes/SignUp"));
+const ExpDef = lazy(() => import("../../routes/ExpDef"));
+const AddExp = lazy(() => import("../../routes/AddExp"));
 
 const defaultHeader = <Header title="Ebnis" />;
 
@@ -66,8 +73,16 @@ export class App extends React.Component<{}, State> {
                 <Switch>
                   <AuthRequired
                     exact={true}
-                    path={NEW_EXP}
-                    component={NewExp}
+                    path={ADD_EXP}
+                    component={AddExp}
+                    redirectTo={Login}
+                    {...childProps}
+                  />
+
+                  <AuthRequired
+                    exact={true}
+                    path={EXP_DEF}
+                    component={ExpDef}
                     redirectTo={Login}
                     {...childProps}
                   />

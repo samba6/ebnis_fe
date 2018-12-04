@@ -25,17 +25,18 @@ import {
   TextArea
 } from "semantic-ui-react";
 
-import "./new-exp.scss";
-import { Props, ValidationSchema, fieldTypes, SelectValue } from "./new-exp";
+import "./exp-def.scss";
+import { Props, ValidationSchema, fieldTypes, SelectValue } from "./exp-def";
 import Header from "../../components/Header";
 import { setTitle } from "../../Routing";
 import {
   CreateExperience as FormValues,
   CreateExpField,
   FieldType
-} from "../../graphql/apollo-gql";
+} from "../../graphql/apollo-gql.d";
 import Select from "react-select";
 import { ApolloError } from "apollo-client";
+import { makeAddExpRoute } from "../../Routing";
 
 type SelectFieldTypeStateVal = null | SelectValue;
 type SelectFieldTypeState = {
@@ -46,7 +47,7 @@ const EMPTY_FIELD_TYPE = "" as FieldType;
 const EMPTY_FIELD = { name: "", type: EMPTY_FIELD_TYPE };
 
 export const NewExp = (props: Props) => {
-  const { setHeader, createExperience } = props;
+  const { setHeader, createExperience, history } = props;
   const [selectValues, setSelectValues] = useState({} as SelectFieldTypeState);
   const routeRef = useRef<HTMLDivElement | null>(null);
   const [showDescriptionInput, setShowDescriptionInput] = useState(false);
@@ -61,10 +62,10 @@ export const NewExp = (props: Props) => {
 
   useEffect(() => {
     if (setHeader) {
-      setHeader(<Header title="New Experience" sideBar={true} />);
+      setHeader(<Header title="Experience Definition" sideBar={true} />);
     }
 
-    setTitle("New Experience");
+    setTitle("Experience Definition");
 
     return setTitle;
   }, []);
@@ -321,24 +322,36 @@ export const NewExp = (props: Props) => {
           }
         });
 
-        // tslint:disable-next-line:no-console
-        console.log(
-          `
+        if (result) {
+          const { data } = result;
+
+          if (data) {
+            const { experience } = data;
+
+            if (experience) {
+              // tslint:disable-next-line:no-console
+              console.log(
+                `
 
 
-        logging starts
+                logging starts
 
 
-        const result = await createExperience({
-              label`,
-          result,
-          `
+                const result = await createExperience({
+                      label`,
+                result,
+                `
 
-        logging ends
+                logging ends
 
 
-        `
-        );
+                `
+              );
+
+              history.replace(makeAddExpRoute(experience.id));
+            }
+          }
+        }
       } catch (error) {
         setGraphQlError(parseGraphQlError(error));
         const { current } = routeRef;
@@ -372,9 +385,9 @@ export const NewExp = (props: Props) => {
         {hasFields ? <hr className="submit-btn-hr" /> : undefined}
 
         <Button
-          className="new-exp-submit"
-          id="new-exp-submit"
-          name="new-exp-submit"
+          className="exp-def-submit"
+          id="exp-def-submit"
+          name="exp-def-submit"
           color="green"
           inverted={true}
           disabled={!dirty || formInvalid || isSubmitting}
@@ -389,7 +402,7 @@ export const NewExp = (props: Props) => {
   }
 
   return (
-    <div className="app-main routes-new-exp" ref={routeRef}>
+    <div className="app-main routes-exp-def" ref={routeRef}>
       <Formik<FormValues>
         initialValues={{ title: "", description: "", fields: [EMPTY_FIELD] }}
         onSubmit={nullSubmit}
@@ -438,11 +451,16 @@ function parseGraphQlError(error: ApolloError) {
     const key1 = (key || "") as keyof CreateExpField;
 
     // we store the formik path names on the upper level so we can easily access
-    // them from render with transforming the error
+    // them from render without transforming the error (an earlier attempt)
+    // required calling functions to transform the data into forms that can
+    // be used - this is no longer required because all shapes in which the
+    // data can be consumed are now stored on this object.  This potentially
+    // makes this object large and convinent but I'm not sure if it is better
+    // than the previous approach)
     transformedError[makeFieldName(index, key1)] = val1;
 
     // we also store the field index and corresponding error so we can easily
-    // access error with field index
+    // access error with field index (no transformation required)
     const fields = transformedError.fields || {};
     fields[index] = key1 + " " + val1;
 
@@ -499,24 +517,24 @@ function renderGraphQlErrorFields(fields?: { [k: string]: string }) {
 
 function swapSelectField(
   fields: (CreateExpField | null)[],
-  a: number,
-  b: number,
+  indexA: number,
+  indexB: number,
   selectValues: SelectFieldTypeState
 ) {
   const values = {} as SelectFieldTypeState;
-  const fieldA = fields[a];
-  const fieldB = fields[b];
+  const fieldA = fields[indexA];
+  const fieldB = fields[indexB];
 
   if (fieldA && fieldA.type) {
-    values[b] = { value: fieldA.type } as SelectFieldTypeStateVal;
+    values[indexB] = { value: fieldA.type } as SelectFieldTypeStateVal;
   } else {
-    values[b] = null;
+    values[indexB] = null;
   }
 
   if (fieldB && fieldB.type) {
-    values[a] = { value: fieldB.type } as SelectFieldTypeStateVal;
+    values[indexA] = { value: fieldB.type } as SelectFieldTypeStateVal;
   } else {
-    values[a] = null;
+    values[indexA] = null;
   }
 
   return {
@@ -534,7 +552,6 @@ function removeSelectedField(
 
   for (let i = removedIndex; i < len; i++) {
     const nextIndex = i + 1;
-
     const field = fields[nextIndex];
 
     if (!field) {

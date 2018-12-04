@@ -1,7 +1,7 @@
 import { graphql } from "react-apollo";
 
-import NewExp from "./new-exp-x";
-import { OwnProps } from "./new-exp";
+import NewExp from "./exp-def-x";
+import { OwnProps } from "./exp-def";
 import EXPERIENCE_MUTATION, {
   ExperienceMutationProps,
   ExperienceMutationFn
@@ -9,7 +9,7 @@ import EXPERIENCE_MUTATION, {
 import {
   ExperienceMutation,
   ExperienceMutationVariables
-} from "../../graphql/apollo-gql";
+} from "../../graphql/apollo-gql.d";
 
 const expMutationGql = graphql<
   OwnProps,

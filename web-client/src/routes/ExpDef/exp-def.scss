@@ -1,7 +1,7 @@
 @import "../../styles/variables";
 @import "../../styles/extensions";
 
-.routes-new-exp {
+.routes-exp-def {
   padding: 0 5px 20px 5px;
   margin-top: -10px;
   overflow-x: hidden;
@@ -11,7 +11,7 @@
     @extend %field-margin-bottom;
   }
 
-  .new-exp-submit {
+  .exp-def-submit {
     margin-top: 20px;
   }
 

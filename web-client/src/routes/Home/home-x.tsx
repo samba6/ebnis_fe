@@ -3,7 +3,7 @@ import React, { useEffect } from "react";
 import "./home.scss";
 import { Props } from "./home";
 import Header from "../../components/Header";
-import { setTitle, NEW_EXP } from "../../Routing";
+import { setTitle, EXP_DEF } from "../../Routing";
 
 export const Home = (props: Props) => {
   const { setHeader, history } = props;
@@ -19,7 +19,7 @@ export const Home = (props: Props) => {
   }, []);
 
   function goToCreateNewExp() {
-    history.push(NEW_EXP);
+    history.push(EXP_DEF);
   }
 
   return (

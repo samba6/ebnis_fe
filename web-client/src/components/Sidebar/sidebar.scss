@@ -1,3 +1,4 @@
+@import "../../styles/variables";
 @import "../../styles/extensions";
 
 .components-sidebar {
@@ -34,6 +35,8 @@
     max-width: 200px;
     background: #ffffff;
     height: var(--main-container-height);
+    border-top: 2px solid $app-color;
+    border-bottom: 2px solid $app-color;
     // if we do less than 103%, the box-shadow will be visible at the left
     // of the view port
 
