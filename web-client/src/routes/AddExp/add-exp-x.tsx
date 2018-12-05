@@ -1,30 +1,14 @@
 import React, { useEffect } from "react";
+import { Form } from "semantic-ui-react";
 
 import "./add-exp.scss";
 import { Props } from "./add-exp";
 import Header from "../../components/Header";
 import { setTitle } from "../../Routing";
+import Loading from "../../components/Loading";
 
 export const AddExp = (props: Props) => {
-  const { setHeader } = props;
-
-  // tslint:disable-next-line:no-console
-  console.log(
-    `
-
-
-  logging starts
-
-
-  props`,
-    props,
-    `
-
-  logging ends
-
-
-  `
-  );
+  const { setHeader, loading, experience } = props;
 
   useEffect(() => {
     if (setHeader) {
@@ -36,7 +20,23 @@ export const AddExp = (props: Props) => {
     return setTitle;
   }, []);
 
-  return <div className="app-main routes-add-exp">Add Experience</div>;
+  if (loading) {
+    return <Loading />;
+  }
+
+  if (!experience) {
+    return <Loading />;
+  }
+
+  const { title } = experience;
+
+  return (
+    <div className="app-main routes-add-exp">
+      <Form>
+        <div className="title">{title}</div>
+      </Form>
+    </div>
+  );
 };
 
 export default AddExp;
