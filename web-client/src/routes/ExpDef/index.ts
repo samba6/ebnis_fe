@@ -3,22 +3,22 @@ import { graphql } from "react-apollo";
 import NewExp from "./exp-def-x";
 import { OwnProps } from "./exp-def";
 import EXPERIENCE_MUTATION, {
-  ExperienceMutationProps,
-  ExperienceMutationFn
-} from "../../graphql/create-exp.mutation";
+  ExpDefMutationProps,
+  ExpDefMutationFn
+} from "../../graphql/create-exp-def.mutation";
 import {
-  ExperienceMutation,
-  ExperienceMutationVariables
+  ExpDefMutation,
+  ExpDefMutationVariables
 } from "../../graphql/apollo-gql.d";
 
 const expMutationGql = graphql<
   OwnProps,
-  ExperienceMutation,
-  ExperienceMutationVariables,
-  ExperienceMutationProps | void
+  ExpDefMutation,
+  ExpDefMutationVariables,
+  ExpDefMutationProps | void
 >(EXPERIENCE_MUTATION, {
   props: props => {
-    const mutate = props.mutate as ExperienceMutationFn;
+    const mutate = props.mutate as ExpDefMutationFn;
     return {
       createExperience: mutate
     };

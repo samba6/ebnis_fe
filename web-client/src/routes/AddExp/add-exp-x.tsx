@@ -8,7 +8,7 @@ import { setTitle } from "../../Routing";
 import Loading from "../../components/Loading";
 
 export const AddExp = (props: Props) => {
-  const { setHeader, loading, experience } = props;
+  const { setHeader, loading, expDef } = props;
 
   useEffect(() => {
     if (setHeader) {
@@ -24,11 +24,11 @@ export const AddExp = (props: Props) => {
     return <Loading />;
   }
 
-  if (!experience) {
+  if (!expDef) {
     return <Loading />;
   }
 
-  const { title } = experience;
+  const { title } = expDef;
 
   return (
     <div className="app-main routes-add-exp">

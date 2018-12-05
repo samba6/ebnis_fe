@@ -30,8 +30,8 @@ import { Props, ValidationSchema, fieldTypes, SelectValue } from "./exp-def";
 import Header from "../../components/Header";
 import { setTitle } from "../../Routing";
 import {
-  CreateExperience as FormValues,
-  CreateExpField,
+  CreateExpDef as FormValues,
+  CreateFieldDef,
   FieldType
 } from "../../graphql/apollo-gql.d";
 import Select from "react-select";
@@ -71,7 +71,7 @@ export const NewExp = (props: Props) => {
   }, []);
 
   const renderField = (values: FormValues, arrayHelpers: ArrayHelpers) => (
-    field: CreateExpField | null,
+    field: CreateFieldDef | null,
     index: number
   ) => {
     if (!field) {
@@ -178,7 +178,7 @@ export const NewExp = (props: Props) => {
     values: FormValues,
     arrayHelpers: ArrayHelpers
   ) => {
-    const fields = (values.fields && values.fields) || [];
+    const fields = (values.fieldDefs && values.fieldDefs) || [];
 
     const len = fields.length;
     const showUp = index > 0;
@@ -247,7 +247,7 @@ export const NewExp = (props: Props) => {
   const renderFields = (values: FormValues) => (arrayHelpers: ArrayHelpers) => {
     return (
       <Fragment>
-        {values.fields.map(renderField(values, arrayHelpers))}
+        {values.fieldDefs.map(renderField(values, arrayHelpers))}
       </Fragment>
     );
   };
@@ -305,7 +305,7 @@ export const NewExp = (props: Props) => {
 
       const errors = await validateForm(values);
 
-      if (errors.title || errors.fields) {
+      if (errors.title || errors.fieldDefs) {
         setSubmittedFormErrors(errors);
         setSubmitting(false);
         return;
@@ -318,7 +318,7 @@ export const NewExp = (props: Props) => {
       try {
         const result = await createExperience({
           variables: {
-            experience: values
+            expDef: values
           }
         });
 
@@ -326,9 +326,9 @@ export const NewExp = (props: Props) => {
           const { data } = result;
 
           if (data) {
-            const { experience } = data;
+            const { expDef } = data;
 
-            if (experience) {
+            if (expDef) {
               // tslint:disable-next-line:no-console
               console.log(
                 `
@@ -337,7 +337,7 @@ export const NewExp = (props: Props) => {
                 logging starts
 
 
-                const result = await createExperience({
+                const result = await createExpDef({
                       label`,
                 result,
                 `
@@ -348,7 +348,7 @@ export const NewExp = (props: Props) => {
                 `
               );
 
-              history.replace(makeAddExpRoute(experience.id));
+              history.replace(makeAddExpRoute(expDef.id));
             }
           }
         }
@@ -367,9 +367,9 @@ export const NewExp = (props: Props) => {
 
   function renderForm(formikProps: FormikProps<FormValues>) {
     const { dirty, isSubmitting, values } = formikProps;
-    const { title, fields } = values;
+    const { title, fieldDefs } = values;
     const hasTitle = !!title;
-    const hasFields = !!fields.length;
+    const hasFields = !!fieldDefs.length;
     const formInvalid = !(hasTitle && hasFields);
 
     return (
@@ -404,7 +404,7 @@ export const NewExp = (props: Props) => {
   return (
     <div className="app-main routes-exp-def" ref={routeRef}>
       <Formik<FormValues>
-        initialValues={{ title: "", description: "", fields: [EMPTY_FIELD] }}
+        initialValues={{ title: "", description: "", fieldDefs: [EMPTY_FIELD] }}
         onSubmit={nullSubmit}
         render={renderForm}
         validationSchema={ValidationSchema}
@@ -420,7 +420,7 @@ export default NewExp;
 
 interface GraphQlError {
   name: string;
-  errors: { [k in keyof CreateExpField]: string };
+  errors: { [k in keyof CreateFieldDef]: string };
 }
 
 type GraphQlErrorState = { [k: string]: string } & {
@@ -448,7 +448,7 @@ function parseGraphQlError(error: ApolloError) {
     }
 
     const index = Number(exec[1]);
-    const key1 = (key || "") as keyof CreateExpField;
+    const key1 = (key || "") as keyof CreateFieldDef;
 
     // we store the formik path names on the upper level so we can easily access
     // them from render without transforming the error (an earlier attempt)
@@ -516,7 +516,7 @@ function renderGraphQlErrorFields(fields?: { [k: string]: string }) {
 }
 
 function swapSelectField(
-  fields: (CreateExpField | null)[],
+  fields: (CreateFieldDef | null)[],
   indexA: number,
   indexB: number,
   selectValues: SelectFieldTypeState
@@ -545,7 +545,7 @@ function swapSelectField(
 
 function removeSelectedField(
   removedIndex: number,
-  fields: (null | CreateExpField)[]
+  fields: (null | CreateFieldDef)[]
 ) {
   const selected = {} as SelectFieldTypeState;
   const len = fields.length - 1;
@@ -568,7 +568,7 @@ function makeFieldNameWithIndex(index: number) {
   return `fields[${index}]`;
 }
 
-function makeFieldName(index: number, key: keyof CreateExpField) {
+function makeFieldName(index: number, key: keyof CreateFieldDef) {
   return `${makeFieldNameWithIndex(index)}.${key}`;
 }
 
@@ -584,13 +584,13 @@ function getFieldContainerErrorClassFromForm(
     return "";
   }
 
-  const { fields } = submittedFormErrors;
+  const { fieldDefs } = submittedFormErrors;
 
-  if (!fields) {
+  if (!fieldDefs) {
     return "";
   }
 
-  if (fields[index]) {
+  if (fieldDefs[index]) {
     return "errors";
   }
   return "";
@@ -598,21 +598,21 @@ function getFieldContainerErrorClassFromForm(
 
 function getFieldError(
   formikName: string,
-  fieldName: keyof CreateExpField,
+  fieldName: keyof CreateFieldDef,
   submittedFormErrors: FormikErrors<FormValues> | undefined
 ) {
   if (!submittedFormErrors) {
     return null;
   }
 
-  const { fields } = submittedFormErrors;
+  const { fieldDefs } = submittedFormErrors;
 
-  if (!(fields && fields.length)) {
+  if (!(fieldDefs && fieldDefs.length)) {
     return null;
   }
 
-  for (let i = 0; i < fields.length; i++) {
-    const field = (fields[i] || {}) as CreateExpField;
+  for (let i = 0; i < fieldDefs.length; i++) {
+    const field = (fieldDefs[i] || {}) as CreateFieldDef;
     const val = field[fieldName] || "";
 
     if (val.startsWith(formikName)) {

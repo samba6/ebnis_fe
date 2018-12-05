@@ -72,6 +72,59 @@
           "possibleTypes": null
         },
         {
+          "description": "Variables for creating Experience",
+          "enumValues": null,
+          "fields": null,
+          "inputFields": [
+            {
+              "defaultValue": null,
+              "description": null,
+              "name": "description",
+              "type": {
+                "kind": "SCALAR",
+                "name": "String",
+                "ofType": null
+              }
+            },
+            {
+              "defaultValue": null,
+              "description": null,
+              "name": "fieldDefs",
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "LIST",
+                  "name": null,
+                  "ofType": {
+                    "kind": "INPUT_OBJECT",
+                    "name": "CreateFieldDef",
+                    "ofType": null
+                  }
+                }
+              }
+            },
+            {
+              "defaultValue": null,
+              "description": null,
+              "name": "title",
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "String",
+                  "ofType": null
+                }
+              }
+            }
+          ],
+          "interfaces": null,
+          "kind": "INPUT_OBJECT",
+          "name": "CreateExpDef",
+          "possibleTypes": null
+        },
+        {
           "description": "Variables for creating field for an existing experience",
           "enumValues": null,
           "fields": null,
@@ -103,74 +156,11 @@
                   "ofType": null
                 }
               }
-            },
-            {
-              "defaultValue": null,
-              "description": null,
-              "name": "value",
-              "type": {
-                "kind": "SCALAR",
-                "name": "String",
-                "ofType": null
-              }
             }
           ],
           "interfaces": null,
           "kind": "INPUT_OBJECT",
-          "name": "CreateExpField",
-          "possibleTypes": null
-        },
-        {
-          "description": "Variables for creating Experience",
-          "enumValues": null,
-          "fields": null,
-          "inputFields": [
-            {
-              "defaultValue": null,
-              "description": null,
-              "name": "description",
-              "type": {
-                "kind": "SCALAR",
-                "name": "String",
-                "ofType": null
-              }
-            },
-            {
-              "defaultValue": null,
-              "description": null,
-              "name": "fields",
-              "type": {
-                "kind": "NON_NULL",
-                "name": null,
-                "ofType": {
-                  "kind": "LIST",
-                  "name": null,
-                  "ofType": {
-                    "kind": "INPUT_OBJECT",
-                    "name": "CreateExpField",
-                    "ofType": null
-                  }
-                }
-              }
-            },
-            {
-              "defaultValue": null,
-              "description": null,
-              "name": "title",
-              "type": {
-                "kind": "NON_NULL",
-                "name": null,
-                "ofType": {
-                  "kind": "SCALAR",
-                  "name": "String",
-                  "ofType": null
-                }
-              }
-            }
-          ],
-          "interfaces": null,
-          "kind": "INPUT_OBJECT",
-          "name": "CreateExperience",
+          "name": "CreateFieldDef",
           "possibleTypes": null
         },
         {
@@ -269,147 +259,6 @@
           "possibleTypes": null
         },
         {
-          "description": "The `Date` scalar type represents a date. The Date appears in a JSON\nresponse as an ISO8601 formatted string.",
-          "enumValues": null,
-          "fields": null,
-          "inputFields": null,
-          "interfaces": null,
-          "kind": "SCALAR",
-          "name": "Date",
-          "possibleTypes": null
-        },
-        {
-          "description": "A ExpField",
-          "enumValues": null,
-          "fields": [
-            {
-              "args": [],
-              "deprecationReason": null,
-              "description": "Date field type",
-              "isDeprecated": false,
-              "name": "date",
-              "type": {
-                "kind": "SCALAR",
-                "name": "Date",
-                "ofType": null
-              }
-            },
-            {
-              "args": [],
-              "deprecationReason": null,
-              "description": "Datetime field type",
-              "isDeprecated": false,
-              "name": "datetime",
-              "type": {
-                "kind": "SCALAR",
-                "name": "ISODatime",
-                "ofType": null
-              }
-            },
-            {
-              "args": [],
-              "deprecationReason": null,
-              "description": "A floating point number field type",
-              "isDeprecated": false,
-              "name": "decimal",
-              "type": {
-                "kind": "SCALAR",
-                "name": "Float",
-                "ofType": null
-              }
-            },
-            {
-              "args": [],
-              "deprecationReason": null,
-              "description": null,
-              "isDeprecated": false,
-              "name": "id",
-              "type": {
-                "kind": "NON_NULL",
-                "name": null,
-                "ofType": {
-                  "kind": "SCALAR",
-                  "name": "ID",
-                  "ofType": null
-                }
-              }
-            },
-            {
-              "args": [],
-              "deprecationReason": null,
-              "description": "An integer field type",
-              "isDeprecated": false,
-              "name": "integer",
-              "type": {
-                "kind": "SCALAR",
-                "name": "Int",
-                "ofType": null
-              }
-            },
-            {
-              "args": [],
-              "deprecationReason": null,
-              "description": "A multi line text field",
-              "isDeprecated": false,
-              "name": "multiLineText",
-              "type": {
-                "kind": "SCALAR",
-                "name": "String",
-                "ofType": null
-              }
-            },
-            {
-              "args": [],
-              "deprecationReason": null,
-              "description": "Name of field e.g start, end, meal",
-              "isDeprecated": false,
-              "name": "name",
-              "type": {
-                "kind": "NON_NULL",
-                "name": null,
-                "ofType": {
-                  "kind": "SCALAR",
-                  "name": "String",
-                  "ofType": null
-                }
-              }
-            },
-            {
-              "args": [],
-              "deprecationReason": null,
-              "description": "A single line text field",
-              "isDeprecated": false,
-              "name": "singleLineText",
-              "type": {
-                "kind": "SCALAR",
-                "name": "String",
-                "ofType": null
-              }
-            },
-            {
-              "args": [],
-              "deprecationReason": null,
-              "description": "The data type of the field",
-              "isDeprecated": false,
-              "name": "type",
-              "type": {
-                "kind": "NON_NULL",
-                "name": null,
-                "ofType": {
-                  "kind": "SCALAR",
-                  "name": "String",
-                  "ofType": null
-                }
-              }
-            }
-          ],
-          "inputFields": null,
-          "interfaces": [],
-          "kind": "OBJECT",
-          "name": "ExpField",
-          "possibleTypes": null
-        },
-        {
           "description": "A Experience",
           "enumValues": null,
           "fields": [
@@ -430,7 +279,7 @@
               "deprecationReason": null,
               "description": null,
               "isDeprecated": false,
-              "name": "fields",
+              "name": "fieldDefs",
               "type": {
                 "kind": "NON_NULL",
                 "name": null,
@@ -439,7 +288,7 @@
                   "name": null,
                   "ofType": {
                     "kind": "OBJECT",
-                    "name": "ExpField",
+                    "name": "FieldDef",
                     "ofType": null
                   }
                 }
@@ -513,7 +362,66 @@
           "inputFields": null,
           "interfaces": [],
           "kind": "OBJECT",
-          "name": "Experience",
+          "name": "ExpDef",
+          "possibleTypes": null
+        },
+        {
+          "description": "An Experience definition Field",
+          "enumValues": null,
+          "fields": [
+            {
+              "args": [],
+              "deprecationReason": null,
+              "description": null,
+              "isDeprecated": false,
+              "name": "id",
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "ID",
+                  "ofType": null
+                }
+              }
+            },
+            {
+              "args": [],
+              "deprecationReason": null,
+              "description": "Name of field e.g start, end, meal",
+              "isDeprecated": false,
+              "name": "name",
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "String",
+                  "ofType": null
+                }
+              }
+            },
+            {
+              "args": [],
+              "deprecationReason": null,
+              "description": "The data type of the field",
+              "isDeprecated": false,
+              "name": "type",
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "ENUM",
+                  "name": "FieldType",
+                  "ofType": null
+                }
+              }
+            }
+          ],
+          "inputFields": null,
+          "interfaces": [],
+          "kind": "OBJECT",
+          "name": "FieldDef",
           "possibleTypes": null
         },
         {
@@ -564,16 +472,6 @@
           "possibleTypes": null
         },
         {
-          "description": "The `Float` scalar type represents signed double-precision fractional\nvalues as specified by\n[IEEE 754](http://en.wikipedia.org/wiki/IEEE_floating_point).",
-          "enumValues": null,
-          "fields": null,
-          "inputFields": null,
-          "interfaces": null,
-          "kind": "SCALAR",
-          "name": "Float",
-          "possibleTypes": null
-        },
-        {
           "description": "Variables for getting an experience",
           "enumValues": null,
           "fields": null,
@@ -595,7 +493,7 @@
           ],
           "interfaces": null,
           "kind": "INPUT_OBJECT",
-          "name": "GetExperience",
+          "name": "GetExpDef",
           "possibleTypes": null
         },
         {
@@ -606,16 +504,6 @@
           "interfaces": null,
           "kind": "SCALAR",
           "name": "ID",
-          "possibleTypes": null
-        },
-        {
-          "description": "The `Int` scalar type represents non-fractional signed whole numeric values.\nInt can represent values between `-(2^53 - 1)` and `2^53 - 1` since it is\nrepresented in JSON as double-precision floating point numbers specified\nby [IEEE 754](http://en.wikipedia.org/wiki/IEEE_floating_point).",
-          "enumValues": null,
-          "fields": null,
-          "inputFields": null,
-          "interfaces": null,
-          "kind": "SCALAR",
-          "name": "Int",
           "possibleTypes": null
         },
         {
@@ -676,13 +564,13 @@
                 {
                   "defaultValue": null,
                   "description": null,
-                  "name": "experience",
+                  "name": "expDef",
                   "type": {
                     "kind": "NON_NULL",
                     "name": null,
                     "ofType": {
                       "kind": "INPUT_OBJECT",
-                      "name": "CreateExperience",
+                      "name": "CreateExpDef",
                       "ofType": null
                     }
                   }
@@ -691,10 +579,10 @@
               "deprecationReason": null,
               "description": null,
               "isDeprecated": false,
-              "name": "experience",
+              "name": "expDef",
               "type": {
                 "kind": "OBJECT",
-                "name": "Experience",
+                "name": "ExpDef",
                 "ofType": null
               }
             },
@@ -795,13 +683,13 @@
                 {
                   "defaultValue": null,
                   "description": null,
-                  "name": "experience",
+                  "name": "expDef",
                   "type": {
                     "kind": "NON_NULL",
                     "name": null,
                     "ofType": {
                       "kind": "INPUT_OBJECT",
-                      "name": "GetExperience",
+                      "name": "GetExpDef",
                       "ofType": null
                     }
                   }
@@ -810,10 +698,10 @@
               "deprecationReason": null,
               "description": "get an experience",
               "isDeprecated": false,
-              "name": "experience",
+              "name": "expDef",
               "type": {
                 "kind": "OBJECT",
-                "name": "Experience",
+                "name": "ExpDef",
                 "ofType": null
               }
             },
@@ -822,13 +710,13 @@
               "deprecationReason": null,
               "description": "get all experiences belonging to a user",
               "isDeprecated": false,
-              "name": "experiences",
+              "name": "expDefs",
               "type": {
                 "kind": "LIST",
                 "name": null,
                 "ofType": {
                   "kind": "OBJECT",
-                  "name": "Experience",
+                  "name": "ExpDef",
                   "ofType": null
                 }
               }
@@ -1156,7 +1044,7 @@
               "deprecationReason": null,
               "description": null,
               "isDeprecated": false,
-              "name": "defaultValue",
+              "name": "deprecationReason",
               "type": {
                 "kind": "SCALAR",
                 "name": "String",
@@ -1180,10 +1068,10 @@
               "deprecationReason": null,
               "description": null,
               "isDeprecated": false,
-              "name": "name",
+              "name": "isDeprecated",
               "type": {
                 "kind": "SCALAR",
-                "name": "String",
+                "name": "Boolean",
                 "ofType": null
               }
             },
@@ -1192,10 +1080,10 @@
               "deprecationReason": null,
               "description": null,
               "isDeprecated": false,
-              "name": "type",
+              "name": "name",
               "type": {
-                "kind": "OBJECT",
-                "name": "__Type",
+                "kind": "SCALAR",
+                "name": "String",
                 "ofType": null
               }
             }
@@ -1203,11 +1091,11 @@
           "inputFields": null,
           "interfaces": [],
           "kind": "OBJECT",
-          "name": "__InputValue",
+          "name": "__EnumValue",
           "possibleTypes": null
         },
         {
-          "description": "Represents a directive",
+          "description": "Represents a schema",
           "enumValues": null,
           "fields": [
             {
@@ -1215,13 +1103,13 @@
               "deprecationReason": null,
               "description": null,
               "isDeprecated": false,
-              "name": "args",
+              "name": "directives",
               "type": {
                 "kind": "LIST",
                 "name": null,
                 "ofType": {
                   "kind": "OBJECT",
-                  "name": "__InputValue",
+                  "name": "__Directive",
                   "ofType": null
                 }
               }
@@ -1231,10 +1119,10 @@
               "deprecationReason": null,
               "description": null,
               "isDeprecated": false,
-              "name": "description",
+              "name": "mutationType",
               "type": {
-                "kind": "SCALAR",
-                "name": "String",
+                "kind": "OBJECT",
+                "name": "__Type",
                 "ofType": null
               }
             },
@@ -1243,70 +1131,46 @@
               "deprecationReason": null,
               "description": null,
               "isDeprecated": false,
-              "name": "locations",
+              "name": "queryType",
+              "type": {
+                "kind": "OBJECT",
+                "name": "__Type",
+                "ofType": null
+              }
+            },
+            {
+              "args": [],
+              "deprecationReason": null,
+              "description": null,
+              "isDeprecated": false,
+              "name": "subscriptionType",
+              "type": {
+                "kind": "OBJECT",
+                "name": "__Type",
+                "ofType": null
+              }
+            },
+            {
+              "args": [],
+              "deprecationReason": null,
+              "description": null,
+              "isDeprecated": false,
+              "name": "types",
               "type": {
                 "kind": "LIST",
                 "name": null,
                 "ofType": {
-                  "kind": "ENUM",
-                  "name": "__DirectiveLocation",
+                  "kind": "OBJECT",
+                  "name": "__Type",
                   "ofType": null
                 }
-              }
-            },
-            {
-              "args": [],
-              "deprecationReason": null,
-              "description": null,
-              "isDeprecated": false,
-              "name": "name",
-              "type": {
-                "kind": "SCALAR",
-                "name": "String",
-                "ofType": null
-              }
-            },
-            {
-              "args": [],
-              "deprecationReason": "Check `locations` field for enum value FIELD",
-              "description": null,
-              "isDeprecated": true,
-              "name": "onField",
-              "type": {
-                "kind": "SCALAR",
-                "name": "Boolean",
-                "ofType": null
-              }
-            },
-            {
-              "args": [],
-              "deprecationReason": "Check `locations` field for enum value FRAGMENT_SPREAD",
-              "description": null,
-              "isDeprecated": true,
-              "name": "onFragment",
-              "type": {
-                "kind": "SCALAR",
-                "name": "Boolean",
-                "ofType": null
-              }
-            },
-            {
-              "args": [],
-              "deprecationReason": "Check `locations` field for enum value OPERATION",
-              "description": null,
-              "isDeprecated": true,
-              "name": "onOperation",
-              "type": {
-                "kind": "SCALAR",
-                "name": "Boolean",
-                "ofType": null
               }
             }
           ],
           "inputFields": null,
           "interfaces": [],
           "kind": "OBJECT",
-          "name": "__Directive",
+          "name": "__Schema",
           "possibleTypes": null
         },
         {
@@ -1371,7 +1235,7 @@
               "deprecationReason": null,
               "description": null,
               "isDeprecated": false,
-              "name": "deprecationReason",
+              "name": "defaultValue",
               "type": {
                 "kind": "SCALAR",
                 "name": "String",
@@ -1395,10 +1259,10 @@
               "deprecationReason": null,
               "description": null,
               "isDeprecated": false,
-              "name": "isDeprecated",
+              "name": "name",
               "type": {
                 "kind": "SCALAR",
-                "name": "Boolean",
+                "name": "String",
                 "ofType": null
               }
             },
@@ -1407,10 +1271,10 @@
               "deprecationReason": null,
               "description": null,
               "isDeprecated": false,
-              "name": "name",
+              "name": "type",
               "type": {
-                "kind": "SCALAR",
-                "name": "String",
+                "kind": "OBJECT",
+                "name": "__Type",
                 "ofType": null
               }
             }
@@ -1418,7 +1282,7 @@
           "inputFields": null,
           "interfaces": [],
           "kind": "OBJECT",
-          "name": "__EnumValue",
+          "name": "__InputValue",
           "possibleTypes": null
         },
         {
@@ -1583,85 +1447,6 @@
           "possibleTypes": null
         },
         {
-          "description": "Represents a schema",
-          "enumValues": null,
-          "fields": [
-            {
-              "args": [],
-              "deprecationReason": null,
-              "description": null,
-              "isDeprecated": false,
-              "name": "directives",
-              "type": {
-                "kind": "LIST",
-                "name": null,
-                "ofType": {
-                  "kind": "OBJECT",
-                  "name": "__Directive",
-                  "ofType": null
-                }
-              }
-            },
-            {
-              "args": [],
-              "deprecationReason": null,
-              "description": null,
-              "isDeprecated": false,
-              "name": "mutationType",
-              "type": {
-                "kind": "OBJECT",
-                "name": "__Type",
-                "ofType": null
-              }
-            },
-            {
-              "args": [],
-              "deprecationReason": null,
-              "description": null,
-              "isDeprecated": false,
-              "name": "queryType",
-              "type": {
-                "kind": "OBJECT",
-                "name": "__Type",
-                "ofType": null
-              }
-            },
-            {
-              "args": [],
-              "deprecationReason": null,
-              "description": null,
-              "isDeprecated": false,
-              "name": "subscriptionType",
-              "type": {
-                "kind": "OBJECT",
-                "name": "__Type",
-                "ofType": null
-              }
-            },
-            {
-              "args": [],
-              "deprecationReason": null,
-              "description": null,
-              "isDeprecated": false,
-              "name": "types",
-              "type": {
-                "kind": "LIST",
-                "name": null,
-                "ofType": {
-                  "kind": "OBJECT",
-                  "name": "__Type",
-                  "ofType": null
-                }
-              }
-            }
-          ],
-          "inputFields": null,
-          "interfaces": [],
-          "kind": "OBJECT",
-          "name": "__Schema",
-          "possibleTypes": null
-        },
-        {
           "description": null,
           "enumValues": null,
           "fields": [
@@ -1746,6 +1531,109 @@
           "interfaces": [],
           "kind": "OBJECT",
           "name": "__Field",
+          "possibleTypes": null
+        },
+        {
+          "description": "Represents a directive",
+          "enumValues": null,
+          "fields": [
+            {
+              "args": [],
+              "deprecationReason": null,
+              "description": null,
+              "isDeprecated": false,
+              "name": "args",
+              "type": {
+                "kind": "LIST",
+                "name": null,
+                "ofType": {
+                  "kind": "OBJECT",
+                  "name": "__InputValue",
+                  "ofType": null
+                }
+              }
+            },
+            {
+              "args": [],
+              "deprecationReason": null,
+              "description": null,
+              "isDeprecated": false,
+              "name": "description",
+              "type": {
+                "kind": "SCALAR",
+                "name": "String",
+                "ofType": null
+              }
+            },
+            {
+              "args": [],
+              "deprecationReason": null,
+              "description": null,
+              "isDeprecated": false,
+              "name": "locations",
+              "type": {
+                "kind": "LIST",
+                "name": null,
+                "ofType": {
+                  "kind": "ENUM",
+                  "name": "__DirectiveLocation",
+                  "ofType": null
+                }
+              }
+            },
+            {
+              "args": [],
+              "deprecationReason": null,
+              "description": null,
+              "isDeprecated": false,
+              "name": "name",
+              "type": {
+                "kind": "SCALAR",
+                "name": "String",
+                "ofType": null
+              }
+            },
+            {
+              "args": [],
+              "deprecationReason": "Check `locations` field for enum value FIELD",
+              "description": null,
+              "isDeprecated": true,
+              "name": "onField",
+              "type": {
+                "kind": "SCALAR",
+                "name": "Boolean",
+                "ofType": null
+              }
+            },
+            {
+              "args": [],
+              "deprecationReason": "Check `locations` field for enum value FRAGMENT_SPREAD",
+              "description": null,
+              "isDeprecated": true,
+              "name": "onFragment",
+              "type": {
+                "kind": "SCALAR",
+                "name": "Boolean",
+                "ofType": null
+              }
+            },
+            {
+              "args": [],
+              "deprecationReason": "Check `locations` field for enum value OPERATION",
+              "description": null,
+              "isDeprecated": true,
+              "name": "onOperation",
+              "type": {
+                "kind": "SCALAR",
+                "name": "Boolean",
+                "ofType": null
+              }
+            }
+          ],
+          "inputFields": null,
+          "interfaces": [],
+          "kind": "OBJECT",
+          "name": "__Directive",
           "possibleTypes": null
         }
       ]

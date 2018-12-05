@@ -1,27 +1,24 @@
 import gql from "graphql-tag";
 import { DataValue } from "react-apollo";
 
-import { expFieldFragment } from "./exp-field.fragment";
-import { experienceFragment } from "./experience.fragment";
-import { GetAnExperience, GetAnExperienceVariables } from "./apollo-gql";
+import { fieldDefFragment } from "./field-def.fragment";
+import { expDefFragment } from "./exp-def.fragment";
+import { GetAnExpDef, GetAnExpDefVariables } from "./apollo-gql";
 
-export const getExperience = gql`
-  query GetAnExperience($experience: GetExperience!) {
-    experience(experience: $experience) {
-      ...ExperienceFragment
-      fields {
-        ...ExpFieldFragment
+export const getExpDef = gql`
+  query GetAnExpDef($expDef: GetExpDef!) {
+    expDef(expDef: $expDef) {
+      ...ExpDefFragment
+      fieldDefs {
+        ...FieldDefFragment
       }
     }
   }
 
-  ${experienceFragment}
-  ${expFieldFragment}
+  ${expDefFragment}
+  ${fieldDefFragment}
 `;
 
-export default getExperience;
+export default getExpDef;
 
-export type GetExperienceGqlProps = DataValue<
-  GetAnExperience,
-  GetAnExperienceVariables
->;
+export type GetExpDefGqlProps = DataValue<GetAnExpDef, GetAnExpDefVariables>;
