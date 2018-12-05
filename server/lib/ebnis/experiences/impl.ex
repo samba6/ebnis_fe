@@ -1,10 +1,10 @@
 defmodule Ebnis.Experiences.Impl do
-  alias Ebnis.Experiences.Experience
+  alias Ebnis.Experiences.DefaultImpl.ExpDef
 
-  @callback create_experience(map) :: {:ok, Experience.t()} | {:error, term, map}
+  @callback create_exp_def(map) :: {:ok, ExpDef.t()} | {:error, term, map}
 
-  @callback get_experience(
-              exp_id :: binary(),
+  @callback get_exp_def(
+              id :: binary(),
               user_id :: binary() | Integer.t()
-            ) :: nil | Experience.t()
+            ) :: nil | ExpDef.t()
 end

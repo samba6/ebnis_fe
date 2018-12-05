@@ -1,16 +1,18 @@
-defmodule EbnisWeb.Schema.ExperienceTest do
+defmodule EbnisWeb.Schema.ExpDefTest do
   use Ebnis.DataCase, async: true
 
   alias EbnisWeb.Schema
-  alias Ebnis.Factory.Experience, as: Factory
+  alias Ebnis.Factory.ExpDef, as: Factory
   alias Ebnis.Factory.Registration, as: RegFactory
-  alias Ebnis.Factory.ExpField, as: ExpFieldFactory
-  alias Ebnis.Query.Experience, as: Query
+  alias Ebnis.Factory.FieldDef, as: FieldDefFactory
+  alias Ebnis.Query.ExpDef, as: Query
 
   @moduletag :db
 
-  @invalid_field_types for k <- ["integer", "date", "datetime", "decimal"],
-                           do: Map.put(%{}, k, "a")
+  @invalid_field_types Enum.map(
+                         ["integer1", "date2", "datetime2", "decimal4"],
+                         &%{type: &1}
+                       )
 
   describe "mutation" do
     # @tag :skip
@@ -19,7 +21,7 @@ defmodule EbnisWeb.Schema.ExperienceTest do
       user = RegFactory.insert()
 
       variables = %{
-        "experience" => Factory.stringify(params)
+        "exp_def" => Factory.stringify(params)
       }
 
       query = Query.create()
@@ -27,9 +29,10 @@ defmodule EbnisWeb.Schema.ExperienceTest do
       assert {:ok,
               %{
                 data: %{
-                  "experience" => %{
+                  "exp_def" => %{
                     "id" => _,
-                    "title" => ^title
+                    "title" => ^title,
+                    "fieldDefs" => _
                   }
                 }
               }} =
@@ -42,49 +45,12 @@ defmodule EbnisWeb.Schema.ExperienceTest do
     end
 
     # @tag :skip
-    test "create an experience without field values succeeds" do
-      user = RegFactory.insert()
-
-      params =
-        Factory.params(
-          fields: [
-            %{
-              name: "Field x",
-              type: "decimal"
-            }
-          ]
-        )
-
-      variables = %{
-        "experience" => Factory.stringify(params)
-      }
-
-      query = Query.create()
-
-      assert {:ok,
-              %{
-                data: %{
-                  "experience" => %{
-                    "id" => _,
-                    "title" => _title
-                  }
-                }
-              }} =
-               Absinthe.run(
-                 query,
-                 Schema,
-                 variables: variables,
-                 context: context(user)
-               )
-    end
-
-    # @tag :skip
-    test "create an experience fails if title not unique for user regardless of case" do
+    test "create an experience fails if title (case insensitive) not unique for user" do
       user = RegFactory.insert()
       Factory.insert(title: "Good experience", user_id: user.id)
 
       variables = %{
-        "experience" =>
+        "exp_def" =>
           Factory.params(title: "good Experience")
           |> Factory.stringify()
       }
@@ -93,7 +59,7 @@ defmodule EbnisWeb.Schema.ExperienceTest do
 
       error =
         %{
-          name: "experience",
+          name: "exp_def",
           errors: %{title: "has already been taken"}
         }
         |> Jason.encode!()
@@ -115,18 +81,18 @@ defmodule EbnisWeb.Schema.ExperienceTest do
     end
 
     # @tag :skip
-    test "create an experience fails if field not unique for experience case insensitive" do
+    test "create an experience fails if field name (case insensitive) not unique for experience case insensitive" do
       user = RegFactory.insert()
 
       attrs = %{
-        fields: [
-          ExpFieldFactory.params(name: "Field 0"),
-          ExpFieldFactory.params(name: "field 0")
+        field_defs: [
+          FieldDefFactory.params(name: "Field 0"),
+          FieldDefFactory.params(name: "field 0")
         ]
       }
 
       variables = %{
-        "experience" =>
+        "exp_def" =>
           attrs
           |> Factory.params()
           |> Factory.stringify()
@@ -162,34 +128,22 @@ defmodule EbnisWeb.Schema.ExperienceTest do
       user = RegFactory.insert()
 
       attrs = %{
-        fields: [
-          @invalid_field_types
-          |> Enum.random()
-          |> Map.put(:name, "invalid field")
+        field_defs: [
+          Enum.random(@invalid_field_types) |> Map.put(:name, "invalid field")
         ]
       }
 
       variables = %{
-        "experience" =>
-          attrs
-          |> Factory.params()
-          |> Factory.stringify()
+        "exp_def" => Factory.params(attrs) |> Factory.stringify()
       }
 
       query = Query.create()
-
-      error =
-        %{
-          name: "invalid field",
-          errors: %{value: "is invalid"}
-        }
-        |> Jason.encode!()
 
       assert {:ok,
               %{
                 errors: [
                   %{
-                    message: ^error
+                    message: _error
                   }
                 ]
               }} =
@@ -202,14 +156,15 @@ defmodule EbnisWeb.Schema.ExperienceTest do
     end
   end
 
-  describe "get experience" do
-    test "get experience succeeds for existing experience" do
+  describe "get experience definition" do
+    # @tag :skip
+    test "get experience def succeeds for existing definition" do
       user = RegFactory.insert()
       %{id: id} = Factory.insert(user_id: user.id)
       id = Integer.to_string(id)
 
       variables = %{
-        "experience" => %{
+        "exp_def" => %{
           "id" => id
         }
       }
@@ -217,7 +172,7 @@ defmodule EbnisWeb.Schema.ExperienceTest do
       assert {:ok,
               %{
                 data: %{
-                  "experience" => %{
+                  "exp_def" => %{
                     "id" => ^id
                   }
                 }
@@ -230,11 +185,12 @@ defmodule EbnisWeb.Schema.ExperienceTest do
                )
     end
 
-    test "get experience fails for non existing experience" do
+    # @tag :skip
+    test "get experience def fails for non existing definition" do
       user = RegFactory.insert()
 
       variables = %{
-        "experience" => %{
+        "exp_def" => %{
           "id" => "0"
         }
       }
@@ -243,7 +199,7 @@ defmodule EbnisWeb.Schema.ExperienceTest do
               %{
                 errors: [
                   %{
-                    message: "Experience does not exist"
+                    message: "Experience definition not found"
                   }
                 ]
               }} =
@@ -255,13 +211,14 @@ defmodule EbnisWeb.Schema.ExperienceTest do
                )
     end
 
+    # @tag :skip
     test "get experience fails for wrong user" do
       user = RegFactory.insert()
       %{id: id} = Factory.insert(user_id: user.id)
       id = Integer.to_string(id)
 
       variables = %{
-        "experience" => %{
+        "exp_def" => %{
           "id" => id
         }
       }
@@ -272,7 +229,7 @@ defmodule EbnisWeb.Schema.ExperienceTest do
               %{
                 errors: [
                   %{
-                    message: "Experience does not exist"
+                    message: "Experience definition not found"
                   }
                 ]
               }} =

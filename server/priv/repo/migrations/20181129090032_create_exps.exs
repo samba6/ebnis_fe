@@ -4,7 +4,7 @@ defmodule Ebnis.Repo.Migrations.CreateExps do
   def change do
     create table(:exps) do
       add(
-        :exp_def_id,
+        :def_id,
         references(:exp_defs, on_delete: :delete_all),
         null: false,
         comment: "Experience to which the field belongs"
@@ -14,7 +14,7 @@ defmodule Ebnis.Repo.Migrations.CreateExps do
     end
 
     :exps
-    |> index([:exp_def_id])
+    |> index([:def_id])
     |> create()
   end
 end

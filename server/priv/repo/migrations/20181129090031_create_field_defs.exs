@@ -2,15 +2,31 @@ defmodule Ebnis.Repo.Migrations.CreateFieldDefs do
   use Ecto.Migration
 
   def change do
+    # execute("""
+    # CREATE TYPE field_t as enum(
+    #   'single_line_text'
+    #   'multi_line_text'
+    #   'integer'
+    #   'decimal'
+    #   'date'
+    #   'datetime'
+    # );
+    # """)
+
+    create table(:field_types, primary_key: false) do
+      add(:text, :citext, null: false)
+    end
+
+    unique_index(:field_types, [:text]) |> create()
+
     execute("""
-    CREATE TYPE field_t as enum(
-      'single_line_text'
-      'multi_line_text'
-      'integer'
-      'decimal'
-      'date'
-      'datetime'
-    );
+      insert into field_types(text) values
+        ('single_line_text'),
+        ('multi_line_text'),
+        ('integer'),
+        ('decimal'),
+        ('date'),
+        ('datetime')
     """)
 
     create table(:field_defs) do
@@ -25,7 +41,12 @@ defmodule Ebnis.Repo.Migrations.CreateFieldDefs do
 
       add(
         :type,
-        :field_t,
+        references(
+          :field_types,
+          on_delete: :delete_all,
+          column: :text,
+          type: :citext
+        ),
         null: false,
         comment: "data type e.g single_line_text, integer etc"
       )

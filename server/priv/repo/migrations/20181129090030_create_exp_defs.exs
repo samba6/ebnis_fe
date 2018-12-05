@@ -1,4 +1,4 @@
-defmodule Ebnis.Repo.Migrations.CreateExperienceDefs do
+defmodule Ebnis.Repo.Migrations.CreateExpDefs do
   use Ecto.Migration
 
   def change do

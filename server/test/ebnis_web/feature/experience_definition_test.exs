@@ -6,7 +6,7 @@ defmodule EbnisWeb.Feature.CreateExperienceTest do
   @moduletag [integration: true, skip: true]
 
   # @tag :no_headless
-  @tag :create_experience_feature
+  @tag :create_exp_feature
   test "create experience definition" do
     # User logs in
     %{email: email, password: password} = params = RegFactory.params()
@@ -51,6 +51,6 @@ defmodule EbnisWeb.Feature.CreateExperienceTest do
   end
 
   defp field_input_name(index, name) do
-    "fields[#{index}].#{name}"
+    "field_defs[#{index}].#{name}"
   end
 end

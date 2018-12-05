@@ -5,12 +5,12 @@ defmodule Ebnis.Experiences do
 
   @behaviour Ebnis.Experiences.Impl
 
-  def create_experience(attrs) do
-    impl().create_experience(attrs)
+  def create_exp_def(attrs) do
+    impl().create_exp_def(attrs)
   end
 
-  def get_experience(id, user_id) do
-    impl().get_experience(id, user_id)
+  def get_exp_def(id, user_id) do
+    impl().get_exp_def(id, user_id)
   end
 
   defconstp impl do

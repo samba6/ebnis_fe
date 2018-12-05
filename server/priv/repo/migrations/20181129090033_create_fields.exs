@@ -1,4 +1,4 @@
-defmodule Ebnis.Repo.Migrations.CreateFields do
+defmodule Ebnis.Repo.Migrations.CreateFieldVals do
   use Ecto.Migration
 
   def change do
@@ -11,7 +11,7 @@ defmodule Ebnis.Repo.Migrations.CreateFields do
       )
 
       add(
-        :field_def_id,
+        :def_id,
         references(:field_defs, on_delete: :delete_all),
         null: false,
         comment: "Experience to which the field value belongs"
@@ -29,7 +29,7 @@ defmodule Ebnis.Repo.Migrations.CreateFields do
 
     index(:field_vals, [:exp_id]) |> create()
 
-    index(:field_vals, [:field_def_id]) |> create()
+    index(:field_vals, [:def_id]) |> create()
 
     constraint(
       :field_vals,
