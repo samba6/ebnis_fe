@@ -43,8 +43,7 @@ type SelectFieldTypeState = {
   [k: number]: SelectFieldTypeStateVal;
 };
 
-const EMPTY_FIELD_TYPE = "" as FieldType;
-const EMPTY_FIELD = { name: "", type: EMPTY_FIELD_TYPE };
+const EMPTY_FIELD = { name: "", type: "" as FieldType };
 
 export const NewExp = (props: Props) => {
   const { setHeader, createExperience, history } = props;
@@ -565,7 +564,7 @@ function removeSelectedField(
 }
 
 function makeFieldNameWithIndex(index: number) {
-  return `fields[${index}]`;
+  return `fieldDefs[${index}]`;
 }
 
 function makeFieldName(index: number, key: keyof CreateFieldDef) {
