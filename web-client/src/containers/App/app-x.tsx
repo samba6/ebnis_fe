@@ -58,12 +58,12 @@ export function App() {
     <div className="containers-app">
       <ApolloProvider client={client}>
         <AppContextParent>
-          <Sidebar />
-
           {header}
 
           <BrowserRouter>
             <Suspense fallback={loading}>
+              <Sidebar />
+
               {cacheLoaded ? (
                 <Switch>
                   <AuthRequired
