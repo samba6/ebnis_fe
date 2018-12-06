@@ -31,6 +31,7 @@ defmodule Ebnis.Experiences.DefaultImpl.FieldDef do
     |> validate_required([:name, :exp_def_id, :type])
     |> assoc_constraint(:exp_def)
     |> unique_constraint(:name, name: :field_defs_exp_def_id_name_index)
+    |> unique_constraint(:type, name: :field_defs_id_type_index)
     |> validate_inclusion(:type, @field_types)
   end
 end

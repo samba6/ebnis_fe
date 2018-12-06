@@ -9,13 +9,15 @@ defmodule Ebnis.Experiences.DefaultImpl.Exp do
   schema "exps" do
     belongs_to(:def, ExpDef)
     has_many(:fields, FieldVal)
+
+    timestamps(type: :utc_datetime)
   end
 
   @doc "changeset"
   def changeset(%__MODULE__{} = exp, %{} = attrs) do
     exp
     |> cast(attrs, [:def_id])
-    |> validate_required([:name, :def_id, :type])
+    |> validate_required([:def_id])
     |> assoc_constraint(:def)
   end
 end

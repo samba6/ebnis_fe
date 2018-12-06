@@ -504,6 +504,7 @@ function renderGraphQlErrorFields(fields?: { [k: string]: string }) {
   return (
     <Fragment>
       <div className="graphql-fields-error-container">Fields</div>
+
       {Object.entries(fields).map(([index, error]) => (
         <div key={index} className="graphql-fields-error-inner">
           <span>{Number(index) + 1}</span>

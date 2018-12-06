@@ -52,12 +52,8 @@ defmodule Ebnis.Repo.Migrations.CreateFieldDefs do
       )
     end
 
-    :field_defs
-    |> index([:exp_def_id])
-    |> create()
-
-    :field_defs
-    |> unique_index([:exp_def_id, :name])
-    |> create()
+    index(:field_defs, [:exp_def_id]) |> create()
+    unique_index(:field_defs, [:id, :type]) |> create()
+    unique_index(:field_defs, [:exp_def_id, :name]) |> create()
   end
 end

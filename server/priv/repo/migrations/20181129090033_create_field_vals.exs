@@ -12,37 +12,32 @@ defmodule Ebnis.Repo.Migrations.CreateFieldVals do
 
       add(
         :def_id,
-        references(:field_defs, on_delete: :delete_all),
+        :integer,
         null: false,
-        comment: "Experience to which the field value belongs"
+        comment: "Field to which the value belongs"
+      )
+
+      add(
+        :type,
+        :citext,
+        null: false,
+        comment: "Field type of the value belongs"
       )
 
       # COLUMNS THAT HOLD FIELD VALUES
 
-      add(:single_line_text, :string, comment: "Single like text field")
-      add(:multi_line_text, :text, comment: "Multi line text field")
-      add(:integer, :integer)
-      add(:decimal, :float)
-      add(:date, :date)
-      add(:datetime, :utc_datetime)
+      add(:value, :map, null: false, comment: "Single like text field")
     end
 
     index(:field_vals, [:exp_id]) |> create()
 
-    index(:field_vals, [:def_id]) |> create()
+    unique_index(:field_vals, [:exp_id, :def_id]) |> create()
 
-    constraint(
-      :field_vals,
-      :one_value_column_non_null,
-      check: """
-      (CASE WHEN single_line_text IS NULL THEN 0 ELSE 1 END) +
-      (CASE WHEN multi_line_text IS NULL THEN 0 ELSE 1 END) +
-      (CASE WHEN integer IS NULL THEN 0 ELSE 1 END) +
-      (CASE WHEN decimal IS NULL THEN 0 ELSE 1 END) +
-      (CASE WHEN date IS NULL THEN 0 ELSE 1 END) +
-      (CASE WHEN datetime IS NULL THEN 0 ELSE 1 END) = 1
-      """
-    )
-    |> create()
+    execute("""
+    ALTER TABLE field_vals
+    ADD CONSTRAINT "field_vals_def_id_type_fkey"
+    FOREIGN KEY (def_id, type) REFERENCES field_defs(id, type)
+    ON DELETE CASCADE
+    """)
   end
 end

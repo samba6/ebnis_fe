@@ -14,3 +14,5 @@ alias Ebnis.Factory.FieldDef, as: FieldDefFactory
 alias Ebnis.Factory.ExpDef, as: ExpDefFactory
 alias Ebnis.Experiences.DefaultImpl.ExpDef, as: ExpDefDefaultImpl
 alias Ebnis.Experiences.DefaultImpl.FieldDef, as: FieldDefDefaultImpl
+alias Ebnis.Factory.FieldVal, as: FieldValFactory
+alias Ebnis.Experiences.DefaultImpl.FieldVal, as: FieldValDefaultImpl
