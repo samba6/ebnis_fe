@@ -21,18 +21,12 @@ defmodule EbnisWeb.Resolver do
   def transaction_errors_to_string(%{} = changeset, failed_operation) do
     %{
       name: failed_operation,
-      errors: changeset_errors_to_map(changeset)
+      errors: changeset_errors_to_map(changeset.errors)
     }
     |> Jason.encode!()
   end
 
-  def changeset_errors_to_string(errors),
-    do:
-      errors
-      |> changeset_errors_to_map()
-      |> Jason.encode!()
-
-  defp changeset_errors_to_map(%{errors: errors}),
+  def changeset_errors_to_map(errors),
     do:
       errors
       |> Enum.map(fn

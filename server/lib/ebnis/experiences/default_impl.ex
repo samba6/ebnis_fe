@@ -13,7 +13,7 @@ defmodule Ebnis.Experiences.DefaultImpl do
   end
 
   def get_exp_def(id, user_id) do
-    Exp
+    ExpDef
     |> where([e], e.id == ^id and e.user_id == ^user_id)
     |> Repo.one()
     |> to_domain()

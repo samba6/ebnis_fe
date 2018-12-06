@@ -47,7 +47,7 @@ defmodule Ebnis.Factory.ExpDef do
     |> Factory.reject_attrs()
     |> Enum.map(fn
       {:field_defs, defs} ->
-        {"field_defs", Enum.map(defs, &FieldDefFactory.stringify/1)}
+        {"fieldDefs", Enum.map(defs, &FieldDefFactory.stringify/1)}
 
       {k, v} when k in @simple_attrs ->
         {Factory.to_camel_key(k), v}

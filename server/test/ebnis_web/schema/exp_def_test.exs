@@ -57,12 +57,7 @@ defmodule EbnisWeb.Schema.ExpDefTest do
 
       query = Query.create()
 
-      error =
-        %{
-          name: "exp_def",
-          errors: %{title: "has already been taken"}
-        }
-        |> Jason.encode!()
+      error = Jason.encode!(%{title: "has already been taken"})
 
       assert {:ok,
               %{
@@ -81,7 +76,7 @@ defmodule EbnisWeb.Schema.ExpDefTest do
     end
 
     # @tag :skip
-    test "create an experience fails if field name (case insensitive) not unique for experience case insensitive" do
+    test "create an experience fails if field name (case insensitive) not unique for experience" do
       user = RegFactory.insert()
 
       attrs = %{
@@ -102,8 +97,9 @@ defmodule EbnisWeb.Schema.ExpDefTest do
 
       error =
         %{
-          name: "field 0---1",
-          errors: %{name: "has already been taken"}
+          field_defs: [
+            %{name: "field 0---1 has already been taken"}
+          ]
         }
         |> Jason.encode!()
 
@@ -143,7 +139,7 @@ defmodule EbnisWeb.Schema.ExpDefTest do
               %{
                 errors: [
                   %{
-                    message: _error
+                    message: _
                   }
                 ]
               }} =

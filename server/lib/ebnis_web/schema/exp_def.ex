@@ -10,9 +10,7 @@ defmodule EbnisWeb.Schema.ExpDef do
     field(:title, non_null(:string))
     field :description, :string
 
-    field :field_defs, :field_def |> list_of() |> non_null() do
-      resolve(&Resolver.field_defs/3)
-    end
+    field :field_defs, :field_def |> list_of() |> non_null()
 
     field(:inserted_at, non_null(:iso_datetime))
     field(:updated_at, non_null(:iso_datetime))

@@ -21,7 +21,9 @@ config :ebnis, Ebnis.Repo,
   hostname: "localhost",
   pool: Ecto.Adapters.SQL.Sandbox,
   timeout: 60_000,
-  pool_timeout: 60_000,
+  # 50 is default. Used to be called pool_timeout
+  #  I will increase this if hound complains
+  queue_target: 50,
   ownership_timeout: 60_000
 
 config :hound,

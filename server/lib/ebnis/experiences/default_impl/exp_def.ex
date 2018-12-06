@@ -19,14 +19,14 @@ defmodule Ebnis.Experiences.DefaultImpl.ExpDef do
   end
 
   @doc "changeset"
-  def changeset(%__MODULE__{} = exp, %{} = attrs) do
-    exp
+  def changeset(%__MODULE__{} = schema, %{} = attrs) do
+    schema
     |> cast(attrs, [:description, :title, :user_id])
     |> cast_embed(:field_defs, required: true)
     |> validate_required([:title, :user_id, :field_defs])
     |> validate_field_defs()
     |> assoc_constraint(:user)
-    |> unique_constraint(:title, name: :exps_user_id_title_index)
+    |> unique_constraint(:title, name: :exp_defs_user_id_title_index)
   end
 
   defp validate_field_defs(%Changeset{valid?: false} = changeset) do
@@ -35,8 +35,11 @@ defmodule Ebnis.Experiences.DefaultImpl.ExpDef do
 
   defp validate_field_defs(%Changeset{changes: changes} = changeset) do
     {field_defs, _names} =
-      Enum.reduce(changes.field_defs, {[], []}, fn field_changeset, {acc, names} ->
-        name_ = String.downcase(field_changeset.changes.name)
+      changes.field_defs
+      |> Enum.with_index()
+      |> Enum.reduce({[], []}, fn {field_changeset, index}, {acc, names} ->
+        name = field_changeset.changes.name
+        name_ = String.downcase(name)
 
         changeset =
           case Enum.member?(names, name_) do
@@ -47,7 +50,7 @@ defmodule Ebnis.Experiences.DefaultImpl.ExpDef do
               add_error(
                 field_changeset,
                 :name,
-                "has already being taken",
+                "#{name}---#{index} has already been taken",
                 validation: :uniqueness
               )
           end

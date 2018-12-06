@@ -27,8 +27,12 @@ defmodule EbnisWeb.User.Resolver do
          {:ok, new_jwt, _claim} <- GuardianApp.encode_and_sign(created_user) do
       {:ok, %User{created_user | jwt: new_jwt}}
     else
-      {:error, %Ecto.Changeset{} = error} ->
-        {:error, Resolver.changeset_errors_to_string(error)}
+      {:error, %Ecto.Changeset{} = changeset} ->
+        errors =
+          Resolver.changeset_errors_to_map(changeset.errors)
+          |> Jason.encode!()
+
+        {:error, errors}
 
       _ ->
         Resolver.unauthorized()
