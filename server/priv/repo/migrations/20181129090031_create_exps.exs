@@ -3,12 +3,12 @@ defmodule Ebnis.Repo.Migrations.CreateExps do
 
   def change do
     create table(:exps) do
-      add(
-        :def_id,
-        references(:exp_defs, on_delete: :delete_all),
+      add(:def_id, references(:exp_defs, on_delete: :delete_all),
         null: false,
-        comment: "Experience to which the field belongs"
+        comment: "The definition of the experience"
       )
+
+      add(:entries, :jsonb, null: false)
 
       timestamps(type: :utc_datetime)
     end
@@ -16,5 +16,7 @@ defmodule Ebnis.Repo.Migrations.CreateExps do
     :exps
     |> index([:def_id])
     |> create()
+
+    execute "CREATE INDEX exps_entries ON exps USING GIN (entries);"
   end
 end

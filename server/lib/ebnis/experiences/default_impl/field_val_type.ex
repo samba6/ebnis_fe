@@ -15,7 +15,8 @@ defmodule Ebnis.Experiences.DefaultImpl.EctoFieldVal do
     cast(%{integer: val})
   end
 
-  def cast(%{integer: val}) when is_integer(val), do: {:ok, val}
+  def cast(%{integer: val}) when is_integer(val),
+    do: {:ok, %{"integer" => val}}
 
   def cast(%{integer: val}) do
     try do
@@ -29,7 +30,7 @@ defmodule Ebnis.Experiences.DefaultImpl.EctoFieldVal do
   def cast(%{"decimal" => val}), do: cast(%{decimal: val})
 
   def cast(%{decimal: val}) when is_float(val) or is_integer(val),
-    do: {:ok, val}
+    do: {:ok, %{"decimal" => val}}
 
   def cast(%{decimal: val}) do
     try do
@@ -41,12 +42,12 @@ defmodule Ebnis.Experiences.DefaultImpl.EctoFieldVal do
   end
 
   def cast(%{"date" => val}), do: cast(%{date: val})
-  def cast(%{date: %Date{} = val}), do: {:ok, val}
+  def cast(%{date: %Date{} = val}), do: {:ok, %{"date" => val}}
 
   def cast(%{date: val}) do
     case Date.from_iso8601(val) do
-      {:ok, date} ->
-        {:ok, date}
+      {:ok, val} ->
+        {:ok, %{"date" => val}}
 
       _ ->
         :error
@@ -69,7 +70,7 @@ defmodule Ebnis.Experiences.DefaultImpl.EctoFieldVal do
   def cast(%{} = val) do
     case Map.to_list(val) do
       [{k, v}] when k in @text_types and is_binary(v) ->
-        {:ok, v}
+        {:ok, Map.put(%{}, to_string(k), v)}
 
       _ ->
         :error

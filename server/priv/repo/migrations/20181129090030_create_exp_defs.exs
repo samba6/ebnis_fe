@@ -14,6 +14,9 @@ defmodule Ebnis.Repo.Migrations.CreateExpDefs do
         comment: "The owner of the experience"
       )
 
+      add(:field_defs, :jsonb, null: false)
+      add(:entries, :jsonb, null: false, default: "[]")
+
       timestamps(type: :utc_datetime)
     end
 
@@ -24,5 +27,8 @@ defmodule Ebnis.Repo.Migrations.CreateExpDefs do
     :exp_defs
     |> unique_index([:user_id, :title])
     |> create()
+
+    execute "CREATE INDEX exp_defs_field_defs ON exp_defs USING GIN (field_defs);"
+    execute "CREATE INDEX exp_defs_entries ON exp_defs USING GIN (entries);"
   end
 end
