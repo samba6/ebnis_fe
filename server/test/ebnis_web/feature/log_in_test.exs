@@ -16,7 +16,7 @@ defmodule EbnisWeb.Feature.LoginTest do
     path() |> navigate_to()
 
     # She sees the login text in the page title
-    assert page_title() =~ "Log in"
+    assert retries(true, fn -> page_title() =~ "Log in" end, 1_000)
 
     # When she fills in her email and password
     fill_field({:name, "email"}, params.email)
