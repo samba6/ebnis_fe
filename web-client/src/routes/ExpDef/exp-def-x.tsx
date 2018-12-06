@@ -80,12 +80,13 @@ export const NewExp = (props: Props) => {
     const errorClass =
       getFieldContainerErrorClassFromForm(index, submittedFormErrors) ||
       (graphQlError &&
-        graphQlError.fields &&
-        graphQlError.fields[index] &&
-        "errors");
+        graphQlError.fieldDefs &&
+        graphQlError.fieldDefs[index] &&
+        "errors") ||
+      "";
 
     return (
-      <div key={index} className={` ${errorClass} fields-container`}>
+      <div key={index} className={` ${errorClass} field-defs-container`}>
         {renderFieldBtnCtrl(index, values, arrayHelpers)}
 
         <FastField
@@ -177,9 +178,9 @@ export const NewExp = (props: Props) => {
     values: FormValues,
     arrayHelpers: ArrayHelpers
   ) => {
-    const fields = (values.fieldDefs && values.fieldDefs) || [];
+    const fieldDefs = (values.fieldDefs && values.fieldDefs) || [];
 
-    const len = fields.length;
+    const len = fieldDefs.length;
     const showUp = index > 0;
     const showDown = len - index !== 1;
 
@@ -200,7 +201,7 @@ export const NewExp = (props: Props) => {
             <Button
               type="button"
               onClick={() => {
-                setSelectValues(removeSelectedField(index, fields));
+                setSelectValues(removeSelectedField(index, fieldDefs));
                 arrayHelpers.remove(index);
                 setSubmittedFormErrors(undefined);
               }}
@@ -217,7 +218,7 @@ export const NewExp = (props: Props) => {
                 const indexDown = index - 1;
                 arrayHelpers.swap(indexUp, indexDown);
                 setSelectValues(
-                  swapSelectField(fields, indexUp, indexDown, selectValues)
+                  swapSelectField(fieldDefs, indexUp, indexDown, selectValues)
                 );
               }}
             >
@@ -231,7 +232,7 @@ export const NewExp = (props: Props) => {
               onClick={() => {
                 arrayHelpers.swap(index, index + 1);
                 setSelectValues(
-                  swapSelectField(fields, index, index + 1, selectValues)
+                  swapSelectField(fieldDefs, index, index + 1, selectValues)
                 );
               }}
             >
@@ -243,7 +244,9 @@ export const NewExp = (props: Props) => {
     );
   };
 
-  const renderFields = (values: FormValues) => (arrayHelpers: ArrayHelpers) => {
+  const renderFieldDefs = (values: FormValues) => (
+    arrayHelpers: ArrayHelpers
+  ) => {
     return (
       <Fragment>
         {values.fieldDefs.map(renderField(values, arrayHelpers))}
@@ -368,8 +371,8 @@ export const NewExp = (props: Props) => {
     const { dirty, isSubmitting, values } = formikProps;
     const { title, fieldDefs } = values;
     const hasTitle = !!title;
-    const hasFields = !!fieldDefs.length;
-    const formInvalid = !(hasTitle && hasFields);
+    const hasFieldDefs = !!fieldDefs.length;
+    const formInvalid = !(hasTitle && hasFieldDefs);
 
     return (
       <Form onSubmit={submit(formikProps)}>
@@ -379,9 +382,9 @@ export const NewExp = (props: Props) => {
 
         <Field name="description" render={renderDescriptionInput} />
 
-        <FieldArray name="fields" render={renderFields(values)} />
+        <FieldArray name="fieldDefs" render={renderFieldDefs(values)} />
 
-        {hasFields ? <hr className="submit-btn-hr" /> : undefined}
+        {hasFieldDefs ? <hr className="submit-btn-hr" /> : undefined}
 
         <Button
           className="exp-def-submit"
@@ -418,12 +421,12 @@ export default NewExp;
 // ------------------------HELPER FUNCTIONS----------------------------
 
 interface GraphQlError {
-  name: string;
-  errors: { [k in keyof CreateFieldDef]: string };
+  field_defs?: { name?: string; type?: string }[];
+  title?: string;
 }
 
 type GraphQlErrorState = { [k: string]: string } & {
-  fields?: {
+  fieldDefs?: {
     [k: number]: string;
   };
 };
@@ -432,22 +435,30 @@ function parseGraphQlError(error: ApolloError) {
   const transformedError = {} as GraphQlErrorState;
 
   for (const err of error.graphQLErrors) {
-    const { name, errors } = JSON.parse(err.message) as GraphQlError;
-    const [key, val] = Object.entries(errors)[0];
-    const val1 = val || ("" as string);
+    const { field_defs, title } = JSON.parse(err.message) as GraphQlError;
 
-    if (name === "experience") {
-      transformedError["title"] = val1;
+    if (title) {
+      transformedError["title"] = title;
+    }
+
+    if (!field_defs) {
       continue;
     }
 
-    const exec = /---(\d+)$/.exec(name);
-    if (!exec) {
-      continue;
-    }
+    for (const { name } of field_defs) {
+      const fieldNameError = parseGraphQlErrorFieldName(name);
 
-    const index = Number(exec[1]);
-    const key1 = (key || "") as keyof CreateFieldDef;
+      if (fieldNameError) {
+        const [index, nameError] = fieldNameError;
+        transformedError[makeFieldName(index, "name")] = nameError;
+
+        // we also store the field index and corresponding error so we can easily
+        // access error with field index (no transformation required)
+        const fieldDefs = transformedError.fieldDefs || {};
+        fieldDefs[index] = "name" + " " + nameError;
+        transformedError.fieldDefs = fieldDefs;
+      }
+    }
 
     // we store the formik path names on the upper level so we can easily access
     // them from render without transforming the error (an earlier attempt)
@@ -456,17 +467,23 @@ function parseGraphQlError(error: ApolloError) {
     // data can be consumed are now stored on this object.  This potentially
     // makes this object large and convinent but I'm not sure if it is better
     // than the previous approach)
-    transformedError[makeFieldName(index, key1)] = val1;
-
-    // we also store the field index and corresponding error so we can easily
-    // access error with field index (no transformation required)
-    const fields = transformedError.fields || {};
-    fields[index] = key1 + " " + val1;
-
-    transformedError.fields = fields;
   }
 
   return transformedError;
+}
+
+function parseGraphQlErrorFieldName(val?: string): [number, string] | null {
+  if (!val) {
+    return null;
+  }
+
+  const exec = /---(\d+)\s*(.+)/.exec(val);
+
+  if (!exec) {
+    return null;
+  }
+
+  return [Number(exec[1]), exec[2]];
 }
 
 function renderGraphQlError(
@@ -477,7 +494,7 @@ function renderGraphQlError(
     return null;
   }
 
-  const { fields, title } = graphQlError;
+  const { fieldDefs, title } = graphQlError;
 
   return (
     <Message
@@ -491,22 +508,24 @@ function renderGraphQlError(
 
       {title && <div>Title {title}</div>}
 
-      <Message.Content>{renderGraphQlErrorFields(fields)}</Message.Content>
+      <Message.Content>
+        {renderGraphQlErrorFieldDefs(fieldDefs)}
+      </Message.Content>
     </Message>
   );
 }
 
-function renderGraphQlErrorFields(fields?: { [k: string]: string }) {
-  if (!fields) {
+function renderGraphQlErrorFieldDefs(fieldDefs?: { [k: string]: string }) {
+  if (!fieldDefs) {
     return null;
   }
 
   return (
     <Fragment>
-      <div className="graphql-fields-error-container">Fields</div>
+      <div className="graphql-field-defs-error-container">Fields</div>
 
-      {Object.entries(fields).map(([index, error]) => (
-        <div key={index} className="graphql-fields-error-inner">
+      {Object.entries(fieldDefs).map(([index, error]) => (
+        <div key={index} className="graphql-field-defs-error-inner">
           <span>{Number(index) + 1}</span>
           <span>{error}</span>
         </div>
@@ -516,14 +535,14 @@ function renderGraphQlErrorFields(fields?: { [k: string]: string }) {
 }
 
 function swapSelectField(
-  fields: (CreateFieldDef | null)[],
+  fieldDefs: (CreateFieldDef | null)[],
   indexA: number,
   indexB: number,
   selectValues: SelectFieldTypeState
 ) {
   const values = {} as SelectFieldTypeState;
-  const fieldA = fields[indexA];
-  const fieldB = fields[indexB];
+  const fieldA = fieldDefs[indexA];
+  const fieldB = fieldDefs[indexB];
 
   if (fieldA && fieldA.type) {
     values[indexB] = { value: fieldA.type } as SelectFieldTypeStateVal;
@@ -545,14 +564,14 @@ function swapSelectField(
 
 function removeSelectedField(
   removedIndex: number,
-  fields: (null | CreateFieldDef)[]
+  fieldDefs: (null | CreateFieldDef)[]
 ) {
   const selected = {} as SelectFieldTypeState;
-  const len = fields.length - 1;
+  const len = fieldDefs.length - 1;
 
   for (let i = removedIndex; i < len; i++) {
     const nextIndex = i + 1;
-    const field = fields[nextIndex];
+    const field = fieldDefs[nextIndex];
 
     if (!field) {
       continue;

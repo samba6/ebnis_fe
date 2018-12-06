@@ -15,7 +15,7 @@
     margin-top: 20px;
   }
 
-  .fields-container {
+  .field-defs-container {
     border: 1px solid $app-color;
     margin-bottom: 20px;
     padding: 5px;
@@ -43,12 +43,12 @@
     left: -15px;
   }
 
-  .graphql-fields-error-container {
+  .graphql-field-defs-error-container {
     font-weight: 900;
     font-size: 1.1em;
   }
 
-  .graphql-fields-error-inner {
+  .graphql-field-defs-error-inner {
     padding-left: 5px;
     & > span {
       display: inline-block;
@@ -59,7 +59,7 @@
       }
 
       &:last-child {
-        padding-left: 1em;
+        padding-left: 0.5em;
       }
     }
   }
