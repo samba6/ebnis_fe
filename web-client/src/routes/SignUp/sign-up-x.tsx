@@ -1,18 +1,19 @@
-import React from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Button, Card, Input, Message, Icon, Form } from "semantic-ui-react";
 import {
   Formik,
   FastField,
   FieldProps,
   FormikProps,
-  FormikActions
+  FormikActions,
+  FormikErrors
 } from "formik";
-import loIsEmpty from "lodash/isEmpty";
+import loIsEmpty from "lodash-es/isEmpty";
+import { ApolloError } from "apollo-client";
 
 import "./sign-up.scss";
 import {
   Props,
-  State,
   initialFormValues,
   ValidationSchema,
   FormValuesKey
@@ -29,58 +30,44 @@ const FORM_RENDER_PROPS = {
   source: ["Source", "text"]
 };
 
-export class SignUp extends React.Component<Props, State> {
-  state: State = {};
-  private mainRef = React.createRef<HTMLDivElement>();
+export function SignUp(props: Props) {
+  const { setHeader, history } = props;
+  const mainRef = useRef<HTMLDivElement | null>(null);
+  const [formErrors, setFormErrors] = useState<
+    undefined | FormikErrors<Registration>
+  >(undefined);
+  const [graphQlError, setGraphQlError] = useState<ApolloError | undefined>(
+    undefined
+  );
 
-  componentDidMount() {
-    const { setHeader } = this.props;
-
+  useEffect(() => {
     if (setHeader) {
       setHeader(<Header title="Sign up for Ebnis" wide={true} />);
     }
 
     setTitle("Sign up");
-  }
 
-  componentWillMount() {
-    setTitle();
-  }
+    return setTitle;
+  }, []);
 
-  render() {
-    return (
-      <div className="app-main routes-sign-up-route" ref={this.mainRef}>
-        <Formik
-          initialValues={initialFormValues}
-          onSubmit={() => null}
-          render={this.renderForm}
-          validationSchema={ValidationSchema}
-          validateOnChange={false}
-        />
-      </div>
-    );
-  }
-
-  private renderForm = ({
+  function renderForm({
     dirty,
     isSubmitting,
     values,
     ...formikProps
-  }: FormikProps<Registration>) => {
-    const { history } = this.props;
-
+  }: FormikProps<Registration>) {
     return (
       <Card>
-        {this.renderSubmissionErrors()}
+        {renderSubmissionErrors()}
 
         <Card.Content>
-          <Form onSubmit={() => this.submit(values, formikProps)}>
+          <Form onSubmit={() => submit(values, formikProps)}>
             {Object.entries(FORM_RENDER_PROPS).map(([name, [label, type]]) => {
               return (
                 <FastField
                   key={name}
                   name={name}
-                  render={this.renderInput(label, type)}
+                  render={renderInput(label, type)}
                 />
               );
             })}
@@ -113,38 +100,36 @@ export class SignUp extends React.Component<Props, State> {
         </Card.Content>
       </Card>
     );
-  };
+  }
 
-  private renderInput = (label: string, type: string) => (
-    formProps: FieldProps<Registration>
-  ) => {
-    const { field } = formProps;
-    const name = field.name as FormValuesKey;
-    const isSourceField = name === "source";
+  function renderInput(label: string, type: string) {
+    return function(formProps: FieldProps<Registration>) {
+      const { field } = formProps;
+      const name = field.name as FormValuesKey;
+      const isSourceField = name === "source";
 
-    return (
-      <Form.Field
-        {...field}
-        className={`form-field ${isSourceField ? "disabled" : ""}`}
-        type={type}
-        control={Input}
-        placeholder={label}
-        autoComplete="off"
-        label={label}
-        id={name}
-        autoFocus={name === "name"}
-        readOnly={isSourceField}
-      />
-    );
-  };
+      return (
+        <Form.Field
+          {...field}
+          className={`form-field ${isSourceField ? "disabled" : ""}`}
+          type={type}
+          control={Input}
+          placeholder={label}
+          autoComplete="off"
+          label={label}
+          id={name}
+          autoFocus={name === "name"}
+          readOnly={isSourceField}
+        />
+      );
+    };
+  }
 
-  private renderSubmissionErrors = () => {
-    const { graphQlError, formErrors } = this.state;
-
+  function renderSubmissionErrors() {
     if (formErrors && !loIsEmpty(formErrors)) {
       return (
         <Card.Content extra={true}>
-          <Message error={true} onDismiss={this.handleFormErrorDismissed}>
+          <Message error={true} onDismiss={handleFormErrorDismissed}>
             <Message.Content>
               <span>Errors in fields:</span>
               {Object.entries(formErrors).map(([k, err]) => {
@@ -165,7 +150,7 @@ export class SignUp extends React.Component<Props, State> {
     if (graphQlError) {
       return (
         <Card.Content extra={true}>
-          <Message error={true} onDismiss={this.handleFormErrorDismissed}>
+          <Message error={true} onDismiss={handleFormErrorDismissed}>
             <Message.Content>{graphQlError.message}</Message.Content>
           </Message>
         </Card.Content>
@@ -173,16 +158,19 @@ export class SignUp extends React.Component<Props, State> {
     }
 
     return undefined;
-  };
+  }
 
-  private handleFormErrorDismissed = () =>
-    this.setState({ graphQlError: undefined, formErrors: undefined });
+  function handleFormErrorDismissed() {
+    setGraphQlError(undefined);
+    setFormErrors(undefined);
+  }
 
-  private submit = async (
+  async function submit(
     values: Registration,
     formikBag: FormikActions<Registration>
-  ) => {
-    await this.setState({ formErrors: undefined, graphQlError: undefined });
+  ) {
+    setGraphQlError(undefined);
+    setFormErrors(undefined);
 
     const errors = await formikBag.validateForm(values);
 
@@ -190,12 +178,12 @@ export class SignUp extends React.Component<Props, State> {
 
     if (!loIsEmpty(errors)) {
       formikBag.setSubmitting(false);
-      this.setState({ formErrors: errors });
-      this.scrollToTop();
+      setFormErrors(errors);
+      scrollToTop();
       return;
     }
 
-    const { regUser, history } = this.props;
+    const { regUser, history } = props;
 
     if (!regUser) {
       return;
@@ -212,10 +200,10 @@ export class SignUp extends React.Component<Props, State> {
         const user = result.data.registration;
 
         if (user) {
-          this.props.reInitSocket(user.jwt);
+          props.reInitSocket(user.jwt);
         }
 
-        await this.props.updateLocalUser({
+        await props.updateLocalUser({
           variables: { user }
         });
 
@@ -223,16 +211,30 @@ export class SignUp extends React.Component<Props, State> {
       }
     } catch (error) {
       formikBag.setSubmitting(false);
-      this.setState({ graphQlError: error });
-      this.scrollToTop();
+      setGraphQlError(error);
+      scrollToTop();
     }
-  };
+  }
 
-  private scrollToTop = () => {
-    if (this.mainRef && this.mainRef.current) {
-      this.mainRef.current.scrollTop = 0;
+  function scrollToTop() {
+    if (mainRef && mainRef.current) {
+      mainRef.current.scrollTop = 0;
     }
-  };
+  }
+
+  return (
+    <div className="app-main routes-sign-up-route" ref={mainRef}>
+      <Formik
+        initialValues={initialFormValues}
+        onSubmit={nullSubmit}
+        render={renderForm}
+        validationSchema={ValidationSchema}
+        validateOnChange={false}
+      />
+    </div>
+  );
 }
 
 export default SignUp;
+
+function nullSubmit() {}

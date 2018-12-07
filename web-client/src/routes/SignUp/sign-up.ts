@@ -1,6 +1,4 @@
-import { ApolloError } from "apollo-client";
 import * as Yup from "yup";
-import { FormikErrors } from "formik";
 import { RouteComponentProps } from "react-router-dom";
 
 import { AppRouteProps } from "../../containers/App/app";
@@ -42,11 +40,6 @@ export const ValidationSchema = Yup.object<Registration>().shape({
     }),
   source: Yup.string().default(() => "password")
 });
-
-export interface State {
-  graphQlError?: ApolloError;
-  formErrors?: FormikErrors<Registration>;
-}
 
 export const RouterThings = {
   documentTitle: "Sign up"

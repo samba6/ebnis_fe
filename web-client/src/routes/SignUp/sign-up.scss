@@ -5,8 +5,13 @@
   overflow-y: auto;
 
   .card {
-    min-width: 318px;
+    max-width: 400px;
+    min-width: 98%;
     margin: 10px auto 35px !important;
+
+    @media screen and (min-width: 420px) {
+      min-width: 400px;
+    }
   }
 
   .form-title {
