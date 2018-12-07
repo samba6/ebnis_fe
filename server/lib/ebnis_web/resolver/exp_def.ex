@@ -58,6 +58,11 @@ defmodule EbnisWeb.Resolver.ExpDef do
     {:error, Resolver.unauthorized()}
   end
 
+  def get_exps(_, _, %{context: %{current_user: user}}) do
+    {:ok, Experiences.get_exp_defs(user.id)}
+  end
+
   def get_exps(_, _, _) do
+    {:error, Resolver.unauthorized()}
   end
 end

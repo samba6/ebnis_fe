@@ -236,6 +236,50 @@ defmodule EbnisWeb.Schema.ExpDefTest do
                  context: context(another_user)
                )
     end
+
+    # @tag :skip
+    test "get experience defs succeeds for existing definitions" do
+      user = RegFactory.insert()
+      %{id: id1} = Factory.insert(user_id: user.id)
+      %{id: id2} = Factory.insert(user_id: user.id)
+      id1 = Integer.to_string(id1)
+      id2 = Integer.to_string(id2)
+
+      assert {:ok,
+              %{
+                data: %{
+                  "exp_defs" => [
+                    %{
+                      "id" => ^id1
+                    },
+                    %{
+                      "id" => ^id2
+                    }
+                  ]
+                }
+              }} =
+               Absinthe.run(
+                 Query.gets(),
+                 Schema,
+                 context: context(user)
+               )
+    end
+
+    test "get experience defs returns [] for none existing definitions" do
+      user = RegFactory.insert()
+
+      assert {:ok,
+              %{
+                data: %{
+                  "exp_defs" => []
+                }
+              }} =
+               Absinthe.run(
+                 Query.gets(),
+                 Schema,
+                 context: context(user)
+               )
+    end
   end
 
   defp context(user), do: %{current_user: user}

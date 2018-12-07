@@ -19,6 +19,12 @@ defmodule Ebnis.Experiences.DefaultImpl do
     |> to_domain()
   end
 
+  def get_exp_defs(user_id) do
+    ExpDef
+    |> where([e], e.user_id == ^user_id)
+    |> Repo.all()
+  end
+
   # defp to_domain(%Exp{} = experience) do
   #   struct(
   #     Ebnis.Experiences.DefaultImpl.Exp,

@@ -50,4 +50,18 @@ defmodule Ebnis.Query.ExpDef do
 
     """
   end
+
+  def gets do
+    """
+    query GetExpDefs {
+      exp_defs {
+        ...#{@frag_name}
+
+      }
+    }
+
+    #{@fragment}
+
+    """
+  end
 end

@@ -7,4 +7,6 @@ defmodule Ebnis.Experiences.Impl do
               id :: binary(),
               user_id :: binary() | Integer.t()
             ) :: nil | ExpDef.t()
+
+  @callback get_exp_defs(user_id :: binary() | Integer.t()) ::  [ExpDef.t()]
 end
