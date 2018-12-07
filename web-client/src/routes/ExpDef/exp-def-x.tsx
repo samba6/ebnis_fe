@@ -37,6 +37,9 @@ import {
 import Select from "react-select";
 import { ApolloError } from "apollo-client";
 import { makeAddExpRoute } from "../../Routing";
+import EXP_DEFS_QUERY, {
+  GetExpDefGqlProps
+} from "../../graphql/exp-defs.query";
 
 type SelectFieldTypeStateVal = null | SelectValue;
 type SelectFieldTypeState = {
@@ -45,8 +48,8 @@ type SelectFieldTypeState = {
 
 const EMPTY_FIELD = { name: "", type: "" as FieldType };
 
-export const NewExp = (props: Props) => {
-  const { setHeader, createExperience, history } = props;
+export const NewExpDef = (props: Props) => {
+  const { setHeader, createExDef, history } = props;
   const [selectValues, setSelectValues] = useState({} as SelectFieldTypeState);
   const routeRef = useRef<HTMLDivElement | null>(null);
   const [showDescriptionInput, setShowDescriptionInput] = useState(false);
@@ -313,14 +316,45 @@ export const NewExp = (props: Props) => {
         return;
       }
 
-      if (!createExperience) {
+      if (!createExDef) {
         return;
       }
 
       try {
-        const result = await createExperience({
+        const result = await createExDef({
           variables: {
             expDef: values
+          },
+
+          update(client, { data: newExpDef }) {
+            if (!newExpDef) {
+              return;
+            }
+
+            const { expDef } = newExpDef;
+
+            if (!expDef) {
+              return;
+            }
+
+            const data = client.readQuery<GetExpDefGqlProps>({
+              query: EXP_DEFS_QUERY
+            });
+
+            if (!data) {
+              return;
+            }
+
+            const { expDefs } = data;
+
+            if (!expDefs) {
+              return;
+            }
+
+            client.writeQuery({
+              query: EXP_DEFS_QUERY,
+              data: [...expDefs, expDef]
+            });
           }
         });
 
@@ -416,7 +450,7 @@ export const NewExp = (props: Props) => {
   );
 };
 
-export default NewExp;
+export default NewExpDef;
 
 // ------------------------HELPER FUNCTIONS----------------------------
 

@@ -19,5 +19,5 @@ export type ExpDefMutationFn = MutationFn<
 >;
 
 export interface ExpDefMutationProps {
-  createExperience?: ExpDefMutationFn;
+  createExDef?: ExpDefMutationFn;
 }
