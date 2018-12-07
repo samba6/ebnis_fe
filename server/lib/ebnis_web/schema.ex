@@ -5,17 +5,20 @@ defmodule EbnisWeb.Schema do
   import_types(EbnisWeb.Schema.Types)
   import_types(EbnisWeb.Schema.Credential)
   import_types(EbnisWeb.Schema.User)
-  import_types(EbnisWeb.Schema.ExpDef)
+  import_types(EbnisWeb.Schema.Experience)
   import_types(EbnisWeb.Schema.FieldDef)
+  import_types(EbnisWeb.Schema.Entry)
 
   query do
     import_fields(:user_query)
-    import_fields(:exp_def_query)
+    import_fields(:exp_query)
+    import_fields(:entry_query)
   end
 
   mutation do
     import_fields(:user_mutation)
-    import_fields(:exp_def_mutation)
+    import_fields(:exp_mutation)
+    import_fields(:entry_mutation)
   end
 
   def context(ctx) do

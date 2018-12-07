@@ -1,11 +1,11 @@
-defmodule EbnisWeb.Schema.ExpDefTest do
+defmodule EbnisWeb.Schema.ExperienceTest do
   use Ebnis.DataCase, async: true
 
   alias EbnisWeb.Schema
-  alias Ebnis.Factory.ExpDef, as: Factory
+  alias Ebnis.Factory.Experience, as: Factory
   alias Ebnis.Factory.Registration, as: RegFactory
   alias Ebnis.Factory.FieldDef, as: FieldDefFactory
-  alias Ebnis.Query.ExpDef, as: Query
+  alias Ebnis.Query.Experience, as: Query
 
   @moduletag :db
 
@@ -21,7 +21,7 @@ defmodule EbnisWeb.Schema.ExpDefTest do
       user = RegFactory.insert()
 
       variables = %{
-        "exp_def" => Factory.stringify(params)
+        "exp" => Factory.stringify(params)
       }
 
       query = Query.create()
@@ -29,7 +29,7 @@ defmodule EbnisWeb.Schema.ExpDefTest do
       assert {:ok,
               %{
                 data: %{
-                  "exp_def" => %{
+                  "exp" => %{
                     "id" => _,
                     "title" => ^title,
                     "fieldDefs" => _
@@ -50,7 +50,7 @@ defmodule EbnisWeb.Schema.ExpDefTest do
       Factory.insert(title: "Good experience", user_id: user.id)
 
       variables = %{
-        "exp_def" =>
+        "exp" =>
           Factory.params(title: "good Experience")
           |> Factory.stringify()
       }
@@ -87,7 +87,7 @@ defmodule EbnisWeb.Schema.ExpDefTest do
       }
 
       variables = %{
-        "exp_def" =>
+        "exp" =>
           attrs
           |> Factory.params()
           |> Factory.stringify()
@@ -130,7 +130,7 @@ defmodule EbnisWeb.Schema.ExpDefTest do
       }
 
       variables = %{
-        "exp_def" => Factory.params(attrs) |> Factory.stringify()
+        "exp" => Factory.params(attrs) |> Factory.stringify()
       }
 
       query = Query.create()
@@ -160,7 +160,7 @@ defmodule EbnisWeb.Schema.ExpDefTest do
       id = Integer.to_string(id)
 
       variables = %{
-        "exp_def" => %{
+        "exp" => %{
           "id" => id
         }
       }
@@ -168,7 +168,7 @@ defmodule EbnisWeb.Schema.ExpDefTest do
       assert {:ok,
               %{
                 data: %{
-                  "exp_def" => %{
+                  "exp" => %{
                     "id" => ^id
                   }
                 }
@@ -186,7 +186,7 @@ defmodule EbnisWeb.Schema.ExpDefTest do
       user = RegFactory.insert()
 
       variables = %{
-        "exp_def" => %{
+        "exp" => %{
           "id" => "0"
         }
       }
@@ -214,7 +214,7 @@ defmodule EbnisWeb.Schema.ExpDefTest do
       id = Integer.to_string(id)
 
       variables = %{
-        "exp_def" => %{
+        "exp" => %{
           "id" => id
         }
       }
@@ -248,7 +248,7 @@ defmodule EbnisWeb.Schema.ExpDefTest do
       assert {:ok,
               %{
                 data: %{
-                  "exp_defs" => [
+                  "exps" => [
                     %{
                       "id" => ^id1
                     },
@@ -265,13 +265,14 @@ defmodule EbnisWeb.Schema.ExpDefTest do
                )
     end
 
+    # @tag :skip
     test "get experience defs returns [] for none existing definitions" do
       user = RegFactory.insert()
 
       assert {:ok,
               %{
                 data: %{
-                  "exp_defs" => []
+                  "exps" => []
                 }
               }} =
                Absinthe.run(

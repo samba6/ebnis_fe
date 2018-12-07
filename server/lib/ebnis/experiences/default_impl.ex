@@ -2,25 +2,25 @@ defmodule Ebnis.Experiences.DefaultImpl do
   import Ecto.Query, warn: false
 
   alias Ebnis.Repo
-  alias Ebnis.Experiences.DefaultImpl.ExpDef
+  alias Ebnis.Experiences.DefaultImpl.Experience
 
   @behaviour Ebnis.Experiences.Impl
 
-  def create_exp_def(attrs) do
-    %ExpDef{}
-    |> ExpDef.changeset(attrs)
+  def create_exp(attrs) do
+    %Experience{}
+    |> Experience.changeset(attrs)
     |> Repo.insert()
   end
 
-  def get_exp_def(id, user_id) do
-    ExpDef
+  def get_exp(id, user_id) do
+    Experience
     |> where([e], e.id == ^id and e.user_id == ^user_id)
     |> Repo.one()
     |> to_domain()
   end
 
-  def get_exp_defs(user_id) do
-    ExpDef
+  def get_exps(user_id) do
+    Experience
     |> where([e], e.user_id == ^user_id)
     |> Repo.all()
   end

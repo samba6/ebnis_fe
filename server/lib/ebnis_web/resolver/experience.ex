@@ -1,11 +1,11 @@
-defmodule EbnisWeb.Resolver.ExpDef do
+defmodule EbnisWeb.Resolver.Experience do
   alias EbnisWeb.Resolver
   alias Ebnis.Experiences
 
-  def create(_, %{exp_def: attrs}, %{context: %{current_user: user}}) do
+  def create(_, %{exp: attrs}, %{context: %{current_user: user}}) do
     case attrs
          |> Map.put(:user_id, user.id)
-         |> Experiences.create_exp_def() do
+         |> Experiences.create_exp() do
       {:ok, exp} ->
         {:ok, exp}
 
@@ -44,8 +44,8 @@ defmodule EbnisWeb.Resolver.ExpDef do
     Jason.encode!(errors)
   end
 
-  def get_exp(_, %{exp_def: %{id: id}}, %{context: %{current_user: user}}) do
-    case Experiences.get_exp_def(id, user.id) do
+  def get_exp(_, %{exp: %{id: id}}, %{context: %{current_user: user}}) do
+    case Experiences.get_exp(id, user.id) do
       nil ->
         {:error, "Experience definition not found"}
 
@@ -55,14 +55,14 @@ defmodule EbnisWeb.Resolver.ExpDef do
   end
 
   def get_exp(_, _, _) do
-    {:error, Resolver.unauthorized()}
+    Resolver.unauthorized()
   end
 
   def get_exps(_, _, %{context: %{current_user: user}}) do
-    {:ok, Experiences.get_exp_defs(user.id)}
+    {:ok, Experiences.get_exps(user.id)}
   end
 
   def get_exps(_, _, _) do
-    {:error, Resolver.unauthorized()}
+    Resolver.unauthorized()
   end
 end

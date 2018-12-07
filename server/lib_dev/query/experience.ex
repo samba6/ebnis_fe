@@ -1,10 +1,10 @@
-defmodule Ebnis.Query.ExpDef do
+defmodule Ebnis.Query.Experience do
   alias Ebnis.Query.FieldDef
 
-  @frag_name "ExpDefFragment"
+  @frag_name "ExperienceFragment"
 
   @fragment """
-    fragment #{@frag_name} on ExpDef {
+    fragment #{@frag_name} on Experience {
       id
       title
       description
@@ -23,8 +23,8 @@ defmodule Ebnis.Query.ExpDef do
     {field_frag_name, field_frag} = FieldDef.all_fields_fragment()
 
     """
-    mutation CreateAnExpDef($exp_def: CreateExpDef!) {
-      exp_def(exp_def: $exp_def) {
+    mutation CreateAnExperience($exp: CreateExp!) {
+      exp(exp: $exp) {
         ...#{@frag_name}
         fieldDefs {
           ...#{field_frag_name}
@@ -39,8 +39,8 @@ defmodule Ebnis.Query.ExpDef do
 
   def get do
     """
-    query GetAnExpDef($exp_def: GetExpDef!) {
-      exp_def(exp_def: $exp_def) {
+    query GetAnExperience($exp: GetExp!) {
+      exp(exp: $exp) {
         ...#{@frag_name}
 
       }
@@ -53,8 +53,8 @@ defmodule Ebnis.Query.ExpDef do
 
   def gets do
     """
-    query GetExpDefs {
-      exp_defs {
+    query GetExperiences {
+      exps {
         ...#{@frag_name}
 
       }

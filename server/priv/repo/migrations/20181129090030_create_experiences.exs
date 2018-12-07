@@ -1,10 +1,10 @@
-defmodule Ebnis.Repo.Migrations.CreateExpDefs do
+defmodule Ebnis.Repo.Migrations.CreateExperiences do
   use Ecto.Migration
 
   def change do
     execute("CREATE EXTENSION IF NOT EXISTS citext WITH SCHEMA public;")
 
-    create table(:exp_defs) do
+    create table(:experiences) do
       add(:title, :citext, null: false)
 
       add(:description, :string)
@@ -14,20 +14,22 @@ defmodule Ebnis.Repo.Migrations.CreateExpDefs do
         comment: "The owner of the experience"
       )
 
-      add(:field_defs, :jsonb, null: false)
+      add(:field_defs, :jsonb,
+        null: false,
+        comment: "Field definitions that will be used for experience entry"
+      )
 
       timestamps(type: :utc_datetime)
     end
 
-    :exp_defs
+    :experiences
     |> index([:user_id])
     |> create()
 
-    :exp_defs
+    :experiences
     |> unique_index([:user_id, :title])
     |> create()
 
-    execute "CREATE INDEX exp_defs_field_defs ON exp_defs USING GIN (field_defs);"
-
+    execute "CREATE INDEX experiences_field_defs ON experiences USING GIN (field_defs);"
   end
 end

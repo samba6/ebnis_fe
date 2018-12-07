@@ -1,10 +1,10 @@
-defmodule Ebnis.Factory.ExpDef do
+defmodule Ebnis.Factory.Experience do
   use Ebnis.Factory
 
   alias Ebnis.Factory
   alias Ebnis.Factory.FieldDef, as: FieldDefFactory
   alias Ebnis.Experiences
-  alias Ebnis.Experiences.DefaultImpl.ExpDef
+  alias Ebnis.Experiences.DefaultImpl.Experience
 
   @count 1..5
   @simple_attrs [:user_id, :title, :description]
@@ -14,7 +14,7 @@ defmodule Ebnis.Factory.ExpDef do
     {:ok, exp} =
       attrs
       |> params()
-      |> Experiences.create_exp_def()
+      |> Experiences.create_exp()
 
     exp
   end
@@ -55,7 +55,7 @@ defmodule Ebnis.Factory.ExpDef do
     |> Enum.into(%{})
   end
 
-  def entry(%ExpDef{field_defs: field_defs}) do
+  def entry(%Experience{field_defs: field_defs}) do
     fields =
       Enum.map(field_defs, fn %{id: id, type: type} ->
         %{

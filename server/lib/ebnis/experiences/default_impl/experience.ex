@@ -1,4 +1,4 @@
-defmodule Ebnis.Experiences.DefaultImpl.ExpDef do
+defmodule Ebnis.Experiences.DefaultImpl.Experience do
   use Ecto.Schema, warn: true
 
   import Ecto.Changeset
@@ -6,14 +6,16 @@ defmodule Ebnis.Experiences.DefaultImpl.ExpDef do
   alias Ecto.Changeset
   alias Ebnis.Accounts.User
   alias Ebnis.Experiences.DefaultImpl.FieldDef
+  alias Ebnis.Experiences.DefaultImpl.Entry
 
   @primary_key {:id, :id, autogenerate: true}
   @timestamps_opts [type: :utc_datetime]
-  schema "exp_defs" do
+  schema "experiences" do
     field(:title, :string)
     field(:description, :string)
     belongs_to(:user, User)
     embeds_many(:field_defs, FieldDef)
+    has_many(:entries, Entry, foreign_key: :exp_id)
 
     timestamps()
   end
@@ -26,7 +28,7 @@ defmodule Ebnis.Experiences.DefaultImpl.ExpDef do
     |> validate_required([:title, :user_id, :field_defs])
     |> validate_field_defs()
     |> assoc_constraint(:user)
-    |> unique_constraint(:title, name: :exp_defs_user_id_title_index)
+    |> unique_constraint(:title, name: :experiences_user_id_title_index)
   end
 
   defp validate_field_defs(%Changeset{valid?: false} = changeset) do
