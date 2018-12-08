@@ -13,8 +13,20 @@ defmodule Ebnis.Experiences do
     impl().get_exp(id, user_id)
   end
 
+  def get_exp_field_defs(exp_id, user_id) do
+    impl().get_exp_field_defs(exp_id, user_id)
+  end
+
   def get_exps(user_id) do
     impl().get_exps(user_id)
+  end
+
+  def create_entry(attrs) do
+    impl().create_entry(attrs)
+  end
+
+  def get_exp_entries(exp_id, user_id) do
+    impl().get_exp_entries(exp_id, user_id)
   end
 
   defconstp impl do

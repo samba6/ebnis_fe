@@ -12,17 +12,17 @@ defmodule Ebnis.Factory do
     do:
       @now
       |> Timex.beginning_of_year()
-      |> Timex.add(
-        Timex.Duration.from_seconds(Enum.random(@all_seconds_in_year))
-        )
+      |> Timex.add(Timex.Duration.from_seconds(Enum.random(@all_seconds_in_year)))
+
+  def to_camel_key(key) when is_binary(key) do
+    [first | rest] = String.split(key, "_")
+    first <> Enum.reduce(rest, "", &(&2 <> String.capitalize(&1)))
+  end
 
   def to_camel_key(key) when is_atom(key) do
-    [first | rest] =
-      key
-      |> Atom.to_string()
-      |> String.split("_")
-
-    first <> Enum.reduce(rest, "", &(&2 <> String.capitalize(&1)))
+    key
+    |> Atom.to_string()
+    |> to_camel_key()
   end
 
   def random_string_int, do: Integer.to_string(Faker.random_between(2, 100))

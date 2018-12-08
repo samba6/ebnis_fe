@@ -10,6 +10,8 @@ defmodule Ebnis.Factory.FieldDef do
     "datetime"
   ]
 
+  def field_types, do: @field_types
+
   def insert(_attrs), do: nil
 
   def params(attrs) do

@@ -3,14 +3,9 @@ defmodule Ebnis.Experiences.DefaultImpl.FieldDef do
 
   import Ecto.Changeset
 
-  @field_types [
-    "single_line_text",
-    "multi_line_text",
-    "integer",
-    "decimal",
-    "date",
-    "datetime"
-  ]
+  alias Ebnis.Experiences.DefaultImpl.EctoFieldVal
+
+  @all_types EctoFieldVal.all_types()
 
   # @primary_key false
   embedded_schema do
@@ -27,6 +22,6 @@ defmodule Ebnis.Experiences.DefaultImpl.FieldDef do
     ])
     |> validate_required([:name, :type])
     |> validate_length(:name, min: 2)
-    |> validate_inclusion(:type, @field_types)
+    |> validate_inclusion(:type, @all_types)
   end
 end

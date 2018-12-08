@@ -242,18 +242,16 @@ defmodule EbnisWeb.Schema.ExperienceTest do
       user = RegFactory.insert()
       %{id: id1} = Factory.insert(user_id: user.id)
       %{id: id2} = Factory.insert(user_id: user.id)
-      id1 = Integer.to_string(id1)
-      id2 = Integer.to_string(id2)
 
       assert {:ok,
               %{
                 data: %{
                   "exps" => [
                     %{
-                      "id" => ^id1
+                      "id" => ida
                     },
                     %{
-                      "id" => ^id2
+                      "id" => idb
                     }
                   ]
                 }
@@ -263,6 +261,10 @@ defmodule EbnisWeb.Schema.ExperienceTest do
                  Schema,
                  context: context(user)
                )
+
+      assert [
+        Integer.to_string(id1), Integer.to_string(id2)
+        ] == Enum.sort([ida, idb])
     end
 
     # @tag :skip
