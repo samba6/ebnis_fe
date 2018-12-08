@@ -2,16 +2,16 @@ import { RouteComponentProps } from "react-router-dom";
 import * as Yup from "yup";
 
 import { AppRouteProps } from "../../containers/App/app";
-import { ExpDefMutationProps } from "../../graphql/create-exp-def.mutation";
+import { CreateExpMutationProps } from "../../graphql/create-exp.mutation";
 import {
-  CreateExpDef as FormValues,
+  CreateExp as FormValues,
   CreateFieldDef,
   FieldType
 } from "../../graphql/apollo-gql.d";
 
 export type OwnProps = AppRouteProps & RouteComponentProps<{}>;
 
-export type Props = OwnProps & ExpDefMutationProps;
+export type Props = OwnProps & CreateExpMutationProps;
 
 const fieldTypeKeys = Object.values(FieldType);
 

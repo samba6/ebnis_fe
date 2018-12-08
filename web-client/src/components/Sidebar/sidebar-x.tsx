@@ -2,7 +2,7 @@ import React, { useContext } from "react";
 
 import "./sidebar.scss";
 import { AppContext } from "../../containers/App/app";
-import { EXP_DEF, ROOT_URL } from "../../Routing";
+import { NEW_EXP_URL, ROOT_URL } from "../../Routing";
 import { Props } from "./sidebar";
 
 const blockClicks: React.MouseEventHandler<HTMLDivElement> = evt =>
@@ -25,8 +25,8 @@ export function Sidebar(props: Props) {
     onShowSidebar(false);
   }
 
-  function onGoToExpDef(where: string) {
-    return function goToExpDef() {
+  function onGoToExperience(where: string) {
+    return function goToExperience() {
       hideSidebar();
       history.push(where);
     };
@@ -42,11 +42,11 @@ export function Sidebar(props: Props) {
 
         <ul className="sidebar__content">
           {pathname !== ROOT_URL && (
-            <li onClick={onGoToExpDef(ROOT_URL)}>Home</li>
+            <li onClick={onGoToExperience(ROOT_URL)}>Home</li>
           )}
 
-          {pathname !== EXP_DEF && (
-            <li onClick={onGoToExpDef(EXP_DEF)}>New Experience Definition</li>
+          {pathname !== NEW_EXP_URL && (
+            <li onClick={onGoToExperience(NEW_EXP_URL)}>New Experience</li>
           )}
         </ul>
       </nav>

@@ -18,7 +18,7 @@ import {
   ValidationSchema,
   FormValuesKey
 } from "./sign-up";
-import { Registration } from "../../graphql/apollo-gql";
+import { Registration } from "../../graphql/apollo-gql.d";
 import { setTitle, ROOT_URL, LOGIN_URL } from "../../Routing";
 import Header from "../../components/Header";
 

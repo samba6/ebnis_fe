@@ -2,7 +2,7 @@ import gql from "graphql-tag";
 import { graphql } from "react-apollo";
 import { MutationFn } from "react-apollo";
 
-import { UserFragment } from "../graphql/apollo-gql";
+import { UserFragment } from "../graphql/apollo-gql.d";
 import { userFragment } from "../graphql/user.fragment";
 
 export const userLocalMutation = gql`

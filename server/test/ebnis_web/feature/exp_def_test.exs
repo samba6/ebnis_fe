@@ -19,7 +19,7 @@ defmodule EbnisWeb.Feature.CreateExperienceTest do
     retries(true, fn -> page_title() =~ "Home" end, 1_000)
 
     # When user clicks create new experience button
-    click({:name, "go-to-create-exp-def"})
+    click({:name, "go-to-new-exp"})
 
     # She sees new experience page title
     assert retries(

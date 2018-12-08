@@ -3,7 +3,7 @@ import * as Yup from "yup";
 import { WithApolloClient } from "react-apollo";
 import { RouteComponentProps } from "react-router-dom";
 
-import { LoginUser as FormValues } from "../../graphql/apollo-gql";
+import { LoginUser as FormValues } from "../../graphql/apollo-gql.d";
 import { LoginMutationProps } from "../../graphql/login.mutation";
 import { UserLocalMutationProps } from "../../state/user.local.mutation";
 import { LoggedOutUserProps } from "../../state/logged-out-user.local.query";

@@ -25,21 +25,19 @@ import {
   TextArea
 } from "semantic-ui-react";
 
-import "./exp-def.scss";
-import { Props, ValidationSchema, fieldTypes, SelectValue } from "./exp-def";
+import "./new-exp.scss";
+import { Props, ValidationSchema, fieldTypes, SelectValue } from "./new-exp";
 import Header from "../../components/Header";
 import { setTitle } from "../../Routing";
 import {
-  CreateExpDef as FormValues,
+  CreateExp as FormValues,
   CreateFieldDef,
   FieldType
 } from "../../graphql/apollo-gql.d";
 import Select from "react-select";
 import { ApolloError } from "apollo-client";
-import { makeAddExpRoute } from "../../Routing";
-import EXP_DEFS_QUERY, {
-  GetExpDefGqlProps
-} from "../../graphql/exp-defs.query";
+import { makeExpRoute } from "../../Routing";
+import EXPS_QUERY, { GetExpGqlProps } from "../../graphql/exps.query";
 
 type SelectFieldTypeStateVal = null | SelectValue;
 type SelectFieldTypeState = {
@@ -48,11 +46,11 @@ type SelectFieldTypeState = {
 
 const EMPTY_FIELD = { name: "", type: "" as FieldType };
 
-export const NewExpDef = (props: Props) => {
-  const { setHeader, createExDef, history } = props;
+export const NewExperience = (props: Props) => {
+  const { setHeader, createExp, history } = props;
   const [selectValues, setSelectValues] = useState({} as SelectFieldTypeState);
   const routeRef = useRef<HTMLDivElement | null>(null);
-  const [showDescriptionInput, setShowDescriptionInput] = useState(false);
+  const [showDescriptionInput, setShowDescriptionInput] = useState(true);
 
   const [graphQlError, setGraphQlError] = useState<
     GraphQlErrorState | undefined
@@ -64,10 +62,10 @@ export const NewExpDef = (props: Props) => {
 
   useEffect(() => {
     if (setHeader) {
-      setHeader(<Header title="Experience Definition" sideBar={true} />);
+      setHeader(<Header title="New Experience" sideBar={true} />);
     }
 
-    setTitle("Experience Definition");
+    setTitle("New Experience");
 
     return setTitle;
   }, []);
@@ -164,7 +162,6 @@ export const NewExpDef = (props: Props) => {
 
         <Input
           {...rest}
-          placeholder="Field Name"
           autoComplete="off"
           name={name}
           id={name}
@@ -265,13 +262,7 @@ export const NewExpDef = (props: Props) => {
       <Form.Field error={!!error}>
         <label htmlFor={field.name}>Title</label>
 
-        <Input
-          {...field}
-          autoFocus={true}
-          placeholder="Title"
-          autoComplete="off"
-          id={field.name}
-        />
+        <Input {...field} autoFocus={true} autoComplete="off" id={field.name} />
 
         {renderFormCtrlError(error)}
       </Form.Field>
@@ -293,9 +284,7 @@ export const NewExpDef = (props: Props) => {
           {showDescriptionInput && <Icon name="caret down" />}
         </label>
 
-        {showDescriptionInput && (
-          <TextArea {...field} placeholder="Description" id={field.name} />
-        )}
+        {showDescriptionInput && <TextArea {...field} id={field.name} />}
       </Form.Field>
     );
   }
@@ -316,44 +305,44 @@ export const NewExpDef = (props: Props) => {
         return;
       }
 
-      if (!createExDef) {
+      if (!createExp) {
         return;
       }
 
       try {
-        const result = await createExDef({
+        const result = await createExp({
           variables: {
-            expDef: values
+            exp: values
           },
 
-          update(client, { data: newExpDef }) {
-            if (!newExpDef) {
+          update: async function(client, { data: newExperience }) {
+            if (!newExperience) {
               return;
             }
 
-            const { expDef } = newExpDef;
+            const { exp } = newExperience;
 
-            if (!expDef) {
+            if (!exp) {
               return;
             }
 
-            const data = client.readQuery<GetExpDefGqlProps>({
-              query: EXP_DEFS_QUERY
+            const data = client.readQuery<GetExpGqlProps>({
+              query: EXPS_QUERY
             });
 
             if (!data) {
               return;
             }
 
-            const { expDefs } = data;
+            const { exps } = data;
 
-            if (!expDefs) {
+            if (!exps) {
               return;
             }
 
-            client.writeQuery({
-              query: EXP_DEFS_QUERY,
-              data: [...expDefs, expDef]
+            await client.writeQuery({
+              query: EXPS_QUERY,
+              data: { exps: [...exps, exp] }
             });
           }
         });
@@ -362,29 +351,10 @@ export const NewExpDef = (props: Props) => {
           const { data } = result;
 
           if (data) {
-            const { expDef } = data;
+            const { exp } = data;
 
-            if (expDef) {
-              // tslint:disable-next-line:no-console
-              console.log(
-                `
-
-
-                logging starts
-
-
-                const result = await createExpDef({
-                      label`,
-                result,
-                `
-
-                logging ends
-
-
-                `
-              );
-
-              history.replace(makeAddExpRoute(expDef.id));
+            if (exp) {
+              history.replace(makeExpRoute(exp.id));
             }
           }
         }
@@ -437,7 +407,7 @@ export const NewExpDef = (props: Props) => {
     );
   }
 
-  return (
+  const render = (
     <div className="app-main routes-exp-def" ref={routeRef}>
       <Formik<FormValues>
         initialValues={{ title: "", description: "", fieldDefs: [EMPTY_FIELD] }}
@@ -448,9 +418,11 @@ export const NewExpDef = (props: Props) => {
       />
     </div>
   );
+
+  return render;
 };
 
-export default NewExpDef;
+export default NewExperience;
 
 // ------------------------HELPER FUNCTIONS----------------------------
 
@@ -617,12 +589,8 @@ function removeSelectedField(
   return selected;
 }
 
-function makeFieldNameWithIndex(index: number) {
-  return `fieldDefs[${index}]`;
-}
-
 function makeFieldName(index: number, key: keyof CreateFieldDef) {
-  return `${makeFieldNameWithIndex(index)}.${key}`;
+  return `fieldDefs[${index}].${key}`;
 }
 
 function nullSubmit() {

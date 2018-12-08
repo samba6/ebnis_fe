@@ -11,8 +11,8 @@ import {
   ROOT_URL,
   LOGIN_URL,
   SIGN_UP_URL,
-  EXP_DEF,
-  ADD_EXP
+  NEW_EXP_URL,
+  EXP_URL
 } from "../../Routing";
 import Loading from "../../components/Loading";
 import Sidebar from "../../components/Sidebar";
@@ -23,8 +23,8 @@ import { AppContextParent } from "./app-context";
 const Home = lazy(() => import("../../routes/Home"));
 const Login = lazy(() => import("../../routes/Login"));
 const SignUp = lazy(() => import("../../routes/SignUp"));
-const ExpDef = lazy(() => import("../../routes/ExpDef"));
-const AddExp = lazy(() => import("../../routes/AddExp"));
+const NewExp = lazy(() => import("../../routes/NewExp"));
+const Exp = lazy(() => import("../../routes/Exp"));
 
 let client = makeClient();
 const loading = <Loading />;
@@ -68,16 +68,16 @@ export function App() {
                 <Switch>
                   <AuthRequired
                     exact={true}
-                    path={ADD_EXP}
-                    component={AddExp}
+                    path={EXP_URL}
+                    component={Exp}
                     redirectTo={Login}
                     {...childProps}
                   />
 
                   <AuthRequired
                     exact={true}
-                    path={EXP_DEF}
-                    component={ExpDef}
+                    path={NEW_EXP_URL}
+                    component={NewExp}
                     redirectTo={Login}
                     {...childProps}
                   />

@@ -4,19 +4,21 @@
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL mutation operation: ExpDefMutation
+// GraphQL mutation operation: CreateExpMutation
 // ====================================================
 
-export interface ExpDefMutation_expDef {
+export interface CreateExpMutation_exp {
   id: string;
+  title: string;
+  description: string | null;
 }
 
-export interface ExpDefMutation {
-  expDef: ExpDefMutation_expDef | null;
+export interface CreateExpMutation {
+  exp: CreateExpMutation_exp | null;
 }
 
-export interface ExpDefMutationVariables {
-  expDef: CreateExpDef;
+export interface CreateExpMutationVariables {
+  exp: CreateExp;
 }
 
 
@@ -24,28 +26,46 @@ export interface ExpDefMutationVariables {
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL query operation: GetAnExpDef
+// GraphQL query operation: GetExps
 // ====================================================
 
-export interface GetAnExpDef_expDef_fieldDefs {
+export interface GetExps_exps {
+  id: string;
+  title: string;
+  description: string | null;
+}
+
+export interface GetExps {
+  exps: (GetExps_exps | null)[] | null;  // get all experiences belonging to a user
+}
+
+
+/* tslint:disable */
+// This file was automatically generated and should not be edited.
+
+// ====================================================
+// GraphQL query operation: GetAnExp
+// ====================================================
+
+export interface GetAnExp_exp_fieldDefs {
   id: string;
   name: string;     // Name of field e.g start, end, meal
   type: FieldType;  // The data type of the field
 }
 
-export interface GetAnExpDef_expDef {
+export interface GetAnExp_exp {
   id: string;
   title: string;
   description: string | null;
-  fieldDefs: (GetAnExpDef_expDef_fieldDefs | null)[];
+  fieldDefs: (GetAnExp_exp_fieldDefs | null)[];  // The field definitions used for the experience entries
 }
 
-export interface GetAnExpDef {
-  expDef: GetAnExpDef_expDef | null;  // get an experience
+export interface GetAnExp {
+  exp: GetAnExp_exp | null;  // get an experience
 }
 
-export interface GetAnExpDefVariables {
-  expDef: GetExpDef;
+export interface GetAnExpVariables {
+  exp: GetExp;
 }
 
 
@@ -99,10 +119,10 @@ export interface UserRegMutationVariables {
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL fragment: ExpDefFragment
+// GraphQL fragment: ExpFrag
 // ====================================================
 
-export interface ExpDefFragment {
+export interface ExpFrag {
   id: string;
   title: string;
   description: string | null;
@@ -113,10 +133,10 @@ export interface ExpDefFragment {
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL fragment: FieldDefFragment
+// GraphQL fragment: FieldDefFrag
 // ====================================================
 
-export interface FieldDefFragment {
+export interface FieldDefFrag {
   id: string;
   name: string;     // Name of field e.g start, end, meal
   type: FieldType;  // The data type of the field
@@ -154,7 +174,7 @@ export enum FieldType {
 }
 
 // Variables for creating Experience
-export interface CreateExpDef {
+export interface CreateExp {
   description?: string | null;
   fieldDefs: (CreateFieldDef | null)[];
   title: string;
@@ -167,7 +187,7 @@ export interface CreateFieldDef {
 }
 
 // Variables for getting an experience
-export interface GetExpDef {
+export interface GetExp {
   id: string;
 }
 

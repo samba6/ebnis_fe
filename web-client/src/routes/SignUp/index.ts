@@ -1,7 +1,7 @@
 import { graphql, compose } from "react-apollo";
 
-import { UserRegMutation } from "../../graphql/apollo-gql";
-import { UserRegMutationVariables } from "../../graphql/apollo-gql";
+import { UserRegMutation } from "../../graphql/apollo-gql.d";
+import { UserRegMutationVariables } from "../../graphql/apollo-gql.d";
 import REG_USER_MUTATION, {
   RegFn,
   RegMutationProps

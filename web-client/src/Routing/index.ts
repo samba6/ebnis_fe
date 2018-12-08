@@ -1,14 +1,14 @@
 export const ROOT_URL = "/";
 export const LOGIN_URL = "/login";
 export const SIGN_UP_URL = "/sign-up";
-export const EXP_DEF = "/exp-def";
-export const ADD_EXP = "/add-exp/:id";
+export const NEW_EXP_URL = "/new-exp";
+export const EXP_URL = "/exp/:id";
 
-export function makeAddExpRoute(id: string) {
-  return ADD_EXP.replace(":id", id);
+export function makeExpRoute(id: string) {
+  return EXP_URL.replace(":id", id);
 }
 
-export interface AddExpRouteParams {
+export interface ExpRouteParams {
   id: string;
 }
 

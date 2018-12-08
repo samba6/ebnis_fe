@@ -13,7 +13,7 @@ import { ApolloError } from "apollo-client";
 import "./login.scss";
 import { Props, ValidationSchema } from "./login";
 import Header from "../../components/Header";
-import { LoginUser as FormValues } from "../../graphql/apollo-gql";
+import { LoginUser as FormValues } from "../../graphql/apollo-gql.d";
 import { setTitle, ROOT_URL, SIGN_UP_URL } from "../../Routing";
 
 export const Login = (props: Props) => {

@@ -4,7 +4,7 @@ import { RouteComponentProps } from "react-router-dom";
 import { AppRouteProps } from "../../containers/App/app";
 import { RegMutationProps } from "../../graphql/user-reg.mutation";
 import { UserLocalMutationProps } from "../../state/user.local.mutation";
-import { Registration } from "../../graphql/apollo-gql";
+import { Registration } from "../../graphql/apollo-gql.d";
 
 export type Props = RouteComponentProps &
   AppRouteProps &

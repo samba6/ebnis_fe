@@ -9,7 +9,7 @@ import USER_LOCAL_QUERY, {
 import {
   LoginMutation,
   LoginMutationVariables
-} from "../../graphql/apollo-gql";
+} from "../../graphql/apollo-gql.d";
 import LOGIN_MUTATION, {
   LoginMutationProps
 } from "../../graphql/login.mutation";

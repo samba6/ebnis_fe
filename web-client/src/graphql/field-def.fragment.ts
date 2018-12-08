@@ -1,11 +1,11 @@
 import gql from "graphql-tag";
 
-export const fieldDefFragment = gql`
-  fragment FieldDefFragment on FieldDef {
+export const fieldDefFrag = gql`
+  fragment FieldDefFrag on FieldDef {
     id
     name
     type
   }
 `;
 
-export default fieldDefFragment;
+export default fieldDefFrag;

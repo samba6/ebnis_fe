@@ -2,7 +2,7 @@ import gql from "graphql-tag";
 import { MutationFn } from "react-apollo";
 
 import userFragment from "./user.fragment";
-import { UserRegMutation, UserRegMutationVariables } from "./apollo-gql";
+import { UserRegMutation, UserRegMutationVariables } from "./apollo-gql.d";
 
 export const userRegMutation = gql`
   mutation UserRegMutation($registration: Registration!) {

@@ -2,7 +2,7 @@ import { withClientState } from "apollo-link-state";
 import { InMemoryCache } from "apollo-cache-inmemory";
 
 import { TOKEN_KEY } from "../constants";
-import { UserFragment } from "../graphql/apollo-gql";
+import { UserFragment } from "../graphql/apollo-gql.d";
 import { Variable as UserMutationVar } from "./user.local.mutation";
 import USER_QUERY, { UserLocalGqlData } from "./auth.local.query";
 import { resetClientAndPersistor } from "./set-up";
