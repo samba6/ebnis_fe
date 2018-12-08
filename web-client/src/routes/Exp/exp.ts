@@ -7,3 +7,11 @@ import { ExpRouteParams } from "../../Routing";
 export type OwnProps = AppRouteProps & RouteComponentProps<ExpRouteParams>;
 
 export type Props = OwnProps & GetExpGqlProps;
+
+export type FormObjVal = Date | string;
+export type FormObj = { [k: string]: FormObjVal };
+
+export interface FieldComponentProps {
+  name: string;
+  setValue: (formName: string, value: FormObjVal) => void;
+}

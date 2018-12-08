@@ -1,6 +1,6 @@
 import { graphql } from "react-apollo";
 
-import AddExp from "./exp-x";
+import Exp from "./exp-x";
 import { OwnProps } from "./exp";
 import GET_EXP_QUERY, { GetExpGqlProps } from "../../graphql/get-exp.query";
 import { GetAnExp, GetAnExpVariables } from "../../graphql/apollo-gql.d";
@@ -23,4 +23,4 @@ const getExpGql = graphql<
   }
 });
 
-export default getExpGql(AddExp);
+export default getExpGql(Exp);
