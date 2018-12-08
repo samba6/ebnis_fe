@@ -6,6 +6,7 @@ defmodule Ebnis.Query.Entry do
   @fragment """
     fragment #{@frag_name} on Entry {
       id
+      expId
       insertedAt
       updatedAt
     }

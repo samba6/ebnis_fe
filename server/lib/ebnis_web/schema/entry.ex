@@ -3,21 +3,6 @@ defmodule EbnisWeb.Schema.Entry do
 
   alias EbnisWeb.Resolver.Entry, as: Resolver
 
-  @desc "An entry datetime data"
-  object :datetime_data do
-    field :datetime, non_null(:iso_datetime)
-  end
-
-  @desc "An entry integer data"
-  object :integer_data do
-    field :integer, non_null(:integer)
-  end
-
-  @desc "An entry decimal data"
-  object :decimal_data do
-    field :decimal, non_null(:float)
-  end
-
   @desc "An entry field"
   object :field do
     field(:def_id, non_null(:id))
@@ -27,6 +12,7 @@ defmodule EbnisWeb.Schema.Entry do
   @desc "An Experience entry"
   object :entry do
     field(:id, non_null(:id))
+    field(:exp_id, non_null(:id))
     field :fields, :field |> list_of() |> non_null()
     field(:inserted_at, non_null(:iso_datetime))
     field(:updated_at, non_null(:iso_datetime))

@@ -14,6 +14,7 @@ defmodule EbnisWeb.Schema.ExperienceEntryTest do
     test "create an entry succeeds" do
       user = RegFactory.insert()
       exp = ExpFactory.insert(user_id: user.id)
+      exp_id = Integer.to_string(exp.id)
       params = Factory.params(exp)
 
       variables = %{
@@ -27,6 +28,7 @@ defmodule EbnisWeb.Schema.ExperienceEntryTest do
                 data: %{
                   "entry" => %{
                     "id" => _,
+                    "expId" => ^exp_id,
                     "fields" => fields
                   }
                 }
