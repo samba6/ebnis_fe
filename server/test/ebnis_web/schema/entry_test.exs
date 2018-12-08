@@ -245,5 +245,64 @@ defmodule EbnisWeb.Schema.ExperienceEntryTest do
     end
   end
 
+  describe "query" do
+    test "get all entries belonging to an experience succeeds" do
+      user = RegFactory.insert()
+      exp = ExpFactory.insert(user_id: user.id)
+
+      ents = [
+        Factory.insert(exp, user_id: user.id),
+        Factory.insert(exp, user_id: user.id)
+      ]
+
+      query = Query.get_exp_entries()
+
+      variables = %{
+        "entry" => %{
+          "expId" => exp.id
+        }
+      }
+
+      assert {:ok,
+              %{
+                data: %{
+                  "expEntries" => entries
+                }
+              }} = Absinthe.run(query, Schema, variables: variables, context: context(user))
+
+      assert length(entries) == 2
+
+      ent_ids = Enum.map(ents, &Integer.to_string(&1.id)) |> Enum.sort()
+      entry_ids = Enum.map(entries, & &1["id"]) |> Enum.sort()
+      assert ent_ids == entry_ids
+    end
+
+    test "get all entries returns empty list if no entries" do
+      user = RegFactory.insert()
+      exp = ExpFactory.insert(user_id: user.id)
+
+      query = Query.get_exp_entries()
+
+      variables = %{
+        "entry" => %{
+          "expId" => exp.id
+        }
+      }
+
+      assert {:ok,
+              %{
+                data: %{
+                  "expEntries" => []
+                }
+              }} =
+               Absinthe.run(
+                 query,
+                 Schema,
+                 variables: variables,
+                 context: context(user)
+               )
+    end
+  end
+
   defp context(user), do: %{current_user: user}
 end

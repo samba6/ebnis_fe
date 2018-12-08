@@ -56,7 +56,7 @@ defmodule Ebnis.Query.Entry do
     """
   end
 
-  def gets do
+  def get_exp_entries do
     """
     query GetEntriesForExperience($entry: GetExpEntries! ) {
       expEntries(entry: $entry) {

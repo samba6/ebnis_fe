@@ -60,7 +60,25 @@ defmodule EbnisWeb.Schema.Entry do
 
   @desc "Mutations allowed on Experience entry object"
   object :entry_mutation do
-    @doc "Create an experience"
+    @doc ~S"""
+      Create an experience
+
+      The error returned will be of the form:
+      {
+        expId?: "does not exist",
+        fields?: [
+          {
+            meta: {
+              defId: defId,
+              index: fieldIndex
+            },
+            errors: {
+              defId: "does not exist" | "has already been taken"
+            }
+          }
+        ]
+      }
+    """
     field :entry, :entry do
       arg(:entry, non_null(:create_entry))
 
