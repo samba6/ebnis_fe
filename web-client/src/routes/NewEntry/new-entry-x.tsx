@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Form, Input, Button } from "semantic-ui-react";
+import { Form, Input, Button, TextArea } from "semantic-ui-react";
 import dateFnFormat from "date-fns/format";
 
 import "./new-entry.scss";
@@ -30,7 +30,7 @@ const fieldTypeUtils = {
 
   [FieldType.MULTI_LINE_TEXT]: {
     component(props: FieldComponentProps) {
-      return <Input id={props.name} name={props.name} fluid={true} />;
+      return <TextArea id={props.name} name={props.name} />;
     },
 
     default: "",

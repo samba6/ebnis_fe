@@ -22,11 +22,12 @@ import {
   Icon,
   Input,
   Message,
-  TextArea
+  TextArea,
+  Dropdown
 } from "semantic-ui-react";
 
 import "./new-exp.scss";
-import { Props, ValidationSchema, fieldTypes, SelectValue } from "./new-exp";
+import { Props, ValidationSchema, FIELD_TYPES } from "./new-exp";
 import Header from "../../components/Header";
 import { setTitle } from "../../Routing";
 import {
@@ -34,17 +35,15 @@ import {
   CreateFieldDef,
   FieldType
 } from "../../graphql/apollo-gql.d";
-import Select from "react-select";
 import { ApolloError } from "apollo-client";
 import { makeExpRoute } from "../../Routing";
 import EXPS_QUERY, { GetExpGqlProps } from "../../graphql/exps.query";
 
-type SelectFieldTypeStateVal = null | SelectValue;
-type SelectFieldTypeState = {
-  [k: number]: SelectFieldTypeStateVal;
-};
-
 const EMPTY_FIELD = { name: "", type: "" as FieldType };
+
+interface SelectFieldTypeState {
+  [k: number]: string | null;
+}
 
 export const NewExperience = (props: Props) => {
   const { setHeader, createExp, history } = props;
@@ -60,7 +59,7 @@ export const NewExperience = (props: Props) => {
     undefined | FormikErrors<FormValues>
   >(undefined);
 
-  useEffect(() => {
+  useEffect(function setCompTitle() {
     if (setHeader) {
       setHeader(<Header title="New Experience" sideBar={true} />);
     }
@@ -87,7 +86,7 @@ export const NewExperience = (props: Props) => {
       "";
 
     return (
-      <div key={index} className={` ${errorClass} field-defs-container`}>
+      <div key={index} className={`${errorClass} field-defs-container`}>
         {renderFieldBtnCtrl(index, values, arrayHelpers)}
 
         <FastField
@@ -107,7 +106,7 @@ export const NewExperience = (props: Props) => {
     formProps: FieldProps<FormValues>
   ) => {
     const {
-      field: { name, ...rest },
+      field: { name, value },
       form: { setFieldValue }
     } = formProps;
 
@@ -117,25 +116,21 @@ export const NewExperience = (props: Props) => {
       <Form.Field error={!!error}>
         <label htmlFor={name}>Field Data Type</label>
 
-        <Select
-          {...rest}
+        <Dropdown
+          fluid
+          selection
+          value={value}
+          compact={true}
           name={name}
-          options={fieldTypes}
-          value={selectValues[index]}
-          getOptionLabel={({ value }) => {
-            return value;
-          }}
-          getOptionValue={({ value }) => {
-            return value;
-          }}
-          onChange={data => {
-            const data1 = data as SelectFieldTypeStateVal;
+          options={FIELD_TYPES}
+          onChange={function fieldTypeChanged(_evt, data) {
+            const val = data.value as string;
 
-            setFieldValue(name, (data1 && data1.value) || "");
+            setFieldValue(name, val);
 
             setSelectValues({
               ...selectValues,
-              [index]: data1
+              [index]: val
             });
           }}
           onFocus={() => setSubmittedFormErrors(undefined)}
@@ -146,9 +141,9 @@ export const NewExperience = (props: Props) => {
     );
   };
 
-  const renderFieldName = (formProps: FieldProps<FormValues>) => {
+  function renderFieldName(formProps: FieldProps<FormValues>) {
     const {
-      field: { name, ...rest }
+      field: { name, value, ...rest }
     } = formProps;
 
     const error =
@@ -162,6 +157,7 @@ export const NewExperience = (props: Props) => {
 
         <Input
           {...rest}
+          value={value}
           autoComplete="off"
           name={name}
           id={name}
@@ -171,13 +167,13 @@ export const NewExperience = (props: Props) => {
         {renderFormCtrlError(error)}
       </Form.Field>
     );
-  };
+  }
 
-  const renderFieldBtnCtrl = (
+  function renderFieldBtnCtrl(
     index: number,
     values: FormValues,
     arrayHelpers: ArrayHelpers
-  ) => {
+  ) {
     const fieldDefs = (values.fieldDefs && values.fieldDefs) || [];
 
     const len = fieldDefs.length;
@@ -189,9 +185,9 @@ export const NewExperience = (props: Props) => {
         <Button.Group className="control-buttons" basic={true} compact={true}>
           <Button
             type="button"
-            onClick={() => {
+            onClick={function onFieldAddClicked() {
               setSubmittedFormErrors(undefined);
-              arrayHelpers.insert(index + 1, EMPTY_FIELD);
+              arrayHelpers.insert(index + 1, { ...EMPTY_FIELD });
             }}
           >
             <Icon name="plus" />
@@ -200,7 +196,7 @@ export const NewExperience = (props: Props) => {
           {len > 1 && (
             <Button
               type="button"
-              onClick={() => {
+              onClick={function onFieldDeleteClicked() {
                 setSelectValues(removeSelectedField(index, fieldDefs));
                 arrayHelpers.remove(index);
                 setSubmittedFormErrors(undefined);
@@ -213,7 +209,7 @@ export const NewExperience = (props: Props) => {
           {showUp && (
             <Button
               type="button"
-              onClick={() => {
+              onClick={function onFieldUpClicked() {
                 const indexUp = index;
                 const indexDown = index - 1;
                 arrayHelpers.swap(indexUp, indexDown);
@@ -229,7 +225,7 @@ export const NewExperience = (props: Props) => {
           {showDown && (
             <Button
               type="button"
-              onClick={() => {
+              onClick={function onFieldDownClicked() {
                 arrayHelpers.swap(index, index + 1);
                 setSelectValues(
                   swapSelectField(fieldDefs, index, index + 1, selectValues)
@@ -242,7 +238,7 @@ export const NewExperience = (props: Props) => {
         </Button.Group>
       </div>
     );
-  };
+  }
 
   const renderFieldDefs = (values: FormValues) => (
     arrayHelpers: ArrayHelpers
@@ -410,7 +406,11 @@ export const NewExperience = (props: Props) => {
   const render = (
     <div className="app-main routes-exp-def" ref={routeRef}>
       <Formik<FormValues>
-        initialValues={{ title: "", description: "", fieldDefs: [EMPTY_FIELD] }}
+        initialValues={{
+          title: "",
+          description: "",
+          fieldDefs: [{ ...EMPTY_FIELD }]
+        }}
         onSubmit={nullSubmit}
         render={renderForm}
         validationSchema={ValidationSchema}
@@ -544,28 +544,30 @@ function swapSelectField(
   fieldDefs: (CreateFieldDef | null)[],
   indexA: number,
   indexB: number,
-  selectValues: SelectFieldTypeState
+  selectedValues: SelectFieldTypeState
 ) {
   const values = {} as SelectFieldTypeState;
   const fieldA = fieldDefs[indexA];
   const fieldB = fieldDefs[indexB];
 
   if (fieldA && fieldA.type) {
-    values[indexB] = { value: fieldA.type } as SelectFieldTypeStateVal;
+    values[indexB] = fieldA.type;
   } else {
     values[indexB] = null;
   }
 
   if (fieldB && fieldB.type) {
-    values[indexA] = { value: fieldB.type } as SelectFieldTypeStateVal;
+    values[indexA] = fieldB.type;
   } else {
     values[indexA] = null;
   }
 
-  return {
-    ...selectValues,
+  const newSelectedVals = {
+    ...selectedValues,
     ...values
   };
+
+  return newSelectedVals;
 }
 
 function removeSelectedField(
@@ -583,14 +585,14 @@ function removeSelectedField(
       continue;
     }
 
-    selected[i] = { value: field.type || "" };
+    selected[i] = field.type;
   }
 
   return selected;
 }
 
 function makeFieldName(index: number, key: keyof CreateFieldDef) {
-  return `fieldDefs[${index}].${key}`;
+  return `fieldDefs[${index}]${key}`;
 }
 
 function nullSubmit() {

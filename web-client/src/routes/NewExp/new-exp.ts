@@ -1,5 +1,6 @@
 import { RouteComponentProps } from "react-router-dom";
 import * as Yup from "yup";
+import { DropdownItemProps } from "semantic-ui-react";
 
 import { AppRouteProps } from "../../containers/App/app";
 import { CreateExpMutationProps } from "../../graphql/create-exp.mutation";
@@ -36,10 +37,12 @@ export const ValidationSchema = Yup.object<FormValues>().shape({
     .ensure()
 });
 
-export interface SelectValue {
-  value: string;
-}
+export const FIELD_TYPES: DropdownItemProps[] = [];
 
-export const fieldTypes: SelectValue[] = fieldTypeKeys.map(v => ({
-  value: v
-}));
+for (const k of fieldTypeKeys) {
+  FIELD_TYPES.push({
+    value: k,
+    text: k,
+    key: k
+  });
+}
