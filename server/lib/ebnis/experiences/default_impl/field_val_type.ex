@@ -28,6 +28,8 @@ defmodule Ebnis.Experiences.DefaultImpl.EctoFieldVal do
   @non_primitives ["datetime", "date", :datetime, :date]
   @primitives Enum.reject(@all_types, &Enum.member?(@non_primitives, &1))
 
+  @float_string_pattern ~r|^\d+\.?$|
+
   @doc ~S"""
   Turn both key and value to map only so we get:
   %{"date" => "2015-01-10" }
@@ -50,7 +52,7 @@ defmodule Ebnis.Experiences.DefaultImpl.EctoFieldVal do
   end
 
   defp serialize_k_v(k, v) when k in @decimal_types and (is_float(v) or is_integer(v)) do
-    to_map(k, v)
+    to_map(k, v / 1)
   end
 
   defp serialize_k_v(k, v) when k in @decimal_types and is_binary(v) do
@@ -107,10 +109,19 @@ defmodule Ebnis.Experiences.DefaultImpl.EctoFieldVal do
   end
 
   defp parse(k, v) when k in @decimal_types and (is_float(v) or is_integer(v)) do
-    to_map(k, v)
+    to_map(k, v / 1)
   end
 
   defp parse(k, v) when k in @decimal_types and is_binary(v) do
+    v =
+      case Regex.match?(@float_string_pattern, v) do
+        true ->
+          String.replace(v, ".", "") <> ".0"
+
+        _ ->
+          v
+      end
+
     try do
       to_map(k, String.to_float(v))
     rescue

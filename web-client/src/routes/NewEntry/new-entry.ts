@@ -15,4 +15,5 @@ export type FormObj = { [k: string]: FormObjVal };
 export interface FieldComponentProps {
   name: string;
   setValue: (formName: string, value: FormObjVal) => void;
+  value: FormObjVal;
 }

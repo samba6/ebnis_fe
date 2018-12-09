@@ -40,7 +40,7 @@ const fieldTypeUtils = {
   },
 
   [FieldType.DATE]: {
-    component(props: FieldComponentProps) {
+    component({ value, ...props }: FieldComponentProps) {
       return <DateField {...props} className="light-border" />;
     },
 
@@ -64,11 +64,22 @@ const fieldTypeUtils = {
   },
 
   [FieldType.DECIMAL]: {
-    component(props: FieldComponentProps) {
-      return <Input id={props.name} name={props.name} fluid={true} />;
+    component({ name, value, setValue }: FieldComponentProps) {
+      return (
+        <Input
+          type="number"
+          id={name}
+          name={name}
+          value={value}
+          fluid={true}
+          onChange={e => {
+            setValue(name, Number(e.target.value) as any);
+          }}
+        />
+      );
     },
 
-    default: 0,
+    default: "",
 
     toString(val: number) {
       return val + "";
@@ -76,11 +87,22 @@ const fieldTypeUtils = {
   },
 
   [FieldType.INTEGER]: {
-    component(props: FieldComponentProps) {
-      return <Input id={props.name} name={props.name} fluid={true} />;
+    component({ name, value, setValue }: FieldComponentProps) {
+      return (
+        <Input
+          type="number"
+          id={name}
+          name={name}
+          value={value}
+          fluid={true}
+          onChange={e => {
+            setValue(name, Number(e.target.value) as any);
+          }}
+        />
+      );
     },
 
-    default: 0,
+    default: "",
 
     toString(val: number) {
       return val + "";
@@ -259,12 +281,17 @@ export const NewEntry = (props: Props) => {
 
     const { name: fieldName, type } = field;
     const name = getFieldName(index);
+    const utils = fieldTypeUtils[type];
 
     return (
       <Form.Field key={index}>
         <label htmlFor={fieldName}>{fieldName}</label>
 
-        {fieldTypeUtils[type].component({ name, setValue })}
+        {utils.component({
+          name,
+          setValue,
+          value: formValues[index] || (utils.default as any)
+        })}
       </Form.Field>
     );
   }
