@@ -12,7 +12,8 @@ import {
   LOGIN_URL,
   SIGN_UP_URL,
   NEW_EXP_URL,
-  EXP_URL
+  EXP_URL,
+  NEW_ENTRY_URL
 } from "../../Routing";
 import Loading from "../../components/Loading";
 import Sidebar from "../../components/Sidebar";
@@ -25,6 +26,7 @@ const Login = lazy(() => import("../../routes/Login"));
 const SignUp = lazy(() => import("../../routes/SignUp"));
 const NewExp = lazy(() => import("../../routes/NewExp"));
 const Exp = lazy(() => import("../../routes/Exp"));
+const NewEntry = lazy(() => import("../../routes/NewEntry"));
 
 let client = makeClient();
 const loading = <Loading />;
@@ -70,6 +72,14 @@ export function App() {
                     exact={true}
                     path={EXP_URL}
                     component={Exp}
+                    redirectTo={Login}
+                    {...childProps}
+                  />
+
+                  <AuthRequired
+                    exact={true}
+                    path={NEW_ENTRY_URL}
+                    component={NewEntry}
                     redirectTo={Login}
                     {...childProps}
                   />

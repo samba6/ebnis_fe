@@ -1,9 +1,17 @@
-import { graphql } from "react-apollo";
+import { graphql, compose } from "react-apollo";
 
 import Exp from "./exp-x";
 import { OwnProps } from "./exp";
 import GET_EXP_QUERY, { GetExpGqlProps } from "../../graphql/get-exp.query";
-import { GetAnExp, GetAnExpVariables } from "../../graphql/apollo-gql.d";
+import {
+  GetAnExp,
+  GetAnExpVariables,
+  GetExpAllEntries,
+  GetExpAllEntriesVariables
+} from "../../graphql/apollo-gql.d";
+import GET_EXP_ENTRIES_QUERY, {
+  GetExpEntriesGqlProps
+} from "../../graphql/exp-entries.query";
 
 const getExpGql = graphql<
   OwnProps,
@@ -23,4 +31,25 @@ const getExpGql = graphql<
   }
 });
 
-export default getExpGql(Exp);
+const getExpEntriesGql = graphql<
+  OwnProps,
+  GetExpAllEntries,
+  GetExpAllEntriesVariables,
+  GetExpEntriesGqlProps | undefined
+>(GET_EXP_ENTRIES_QUERY, {
+  props: props => props.data,
+  options: ({ match }) => {
+    return {
+      variables: {
+        entry: {
+          expId: match.params.id
+        }
+      }
+    };
+  }
+});
+
+export default compose(
+  getExpGql,
+  getExpEntriesGql
+)(Exp);

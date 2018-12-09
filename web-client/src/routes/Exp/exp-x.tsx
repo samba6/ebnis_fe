@@ -1,88 +1,57 @@
-import React, { useEffect, useState } from "react";
-import { Form, Input } from "semantic-ui-react";
+import React, { useEffect, Fragment, useMemo } from "react";
+import { Button } from "semantic-ui-react";
+import dateFnParse from "date-fns/parse";
+import dateFnFormat from "date-fns/format";
 
 import "./exp.scss";
-import { Props, FieldComponentProps, FormObj, FormObjVal } from "./exp";
+import { Props } from "./exp";
 import Header from "../../components/Header";
-import { setTitle } from "../../Routing";
+import { setTitle, makeNewEntryRoute } from "../../Routing";
 import Loading from "../../components/Loading";
-import { GetAnExp_exp_fieldDefs, FieldType } from "../../graphql/apollo-gql.d";
-import DateField from "../../components/DateField";
-import DateTimeField from "../../components/DateTimeField";
+import {
+  GetExpAllEntries_expEntries,
+  GetExpAllEntries_expEntries_fields,
+  FieldType
+} from "../../graphql/apollo-gql.d";
 
-const fieldComponents = {
-  [FieldType.SINGLE_LINE_TEXT](props: FieldComponentProps) {
-    return <Input id={props.name} name={props.name} fluid={true} />;
+const displayFieldType = {
+  [FieldType.SINGLE_LINE_TEXT](text: string) {
+    return text;
   },
 
-  [FieldType.MULTI_LINE_TEXT](props: FieldComponentProps) {
-    return <Input id={props.name} name={props.name} fluid={true} />;
+  [FieldType.MULTI_LINE_TEXT](text: string) {
+    return text;
   },
 
-  [FieldType.DATE](props: FieldComponentProps) {
-    return <DateField {...props} className="light-border" />;
+  [FieldType.DATE](text: string) {
+    const date = dateFnParse(text);
+
+    return dateFnFormat(date, "Do MMM, YYYY");
   },
 
-  [FieldType.DATETIME](props: FieldComponentProps) {
-    return <DateTimeField {...props} className="light-border" />;
+  [FieldType.DATETIME](text: string) {
+    const date = dateFnParse(text);
+
+    return dateFnFormat(date, "Do MMM, YYYY hh:mm A");
   },
 
-  [FieldType.DECIMAL](props: FieldComponentProps) {
-    return <Input id={props.name} name={props.name} fluid={true} />;
+  [FieldType.DECIMAL](text: string) {
+    return Number(text);
   },
 
-  [FieldType.INTEGER](props: FieldComponentProps) {
-    return <Input id={props.name} name={props.name} fluid={true} />;
+  [FieldType.INTEGER](text: string) {
+    return Number(text);
   }
 };
 
-const defaultFieldTypes = {
-  [FieldType.SINGLE_LINE_TEXT]: "",
-  [FieldType.MULTI_LINE_TEXT]: "",
-  [FieldType.DATE]: new Date(),
-  [FieldType.DATETIME]: new Date(),
-  [FieldType.DECIMAL]: 0,
-  [FieldType.INTEGER]: 0
-};
-
 export const Exp = (props: Props) => {
-  const { setHeader, loading, exp } = props;
-  const [formValues, setFormValues] = useState<FormObj>({} as FormObj);
+  const { setHeader, loading, exp, expEntries, history } = props;
 
-  // tslint:disable-next-line:no-console
-  console.log(
-    `
-
-
-    logging starts
-
-
-    formValues`,
-    formValues,
-    `
-
-    logging ends
-
-
-    `
-  );
-
-  // tslint:disable-next-line:no-console
-  console.log(
-    `
-
-
-    logging starts
-
-
-    exp`,
-    exp,
-    `
-
-    logging ends
-
-
-    `
+  const fieldDefs = useMemo(
+    function computeFieldDefs() {
+      return (exp && exp.fieldDefs) || [];
+    },
+    [exp]
   );
 
   useEffect(
@@ -97,46 +66,60 @@ export const Exp = (props: Props) => {
 
       return setTitle;
     },
-    [props.exp]
+    [exp]
   );
 
-  useEffect(
-    function setInitialFormValues() {
-      if (!exp) {
-        return;
-      }
-
-      const { fieldDefs } = exp;
-
-      if (!(fieldDefs && fieldDefs.length)) {
-        return;
-      }
-
-      const initialFormValues = fieldDefs.reduce(function fieldDefReducer(
-        acc,
-        field,
-        index
-      ) {
-        if (!field) {
-          return acc;
-        }
-
-        acc[getFieldName(index)] = defaultFieldTypes[field.type];
-        return acc;
-      },
-      {});
-
-      setFormValues(initialFormValues);
-    },
-    [props.exp]
-  );
-
-  function setValue(formName: string, value: FormObjVal) {
-    setFormValues({ ...formValues, [formName]: value });
+  function goToNewEntry() {
+    history.push(makeNewEntryRoute((exp && exp.id) || ""));
   }
 
-  function getFieldName(index: number) {
-    return `fields[${index}]`;
+  function renderEntryField(field: GetExpAllEntries_expEntries_fields | null) {
+    if (!field) {
+      return null;
+    }
+
+    const { defId, data } = field;
+    const fieldDef = fieldDefs.find(f => (f ? f.id === defId : false));
+
+    if (!fieldDef) {
+      return;
+    }
+
+    const { type, name: fieldName } = fieldDef;
+
+    const [fieldData] = Object.values(JSON.parse(data));
+    const text = displayFieldType[type](fieldData);
+
+    return (
+      <div key={defId}>
+        {fieldName} {text}
+      </div>
+    );
+  }
+
+  function renderEntry(
+    entry: GetExpAllEntries_expEntries | null,
+    index: number
+  ) {
+    if (!entry) {
+      return null;
+    }
+
+    const { fields } = entry;
+
+    return <div key={index}>{fields.map(renderEntryField)}</div>;
+  }
+
+  function renderEntries() {
+    if (!(expEntries && expEntries.length)) {
+      return (
+        <span className="no-entries" onClick={goToNewEntry}>
+          No entries. Click here to add one
+        </span>
+      );
+    }
+
+    return <Fragment>{expEntries.map(renderEntry)}</Fragment>;
   }
 
   if (loading) {
@@ -147,30 +130,26 @@ export const Exp = (props: Props) => {
     return <Loading />;
   }
 
-  const { title, fieldDefs } = exp;
-
-  function renderField(field: GetAnExp_exp_fieldDefs | null, index: number) {
-    if (!field) {
-      return null;
-    }
-
-    const { name: fieldName, type } = field;
-    const name = getFieldName(index);
-
-    return (
-      <Form.Field key={index}>
-        <label htmlFor={fieldName}>{fieldName}</label>
-
-        {fieldComponents[type]({ name, setValue })}
-      </Form.Field>
-    );
-  }
+  const { title } = exp;
 
   const render = (
     <div className="app-main routes-exp">
-      <div className="title">{title}</div>
+      <div className="header">
+        <div className="title">{title}</div>
 
-      <Form>{fieldDefs.map(renderField)}</Form>
+        <Button
+          className="new-exp-entry-button"
+          type="button"
+          name="new-exp-entry-button"
+          basic={true}
+          compact={true}
+          onClick={goToNewEntry}
+        >
+          New entry
+        </Button>
+      </div>
+
+      <div className="main">{renderEntries()}</div>
     </div>
   );
 

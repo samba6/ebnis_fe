@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import { Form, Dropdown, DropdownItemProps } from "semantic-ui-react";
 import getDaysInMonth from "date-fns/get_days_in_month";
 
@@ -69,10 +69,6 @@ export function DateField(props: DateFieldProps) {
   const [selectedYear, setSelectedYear] = useState(currYr);
   const [selectedMonth, setSelectedMonth] = useState(currMonth);
   const [selectedDay, setSelectedDay] = useState(currDay);
-
-  useEffect(function initialDateChange() {
-    setDate({});
-  }, []);
 
   const dayOptions = useMemo(
     function computeDays() {

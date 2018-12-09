@@ -4,6 +4,34 @@
 // This file was automatically generated and should not be edited.
 
 // ====================================================
+// GraphQL mutation operation: CreateAnEntry
+// ====================================================
+
+export interface CreateAnEntry_entry_fields {
+  defId: string;
+  data: any;
+}
+
+export interface CreateAnEntry_entry {
+  id: string;
+  expId: string;
+  fields: (CreateAnEntry_entry_fields | null)[];
+  insertedAt: any;
+}
+
+export interface CreateAnEntry {
+  entry: CreateAnEntry_entry | null;
+}
+
+export interface CreateAnEntryVariables {
+  entry: CreateEntry;
+}
+
+
+/* tslint:disable */
+// This file was automatically generated and should not be edited.
+
+// ====================================================
 // GraphQL mutation operation: CreateExpMutation
 // ====================================================
 
@@ -19,6 +47,34 @@ export interface CreateExpMutation {
 
 export interface CreateExpMutationVariables {
   exp: CreateExp;
+}
+
+
+/* tslint:disable */
+// This file was automatically generated and should not be edited.
+
+// ====================================================
+// GraphQL query operation: GetExpAllEntries
+// ====================================================
+
+export interface GetExpAllEntries_expEntries_fields {
+  defId: string;
+  data: any;
+}
+
+export interface GetExpAllEntries_expEntries {
+  id: string;
+  expId: string;
+  fields: (GetExpAllEntries_expEntries_fields | null)[];
+  insertedAt: any;
+}
+
+export interface GetExpAllEntries {
+  expEntries: (GetExpAllEntries_expEntries | null)[] | null;  // get all experiences belonging to a user
+}
+
+export interface GetExpAllEntriesVariables {
+  entry: GetExpEntries;
 }
 
 
@@ -119,6 +175,26 @@ export interface UserRegMutationVariables {
 // This file was automatically generated and should not be edited.
 
 // ====================================================
+// GraphQL fragment: EntryFrag
+// ====================================================
+
+export interface EntryFrag_fields {
+  defId: string;
+  data: any;
+}
+
+export interface EntryFrag {
+  id: string;
+  expId: string;
+  fields: (EntryFrag_fields | null)[];
+  insertedAt: any;
+}
+
+
+/* tslint:disable */
+// This file was automatically generated and should not be edited.
+
+// ====================================================
 // GraphQL fragment: ExpFrag
 // ====================================================
 
@@ -173,6 +249,18 @@ export enum FieldType {
   SINGLE_LINE_TEXT = "SINGLE_LINE_TEXT",
 }
 
+// Variables for creating an xperience entry
+export interface CreateEntry {
+  expId: string;
+  fields: (CreateField | null)[];
+}
+
+// Variables for creating an entry field
+export interface CreateField {
+  data: any;
+  defId: string;
+}
+
 // Variables for creating Experience
 export interface CreateExp {
   description?: string | null;
@@ -184,6 +272,11 @@ export interface CreateExp {
 export interface CreateFieldDef {
   name: string;
   type: FieldType;
+}
+
+// Variables for getting all entries belonging to an experience
+export interface GetExpEntries {
+  expId: string;
 }
 
 // Variables for getting an experience
