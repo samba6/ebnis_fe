@@ -13,6 +13,11 @@ defmodule EbnisWeb.Schema.Entry do
   object :entry do
     field(:id, non_null(:id))
     field(:exp_id, non_null(:id))
+
+    field :exp, non_null(:experience) do
+      resolve(&Resolver.exp/3)
+    end
+
     field :fields, :field |> list_of() |> non_null()
     field(:inserted_at, non_null(:iso_datetime))
     field(:updated_at, non_null(:iso_datetime))

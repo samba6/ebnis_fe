@@ -9,6 +9,9 @@ defmodule Ebnis.Query.Entry do
       expId
       insertedAt
       updatedAt
+      exp {
+        id
+      }
     }
   """
 

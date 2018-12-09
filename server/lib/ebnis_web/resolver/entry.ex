@@ -1,4 +1,6 @@
 defmodule EbnisWeb.Resolver.Entry do
+  import Absinthe.Resolution.Helpers, only: [on_load: 2]
+
   alias EbnisWeb.Resolver
   alias Ebnis.Experiences
 
@@ -69,5 +71,11 @@ defmodule EbnisWeb.Resolver.Entry do
 
   def get_exp_entries(_, _, _) do
     Resolver.unauthorized()
+  end
+
+  def exp(%{} = entry, _, %{context: %{loader: loader}}) do
+    loader
+    |> Dataloader.load(:data, :exp, entry)
+    |> on_load(&{:ok, Dataloader.get(&1, :data, :exp, entry)})
   end
 end

@@ -29,6 +29,9 @@ defmodule EbnisWeb.Schema.ExperienceEntryTest do
                   "entry" => %{
                     "id" => _,
                     "expId" => ^exp_id,
+                    "exp" => %{
+                      "id" => ^exp_id
+                    },
                     "fields" => fields
                   }
                 }
