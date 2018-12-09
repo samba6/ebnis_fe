@@ -20,7 +20,9 @@ defmodule Ebnis.Experiences.DefaultImpl do
     |> to_domain()
   end
 
-  def get_exps(user_id) do
+  def get_exp(id), do: Repo.get(Experience, id)
+
+  def get_user_exps(user_id) do
     Experience
     |> where([e], e.user_id == ^user_id)
     |> Repo.all()
@@ -49,6 +51,8 @@ defmodule Ebnis.Experiences.DefaultImpl do
     |> where([_, e], e.id == ^exp_id and e.user_id == ^user_id)
     |> Repo.all()
   end
+
+  def get_entry(id), do: Repo.get(Entry, id)
 
   # defp to_domain(%Exp{} = experience) do
   #   struct(

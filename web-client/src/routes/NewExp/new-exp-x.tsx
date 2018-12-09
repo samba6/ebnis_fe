@@ -387,9 +387,9 @@ export const NewExperience = (props: Props) => {
         {hasFieldDefs ? <hr className="submit-btn-hr" /> : undefined}
 
         <Button
-          className="exp-def-submit"
-          id="exp-def-submit"
-          name="exp-def-submit"
+          className="new-exp-submit"
+          id="new-exp-submit"
+          name="new-exp-submit"
           color="green"
           inverted={true}
           disabled={!dirty || formInvalid || isSubmitting}

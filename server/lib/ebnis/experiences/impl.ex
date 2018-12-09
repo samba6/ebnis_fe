@@ -9,7 +9,9 @@ defmodule Ebnis.Experiences.Impl do
               user_id :: binary() | Integer.t()
             ) :: nil | Experience.t()
 
-  @callback get_exps(user_id :: binary() | Integer.t()) :: [Experience.t()]
+  @callback get_exp(id :: binary()) :: nil | Experience.t()
+
+  @callback get_user_exps(user_id :: binary() | Integer.t()) :: [Experience.t()]
 
   @callback create_entry(map) :: {:ok, Entry.t()} | {:error, term, map}
 
@@ -17,4 +19,6 @@ defmodule Ebnis.Experiences.Impl do
               exp_id :: binary() | Integer.t(),
               user_id :: binary() | Integer.t()
             ) :: [Entry.t()]
+
+  @callback get_entry(id :: binary() | Integer.t()) :: Entry.t() | nil
 end

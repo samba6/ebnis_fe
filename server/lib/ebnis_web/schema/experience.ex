@@ -45,7 +45,7 @@ defmodule EbnisWeb.Schema.Experience do
   object :exp_query do
     @desc "get all experiences belonging to a user"
     field :exps, list_of(:experience) do
-      resolve(&Resolver.get_exps/3)
+      resolve(&Resolver.get_user_exps/3)
     end
 
     @desc "get an experience"
