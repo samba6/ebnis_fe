@@ -183,7 +183,6 @@ export const NewEntry = (props: Props) => {
       }
 
       const { type, id } = field;
-      // const val1 = val as any;
       const toString = fieldTypeUtils[type].toString as any;
 
       fields.push({
@@ -192,14 +191,16 @@ export const NewEntry = (props: Props) => {
       });
     }
 
+    const { id: expId } = exp;
+
     const variables = {
       entry: {
-        expId: exp.id,
+        expId,
         fields
       }
     };
 
-    const result = await createEntry({
+    await createEntry({
       variables,
       update: async function(client, { data: newEntry }) {
         if (!newEntry) {
@@ -212,46 +213,33 @@ export const NewEntry = (props: Props) => {
           return;
         }
 
+        const variables = {
+          entry: { expId }
+        };
+
         const data = client.readQuery<
           GetExpAllEntries,
           GetExpAllEntriesVariables
         >({
-          query: GET_EXP_ENTRIES_QUERY
+          query: GET_EXP_ENTRIES_QUERY,
+          variables
         });
 
         if (!data) {
           return;
         }
 
-        const expEntries = data.expEntries || [];
-        expEntries.push(entry);
-
         await client.writeQuery({
           query: GET_EXP_ENTRIES_QUERY,
+          variables,
           data: {
-            expEntries
+            expEntries: [...(data.expEntries || []), entry]
           }
         });
       }
     });
 
-    // tslint:disable-next-line:no-console
-    console.log(
-      `
-
-
-        logging starts
-
-
-        result create entry `,
-      result,
-      `
-
-        logging ends
-
-
-    `
-    );
+    goToExp();
   }
 
   if (loading) {

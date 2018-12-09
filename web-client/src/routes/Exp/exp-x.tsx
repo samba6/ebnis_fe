@@ -47,6 +47,24 @@ const displayFieldType = {
 export const Exp = (props: Props) => {
   const { setHeader, loading, exp, expEntries, history } = props;
 
+  // tslint:disable-next-line:no-console
+  console.log(
+    `
+
+
+  logging starts
+
+
+  expEntries`,
+    expEntries,
+    `
+
+  logging ends
+
+
+  `
+  );
+
   const fieldDefs = useMemo(
     function computeFieldDefs() {
       return (exp && exp.fieldDefs) || [];
@@ -107,7 +125,11 @@ export const Exp = (props: Props) => {
 
     const { fields } = entry;
 
-    return <div key={index}>{fields.map(renderEntryField)}</div>;
+    return (
+      <div key={index} className="entry-container">
+        {fields.map(renderEntryField)}
+      </div>
+    );
   }
 
   function renderEntries() {
