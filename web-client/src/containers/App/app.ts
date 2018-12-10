@@ -1,7 +1,4 @@
-import React from "react";
-
 export interface AppRouteProps {
-  setHeader: React.Dispatch<React.SetStateAction<JSX.Element>>;
   reInitSocket: (jwt: string) => void;
 }
 

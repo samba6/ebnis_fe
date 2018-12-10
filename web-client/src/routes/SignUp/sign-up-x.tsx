@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useContext } from "react";
 import { Button, Card, Input, Message, Icon, Form } from "semantic-ui-react";
 import {
   Formik,
@@ -21,6 +21,7 @@ import {
 import { Registration } from "../../graphql/apollo-gql.d";
 import { setTitle, ROOT_URL, LOGIN_URL } from "../../Routing";
 import Header from "../../components/Header";
+import { AppContext } from "../../containers/AppContext/app-context";
 
 const FORM_RENDER_PROPS = {
   name: ["Name", "text"],
@@ -31,8 +32,9 @@ const FORM_RENDER_PROPS = {
 };
 
 export function SignUp(props: Props) {
-  const { setHeader, history, regUser } = props;
+  const { history, regUser } = props;
   const mainRef = useRef<HTMLDivElement | null>(null);
+  const { setHeader } = useContext(AppContext);
 
   const [formErrors, setFormErrors] = useState<
     undefined | FormikErrors<Registration>
@@ -43,10 +45,7 @@ export function SignUp(props: Props) {
   );
 
   useEffect(function setPageTitle() {
-    if (setHeader) {
-      setHeader(<Header title="Sign up for Ebnis" wide={true} />);
-    }
-
+    setHeader(<Header title="Sign up for Ebnis" wide={true} />);
     setTitle("Sign up");
 
     return setTitle;

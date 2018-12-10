@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import { Form, Input, Button, TextArea } from "semantic-ui-react";
 import dateFnFormat from "date-fns/format";
 
@@ -16,6 +16,7 @@ import {
 import DateField from "../../components/DateField";
 import DateTimeField from "../../components/DateTimeField";
 import GET_EXP_ENTRIES_QUERY from "../../graphql/exp-entries.query";
+import { AppContext } from "../../containers/AppContext/app-context";
 
 const fieldTypeUtils = {
   [FieldType.SINGLE_LINE_TEXT]: {
@@ -111,17 +112,14 @@ const fieldTypeUtils = {
 };
 
 export const NewEntry = (props: Props) => {
-  const { setHeader, loading, exp, history, createEntry } = props;
+  const { setHeader } = useContext(AppContext);
+  const { loading, exp, history, createEntry } = props;
   const [formValues, setFormValues] = useState<FormObj>({} as FormObj);
 
   useEffect(
     function setRouteTitle() {
       const title = "New " + ((exp && exp.title) || "entry");
-
-      if (setHeader) {
-        setHeader(<Header title={title} sideBar={true} />);
-      }
-
+      setHeader(<Header title={title} sideBar={true} />);
       setTitle(title);
 
       return setTitle;

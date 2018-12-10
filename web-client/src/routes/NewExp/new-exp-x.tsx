@@ -4,7 +4,8 @@ import React, {
   Fragment,
   SetStateAction,
   Dispatch,
-  useRef
+  useRef,
+  useContext
 } from "react";
 import {
   Formik,
@@ -38,6 +39,7 @@ import {
 import { ApolloError } from "apollo-client";
 import { makeExpRoute } from "../../Routing";
 import EXPS_QUERY, { GetExpGqlProps } from "../../graphql/exps.query";
+import { AppContext } from "../../containers/AppContext/app-context";
 
 const EMPTY_FIELD = { name: "", type: "" as FieldType };
 
@@ -46,7 +48,8 @@ interface SelectFieldTypeState {
 }
 
 export const NewExperience = (props: Props) => {
-  const { setHeader, createExp, history } = props;
+  const { setHeader } = useContext(AppContext);
+  const { createExp, history } = props;
   const [selectValues, setSelectValues] = useState({} as SelectFieldTypeState);
   const routeRef = useRef<HTMLDivElement | null>(null);
   const [showDescriptionInput, setShowDescriptionInput] = useState(true);
@@ -60,10 +63,7 @@ export const NewExperience = (props: Props) => {
   >(undefined);
 
   useEffect(function setCompTitle() {
-    if (setHeader) {
-      setHeader(<Header title="New Experience" sideBar={true} />);
-    }
-
+    setHeader(<Header title="New Experience" sideBar={true} />);
     setTitle("New Experience");
 
     return setTitle;

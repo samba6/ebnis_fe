@@ -1,4 +1,4 @@
-import React, { useEffect, Fragment, useMemo } from "react";
+import React, { useEffect, Fragment, useMemo, useContext } from "react";
 import { Button } from "semantic-ui-react";
 import dateFnParse from "date-fns/parse";
 import dateFnFormat from "date-fns/format";
@@ -13,6 +13,7 @@ import {
   GetExpAllEntries_expEntries_fields,
   FieldType
 } from "../../graphql/apollo-gql.d";
+import { AppContext } from "../../containers/AppContext/app-context";
 
 const displayFieldType = {
   [FieldType.SINGLE_LINE_TEXT](text: string) {
@@ -45,7 +46,8 @@ const displayFieldType = {
 };
 
 export const Exp = (props: Props) => {
-  const { setHeader, loading, exp, expEntries, history } = props;
+  const { loading, exp, expEntries, history } = props;
+  const { setHeader } = useContext(AppContext);
 
   const fieldDefs = useMemo(
     function computeFieldDefs() {
@@ -57,11 +59,7 @@ export const Exp = (props: Props) => {
   useEffect(
     function setRouteTitle() {
       const title = (exp && exp.title) || "Experience";
-
-      if (setHeader) {
-        setHeader(<Header title={title} sideBar={true} />);
-      }
-
+      setHeader(<Header title={title} sideBar={true} />);
       setTitle(title);
 
       return setTitle;

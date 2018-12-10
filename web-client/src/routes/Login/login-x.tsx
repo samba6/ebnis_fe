@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { Button, Card, Input, Message, Icon, Form } from "semantic-ui-react";
 import {
   Formik,
@@ -16,9 +16,10 @@ import { Props, ValidationSchema } from "./login";
 import Header from "../../components/Header";
 import { LoginUser as FormValues } from "../../graphql/apollo-gql.d";
 import { setTitle, ROOT_URL, SIGN_UP_URL } from "../../Routing";
+import { AppContext } from "../../containers/AppContext/app-context";
 
 export const Login = (props: Props) => {
-  const { setHeader } = props;
+  const { setHeader } = useContext(AppContext);
   const [pwdType, setPwdType] = useState("password");
 
   const [formErrors, setFormErrors] = useState<
@@ -30,11 +31,9 @@ export const Login = (props: Props) => {
   );
 
   useEffect(function setPageTitle() {
-    if (setHeader) {
-      setHeader(
-        <Header title="Login to your account" wide={true} sideBar={false} />
-      );
-    }
+    setHeader(
+      <Header title="Login to your account" wide={true} sideBar={false} />
+    );
 
     setTitle("Log in");
   }, []);

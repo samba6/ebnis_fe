@@ -1,9 +1,8 @@
-import React, { lazy, Suspense, useState, useEffect } from "react";
+import React, { lazy, Suspense, useState, useEffect, useContext } from "react";
 import { ApolloProvider } from "react-apollo";
 import { BrowserRouter, Switch, Route } from "react-router-dom";
 
 import "./app.scss";
-import Header from "../../components/Header";
 import { makeClient, persistCache } from "../../state/set-up";
 import logger from "../../logger";
 import AuthRequired from "../../components/AuthRequired";
@@ -19,6 +18,7 @@ import Loading from "../../components/Loading";
 import Sidebar from "../../components/Sidebar";
 import { getSocket } from "../../socket";
 import { AppRouteProps } from "./app";
+import { AppContext } from "../AppContext/app-context";
 
 const Home = lazy(() => import("../../routes/Home"));
 const Login = lazy(() => import("../../routes/Login"));
@@ -36,8 +36,8 @@ function reInitSocket(jwt: string) {
 }
 
 export function App() {
-  const [header, setHeader] = useState(<Header title="Ebnis" />);
   const [cacheLoaded, setCacheLoaded] = useState(false);
+  const { header } = useContext(AppContext);
 
   useEffect(() => {
     (async function() {
@@ -51,7 +51,6 @@ export function App() {
   }, []);
 
   const childProps: AppRouteProps = {
-    setHeader,
     reInitSocket
   };
 
