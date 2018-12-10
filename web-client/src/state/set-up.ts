@@ -1,13 +1,13 @@
 import { InMemoryCache } from "apollo-cache-inmemory";
 import { ApolloClient } from "apollo-client";
-import { ApolloLink, Operation } from "apollo-link";
-import { onError } from "apollo-link-error";
+import { ApolloLink } from "apollo-link";
 import { CachePersistor } from "apollo-cache-persist";
 import * as AbsintheSocket from "@absinthe/socket";
 import { createAbsintheSocketLink } from "@absinthe/socket-apollo-link";
 
-import initState, { getToken } from "./resolvers";
+import initState from "./resolvers";
 import { getSocket } from "../socket";
+import { middleWares } from "./apollo-middle-wares";
 
 const cache = new InMemoryCache();
 let client: ApolloClient<{}>;
@@ -19,14 +19,7 @@ export function makeClient(socket = getSocket(), reNew = false) {
 
   const absintheSocket = AbsintheSocket.create(socket);
 
-  let socketLink = createAbsintheSocketLink(absintheSocket);
-
-  socketLink = middlewareAuthLink().concat(socketLink);
-  socketLink = middlewareErrorLink().concat(socketLink);
-
-  if (process.env.NODE_ENV !== "production") {
-    socketLink = middlewareLoggerLink(socketLink);
-  }
+  let socketLink = middleWares(createAbsintheSocketLink(absintheSocket));
 
   client = new ApolloClient({
     cache,
@@ -69,102 +62,3 @@ export const resetClientAndPersistor = async () => {
   await client.clearStore();
   await persistor.resume();
 };
-
-// HELPER FUNCTIONS
-
-function middlewareAuthLink() {
-  return new ApolloLink((operation, forward) => {
-    const token = getToken();
-
-    if (token) {
-      operation.setContext({
-        headers: {
-          authorization: `Bearer ${token}`
-        }
-      });
-    }
-
-    return forward ? forward(operation) : null;
-  });
-}
-
-const getNow = () => {
-  const n = new Date();
-  return `${n.getHours()}:${n.getMinutes()}:${n.getSeconds()}`;
-};
-
-function middlewareLoggerLink(l: ApolloLink) {
-  const processOperation = (operation: Operation) => ({
-    query: operation.query.loc ? operation.query.loc.source.body : "",
-    variables: operation.variables
-  });
-
-  const logger = new ApolloLink((operation, forward) => {
-    const operationName = `Apollo operation: ${operation.operationName}`;
-
-    // tslint:disable-next-line:no-console
-    console.log(
-      "\n\n\n",
-      getNow(),
-      `=============================${operationName}========================\n`,
-      processOperation(operation),
-      `\n=========================End ${operationName}=========================`
-    );
-
-    if (!forward) {
-      return null;
-    }
-
-    const fop = forward(operation);
-
-    if (fop.map) {
-      return fop.map(response => {
-        // tslint:disable-next-line:no-console
-        console.log(
-          "\n\n\n",
-          getNow(),
-          `==============Received response from ${operationName}============\n`,
-          response,
-          `\n==========End Received response from ${operationName}=============`
-        );
-        return response;
-      });
-    }
-
-    return fop;
-  });
-
-  return logger.concat(l);
-}
-
-function middlewareErrorLink() {
-  return onError(({ graphQLErrors, networkError, response, operation }) => {
-    // tslint:disable-next-line:ban-types
-    const logError = (errorName: string, obj: Object) => {
-      if (process.env.NODE_ENV === "production") {
-        return;
-      }
-
-      const operationName = `[${errorName} error] from Apollo operation: ${
-        operation.operationName
-      }`;
-
-      // tslint:disable-next-line:no-console
-      console.error(
-        "\n\n\n",
-        getNow(),
-        `============================${operationName}=======================\n`,
-        obj,
-        `\n====================End ${operationName}============================`
-      );
-    };
-
-    if (response) {
-      logError("Response", response);
-    }
-
-    if (networkError) {
-      logError("Network", networkError);
-    }
-  });
-}
