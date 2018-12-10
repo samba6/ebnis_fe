@@ -2,7 +2,6 @@ import { RouteComponentProps } from "react-router-dom";
 import * as Yup from "yup";
 import { DropdownItemProps } from "semantic-ui-react";
 
-import { AppRouteProps } from "../../containers/App/app";
 import { CreateExpMutationProps } from "../../graphql/create-exp.mutation";
 import {
   CreateExp as FormValues,
@@ -10,7 +9,7 @@ import {
   FieldType
 } from "../../graphql/apollo-gql.d";
 
-export type OwnProps = AppRouteProps & RouteComponentProps<{}>;
+export type OwnProps = RouteComponentProps<{}>;
 
 export type Props = OwnProps & CreateExpMutationProps;
 

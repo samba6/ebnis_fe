@@ -11,7 +11,8 @@ import Loading from "../../components/Loading";
 import {
   GetExpAllEntries_expEntries,
   GetExpAllEntries_expEntries_fields,
-  FieldType
+  FieldType,
+  GetAnExp_exp_fieldDefs
 } from "../../graphql/apollo-gql.d";
 import { AppContext } from "../../containers/AppContext/app-context";
 
@@ -77,7 +78,9 @@ export const Exp = (props: Props) => {
     }
 
     const { defId, data } = field;
-    const fieldDef = fieldDefs.find(f => (f ? f.id === defId : false));
+    const fieldDef = fieldDefs.find((f: GetAnExp_exp_fieldDefs | null) =>
+      f ? f.id === defId : false
+    );
 
     if (!fieldDef) {
       return;

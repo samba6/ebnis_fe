@@ -34,7 +34,7 @@ const FORM_RENDER_PROPS = {
 export function SignUp(props: Props) {
   const { history, regUser } = props;
   const mainRef = useRef<HTMLDivElement | null>(null);
-  const { setHeader } = useContext(AppContext);
+  const { setHeader, reInitSocket } = useContext(AppContext);
 
   const [formErrors, setFormErrors] = useState<
     undefined | FormikErrors<Registration>
@@ -199,7 +199,7 @@ export function SignUp(props: Props) {
         const user = result.data.registration;
 
         if (user) {
-          props.reInitSocket(user.jwt);
+          reInitSocket(user.jwt);
         }
 
         await props.updateLocalUser({

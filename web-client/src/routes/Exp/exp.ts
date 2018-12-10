@@ -1,11 +1,10 @@
 import { RouteComponentProps } from "react-router-dom";
 
-import { AppRouteProps } from "../../containers/App/app";
 import { GetExpGqlProps } from "../../graphql/get-exp.query";
 import { GetExpEntriesGqlProps } from "../../graphql/exp-entries.query";
 import { ExpRouteParams } from "../../Routing";
 
-export type OwnProps = AppRouteProps & RouteComponentProps<ExpRouteParams>;
+export type OwnProps = RouteComponentProps<ExpRouteParams>;
 
 export type Props = OwnProps & GetExpGqlProps & GetExpEntriesGqlProps;
 

@@ -3,7 +3,7 @@ import { ApolloProvider } from "react-apollo";
 import { BrowserRouter, Switch, Route } from "react-router-dom";
 
 import "./app.scss";
-import { makeClient, persistCache } from "../../state/set-up";
+import { persistCache } from "../../state/set-up";
 import logger from "../../logger";
 import AuthRequired from "../../components/AuthRequired";
 import {
@@ -16,8 +16,6 @@ import {
 } from "../../Routing";
 import Loading from "../../components/Loading";
 import Sidebar from "../../components/Sidebar";
-import { getSocket } from "../../socket";
-import { AppRouteProps } from "./app";
 import { AppContext } from "../AppContext/app-context";
 
 const Home = lazy(() => import("../../routes/Home"));
@@ -27,17 +25,11 @@ const NewExp = lazy(() => import("../../routes/NewExp"));
 const Exp = lazy(() => import("../../routes/Exp"));
 const NewEntry = lazy(() => import("../../routes/NewEntry"));
 
-let client = makeClient();
 const loading = <Loading />;
-
-function reInitSocket(jwt: string) {
-  const socket = getSocket().ebnisConnect(jwt);
-  client = makeClient(socket, true);
-}
 
 export function App() {
   const [cacheLoaded, setCacheLoaded] = useState(false);
-  const { header } = useContext(AppContext);
+  const { header, client } = useContext(AppContext);
 
   useEffect(() => {
     (async function() {
@@ -49,10 +41,6 @@ export function App() {
       }
     })();
   }, []);
-
-  const childProps: AppRouteProps = {
-    reInitSocket
-  };
 
   return (
     <div className="containers-app">
@@ -70,7 +58,6 @@ export function App() {
                   path={EXP_URL}
                   component={Exp}
                   redirectTo={Login}
-                  {...childProps}
                 />
 
                 <AuthRequired
@@ -78,7 +65,6 @@ export function App() {
                   path={NEW_ENTRY_URL}
                   component={NewEntry}
                   redirectTo={Login}
-                  {...childProps}
                 />
 
                 <AuthRequired
@@ -86,7 +72,6 @@ export function App() {
                   path={NEW_EXP_URL}
                   component={NewExp}
                   redirectTo={Login}
-                  {...childProps}
                 />
 
                 <AuthRequired
@@ -94,30 +79,21 @@ export function App() {
                   path={ROOT_URL}
                   component={Home}
                   redirectTo={Login}
-                  {...childProps}
                 />
 
                 <Route
                   exact={true}
                   path={LOGIN_URL}
-                  render={renderProps => (
-                    <Login {...childProps} {...renderProps} />
-                  )}
+                  render={renderProps => <Login {...renderProps} />}
                 />
 
                 <Route
                   exact={true}
                   path={SIGN_UP_URL}
-                  render={renderProps => (
-                    <SignUp {...childProps} {...renderProps} />
-                  )}
+                  render={renderProps => <SignUp {...renderProps} />}
                 />
 
-                <Route
-                  render={renderProps => (
-                    <Login {...childProps} {...renderProps} />
-                  )}
-                />
+                <Route render={renderProps => <Login {...renderProps} />} />
               </Switch>
             ) : (
               <Loading />

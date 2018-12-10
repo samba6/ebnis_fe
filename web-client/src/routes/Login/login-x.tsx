@@ -19,7 +19,7 @@ import { setTitle, ROOT_URL, SIGN_UP_URL } from "../../Routing";
 import { AppContext } from "../../containers/AppContext/app-context";
 
 export const Login = (props: Props) => {
-  const { setHeader } = useContext(AppContext);
+  const { setHeader, reInitSocket } = useContext(AppContext);
   const [pwdType, setPwdType] = useState("password");
 
   const [formErrors, setFormErrors] = useState<
@@ -122,7 +122,7 @@ export const Login = (props: Props) => {
         const user = result.data.login;
 
         if (user) {
-          props.reInitSocket(user.jwt);
+          reInitSocket(user.jwt);
         }
 
         await props.updateLocalUser({

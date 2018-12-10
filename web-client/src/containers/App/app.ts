@@ -1,7 +1,3 @@
-export interface AppRouteProps {
-  reInitSocket: (jwt: string) => void;
-}
-
 export enum MediaQueryKey {
   SCREEN_MIN_WIDTH_600 = "screenMinWidth600"
 }
