@@ -1,7 +1,7 @@
 import React, { useContext } from "react";
 
 import "./sidebar.scss";
-import { AppContext } from "../../containers/App/app";
+import { AppContext } from "../../containers/AppContext/app-context";
 import { NEW_EXP_URL, ROOT_URL } from "../../Routing";
 import { Props } from "./sidebar";
 

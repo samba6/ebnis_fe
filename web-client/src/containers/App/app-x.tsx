@@ -19,7 +19,6 @@ import Loading from "../../components/Loading";
 import Sidebar from "../../components/Sidebar";
 import { getSocket } from "../../socket";
 import { AppRouteProps } from "./app";
-import { AppContextParent } from "./app-context";
 
 const Home = lazy(() => import("../../routes/Home"));
 const Login = lazy(() => import("../../routes/Login"));
@@ -59,75 +58,73 @@ export function App() {
   return (
     <div className="containers-app">
       <ApolloProvider client={client}>
-        <AppContextParent>
-          {header}
+        {header}
 
-          <BrowserRouter>
-            <Suspense fallback={loading}>
-              <Sidebar />
+        <BrowserRouter>
+          <Suspense fallback={loading}>
+            <Sidebar />
 
-              {cacheLoaded ? (
-                <Switch>
-                  <AuthRequired
-                    exact={true}
-                    path={EXP_URL}
-                    component={Exp}
-                    redirectTo={Login}
-                    {...childProps}
-                  />
+            {cacheLoaded ? (
+              <Switch>
+                <AuthRequired
+                  exact={true}
+                  path={EXP_URL}
+                  component={Exp}
+                  redirectTo={Login}
+                  {...childProps}
+                />
 
-                  <AuthRequired
-                    exact={true}
-                    path={NEW_ENTRY_URL}
-                    component={NewEntry}
-                    redirectTo={Login}
-                    {...childProps}
-                  />
+                <AuthRequired
+                  exact={true}
+                  path={NEW_ENTRY_URL}
+                  component={NewEntry}
+                  redirectTo={Login}
+                  {...childProps}
+                />
 
-                  <AuthRequired
-                    exact={true}
-                    path={NEW_EXP_URL}
-                    component={NewExp}
-                    redirectTo={Login}
-                    {...childProps}
-                  />
+                <AuthRequired
+                  exact={true}
+                  path={NEW_EXP_URL}
+                  component={NewExp}
+                  redirectTo={Login}
+                  {...childProps}
+                />
 
-                  <AuthRequired
-                    exact={true}
-                    path={ROOT_URL}
-                    component={Home}
-                    redirectTo={Login}
-                    {...childProps}
-                  />
+                <AuthRequired
+                  exact={true}
+                  path={ROOT_URL}
+                  component={Home}
+                  redirectTo={Login}
+                  {...childProps}
+                />
 
-                  <Route
-                    exact={true}
-                    path={LOGIN_URL}
-                    render={renderProps => (
-                      <Login {...childProps} {...renderProps} />
-                    )}
-                  />
+                <Route
+                  exact={true}
+                  path={LOGIN_URL}
+                  render={renderProps => (
+                    <Login {...childProps} {...renderProps} />
+                  )}
+                />
 
-                  <Route
-                    exact={true}
-                    path={SIGN_UP_URL}
-                    render={renderProps => (
-                      <SignUp {...childProps} {...renderProps} />
-                    )}
-                  />
+                <Route
+                  exact={true}
+                  path={SIGN_UP_URL}
+                  render={renderProps => (
+                    <SignUp {...childProps} {...renderProps} />
+                  )}
+                />
 
-                  <Route
-                    render={renderProps => (
-                      <Login {...childProps} {...renderProps} />
-                    )}
-                  />
-                </Switch>
-              ) : (
-                <Loading />
-              )}
-            </Suspense>
-          </BrowserRouter>
-        </AppContextParent>
+                <Route
+                  render={renderProps => (
+                    <Login {...childProps} {...renderProps} />
+                  )}
+                />
+              </Switch>
+            ) : (
+              <Loading />
+            )}
+          </Suspense>
+        </BrowserRouter>
       </ApolloProvider>
     </div>
   );

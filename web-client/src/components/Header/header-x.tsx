@@ -4,7 +4,7 @@ import { Icon } from "semantic-ui-react";
 import "./header.scss";
 import logo from "./logo.png";
 import { Props } from "./header";
-import { AppContext } from "../../containers/App/app";
+import { AppContext } from "../../containers/AppContext/app-context";
 
 export const Header = (props: Props) => {
   const { title, wide, sideBar } = props;

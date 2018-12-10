@@ -4,9 +4,15 @@ import "semantic-ui-css-offline";
 
 import "./index.scss";
 import App from "./containers/App";
+import AppContext from "./containers/AppContext";
 import * as serviceWorker from "./serviceWorker";
 
-ReactDOM.render(<App />, document.getElementById("root"));
+ReactDOM.render(
+  <AppContext>
+    <App />
+  </AppContext>,
+  document.getElementById("root")
+);
 
 // If you want your app to work offline and load faster, you can change
 // unregister() to register() below. Note this comes with some pitfalls.
