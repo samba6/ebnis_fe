@@ -53,33 +53,21 @@ export function App() {
 
             {cacheLoaded ? (
               <Switch>
-                <AuthRequired
-                  exact={true}
-                  path={EXP_URL}
-                  component={Exp}
-                  redirectTo={Login}
-                />
+                <AuthRequired exact={true} path={EXP_URL} component={Exp} />
 
                 <AuthRequired
                   exact={true}
                   path={NEW_ENTRY_URL}
                   component={NewEntry}
-                  redirectTo={Login}
                 />
 
                 <AuthRequired
                   exact={true}
                   path={NEW_EXP_URL}
                   component={NewExp}
-                  redirectTo={Login}
                 />
 
-                <AuthRequired
-                  exact={true}
-                  path={ROOT_URL}
-                  component={Home}
-                  redirectTo={Login}
-                />
+                <AuthRequired exact={true} path={ROOT_URL} component={Home} />
 
                 <Route
                   exact={true}

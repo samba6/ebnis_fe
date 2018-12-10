@@ -1,6 +1,6 @@
 import { graphql, compose } from "react-apollo";
 
-import AuthRequired from "./component";
+import AuthRequired from "./auth-required-x";
 import AUTH_USER_LOCAL_QUERY, {
   UserLocalGqlData,
   UserLocalGqlProps
