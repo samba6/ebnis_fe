@@ -5,8 +5,8 @@ import { CachePersistor } from "apollo-cache-persist";
 import * as AbsintheSocket from "@absinthe/socket";
 import { createAbsintheSocketLink } from "@absinthe/socket-apollo-link";
 
-import initState from "./resolvers";
-import { getSocket } from "../socket";
+import initState from "../../state/resolvers";
+import { getSocket } from "../../socket";
 import { middleWares } from "./apollo-middle-wares";
 
 const cache = new InMemoryCache();

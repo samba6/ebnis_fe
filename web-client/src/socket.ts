@@ -1,6 +1,6 @@
 import { Socket, Channel } from "phoenix";
 import { logger } from "./logger";
-import { getToken } from "./state/resolvers";
+import { getToken } from "./state/tokens";
 import getBackendUrls from "./state/get-backend-urls";
 
 type AllQueries = {};

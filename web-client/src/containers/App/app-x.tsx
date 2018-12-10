@@ -3,7 +3,7 @@ import { ApolloProvider } from "react-apollo";
 import { BrowserRouter, Switch, Route } from "react-router-dom";
 
 import "./app.scss";
-import { persistCache } from "../../state/set-up";
+import { persistCache } from "../AppContext/set-up";
 import logger from "../../logger";
 import AuthRequired from "../../components/AuthRequired";
 import {

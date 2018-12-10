@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { AppContext } from "./app-context";
 import Header from "../../components/Header";
 import { getSocket } from "../../socket";
-import { makeClient } from "../../state/set-up";
+import { makeClient } from "./set-up";
 
 let client = makeClient();
 

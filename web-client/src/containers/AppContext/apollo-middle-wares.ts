@@ -1,7 +1,7 @@
 import { ApolloLink, Operation } from "apollo-link";
 import { onError } from "apollo-link-error";
 
-import { getToken } from "./resolvers";
+import { getToken } from "../../state/tokens";
 
 const middlewareAuthLink = new ApolloLink((operation, forward) => {
   const token = getToken();
