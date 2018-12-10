@@ -20,7 +20,7 @@
     {
       "label": "deploy to netlify only",
       "type": "shell",
-      "command": "yarn build-prod  && cd .. && git co master && git merge dev && netlify -p -s ebnis -d web-client/build && git co dev",
+      "command": "yarn build-prod  && cd .. && git co master && git merge dev && netlify deploy -p -s ebnis -d web-client/build && git co dev",
       "problemMatcher": []
     },
 
