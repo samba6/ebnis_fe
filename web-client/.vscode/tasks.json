@@ -18,6 +18,13 @@
     },
 
     {
+      "label": "deploy to netlify only",
+      "type": "shell",
+      "command": "yarn build-prod  && cd .. && git co master && git merge dev && netlify -p -s ebnis -d web-client/build && git co dev",
+      "problemMatcher": []
+    },
+
+    {
       "label": "Apollo code gen",
       "type": "shell",
       "command": "apollo-codegen introspect-schema http://localhost:4022/api --output src/graphql/schema.json && apollo-codegen generate src/graphql/*.ts --schema src/graphql/schema.json --target typescript --output src/graphql/apollo-gql.d.ts",
