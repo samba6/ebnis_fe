@@ -13,9 +13,7 @@ import initState from "../../state/resolvers";
 import { middleWares } from "./apollo-middle-wares";
 
 const cache = new InMemoryCache();
-let client: ApolloClient<{}>;
-client = makeClient();
-
+let client = makeClient();
 const storage = localStorage as any;
 
 const persistor = new CachePersistor({
@@ -54,7 +52,7 @@ export function AppContextParent(props: React.Props<{}>) {
         },
         reInitSocket(jwt: string) {
           const socket = getSocket().ebnisConnect(jwt);
-          client = makeClient(socket, true);
+          client = makeClient(socket);
         }
       }}
     >
@@ -65,11 +63,7 @@ export function AppContextParent(props: React.Props<{}>) {
 
 export default AppContextParent;
 
-export function makeClient(socket = getSocket(), reNew = false) {
-  if (client && !reNew) {
-    return client;
-  }
-
+export function makeClient(socket = getSocket()): ApolloClient<{}> {
   const absintheSocket = AbsintheSocket.create(socket);
 
   let socketLink = middleWares(createAbsintheSocketLink(absintheSocket));
