@@ -31,16 +31,18 @@ const FORM_RENDER_PROPS = {
 };
 
 export function SignUp(props: Props) {
-  const { setHeader, history } = props;
+  const { setHeader, history, regUser } = props;
   const mainRef = useRef<HTMLDivElement | null>(null);
+
   const [formErrors, setFormErrors] = useState<
     undefined | FormikErrors<Registration>
   >(undefined);
+
   const [graphQlError, setGraphQlError] = useState<ApolloError | undefined>(
     undefined
   );
 
-  useEffect(() => {
+  useEffect(function setPageTitle() {
     if (setHeader) {
       setHeader(<Header title="Sign up for Ebnis" wide={true} />);
     }
@@ -103,7 +105,7 @@ export function SignUp(props: Props) {
   }
 
   function renderInput(label: string, type: string) {
-    return function(formProps: FieldProps<Registration>) {
+    return function renderInputInner(formProps: FieldProps<Registration>) {
       const { field } = formProps;
       const name = field.name as FormValuesKey;
       const isSourceField = name === "source";
@@ -182,8 +184,6 @@ export function SignUp(props: Props) {
       scrollToTop();
       return;
     }
-
-    const { regUser, history } = props;
 
     if (!regUser) {
       return;

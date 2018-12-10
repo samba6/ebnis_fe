@@ -45,7 +45,7 @@ const persistor = new CachePersistor({
 });
 
 export async function persistCache() {
-  const SCHEMA_VERSION = "3.1"; // Must be a string.
+  const SCHEMA_VERSION = "1.0"; // Must be a string.
   const SCHEMA_VERSION_KEY = "ebnis-apollo-schema-version";
   const currentVersion = localStorage.getItem(SCHEMA_VERSION_KEY);
 

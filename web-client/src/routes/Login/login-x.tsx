@@ -6,7 +6,8 @@ import {
   FieldProps,
   FormikProps,
   FormikActions,
-  FormikErrors
+  FormikErrors,
+  Field
 } from "formik";
 import { ApolloError } from "apollo-client";
 
@@ -18,6 +19,7 @@ import { setTitle, ROOT_URL, SIGN_UP_URL } from "../../Routing";
 
 export const Login = (props: Props) => {
   const { setHeader } = props;
+  const [pwdType, setPwdType] = useState("password");
 
   const [formErrors, setFormErrors] = useState<
     FormikErrors<FormValues> | undefined
@@ -27,7 +29,7 @@ export const Login = (props: Props) => {
     undefined
   );
 
-  useEffect(() => {
+  useEffect(function setPageTitle() {
     if (setHeader) {
       setHeader(
         <Header title="Login to your account" wide={true} sideBar={false} />
@@ -37,12 +39,12 @@ export const Login = (props: Props) => {
     setTitle("Log in");
   }, []);
 
-  const renderForm = ({
+  function renderForm({
     dirty,
     isSubmitting,
     values,
     ...formikProps
-  }: FormikProps<FormValues>) => {
+  }: FormikProps<FormValues>) {
     const { history } = props;
 
     return (
@@ -53,7 +55,7 @@ export const Login = (props: Props) => {
           <Form onSubmit={() => submit(values, formikProps)}>
             <FastField name="email" render={renderEmailInput} />
 
-            <FastField name="password" render={renderPwdInput} />
+            <Field name="password" render={renderPwdInput} />
 
             <Button
               id="login-submit"
@@ -84,7 +86,7 @@ export const Login = (props: Props) => {
         </Card.Content>
       </Card>
     );
-  };
+  }
 
   const submit = async (
     values: FormValues,
@@ -136,39 +138,53 @@ export const Login = (props: Props) => {
     }
   };
 
-  const renderEmailInput = (formProps: FieldProps<FormValues>) => {
+  function renderEmailInput(formProps: FieldProps<FormValues>) {
     const { field } = formProps;
 
     return (
-      <Form.Field
-        {...field}
-        control={Input}
-        placeholder="Email"
-        autoComplete="off"
-        label="Email"
-        id="email"
-        autoFocus={true}
-      />
+      <Form.Field>
+        <label htmlFor="email">Email</label>
+        <Input
+          {...field}
+          type="email"
+          autoComplete="off"
+          autoFocus={true}
+          id="email"
+        />
+      </Form.Field>
     );
-  };
+  }
 
-  const renderPwdInput = (formProps: FieldProps<FormValues>) => {
+  function renderPwdInput(formProps: FieldProps<FormValues>) {
     const { field } = formProps;
 
     return (
-      <Form.Field
-        {...field}
-        type="password"
-        control={Input}
-        placeholder="Password"
-        autoComplete="off"
-        label="Password"
-        id="password"
-      />
-    );
-  };
+      <Form.Field>
+        <label htmlFor="password">Password</label>
+        <Input icon placeholder="">
+          <input {...field} type={pwdType} autoComplete="off" id="password" />
 
-  const renderSubmissionErrors = () => {
+          {pwdType === "password" && field.value && (
+            <Icon name="eye" className="link" onClick={toggleShowPwdClicked} />
+          )}
+
+          {pwdType === "text" && field.value && (
+            <Icon
+              name="eye slash"
+              className="link"
+              onClick={toggleShowPwdClicked}
+            />
+          )}
+        </Input>
+      </Form.Field>
+    );
+  }
+
+  function toggleShowPwdClicked() {
+    setPwdType(pwdType === "password" ? "text" : "password");
+  }
+
+  function renderSubmissionErrors() {
     if (formErrors) {
       const { email, password } = formErrors;
 
@@ -212,12 +228,12 @@ export const Login = (props: Props) => {
     }
 
     return undefined;
-  };
+  }
 
-  const handleFormErrorDismissed = () => {
+  function handleFormErrorDismissed() {
     setFormErrors(undefined);
     setGraphQlErrors(undefined);
-  };
+  }
 
   return (
     <div className="app-main routes-login">
