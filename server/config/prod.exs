@@ -22,7 +22,8 @@ config :ebnis, EbnisWeb.Endpoint,
   secret_key_base: secret_key,
   check_origin: [
     "https://ebnis.herokuapp.com",
-    "https://ebnis.surge.sh"
+    "https://ebnis.surge.sh",
+    "https://ebnis.netlify.com"
   ]
 
 config :ebnis, Ebnis.Repo,

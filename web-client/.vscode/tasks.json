@@ -25,6 +25,13 @@
     },
 
     {
+      "label": "deploy to netlify and heroku",
+      "type": "shell",
+      "command": "yarn build-prod  && cd .. && git co master && git merge dev && netlify deploy -p -d web-client/build  && git subtree push --prefix=server heroku master && heroku run \"POOL_SIZE=2 mix ecto.migrate\" && git co dev ",
+      "problemMatcher": []
+    },
+
+    {
       "label": "Apollo code gen",
       "type": "shell",
       "command": "apollo-codegen introspect-schema http://localhost:4022/api --output src/graphql/schema.json && apollo-codegen generate src/graphql/*.ts --schema src/graphql/schema.json --target typescript --output src/graphql/apollo-gql.d.ts",
