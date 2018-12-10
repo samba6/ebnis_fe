@@ -3,7 +3,6 @@ import { ApolloProvider } from "react-apollo";
 import { BrowserRouter, Switch, Route } from "react-router-dom";
 
 import "./app.scss";
-import { persistCache } from "../AppContext/set-up";
 import logger from "../../logger";
 import AuthRequired from "../../components/AuthRequired";
 import {
@@ -29,7 +28,7 @@ const loading = <Loading />;
 
 export function App() {
   const [cacheLoaded, setCacheLoaded] = useState(false);
-  const { header, client } = useContext(AppContext);
+  const { header, client, persistCache } = useContext(AppContext);
 
   useEffect(() => {
     (async function() {

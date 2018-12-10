@@ -15,6 +15,7 @@ export interface AppContextProps {
   header?: JSX.Element;
   reInitSocket: (jwt: string) => void;
   client: ApolloClient<{}>;
+  persistCache: () => void;
 }
 
 export const AppContext = React.createContext<AppContextProps>({
@@ -22,5 +23,6 @@ export const AppContext = React.createContext<AppContextProps>({
   onShowSidebar: () => null,
   setHeader: () => null,
   reInitSocket: () => null,
+  persistCache: () => null,
   client
 });
