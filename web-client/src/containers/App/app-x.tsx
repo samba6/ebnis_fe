@@ -25,8 +25,10 @@ const NewEntry = lazy(() => import("../../routes/NewEntry"));
 function Root() {
   return (
     <div className="app-container">
-      <Header title="Ebnis" />
-      <Loading />
+      <div className="app-main">
+        <Header title="Ebnis" />
+        <Loading />
+      </div>
     </div>
   );
 }
@@ -63,11 +65,27 @@ export function App(props: { persistCache: () => void }) {
 
             <AuthRequired exact={true} path={ROOT_URL} component={Home} />
 
-            <Route exact={true} path={LOGIN_URL} component={Login} />
+            <Route
+              exact={true}
+              path={LOGIN_URL}
+              render={function renderLogin(childProps) {
+                return <Login {...childProps} />;
+              }}
+            />
 
-            <Route exact={true} path={SIGN_UP_URL} component={SignUp} />
+            <Route
+              exact={true}
+              path={SIGN_UP_URL}
+              render={function renderSignUp(childProps) {
+                return <SignUp {...childProps} />;
+              }}
+            />
 
-            <Route component={Login} />
+            <Route
+              render={function renderLogin(childProps) {
+                return <Login {...childProps} />;
+              }}
+            />
           </Switch>
         ) : (
           <Root />

@@ -1,9 +1,8 @@
 import React from "react";
 import "jest-dom/extend-expect";
 import "react-testing-library/cleanup-after-each";
-import { render, fireEvent } from "react-testing-library";
+import { render } from "react-testing-library";
 import { Header } from "./header-x";
-// import { Props } from "./header";
 
 test("renders Header component with logo, title and no sidebar trigger", () => {
   const title = "My Ebnis App";
@@ -21,11 +20,10 @@ test("renders Header component with logo, title and no sidebar trigger", () => {
 
 test("renders Header component with sidebar trigger", () => {
   const { getByTestId, container } = render(
-    <Header title="My Ebnis App" sideBar={true} />
+    <Header title="My Ebnis App" sidebar={true} />
   );
 
   const { firstChild: header } = container;
   const sidebarTrigger = getByTestId("sidebar-trigger");
   expect(header).toContainElement(sidebarTrigger);
-  fireEvent.click(sidebarTrigger);
 });
