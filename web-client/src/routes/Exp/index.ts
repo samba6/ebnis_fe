@@ -26,7 +26,8 @@ const getExpGql = graphql<
         exp: {
           id: match.params.id
         }
-      }
+      },
+      fetchPolicy: "cache-and-network"
     };
   }
 });
@@ -44,7 +45,9 @@ const getExpEntriesGql = graphql<
         entry: {
           expId: match.params.id
         }
-      }
+      },
+
+      fetchPolicy: "cache-and-network"
     };
   }
 });

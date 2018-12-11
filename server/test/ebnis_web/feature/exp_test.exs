@@ -5,7 +5,7 @@ defmodule EbnisWeb.Feature.CreateExperienceTest do
   alias Ebnis.Experiences
 
   @moduletag :integration
-  # @moduletag :skip
+  @moduletag :skip
 
   # @tag :no_headless
   @tag :create_exp_feature
