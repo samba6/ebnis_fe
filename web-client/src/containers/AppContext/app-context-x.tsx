@@ -7,7 +7,6 @@ import * as AbsintheSocket from "@absinthe/socket";
 import { createAbsintheSocketLink } from "@absinthe/socket-apollo-link";
 
 import { AppContext } from "./app-context";
-import Header from "../../components/Header";
 import { getSocket } from "../../socket";
 import initState from "../../state/resolvers";
 import { middleWares } from "./apollo-middle-wares";
@@ -23,7 +22,7 @@ const persistor = new CachePersistor({
 });
 
 export function AppContextParent(props: React.Props<{}>) {
-  const [header, setHeader] = useState(<Header title="Ebnis" />);
+  const [header, setHeader] = useState<undefined | JSX.Element>(undefined);
   const [showSidebar, onShowSidebar] = useState(false);
 
   return (

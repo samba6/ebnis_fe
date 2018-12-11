@@ -18,15 +18,18 @@ export const Header = (props: Props) => {
         <img src={logo} className="logo" alt="logo" />
       </div>
 
-      <div className="title">
+      <div data-testid="app-header-title" className="title">
         {title}
 
-        <span
-          className={`${sideBar ? "" : "no"} sidebar-trigger item`}
-          onClick={() => onShowSidebar(!showSidebar)}
-        >
-          <Icon name="content" />
-        </span>
+        {sideBar && (
+          <span
+            className="sidebar-trigger item"
+            onClick={() => onShowSidebar(!showSidebar)}
+            data-testid="sidebar-trigger"
+          >
+            <Icon name="content" />
+          </span>
+        )}
       </div>
     </header>
   );

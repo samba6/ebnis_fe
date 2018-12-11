@@ -16,6 +16,7 @@ import {
 import Loading from "../../components/Loading";
 import Sidebar from "../../components/Sidebar";
 import { AppContext } from "../AppContext/app-context";
+import Header from "../../components/Header";
 
 const Home = lazy(() => import("../../routes/Home"));
 const Login = lazy(() => import("../../routes/Login"));
@@ -24,11 +25,13 @@ const NewExp = lazy(() => import("../../routes/NewExp"));
 const Exp = lazy(() => import("../../routes/Exp"));
 const NewEntry = lazy(() => import("../../routes/NewEntry"));
 
-const loading = <Loading />;
-
 export function App() {
   const [cacheLoaded, setCacheLoaded] = useState(false);
-  const { header, client, persistCache } = useContext(AppContext);
+  const {
+    header = <Header title="Ebnis" />,
+    client,
+    persistCache
+  } = useContext(AppContext);
 
   useEffect(() => {
     (async function() {
@@ -42,12 +45,12 @@ export function App() {
   }, []);
 
   return (
-    <div className="containers-app">
+    <div className="app-container">
       <ApolloProvider client={client}>
         {header}
 
         <BrowserRouter>
-          <Suspense fallback={loading}>
+          <Suspense fallback={<Loading />}>
             <Sidebar />
 
             {cacheLoaded ? (

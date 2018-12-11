@@ -11,8 +11,8 @@ const client = new ApolloClient({
 export interface AppContextProps {
   showSidebar: boolean;
   onShowSidebar: (showSidebar: boolean) => void;
-  setHeader: React.Dispatch<React.SetStateAction<JSX.Element>>;
-  header?: JSX.Element;
+  setHeader: React.Dispatch<React.SetStateAction<JSX.Element | undefined>>;
+  header?: JSX.Element | undefined;
   reInitSocket: (jwt: string) => void;
   client: ApolloClient<{}>;
   persistCache: () => void;

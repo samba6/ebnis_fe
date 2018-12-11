@@ -37,7 +37,11 @@ export function Sidebar(props: Props) {
       className={visibleClass + " components-sidebar"}
       onClick={hideSidebar}
     >
-      <nav className="container" onClick={blockClicks}>
+      <nav
+        className="container"
+        data-testid="sidebar-container"
+        onClick={blockClicks}
+      >
         <div className="sidebar-hide item" onClick={hideSidebar} />
 
         <ul className="sidebar__content">
