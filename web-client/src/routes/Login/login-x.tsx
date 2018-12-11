@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect } from "react";
 import { Button, Card, Input, Message, Icon, Form } from "semantic-ui-react";
 import {
   Formik,
@@ -13,13 +13,12 @@ import { ApolloError } from "apollo-client";
 
 import "./login.scss";
 import { Props, ValidationSchema } from "./login";
-import Header from "../../components/Header";
+import SidebarHeader from "../../components/SidebarHeader";
 import { LoginUser as FormValues } from "../../graphql/apollo-gql.d";
-import { setTitle, ROOT_URL, SIGN_UP_URL } from "../../Routing";
-import { AppContext } from "../../containers/AppContext/app-context";
+import { setTitle, SIGN_UP_URL } from "../../Routing";
+import refreshToHome from "./refresh-to-home";
 
 export const Login = (props: Props) => {
-  const { setHeader, reInitSocket } = useContext(AppContext);
   const [pwdType, setPwdType] = useState("password");
 
   const [formErrors, setFormErrors] = useState<
@@ -31,11 +30,9 @@ export const Login = (props: Props) => {
   );
 
   useEffect(function setPageTitle() {
-    setHeader(
-      <Header title="Login to your account" wide={true} sideBar={false} />
-    );
-
     setTitle("Log in");
+
+    return setTitle;
   }, []);
 
   function renderForm({
@@ -105,7 +102,7 @@ export const Login = (props: Props) => {
       return;
     }
 
-    const { login, history } = props;
+    const { login } = props;
 
     if (!login) {
       return;
@@ -121,15 +118,11 @@ export const Login = (props: Props) => {
       if (result && result.data) {
         const user = result.data.login;
 
-        if (user) {
-          reInitSocket(user.jwt);
-        }
-
         await props.updateLocalUser({
           variables: { user }
         });
 
-        history.replace(ROOT_URL);
+        refreshToHome();
       }
     } catch (error) {
       formikBag.setSubmitting(false);
@@ -235,14 +228,18 @@ export const Login = (props: Props) => {
   }
 
   return (
-    <div className="app-main routes-login">
-      <Formik
-        initialValues={{ email: "", password: "" }}
-        onSubmit={() => null}
-        render={renderForm}
-        validationSchema={ValidationSchema}
-        validateOnChange={false}
-      />
+    <div className="app-container">
+      <SidebarHeader title="Login to your account" wide={true} />
+
+      <div className="app-main routes-login">
+        <Formik
+          initialValues={{ email: "", password: "" }}
+          onSubmit={() => null}
+          render={renderForm}
+          validationSchema={ValidationSchema}
+          validateOnChange={false}
+        />
+      </div>
     </div>
   );
 };

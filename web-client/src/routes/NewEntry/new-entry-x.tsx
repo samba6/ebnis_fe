@@ -1,10 +1,10 @@
-import React, { useEffect, useState, useContext } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { Form, Input, Button, TextArea } from "semantic-ui-react";
 import dateFnFormat from "date-fns/format";
 
 import "./new-entry.scss";
 import { Props, FieldComponentProps, FormObj, FormObjVal } from "./new-entry";
-import Header from "../../components/Header";
+import SidebarHeader from "../../components/SidebarHeader";
 import { setTitle, makeExpRoute } from "../../Routing";
 import Loading from "../../components/Loading";
 import {
@@ -16,7 +16,6 @@ import {
 import DateField from "../../components/DateField";
 import DateTimeField from "../../components/DateTimeField";
 import GET_EXP_ENTRIES_QUERY from "../../graphql/exp-entries.query";
-import { AppContext } from "../../containers/AppContext/app-context";
 
 const fieldTypeUtils = {
   [FieldType.SINGLE_LINE_TEXT]: {
@@ -112,19 +111,23 @@ const fieldTypeUtils = {
 };
 
 export const NewEntry = (props: Props) => {
-  const { setHeader } = useContext(AppContext);
   const { loading, exp, history, createEntry } = props;
   const [formValues, setFormValues] = useState<FormObj>({} as FormObj);
 
+  const pageTitle = useMemo(
+    function makePageTitle() {
+      return "New " + ((exp && exp.title) || "entry");
+    },
+    [exp]
+  );
+
   useEffect(
     function setRouteTitle() {
-      const title = "New " + ((exp && exp.title) || "entry");
-      setHeader(<Header title={title} sideBar={true} />);
-      setTitle(title);
+      setTitle(pageTitle);
 
       return setTitle;
     },
-    [props.exp]
+    [exp]
   );
 
   useEffect(
@@ -155,7 +158,7 @@ export const NewEntry = (props: Props) => {
 
       setFormValues(initialFormValues);
     },
-    [props.exp]
+    [exp]
   );
 
   function setValue(fieldName: string, value: FormObjVal) {
@@ -295,26 +298,30 @@ export const NewEntry = (props: Props) => {
   }
 
   const render = (
-    <div className="app-main routes-new-entry">
-      <Button type="button" onClick={goToExp} className="title" basic={true}>
-        {title}
-      </Button>
+    <div className="app-container">
+      <SidebarHeader title={pageTitle} sidebar={true} />
 
-      <Form className="main">
-        {fieldDefs.map(renderField)}
-
-        <hr />
-
-        <Button
-          type="submit"
-          inverted={true}
-          color="green"
-          fluid={true}
-          onClick={submit}
-        >
-          Submit
+      <div className="app-main routes-new-entry">
+        <Button type="button" onClick={goToExp} className="title" basic={true}>
+          {title}
         </Button>
-      </Form>
+
+        <Form className="main">
+          {fieldDefs.map(renderField)}
+
+          <hr />
+
+          <Button
+            type="submit"
+            inverted={true}
+            color="green"
+            fluid={true}
+            onClick={submit}
+          >
+            Submit
+          </Button>
+        </Form>
+      </div>
     </div>
   );
 

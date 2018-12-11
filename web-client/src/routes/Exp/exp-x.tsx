@@ -1,11 +1,11 @@
-import React, { useEffect, Fragment, useMemo, useContext } from "react";
+import React, { useEffect, Fragment, useMemo } from "react";
 import { Button } from "semantic-ui-react";
 import dateFnParse from "date-fns/parse";
 import dateFnFormat from "date-fns/format";
 
 import "./exp.scss";
 import { Props } from "./exp";
-import Header from "../../components/Header";
+import SidebarHeader from "../../components/SidebarHeader";
 import { setTitle, makeNewEntryRoute } from "../../Routing";
 import Loading from "../../components/Loading";
 import {
@@ -14,7 +14,6 @@ import {
   FieldType,
   GetAnExp_exp_fieldDefs
 } from "../../graphql/apollo-gql.d";
-import { AppContext } from "../../containers/AppContext/app-context";
 
 const displayFieldType = {
   [FieldType.SINGLE_LINE_TEXT](text: string) {
@@ -48,7 +47,6 @@ const displayFieldType = {
 
 export const Exp = (props: Props) => {
   const { loading, exp, expEntries, history } = props;
-  const { setHeader } = useContext(AppContext);
 
   const fieldDefs = useMemo(
     function computeFieldDefs() {
@@ -59,8 +57,6 @@ export const Exp = (props: Props) => {
 
   useEffect(
     function setRouteTitle() {
-      const title = (exp && exp.title) || "Experience";
-      setHeader(<Header title={title} sideBar={true} />);
       setTitle(title);
 
       return setTitle;
@@ -138,23 +134,27 @@ export const Exp = (props: Props) => {
   const { title } = exp;
 
   const render = (
-    <div className="app-main routes-exp">
-      <div className="header">
-        <div className="title">{title}</div>
+    <div className="app-container">
+      <SidebarHeader title={title} wide={true} sidebar={true} />
 
-        <Button
-          className="new-exp-entry-button"
-          type="button"
-          name="new-exp-entry-button"
-          basic={true}
-          compact={true}
-          onClick={goToNewEntry}
-        >
-          New entry
-        </Button>
+      <div className="app-main routes-exp">
+        <div className="header">
+          <div className="title">{title}</div>
+
+          <Button
+            className="new-exp-entry-button"
+            type="button"
+            name="new-exp-entry-button"
+            basic={true}
+            compact={true}
+            onClick={goToNewEntry}
+          >
+            New entry
+          </Button>
+        </div>
+
+        <div className="main">{renderEntries()}</div>
       </div>
-
-      <div className="main">{renderEntries()}</div>
     </div>
   );
 

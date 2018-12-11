@@ -1,14 +1,19 @@
-import React, { useContext } from "react";
+import React from "react";
 import { Icon } from "semantic-ui-react";
 
 import "./header.scss";
 import logo from "./logo.png";
-import { Props } from "./header";
-import { AppContext } from "../../containers/AppContext/app-context";
+
+export interface Props {
+  title: string;
+  wide?: boolean;
+  sidebar?: boolean;
+  show?: boolean;
+  toggleShowSidebar?: React.Dispatch<React.SetStateAction<boolean>>;
+}
 
 export const Header = (props: Props) => {
-  const { title, wide, sideBar } = props;
-  const { onShowSidebar, showSidebar } = useContext(AppContext);
+  const { title, wide, sidebar, toggleShowSidebar, show } = props;
   let className = "components-header";
   className = wide ? "wide " + className : className;
 
@@ -21,10 +26,10 @@ export const Header = (props: Props) => {
       <div data-testid="app-header-title" className="title">
         {title}
 
-        {sideBar && (
+        {sidebar && (
           <span
             className="sidebar-trigger item"
-            onClick={() => onShowSidebar(!showSidebar)}
+            onClick={() => toggleShowSidebar && toggleShowSidebar(!show)}
             data-testid="sidebar-trigger"
           >
             <Icon name="content" />

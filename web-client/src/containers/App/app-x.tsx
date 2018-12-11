@@ -1,5 +1,4 @@
-import React, { lazy, Suspense, useState, useEffect, useContext } from "react";
-import { ApolloProvider } from "react-apollo";
+import React, { lazy, Suspense, useState, useEffect } from "react";
 import { BrowserRouter, Switch, Route } from "react-router-dom";
 
 import "./app.scss";
@@ -14,8 +13,6 @@ import {
   NEW_ENTRY_URL
 } from "../../Routing";
 import Loading from "../../components/Loading";
-import Sidebar from "../../components/Sidebar";
-import { AppContext } from "../AppContext/app-context";
 import Header from "../../components/Header";
 
 const Home = lazy(() => import("../../routes/Home"));
@@ -25,13 +22,18 @@ const NewExp = lazy(() => import("../../routes/NewExp"));
 const Exp = lazy(() => import("../../routes/Exp"));
 const NewEntry = lazy(() => import("../../routes/NewEntry"));
 
-export function App() {
+function Root() {
+  return (
+    <div className="app-container">
+      <Header title="Ebnis" />
+      <Loading />
+    </div>
+  );
+}
+
+export function App(props: { persistCache: () => void }) {
   const [cacheLoaded, setCacheLoaded] = useState(false);
-  const {
-    header = <Header title="Ebnis" />,
-    client,
-    persistCache
-  } = useContext(AppContext);
+  const { persistCache } = props;
 
   useEffect(() => {
     (async function() {
@@ -45,53 +47,33 @@ export function App() {
   }, []);
 
   return (
-    <div className="app-container">
-      <ApolloProvider client={client}>
-        {header}
+    <BrowserRouter>
+      <Suspense fallback={<Root />}>
+        {cacheLoaded ? (
+          <Switch>
+            <AuthRequired exact={true} path={EXP_URL} component={Exp} />
 
-        <BrowserRouter>
-          <Suspense fallback={<Loading />}>
-            <Sidebar />
+            <AuthRequired
+              exact={true}
+              path={NEW_ENTRY_URL}
+              component={NewEntry}
+            />
 
-            {cacheLoaded ? (
-              <Switch>
-                <AuthRequired exact={true} path={EXP_URL} component={Exp} />
+            <AuthRequired exact={true} path={NEW_EXP_URL} component={NewExp} />
 
-                <AuthRequired
-                  exact={true}
-                  path={NEW_ENTRY_URL}
-                  component={NewEntry}
-                />
+            <AuthRequired exact={true} path={ROOT_URL} component={Home} />
 
-                <AuthRequired
-                  exact={true}
-                  path={NEW_EXP_URL}
-                  component={NewExp}
-                />
+            <Route exact={true} path={LOGIN_URL} component={Login} />
 
-                <AuthRequired exact={true} path={ROOT_URL} component={Home} />
+            <Route exact={true} path={SIGN_UP_URL} component={SignUp} />
 
-                <Route
-                  exact={true}
-                  path={LOGIN_URL}
-                  render={renderProps => <Login {...renderProps} />}
-                />
-
-                <Route
-                  exact={true}
-                  path={SIGN_UP_URL}
-                  render={renderProps => <SignUp {...renderProps} />}
-                />
-
-                <Route render={renderProps => <Login {...renderProps} />} />
-              </Switch>
-            ) : (
-              <Loading />
-            )}
-          </Suspense>
-        </BrowserRouter>
-      </ApolloProvider>
-    </div>
+            <Route component={Login} />
+          </Switch>
+        ) : (
+          <Root />
+        )}
+      </Suspense>
+    </BrowserRouter>
   );
 }
 

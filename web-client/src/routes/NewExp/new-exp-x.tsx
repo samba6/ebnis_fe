@@ -4,8 +4,7 @@ import React, {
   Fragment,
   SetStateAction,
   Dispatch,
-  useRef,
-  useContext
+  useRef
 } from "react";
 import {
   Formik,
@@ -29,7 +28,7 @@ import {
 
 import "./new-exp.scss";
 import { Props, ValidationSchema, FIELD_TYPES } from "./new-exp";
-import Header from "../../components/Header";
+import SidebarHeader from "../../components/SidebarHeader";
 import { setTitle } from "../../Routing";
 import {
   CreateExp as FormValues,
@@ -39,7 +38,6 @@ import {
 import { ApolloError } from "apollo-client";
 import { makeExpRoute } from "../../Routing";
 import EXPS_QUERY, { GetExpGqlProps } from "../../graphql/exps.query";
-import { AppContext } from "../../containers/AppContext/app-context";
 
 const EMPTY_FIELD = { name: "", type: "" as FieldType };
 
@@ -48,7 +46,6 @@ interface SelectFieldTypeState {
 }
 
 export const NewExperience = (props: Props) => {
-  const { setHeader } = useContext(AppContext);
   const { createExp, history } = props;
   const [selectValues, setSelectValues] = useState({} as SelectFieldTypeState);
   const routeRef = useRef<HTMLDivElement | null>(null);
@@ -63,7 +60,6 @@ export const NewExperience = (props: Props) => {
   >(undefined);
 
   useEffect(function setCompTitle() {
-    setHeader(<Header title="New Experience" sideBar={true} />);
     setTitle("New Experience");
 
     return setTitle;
@@ -404,18 +400,22 @@ export const NewExperience = (props: Props) => {
   }
 
   const render = (
-    <div className="app-main routes-exp-def" ref={routeRef}>
-      <Formik<FormValues>
-        initialValues={{
-          title: "",
-          description: "",
-          fieldDefs: [{ ...EMPTY_FIELD }]
-        }}
-        onSubmit={nullSubmit}
-        render={renderForm}
-        validationSchema={ValidationSchema}
-        validateOnChange={false}
-      />
+    <div className="app-container">
+      <SidebarHeader title="New Experience" sidebar={true} />
+
+      <div className="app-main routes-exp-def" ref={routeRef}>
+        <Formik<FormValues>
+          initialValues={{
+            title: "",
+            description: "",
+            fieldDefs: [{ ...EMPTY_FIELD }]
+          }}
+          onSubmit={nullSubmit}
+          render={renderForm}
+          validationSchema={ValidationSchema}
+          validateOnChange={false}
+        />
+      </div>
     </div>
   );
 

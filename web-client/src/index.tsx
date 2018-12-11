@@ -1,16 +1,20 @@
 import React from "react";
 import ReactDOM from "react-dom";
+import { ApolloProvider } from "react-apollo";
 import "semantic-ui-css-offline";
 
 import "./index.scss";
 import App from "./containers/App";
-import AppContext from "./containers/AppContext";
 import * as serviceWorker from "./serviceWorker";
+import setUp from "./state/apollo-set-up";
+
+const { persistCache, client } = setUp();
 
 ReactDOM.render(
-  <AppContext>
-    <App />
-  </AppContext>,
+  <ApolloProvider client={client}>
+    <App persistCache={persistCache} />
+  </ApolloProvider>,
+
   document.getElementById("root")
 );
 

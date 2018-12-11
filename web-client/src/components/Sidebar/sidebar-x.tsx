@@ -1,9 +1,13 @@
-import React, { useContext } from "react";
+import React from "react";
+import { RouteComponentProps } from "react-router-dom";
 
 import "./sidebar.scss";
-import { AppContext } from "../../containers/AppContext/app-context";
 import { NEW_EXP_URL, ROOT_URL } from "../../Routing";
-import { Props } from "./sidebar";
+
+interface Props extends RouteComponentProps {
+  show: boolean;
+  toggleShowSidebar: React.Dispatch<React.SetStateAction<boolean>>;
+}
 
 const blockClicks: React.MouseEventHandler<HTMLDivElement> = evt =>
   evt.stopPropagation();
@@ -11,18 +15,19 @@ const blockClicks: React.MouseEventHandler<HTMLDivElement> = evt =>
 export function Sidebar(props: Props) {
   const {
     history,
-    location: { pathname }
+    location: { pathname },
+    show,
+    toggleShowSidebar
   } = props;
-  const { onShowSidebar, showSidebar } = useContext(AppContext);
 
   let visibleClass = "";
 
-  if (showSidebar === true) {
+  if (show === true) {
     visibleClass = "visible";
   }
 
   function hideSidebar() {
-    onShowSidebar(false);
+    toggleShowSidebar(false);
   }
 
   function onGoToExperience(where: string) {

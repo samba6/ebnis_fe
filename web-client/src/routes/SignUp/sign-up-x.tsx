@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useContext } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Button, Card, Input, Message, Icon, Form } from "semantic-ui-react";
 import {
   Formik,
@@ -19,9 +19,9 @@ import {
   FormValuesKey
 } from "./sign-up";
 import { Registration } from "../../graphql/apollo-gql.d";
-import { setTitle, ROOT_URL, LOGIN_URL } from "../../Routing";
-import Header from "../../components/Header";
-import { AppContext } from "../../containers/AppContext/app-context";
+import { setTitle, LOGIN_URL } from "../../Routing";
+import SidebarHeader from "../../components/SidebarHeader";
+import refreshToHome from "../Login/refresh-to-home";
 
 const FORM_RENDER_PROPS = {
   name: ["Name", "text"],
@@ -34,7 +34,6 @@ const FORM_RENDER_PROPS = {
 export function SignUp(props: Props) {
   const { history, regUser } = props;
   const mainRef = useRef<HTMLDivElement | null>(null);
-  const { setHeader, reInitSocket } = useContext(AppContext);
 
   const [formErrors, setFormErrors] = useState<
     undefined | FormikErrors<Registration>
@@ -45,7 +44,6 @@ export function SignUp(props: Props) {
   );
 
   useEffect(function setPageTitle() {
-    setHeader(<Header title="Sign up for Ebnis" wide={true} />);
     setTitle("Sign up");
 
     return setTitle;
@@ -198,15 +196,11 @@ export function SignUp(props: Props) {
       if (result && result.data) {
         const user = result.data.registration;
 
-        if (user) {
-          reInitSocket(user.jwt);
-        }
-
         await props.updateLocalUser({
           variables: { user }
         });
 
-        history.replace(ROOT_URL);
+        refreshToHome();
       }
     } catch (error) {
       formikBag.setSubmitting(false);
@@ -222,14 +216,18 @@ export function SignUp(props: Props) {
   }
 
   return (
-    <div className="app-main routes-sign-up-route" ref={mainRef}>
-      <Formik
-        initialValues={initialFormValues}
-        onSubmit={nullSubmit}
-        render={renderForm}
-        validationSchema={ValidationSchema}
-        validateOnChange={false}
-      />
+    <div className="app-container">
+      <SidebarHeader title="Sign up for Ebnis" wide={true} />
+
+      <div className="app-main routes-sign-up-route" ref={mainRef}>
+        <Formik
+          initialValues={initialFormValues}
+          onSubmit={nullSubmit}
+          render={renderForm}
+          validationSchema={ValidationSchema}
+          validateOnChange={false}
+        />
+      </div>
     </div>
   );
 }

@@ -1,23 +1,20 @@
-import React, { useEffect, useState, useContext } from "react";
+import React, { useEffect, useState } from "react";
 import { Icon } from "semantic-ui-react";
 
 import "./home.scss";
 import { Props } from "./home";
-import Header from "../../components/Header";
+import SidebarHeader from "../../components/SidebarHeader";
 import { setTitle, NEW_EXP_URL, makeExpRoute } from "../../Routing";
 import Loading from "../../components/Loading";
 import { GetExps_exps } from "../../graphql/apollo-gql.d";
-import { AppContext } from "../../containers/AppContext/app-context";
 
 export const Home = (props: Props) => {
-  const { setHeader } = useContext(AppContext);
   const { history, loading, exps } = props;
   const [toggleDescriptions, setToggleDescriptions] = useState<{
     [k: string]: boolean;
   }>({});
 
   useEffect(() => {
-    setHeader(<Header title="Home" sideBar={true} />);
     setTitle("Home");
 
     return setTitle;
@@ -114,17 +111,21 @@ export const Home = (props: Props) => {
   }
 
   return (
-    <div className="app-main routes-home">
-      {renderExperiences()}
+    <div className="app-container">
+      <SidebarHeader title="Home" sidebar={true} />
 
-      <button
-        className="new-exp-btn"
-        name="go-to-new-exp"
-        type="button"
-        onClick={goToNewExp}
-      >
-        +
-      </button>
+      <div className="app-main routes-home">
+        {renderExperiences()}
+
+        <button
+          className="new-exp-btn"
+          name="go-to-new-exp"
+          type="button"
+          onClick={goToNewExp}
+        >
+          +
+        </button>
+      </div>
     </div>
   );
 };
