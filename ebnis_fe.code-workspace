@@ -1,0 +1,25 @@
+{
+  "folders": [
+    {
+      "path": "."
+    }
+  ],
+  "settings": {
+    },
+    "search.exclude": {
+      "**/node_modules": true,
+      "**/tags": true
+    },
+    "typescript.tsdk": "WebClient\\node_modules\\typescript\\lib",
+    "advancedNewFile.exclude": {
+      "node_modules": true,
+      "node_modules_electron": true,
+      "build": true
+    },
+    "cSpell.words": [
+      "SCSL",
+      "ield",
+      "xperience"
+    ]
+  }
+}
