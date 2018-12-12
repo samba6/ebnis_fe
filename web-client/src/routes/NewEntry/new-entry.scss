@@ -2,20 +2,24 @@
 @import "../../styles/extensions";
 
 .routes-new-entry {
-  padding: 0 5px 20px 5px;
-  margin-top: -18px;
-  overflow-x: hidden;
-  overflow-y: auto;
-
-  & > .title {
-    display: block;
-    margin-top: 10px;
-    flex-shrink: 0;
-  }
-
   & > .main {
-    padding-top: 10px;
+    display: flex;
+    flex-direction: column;
+    // padding: 10px 5px 20px 5px;
     flex: 1;
+
+    & > .title {
+      display: block;
+      flex-shrink: 0;
+      margin: 10px 5px 25px;
+    }
+
+    & > .form {
+      padding: 0px 5px 20px 5px;
+      flex: 1;
+      overflow-x: hidden;
+      overflow-y: auto;
+    }
   }
 
   .date-field {

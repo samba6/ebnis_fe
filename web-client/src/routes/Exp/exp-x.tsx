@@ -1,4 +1,4 @@
-import React, { useEffect, Fragment, useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 import { Button } from "semantic-ui-react";
 import dateFnParse from "date-fns/parse";
 import dateFnFormat from "date-fns/format";
@@ -47,6 +47,7 @@ const displayFieldType = {
 
 export const Exp = (props: Props) => {
   const { loading, exp, expEntries, history } = props;
+  const title = exp ? exp.title : "Experience";
 
   const fieldDefs = useMemo(
     function computeFieldDefs() {
@@ -120,24 +121,16 @@ export const Exp = (props: Props) => {
       );
     }
 
-    return <Fragment>{expEntries.map(renderEntry)}</Fragment>;
+    return <>{expEntries.map(renderEntry)}</>;
   }
 
-  if (loading) {
-    return <Loading />;
-  }
+  function renderMainOr() {
+    if (loading) {
+      return <Loading />;
+    }
 
-  if (!exp) {
-    return <Loading />;
-  }
-
-  const { title } = exp;
-
-  const render = (
-    <div className="app-container">
-      <SidebarHeader title={title} wide={true} sidebar={true} />
-
-      <div className="app-main routes-exp">
+    return (
+      <>
         <div className="header">
           <div className="title">{title}</div>
 
@@ -154,7 +147,15 @@ export const Exp = (props: Props) => {
         </div>
 
         <div className="main">{renderEntries()}</div>
-      </div>
+      </>
+    );
+  }
+
+  const render = (
+    <div className="app-container">
+      <SidebarHeader title={title} sidebar={true} />
+
+      <div className="app-main routes-exp">{renderMainOr()}</div>
     </div>
   );
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState } from "react";
 import { Form, Input, Button, TextArea } from "semantic-ui-react";
 import dateFnFormat from "date-fns/format";
 
@@ -114,16 +114,13 @@ export const NewEntry = (props: Props) => {
   const { loading, exp, history, createEntry } = props;
   const [formValues, setFormValues] = useState<FormObj>({} as FormObj);
 
-  const pageTitle = useMemo(
-    function makePageTitle() {
-      return "New " + ((exp && exp.title) || "entry");
-    },
-    [exp]
-  );
+  function pageTitle() {
+    return "New " + ((exp && exp.title) || "entry");
+  }
 
   useEffect(
     function setRouteTitle() {
-      setTitle(pageTitle);
+      setTitle(pageTitle());
 
       return setTitle;
     },
@@ -265,16 +262,6 @@ export const NewEntry = (props: Props) => {
     goToExp();
   }
 
-  if (loading) {
-    return <Loading />;
-  }
-
-  if (!exp) {
-    return <Loading />;
-  }
-
-  const { fieldDefs, title } = exp;
-
   function renderField(field: GetAnExp_exp_fieldDefs | null, index: number) {
     if (!field) {
       return null;
@@ -297,16 +284,23 @@ export const NewEntry = (props: Props) => {
     );
   }
 
-  const render = (
-    <div className="app-container">
-      <SidebarHeader title={pageTitle} sidebar={true} />
+  function renderMainOr() {
+    if (loading) {
+      return <Loading />;
+    }
 
-      <div className="app-main routes-new-entry">
+    if (!exp) {
+      return <Loading />;
+    }
+
+    const { fieldDefs, title } = exp;
+
+    return (
+      <div className="main">
         <Button type="button" onClick={goToExp} className="title" basic={true}>
           {title}
         </Button>
-
-        <Form className="main">
+        <Form>
           {fieldDefs.map(renderField)}
 
           <hr />
@@ -322,10 +316,16 @@ export const NewEntry = (props: Props) => {
           </Button>
         </Form>
       </div>
+    );
+  }
+
+  return (
+    <div className="app-container">
+      <SidebarHeader title={pageTitle()} sidebar={true} />
+
+      <div className="app-main routes-new-entry"> {renderMainOr()}</div>
     </div>
   );
-
-  return render;
 };
 
 export default NewEntry;

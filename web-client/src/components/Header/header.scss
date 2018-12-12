@@ -4,9 +4,9 @@
 .components-header {
   @extend %header-box-shadow;
   flex-shrink: 0;
-  margin-bottom: 20px;
   display: flex;
-  padding: 5px 15px 0 15px;
+  justify-content: space-between;
+  padding: 5px 0 0 15px;
   flex-direction: row;
 
   &.wide {
@@ -22,17 +22,34 @@
 
   .logo-container {
     flex: 1;
+    min-width: 50px;
   }
 
   .title {
-    text-align: center;
     font-weight: 900;
     color: $app-color;
     font-size: 1.3em;
     letter-spacing: 1.2px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+
+    &:not(.no-sidebar) {
+      display: flex;
+      justify-content: space-between;
+      width: 250px;
+      align-items: center;
+      padding-left: 20px;
+      text-align: right;
+      z-index: 2;
+    }
+
+    &.no-sidebar {
+      text-align: center;
+    }
+  }
+
+  .title_text {
+    width: 200px;
+    text-overflow: ellipsis;
+    overflow: hidden;
   }
 
   @media (min-width: 600px) {
@@ -45,13 +62,22 @@
 
     .title {
       font-size: 1.2em;
+
+      &.no-sidebar {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
     }
   }
 
   .sidebar-trigger {
     min-width: 40px;
     cursor: pointer;
-    padding: 10px 0 10px 20px;
-    z-index: 2;
+    padding: 10px 5px 10px 20px;
+  }
+
+  .close-sidebar-icon {
+    color: #cc6363 !important;
   }
 }

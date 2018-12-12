@@ -26,7 +26,7 @@ function Root() {
   return (
     <div className="app-container">
       <div className="app-main">
-        <Header title="Ebnis" />
+        <Header title="" />
         <Loading />
       </div>
     </div>

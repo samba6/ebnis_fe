@@ -34,7 +34,7 @@ export const Home = (props: Props) => {
     }
 
     return (
-      <div className="exp-defs-container" onClick={handleDefsClick}>
+      <div className="exps-container" onClick={handleDefsClick}>
         {exps.map(renderExperience)}
       </div>
     );
@@ -106,15 +106,13 @@ export const Home = (props: Props) => {
     }
   }
 
-  if (loading) {
-    return <Loading />;
-  }
+  function renderMain() {
+    if (loading) {
+      return <Loading />;
+    }
 
-  return (
-    <div className="app-container">
-      <SidebarHeader title="Home" sidebar={true} />
-
-      <div className="app-main routes-home">
+    return (
+      <div className="route-main">
         {renderExperiences()}
 
         <button
@@ -126,6 +124,14 @@ export const Home = (props: Props) => {
           +
         </button>
       </div>
+    );
+  }
+
+  return (
+    <div className="app-container">
+      <SidebarHeader title="Home" sidebar={true} />
+
+      <div className="app-main routes-home">{renderMain()}</div>
     </div>
   );
 };

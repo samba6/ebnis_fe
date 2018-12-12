@@ -2,19 +2,26 @@
 @import "../../styles/extensions";
 
 .routes-exp {
-  padding: 0 5px 50px 5px;
-  margin-top: -10px;
+  // padding: 0 5px 50px 5px;
   overflow-x: hidden;
   overflow-y: auto;
-  // so the vertical scroll-bar (in case of y-overflow) abuts the main menu
-  top: -10px;
+
+  & > .main {
+    flex: 1 1;
+    margin-top: 80px;
+    padding: 5px;
+  }
 
   & > .header {
     display: flex;
     justify-content: space-between;
     align-items: flex-end;
-    // compensate for top: -10px; on the parent
-    padding-top: 10px;
+    background: #fff;
+    height: 60px;
+    position: fixed;
+    margin-right: 5px;
+    margin-top: 5px;
+    padding-left: 5px;
 
     .title {
       text-align: center;
@@ -22,10 +29,6 @@
       font-weight: 900;
       font-size: 1.12em;
     }
-  }
-
-  & > .main {
-    flex: 1;
   }
 
   .no-entries {

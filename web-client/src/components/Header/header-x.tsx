@@ -23,8 +23,11 @@ export const Header = (props: Props) => {
         <img src={logo} className="logo" alt="logo" />
       </div>
 
-      <div data-testid="app-header-title" className="title">
-        {title}
+      <div
+        data-testid="app-header-title"
+        className={`title ${sidebar ? "" : "no-sidebar"}`}
+      >
+        <span className={sidebar ? "title_text" : ""}>{title}</span>
 
         {sidebar && (
           <span
@@ -32,7 +35,11 @@ export const Header = (props: Props) => {
             onClick={() => toggleShowSidebar && toggleShowSidebar(!show)}
             data-testid="sidebar-trigger"
           >
-            <Icon name="content" />
+            {show ? (
+              <Icon className="close-sidebar-icon" name="close" />
+            ) : (
+              <Icon name="content" />
+            )}
           </span>
         )}
       </div>

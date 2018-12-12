@@ -2,8 +2,14 @@
 @import "../../styles/extensions";
 
 .routes-home {
-  padding: 0 5px 0 5px;
-  margin-top: -10px;
+  & > .route-main {
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .exps-container {
+    padding: 10px 5px 0 5px;
+  }
 
   .no-exp-info {
     cursor: pointer;

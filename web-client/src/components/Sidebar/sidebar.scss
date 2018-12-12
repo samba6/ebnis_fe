@@ -32,7 +32,7 @@
   .container {
     position: relative;
     width: calc(var(--main-container-width) * 0.9);
-    max-width: 200px;
+    max-width: 320px;
     background: #ffffff;
     height: var(--main-container-height);
     border-top: 2px solid $app-color;
