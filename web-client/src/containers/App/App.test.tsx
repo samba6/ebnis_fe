@@ -23,17 +23,16 @@ it("renders without crashing", () => {
     </ApolloProvider>
   );
 
-  const { rerender, container, getByTestId, debug } = render(Component);
+  const { rerender, container, getByTestId } = render(Component);
 
   const { firstChild: app } = container;
   expect(app).toContainElement(getByTestId("loading-spinner"));
 
   const $title = getByTestId("app-header-title");
   expect(app).toContainElement($title);
-  expect($title.textContent).toBe("Ebnis");
+  expect($title.textContent).toBe("");
 
   // we need to re-render so react can flush all effects
   rerender(Component);
   expect(mockedPersistCache.mock.calls.length).toBe(1);
-  debug();
 });

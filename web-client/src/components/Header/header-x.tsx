@@ -15,7 +15,11 @@ export interface Props {
 export const Header = (props: Props) => {
   const { title, wide, sidebar, toggleShowSidebar, show } = props;
   let className = "components-header";
-  className = wide ? "wide " + className : className;
+
+  // if we are showing sidebar, we can't be wide
+  if (!sidebar) {
+    className = wide ? "wide " + className : className;
+  }
 
   return (
     <header className={className}>
