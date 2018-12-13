@@ -18,11 +18,11 @@ it("renders with header no sidebar", () => {
 });
 
 it("renders with header and sidebar", () => {
-  const {
-    container: sidebarHeader,
-    getByTestId,
-    queryByTestId
-  } = renderWithRouter(<SidebarHeader title={title} sidebar={true} />);
+  const { ui } = renderWithRouter(
+    <SidebarHeader title={title} sidebar={true} />
+  );
+
+  const { container: sidebarHeader, getByTestId, queryByTestId } = render(ui);
 
   expect(sidebarHeader).toContainElement(getByTestId("app-header"));
 
