@@ -40,9 +40,13 @@ export const Header = (props: Props) => {
             data-testid="sidebar-trigger"
           >
             {show ? (
-              <Icon className="close-sidebar-icon" name="close" />
+              <Icon
+                data-testid="close-sidebar-icon"
+                className="close-sidebar-icon"
+                name="close"
+              />
             ) : (
-              <Icon name="content" />
+              <Icon data-testid="show-sidebar-icon" name="content" />
             )}
           </span>
         )}
