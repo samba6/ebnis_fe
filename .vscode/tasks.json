@@ -46,6 +46,20 @@
     },
 
     {
+      "label": "test frontend",
+      "type": "shell",
+      "command": "launch_with_cmder.bat \"yarn test\" ",
+      "problemMatcher": []
+    },
+
+    {
+      "label": "test frontend with coverage",
+      "type": "shell",
+      "command": "launch_with_cmder.bat \"yarn test --coverage\" ",
+      "problemMatcher": []
+    },
+
+    {
       "label": "Serve and chrome",
       "type": "shell",
       "command": "launch_with_cmder.bat \"chromedriver\" && yarn build-local-prod && launch_with_cmder.bat \"serve -s build -l 4024\"  ",
