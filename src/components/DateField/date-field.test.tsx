@@ -15,11 +15,11 @@ import {
 it("renders correctly", () => {
   const compName = "date1";
   const today = new Date();
-  const { currYr, years, currMonth, currDay } = getToday(today);
+  const { currYr, currMonth, currDay } = getToday(today);
   const fieldName = makeFieldNames(compName);
   const setValueMock = jest.fn();
 
-  const { debug, container, getByText, getByTestId } = render(
+  const { container, getByText, getByTestId } = render(
     <DateField name={compName} value={today} setValue={setValueMock} />
   );
 
@@ -35,7 +35,6 @@ it("renders correctly", () => {
 
   const $day = getByTestId(fieldName.day);
   expect($day.getAttribute("name")).toBe(fieldName.day);
-  displayedDays.forEach(d => expect($day).toContainElement(getByText(d.text)));
 
   const displayedDaysLen = displayedDays.length - 1;
   const lastDayOfMonth = displayedDays[displayedDaysLen].value;
@@ -59,7 +58,6 @@ it("renders correctly", () => {
 
   const $month = getByTestId(fieldName.month);
   expect($month.getAttribute("name")).toBe(fieldName.month);
-  MONTH_LABELS.forEach(m => expect($month).toContainElement(getByText(m)));
 
   let nextMonth = currMonth + 1;
   nextMonth = nextMonth > 11 ? 3 : nextMonth;
@@ -78,7 +76,6 @@ it("renders correctly", () => {
 
   const $year = getByTestId(fieldName.year);
   expect($year.getAttribute("name")).toBe(fieldName.year);
-  years.forEach(y => expect($year).toContainElement(getByText(y.text)));
 
   const nextYr = currYr + 1;
   const $nextYear = getByText(nextYr + "");

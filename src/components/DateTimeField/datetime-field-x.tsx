@@ -1,36 +1,23 @@
-import React, { useState } from "react";
-import { Form, Dropdown, DropdownItemProps } from "semantic-ui-react";
+import React, { useState, useMemo } from "react";
+import { Form, Dropdown } from "semantic-ui-react";
 
 import DateField from "../DateField";
 import { FieldComponentProps, FormObjVal } from "../../routes/Exp/exp";
+import {
+  HOUR_OPTIONS,
+  MINUTE_OPTIONS,
+  getFieldName,
+  LABELS
+} from "./datetime-field";
 
 interface DateTimeProps extends FieldComponentProps {
   className?: string;
-}
-
-const HOUR_OPTIONS: DropdownItemProps[] = [];
-
-for (let hrIndex = 0; hrIndex < 24; hrIndex++) {
-  HOUR_OPTIONS.push({
-    key: hrIndex,
-    text: ("" + hrIndex).padStart(2, "0"),
-    value: hrIndex
-  });
-}
-
-const MINUTE_OPTIONS: DropdownItemProps[] = [];
-
-for (let minIndex = 0; minIndex < 60; minIndex++) {
-  MINUTE_OPTIONS.push({
-    key: minIndex,
-    text: ("" + minIndex).padStart(2, "0"),
-    value: minIndex
-  });
+  value: Date;
 }
 
 export function DateTimeField(props: DateTimeProps) {
-  const { className, name: compName, setValue = () => null } = props;
-  const [datetime, setDatetime] = useState(new Date());
+  const { className, name: compName, setValue, value } = props;
+  const [datetime, setDatetime] = useState(value);
 
   function setDateVal(a: string, date: FormObjVal) {
     const date1 = date as Date;
@@ -47,10 +34,23 @@ export function DateTimeField(props: DateTimeProps) {
     setValue(compName, date);
   }
 
+  const fieldNames = useMemo(function getFieldNames() {
+    return LABELS.reduce(
+      function reduceLabels(acc, l) {
+        acc[l] = getFieldName(compName, l);
+        return acc;
+      },
+      { date: "", hr: "", min: "" }
+    );
+  }, []);
+
   return (
-    <Form.Field className={`${className || ""} `}>
+    <Form.Field
+      className={`${className || ""} datetime-field`}
+      data-testid={`datetime-field-${compName}`}
+    >
       <DateField
-        name={compName + ".date"}
+        name={fieldNames.date}
         value={datetime}
         setValue={setDateVal}
       />
@@ -63,13 +63,13 @@ export function DateTimeField(props: DateTimeProps) {
           <Dropdown
             fluid
             selection
-            name={compName + ".hr"}
-            compact={true}
+            compact
+            data-testid={fieldNames.hr}
+            name={fieldNames.hr}
             options={HOUR_OPTIONS}
             defaultValue={datetime.getHours()}
             onChange={function dropDownHrChanged(evt, data) {
-              const dataVal = data.value as number;
-              setDateTimeVal({ h: dataVal });
+              setDateTimeVal({ h: data.value as number });
             }}
           />
         </div>
@@ -81,13 +81,13 @@ export function DateTimeField(props: DateTimeProps) {
           <Dropdown
             fluid
             selection
-            name={compName + ".min"}
-            compact={true}
+            compact
+            data-testid={fieldNames.min}
+            name={fieldNames.min}
             options={MINUTE_OPTIONS}
             defaultValue={datetime.getMinutes()}
             onChange={function dropDownMinChanged(evt, data) {
-              const dataVal = data.value as number;
-              setDateTimeVal({ m: dataVal });
+              setDateTimeVal({ m: data.value as number });
             }}
           />
         </div>

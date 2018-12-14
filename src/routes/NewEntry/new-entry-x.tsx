@@ -54,8 +54,14 @@ const fieldTypeUtils = {
   },
 
   [FieldType.DATETIME]: {
-    component(props: FieldComponentProps) {
-      return <DateTimeField {...props} className="light-border" />;
+    component({ value, ...props }: FieldComponentProps) {
+      return (
+        <DateTimeField
+          value={value as Date}
+          {...props}
+          className="light-border"
+        />
+      );
     },
 
     default: new Date(),

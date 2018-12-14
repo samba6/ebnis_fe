@@ -41,7 +41,10 @@ export function DateField(props: DateFieldProps) {
   }, []);
 
   return (
-    <Form.Field className={`${className || ""} date-field`}>
+    <Form.Field
+      className={`${className || ""} date-field`}
+      data-testid={`date-field-${compName}`}
+    >
       <div className="entry-sub-field_container">
         <label htmlFor={fieldNames.day} className="field_label">
           {LABELS.day}
