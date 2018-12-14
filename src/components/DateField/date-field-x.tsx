@@ -1,68 +1,22 @@
 import React, { useState, useMemo } from "react";
-import { Form, Dropdown, DropdownItemProps } from "semantic-ui-react";
-import getDaysInMonth from "date-fns/get_days_in_month";
+import { Form, Dropdown } from "semantic-ui-react";
 
 import { FieldComponentProps } from "../../routes/Exp/exp";
+import {
+  MONTHS,
+  getToday,
+  getDisplayedDays,
+  LABELS,
+  makeFieldNames
+} from "./date-field";
 
 interface DateFieldProps extends FieldComponentProps {
-  name: string;
   className?: string;
-  value?: Date;
-}
-
-const MONTHS = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec"
-].map((m, index) => ({ key: index, text: m, value: index }));
-
-const DAYS: DropdownItemProps[] = [];
-
-for (let dayIndex = 1; dayIndex < 32; dayIndex++) {
-  DAYS.push({
-    key: dayIndex,
-    text: dayIndex,
-    value: dayIndex
-  });
-}
-
-function getToday(today: Date) {
-  const currYr = today.getFullYear();
-  const years = [];
-
-  for (let yrOffset = -2; yrOffset < 2; yrOffset++) {
-    const year = currYr + yrOffset;
-    years.push({
-      key: yrOffset,
-      text: year,
-      value: year
-    });
-  }
-
-  return {
-    currYr,
-    years,
-    currMonth: today.getMonth(),
-    currDay: today.getDate()
-  };
+  value: Date;
 }
 
 export function DateField(props: DateFieldProps) {
-  const {
-    className,
-    setValue = () => undefined,
-    value = new Date(),
-    name: compName
-  } = props;
+  const { className, setValue, value, name: compName } = props;
   const { years, currYr, currMonth, currDay } = useMemo(function() {
     return getToday(value);
   }, []);
@@ -72,35 +26,37 @@ export function DateField(props: DateFieldProps) {
 
   const dayOptions = useMemo(
     function computeDays() {
-      const numDaysInMonth = getDaysInMonth(
-        new Date(selectedYear, selectedMonth)
-      );
-
-      return DAYS.slice(0, numDaysInMonth);
+      return getDisplayedDays(selectedYear, selectedMonth);
     },
     [selectedYear, selectedMonth]
   );
 
   function setDate({ y = selectedYear, m = selectedMonth, d = selectedDay }) {
-    setValue(compName, new Date(y, m, d));
+    const updatedDate = new Date(y, m, d);
+    setValue(compName, updatedDate);
   }
+
+  const fieldNames = useMemo(function makeFieldNames1() {
+    return makeFieldNames(compName);
+  }, []);
 
   return (
     <Form.Field className={`${className || ""} date-field`}>
       <div className="entry-sub-field_container">
-        <label htmlFor="" className="field_label">
-          Day
+        <label htmlFor={fieldNames.day} className="field_label">
+          {LABELS.day}
         </label>
         <Dropdown
           fluid
           selection
-          name={compName + ".day"}
+          data-testid={fieldNames.day}
+          name={fieldNames.day}
           compact={true}
           basic={true}
           options={dayOptions}
           defaultValue={currDay}
           onChange={async function(evt, data) {
-            const dataVal = (data.value || 0) as number;
+            const dataVal = data.value as number;
             setSelectedDay(dataVal);
             setDate({ d: dataVal });
           }}
@@ -108,17 +64,19 @@ export function DateField(props: DateFieldProps) {
       </div>
 
       <div className="entry-sub-field_container">
-        <label htmlFor="" className="field_label">
-          Month
+        <label htmlFor={fieldNames.month} className="field_label">
+          {LABELS.month}
         </label>
         <Dropdown
           fluid
           selection
+          data-testid={fieldNames.month}
+          name={fieldNames.month}
           compact={true}
           options={MONTHS}
           defaultValue={currMonth}
           onChange={function(evt, data) {
-            const dataVal = (data.value || 0) as number;
+            const dataVal = data.value as number;
             setSelectedMonth(dataVal);
             setDate({ m: dataVal });
           }}
@@ -126,17 +84,19 @@ export function DateField(props: DateFieldProps) {
       </div>
 
       <div className="entry-sub-field_container">
-        <label htmlFor="" className="field_label">
-          Year
+        <label htmlFor={fieldNames.year} className="field_label">
+          {LABELS.year}
         </label>
         <Dropdown
           fluid
           selection
-          compact={true}
+          compact
+          data-testid={fieldNames.year}
+          name={fieldNames.year}
           options={years}
           defaultValue={currYr}
           onChange={function(evt, data) {
-            const dataVal = (data.value || 0) as number;
+            const dataVal = data.value as number;
             setSelectedYear(dataVal);
             setDate({ y: dataVal });
           }}

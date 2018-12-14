@@ -41,7 +41,9 @@ const fieldTypeUtils = {
 
   [FieldType.DATE]: {
     component({ value, ...props }: FieldComponentProps) {
-      return <DateField {...props} className="light-border" />;
+      return (
+        <DateField value={value as Date} {...props} className="light-border" />
+      );
     },
 
     default: new Date(),
