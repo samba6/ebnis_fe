@@ -1,8 +1,12 @@
 import React from "react";
 import { RouteProps, Route, Redirect } from "react-router-dom";
 
-import { Props } from "./auth-required";
 import { LOGIN_URL } from "../../Routing";
+import { UserLocalGqlData } from "../../state/auth.local.query";
+
+interface Props extends RouteProps, UserLocalGqlData {
+  component: React.ComponentClass<{}> | React.StatelessComponent<{}>;
+}
 
 export function AuthRequired({ component: AuthComponent, ...rest }: Props) {
   function render(childProps: RouteProps) {
