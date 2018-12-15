@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useReducer } from "react";
+import React, { useEffect, useReducer, Dispatch } from "react";
 import { Button, Card, Input, Message, Icon, Form } from "semantic-ui-react";
 import { Formik, FastField, FieldProps, FormikProps, Field } from "formik";
 
@@ -9,7 +9,8 @@ import {
   loginReducer,
   Action_Types,
   State,
-  SubmitArg
+  SubmitArg,
+  Action
 } from "./login";
 import SidebarHeader from "../../components/SidebarHeader";
 import { LoginUser as FormValues } from "../../graphql/apollo-gql.d";
@@ -25,8 +26,10 @@ export function Login(props: Props) {
     updateLocalUser,
     submit = defaultSubmit
   } = props;
-  const [pwdType, setPwdType] = useState("password");
-  const [state, dispatch] = useReducer(loginReducer, {} as State);
+
+  const [state, dispatch] = useReducer(loginReducer, {
+    pwdType: "password"
+  } as State);
 
   useEffect(function setPageTitle() {
     setTitle("Log in");
@@ -42,14 +45,14 @@ export function Login(props: Props) {
   }: FormikProps<FormValues>) {
     return (
       <Card>
-        {renderSubmissionErrors()}
+        <Errors onDismiss={handleErrorsDismissed} errors={state} />
 
         <Card.Content>
           <Form
-            onSubmit={function onSubmit() {
-              handleFormErrorDismissed();
+            onSubmit={async function onSubmit() {
+              handleErrorsDismissed();
 
-              submit({
+              await submit({
                 values,
                 formikBag,
                 login,
@@ -59,9 +62,18 @@ export function Login(props: Props) {
               });
             }}
           >
-            <FastField name="email" render={renderEmailInput} />
+            <FastField name="email" component={EmailInput} />
 
-            <Field name="password" render={renderPwdInput} />
+            <Field
+              name="password"
+              render={(fieldProps: FieldProps<FormValues>) => (
+                <PwdInput
+                  dispatch={dispatch}
+                  pwdType={state.pwdType}
+                  {...fieldProps}
+                />
+              )}
+            />
 
             <Button
               id="login-submit"
@@ -94,117 +106,7 @@ export function Login(props: Props) {
     );
   }
 
-  function renderEmailInput(formProps: FieldProps<FormValues>) {
-    const { field } = formProps;
-
-    return (
-      <Form.Field>
-        <label htmlFor="email">Email</label>
-        <Input
-          {...field}
-          type="email"
-          autoComplete="off"
-          autoFocus={true}
-          id="email"
-        />
-      </Form.Field>
-    );
-  }
-
-  function renderPwdInput(formProps: FieldProps<FormValues>) {
-    const { field } = formProps;
-
-    return (
-      <Form.Field>
-        <label htmlFor="password">Password</label>
-        <Input icon={true} placeholder="" data-testid="password-input">
-          <input {...field} type={pwdType} autoComplete="off" id="password" />
-
-          {pwdType === "password" && field.value && (
-            <Icon
-              name="eye"
-              className="link"
-              data-testid="password-unmask"
-              onClick={toggleShowPwdClicked}
-            />
-          )}
-
-          {pwdType === "text" && field.value && (
-            <Icon
-              name="eye slash"
-              className="link"
-              data-testid="password-mask"
-              onClick={toggleShowPwdClicked}
-            />
-          )}
-        </Input>
-      </Form.Field>
-    );
-  }
-
-  function toggleShowPwdClicked() {
-    setPwdType(pwdType === "password" ? "text" : "password");
-  }
-
-  function renderSubmissionErrors() {
-    const { connError, formErrors, graphQlErrors } = state;
-
-    if (connError) {
-      return (
-        <Card.Content extra={true}>
-          <Message error={true} onDismiss={handleFormErrorDismissed}>
-            <Message.Content>You are not connected</Message.Content>
-          </Message>
-        </Card.Content>
-      );
-    }
-
-    if (formErrors) {
-      const { email, password } = formErrors;
-
-      if (!(email || password)) {
-        return undefined;
-      }
-
-      return (
-        <Card.Content extra={true}>
-          <Message error={true} onDismiss={handleFormErrorDismissed}>
-            <Message.Content>
-              <span>Errors in fields: </span>
-
-              {email && (
-                <div>
-                  <span>Email: </span>
-                  <span>{email}</span>
-                </div>
-              )}
-
-              {password && (
-                <div>
-                  <span>Password: </span>
-                  <span>{password}</span>
-                </div>
-              )}
-            </Message.Content>
-          </Message>
-        </Card.Content>
-      );
-    }
-
-    if (graphQlErrors) {
-      return (
-        <Card.Content extra={true}>
-          <Message error={true} onDismiss={handleFormErrorDismissed}>
-            <Message.Content>{graphQlErrors.message}</Message.Content>
-          </Message>
-        </Card.Content>
-      );
-    }
-
-    return undefined;
-  }
-
-  function handleFormErrorDismissed() {
+  function handleErrorsDismissed() {
     dispatch({ type: Action_Types.SET_FORM_ERROR, payload: undefined });
     dispatch({ type: Action_Types.SET_GRAPHQL_ERROR, payload: undefined });
     dispatch({ type: Action_Types.SET_CONN_ERROR, payload: false });
@@ -228,6 +130,135 @@ export function Login(props: Props) {
 }
 
 export default Login;
+
+interface PwdInputProps extends FieldProps<FormValues> {
+  pwdType: "text" | "password";
+  dispatch: Dispatch<Action>;
+}
+
+function PwdInput(props: PwdInputProps) {
+  const { field, pwdType, dispatch } = props;
+
+  return (
+    <Form.Field>
+      <label htmlFor="password">Password</label>
+      <Input icon={true} placeholder="" data-testid="password-input">
+        <input {...field} type={pwdType} autoComplete="off" id="password" />
+
+        {pwdType === "password" && field.value && (
+          <Icon
+            name="eye"
+            className="link"
+            data-testid="password-unmask"
+            onClick={() =>
+              dispatch({
+                type: Action_Types.SET_PASSWORD_TYPE,
+                payload: "text"
+              })
+            }
+          />
+        )}
+
+        {pwdType === "text" && field.value && (
+          <Icon
+            name="eye slash"
+            className="link"
+            data-testid="password-mask"
+            onClick={() =>
+              dispatch({
+                type: Action_Types.SET_PASSWORD_TYPE,
+                payload: "password"
+              })
+            }
+          />
+        )}
+      </Input>
+    </Form.Field>
+  );
+}
+
+function EmailInput(props: FieldProps<FormValues>) {
+  const { field } = props;
+
+  return (
+    <Form.Field>
+      <label htmlFor="email">Email</label>
+      <Input
+        {...field}
+        type="email"
+        autoComplete="off"
+        autoFocus={true}
+        id="email"
+      />
+    </Form.Field>
+  );
+}
+
+interface ErrorsProps {
+  errors: State;
+  onDismiss: () => void;
+}
+
+function Errors(props: ErrorsProps) {
+  const {
+    errors: { connError, formErrors, graphQlErrors },
+    onDismiss
+  } = props;
+
+  if (connError) {
+    return (
+      <Card.Content extra={true}>
+        <Message error={true} onDismiss={onDismiss}>
+          <Message.Content>You are not connected</Message.Content>
+        </Message>
+      </Card.Content>
+    );
+  }
+
+  if (formErrors) {
+    const { email, password } = formErrors;
+
+    if (!(email || password)) {
+      return null;
+    }
+
+    return (
+      <Card.Content extra={true}>
+        <Message error={true} onDismiss={onDismiss}>
+          <Message.Content>
+            <span>Errors in fields: </span>
+
+            {email && (
+              <div>
+                <span>Email: </span>
+                <span>{email}</span>
+              </div>
+            )}
+
+            {password && (
+              <div>
+                <span>Password: </span>
+                <span>{password}</span>
+              </div>
+            )}
+          </Message.Content>
+        </Message>
+      </Card.Content>
+    );
+  }
+
+  if (graphQlErrors) {
+    return (
+      <Card.Content extra={true}>
+        <Message error={true} onDismiss={onDismiss}>
+          <Message.Content>{graphQlErrors.message}</Message.Content>
+        </Message>
+      </Card.Content>
+    );
+  }
+
+  return null;
+}
 
 async function defaultSubmit({
   values,

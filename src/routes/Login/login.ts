@@ -40,18 +40,27 @@ export const RouterThings = {
 export enum Action_Types {
   SET_CONN_ERROR = "@login/SET_CONN_ERROR",
   SET_FORM_ERROR = "@login/SET_FORM_ERROR",
-  SET_GRAPHQL_ERROR = "@login/SET_GRAPHQL_ERROR"
+  SET_GRAPHQL_ERROR = "@login/SET_GRAPHQL_ERROR",
+  SET_PASSWORD_TYPE = "@login/SET_PASSWORD_TYPE"
 }
 
 export interface State {
   readonly connError?: boolean;
   readonly formErrors?: FormikErrors<FormValues>;
   readonly graphQlErrors?: ApolloError;
+  readonly pwdType: PasswordType;
 }
+
+type PasswordType = "text" | "password";
 
 export interface Action {
   type: Action_Types;
-  payload: undefined | boolean | FormikErrors<FormValues> | ApolloError;
+  payload:
+    | undefined
+    | boolean
+    | FormikErrors<FormValues>
+    | ApolloError
+    | PasswordType;
 }
 
 export const loginReducer: Reducer<State, Action> = (state, action) => {
@@ -67,6 +76,10 @@ export const loginReducer: Reducer<State, Action> = (state, action) => {
     case Action_Types.SET_GRAPHQL_ERROR:
       const payload3 = action.payload as ApolloError;
       return { ...state, graphQlErrors: payload3 };
+
+    case Action_Types.SET_PASSWORD_TYPE:
+      const payload4 = action.payload as PasswordType;
+      return { ...state, pwdType: payload4 };
 
     default:
       return state;
