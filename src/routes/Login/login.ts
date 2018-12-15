@@ -10,6 +10,7 @@ import { LoginMutationProps } from "../../graphql/login.mutation";
 import { UserLocalMutationProps } from "../../state/user.local.mutation";
 import { LoggedOutUserProps } from "../../state/logged-out-user.local.query";
 import { ConnProps } from "../../state/conn.query";
+import { PwdInputActionTypes } from "../../components/PwdInput/pwd-input";
 
 export interface OwnProps extends RouteComponentProps<{}> {
   refreshToHome?: () => void;
@@ -45,10 +46,17 @@ export interface State {
   readonly otherErrors?: string;
   readonly formErrors?: FormikErrors<FormValues>;
   readonly graphQlErrors?: ApolloError;
+  readonly pwdType?: "password" | "text";
 }
 
+export const initialState: State = {
+  otherErrors: undefined,
+  formErrors: undefined,
+  graphQlErrors: undefined
+};
+
 export interface Action {
-  type: Action_Types;
+  type: Action_Types | PwdInputActionTypes;
   payload:
     | undefined
     | boolean
@@ -70,6 +78,10 @@ export const authFormErrorReducer: Reducer<State, Action> = (state, action) => {
     case Action_Types.SET_GRAPHQL_ERROR:
       const payload3 = action.payload as ApolloError;
       return { ...state, graphQlErrors: payload3 };
+
+    case PwdInputActionTypes.SET_PWD_TYPE:
+      const payload4 = action.payload as "password" | "text";
+      return { ...state, pwdType: payload4 };
 
     default:
       return state;

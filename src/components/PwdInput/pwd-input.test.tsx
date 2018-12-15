@@ -1,22 +1,32 @@
-import React from "react";
+import React, { useReducer } from "react";
 import "jest-dom/extend-expect";
 import "react-testing-library/cleanup-after-each";
 import { render, fireEvent } from "react-testing-library";
-import { Formik, Field } from "formik";
+import { Formik, Field, FieldProps } from "formik";
 
 import PwdInput from ".";
 import { makeId } from "./pwd-input-x";
+import { reducer } from "./pwd-input";
 
 it("renders correctly", () => {
   const name = "pwd";
 
   function App() {
+    const [state, dispatch] = useReducer(reducer, undefined);
+
     return (
       <Formik
         onSubmit={() => null}
         initialValues={{ [name]: "" }}
         validateOnChange={false}
-        render={() => <Field name={name} component={PwdInput} />}
+        render={() => (
+          <Field
+            name={name}
+            render={(fieldProps: FieldProps) => (
+              <PwdInput {...fieldProps} dispatch={dispatch} pwdType={state} />
+            )}
+          />
+        )}
       />
     );
   }

@@ -1,10 +1,26 @@
-import React, { useState } from "react";
-import { FieldProps } from "formik";
+import React from "react";
+
+import { Props, PwdInputActionTypes } from "./pwd-input";
 import { Form, Input, Icon } from "semantic-ui-react";
 
-export default function PwdInput<TFormValues>(props: FieldProps<TFormValues>) {
-  const { field } = props;
-  const [pwdType, setPwdType] = useState("password");
+export const PwdInput = React.memo(pwdInput, xx);
+
+export default PwdInput;
+
+function xx<T>(p: Props<T>, n: Props<T>) {
+  if (p.pwdType !== n.pwdType) {
+    return false;
+  }
+
+  if (p.field.value !== n.field.value) {
+    return false;
+  }
+
+  return true;
+}
+
+function pwdInput<TFormValues>(props: Props<TFormValues>) {
+  const { field, pwdType = "password", dispatch } = props;
   const id = makeId(field.name);
 
   return (
@@ -19,7 +35,12 @@ export default function PwdInput<TFormValues>(props: FieldProps<TFormValues>) {
             name="eye"
             className="link"
             data-testid="password-unmask"
-            onClick={() => setPwdType("text")}
+            onClick={() =>
+              dispatch({
+                payload: "text",
+                type: PwdInputActionTypes.SET_PWD_TYPE
+              })
+            }
           />
         )}
 
@@ -28,7 +49,12 @@ export default function PwdInput<TFormValues>(props: FieldProps<TFormValues>) {
             name="eye slash"
             className="link"
             data-testid="password-mask"
-            onClick={() => setPwdType("password")}
+            onClick={() =>
+              dispatch({
+                payload: "password",
+                type: PwdInputActionTypes.SET_PWD_TYPE
+              })
+            }
           />
         )}
       </Input>

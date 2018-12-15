@@ -1,4 +1,4 @@
-import React, { useEffect, useReducer } from "react";
+import React, { useEffect, useReducer, Dispatch } from "react";
 import { Button, Card, Input, Message, Icon, Form } from "semantic-ui-react";
 import { Formik, FastField, FieldProps, FormikProps, Field } from "formik";
 
@@ -9,13 +9,17 @@ import {
   authFormErrorReducer,
   Action_Types,
   State,
-  SubmitArg
+  SubmitArg,
+  Action,
+  initialState
 } from "./login";
 import SidebarHeader from "../../components/SidebarHeader";
 import { LoginUser as FormValues } from "../../graphql/apollo-gql.d";
 import { setTitle, SIGN_UP_URL } from "../../Routing";
 import refreshToHomeDefault from "../../Routing/refresh-to-home";
 import PwdInput from "../../components/PwdInput";
+
+const Errors = React.memo(ErrorsComp, ErrorsCompEqual);
 
 export function Login(props: Props) {
   const {
@@ -26,7 +30,7 @@ export function Login(props: Props) {
     refreshToHome = refreshToHomeDefault
   } = props;
 
-  const [state, dispatch] = useReducer(authFormErrorReducer, {} as State);
+  const [state, dispatch] = useReducer(authFormErrorReducer, initialState);
 
   useEffect(function setPageTitle() {
     setTitle("Log in");
@@ -42,12 +46,12 @@ export function Login(props: Props) {
   }: FormikProps<FormValues>) {
     return (
       <Card>
-        <Errors onDismiss={handleErrorsDismissed} errors={state} />
+        <Errors errors={state} dispatch={dispatch} />
 
         <Card.Content>
           <Form
             onSubmit={function onSubmit() {
-              handleErrorsDismissed();
+              handleErrorsDismissed(dispatch);
 
               if (!(connected && connected.isConnected)) {
                 formikBag.setSubmitting(false);
@@ -70,7 +74,12 @@ export function Login(props: Props) {
           >
             <FastField name="email" component={EmailInput} />
 
-            <Field name="password" component={PwdInput} />
+            <Field
+              name="password"
+              render={(f: FieldProps<FormValues>) => (
+                <PwdInput {...f} dispatch={dispatch} pwdType={state.pwdType} />
+              )}
+            />
 
             <Button
               id="login-submit"
@@ -103,12 +112,6 @@ export function Login(props: Props) {
     );
   }
 
-  function handleErrorsDismissed() {
-    dispatch({ type: Action_Types.SET_FORM_ERROR, payload: undefined });
-    dispatch({ type: Action_Types.SET_GRAPHQL_ERROR, payload: undefined });
-    dispatch({ type: Action_Types.SET_OTHER_ERRORS, payload: false });
-  }
-
   return (
     <div className="app-container">
       <SidebarHeader title="Login to your account" wide={true} />
@@ -127,6 +130,12 @@ export function Login(props: Props) {
 }
 
 export default Login;
+
+function handleErrorsDismissed(dispatch: Dispatch<Action>) {
+  dispatch({ type: Action_Types.SET_FORM_ERROR, payload: undefined });
+  dispatch({ type: Action_Types.SET_GRAPHQL_ERROR, payload: undefined });
+  dispatch({ type: Action_Types.SET_OTHER_ERRORS, payload: undefined });
+}
 
 function EmailInput(props: FieldProps<FormValues>) {
   const { field } = props;
@@ -147,14 +156,31 @@ function EmailInput(props: FieldProps<FormValues>) {
 
 interface ErrorsProps {
   errors: State;
-  onDismiss: () => void;
+  dispatch: Dispatch<Action>;
 }
 
-function Errors(props: ErrorsProps) {
+function ErrorsCompEqual(
+  { errors: p }: ErrorsProps,
+  { errors: n }: ErrorsProps
+) {
+  for (const [k, v] of Object.entries(p)) {
+    if (v !== n[k]) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+function ErrorsComp(props: ErrorsProps) {
   const {
     errors: { otherErrors, formErrors, graphQlErrors },
-    onDismiss
+    dispatch
   } = props;
+
+  function onDismiss() {
+    handleErrorsDismissed(dispatch);
+  }
 
   function messageContent() {
     if (otherErrors) {
