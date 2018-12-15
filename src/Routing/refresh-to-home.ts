@@ -31,7 +31,7 @@ export default function refreshToHome() {
   let counter = 0;
 
   intervalId = setInterval(() => {
-    if (getUser() || counter === 500) {
+    if (getUser() || counter === 1000) {
       clearInterval(intervalId);
       window.location.href = ROOT_URL;
     }
