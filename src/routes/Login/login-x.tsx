@@ -15,21 +15,18 @@ import SidebarHeader from "../../components/SidebarHeader";
 import { LoginUser as FormValues } from "../../graphql/apollo-gql.d";
 import { setTitle, SIGN_UP_URL } from "../../Routing";
 import refreshToHomeDefault from "../../Routing/refresh-to-home";
-import getConnStatusDefault from "../../state/get-conn-status";
 import PwdInput from "../../components/PwdInput";
 
 export function Login(props: Props) {
   const {
     history,
-    client,
     login,
     updateLocalUser,
-    submit = defaultSubmit
+    connected,
+    refreshToHome = refreshToHomeDefault
   } = props;
 
-  const [state, dispatch] = useReducer(loginReducer, {
-    pwdType: "password"
-  } as State);
+  const [state, dispatch] = useReducer(loginReducer, {} as State);
 
   useEffect(function setPageTitle() {
     setTitle("Log in");
@@ -49,16 +46,25 @@ export function Login(props: Props) {
 
         <Card.Content>
           <Form
-            onSubmit={async function onSubmit() {
+            onSubmit={function onSubmit() {
               handleErrorsDismissed();
 
-              await submit({
+              if (!(connected && connected.isConnected)) {
+                formikBag.setSubmitting(false);
+                dispatch({
+                  type: Action_Types.SET_OTHER_ERRORS,
+                  payload: "You are not connected"
+                });
+                return;
+              }
+
+              submit({
                 values,
                 formikBag,
                 login,
                 dispatch,
                 updateLocalUser,
-                client
+                refreshToHome
               });
             }}
           >
@@ -100,7 +106,7 @@ export function Login(props: Props) {
   function handleErrorsDismissed() {
     dispatch({ type: Action_Types.SET_FORM_ERROR, payload: undefined });
     dispatch({ type: Action_Types.SET_GRAPHQL_ERROR, payload: undefined });
-    dispatch({ type: Action_Types.SET_CONN_ERROR, payload: false });
+    dispatch({ type: Action_Types.SET_OTHER_ERRORS, payload: false });
   }
 
   return (
@@ -146,83 +152,79 @@ interface ErrorsProps {
 
 function Errors(props: ErrorsProps) {
   const {
-    errors: { connError, formErrors, graphQlErrors },
+    errors: { otherErrors, formErrors, graphQlErrors },
     onDismiss
   } = props;
 
-  if (connError) {
-    return (
-      <Card.Content extra={true}>
-        <Message error={true} onDismiss={onDismiss}>
-          <Message.Content>You are not connected</Message.Content>
-        </Message>
-      </Card.Content>
-    );
-  }
-
-  if (formErrors) {
-    const { email, password } = formErrors;
-
-    if (!(email || password)) {
-      return null;
+  function messageContent() {
+    if (otherErrors) {
+      return otherErrors;
     }
 
-    return (
-      <Card.Content extra={true}>
-        <Message error={true} onDismiss={onDismiss}>
-          <Message.Content>
-            <span>Errors in fields: </span>
+    if (formErrors) {
+      const { email, password } = formErrors;
 
-            {email && (
-              <div>
-                <span>Email: </span>
-                <span>{email}</span>
-              </div>
-            )}
+      return (
+        <>
+          <span>Errors in fields: </span>
 
-            {password && (
-              <div>
-                <span>Password: </span>
-                <span>{password}</span>
-              </div>
-            )}
-          </Message.Content>
-        </Message>
-      </Card.Content>
-    );
+          {email && (
+            <div>
+              <span>Email: </span>
+              <span>{email}</span>
+            </div>
+          )}
+
+          {password && (
+            <div>
+              <span>Password: </span>
+              <span>{password}</span>
+            </div>
+          )}
+        </>
+      );
+    }
+
+    if (graphQlErrors) {
+      return graphQlErrors.message;
+    }
+
+    return null;
   }
 
-  if (graphQlErrors) {
-    return (
-      <Card.Content extra={true}>
-        <Message error={true} onDismiss={onDismiss}>
-          <Message.Content>{graphQlErrors.message}</Message.Content>
-        </Message>
-      </Card.Content>
-    );
+  const content = messageContent();
+
+  if (!content) {
+    return null;
   }
 
-  return null;
+  return (
+    <Card.Content data-testid="login-form-error" extra={true}>
+      <Message error={true} onDismiss={onDismiss}>
+        <Message.Content>{content}</Message.Content>
+      </Message>
+    </Card.Content>
+  );
 }
 
-async function defaultSubmit({
+async function submit({
   values,
   formikBag,
   dispatch,
   login,
   updateLocalUser,
-  client,
-  getConnStatus = getConnStatusDefault,
-  refreshToHome = refreshToHomeDefault
+  refreshToHome
 }: SubmitArg) {
-  formikBag.setSubmitting(true);
-  const connStatus = await getConnStatus(client);
-
-  if (!connStatus) {
+  if (!login) {
     formikBag.setSubmitting(false);
-    dispatch({ type: Action_Types.SET_CONN_ERROR, payload: true });
+    dispatch({
+      type: Action_Types.SET_OTHER_ERRORS,
+      payload: "Unknown error"
+    });
     return;
   }
+
+  formikBag.setSubmitting(true);
 
   const errors = await formikBag.validateForm(values);
 
@@ -232,10 +234,6 @@ async function defaultSubmit({
       type: Action_Types.SET_FORM_ERROR,
       payload: errors
     });
-    return;
-  }
-
-  if (!login) {
     return;
   }
 

@@ -1,5 +1,4 @@
 import * as Yup from "yup";
-import { WithApolloClient } from "react-apollo";
 import { RouteComponentProps } from "react-router-dom";
 import { Reducer } from "react";
 import { FormikErrors, FormikActions } from "formik";
@@ -12,10 +11,9 @@ import { UserLocalMutationProps } from "../../state/user.local.mutation";
 import { LoggedOutUserProps } from "../../state/logged-out-user.local.query";
 import { ConnProps } from "../../state/conn.query";
 
-export interface OwnProps
-  extends WithApolloClient<{}>,
-    RouteComponentProps<{}> {
-  submit?: (args: SubmitArg) => Promise<void>;
+export interface OwnProps extends RouteComponentProps<{}> {
+  refreshToHome?: () => void;
+  getConnStatus?: (client: ApolloClient<{}>) => Promise<boolean>;
 }
 
 export type Props = OwnProps &
@@ -38,20 +36,16 @@ export const RouterThings = {
 };
 
 export enum Action_Types {
-  SET_CONN_ERROR = "@login/SET_CONN_ERROR",
+  SET_OTHER_ERRORS = "@login/SET_OTHER_ERRORS",
   SET_FORM_ERROR = "@login/SET_FORM_ERROR",
-  SET_GRAPHQL_ERROR = "@login/SET_GRAPHQL_ERROR",
-  SET_PASSWORD_TYPE = "@login/SET_PASSWORD_TYPE"
+  SET_GRAPHQL_ERROR = "@login/SET_GRAPHQL_ERROR"
 }
 
 export interface State {
-  readonly connError?: boolean;
+  readonly otherErrors?: string;
   readonly formErrors?: FormikErrors<FormValues>;
   readonly graphQlErrors?: ApolloError;
-  readonly pwdType: PasswordType;
 }
-
-type PasswordType = "text" | "password";
 
 export interface Action {
   type: Action_Types;
@@ -60,14 +54,14 @@ export interface Action {
     | boolean
     | FormikErrors<FormValues>
     | ApolloError
-    | PasswordType;
+    | string;
 }
 
 export const loginReducer: Reducer<State, Action> = (state, action) => {
   switch (action.type) {
-    case Action_Types.SET_CONN_ERROR:
-      const payload1 = action.payload as boolean;
-      return { ...state, connError: payload1 };
+    case Action_Types.SET_OTHER_ERRORS:
+      const payload1 = action.payload as string;
+      return { ...state, otherErrors: payload1 };
 
     case Action_Types.SET_FORM_ERROR:
       const payload2 = action.payload as FormikErrors<FormValues>;
@@ -76,10 +70,6 @@ export const loginReducer: Reducer<State, Action> = (state, action) => {
     case Action_Types.SET_GRAPHQL_ERROR:
       const payload3 = action.payload as ApolloError;
       return { ...state, graphQlErrors: payload3 };
-
-    case Action_Types.SET_PASSWORD_TYPE:
-      const payload4 = action.payload as PasswordType;
-      return { ...state, pwdType: payload4 };
 
     default:
       return state;
@@ -90,7 +80,5 @@ export interface SubmitArg extends LoginMutationProps, UserLocalMutationProps {
   values: FormValues;
   formikBag: FormikActions<FormValues>;
   dispatch: Dispatch<Action>;
-  client: ApolloClient<{}>;
-  getConnStatus?: (client: ApolloClient<{}>) => Promise<boolean>;
-  refreshToHome?: () => void;
+  refreshToHome: () => void;
 }
