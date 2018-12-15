@@ -21,7 +21,7 @@ import {
 import { Registration } from "../../graphql/apollo-gql.d";
 import { setTitle, LOGIN_URL } from "../../Routing";
 import SidebarHeader from "../../components/SidebarHeader";
-import refreshToHome from "../Login/refresh-to-home";
+import refreshToHome from "../../Routing/refresh-to-home";
 
 const FORM_RENDER_PROPS = {
   name: ["Name", "text"],
@@ -222,7 +222,7 @@ export function SignUp(props: Props) {
       <div className="app-main routes-sign-up-route" ref={mainRef}>
         <Formik
           initialValues={initialFormValues}
-          onSubmit={nullSubmit}
+          onSubmit={() => null}
           render={renderForm}
           validationSchema={ValidationSchema}
           validateOnChange={false}
@@ -233,5 +233,3 @@ export function SignUp(props: Props) {
 }
 
 export default SignUp;
-
-function nullSubmit() {}

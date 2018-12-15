@@ -1,33 +1,24 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useReducer } from "react";
 import { Button, Card, Input, Message, Icon, Form } from "semantic-ui-react";
-import {
-  Formik,
-  FastField,
-  FieldProps,
-  FormikProps,
-  FormikActions,
-  FormikErrors,
-  Field
-} from "formik";
-import { ApolloError } from "apollo-client";
+import { Formik, FastField, FieldProps, FormikProps, Field } from "formik";
 
 import "./login.scss";
-import { Props, ValidationSchema } from "./login";
+import {
+  Props,
+  ValidationSchema,
+  loginReducer,
+  Action_Types,
+  State
+} from "./login";
 import SidebarHeader from "../../components/SidebarHeader";
 import { LoginUser as FormValues } from "../../graphql/apollo-gql.d";
 import { setTitle, SIGN_UP_URL } from "../../Routing";
-import refreshToHome from "./refresh-to-home";
+import submitForm from "./submit";
 
 export const Login = (props: Props) => {
+  const { history, client, login, updateLocalUser } = props;
   const [pwdType, setPwdType] = useState("password");
-
-  const [formErrors, setFormErrors] = useState<
-    FormikErrors<FormValues> | undefined
-  >(undefined);
-
-  const [graphQlErrors, setGraphQlErrors] = useState<ApolloError | undefined>(
-    undefined
-  );
+  const [state, dispatch] = useReducer(loginReducer, {} as State);
 
   useEffect(function setPageTitle() {
     setTitle("Log in");
@@ -39,16 +30,27 @@ export const Login = (props: Props) => {
     dirty,
     isSubmitting,
     values,
-    ...formikProps
+    ...formikBag
   }: FormikProps<FormValues>) {
-    const { history } = props;
-
     return (
       <Card>
         {renderSubmissionErrors()}
 
         <Card.Content>
-          <Form onSubmit={() => submit(values, formikProps)}>
+          <Form
+            onSubmit={function onSubmit() {
+              handleFormErrorDismissed();
+
+              submitForm({
+                values,
+                formikBag,
+                login,
+                dispatch,
+                updateLocalUser,
+                client
+              });
+            }}
+          >
             <FastField name="email" render={renderEmailInput} />
 
             <Field name="password" render={renderPwdInput} />
@@ -63,7 +65,7 @@ export const Login = (props: Props) => {
               type="submit"
               fluid={true}
             >
-              <Icon name="checkmark" /> Ok
+              <Icon name="checkmark" /> Submit
             </Button>
           </Form>
         </Card.Content>
@@ -83,52 +85,6 @@ export const Login = (props: Props) => {
       </Card>
     );
   }
-
-  const submit = async (
-    values: FormValues,
-    formikBag: FormikActions<FormValues>
-  ) => {
-    setFormErrors(undefined);
-    setGraphQlErrors(undefined);
-
-    const errors = await formikBag.validateForm(values);
-
-    formikBag.setSubmitting(true);
-
-    if (errors.email || errors.password) {
-      formikBag.setSubmitting(false);
-      setFormErrors(errors);
-
-      return;
-    }
-
-    const { login } = props;
-
-    if (!login) {
-      return;
-    }
-
-    try {
-      const result = await login({
-        variables: {
-          login: values
-        }
-      });
-
-      if (result && result.data) {
-        const user = result.data.login;
-
-        await props.updateLocalUser({
-          variables: { user }
-        });
-
-        refreshToHome();
-      }
-    } catch (error) {
-      formikBag.setSubmitting(false);
-      setGraphQlErrors(error);
-    }
-  };
 
   function renderEmailInput(formProps: FieldProps<FormValues>) {
     const { field } = formProps;
@@ -153,17 +109,23 @@ export const Login = (props: Props) => {
     return (
       <Form.Field>
         <label htmlFor="password">Password</label>
-        <Input icon placeholder="">
+        <Input icon={true} placeholder="" data-testid="password-input">
           <input {...field} type={pwdType} autoComplete="off" id="password" />
 
           {pwdType === "password" && field.value && (
-            <Icon name="eye" className="link" onClick={toggleShowPwdClicked} />
+            <Icon
+              name="eye"
+              className="link"
+              data-testid="password-unmask"
+              onClick={toggleShowPwdClicked}
+            />
           )}
 
           {pwdType === "text" && field.value && (
             <Icon
               name="eye slash"
               className="link"
+              data-testid="password-mask"
               onClick={toggleShowPwdClicked}
             />
           )}
@@ -177,6 +139,18 @@ export const Login = (props: Props) => {
   }
 
   function renderSubmissionErrors() {
+    const { connError, formErrors, graphQlErrors } = state;
+
+    if (connError) {
+      return (
+        <Card.Content extra={true}>
+          <Message error={true} onDismiss={handleFormErrorDismissed}>
+            <Message.Content>You are not connected</Message.Content>
+          </Message>
+        </Card.Content>
+      );
+    }
+
     if (formErrors) {
       const { email, password } = formErrors;
 
@@ -223,8 +197,9 @@ export const Login = (props: Props) => {
   }
 
   function handleFormErrorDismissed() {
-    setFormErrors(undefined);
-    setGraphQlErrors(undefined);
+    dispatch({ type: Action_Types.SET_FORM_ERROR, payload: undefined });
+    dispatch({ type: Action_Types.SET_GRAPHQL_ERROR, payload: undefined });
+    dispatch({ type: Action_Types.SET_CONN_ERROR, payload: false });
   }
 
   return (
