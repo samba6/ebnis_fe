@@ -1,29 +1,23 @@
 import React from "react";
 import "jest-dom/extend-expect";
 import "react-testing-library/cleanup-after-each";
-import { render, fireEvent } from "react-testing-library";
+import { render, fireEvent, wait } from "react-testing-library";
 
 import { Login } from "./login-x";
 import { makeClient, renderWithRouter } from "../../test_utils";
 
-it("renders", () => {
+it("renders correctly", async () => {
   // tslint:disable-next-line:no-any
   const Login1 = Login as any;
   const client = makeClient();
-  const mockGetConn = jest.fn(() => Promise.resolve(false));
+
+  const mockSubmit = jest.fn(() => Promise.resolve(false));
+
   const { ui } = renderWithRouter(
-    <Login1 client={client} getConnStatus={mockGetConn} />
+    <Login1 client={client} submit={mockSubmit} />
   );
 
-  const {
-    debug,
-    rerender,
-    container,
-    getByText,
-    getByLabelText,
-    queryByTestId,
-    getByTestId
-  } = render(ui);
+  const { container, getByText, getByLabelText } = render(ui);
   const $login = container.firstChild;
   expect($login).toContainElement(getByText(/Login to your account/));
 
@@ -31,47 +25,16 @@ it("renders", () => {
   expect($button.getAttribute("name")).toBe("login-submit");
   expect($button).toHaveAttribute("disabled");
 
-  const $email = getByLabelText("Email");
-  fireEvent.change($email, {
+  fireEvent.change(getByLabelText("Email"), {
     target: { value: "me@me.com" }
   });
 
-  expect($login).not.toContainElement(queryByTestId("password-unmask"));
-  expect($login).not.toContainElement(queryByTestId("password-mask"));
-
-  const $pwd = getByLabelText("Password");
-  const pwd = "awesome pass";
-
-  fireEvent.change($pwd, {
-    target: { value: pwd }
+  fireEvent.change(getByLabelText("Password"), {
+    target: { value: "awesome pass" }
   });
-
-  expect($login).toContainElement(getByTestId("password-unmask"));
-
-  fireEvent.change($pwd, {
-    target: { value: "" }
-  });
-
-  expect($login).not.toContainElement(queryByTestId("password-unmask"));
-
-  fireEvent.change($pwd, {
-    target: { value: pwd }
-  });
-
-  fireEvent.click(getByTestId("password-unmask"));
-  expect($login).not.toContainElement(queryByTestId("password-unmask"));
-
-  const $maskPwd = getByTestId("password-mask");
-  expect($login).toContainElement($maskPwd);
-
-  fireEvent.click($maskPwd);
-  expect($login).not.toContainElement(queryByTestId("password-mask"));
-  expect($login).toContainElement(getByTestId("password-unmask"));
 
   expect($button).not.toHaveAttribute("disabled");
   fireEvent.click($button);
-  rerender(ui);
-  // expect(mockGetConn.mock.calls.length).toBe(1);
 
-  debug();
+  await wait(() => expect(mockSubmit.mock.calls.length).toBe(1));
 });

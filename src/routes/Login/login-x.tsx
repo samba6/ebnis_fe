@@ -1,4 +1,4 @@
-import React, { useEffect, useReducer, Dispatch } from "react";
+import React, { useEffect, useReducer } from "react";
 import { Button, Card, Input, Message, Icon, Form } from "semantic-ui-react";
 import { Formik, FastField, FieldProps, FormikProps, Field } from "formik";
 
@@ -9,14 +9,14 @@ import {
   loginReducer,
   Action_Types,
   State,
-  SubmitArg,
-  Action
+  SubmitArg
 } from "./login";
 import SidebarHeader from "../../components/SidebarHeader";
 import { LoginUser as FormValues } from "../../graphql/apollo-gql.d";
 import { setTitle, SIGN_UP_URL } from "../../Routing";
 import refreshToHomeDefault from "../../Routing/refresh-to-home";
 import getConnStatusDefault from "../../state/get-conn-status";
+import PwdInput from "../../components/PwdInput";
 
 export function Login(props: Props) {
   const {
@@ -64,16 +64,7 @@ export function Login(props: Props) {
           >
             <FastField name="email" component={EmailInput} />
 
-            <Field
-              name="password"
-              render={(fieldProps: FieldProps<FormValues>) => (
-                <PwdInput
-                  dispatch={dispatch}
-                  pwdType={state.pwdType}
-                  {...fieldProps}
-                />
-              )}
-            />
+            <Field name="password" component={PwdInput} />
 
             <Button
               id="login-submit"
@@ -130,52 +121,6 @@ export function Login(props: Props) {
 }
 
 export default Login;
-
-interface PwdInputProps extends FieldProps<FormValues> {
-  pwdType: "text" | "password";
-  dispatch: Dispatch<Action>;
-}
-
-function PwdInput(props: PwdInputProps) {
-  const { field, pwdType, dispatch } = props;
-
-  return (
-    <Form.Field>
-      <label htmlFor="password">Password</label>
-      <Input icon={true} placeholder="" data-testid="password-input">
-        <input {...field} type={pwdType} autoComplete="off" id="password" />
-
-        {pwdType === "password" && field.value && (
-          <Icon
-            name="eye"
-            className="link"
-            data-testid="password-unmask"
-            onClick={() =>
-              dispatch({
-                type: Action_Types.SET_PASSWORD_TYPE,
-                payload: "text"
-              })
-            }
-          />
-        )}
-
-        {pwdType === "text" && field.value && (
-          <Icon
-            name="eye slash"
-            className="link"
-            data-testid="password-mask"
-            onClick={() =>
-              dispatch({
-                type: Action_Types.SET_PASSWORD_TYPE,
-                payload: "password"
-              })
-            }
-          />
-        )}
-      </Input>
-    </Form.Field>
-  );
-}
 
 function EmailInput(props: FieldProps<FormValues>) {
   const { field } = props;
