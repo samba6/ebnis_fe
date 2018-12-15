@@ -15,6 +15,7 @@
     "trailing-comma": false,
     "object-literal-key-quotes": false,
     "jsx-curly-spacing": "always",
-    "jsx-no-lambda": false
+    "jsx-no-lambda": false,
+    "only-arrow-functions": false
   }
 }
