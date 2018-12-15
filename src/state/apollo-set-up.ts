@@ -10,12 +10,24 @@ import { getSocket } from "../socket";
 import initState from "../state/resolvers";
 import { getToken } from "../state/tokens";
 import { SCHEMA_VERSION, SCHEMA_VERSION_KEY, SCHEMA_KEY } from "../constants";
+import CONN_MUTATION, { ConnMutData } from "./conn.mutation";
 
 const cache = new InMemoryCache();
-const absintheSocket = AbsintheSocket.create(getSocket());
+let client: ApolloClient<{}>;
+
+function onConnChange(isConnected: boolean) {
+  client.mutate<ConnMutData, ConnMutData>({
+    mutation: CONN_MUTATION,
+    variables: {
+      isConnected
+    }
+  });
+}
+
+const absintheSocket = AbsintheSocket.create(getSocket({ onConnChange }));
 const socketLink = middleWares(createAbsintheSocketLink(absintheSocket));
 
-const client = new ApolloClient({
+client = new ApolloClient({
   cache,
   link: ApolloLink.from([initState(cache), socketLink])
 });

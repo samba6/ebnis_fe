@@ -30,7 +30,7 @@ export interface AppSocket extends Socket {
 
 let socket: AppSocket;
 
-export const defineSocket = () => {
+export const defineSocket = (props: DefineParams) => {
   // if we are disconnected, phoenix will keep trying to connect which means
   // we will keep dispatching disconnect.  So we track if we already dispatched
   // disconnect (socketDisconnectedCount = 1) and if so we do not send another
@@ -47,6 +47,8 @@ export const defineSocket = () => {
     socket.connect();
 
     socket.onOpen(() => {
+      dispatchConnected();
+
       if (token) {
         joinDataAuthChannel(payload);
       }
@@ -80,8 +82,19 @@ export const defineSocket = () => {
 
   function dispatchDisconnected() {
     if (socketDisconnectedCount === 0) {
+      if (props.onConnChange) {
+        props.onConnChange(false);
+      }
       socketDisconnectedCount = 1;
     }
+  }
+
+  function dispatchConnected() {
+    if (props.onConnChange) {
+      props.onConnChange(true);
+    }
+
+    socketDisconnectedCount = 0;
   }
 
   function joinDataAuthChannel(payload?: ConnectionPayload) {
@@ -182,15 +195,19 @@ export const defineSocket = () => {
   return socket;
 };
 
-export function getSocket() {
+export function getSocket(params: DefineParams = {}) {
   if (socket) {
     return socket;
   }
 
-  return defineSocket();
+  return defineSocket(params);
 }
 
 export default getSocket;
+
+interface DefineParams {
+  onConnChange?: (connStatus: boolean) => void;
+}
 
 type OnChannelMessage<T> = (msg: T) => void;
 type OnError<T> = (reason: T) => void;

@@ -13,17 +13,16 @@ type ClientStateFn<TVariables> = (
   context: { cache: InMemoryCache }
 ) => void;
 
-const updateNetworkStatus: ClientStateFn<{
+const updateConn: ClientStateFn<{
   isConnected: boolean;
 }> = (_, { isConnected }, { cache }) => {
-  const data = {
-    networkStatus: {
-      __typename: "NetworkStatus",
-      isConnected
-    }
+  const connected = {
+    __typename: "ConnectionStatus",
+    isConnected
   };
-  cache.writeData({ data });
-  return null;
+
+  cache.writeData({ data: { connected } });
+  return connected;
 };
 
 const userMutation: ClientStateFn<UserMutationVar> = async (
@@ -73,12 +72,12 @@ export default (cache: InMemoryCache) => {
     cache,
     resolvers: {
       Mutation: {
-        updateNetworkStatus,
+        connected: updateConn,
         user: userMutation
       }
     },
     defaults: {
-      networkStatus: null,
+      connected: false,
       staleToken: getToken(),
       user: null,
       loggedOutUser: null
