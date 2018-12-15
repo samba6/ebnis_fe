@@ -2,8 +2,9 @@ import * as Yup from "yup";
 import { WithApolloClient } from "react-apollo";
 import { RouteComponentProps } from "react-router-dom";
 import { Reducer } from "react";
-import { FormikErrors } from "formik";
+import { FormikErrors, FormikActions } from "formik";
 import { ApolloError, ApolloClient } from "apollo-client";
+import { Dispatch } from "react";
 
 import { LoginUser as FormValues } from "../../graphql/apollo-gql.d";
 import { LoginMutationProps } from "../../graphql/login.mutation";
@@ -14,7 +15,7 @@ import { ConnProps } from "../../state/conn.query";
 export interface OwnProps
   extends WithApolloClient<{}>,
     RouteComponentProps<{}> {
-  getConnStatus?: (client: ApolloClient<{}>) => boolean;
+  submit?: (args: SubmitArg) => Promise<void>;
 }
 
 export type Props = OwnProps &
@@ -71,3 +72,12 @@ export const loginReducer: Reducer<State, Action> = (state, action) => {
       return state;
   }
 };
+
+export interface SubmitArg extends LoginMutationProps, UserLocalMutationProps {
+  values: FormValues;
+  formikBag: FormikActions<FormValues>;
+  dispatch: Dispatch<Action>;
+  client: ApolloClient<{}>;
+  getConnStatus?: (client: ApolloClient<{}>) => Promise<boolean>;
+  refreshToHome?: () => void;
+}

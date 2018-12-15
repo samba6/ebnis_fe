@@ -8,15 +8,23 @@ import {
   ValidationSchema,
   loginReducer,
   Action_Types,
-  State
+  State,
+  SubmitArg
 } from "./login";
 import SidebarHeader from "../../components/SidebarHeader";
 import { LoginUser as FormValues } from "../../graphql/apollo-gql.d";
 import { setTitle, SIGN_UP_URL } from "../../Routing";
-import submitForm from "./submit";
+import refreshToHomeDefault from "../../Routing/refresh-to-home";
+import getConnStatusDefault from "../../state/get-conn-status";
 
-export const Login = (props: Props) => {
-  const { history, client, login, updateLocalUser } = props;
+export function Login(props: Props) {
+  const {
+    history,
+    client,
+    login,
+    updateLocalUser,
+    submit = defaultSubmit
+  } = props;
   const [pwdType, setPwdType] = useState("password");
   const [state, dispatch] = useReducer(loginReducer, {} as State);
 
@@ -41,7 +49,7 @@ export const Login = (props: Props) => {
             onSubmit={function onSubmit() {
               handleFormErrorDismissed();
 
-              submitForm({
+              submit({
                 values,
                 formikBag,
                 login,
@@ -217,6 +225,62 @@ export const Login = (props: Props) => {
       </div>
     </div>
   );
-};
+}
 
 export default Login;
+
+async function defaultSubmit({
+  values,
+  formikBag,
+  dispatch,
+  login,
+  updateLocalUser,
+  client,
+  getConnStatus = getConnStatusDefault,
+  refreshToHome = refreshToHomeDefault
+}: SubmitArg) {
+  formikBag.setSubmitting(true);
+  const connStatus = await getConnStatus(client);
+
+  if (!connStatus) {
+    formikBag.setSubmitting(false);
+    dispatch({ type: Action_Types.SET_CONN_ERROR, payload: true });
+    return;
+  }
+
+  const errors = await formikBag.validateForm(values);
+
+  if (errors.email || errors.password) {
+    formikBag.setSubmitting(false);
+    dispatch({
+      type: Action_Types.SET_FORM_ERROR,
+      payload: errors
+    });
+    return;
+  }
+
+  if (!login) {
+    return;
+  }
+
+  try {
+    const result = await login({
+      variables: {
+        login: values
+      }
+    });
+
+    if (result && result.data) {
+      const user = result.data.login;
+
+      await updateLocalUser({
+        variables: { user }
+      });
+
+      refreshToHome();
+    }
+  } catch (error) {
+    formikBag.setSubmitting(false);
+    dispatch({ type: Action_Types.SET_GRAPHQL_ERROR, payload: error });
+  }
+}
