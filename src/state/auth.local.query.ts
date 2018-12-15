@@ -4,7 +4,7 @@ import { DataValue } from "react-apollo";
 import { userFragment } from "../graphql/user.fragment";
 import { UserFragment } from "../graphql/apollo-gql.d";
 
-export const authUserLocalQuery = gql`
+export const USER_LOCAL_QUERY = gql`
   query UserLocalQuery {
     user @client {
       ...UserFragment
@@ -16,7 +16,7 @@ export const authUserLocalQuery = gql`
   ${userFragment}
 `;
 
-export default authUserLocalQuery;
+export default USER_LOCAL_QUERY;
 
 export interface UserLocalGqlData {
   user?: UserFragment;

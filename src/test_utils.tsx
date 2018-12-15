@@ -6,11 +6,15 @@ import { ApolloProvider } from "react-apollo";
 import { Router } from "react-router-dom";
 import { createMemoryHistory } from "history";
 
-export function renderWithApollo(ui: JSX.Element) {
-  const client = new ApolloClient({
+export function makeClient() {
+  return new ApolloClient({
     cache: new InMemoryCache(),
     link: new ApolloLink()
   });
+}
+
+export function renderWithApollo(ui: JSX.Element) {
+  const client = makeClient();
 
   return {
     client,
