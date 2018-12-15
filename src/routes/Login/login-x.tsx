@@ -6,7 +6,7 @@ import "./login.scss";
 import {
   Props,
   ValidationSchema,
-  loginReducer,
+  authFormErrorReducer,
   Action_Types,
   State,
   SubmitArg
@@ -26,7 +26,7 @@ export function Login(props: Props) {
     refreshToHome = refreshToHomeDefault
   } = props;
 
-  const [state, dispatch] = useReducer(loginReducer, {} as State);
+  const [state, dispatch] = useReducer(authFormErrorReducer, {} as State);
 
   useEffect(function setPageTitle() {
     setTitle("Log in");

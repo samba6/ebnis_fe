@@ -57,7 +57,7 @@ export interface Action {
     | string;
 }
 
-export const loginReducer: Reducer<State, Action> = (state, action) => {
+export const authFormErrorReducer: Reducer<State, Action> = (state, action) => {
   switch (action.type) {
     case Action_Types.SET_OTHER_ERRORS:
       const payload1 = action.payload as string;

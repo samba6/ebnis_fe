@@ -1,27 +1,21 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect, useRef, useReducer } from "react";
 import { Button, Card, Input, Message, Icon, Form } from "semantic-ui-react";
-import {
-  Formik,
-  FastField,
-  FieldProps,
-  FormikProps,
-  FormikActions,
-  FormikErrors
-} from "formik";
+import { Formik, FastField, FieldProps, FormikProps } from "formik";
 import loIsEmpty from "lodash-es/isEmpty";
-import { ApolloError } from "apollo-client";
 
 import "./sign-up.scss";
 import {
   Props,
   initialFormValues,
   ValidationSchema,
-  FormValuesKey
+  FormValuesKey,
+  SubmitArg
 } from "./sign-up";
 import { Registration } from "../../graphql/apollo-gql.d";
 import { setTitle, LOGIN_URL } from "../../Routing";
 import SidebarHeader from "../../components/SidebarHeader";
-import refreshToHome from "../../Routing/refresh-to-home";
+import refreshToHomeDefault from "../../Routing/refresh-to-home";
+import { authFormErrorReducer, Action_Types, State } from "../Login/login";
 
 const FORM_RENDER_PROPS = {
   name: ["Name", "text"],
@@ -32,16 +26,16 @@ const FORM_RENDER_PROPS = {
 };
 
 export function SignUp(props: Props) {
-  const { history, regUser } = props;
+  const {
+    history,
+    regUser,
+    connected,
+    updateLocalUser,
+    refreshToHome = refreshToHomeDefault,
+    scrollToTop = defaultScrollToTop
+  } = props;
   const mainRef = useRef<HTMLDivElement | null>(null);
-
-  const [formErrors, setFormErrors] = useState<
-    undefined | FormikErrors<Registration>
-  >(undefined);
-
-  const [graphQlError, setGraphQlError] = useState<ApolloError | undefined>(
-    undefined
-  );
+  const [state, dispatch] = useReducer(authFormErrorReducer, {} as State);
 
   useEffect(function setPageTitle() {
     setTitle("Sign up");
@@ -53,14 +47,37 @@ export function SignUp(props: Props) {
     dirty,
     isSubmitting,
     values,
-    ...formikProps
+    ...formikBag
   }: FormikProps<Registration>) {
     return (
       <Card>
-        {renderSubmissionErrors()}
+        <FormErrors onDismiss={handleErrorsDismissed} errors={state} />
 
         <Card.Content>
-          <Form onSubmit={() => submit(values, formikProps)}>
+          <Form
+            onSubmit={function onSubmit() {
+              handleErrorsDismissed();
+
+              if (!(connected && connected.isConnected)) {
+                formikBag.setSubmitting(false);
+                dispatch({
+                  type: Action_Types.SET_OTHER_ERRORS,
+                  payload: "You are not connected"
+                });
+                return;
+              }
+
+              submit({
+                values,
+                formikBag,
+                regUser,
+                dispatch,
+                updateLocalUser,
+                refreshToHome,
+                scrollToTop
+              });
+            }}
+          >
             {Object.entries(FORM_RENDER_PROPS).map(([name, [label, type]]) => {
               return (
                 <FastField
@@ -101,115 +118,13 @@ export function SignUp(props: Props) {
     );
   }
 
-  function renderInput(label: string, type: string) {
-    return function renderInputInner(formProps: FieldProps<Registration>) {
-      const { field } = formProps;
-      const name = field.name as FormValuesKey;
-      const isSourceField = name === "source";
-
-      return (
-        <Form.Field
-          {...field}
-          className={`form-field ${isSourceField ? "disabled" : ""}`}
-          type={type}
-          control={Input}
-          placeholder={label}
-          autoComplete="off"
-          label={label}
-          id={name}
-          autoFocus={name === "name"}
-          readOnly={isSourceField}
-        />
-      );
-    };
+  function handleErrorsDismissed() {
+    dispatch({ type: Action_Types.SET_FORM_ERROR, payload: undefined });
+    dispatch({ type: Action_Types.SET_GRAPHQL_ERROR, payload: undefined });
+    dispatch({ type: Action_Types.SET_OTHER_ERRORS, payload: false });
   }
 
-  function renderSubmissionErrors() {
-    if (formErrors && !loIsEmpty(formErrors)) {
-      return (
-        <Card.Content extra={true}>
-          <Message error={true} onDismiss={handleFormErrorDismissed}>
-            <Message.Content>
-              <span>Errors in fields:</span>
-              {Object.entries(formErrors).map(([k, err]) => {
-                const label = FORM_RENDER_PROPS[k][0];
-                return (
-                  <div key={label}>
-                    <span>{label}</span>
-                    <span>{err}</span>
-                  </div>
-                );
-              })}
-            </Message.Content>
-          </Message>
-        </Card.Content>
-      );
-    }
-
-    if (graphQlError) {
-      return (
-        <Card.Content extra={true}>
-          <Message error={true} onDismiss={handleFormErrorDismissed}>
-            <Message.Content>{graphQlError.message}</Message.Content>
-          </Message>
-        </Card.Content>
-      );
-    }
-
-    return undefined;
-  }
-
-  function handleFormErrorDismissed() {
-    setGraphQlError(undefined);
-    setFormErrors(undefined);
-  }
-
-  async function submit(
-    values: Registration,
-    formikBag: FormikActions<Registration>
-  ) {
-    setGraphQlError(undefined);
-    setFormErrors(undefined);
-
-    const errors = await formikBag.validateForm(values);
-
-    formikBag.setSubmitting(true);
-
-    if (!loIsEmpty(errors)) {
-      formikBag.setSubmitting(false);
-      setFormErrors(errors);
-      scrollToTop();
-      return;
-    }
-
-    if (!regUser) {
-      return;
-    }
-
-    try {
-      const result = await regUser({
-        variables: {
-          registration: values
-        }
-      });
-
-      if (result && result.data) {
-        const user = result.data.registration;
-
-        await props.updateLocalUser({
-          variables: { user }
-        });
-
-        refreshToHome();
-      }
-    } catch (error) {
-      formikBag.setSubmitting(false);
-      setGraphQlError(error);
-      scrollToTop();
-    }
-  }
-
-  function scrollToTop() {
+  function defaultScrollToTop() {
     if (mainRef && mainRef.current) {
       mainRef.current.scrollTop = 0;
     }
@@ -233,3 +148,124 @@ export function SignUp(props: Props) {
 }
 
 export default SignUp;
+
+interface FormErrorsProps {
+  errors: State;
+  onDismiss: () => void;
+}
+
+function FormErrors(props: FormErrorsProps) {
+  const {
+    errors: { formErrors, graphQlErrors },
+    onDismiss
+  } = props;
+
+  if (formErrors && !loIsEmpty(formErrors)) {
+    return (
+      <Card.Content extra={true}>
+        <Message error={true} onDismiss={onDismiss}>
+          <Message.Content>
+            <span>Errors in fields:</span>
+            {Object.entries(formErrors).map(([k, err]) => {
+              const label = FORM_RENDER_PROPS[k][0];
+              return (
+                <div key={label}>
+                  <span>{label}</span>
+                  <span>{err}</span>
+                </div>
+              );
+            })}
+          </Message.Content>
+        </Message>
+      </Card.Content>
+    );
+  }
+
+  if (graphQlErrors) {
+    return (
+      <Card.Content extra={true}>
+        <Message error={true} onDismiss={onDismiss}>
+          <Message.Content>{graphQlErrors.message}</Message.Content>
+        </Message>
+      </Card.Content>
+    );
+  }
+
+  return null;
+}
+
+function renderInput(label: string, type: string) {
+  return function renderInputInner(formProps: FieldProps<Registration>) {
+    const { field } = formProps;
+    const name = field.name as FormValuesKey;
+    const isSourceField = name === "source";
+
+    return (
+      <Form.Field
+        {...field}
+        className={`form-field ${isSourceField ? "disabled" : ""}`}
+        type={type}
+        control={Input}
+        placeholder={label}
+        autoComplete="off"
+        label={label}
+        id={name}
+        autoFocus={name === "name"}
+        readOnly={isSourceField}
+      />
+    );
+  };
+}
+
+async function submit({
+  values,
+  formikBag,
+  dispatch,
+  updateLocalUser,
+  refreshToHome,
+  regUser,
+  scrollToTop
+}: SubmitArg) {
+  if (!regUser) {
+    formikBag.setSubmitting(false);
+    dispatch({
+      type: Action_Types.SET_OTHER_ERRORS,
+      payload: "Unknown error"
+    });
+    return;
+  }
+
+  formikBag.setSubmitting(true);
+  const errors = await formikBag.validateForm(values);
+
+  if (!loIsEmpty(errors)) {
+    formikBag.setSubmitting(false);
+    dispatch({
+      type: Action_Types.SET_FORM_ERROR,
+      payload: errors
+    });
+    return;
+  }
+
+  try {
+    const result = await regUser({
+      variables: {
+        registration: values
+      }
+    });
+
+    if (result && result.data) {
+      const user = result.data.registration;
+
+      await updateLocalUser({
+        variables: { user }
+      });
+
+      refreshToHome();
+    }
+  } catch (error) {
+    formikBag.setSubmitting(false);
+    dispatch({ type: Action_Types.SET_GRAPHQL_ERROR, payload: error });
+    scrollToTop();
+  }
+}
