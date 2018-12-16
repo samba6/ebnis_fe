@@ -27,6 +27,14 @@
 .routes-sign-up-route {
   @extend %auth-root-styles;
 
+  .error-label {
+    font-weight: bold;
+  }
+
+  .error-text {
+    margin-left: 15px;
+  }
+
   .to-login-button {
     @extend %auth-redirect-btn;
   }

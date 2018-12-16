@@ -14,7 +14,7 @@ it("renders correctly and submits", async () => {
     }
   };
 
-  const mockLogin = getLogin(result);
+  const mockLogin = makeLoginFunc(result);
   const mockUpdateLocalUser = jest.fn();
   const mockRefreshToHome = jest.fn();
 
@@ -32,7 +32,7 @@ it("renders correctly and submits", async () => {
 
   const $button = getByText(/Submit/);
   expect($button.getAttribute("name")).toBe("login-submit");
-  expect($button).toHaveAttribute("disabled");
+  expect($button).toBeDisabled();
 
   const $email = getByLabelText("Email");
   expect($email.getAttribute("type")).toBe("email");
@@ -46,14 +46,10 @@ it("renders correctly and submits", async () => {
   fireEvent.click($button);
 
   await wait(() =>
-    expect(mockUpdateLocalUser.mock.calls[0]).toEqual([
-      {
-        variables: { user }
-      }
-    ])
+    expect(mockUpdateLocalUser).toBeCalledWith({ variables: { user } })
   );
 
-  expect(mockRefreshToHome.mock.calls.length).toBe(1);
+  expect(mockRefreshToHome).toBeCalled();
 });
 
 it("renders error if login function is null", async () => {
@@ -71,7 +67,7 @@ it("renders error if login function is null", async () => {
 
 it("renders error if socket not connected", async () => {
   const { ui } = makeComp({
-    login: getLogin(),
+    login: makeLoginFunc(),
     connected: { isConnected: false }
   });
 
@@ -84,7 +80,7 @@ it("renders error if socket not connected", async () => {
 
 it("renders error if email is invalid", async () => {
   const { ui } = makeComp({
-    login: getLogin(),
+    login: makeLoginFunc(),
     connected: { isConnected: true }
   });
 
@@ -99,7 +95,7 @@ it("renders error if email is invalid", async () => {
 
 it("renders error if password is invalid", async () => {
   const { ui } = makeComp({
-    login: getLogin(),
+    login: makeLoginFunc(),
     connected: { isConnected: true }
   });
 
@@ -133,7 +129,7 @@ it("renders error if server returns error", async () => {
 });
 
 // tslint:disable-next-line:no-any
-function getLogin(data?: any) {
+function makeLoginFunc(data?: any) {
   if (data) {
     return jest.fn(() => Promise.resolve(data));
   }

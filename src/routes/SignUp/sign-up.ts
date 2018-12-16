@@ -30,19 +30,19 @@ export const initialFormValues: Registration = {
 
 export const ValidationSchema = Yup.object<Registration>().shape({
   name: Yup.string()
-    .min(2, "Too Short!")
-    .max(50, "Too Long!")
-    .required("Required"),
+    .min(2, "must be at least 2 characters")
+    .max(50, "is too long!")
+    .required("is required"),
   email: Yup.string()
-    .email("Invalid email")
-    .required("Required"),
+    .email("is invalid")
+    .required("is required"),
   password: Yup.string()
-    .min(4, "Too Short!")
-    .max(50, "Too Long!")
-    .required("Required"),
+    .min(4, "must be at least 4 characters")
+    .max(50, "is too Long!")
+    .required("is required"),
   passwordConfirmation: Yup.string()
-    .required("Required")
-    .test("password", "Passwords do not match", function(val) {
+    .required("is required")
+    .test("passwords-match", "Passwords do not match", function(val) {
       return this.parent.password === val;
     }),
   source: Yup.string().default(() => "password")

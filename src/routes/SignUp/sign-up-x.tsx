@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useReducer } from "react";
 import { Button, Card, Input, Message, Icon, Form } from "semantic-ui-react";
 import { Formik, FastField, FieldProps, FormikProps } from "formik";
-import loIsEmpty from "lodash-es/isEmpty";
+import loIsEmpty from "lodash/isEmpty";
 
 import "./sign-up.scss";
 import {
@@ -64,6 +64,7 @@ export function SignUp(props: Props) {
                   type: Action_Types.SET_OTHER_ERRORS,
                   payload: "You are not connected"
                 });
+                scrollToTop();
                 return;
               }
 
@@ -98,7 +99,7 @@ export function SignUp(props: Props) {
               type="submit"
               fluid={true}
             >
-              <Icon name="checkmark" /> Ok
+              <Icon name="checkmark" /> Submit
             </Button>
           </Form>
         </Card.Content>
@@ -156,36 +157,46 @@ interface FormErrorsProps {
 
 function FormErrors(props: FormErrorsProps) {
   const {
-    errors: { formErrors, graphQlErrors },
+    errors: { formErrors, graphQlErrors, otherErrors },
     onDismiss
   } = props;
 
-  if (formErrors && !loIsEmpty(formErrors)) {
-    return (
-      <Card.Content extra={true}>
-        <Message error={true} onDismiss={onDismiss}>
-          <Message.Content>
-            <span>Errors in fields:</span>
-            {Object.entries(formErrors).map(([k, err]) => {
-              const label = FORM_RENDER_PROPS[k][0];
-              return (
-                <div key={label}>
-                  <span>{label}</span>
-                  <span>{err}</span>
-                </div>
-              );
-            })}
-          </Message.Content>
-        </Message>
-      </Card.Content>
-    );
+  function getContent() {
+    if (otherErrors) {
+      return otherErrors;
+    }
+
+    if (formErrors) {
+      return (
+        <>
+          <span>Errors in fields:</span>
+          {Object.entries(formErrors).map(([k, err]) => {
+            const label = FORM_RENDER_PROPS[k][0];
+            return (
+              <div key={label}>
+                <div className="error-label">{label}</div>
+                <div className="error-text">{err}</div>
+              </div>
+            );
+          })}
+        </>
+      );
+    }
+
+    if (graphQlErrors) {
+      return graphQlErrors.message;
+    }
+
+    return null;
   }
 
-  if (graphQlErrors) {
+  const content = getContent();
+
+  if (content) {
     return (
-      <Card.Content extra={true}>
+      <Card.Content extra={true} data-testid="sign-up-form-error">
         <Message error={true} onDismiss={onDismiss}>
-          <Message.Content>{graphQlErrors.message}</Message.Content>
+          <Message.Content>{content}</Message.Content>
         </Message>
       </Card.Content>
     );
@@ -206,7 +217,6 @@ function renderInput(label: string, type: string) {
         className={`form-field ${isSourceField ? "disabled" : ""}`}
         type={type}
         control={Input}
-        placeholder={label}
         autoComplete="off"
         label={label}
         id={name}
@@ -228,10 +238,9 @@ async function submit({
 }: SubmitArg) {
   if (!regUser) {
     formikBag.setSubmitting(false);
-    dispatch({
-      type: Action_Types.SET_OTHER_ERRORS,
-      payload: "Unknown error"
-    });
+    dispatch({ type: Action_Types.SET_OTHER_ERRORS, payload: "Unknown error" });
+    scrollToTop();
+
     return;
   }
 
@@ -240,27 +249,18 @@ async function submit({
 
   if (!loIsEmpty(errors)) {
     formikBag.setSubmitting(false);
-    dispatch({
-      type: Action_Types.SET_FORM_ERROR,
-      payload: errors
-    });
+    dispatch({ type: Action_Types.SET_FORM_ERROR, payload: errors });
+    scrollToTop();
+
     return;
   }
 
   try {
-    const result = await regUser({
-      variables: {
-        registration: values
-      }
-    });
+    const result = await regUser({ variables: { registration: values } });
 
     if (result && result.data) {
       const user = result.data.registration;
-
-      await updateLocalUser({
-        variables: { user }
-      });
-
+      await updateLocalUser({ variables: { user } });
       refreshToHome();
     }
   } catch (error) {
