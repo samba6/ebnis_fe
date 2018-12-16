@@ -68,20 +68,19 @@ export interface Action {
 export const authFormErrorReducer: Reducer<State, Action> = (state, action) => {
   switch (action.type) {
     case Action_Types.SET_OTHER_ERRORS:
-      const payload1 = action.payload as string;
-      return { ...state, otherErrors: payload1 };
+      return { ...state, otherErrors: action.payload as string };
 
     case Action_Types.SET_FORM_ERROR:
-      const payload2 = action.payload as FormikErrors<FormValues>;
-      return { ...state, formErrors: payload2 };
+      return {
+        ...state,
+        formErrors: action.payload as FormikErrors<FormValues>
+      };
 
     case Action_Types.SET_GRAPHQL_ERROR:
-      const payload3 = action.payload as ApolloError;
-      return { ...state, graphQlErrors: payload3 };
+      return { ...state, graphQlErrors: action.payload as ApolloError };
 
     case PwdInputActionTypes.SET_PWD_TYPE:
-      const payload4 = action.payload as "password" | "text";
-      return { ...state, pwdType: payload4 };
+      return { ...state, pwdType: action.payload as "password" | "text" };
 
     default:
       return state;
