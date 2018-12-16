@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useReducer } from "react";
+import React, { useEffect, useRef, useReducer, Dispatch } from "react";
 import { Button, Card, Input, Message, Icon, Form } from "semantic-ui-react";
 import { Formik, FastField, FieldProps, FormikProps } from "formik";
 import loIsEmpty from "lodash/isEmpty";
@@ -15,7 +15,12 @@ import { Registration } from "../../graphql/apollo-gql.d";
 import { setTitle, LOGIN_URL } from "../../Routing";
 import SidebarHeader from "../../components/SidebarHeader";
 import refreshToHomeDefault from "../../Routing/refresh-to-home";
-import { authFormErrorReducer, Action_Types, State } from "../Login/login";
+import {
+  authFormErrorReducer,
+  Action_Types,
+  State,
+  Action
+} from "../Login/login";
 import getConnDefault from "../../state/get-conn-status";
 
 const FORM_RENDER_PROPS = {
@@ -53,12 +58,12 @@ export function SignUp(props: Props) {
   }: FormikProps<Registration>) {
     return (
       <Card>
-        <FormErrors onDismiss={handleErrorsDismissed} errors={state} />
+        <FormErrors errors={state} dispatch={dispatch} />
 
         <Card.Content>
           <Form
             onSubmit={async function onSubmit() {
-              handleErrorsDismissed();
+              handleErrorsDismissed(dispatch);
 
               if (!(await getConn(client))) {
                 formikBag.setSubmitting(false);
@@ -121,12 +126,6 @@ export function SignUp(props: Props) {
     );
   }
 
-  function handleErrorsDismissed() {
-    dispatch({ type: Action_Types.SET_FORM_ERROR, payload: undefined });
-    dispatch({ type: Action_Types.SET_GRAPHQL_ERROR, payload: undefined });
-    dispatch({ type: Action_Types.SET_OTHER_ERRORS, payload: false });
-  }
-
   function defaultScrollToTop() {
     if (mainRef && mainRef.current) {
       mainRef.current.scrollTop = 0;
@@ -154,13 +153,13 @@ export default SignUp;
 
 interface FormErrorsProps {
   errors: State;
-  onDismiss: () => void;
+  dispatch: Dispatch<Action>;
 }
 
 function FormErrors(props: FormErrorsProps) {
   const {
     errors: { formErrors, graphQlErrors, otherErrors },
-    onDismiss
+    dispatch
   } = props;
 
   function getContent() {
@@ -197,7 +196,7 @@ function FormErrors(props: FormErrorsProps) {
   if (content) {
     return (
       <Card.Content extra={true} data-testid="sign-up-form-error">
-        <Message error={true} onDismiss={onDismiss}>
+        <Message error={true} onDismiss={() => handleErrorsDismissed(dispatch)}>
           <Message.Content>{content}</Message.Content>
         </Message>
       </Card.Content>
@@ -270,4 +269,10 @@ async function submit({
     dispatch({ type: Action_Types.SET_GRAPHQL_ERROR, payload: error });
     scrollToTop();
   }
+}
+
+function handleErrorsDismissed(dispatch: Dispatch<Action>) {
+  dispatch({ type: Action_Types.SET_FORM_ERROR, payload: undefined });
+  dispatch({ type: Action_Types.SET_GRAPHQL_ERROR, payload: undefined });
+  dispatch({ type: Action_Types.SET_OTHER_ERRORS, payload: false });
 }
