@@ -4,6 +4,7 @@ import "react-testing-library/cleanup-after-each";
 import { render, fireEvent, wait, waitForElement } from "react-testing-library";
 
 import { SignUp } from "./sign-up-x";
+import { Props } from "./sign-up";
 import { makeClient, renderWithRouter } from "../../test_utils";
 
 it("renders correctly and submits", async () => {
@@ -157,11 +158,10 @@ function fillForm(getByLabelText: any, getByText: any) {
   fireEvent.click(getByText(/Submit/));
 }
 
-// tslint:disable-next-line:no-any
-function makeComp(params: any = {}) {
+function makeComp(params: Props | {} = {}) {
   const mockScrollToTop = jest.fn();
   // tslint:disable-next-line:no-any
-  const SignUp1 = SignUp as any;
+  const SignUp1 = SignUp as (props: Props | any) => JSX.Element;
   const client = makeClient();
   return {
     ...renderWithRouter(

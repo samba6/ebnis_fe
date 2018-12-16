@@ -4,6 +4,7 @@ import "react-testing-library/cleanup-after-each";
 import { render, fireEvent, wait, waitForElement } from "react-testing-library";
 
 import { Login } from "./login-x";
+import { Props } from "./login";
 import { makeClient, renderWithRouter } from "../../test_utils";
 
 it("renders correctly and submits", async () => {
@@ -145,10 +146,9 @@ function fillForm(getByLabelText: any, getByText: any) {
   fireEvent.click(getByText(/Submit/));
 }
 
-// tslint:disable-next-line:no-any
-function makeComp(params: any = {}) {
+function makeComp(params: Props | {} = {}) {
   // tslint:disable-next-line:no-any
-  const Login1 = Login as any;
+  const Login1 = Login as (props: Props | any) => JSX.Element;
   const client = makeClient();
   return renderWithRouter(
     <Login1 client={client} getConn={makeConn(true)} {...params} />
