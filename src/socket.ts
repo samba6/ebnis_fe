@@ -3,7 +3,7 @@ import { logger } from "./logger";
 import { getToken } from "./state/tokens";
 import getBackendUrls from "./state/get-backend-urls";
 
-type AllQueries = {};
+interface AllQueries {}
 
 enum CHANNEL {
   "DATA_PLAIN" = "data:pxy",
@@ -55,6 +55,10 @@ export const defineSocket = (props: DefineParams) => {
     });
 
     socket.onError(() => {
+      dispatchDisconnected();
+    });
+
+    socket.onClose(() => {
       dispatchDisconnected();
     });
 
