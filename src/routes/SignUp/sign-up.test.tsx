@@ -21,8 +21,7 @@ it("renders correctly and submits", async () => {
   const { ui } = makeComp({
     regUser: mockRegUser,
     updateLocalUser: mockUpdateLocalUser,
-    refreshToHome: mockRefreshToHome,
-    connected: { isConnected: true }
+    refreshToHome: mockRefreshToHome
   });
 
   const { container, getByText, getByLabelText } = render(ui);
@@ -70,11 +69,7 @@ it("renders correctly and submits", async () => {
 });
 
 it("renders error if regUser function is null", async () => {
-  const { ui, mockScrollToTop } = makeComp({
-    regUser: undefined,
-    connected: { isConnected: true }
-  });
-
+  const { ui, mockScrollToTop } = makeComp({ regUser: undefined });
   const { getByText, getByLabelText, getByTestId } = render(ui);
 
   fillForm(getByLabelText, getByText);
@@ -86,7 +81,7 @@ it("renders error if regUser function is null", async () => {
 it("renders error if socket not connected", async () => {
   const { ui, mockScrollToTop } = makeComp({
     regUser: makeRegUserFunc(),
-    connected: { isConnected: false }
+    getConn: makeConn(false)
   });
 
   const { getByText, getByLabelText, getByTestId } = render(ui);
@@ -98,11 +93,7 @@ it("renders error if socket not connected", async () => {
 });
 
 it("renders error if password and password confirm are not same", async () => {
-  const { ui, mockScrollToTop } = makeComp({
-    regUser: makeRegUserFunc(),
-    connected: { isConnected: true }
-  });
-
+  const { ui, mockScrollToTop } = makeComp({ regUser: makeRegUserFunc() });
   const { getByText, getByLabelText, getByTestId } = render(ui);
 
   fillField(getByLabelText("Name"), "Kanmii");
@@ -116,24 +107,24 @@ it("renders error if password and password confirm are not same", async () => {
   expect(mockScrollToTop).toBeCalled();
 });
 
-xit("renders error if server returns error", async () => {
+it("renders error if server returns error", async () => {
   const mockRegUser = jest.fn(() =>
     Promise.reject({
-      message: "Invalid email/password"
+      message: "email"
     })
   );
 
-  const { ui } = makeComp({
+  const { ui, mockScrollToTop } = makeComp({
     regUser: mockRegUser,
-    updateLocalUser: jest.fn(),
-    connected: { isConnected: true }
+    updateLocalUser: jest.fn()
   });
 
   const { getByText, getByLabelText, getByTestId } = render(ui);
   fillForm(getByLabelText, getByText);
 
-  const $error = await waitForElement(() => getByTestId("login-form-error"));
-  expect($error).toContainElement(getByText(/Invalid email\/password/i));
+  const $error = await waitForElement(() => getByTestId("sign-up-form-error"));
+  expect($error).toContainElement(getByText(/email/i));
+  expect(mockScrollToTop).toBeCalled();
 });
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -174,8 +165,17 @@ function makeComp(params: any = {}) {
   const client = makeClient();
   return {
     ...renderWithRouter(
-      <SignUp1 {...params} scrollToTop={mockScrollToTop} client={client} />
+      <SignUp1
+        scrollToTop={mockScrollToTop}
+        client={client}
+        getConn={makeConn(true)}
+        {...params}
+      />
     ),
     mockScrollToTop
   };
+}
+
+function makeConn(conn?: boolean) {
+  return jest.fn(() => Promise.resolve(conn));
 }
