@@ -1,15 +1,17 @@
 import React from "react";
 import "jest-dom/extend-expect";
 import "react-testing-library/cleanup-after-each";
-import { render } from "react-testing-library";
+import { render, waitForElement } from "react-testing-library";
 
 import { renderWithApollo } from "../../test_utils";
 import App from "./app-x";
 
-it("renders without crashing", () => {
+it("renders login page", async () => {
   const mockedPersistCache = jest.fn();
   const { ui } = renderWithApollo(<App persistCache={mockedPersistCache} />);
-  const { rerender, container, getByTestId } = render(ui);
+  const { rerender, container, getByTestId, getByText, queryByText } = render(
+    ui
+  );
 
   const { firstChild: app } = container;
   expect(app).toContainElement(getByTestId("loading-spinner"));
@@ -18,7 +20,9 @@ it("renders without crashing", () => {
   expect(app).toContainElement($title);
   expect($title.textContent).toBe("");
 
-  // we need to re-render so react can flush all effects
+  // we need to re-render so react can flush all async effects
   rerender(ui);
   expect(mockedPersistCache.mock.calls.length).toBe(1);
+  await waitForElement(() => getByText("Login to your account"));
+  expect(app).not.toContainElement(queryByText("loading-spinner"));
 });

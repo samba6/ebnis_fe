@@ -74,7 +74,7 @@ export function App(props: { persistCache: () => void }) {
             />
 
             {/* we are using render props because react router 4 is not yet
-              compatible with react > 16.7. React router throws invalid props
+              compatible with react >= 16.7. React router throws invalid props
               error (only in dev) for component prop, but otherwise it
               renders ok
            */}
