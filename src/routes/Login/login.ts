@@ -4,24 +4,25 @@ import { Reducer } from "react";
 import { FormikErrors, FormikActions } from "formik";
 import { ApolloError, ApolloClient } from "apollo-client";
 import { Dispatch } from "react";
+import { WithApolloClient } from "react-apollo";
 
 import { LoginUser as FormValues } from "../../graphql/apollo-gql.d";
 import { LoginMutationProps } from "../../graphql/login.mutation";
 import { UserLocalMutationProps } from "../../state/user.local.mutation";
 import { LoggedOutUserProps } from "../../state/logged-out-user.local.query";
-import { ConnProps } from "../../state/conn.query";
 import { PwdInputActionTypes } from "../../components/PwdInput/pwd-input";
 
-export interface OwnProps extends RouteComponentProps<{}> {
+export interface OwnProps
+  extends RouteComponentProps<{}>,
+    WithApolloClient<{}> {
   refreshToHome?: () => void;
-  getConnStatus?: (client: ApolloClient<{}>) => Promise<boolean>;
+  getConn?: (client: ApolloClient<{}>) => Promise<boolean>;
 }
 
 export type Props = OwnProps &
   LoginMutationProps &
   UserLocalMutationProps &
-  LoggedOutUserProps &
-  ConnProps;
+  LoggedOutUserProps;
 
 export const ValidationSchema = Yup.object<FormValues>().shape({
   email: Yup.string()

@@ -21,7 +21,6 @@ it("renders correctly and submits", async () => {
   const { ui } = makeComp({
     login: mockLogin,
     updateLocalUser: mockUpdateLocalUser,
-    connected: { isConnected: true },
     refreshToHome: mockRefreshToHome
   });
 
@@ -54,8 +53,7 @@ it("renders correctly and submits", async () => {
 
 it("renders error if login function is null", async () => {
   const { ui } = makeComp({
-    login: undefined,
-    connected: { isConnected: true }
+    login: undefined
   });
 
   const { getByText, getByLabelText, getByTestId } = render(ui);
@@ -68,7 +66,7 @@ it("renders error if login function is null", async () => {
 it("renders error if socket not connected", async () => {
   const { ui } = makeComp({
     login: makeLoginFunc(),
-    connected: { isConnected: false }
+    getConn: makeConn(false)
   });
 
   const { getByText, getByLabelText, getByTestId } = render(ui);
@@ -80,8 +78,7 @@ it("renders error if socket not connected", async () => {
 
 it("renders error if email is invalid", async () => {
   const { ui } = makeComp({
-    login: makeLoginFunc(),
-    connected: { isConnected: true }
+    login: makeLoginFunc()
   });
 
   const { getByText, getByLabelText, getByTestId } = render(ui);
@@ -95,8 +92,7 @@ it("renders error if email is invalid", async () => {
 
 it("renders error if password is invalid", async () => {
   const { ui } = makeComp({
-    login: makeLoginFunc(),
-    connected: { isConnected: true }
+    login: makeLoginFunc()
   });
 
   const { getByText, getByLabelText, getByTestId } = render(ui);
@@ -117,8 +113,7 @@ it("renders error if server returns error", async () => {
 
   const { ui } = makeComp({
     login: mockLogin,
-    updateLocalUser: jest.fn(),
-    connected: { isConnected: true }
+    updateLocalUser: jest.fn()
   });
 
   const { getByText, getByLabelText, getByTestId } = render(ui);
@@ -155,5 +150,11 @@ function makeComp(params: any = {}) {
   // tslint:disable-next-line:no-any
   const Login1 = Login as any;
   const client = makeClient();
-  return renderWithRouter(<Login1 client={client} {...params} />);
+  return renderWithRouter(
+    <Login1 client={client} getConn={makeConn(true)} {...params} />
+  );
+}
+
+function makeConn(conn?: boolean) {
+  return jest.fn(() => Promise.resolve(conn));
 }

@@ -18,6 +18,7 @@ import { LoginUser as FormValues } from "../../graphql/apollo-gql.d";
 import { setTitle, SIGN_UP_URL } from "../../Routing";
 import refreshToHomeDefault from "../../Routing/refresh-to-home";
 import PwdInput from "../../components/PwdInput";
+import getConnDefault from "../../state/get-conn-status";
 
 const Errors = React.memo(ErrorsComp, ErrorsCompEqual);
 
@@ -26,7 +27,8 @@ export function Login(props: Props) {
     history,
     login,
     updateLocalUser,
-    connected,
+    client,
+    getConn = getConnDefault,
     refreshToHome = refreshToHomeDefault
   } = props;
 
@@ -50,10 +52,10 @@ export function Login(props: Props) {
 
         <Card.Content>
           <Form
-            onSubmit={function onSubmit() {
+            onSubmit={async function onSubmit() {
               handleErrorsDismissed(dispatch);
 
-              if (!(connected && connected.isConnected)) {
+              if (!(await getConn(client))) {
                 formikBag.setSubmitting(false);
                 dispatch({
                   type: Action_Types.SET_OTHER_ERRORS,
