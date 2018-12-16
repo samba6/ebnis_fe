@@ -16,6 +16,7 @@ import { setTitle, LOGIN_URL } from "../../Routing";
 import SidebarHeader from "../../components/SidebarHeader";
 import refreshToHomeDefault from "../../Routing/refresh-to-home";
 import { authFormErrorReducer, Action_Types, State } from "../Login/login";
+import getConnDefault from "../../state/get-conn-status";
 
 const FORM_RENDER_PROPS = {
   name: ["Name", "text"],
@@ -27,12 +28,13 @@ const FORM_RENDER_PROPS = {
 
 export function SignUp(props: Props) {
   const {
+    client,
     history,
     regUser,
-    connected,
     updateLocalUser,
     refreshToHome = refreshToHomeDefault,
-    scrollToTop = defaultScrollToTop
+    scrollToTop = defaultScrollToTop,
+    getConn = getConnDefault
   } = props;
   const mainRef = useRef<HTMLDivElement | null>(null);
   const [state, dispatch] = useReducer(authFormErrorReducer, {} as State);
@@ -55,10 +57,10 @@ export function SignUp(props: Props) {
 
         <Card.Content>
           <Form
-            onSubmit={function onSubmit() {
+            onSubmit={async function onSubmit() {
               handleErrorsDismissed();
 
-              if (!(connected && connected.isConnected)) {
+              if (!(await getConn(client))) {
                 formikBag.setSubmitting(false);
                 dispatch({
                   type: Action_Types.SET_OTHER_ERRORS,

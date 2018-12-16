@@ -2,20 +2,22 @@ import * as Yup from "yup";
 import { RouteComponentProps } from "react-router-dom";
 import { FormikActions } from "formik";
 import { Dispatch } from "react";
+import { WithApolloClient } from "react-apollo";
+import ApolloClient from "apollo-client";
 
 import { RegMutationProps } from "../../graphql/user-reg.mutation";
 import { UserLocalMutationProps } from "../../state/user.local.mutation";
 import { Registration } from "../../graphql/apollo-gql.d";
-import { ConnProps } from "../../state/conn.query";
 import { Action } from "../Login/login";
 
 export interface Props
   extends RouteComponentProps,
     RegMutationProps,
     UserLocalMutationProps,
-    ConnProps {
+    WithApolloClient<{}> {
   refreshToHome?: () => void;
   scrollToTop?: () => void;
+  getConn?: (client: ApolloClient<{}>) => Promise<boolean>;
 }
 
 export type FormValuesKey = keyof Registration;

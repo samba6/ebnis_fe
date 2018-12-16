@@ -32,6 +32,7 @@ client = new ApolloClient({
   link: ApolloLink.from([initState(cache), socketLink])
 });
 
+// tslint:disable-next-line:no-any
 const storage = localStorage as any;
 
 const persistor = new CachePersistor({
