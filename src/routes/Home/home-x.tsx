@@ -112,7 +112,7 @@ export const Home = (props: Props) => {
     }
 
     return (
-      <div className="route-main">
+      <div className="route-main" data-testid="home-route-main">
         {renderExperiences()}
 
         <button
@@ -120,6 +120,7 @@ export const Home = (props: Props) => {
           name="go-to-new-exp"
           type="button"
           onClick={goToNewExp}
+          data-testid="go-to-new-exp"
         >
           +
         </button>
