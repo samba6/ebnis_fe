@@ -56,7 +56,7 @@ export function makeHistory(params: HistoryProps = defaultHistoryProps) {
 }
 
 export function testWithRouter<TProps>(
-  Ui: FunctionComponent<TProps>,
+  Ui: FunctionComponent<TProps & { history: MemoryHistory }>,
   historyProps?: HistoryProps
 ) {
   const history = makeHistory(historyProps) as MemoryHistory;
@@ -76,7 +76,9 @@ export function testWithRouter<TProps>(
   };
 }
 
-export function testWithApollo<TProps>(Ui: FunctionComponent<TProps>) {
+export function testWithApollo<TProps>(
+  Ui: FunctionComponent<TProps & { client: ApolloClient<{}> }>
+) {
   const client = makeClient();
 
   return {

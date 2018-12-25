@@ -6,7 +6,7 @@ import { Props } from "./home";
 import SidebarHeader from "../../components/SidebarHeader";
 import { setTitle, NEW_EXP_URL, makeExpRoute } from "../../Routing";
 import Loading from "../../components/Loading";
-import { GetExps_exps } from "../../graphql/apollo-gql.d";
+import { GetExps_exps } from "../../graphql/apollo-gql";
 
 export const Home = (props: Props) => {
   const { history, loading, exps } = props;
@@ -34,7 +34,11 @@ export const Home = (props: Props) => {
     }
 
     return (
-      <div className="exps-container" onClick={handleDefsClick}>
+      <div
+        data-testid="exps-container"
+        className="exps-container"
+        onClick={handleDefsClick}
+      >
         {exps.map(renderExperience)}
       </div>
     );
