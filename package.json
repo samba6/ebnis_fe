@@ -27,7 +27,8 @@
     "yup": "^0.26.6"
   },
   "scripts": {
-    "start": "launch_with_cmder.bat \"cross-env PORT=4021 BROWSER=none REACT_APP_API_URL=http://localhost:4022 yarn react-scripts start\" ",
+    "start-win": "launch_with_cmder.bat \"cross-env PORT=4021 BROWSER=none REACT_APP_API_URL=http://localhost:4022 yarn react-scripts start\" ",
+    "start": "cross-env PORT=4021 BROWSER=none REACT_APP_API_URL=http://localhost:4022 yarn react-scripts start",
     "build-prod": "cross-env REACT_APP_API_URL=https://ebnis.herokuapp.com  react-scripts build",
     "build-local-prod": "cross-env REACT_APP_API_URL=http://localhost:4023  react-scripts build",
     "test": "cross-env REACT_APP_API_URL=http://localhost:4022 yarn react-scripts test",
