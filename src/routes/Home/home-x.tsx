@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, Dispatch, SetStateAction } from "react";
 import { Icon } from "semantic-ui-react";
+import { History } from "history";
 
 import "./home.scss";
 import { Props } from "./home";
@@ -35,40 +36,16 @@ export const Home = (props: Props) => {
 
     return (
       <div data-testid="exps-container" className="exps-container">
-        {exps.map(renderExperience)}
-      </div>
-    );
-  }
-
-  function renderExperience(expDef: GetExps_exps | null, index: number) {
-    if (!expDef) {
-      return null;
-    }
-
-    const { title, description, id } = expDef;
-    const showingDescription = toggleDescriptions[index];
-
-    return (
-      <div key={index} className="exp-container" data-index={index}>
-        <ShowDescriptionToggle
-          description={description}
-          showingDescription={showingDescription}
-          id={id}
-          onClick={() => {
-            setToggleDescriptions({
-              ...toggleDescriptions,
-              [index]: !toggleDescriptions[index]
-            });
-          }}
-        />
-
-        <div className="main" onClick={() => history.push(makeExpRoute(id))}>
-          <span className="exp_title">{title}</span>
-
-          {showingDescription && (
-            <div className="exp_description">{description}</div>
-          )}
-        </div>
+        {exps.map((exp, index) => (
+          <Experience
+            key={index}
+            expDef={exp}
+            index={index}
+            toggleDescriptions={toggleDescriptions}
+            setToggleDescriptions={setToggleDescriptions}
+            history={history}
+          />
+        ))}
       </div>
     );
   }
@@ -106,38 +83,102 @@ export const Home = (props: Props) => {
 
 export default Home;
 
-function ShowDescriptionToggle({
-  description,
-  showingDescription,
-  id,
-  onClick
-}: {
-  description: string | null;
-  showingDescription: boolean;
-  id: string;
-  onClick: () => void;
-}) {
-  if (!description) {
-    return null;
-  }
+interface ExperienceProps {
+  expDef: GetExps_exps | null;
+  index: number;
+  toggleDescriptions: { [k: string]: boolean };
+  setToggleDescriptions: Dispatch<SetStateAction<{ [k: string]: boolean }>>;
+  history: History;
+}
 
-  if (!showingDescription) {
+const Experience = React.memo(
+  function ExperienceMemo({
+    expDef,
+    index,
+    toggleDescriptions,
+    setToggleDescriptions,
+    history
+  }: ExperienceProps) {
+    if (!expDef) {
+      return null;
+    }
+
+    const { title, description, id } = expDef;
+    const showingDescription = toggleDescriptions[index];
+
+    return (
+      <div key={index} className="exp-container" data-index={index}>
+        <ShowDescriptionToggle
+          description={description}
+          showingDescription={showingDescription}
+          id={id}
+          onClick={() => {
+            setToggleDescriptions({
+              ...toggleDescriptions,
+              [index]: !toggleDescriptions[index]
+            });
+          }}
+        />
+
+        <div className="main" onClick={() => history.push(makeExpRoute(id))}>
+          <span className="exp_title">{title}</span>
+
+          {showingDescription && (
+            <div className="exp_description">{description}</div>
+          )}
+        </div>
+      </div>
+    );
+  },
+  function ExperienceMemoDiff(prevProps, currProps) {
+    if (
+      prevProps.toggleDescriptions[prevProps.index] !==
+      currProps.toggleDescriptions[currProps.index]
+    ) {
+      return false;
+    }
+
+    return true;
+  }
+);
+
+const ShowDescriptionToggle = React.memo(
+  function ShowDescriptionToggleMemo({
+    description,
+    showingDescription,
+    id,
+    onClick
+  }: {
+    description: string | null;
+    showingDescription: boolean;
+    id: string;
+    onClick: () => void;
+  }) {
+    if (!description) {
+      return null;
+    }
+
+    if (!showingDescription) {
+      return (
+        <Icon
+          data-testid={`exp-toggle-${id}`}
+          name="caret right"
+          className="reveal-hide-description"
+          onClick={onClick}
+        />
+      );
+    }
+
     return (
       <Icon
         data-testid={`exp-toggle-${id}`}
-        name="caret right"
+        name="caret down"
         className="reveal-hide-description"
         onClick={onClick}
       />
     );
+  },
+  function ShowDescriptionToggleDiff(oldProps, newProps) {
+    return oldProps.showingDescription === newProps.showingDescription;
   }
-
-  return (
-    <Icon
-      data-testid={`exp-toggle-${id}`}
-      name="caret down"
-      className="reveal-hide-description"
-      onClick={onClick}
-    />
-  );
-}
+);
