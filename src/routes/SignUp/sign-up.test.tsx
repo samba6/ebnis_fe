@@ -5,7 +5,7 @@ import { render, fireEvent, wait, waitForElement } from "react-testing-library";
 
 import { SignUp } from "./sign-up-x";
 import { Props } from "./sign-up";
-import { makeClient, renderWithRouter } from "../../test_utils";
+import { makeClient, renderWithRouter, fillField } from "../../test_utils";
 
 it("renders correctly and submits", async () => {
   const user = {};
@@ -141,12 +141,6 @@ function makeRegUserFunc(data?: any) {
   }
 
   return jest.fn();
-}
-
-function fillField(element: Element, value: string) {
-  fireEvent.change(element, {
-    target: { value }
-  });
 }
 
 // tslint:disable-next-line:no-any
