@@ -34,11 +34,7 @@ export const Home = (props: Props) => {
     }
 
     return (
-      <div
-        data-testid="exps-container"
-        className="exps-container"
-        onClick={handleDefsClick}
-      >
+      <div data-testid="exps-container" className="exps-container">
         {exps.map(renderExperience)}
       </div>
     );
@@ -49,14 +45,24 @@ export const Home = (props: Props) => {
       return null;
     }
 
-    const { title, description } = expDef;
+    const { title, description, id } = expDef;
     const showingDescription = toggleDescriptions[index];
 
     return (
       <div key={index} className="exp-container" data-index={index}>
-        {showDescriptionToggle(description, showingDescription)}
+        <ShowDescriptionToggle
+          description={description}
+          showingDescription={showingDescription}
+          id={id}
+          onClick={() => {
+            setToggleDescriptions({
+              ...toggleDescriptions,
+              [index]: !toggleDescriptions[index]
+            });
+          }}
+        />
 
-        <div className="main">
+        <div className="main" onClick={() => history.push(makeExpRoute(id))}>
           <span className="exp_title">{title}</span>
 
           {showingDescription && (
@@ -65,49 +71,6 @@ export const Home = (props: Props) => {
         </div>
       </div>
     );
-  }
-
-  function handleDefsClick(evt: React.MouseEvent<HTMLDivElement>) {
-    const target = evt.target as HTMLDivElement;
-    const container = target.closest(".exp-container") as HTMLDivElement;
-
-    if (!(container && exps)) {
-      return;
-    }
-
-    const index = container.dataset.index;
-
-    if (index === undefined) {
-      return;
-    }
-
-    const def = exps[index];
-
-    if (!def) {
-      return;
-    }
-
-    const { classList } = target;
-    const { id } = def;
-
-    if (classList.contains("exp_title")) {
-      history.push(makeExpRoute(id));
-      return;
-    }
-
-    if (classList.contains("exp_description")) {
-      history.push(makeExpRoute(id));
-      return;
-    }
-
-    if (target.classList.contains("reveal-hide-description")) {
-      setToggleDescriptions({
-        ...toggleDescriptions,
-        [index]: !toggleDescriptions[index]
-      });
-
-      return;
-    }
   }
 
   function renderMain() {
@@ -143,17 +106,38 @@ export const Home = (props: Props) => {
 
 export default Home;
 
-function showDescriptionToggle(
-  description: string | null,
-  showingDescription: boolean
-) {
+function ShowDescriptionToggle({
+  description,
+  showingDescription,
+  id,
+  onClick
+}: {
+  description: string | null;
+  showingDescription: boolean;
+  id: string;
+  onClick: () => void;
+}) {
   if (!description) {
     return null;
   }
 
   if (!showingDescription) {
-    return <Icon name="caret right" className="reveal-hide-description" />;
+    return (
+      <Icon
+        data-testid={`exp-toggle-${id}`}
+        name="caret right"
+        className="reveal-hide-description"
+        onClick={onClick}
+      />
+    );
   }
 
-  return <Icon name="caret down" className="reveal-hide-description" />;
+  return (
+    <Icon
+      data-testid={`exp-toggle-${id}`}
+      name="caret down"
+      className="reveal-hide-description"
+      onClick={onClick}
+    />
+  );
 }
