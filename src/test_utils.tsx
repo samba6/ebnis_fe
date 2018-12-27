@@ -1,10 +1,10 @@
-import React, { FunctionComponent } from "react";
+import React, { FunctionComponent, ComponentClass } from "react";
 import { ApolloClient } from "apollo-client";
 import { InMemoryCache } from "apollo-cache-inmemory";
 import { ApolloLink } from "apollo-link";
 import { ApolloProvider } from "react-apollo";
 import { Router } from "react-router-dom";
-import { createMemoryHistory, MemoryHistory } from "history";
+import { createMemoryHistory, History } from "history";
 
 export function makeClient() {
   return new ApolloClient({
@@ -56,10 +56,12 @@ export function makeHistory(params: HistoryProps = defaultHistoryProps) {
 }
 
 export function testWithRouter<TProps>(
-  Ui: FunctionComponent<TProps & { history: MemoryHistory }>,
+  Ui:
+    | FunctionComponent<TProps & { history: History }>
+    | ComponentClass<TProps & { history: History }>,
   historyProps?: HistoryProps
 ) {
-  const history = makeHistory(historyProps) as MemoryHistory;
+  const history = makeHistory(historyProps) as History;
 
   return {
     // adding `history` to the returned utilities to allow us

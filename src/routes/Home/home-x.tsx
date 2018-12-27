@@ -1,4 +1,4 @@
-import React, { useEffect, useState, Dispatch, SetStateAction } from "react";
+import React, { useEffect, useState } from "react";
 import { Icon } from "semantic-ui-react";
 import { History } from "history";
 
@@ -87,7 +87,11 @@ interface ExperienceProps {
   expDef: GetExps_exps | null;
   index: number;
   toggleDescriptions: { [k: string]: boolean };
-  setToggleDescriptions: Dispatch<SetStateAction<{ [k: string]: boolean }>>;
+  setToggleDescriptions: (
+    toggleDescriptions: {
+      [k: string]: boolean;
+    }
+  ) => void;
   history: History;
 }
 
