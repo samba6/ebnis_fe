@@ -1,14 +1,11 @@
 import * as Yup from "yup";
 import { RouteComponentProps } from "react-router-dom";
-import { FormikActions } from "formik";
-import { Dispatch } from "react";
 import { WithApolloClient } from "react-apollo";
 import ApolloClient from "apollo-client";
 
 import { RegMutationProps } from "../../graphql/user-reg.mutation";
 import { UserLocalMutationProps } from "../../state/user.local.mutation";
 import { Registration } from "../../graphql/apollo-gql.d";
-import { Action } from "../Login/login";
 
 export interface Props
   extends RouteComponentProps,
@@ -53,11 +50,3 @@ export const ValidationSchema = Yup.object<Registration>().shape({
 export const RouterThings = {
   documentTitle: "Sign up"
 };
-
-export interface SubmitArg extends RegMutationProps, UserLocalMutationProps {
-  values: Registration;
-  formikBag: FormikActions<Registration>;
-  dispatch: Dispatch<Action>;
-  refreshToHome: () => void;
-  scrollToTop: () => void;
-}

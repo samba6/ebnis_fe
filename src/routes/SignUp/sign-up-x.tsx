@@ -8,8 +8,7 @@ import {
   Props,
   initialFormValues,
   ValidationSchema,
-  FormValuesKey,
-  SubmitArg
+  FormValuesKey
 } from "./sign-up";
 import { Registration } from "../../graphql/apollo-gql.d";
 import { setTitle, LOGIN_URL } from "../../Routing";
@@ -75,15 +74,49 @@ export function SignUp(props: Props) {
                 return;
               }
 
-              submit({
-                values,
-                formikBag,
-                regUser,
-                dispatch,
-                updateLocalUser,
-                refreshToHome,
-                scrollToTop
-              });
+              if (!regUser) {
+                formikBag.setSubmitting(false);
+                dispatch({
+                  type: Action_Types.SET_OTHER_ERRORS,
+                  payload: "Unknown error"
+                });
+                scrollToTop();
+
+                return;
+              }
+
+              formikBag.setSubmitting(true);
+              const errors = await formikBag.validateForm(values);
+
+              if (!loIsEmpty(errors)) {
+                formikBag.setSubmitting(false);
+                dispatch({
+                  type: Action_Types.SET_FORM_ERROR,
+                  payload: errors
+                });
+                scrollToTop();
+
+                return;
+              }
+
+              try {
+                const result = await regUser({
+                  variables: { registration: values }
+                });
+
+                if (result && result.data) {
+                  const user = result.data.registration;
+                  await updateLocalUser({ variables: { user } });
+                  refreshToHome();
+                }
+              } catch (error) {
+                formikBag.setSubmitting(false);
+                dispatch({
+                  type: Action_Types.SET_GRAPHQL_ERROR,
+                  payload: error
+                });
+                scrollToTop();
+              }
             }}
           >
             {Object.entries(FORM_RENDER_PROPS).map(([name, [label, type]]) => {
@@ -226,49 +259,6 @@ function renderInput(label: string, type: string) {
       />
     );
   };
-}
-
-async function submit({
-  values,
-  formikBag,
-  dispatch,
-  updateLocalUser,
-  refreshToHome,
-  regUser,
-  scrollToTop
-}: SubmitArg) {
-  if (!regUser) {
-    formikBag.setSubmitting(false);
-    dispatch({ type: Action_Types.SET_OTHER_ERRORS, payload: "Unknown error" });
-    scrollToTop();
-
-    return;
-  }
-
-  formikBag.setSubmitting(true);
-  const errors = await formikBag.validateForm(values);
-
-  if (!loIsEmpty(errors)) {
-    formikBag.setSubmitting(false);
-    dispatch({ type: Action_Types.SET_FORM_ERROR, payload: errors });
-    scrollToTop();
-
-    return;
-  }
-
-  try {
-    const result = await regUser({ variables: { registration: values } });
-
-    if (result && result.data) {
-      const user = result.data.registration;
-      await updateLocalUser({ variables: { user } });
-      refreshToHome();
-    }
-  } catch (error) {
-    formikBag.setSubmitting(false);
-    dispatch({ type: Action_Types.SET_GRAPHQL_ERROR, payload: error });
-    scrollToTop();
-  }
 }
 
 function handleErrorsDismissed(dispatch: Dispatch<Action>) {
