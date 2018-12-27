@@ -1,10 +1,10 @@
 import React, {
   useEffect,
-  useState,
   Fragment,
-  SetStateAction,
   Dispatch,
-  useRef
+  useRef,
+  Reducer,
+  useReducer
 } from "react";
 import {
   Formik,
@@ -41,23 +41,69 @@ import EXPS_QUERY, { GetExpGqlProps } from "../../graphql/exps.query";
 
 const EMPTY_FIELD = { name: "", type: "" as FieldType };
 
+enum Action_Types {
+  SET_OTHER_ERRORS = "@new-exp/SET_OTHER_ERRORS",
+  SET_FORM_ERROR = "@new-exp/SET_FORM_ERROR",
+  SET_GRAPHQL_ERROR = "@new-exp/SET_GRAPHQL_ERROR",
+  SET_SHOW_DESCRIPTION_INPUT = "@new-exp/SET_SHOW_DESCRIPTION_INPUT",
+  SELECT_VALUES = "@new-exp/SELECT_VALUES"
+}
+
+interface Action {
+  type: Action_Types;
+  payload:
+    | undefined
+    | boolean
+    | FormikErrors<FormValues>
+    | GraphQlErrorState
+    | SelectFieldTypeState;
+}
+
+interface State {
+  readonly otherErrors?: string;
+  readonly submittedFormErrors?: FormikErrors<FormValues>;
+  readonly graphQlError?: GraphQlErrorState;
+  readonly showDescriptionInput: boolean;
+  readonly selectValues: SelectFieldTypeState;
+}
+
+export const reducer: Reducer<State, Action> = (state, action) => {
+  switch (action.type) {
+    case Action_Types.SET_OTHER_ERRORS:
+      return { ...state, otherErrors: action.payload as string };
+
+    case Action_Types.SET_FORM_ERROR:
+      return {
+        ...state,
+        submittedFormErrors: action.payload as FormikErrors<FormValues>
+      };
+
+    case Action_Types.SET_GRAPHQL_ERROR:
+      return { ...state, graphQlError: action.payload as GraphQlErrorState };
+
+    case Action_Types.SET_SHOW_DESCRIPTION_INPUT:
+      return { ...state, showDescriptionInput: action.payload as boolean };
+
+    case Action_Types.SELECT_VALUES:
+      return { ...state, selectValues: action.payload as SelectFieldTypeState };
+
+    default:
+      return state;
+  }
+};
+
 interface SelectFieldTypeState {
   [k: number]: string | null;
 }
 
 export const NewExperience = (props: Props) => {
   const { createExp, history } = props;
-  const [selectValues, setSelectValues] = useState({} as SelectFieldTypeState);
+  const [state, dispatch] = useReducer(reducer, {
+    showDescriptionInput: true,
+    selectValues: {}
+  } as State);
+
   const routeRef = useRef<HTMLDivElement | null>(null);
-  const [showDescriptionInput, setShowDescriptionInput] = useState(true);
-
-  const [graphQlError, setGraphQlError] = useState<
-    GraphQlErrorState | undefined
-  >(undefined);
-
-  const [submittedFormErrors, setSubmittedFormErrors] = useState<
-    undefined | FormikErrors<FormValues>
-  >(undefined);
 
   useEffect(function setCompTitle() {
     setTitle("New Experience");
@@ -72,6 +118,8 @@ export const NewExperience = (props: Props) => {
     if (!field) {
       return null;
     }
+
+    const { submittedFormErrors, graphQlError } = state;
 
     const errorClass =
       getFieldContainerErrorClassFromForm(index, submittedFormErrors) ||
@@ -106,30 +154,37 @@ export const NewExperience = (props: Props) => {
       form: { setFieldValue }
     } = formProps;
 
-    const error = getFieldError(name, "type", submittedFormErrors);
+    const error = getFieldError(name, "type", state.submittedFormErrors);
 
     return (
       <Form.Field error={!!error}>
         <label htmlFor={name}>Field Data Type</label>
 
         <Dropdown
-          fluid
-          selection
+          fluid={true}
+          selection={true}
           value={value}
           compact={true}
           name={name}
           options={FIELD_TYPES}
-          onChange={function fieldTypeChanged(_evt, data) {
+          onChange={function fieldTypeChanged(evt, data) {
             const val = data.value as string;
 
             setFieldValue(name, val);
-
-            setSelectValues({
-              ...selectValues,
-              [index]: val
+            dispatch({
+              type: Action_Types.SELECT_VALUES,
+              payload: {
+                ...state.selectValues,
+                [index]: val
+              }
             });
           }}
-          onFocus={() => setSubmittedFormErrors(undefined)}
+          onFocus={() =>
+            dispatch({
+              type: Action_Types.SET_FORM_ERROR,
+              payload: undefined
+            })
+          }
         />
 
         {renderFormCtrlError(error)}
@@ -141,6 +196,8 @@ export const NewExperience = (props: Props) => {
     const {
       field: { name, value, ...rest }
     } = formProps;
+
+    const { submittedFormErrors, graphQlError } = state;
 
     const error =
       getFieldError(name, "name", submittedFormErrors) ||
@@ -157,7 +214,12 @@ export const NewExperience = (props: Props) => {
           autoComplete="off"
           name={name}
           id={name}
-          onFocus={() => setSubmittedFormErrors(undefined)}
+          onFocus={() =>
+            dispatch({
+              type: Action_Types.SET_FORM_ERROR,
+              payload: undefined
+            })
+          }
         />
 
         {renderFormCtrlError(error)}
@@ -182,7 +244,10 @@ export const NewExperience = (props: Props) => {
           <Button
             type="button"
             onClick={function onFieldAddClicked() {
-              setSubmittedFormErrors(undefined);
+              dispatch({
+                type: Action_Types.SET_FORM_ERROR,
+                payload: undefined
+              });
               arrayHelpers.insert(index + 1, { ...EMPTY_FIELD });
             }}
           >
@@ -193,9 +258,16 @@ export const NewExperience = (props: Props) => {
             <Button
               type="button"
               onClick={function onFieldDeleteClicked() {
-                setSelectValues(removeSelectedField(index, fieldDefs));
+                dispatch({
+                  type: Action_Types.SELECT_VALUES,
+                  payload: removeSelectedField(index, fieldDefs)
+                });
+
                 arrayHelpers.remove(index);
-                setSubmittedFormErrors(undefined);
+                dispatch({
+                  type: Action_Types.SET_FORM_ERROR,
+                  payload: undefined
+                });
               }}
             >
               <Icon name="minus" />
@@ -209,9 +281,16 @@ export const NewExperience = (props: Props) => {
                 const indexUp = index;
                 const indexDown = index - 1;
                 arrayHelpers.swap(indexUp, indexDown);
-                setSelectValues(
-                  swapSelectField(fieldDefs, indexUp, indexDown, selectValues)
-                );
+
+                dispatch({
+                  type: Action_Types.SELECT_VALUES,
+                  payload: swapSelectField(
+                    fieldDefs,
+                    indexUp,
+                    indexDown,
+                    state.selectValues
+                  )
+                });
               }}
             >
               <Icon name="arrow up" />
@@ -223,9 +302,16 @@ export const NewExperience = (props: Props) => {
               type="button"
               onClick={function onFieldDownClicked() {
                 arrayHelpers.swap(index, index + 1);
-                setSelectValues(
-                  swapSelectField(fieldDefs, index, index + 1, selectValues)
-                );
+
+                dispatch({
+                  type: Action_Types.SELECT_VALUES,
+                  payload: swapSelectField(
+                    fieldDefs,
+                    index,
+                    index + 1,
+                    state.selectValues
+                  )
+                });
               }}
             >
               <Icon name="arrow down" />
@@ -248,6 +334,7 @@ export const NewExperience = (props: Props) => {
 
   function renderTitleInput(formProps: FieldProps<FormValues>) {
     const { field } = formProps;
+    const { graphQlError } = state;
     const error = (graphQlError && graphQlError.title) || "";
 
     return (
@@ -263,13 +350,19 @@ export const NewExperience = (props: Props) => {
 
   function renderDescriptionInput(formProps: FieldProps<FormValues>) {
     const { field } = formProps;
+    const { showDescriptionInput } = state;
 
     return (
       <Form.Field>
         <label
           className="description-field-label"
           htmlFor={field.name}
-          onClick={() => setShowDescriptionInput(!showDescriptionInput)}
+          onClick={() =>
+            dispatch({
+              type: Action_Types.SET_SHOW_DESCRIPTION_INPUT,
+              payload: !showDescriptionInput
+            })
+          }
         >
           Description
           {!showDescriptionInput && <Icon name="caret left" />}
@@ -281,86 +374,104 @@ export const NewExperience = (props: Props) => {
     );
   }
 
-  function submit(formikProps: FormikProps<FormValues>) {
-    return async function submitInner() {
-      setSubmittedFormErrors(undefined);
-      setGraphQlError(undefined);
+  async function submit(formikProps: FormikProps<FormValues>) {
+    dispatch({
+      type: Action_Types.SET_FORM_ERROR,
+      payload: undefined
+    });
 
-      const { values, validateForm, setSubmitting } = formikProps;
-      setSubmitting(true);
+    dispatch({
+      type: Action_Types.SET_GRAPHQL_ERROR,
+      payload: undefined
+    });
 
-      const errors = await validateForm(values);
+    dispatch({
+      type: Action_Types.SET_GRAPHQL_ERROR,
+      payload: undefined
+    });
 
-      if (errors.title || errors.fieldDefs) {
-        setSubmittedFormErrors(errors);
-        setSubmitting(false);
-        return;
-      }
+    const { values, validateForm, setSubmitting } = formikProps;
+    setSubmitting(true);
 
-      if (!createExp) {
-        return;
-      }
+    const errors = await validateForm(values);
 
-      try {
-        const result = await createExp({
-          variables: {
-            exp: values
-          },
-
-          update: async function(client, { data: newExperience }) {
-            if (!newExperience) {
-              return;
-            }
-
-            const { exp } = newExperience;
-
-            if (!exp) {
-              return;
-            }
-
-            const data = client.readQuery<GetExpGqlProps>({
-              query: EXPS_QUERY
-            });
-
-            if (!data) {
-              return;
-            }
-
-            const { exps } = data;
-
-            if (!exps) {
-              return;
-            }
-
-            await client.writeQuery({
-              query: EXPS_QUERY,
-              data: { exps: [...exps, exp] }
-            });
-          }
-        });
-
-        if (result) {
-          const { data } = result;
-
-          if (data) {
-            const { exp } = data;
-
-            if (exp) {
-              history.replace(makeExpRoute(exp.id));
-            }
-          }
-        }
-      } catch (error) {
-        setGraphQlError(parseGraphQlError(error));
-        const { current } = routeRef;
-
-        if (current) {
-          current.scrollTop = 0;
-        }
-      }
+    if (errors.title || errors.fieldDefs) {
+      dispatch({
+        type: Action_Types.SET_FORM_ERROR,
+        payload: errors
+      });
 
       setSubmitting(false);
-    };
+      return;
+    }
+
+    if (!createExp) {
+      return;
+    }
+
+    try {
+      const result = await createExp({
+        variables: {
+          exp: values
+        },
+
+        async update(client, { data: newExperience }) {
+          if (!newExperience) {
+            return;
+          }
+
+          const { exp } = newExperience;
+
+          if (!exp) {
+            return;
+          }
+
+          const data = client.readQuery<GetExpGqlProps>({
+            query: EXPS_QUERY
+          });
+
+          if (!data) {
+            return;
+          }
+
+          const { exps } = data;
+
+          if (!exps) {
+            return;
+          }
+
+          await client.writeQuery({
+            query: EXPS_QUERY,
+            data: { exps: [...exps, exp] }
+          });
+        }
+      });
+
+      if (result) {
+        const { data } = result;
+
+        if (data) {
+          const { exp } = data;
+
+          if (exp) {
+            history.replace(makeExpRoute(exp.id));
+          }
+        }
+      }
+    } catch (error) {
+      dispatch({
+        type: Action_Types.SET_GRAPHQL_ERROR,
+        payload: parseGraphQlError(error)
+      });
+
+      const { current } = routeRef;
+
+      if (current) {
+        current.scrollTop = 0;
+      }
+    }
+
+    setSubmitting(false);
   }
 
   function renderForm(formikProps: FormikProps<FormValues>) {
@@ -371,8 +482,12 @@ export const NewExperience = (props: Props) => {
     const formInvalid = !(hasTitle && hasFieldDefs);
 
     return (
-      <Form onSubmit={submit(formikProps)}>
-        {renderGraphQlError(graphQlError, setGraphQlError)}
+      <Form
+        onSubmit={() => {
+          submit(formikProps);
+        }}
+      >
+        {renderGraphQlError(state.graphQlError, dispatch)}
 
         <FastField name="title" render={renderTitleInput} />
 
@@ -427,7 +542,7 @@ export default NewExperience;
 // ------------------------HELPER FUNCTIONS----------------------------
 
 interface GraphQlError {
-  field_defs?: { name?: string; type?: string }[];
+  field_defs?: Array<{ name?: string; type?: string }>;
   title?: string;
 }
 
@@ -444,7 +559,7 @@ function parseGraphQlError(error: ApolloError) {
     const { field_defs, title } = JSON.parse(err.message) as GraphQlError;
 
     if (title) {
-      transformedError["title"] = title;
+      transformedError.title = title;
     }
 
     if (!field_defs) {
@@ -467,10 +582,10 @@ function parseGraphQlError(error: ApolloError) {
     }
 
     // we store the formik path names on the upper level so we can easily access
-    // them from render without transforming the error (an earlier attempt)
+    // them from render without transforming the error (an earlier attempt
     // required calling functions to transform the data into forms that can
     // be used - this is no longer required because all shapes in which the
-    // data can be consumed are now stored on this object.  This potentially
+    // data can be consumed are now stored on this object).  This potentially
     // makes this object large and convinent but I'm not sure if it is better
     // than the previous approach)
   }
@@ -494,7 +609,7 @@ function parseGraphQlErrorFieldName(val?: string): [number, string] | null {
 
 function renderGraphQlError(
   graphQlError: GraphQlErrorState | undefined,
-  setGraphQlError: Dispatch<SetStateAction<GraphQlErrorState | undefined>>
+  dispatch: Dispatch<Action>
 ) {
   if (!graphQlError) {
     return null;
@@ -506,7 +621,12 @@ function renderGraphQlError(
     <Message
       style={{ display: "block" }}
       error={true}
-      onDismiss={() => setGraphQlError(undefined)}
+      onDismiss={() =>
+        dispatch({
+          type: Action_Types.SET_GRAPHQL_ERROR,
+          payload: undefined
+        })
+      }
     >
       <Message.Header className="graphql-errors-header">
         Error in submitted form!
@@ -541,7 +661,7 @@ function renderGraphQlErrorFieldDefs(fieldDefs?: { [k: string]: string }) {
 }
 
 function swapSelectField(
-  fieldDefs: (CreateFieldDef | null)[],
+  fieldDefs: Array<CreateFieldDef | null>,
   indexA: number,
   indexB: number,
   selectedValues: SelectFieldTypeState
@@ -572,7 +692,7 @@ function swapSelectField(
 
 function removeSelectedField(
   removedIndex: number,
-  fieldDefs: (null | CreateFieldDef)[]
+  fieldDefs: Array<null | CreateFieldDef>
 ) {
   const selected = {} as SelectFieldTypeState;
   const len = fieldDefs.length - 1;
@@ -634,6 +754,7 @@ function getFieldError(
     return null;
   }
 
+  // tslint:disable-next-line:prefer-for-of
   for (let i = 0; i < fieldDefs.length; i++) {
     const field = (fieldDefs[i] || {}) as CreateFieldDef;
     const val = field[fieldName] || "";
