@@ -41,11 +41,13 @@ export function renderWithRouter(
 
 interface HistoryProps {
   push?: (path: string) => void;
+  replace?: (path: string) => void;
   path?: string;
 }
 
 const defaultHistoryProps: HistoryProps = {
-  push: jest.fn()
+  push: jest.fn(),
+  replace: jest.fn()
 };
 
 export function makeHistory(params: HistoryProps = defaultHistoryProps) {

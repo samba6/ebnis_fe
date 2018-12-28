@@ -129,7 +129,9 @@ export function NewExperience(props: Props) {
     return setTitle;
   }, []);
 
-  const renderField = (values: FormValues, arrayHelpers: ArrayHelpers) => (
+  const FieldDef = (
+    values: FormValues,
+    arrayHelpers: ArrayHelpers,
     field: CreateFieldDef | null,
     index: number
   ) => {
@@ -149,7 +151,7 @@ export function NewExperience(props: Props) {
 
     return (
       <div
-        data-testid={`field-def-container-${index}`}
+        data-testid={`field-def-container-${index + 1}`}
         key={index}
         className={`${errorClass} field-def-container`}
       >
@@ -187,7 +189,9 @@ export function NewExperience(props: Props) {
   ) => {
     return (
       <Fragment>
-        {values.fieldDefs.map(renderField(values, arrayHelpers))}
+        {values.fieldDefs.map((field, index) =>
+          FieldDef(values, arrayHelpers, field, index)
+        )}
       </Fragment>
     );
   };
@@ -400,7 +404,7 @@ function FieldName({
         }
       />
 
-      {renderFormCtrlError(error)}
+      <FormCtrlError error={error} />
     </Form.Field>
   );
 }
@@ -451,7 +455,7 @@ function FieldDataType({
         }
       />
 
-      {renderFormCtrlError(error)}
+      <FormCtrlError error={error} />
     </Form.Field>
   );
 }
@@ -621,7 +625,7 @@ function TitleInput({
 
       <Input {...field} autoFocus={true} autoComplete="off" id={field.name} />
 
-      {renderFormCtrlError(error)}
+      <FormCtrlError error={error} />
     </Form.Field>
   );
 }
@@ -800,7 +804,7 @@ function removeSelectedField(
 }
 
 function makeFieldName(index: number, key: keyof CreateFieldDef) {
-  return `fieldDefs[${index}]${key}`;
+  return `fieldDefs[${index}].${key}`;
 }
 
 function nullSubmit() {
@@ -855,6 +859,6 @@ function getFieldError(
   return null;
 }
 
-function renderFormCtrlError(error: null | string) {
-  return error && <div className="form-control-error">{error}</div>;
+function FormCtrlError({ error }: { error: null | string }) {
+  return error ? <div className="form-control-error">{error}</div> : null;
 }

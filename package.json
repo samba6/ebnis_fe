@@ -65,7 +65,8 @@
   "jest": {
     "collectCoverageFrom": [
       "src/**/*.{ts,tsx}",
-      "!src/**/Home/index.ts"
+      "!src/**/Home/index.ts",
+      "!src/**/NewExp/index.ts"
     ]
   }
 }

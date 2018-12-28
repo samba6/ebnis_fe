@@ -16,11 +16,23 @@ import {
 } from "../../graphql/apollo-gql.d";
 import { Props } from "./new-exp";
 import { testWithRouter, fillField } from "../../test_utils";
+import { makeExpRoute } from "../../Routing";
 
 it("renders main", async () => {
-  const { Ui } = testWithRouter<Props>(NewExp);
-  const mockCreateExp = jest.fn();
+  const mockReplace = jest.fn();
+  const { Ui } = testWithRouter<Props>(NewExp, { replace: mockReplace });
   const mockCreateExpUpdate = jest.fn();
+
+  const result = {
+    data: {
+      exp: {
+        id: "expId1"
+      }
+    }
+  };
+
+  const mockCreateExp = jest.fn(() => Promise.resolve(result));
+
   const props: Props = {
     createExp: mockCreateExp,
     createExpUpdate: mockCreateExpUpdate
@@ -274,23 +286,76 @@ it("renders main", async () => {
       update: mockCreateExpUpdate
     })
   );
+
+  expect(mockReplace).toBeCalledWith(makeExpRoute("expId1"));
 });
 
-// xit("errors when 2 field defs have same name", () => {
-//   const { Ui } = testWithRouter<Props>(NewExp);
-//   // tslint:disable-next-line:no-any
-//   const props: Props = { loading: true } as any;
-//   const { getByLabelText } = render(<Ui {...props} />);
+it("renders errors if two field defs have same name", async () => {
+  const fieldDefs: CreateFieldDef[] = [
+    {
+      name: "Nice field",
+      type: FieldType.SINGLE_LINE_TEXT
+    },
 
-//   fillField(getByLabelText("Field 1 Name"), "Names are the same");
-//   fillField(getByLabelText("Field 2 Name"), "Names are the same");
-// });
+    {
+      name: "Nice field",
+      type: FieldType.DATETIME
+    }
+  ];
 
-///////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////
-////////////////////////// HELPER FUNCTIONS ///////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////
+  const formValue: FormValues = {
+    title: "Exp 2",
+    fieldDefs
+  };
+
+  const { Ui } = testWithRouter<Props>(NewExp);
+
+  const props: Props = {
+    createExp: jest.fn(() =>
+      Promise.reject({
+        graphQLErrors: [
+          {
+            message: `{\"field_defs\":[{\"name\":\"${
+              fieldDefs[1].name
+            }---1 has already been taken\"}]}`
+          }
+        ]
+      })
+    )
+    // tslint:disable-next-line:no-any
+  } as any;
+
+  const { getByText, getByLabelText, getByTestId, queryByText } = render(
+    <Ui {...props} />
+  );
+
+  fillField(getByLabelText("Title"), formValue.title);
+  fillField(getByLabelText("Field 1 Name"), fieldDefs[0].name);
+
+  fireEvent.click(
+    selectDataType(getByText, "Field 1 Data Type", FieldType.SINGLE_LINE_TEXT)
+  );
+
+  fireEvent.click(getByTestId("add-field-btn-1"));
+  fillField(getByLabelText("Field 2 Name"), fieldDefs[1].name);
+
+  fireEvent.click(
+    selectDataType(getByText, "Field 2 Data Type", FieldType.DATETIME)
+  );
+
+  const $fieldDef2Container = getByTestId("field-def-container-2");
+  const $field2 = $fieldDef2Container.querySelector(".field") as HTMLDivElement;
+  expect($fieldDef2Container.classList).not.toContain("errors");
+  expect($field2.classList).not.toContain("error");
+  expect($field2).not.toContain(queryByText("has already been taken"));
+
+  fireEvent.click(getByText("Submit"));
+  await wait(() => expect($fieldDef2Container.classList).toContain("errors"));
+  expect($field2.classList).toContain("error");
+  expect($field2).toContainElement(getByText("has already been taken"));
+
+  throw Error("Test form error one field is empty");
+});
 
 function selectDataType(
   getByText: (
