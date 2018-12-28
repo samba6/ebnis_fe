@@ -1,7 +1,7 @@
 import React from "react";
 import "jest-dom/extend-expect";
 import "react-testing-library/cleanup-after-each";
-import { render, fireEvent } from "react-testing-library";
+import { render, fireEvent, wait } from "react-testing-library";
 import {
   getByText as domGetByText,
   Matcher,
@@ -17,10 +17,15 @@ import {
 import { Props } from "./new-exp";
 import { testWithRouter, fillField } from "../../test_utils";
 
-it("renders main", () => {
+it("renders main", async () => {
   const { Ui } = testWithRouter<Props>(NewExp);
-  // tslint:disable-next-line:no-any
-  const props: Props = { loading: true } as any;
+  const mockCreateExp = jest.fn();
+  const mockCreateExpUpdate = jest.fn();
+  const props: Props = {
+    createExp: mockCreateExp,
+    createExpUpdate: mockCreateExpUpdate
+    // tslint:disable-next-line:no-any
+  } as any;
   const {
     queryByLabelText,
     getByText,
@@ -60,6 +65,9 @@ it("renders main", () => {
   fillField(getByLabelText("Title"), formValue.title);
   expect($btn).not.toBeDisabled();
 
+  /**
+   * TOGGLING DESCRIPTION
+   */
   expect(getByLabelText("Description")).toBeInTheDocument();
   const $descToggle = getByTestId("description-field-toggle");
   fireEvent.click($descToggle);
@@ -70,7 +78,7 @@ it("renders main", () => {
   fillField($desc, formValue.description as string);
 
   // If the first field is empty, then controls are not shown
-  expect(queryByTestId("field-controls-0")).not.toBeInTheDocument();
+  expect(queryByTestId("field-controls-1")).not.toBeInTheDocument();
 
   // So we fill the name and data type fields to see the controls
   fillField(getByLabelText("Field 1 Name"), fieldDefs[0].name);
@@ -78,50 +86,55 @@ it("renders main", () => {
   fireEvent.click(
     domGetByText(
       getByText("Field 1 Data Type").parentElement as HTMLDivElement,
-      fieldDefs[0].type
+      FieldType.SINGLE_LINE_TEXT
     )
   );
 
-  expect(getByTestId("field-controls-0")).toBeInTheDocument();
+  expect(getByTestId("field-controls-1")).toBeInTheDocument();
   // but only `add-field-btn` is shown. All other controls are invisible
-  expect(queryByTestId("remove-field-btn-0")).not.toBeInTheDocument();
-  expect(queryByTestId("go-up-field-btn-0")).not.toBeInTheDocument();
-  expect(queryByTestId("go-down-field-btn-0")).not.toBeInTheDocument();
+  expect(queryByTestId("remove-field-btn-1")).not.toBeInTheDocument();
+  expect(queryByTestId("go-up-field-btn-1")).not.toBeInTheDocument();
+  expect(queryByTestId("go-down-field-btn-1")).not.toBeInTheDocument();
 
   // the only visible button
-  const $field1AddBtn = getByTestId("add-field-btn-0");
+  const $field1AddBtn = getByTestId("add-field-btn-1");
   fireEvent.click($field1AddBtn);
 
   // when a new field is added, the first field's go-down-field-btn and
   // remove-field-btn are shown
-  expect(getByTestId("go-down-field-btn-0")).toBeInTheDocument();
-  expect(getByTestId("remove-field-btn-0")).toBeInTheDocument();
+  expect(getByTestId("go-down-field-btn-1")).toBeInTheDocument();
+  expect(getByTestId("remove-field-btn-1")).toBeInTheDocument();
 
   // we show that when field 2 is removed, remove-field-btn and
-  // go-down-field-btn are gone
-  fireEvent.click(getByTestId("remove-field-btn-1"));
-  expect(queryByTestId("remove-field-btn-0")).not.toBeInTheDocument();
-  expect(queryByTestId("go-down-field-btn-0")).not.toBeInTheDocument();
+  // go-down-field-btn of field1 are gone are gone
+  fireEvent.click(getByTestId("remove-field-btn-2"));
+  expect(queryByTestId("remove-field-btn-1")).not.toBeInTheDocument();
+  expect(queryByTestId("go-down-field-btn-1")).not.toBeInTheDocument();
 
   fireEvent.click($field1AddBtn);
   // when field 2 is re-added, the buttons for field 1 are back
-  expect(getByTestId("remove-field-btn-0")).toBeInTheDocument();
-  expect(getByTestId("go-down-field-btn-0")).toBeInTheDocument();
-  expect(queryByTestId("go-up-field-btn-0")).not.toBeInTheDocument();
-
-  // field 2 now has 2 of the 4 buttons.  add-field-btn will not show up
-  // until we fill out field 2
-  expect(queryByTestId("add-field-btn-1")).not.toBeInTheDocument();
-  expect(queryByTestId("go-down-field-btn-1")).not.toBeInTheDocument();
   expect(getByTestId("remove-field-btn-1")).toBeInTheDocument();
-  expect(getByTestId("go-up-field-btn-1")).toBeInTheDocument();
+  expect(getByTestId("go-down-field-btn-1")).toBeInTheDocument();
+  expect(queryByTestId("go-up-field-btn-1")).not.toBeInTheDocument();
+
+  /**
+   * field 2 now has 2 of the 4 buttons.  add-field-btn will not show up
+   * until we fill out field 2.
+   * Since this is the last field, go down button will not be rendered
+   */
+
+  expect(queryByTestId("add-field-btn-2")).not.toBeInTheDocument();
+  expect(queryByTestId("go-down-field-btn-2")).not.toBeInTheDocument();
+  expect(getByTestId("remove-field-btn-2")).toBeInTheDocument();
+  expect(getByTestId("go-up-field-btn-2")).toBeInTheDocument();
 
   // filling field 2
   fillField(getByLabelText("Field 2 Name"), fieldDefs[1].name);
 
-  const $field2DataType = domGetByText(
-    getByText("Field 2 Data Type").parentElement as HTMLDivElement,
-    fieldDefs[1].type
+  const $field2DataType = selectDataType(
+    getByText,
+    "Field 2 Data Type",
+    FieldType.DATETIME
   );
 
   // before it is selected, it should not have attribute role
@@ -130,14 +143,15 @@ it("renders main", () => {
 
   // after Selection, it should have attribute role
   expect(
-    domGetByText(
-      getByText("Field 2 Data Type").parentElement as HTMLDivElement,
-      fieldDefs[1].type
+    selectDataType(
+      getByText,
+      "Field 2 Data Type",
+      FieldType.DATETIME
     ).getAttribute("role")
   ).toBe("alert");
 
   // field 2 add button appears
-  expect(getByTestId("add-field-btn-1")).toBeInTheDocument();
+  expect(getByTestId("add-field-btn-2")).toBeInTheDocument();
 
   // let's click the add button on field 1 to add a 3rd field but immediately
   // after field 1
@@ -148,10 +162,7 @@ it("renders main", () => {
   expect(getByLabelText("Field 2 Name").getAttribute("value")).toBe("");
   // field 2 datetime dropdown has not been selected
   expect(
-    domGetByText(
-      getByText("Field 2 Data Type").parentElement as HTMLDivElement,
-      fieldDefs[1].type
-    )
+    selectDataType(getByText, "Field 2 Data Type", FieldType.DATETIME)
   ).not.toHaveAttribute("role");
 
   // our former field 2 is now field 3
@@ -160,21 +171,21 @@ it("renders main", () => {
   );
 
   expect(
-    domGetByText(
-      getByText("Field 3 Data Type").parentElement as HTMLDivElement,
-      fieldDefs[1].type
+    selectDataType(
+      getByText,
+      "Field 3 Data Type",
+      FieldType.DATETIME
     ).getAttribute("role")
   ).toBe("alert");
 
   /**
-   * the new field 2 has update, down and remove buttons, but no add button
+   * the new field 2 has up, down and remove buttons, but no add button
    * because field's name and data type are empty.
    */
-  expect(queryByTestId("add-field-btn-1")).not.toBeInTheDocument();
-  expect(getByTestId("remove-field-btn-1")).toBeInTheDocument();
-  expect(getByTestId("go-up-field-btn-1")).toBeInTheDocument();
-  const $newField2DownBtn = getByTestId("go-down-field-btn-1");
-  expect($newField2DownBtn).toBeInTheDocument();
+  expect(queryByTestId("add-field-btn-2")).not.toBeInTheDocument();
+  expect(getByTestId("remove-field-btn-2")).toBeInTheDocument();
+  expect(getByTestId("go-up-field-btn-2")).toBeInTheDocument();
+  const $newField2DownBtn = getByTestId("go-down-field-btn-2");
 
   // we fill new field 2 and verify add button shows up
   fillField(getByLabelText("Field 2 Name"), fieldDefs[2].name);
@@ -182,14 +193,15 @@ it("renders main", () => {
   fireEvent.click(
     selectDataType(getByText, "Field 2 Data Type", fieldDefs[2].type)
   );
-  expect(getByTestId("add-field-btn-1")).toBeInTheDocument();
+  /** Now that the field is filled completely, add button shows */
+  expect(getByTestId("add-field-btn-2")).toBeInTheDocument();
 
   // Let us swap fields 2 and 3 by clicking down button on field 2.
   // We verify field 3 has been shifted up
   // (to position 2) while field 2 has been shifted down to position 3
   fireEvent.click($newField2DownBtn);
 
-  // field 3 is now field 2
+  // field 3 is now field 2 - we have restored original field 2
   expect(getByLabelText("Field 2 Name").getAttribute("value")).toBe(
     fieldDefs[1].name
   );
@@ -198,7 +210,7 @@ it("renders main", () => {
     selectDataType(
       getByText,
       "Field 2 Data Type",
-      fieldDefs[1].type
+      FieldType.DATETIME
     ).getAttribute("role")
   ).toBe("alert");
 
@@ -218,7 +230,7 @@ it("renders main", () => {
   // Let us swap fields 1 and 2 by clicking up button on field 2.
   // We verify field 2 has been shifted up
   // (to position 1) while field 1 has been shifted down to position 2
-  fireEvent.click(getByTestId("go-up-field-btn-1"));
+  fireEvent.click(getByTestId("go-up-field-btn-2"));
 
   // field 2 is now field 1
   expect(getByLabelText("Field 1 Name").getAttribute("value")).toBe(
@@ -229,7 +241,7 @@ it("renders main", () => {
     selectDataType(
       getByText,
       "Field 1 Data Type",
-      fieldDefs[1].type
+      FieldType.DATETIME
     ).getAttribute("role")
   ).toBe("alert");
 
@@ -242,25 +254,37 @@ it("renders main", () => {
     selectDataType(
       getByText,
       "Field 2 Data Type",
-      fieldDefs[0].type
+      FieldType.SINGLE_LINE_TEXT
     ).getAttribute("role")
   ).toBe("alert");
 
+  /** Let's restore order of the field defs - just to conform to their order
+   * in form value (so we don't need to re-arrange form values)
+   */
+  fireEvent.click(getByTestId("go-up-field-btn-2"));
   expect($btn.classList).not.toContain("loading");
   fireEvent.click($btn);
   expect($btn.classList).toContain("loading");
   expect($btn).toBeDisabled();
+  await wait(() =>
+    expect(mockCreateExp).toBeCalledWith({
+      variables: {
+        exp: formValue
+      },
+      update: mockCreateExpUpdate
+    })
+  );
 });
 
-xit("errors when 2 field defs have same name", () => {
-  const { Ui } = testWithRouter<Props>(NewExp);
-  // tslint:disable-next-line:no-any
-  const props: Props = { loading: true } as any;
-  const { getByLabelText } = render(<Ui {...props} />);
+// xit("errors when 2 field defs have same name", () => {
+//   const { Ui } = testWithRouter<Props>(NewExp);
+//   // tslint:disable-next-line:no-any
+//   const props: Props = { loading: true } as any;
+//   const { getByLabelText } = render(<Ui {...props} />);
 
-  fillField(getByLabelText("Field 1 Name"), "Names are the same");
-  fillField(getByLabelText("Field 2 Name"), "Names are the same");
-});
+//   fillField(getByLabelText("Field 1 Name"), "Names are the same");
+//   fillField(getByLabelText("Field 2 Name"), "Names are the same");
+// });
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////

@@ -25,9 +25,15 @@ import {
   TextArea,
   Dropdown
 } from "semantic-ui-react";
+import { ApolloError } from "apollo-client";
 
 import "./new-exp.scss";
-import { Props, ValidationSchema, FIELD_TYPES } from "./new-exp";
+import {
+  Props,
+  ValidationSchema,
+  FIELD_TYPES,
+  CreateExpUpdateFn
+} from "./new-exp";
 import SidebarHeader from "../../components/SidebarHeader";
 import { setTitle } from "../../Routing";
 import {
@@ -35,7 +41,6 @@ import {
   CreateFieldDef,
   FieldType
 } from "../../graphql/apollo-gql.d";
-import { ApolloError } from "apollo-client";
 import { makeExpRoute } from "../../Routing";
 import EXPS_QUERY, { GetExpGqlProps } from "../../graphql/exps.query";
 
@@ -106,7 +111,11 @@ interface SelectFieldTypeState {
 }
 
 export function NewExperience(props: Props) {
-  const { createExp, history } = props;
+  const {
+    createExp,
+    history,
+    createExpUpdate = createExpUpdateDefault
+  } = props;
   const [state, dispatch] = useReducer(reducer, {
     showDescriptionInput: true,
     selectValues: {}
@@ -220,36 +229,7 @@ export function NewExperience(props: Props) {
                 exp: values
               },
 
-              async update(client, { data: newExperience }) {
-                if (!newExperience) {
-                  return;
-                }
-
-                const { exp } = newExperience;
-
-                if (!exp) {
-                  return;
-                }
-
-                const data = client.readQuery<GetExpGqlProps>({
-                  query: EXPS_QUERY
-                });
-
-                if (!data) {
-                  return;
-                }
-
-                const { exps } = data;
-
-                if (!exps) {
-                  return;
-                }
-
-                await client.writeQuery({
-                  query: EXPS_QUERY,
-                  data: { exps: [...exps, exp] }
-                });
-              }
+              update: createExpUpdate
             });
 
             if (result) {
@@ -348,6 +328,40 @@ export default NewExperience;
 ////////////////////////// HELPERS ////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
+
+const createExpUpdateDefault: CreateExpUpdateFn = async (
+  client,
+  { data: newExperience }
+) => {
+  if (!newExperience) {
+    return;
+  }
+
+  const { exp } = newExperience;
+
+  if (!exp) {
+    return;
+  }
+
+  const data = client.readQuery<GetExpGqlProps>({
+    query: EXPS_QUERY
+  });
+
+  if (!data) {
+    return;
+  }
+
+  const { exps } = data;
+
+  if (!exps) {
+    return;
+  }
+
+  await client.writeQuery({
+    query: EXPS_QUERY,
+    data: { exps: [...exps, exp] }
+  });
+};
 
 function FieldName({
   field,
@@ -475,20 +489,21 @@ function FieldBtnCtrls({
 
   const showUp = index > 0;
   const showDown = len - index !== 1;
+  const index1 = index + 1;
 
   return (
-    <div data-testid={`field-controls-${index}`} className="field-controls">
+    <div data-testid={`field-controls-${index1}`} className="field-controls">
       <Button.Group className="control-buttons" basic={true} compact={true}>
         {withData && (
           <Button
-            data-testid={`add-field-btn-${index}`}
+            data-testid={`add-field-btn-${index1}`}
             type="button"
             onClick={function onFieldAddClicked() {
               dispatch({
                 type: Action_Types.SET_FORM_ERROR,
                 payload: undefined
               });
-              arrayHelpers.insert(index + 1, { ...EMPTY_FIELD });
+              arrayHelpers.insert(index1, { ...EMPTY_FIELD });
             }}
           >
             <Icon name="plus" />
@@ -497,7 +512,7 @@ function FieldBtnCtrls({
 
         {len > 1 && (
           <Button
-            data-testid={`remove-field-btn-${index}`}
+            data-testid={`remove-field-btn-${index1}`}
             type="button"
             onClick={function onFieldDeleteClicked() {
               dispatch({
@@ -518,7 +533,7 @@ function FieldBtnCtrls({
 
         {showUp && (
           <Button
-            data-testid={`go-up-field-btn-${index}`}
+            data-testid={`go-up-field-btn-${index1}`}
             type="button"
             onClick={function onFieldUpClicked() {
               const indexUp = index;
@@ -542,19 +557,14 @@ function FieldBtnCtrls({
 
         {showDown && (
           <Button
-            data-testid={`go-down-field-btn-${index}`}
+            data-testid={`go-down-field-btn-${index1}`}
             type="button"
             onClick={function onFieldDownClicked() {
-              arrayHelpers.swap(index, index + 1);
+              arrayHelpers.swap(index, index1);
 
               dispatch({
                 type: Action_Types.SELECT_VALUES,
-                payload: swapSelectField(
-                  fieldDefs,
-                  index,
-                  index + 1,
-                  selectValues
-                )
+                payload: swapSelectField(fieldDefs, index, index1, selectValues)
               });
             }}
           >

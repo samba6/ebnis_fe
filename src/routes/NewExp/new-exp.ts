@@ -1,15 +1,21 @@
 import { RouteComponentProps } from "react-router-dom";
 import * as Yup from "yup";
 import { DropdownItemProps } from "semantic-ui-react";
+import { MutationUpdaterFn } from "react-apollo";
 
 import { CreateExpMutationProps } from "../../graphql/create-exp.mutation";
 import {
   CreateExp as FormValues,
   CreateFieldDef,
-  FieldType
+  FieldType,
+  CreateExpMutation
 } from "../../graphql/apollo-gql.d";
 
-export type OwnProps = RouteComponentProps<{}>;
+export type CreateExpUpdateFn = MutationUpdaterFn<CreateExpMutation>;
+
+export interface OwnProps extends RouteComponentProps<{}> {
+  createExpUpdate?: CreateExpUpdateFn;
+}
 
 export type Props = OwnProps & CreateExpMutationProps;
 
