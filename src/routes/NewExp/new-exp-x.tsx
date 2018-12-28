@@ -46,12 +46,13 @@ enum Action_Types {
   SET_FORM_ERROR = "@new-exp/SET_FORM_ERROR",
   SET_GRAPHQL_ERROR = "@new-exp/SET_GRAPHQL_ERROR",
   SET_SHOW_DESCRIPTION_INPUT = "@new-exp/SET_SHOW_DESCRIPTION_INPUT",
-  SELECT_VALUES = "@new-exp/SELECT_VALUES"
+  SELECT_VALUES = "@new-exp/SELECT_VALUES",
+  RESET_FORM_ERRORS = "@new-exp/RESET_FORM_ERRORS"
 }
 
 interface Action {
   type: Action_Types;
-  payload:
+  payload?:
     | undefined
     | boolean
     | FormikErrors<FormValues>
@@ -69,6 +70,14 @@ interface State {
 
 export const reducer: Reducer<State, Action> = (state, action) => {
   switch (action.type) {
+    case Action_Types.RESET_FORM_ERRORS:
+      return {
+        ...state,
+        otherErrors: undefined,
+        submittedFormErrors: undefined,
+        graphQlError: undefined
+      };
+
     case Action_Types.SET_OTHER_ERRORS:
       return { ...state, otherErrors: action.payload as string };
 
@@ -96,7 +105,7 @@ interface SelectFieldTypeState {
   [k: number]: string | null;
 }
 
-export const NewExperience = (props: Props) => {
+export function NewExperience(props: Props) {
   const { createExp, history } = props;
   const [state, dispatch] = useReducer(reducer, {
     showDescriptionInput: true,
@@ -119,7 +128,7 @@ export const NewExperience = (props: Props) => {
       return null;
     }
 
-    const { submittedFormErrors, graphQlError } = state;
+    const { submittedFormErrors, graphQlError, selectValues } = state;
 
     const errorClass =
       getFieldContainerErrorClassFromForm(index, submittedFormErrors) ||
@@ -130,197 +139,39 @@ export const NewExperience = (props: Props) => {
       "";
 
     return (
-      <div key={index} className={`${errorClass} field-defs-container`}>
-        {renderFieldBtnCtrl(index, values, arrayHelpers)}
-
+      <div
+        data-testid={`field-def-container-${index}`}
+        key={index}
+        className={`${errorClass} field-def-container`}
+      >
         <FastField
           name={makeFieldName(index, "name")}
-          render={renderFieldName}
+          index={index}
+          component={FieldName}
+          dispatch={dispatch}
+          submittedFormErrors={submittedFormErrors}
+          graphQlError={graphQlError}
         />
 
         <FastField
+          index={index}
           name={makeFieldName(index, "type")}
-          render={renderFieldDataType(index)}
+          submittedFormErrors={submittedFormErrors}
+          dispatch={dispatch}
+          selectValues={selectValues}
+          component={FieldDataType}
+        />
+
+        <FieldBtnCtrls
+          index={index}
+          values={values}
+          arrayHelpers={arrayHelpers}
+          dispatch={dispatch}
+          selectValues={state.selectValues}
         />
       </div>
     );
   };
-
-  const renderFieldDataType = (index: number) => (
-    formProps: FieldProps<FormValues>
-  ) => {
-    const {
-      field: { name, value },
-      form: { setFieldValue }
-    } = formProps;
-
-    const error = getFieldError(name, "type", state.submittedFormErrors);
-
-    return (
-      <Form.Field error={!!error}>
-        <label htmlFor={name}>Field Data Type</label>
-
-        <Dropdown
-          fluid={true}
-          selection={true}
-          value={value}
-          compact={true}
-          name={name}
-          options={FIELD_TYPES}
-          onChange={function fieldTypeChanged(evt, data) {
-            const val = data.value as string;
-
-            setFieldValue(name, val);
-            dispatch({
-              type: Action_Types.SELECT_VALUES,
-              payload: {
-                ...state.selectValues,
-                [index]: val
-              }
-            });
-          }}
-          onFocus={() =>
-            dispatch({
-              type: Action_Types.SET_FORM_ERROR,
-              payload: undefined
-            })
-          }
-        />
-
-        {renderFormCtrlError(error)}
-      </Form.Field>
-    );
-  };
-
-  function renderFieldName(formProps: FieldProps<FormValues>) {
-    const {
-      field: { name, value, ...rest }
-    } = formProps;
-
-    const { submittedFormErrors, graphQlError } = state;
-
-    const error =
-      getFieldError(name, "name", submittedFormErrors) ||
-      (graphQlError && graphQlError[name]) ||
-      "";
-
-    return (
-      <Form.Field error={!!error}>
-        <label htmlFor={name}>Field Name</label>
-
-        <Input
-          {...rest}
-          value={value}
-          autoComplete="off"
-          name={name}
-          id={name}
-          onFocus={() =>
-            dispatch({
-              type: Action_Types.SET_FORM_ERROR,
-              payload: undefined
-            })
-          }
-        />
-
-        {renderFormCtrlError(error)}
-      </Form.Field>
-    );
-  }
-
-  function renderFieldBtnCtrl(
-    index: number,
-    values: FormValues,
-    arrayHelpers: ArrayHelpers
-  ) {
-    const fieldDefs = (values.fieldDefs && values.fieldDefs) || [];
-
-    const len = fieldDefs.length;
-    const showUp = index > 0;
-    const showDown = len - index !== 1;
-
-    return (
-      <div className="field-controls">
-        <Button.Group className="control-buttons" basic={true} compact={true}>
-          <Button
-            type="button"
-            onClick={function onFieldAddClicked() {
-              dispatch({
-                type: Action_Types.SET_FORM_ERROR,
-                payload: undefined
-              });
-              arrayHelpers.insert(index + 1, { ...EMPTY_FIELD });
-            }}
-          >
-            <Icon name="plus" />
-          </Button>
-
-          {len > 1 && (
-            <Button
-              type="button"
-              onClick={function onFieldDeleteClicked() {
-                dispatch({
-                  type: Action_Types.SELECT_VALUES,
-                  payload: removeSelectedField(index, fieldDefs)
-                });
-
-                arrayHelpers.remove(index);
-                dispatch({
-                  type: Action_Types.SET_FORM_ERROR,
-                  payload: undefined
-                });
-              }}
-            >
-              <Icon name="minus" />
-            </Button>
-          )}
-
-          {showUp && (
-            <Button
-              type="button"
-              onClick={function onFieldUpClicked() {
-                const indexUp = index;
-                const indexDown = index - 1;
-                arrayHelpers.swap(indexUp, indexDown);
-
-                dispatch({
-                  type: Action_Types.SELECT_VALUES,
-                  payload: swapSelectField(
-                    fieldDefs,
-                    indexUp,
-                    indexDown,
-                    state.selectValues
-                  )
-                });
-              }}
-            >
-              <Icon name="arrow up" />
-            </Button>
-          )}
-
-          {showDown && (
-            <Button
-              type="button"
-              onClick={function onFieldDownClicked() {
-                arrayHelpers.swap(index, index + 1);
-
-                dispatch({
-                  type: Action_Types.SELECT_VALUES,
-                  payload: swapSelectField(
-                    fieldDefs,
-                    index,
-                    index + 1,
-                    state.selectValues
-                  )
-                });
-              }}
-            >
-              <Icon name="arrow down" />
-            </Button>
-          )}
-        </Button.Group>
-      </div>
-    );
-  }
 
   const renderFieldDefs = (values: FormValues) => (
     arrayHelpers: ArrayHelpers
@@ -332,170 +183,123 @@ export const NewExperience = (props: Props) => {
     );
   };
 
-  function renderTitleInput(formProps: FieldProps<FormValues>) {
-    const { field } = formProps;
-    const { graphQlError } = state;
-    const error = (graphQlError && graphQlError.title) || "";
-
-    return (
-      <Form.Field error={!!error}>
-        <label htmlFor={field.name}>Title</label>
-
-        <Input {...field} autoFocus={true} autoComplete="off" id={field.name} />
-
-        {renderFormCtrlError(error)}
-      </Form.Field>
-    );
-  }
-
-  function renderDescriptionInput(formProps: FieldProps<FormValues>) {
-    const { field } = formProps;
-    const { showDescriptionInput } = state;
-
-    return (
-      <Form.Field>
-        <label
-          className="description-field-label"
-          htmlFor={field.name}
-          onClick={() =>
-            dispatch({
-              type: Action_Types.SET_SHOW_DESCRIPTION_INPUT,
-              payload: !showDescriptionInput
-            })
-          }
-        >
-          Description
-          {!showDescriptionInput && <Icon name="caret left" />}
-          {showDescriptionInput && <Icon name="caret down" />}
-        </label>
-
-        {showDescriptionInput && <TextArea {...field} id={field.name} />}
-      </Form.Field>
-    );
-  }
-
-  async function submit(formikProps: FormikProps<FormValues>) {
-    dispatch({
-      type: Action_Types.SET_FORM_ERROR,
-      payload: undefined
-    });
-
-    dispatch({
-      type: Action_Types.SET_GRAPHQL_ERROR,
-      payload: undefined
-    });
-
-    dispatch({
-      type: Action_Types.SET_GRAPHQL_ERROR,
-      payload: undefined
-    });
-
-    const { values, validateForm, setSubmitting } = formikProps;
-    setSubmitting(true);
-
-    const errors = await validateForm(values);
-
-    if (errors.title || errors.fieldDefs) {
-      dispatch({
-        type: Action_Types.SET_FORM_ERROR,
-        payload: errors
-      });
-
-      setSubmitting(false);
-      return;
-    }
-
-    if (!createExp) {
-      return;
-    }
-
-    try {
-      const result = await createExp({
-        variables: {
-          exp: values
-        },
-
-        async update(client, { data: newExperience }) {
-          if (!newExperience) {
-            return;
-          }
-
-          const { exp } = newExperience;
-
-          if (!exp) {
-            return;
-          }
-
-          const data = client.readQuery<GetExpGqlProps>({
-            query: EXPS_QUERY
-          });
-
-          if (!data) {
-            return;
-          }
-
-          const { exps } = data;
-
-          if (!exps) {
-            return;
-          }
-
-          await client.writeQuery({
-            query: EXPS_QUERY,
-            data: { exps: [...exps, exp] }
-          });
-        }
-      });
-
-      if (result) {
-        const { data } = result;
-
-        if (data) {
-          const { exp } = data;
-
-          if (exp) {
-            history.replace(makeExpRoute(exp.id));
-          }
-        }
-      }
-    } catch (error) {
-      dispatch({
-        type: Action_Types.SET_GRAPHQL_ERROR,
-        payload: parseGraphQlError(error)
-      });
-
-      const { current } = routeRef;
-
-      if (current) {
-        current.scrollTop = 0;
-      }
-    }
-
-    setSubmitting(false);
-  }
-
   function renderForm(formikProps: FormikProps<FormValues>) {
     const { dirty, isSubmitting, values } = formikProps;
     const { title, fieldDefs } = values;
-    const hasTitle = !!title;
-    const hasFieldDefs = !!fieldDefs.length;
-    const formInvalid = !(hasTitle && hasFieldDefs);
+    const formInvalid = !(!!title && !!fieldDefs.length);
 
     return (
       <Form
-        onSubmit={() => {
-          submit(formikProps);
+        onSubmit={async function onSubmit() {
+          dispatch({
+            type: Action_Types.RESET_FORM_ERRORS
+          });
+
+          const { validateForm, setSubmitting } = formikProps;
+          setSubmitting(true);
+
+          const errors = await validateForm(values);
+
+          if (errors.title || errors.fieldDefs) {
+            dispatch({
+              type: Action_Types.SET_FORM_ERROR,
+              payload: errors
+            });
+
+            setSubmitting(false);
+            return;
+          }
+
+          if (!createExp) {
+            return;
+          }
+
+          try {
+            const result = await createExp({
+              variables: {
+                exp: values
+              },
+
+              async update(client, { data: newExperience }) {
+                if (!newExperience) {
+                  return;
+                }
+
+                const { exp } = newExperience;
+
+                if (!exp) {
+                  return;
+                }
+
+                const data = client.readQuery<GetExpGqlProps>({
+                  query: EXPS_QUERY
+                });
+
+                if (!data) {
+                  return;
+                }
+
+                const { exps } = data;
+
+                if (!exps) {
+                  return;
+                }
+
+                await client.writeQuery({
+                  query: EXPS_QUERY,
+                  data: { exps: [...exps, exp] }
+                });
+              }
+            });
+
+            if (result) {
+              const { data } = result;
+
+              if (data) {
+                const { exp } = data;
+
+                if (exp) {
+                  history.replace(makeExpRoute(exp.id));
+                }
+              }
+            }
+          } catch (error) {
+            dispatch({
+              type: Action_Types.SET_GRAPHQL_ERROR,
+              payload: parseGraphQlError(error)
+            });
+
+            const { current } = routeRef;
+
+            if (current) {
+              current.scrollTop = 0;
+            }
+          }
+
+          setSubmitting(false);
         }}
       >
-        {renderGraphQlError(state.graphQlError, dispatch)}
+        <GraphQlErrorComponent
+          graphQlError={state.graphQlError}
+          dispatch={dispatch}
+        />
 
-        <FastField name="title" render={renderTitleInput} />
+        <FastField
+          name="title"
+          graphQlError={state.graphQlError}
+          component={TitleInput}
+        />
 
-        <Field name="description" render={renderDescriptionInput} />
+        <Field
+          name="description"
+          dispatch={dispatch}
+          showDescriptionInput={state.showDescriptionInput}
+          component={DescriptionInput}
+        />
 
         <FieldArray name="fieldDefs" render={renderFieldDefs(values)} />
 
-        {hasFieldDefs ? <hr className="submit-btn-hr" /> : undefined}
+        <hr className="submit-btn-hr" />
 
         <Button
           className="new-exp-submit"
@@ -508,7 +312,7 @@ export const NewExperience = (props: Props) => {
           type="submit"
           fluid={true}
         >
-          <Icon name="checkmark" /> Ok
+          <Icon name="checkmark" /> Submit
         </Button>
       </Form>
     );
@@ -518,7 +322,7 @@ export const NewExperience = (props: Props) => {
     <div className="app-container">
       <SidebarHeader title="New Experience" sidebar={true} />
 
-      <div className="app-main routes-exp-def" ref={routeRef}>
+      <div className="app-main routes-new-exp" ref={routeRef}>
         <Formik<FormValues>
           initialValues={{
             title: "",
@@ -535,11 +339,282 @@ export const NewExperience = (props: Props) => {
   );
 
   return render;
-};
+}
 
 export default NewExperience;
 
-// ------------------------HELPER FUNCTIONS----------------------------
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+////////////////////////// HELPERS ////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
+function FieldName({
+  field,
+  index,
+  dispatch,
+  submittedFormErrors,
+  graphQlError
+}: FieldProps<FormValues> & {
+  index: number;
+  dispatch: Dispatch<Action>;
+  submittedFormErrors: FormikErrors<FormValues>;
+  graphQlError: GraphQlErrorState;
+}) {
+  const { name, value, ...rest } = field;
+
+  const error =
+    getFieldError(name, "name", submittedFormErrors) ||
+    (graphQlError && graphQlError[name]) ||
+    "";
+
+  return (
+    <Form.Field error={!!error}>
+      <label htmlFor={name}>{`Field ${index + 1} Name`}</label>
+
+      <Input
+        {...rest}
+        value={value}
+        autoComplete="off"
+        name={name}
+        id={name}
+        onFocus={() =>
+          dispatch({
+            type: Action_Types.SET_FORM_ERROR,
+            payload: undefined
+          })
+        }
+      />
+
+      {renderFormCtrlError(error)}
+    </Form.Field>
+  );
+}
+
+function FieldDataType({
+  field: { name, value },
+  form: { setFieldValue },
+  submittedFormErrors,
+  dispatch,
+  selectValues,
+  index
+}: FieldProps<FormValues> & {
+  submittedFormErrors: FormikErrors<FormValues>;
+  dispatch: Dispatch<Action>;
+  selectValues: SelectFieldTypeState;
+  index: number;
+}) {
+  const error = getFieldError(name, "type", submittedFormErrors);
+
+  return (
+    <Form.Field error={!!error}>
+      <label htmlFor={name}>{`Field ${index + 1} Data Type`}</label>
+
+      <Dropdown
+        fluid={true}
+        selection={true}
+        value={value}
+        compact={true}
+        name={name}
+        options={FIELD_TYPES}
+        onChange={function fieldTypeChanged(evt, data) {
+          const val = data.value as string;
+
+          setFieldValue(name, val);
+          dispatch({
+            type: Action_Types.SELECT_VALUES,
+            payload: {
+              selectValues,
+              [index]: val
+            }
+          });
+        }}
+        onFocus={() =>
+          dispatch({
+            type: Action_Types.SET_FORM_ERROR,
+            payload: undefined
+          })
+        }
+      />
+
+      {renderFormCtrlError(error)}
+    </Form.Field>
+  );
+}
+
+/**
+ * SUMMARY OF RULES FOR FIELD CTRL BUTTONS
+ * 1. If only one field and the field is empty, not buttons
+ * 2. If only one field and the field is filled, add button only
+ * 3. Any field that is not completely filled does not get the add button
+ *    *completely* means filling field name and selecting a data type
+ * 4. The first field never gets an up button
+ * 5. The last field never gets a down button
+ */
+function FieldBtnCtrls({
+  index,
+  values,
+  arrayHelpers,
+  dispatch,
+  selectValues
+}: {
+  index: number;
+  values: FormValues;
+  arrayHelpers: ArrayHelpers;
+  dispatch: Dispatch<Action>;
+  selectValues: SelectFieldTypeState;
+}) {
+  const fieldDefs = (values.fieldDefs && values.fieldDefs) || [];
+  const field = fieldDefs[index];
+  const len = fieldDefs.length;
+  const withData = field && field.name && field.type;
+
+  if (len === 1 && !withData) {
+    return null;
+  }
+
+  const showUp = index > 0;
+  const showDown = len - index !== 1;
+
+  return (
+    <div data-testid={`field-controls-${index}`} className="field-controls">
+      <Button.Group className="control-buttons" basic={true} compact={true}>
+        {withData && (
+          <Button
+            data-testid={`add-field-btn-${index}`}
+            type="button"
+            onClick={function onFieldAddClicked() {
+              dispatch({
+                type: Action_Types.SET_FORM_ERROR,
+                payload: undefined
+              });
+              arrayHelpers.insert(index + 1, { ...EMPTY_FIELD });
+            }}
+          >
+            <Icon name="plus" />
+          </Button>
+        )}
+
+        {len > 1 && (
+          <Button
+            data-testid={`remove-field-btn-${index}`}
+            type="button"
+            onClick={function onFieldDeleteClicked() {
+              dispatch({
+                type: Action_Types.SELECT_VALUES,
+                payload: removeSelectedField(index, fieldDefs)
+              });
+
+              arrayHelpers.remove(index);
+              dispatch({
+                type: Action_Types.SET_FORM_ERROR,
+                payload: undefined
+              });
+            }}
+          >
+            <Icon name="minus" />
+          </Button>
+        )}
+
+        {showUp && (
+          <Button
+            data-testid={`go-up-field-btn-${index}`}
+            type="button"
+            onClick={function onFieldUpClicked() {
+              const indexUp = index;
+              const indexDown = index - 1;
+              arrayHelpers.swap(indexUp, indexDown);
+
+              dispatch({
+                type: Action_Types.SELECT_VALUES,
+                payload: swapSelectField(
+                  fieldDefs,
+                  indexUp,
+                  indexDown,
+                  selectValues
+                )
+              });
+            }}
+          >
+            <Icon name="arrow up" />
+          </Button>
+        )}
+
+        {showDown && (
+          <Button
+            data-testid={`go-down-field-btn-${index}`}
+            type="button"
+            onClick={function onFieldDownClicked() {
+              arrayHelpers.swap(index, index + 1);
+
+              dispatch({
+                type: Action_Types.SELECT_VALUES,
+                payload: swapSelectField(
+                  fieldDefs,
+                  index,
+                  index + 1,
+                  selectValues
+                )
+              });
+            }}
+          >
+            <Icon name="arrow down" />
+          </Button>
+        )}
+      </Button.Group>
+    </div>
+  );
+}
+
+function DescriptionInput({
+  field,
+  showDescriptionInput,
+  dispatch
+}: FieldProps<FormValues> & {
+  showDescriptionInput: boolean;
+  dispatch: Dispatch<Action>;
+}) {
+  return (
+    <Form.Field>
+      <label
+        data-testid="description-field-toggle"
+        className="description-field-toggle"
+        htmlFor={field.name}
+        onClick={() =>
+          dispatch({
+            type: Action_Types.SET_SHOW_DESCRIPTION_INPUT,
+            payload: !showDescriptionInput
+          })
+        }
+      >
+        Description
+        {!showDescriptionInput && <Icon name="caret left" />}
+        {showDescriptionInput && <Icon name="caret down" />}
+      </label>
+
+      {showDescriptionInput && <TextArea {...field} id={field.name} />}
+    </Form.Field>
+  );
+}
+
+function TitleInput({
+  field,
+  graphQlError
+}: FieldProps<FormValues> & {
+  graphQlError: GraphQlErrorState | undefined;
+}) {
+  const error = (graphQlError && graphQlError.title) || "";
+
+  return (
+    <Form.Field error={!!error}>
+      <label htmlFor={field.name}>Title</label>
+
+      <Input {...field} autoFocus={true} autoComplete="off" id={field.name} />
+
+      {renderFormCtrlError(error)}
+    </Form.Field>
+  );
+}
 
 interface GraphQlError {
   field_defs?: Array<{ name?: string; type?: string }>;
@@ -607,10 +682,13 @@ function parseGraphQlErrorFieldName(val?: string): [number, string] | null {
   return [Number(exec[1]), exec[2]];
 }
 
-function renderGraphQlError(
-  graphQlError: GraphQlErrorState | undefined,
-  dispatch: Dispatch<Action>
-) {
+function GraphQlErrorComponent({
+  graphQlError,
+  dispatch
+}: {
+  graphQlError: GraphQlErrorState | undefined;
+  dispatch: Dispatch<Action>;
+}) {
   if (!graphQlError) {
     return null;
   }

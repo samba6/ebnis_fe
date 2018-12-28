@@ -5,6 +5,7 @@ import { ApolloLink } from "apollo-link";
 import { ApolloProvider } from "react-apollo";
 import { Router } from "react-router-dom";
 import { createMemoryHistory, History } from "history";
+import { fireEvent } from "react-testing-library";
 
 export function makeClient() {
   return new ApolloClient({
@@ -91,4 +92,10 @@ export function testWithApollo<TProps>(
       </ApolloProvider>
     )
   };
+}
+
+export function fillField(element: Element, value: string) {
+  fireEvent.change(element, {
+    target: { value }
+  });
 }

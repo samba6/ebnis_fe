@@ -1,7 +1,7 @@
 @import "../../styles/variables";
 @import "../../styles/extensions";
 
-.routes-exp-def {
+.routes-new-exp {
   padding: 10px 5px 20px 5px;
   overflow-x: hidden;
   overflow-y: auto;
@@ -14,7 +14,7 @@
     margin-top: 20px;
   }
 
-  .field-defs-container {
+  .field-def-container {
     border: 1px solid $app-color;
     margin-bottom: 20px;
     padding: 5px;
@@ -63,7 +63,7 @@
     }
   }
 
-  .description-field-label {
+  .description-field-toggle {
     opacity: 0.6;
     cursor: pointer;
   }
