@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useRef } from "react";
 import { Form, Dropdown } from "semantic-ui-react";
 
 import DateField from "../DateField";
@@ -34,15 +34,17 @@ export function DateTimeField(props: DateTimeProps) {
     setValue(compName, date);
   }
 
-  const fieldNames = useMemo(function getFieldNames() {
-    return LABELS.reduce(
-      function reduceLabels(acc, l) {
-        acc[l] = getFieldName(compName, l);
-        return acc;
-      },
-      { date: "", hr: "", min: "" }
-    );
-  }, []);
+  const fieldNames = useRef(
+    (function getFieldNames() {
+      return LABELS.reduce(
+        function reduceLabels(acc, l) {
+          acc[l] = getFieldName(compName, l);
+          return acc;
+        },
+        { date: "", hr: "", min: "" }
+      );
+    })()
+  ).current;
 
   return (
     <Form.Field
@@ -61,9 +63,9 @@ export function DateTimeField(props: DateTimeProps) {
             Hour
           </label>
           <Dropdown
-            fluid
-            selection
-            compact
+            fluid={true}
+            selection={true}
+            compact={true}
             data-testid={fieldNames.hr}
             name={fieldNames.hr}
             options={HOUR_OPTIONS}
@@ -79,9 +81,9 @@ export function DateTimeField(props: DateTimeProps) {
             Minute
           </label>
           <Dropdown
-            fluid
-            selection
-            compact
+            fluid={true}
+            selection={true}
+            compact={true}
             data-testid={fieldNames.min}
             name={fieldNames.min}
             options={MINUTE_OPTIONS}

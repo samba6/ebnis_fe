@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef } from "react";
 import { Form, Dropdown } from "semantic-ui-react";
 
 import { FieldComponentProps } from "../../routes/Exp/exp";
@@ -17,12 +17,19 @@ interface DateFieldProps extends FieldComponentProps {
 
 export function DateField(props: DateFieldProps) {
   const { className, setValue, value, name: compName } = props;
-  const { years, currYr, currMonth, currDay } = useMemo(function() {
-    return getToday(value);
-  }, []);
+
+  const { years, currYr, currMonth, currDay } = useMemo(
+    function() {
+      return getToday(value);
+    },
+    [value]
+  );
+
   const [selectedYear, setSelectedYear] = useState(currYr);
   const [selectedMonth, setSelectedMonth] = useState(currMonth);
   const [selectedDay, setSelectedDay] = useState(currDay);
+
+  const fieldNames = useRef(makeFieldNames(compName)).current;
 
   const dayOptions = useMemo(
     function computeDays() {
@@ -36,10 +43,6 @@ export function DateField(props: DateFieldProps) {
     setValue(compName, updatedDate);
   }
 
-  const fieldNames = useMemo(function makeFieldNames1() {
-    return makeFieldNames(compName);
-  }, []);
-
   return (
     <Form.Field
       className={`${className || ""} date-field`}
@@ -50,8 +53,8 @@ export function DateField(props: DateFieldProps) {
           {LABELS.day}
         </label>
         <Dropdown
-          fluid
-          selection
+          fluid={true}
+          selection={true}
           data-testid={fieldNames.day}
           name={fieldNames.day}
           compact={true}
@@ -71,8 +74,8 @@ export function DateField(props: DateFieldProps) {
           {LABELS.month}
         </label>
         <Dropdown
-          fluid
-          selection
+          fluid={true}
+          selection={true}
           data-testid={fieldNames.month}
           name={fieldNames.month}
           compact={true}
@@ -91,9 +94,9 @@ export function DateField(props: DateFieldProps) {
           {LABELS.year}
         </label>
         <Dropdown
-          fluid
-          selection
-          compact
+          fluid={true}
+          selection={true}
+          compact={true}
           data-testid={fieldNames.year}
           name={fieldNames.year}
           options={years}

@@ -62,7 +62,7 @@ export const Exp = (props: Props) => {
 
       return setTitle;
     },
-    [exp]
+    [title]
   );
 
   function goToNewEntry() {

@@ -3,7 +3,6 @@ import React, {
   Fragment,
   Dispatch,
   useRef,
-  Reducer,
   useReducer
 } from "react";
 import {
@@ -32,83 +31,25 @@ import {
   Props,
   ValidationSchema,
   FIELD_TYPES,
-  CreateExpUpdateFn
+  CreateExpUpdateFn,
+  EMPTY_FIELD,
+  reducer,
+  State,
+  Action_Types,
+  Action,
+  SelectFieldTypeState,
+  GraphQlErrorState,
+  GraphQlError
 } from "./new-exp";
 import SidebarHeader from "../../components/SidebarHeader";
 import { setTitle } from "../../Routing";
 import {
   CreateExp as FormValues,
   CreateFieldDef,
-  FieldType
+  CreateExpMutation_exp
 } from "../../graphql/apollo-gql.d";
 import { makeExpRoute } from "../../Routing";
 import EXPS_QUERY, { GetExpGqlProps } from "../../graphql/exps.query";
-
-const EMPTY_FIELD = { name: "", type: "" as FieldType };
-
-enum Action_Types {
-  SET_OTHER_ERRORS = "@new-exp/SET_OTHER_ERRORS",
-  SET_FORM_ERROR = "@new-exp/SET_FORM_ERROR",
-  SET_GRAPHQL_ERROR = "@new-exp/SET_GRAPHQL_ERROR",
-  SET_SHOW_DESCRIPTION_INPUT = "@new-exp/SET_SHOW_DESCRIPTION_INPUT",
-  SELECT_VALUES = "@new-exp/SELECT_VALUES",
-  RESET_FORM_ERRORS = "@new-exp/RESET_FORM_ERRORS"
-}
-
-interface Action {
-  type: Action_Types;
-  payload?:
-    | undefined
-    | boolean
-    | FormikErrors<FormValues>
-    | GraphQlErrorState
-    | SelectFieldTypeState;
-}
-
-interface State {
-  readonly otherErrors?: string;
-  readonly submittedFormErrors?: FormikErrors<FormValues>;
-  readonly graphQlError?: GraphQlErrorState;
-  readonly showDescriptionInput: boolean;
-  readonly selectValues: SelectFieldTypeState;
-}
-
-export const reducer: Reducer<State, Action> = (state, action) => {
-  switch (action.type) {
-    case Action_Types.RESET_FORM_ERRORS:
-      return {
-        ...state,
-        otherErrors: undefined,
-        submittedFormErrors: undefined,
-        graphQlError: undefined
-      };
-
-    case Action_Types.SET_OTHER_ERRORS:
-      return { ...state, otherErrors: action.payload as string };
-
-    case Action_Types.SET_FORM_ERROR:
-      return {
-        ...state,
-        submittedFormErrors: action.payload as FormikErrors<FormValues>
-      };
-
-    case Action_Types.SET_GRAPHQL_ERROR:
-      return { ...state, graphQlError: action.payload as GraphQlErrorState };
-
-    case Action_Types.SET_SHOW_DESCRIPTION_INPUT:
-      return { ...state, showDescriptionInput: action.payload as boolean };
-
-    case Action_Types.SELECT_VALUES:
-      return { ...state, selectValues: action.payload as SelectFieldTypeState };
-
-    default:
-      return state;
-  }
-};
-
-interface SelectFieldTypeState {
-  [k: number]: string | null;
-}
 
 export function NewExperience(props: Props) {
   const {
@@ -135,6 +76,7 @@ export function NewExperience(props: Props) {
     field: CreateFieldDef | null,
     index: number
   ) => {
+    // istanbul ignore next: satisfying typescript
     if (!field) {
       return null;
     }
@@ -223,6 +165,7 @@ export function NewExperience(props: Props) {
             return;
           }
 
+          // istanbul ignore next: satisfying typescript
           if (!createExp) {
             return;
           }
@@ -236,27 +179,20 @@ export function NewExperience(props: Props) {
               update: createExpUpdate
             });
 
-            if (result) {
-              const { data } = result;
+            const exp = (result &&
+              result.data &&
+              result.data.exp) as CreateExpMutation_exp;
 
-              if (data) {
-                const { exp } = data;
-
-                if (exp) {
-                  history.replace(makeExpRoute(exp.id));
-                }
-              }
-            }
+            history.replace(makeExpRoute(exp.id));
           } catch (error) {
             dispatch({
               type: Action_Types.SET_GRAPHQL_ERROR,
               payload: parseGraphQlError(error)
             });
 
-            const { current } = routeRef;
-
-            if (current) {
-              current.scrollTop = 0;
+            // istanbul ignore next: satisfying typescript
+            if (routeRef.current) {
+              routeRef.current.scrollTop = 0;
             }
           }
 
@@ -327,12 +263,7 @@ export function NewExperience(props: Props) {
 
 export default NewExperience;
 
-///////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////
-////////////////////////// HELPERS ////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////
-
+// istanbul ignore next: trust apollo to act in good faith
 const createExpUpdateDefault: CreateExpUpdateFn = async (
   client,
   { data: newExperience }
@@ -630,17 +561,6 @@ function TitleInput({
   );
 }
 
-interface GraphQlError {
-  field_defs?: Array<{ name?: string; type?: string }>;
-  title?: string;
-}
-
-type GraphQlErrorState = { [k: string]: string } & {
-  fieldDefs?: {
-    [k: number]: string;
-  };
-};
-
 function parseGraphQlError(error: ApolloError) {
   const transformedError = {} as GraphQlErrorState;
 
@@ -665,7 +585,7 @@ function parseGraphQlError(error: ApolloError) {
         // we also store the field index and corresponding error so we can easily
         // access error with field index (no transformation required)
         const fieldDefs = transformedError.fieldDefs || {};
-        fieldDefs[index] = "name" + " " + nameError;
+        fieldDefs[index] = `name ${nameError}`;
         transformedError.fieldDefs = fieldDefs;
       }
     }

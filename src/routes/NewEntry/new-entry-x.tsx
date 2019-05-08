@@ -11,7 +11,8 @@ import {
   GetAnExp_exp_fieldDefs,
   FieldType,
   GetExpAllEntries,
-  GetExpAllEntriesVariables
+  GetExpAllEntriesVariables,
+  GetAnExp_exp
 } from "../../graphql/apollo-gql.d";
 import DateField from "../../components/DateField";
 import DateTimeField from "../../components/DateTimeField";
@@ -122,13 +123,9 @@ export const NewEntry = (props: Props) => {
   const { loading, exp, history, createEntry } = props;
   const [formValues, setFormValues] = useState<FormObj>({} as FormObj);
 
-  function pageTitle() {
-    return "New " + ((exp && exp.title) || "entry");
-  }
-
   useEffect(
     function setRouteTitle() {
-      setTitle(pageTitle());
+      setTitle(pageTitle(exp));
 
       return setTitle;
     },
@@ -230,7 +227,7 @@ export const NewEntry = (props: Props) => {
 
     await createEntry({
       variables,
-      update: async function(client, { data: newEntry }) {
+      async update(client, { data: newEntry }) {
         if (!newEntry) {
           return;
         }
@@ -329,7 +326,7 @@ export const NewEntry = (props: Props) => {
 
   return (
     <div className="app-container">
-      <SidebarHeader title={pageTitle()} sidebar={true} />
+      <SidebarHeader title={pageTitle(exp)} sidebar={true} />
 
       <div className="app-main routes-new-entry"> {renderMainOr()}</div>
     </div>
@@ -337,3 +334,7 @@ export const NewEntry = (props: Props) => {
 };
 
 export default NewEntry;
+
+function pageTitle(exp: GetAnExp_exp | null | undefined) {
+  return "New " + ((exp && exp.title) || "entry");
+}

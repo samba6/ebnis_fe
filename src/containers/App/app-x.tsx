@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useState, useEffect } from "react";
+import React, { lazy, Suspense, useState, useEffect, useRef } from "react";
 import { BrowserRouter, Switch, Route } from "react-router-dom";
 
 import "./app.scss";
@@ -35,12 +35,12 @@ function Root() {
 
 export function App(props: { persistCache: () => void }) {
   const [cacheLoaded, setCacheLoaded] = useState(false);
-  const { persistCache } = props;
+  const persistCacheRef = useRef(props.persistCache);
 
   useEffect(() => {
     (async function() {
       try {
-        await persistCache();
+        await persistCacheRef.current();
         setCacheLoaded(true);
       } catch (error) {
         logger("error", "Error restoring Apollo cache", error);
