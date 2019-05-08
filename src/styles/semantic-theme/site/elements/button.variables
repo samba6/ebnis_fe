@@ -1,0 +1,16 @@
+@basicBorderSize: 2px;
+@downBackgroundColor: @appColor;
+@hoverBackgroundColor: @appColor;
+@activeColor: #fff;
+@downColor: #fff;
+@textColor: @appColor;
+@basicBoxShadow: 0px 0px 0px @basicBorderSize @appColor inset;
+@basicDownBackground: @appColor;
+@basicDownTextColor: #fff;
+@basicDownBoxShadow:
+  0px 0px 0px @basicBorderSize @appColor inset,
+  0px 1px 4px 0px @borderColor inset;
+@basicHoverBackground: @appColor;
+@basicHoverBoxShadow:
+  0px 0px 0px @basicBorderSize @appColor inset,
+  0px 0px 0px 0px @appColor inset;

@@ -1,0 +1,10 @@
+@borderRadius: 3px;
+
+@verticalPadding: unit( 12 / @emSize, rem);
+@horizontalPadding: unit( 7 / @emSize, rem);
+
+/* Header */
+@headerFontSize: @emSize;
+
+/* Icon Message */
+@iconSize: inherit;

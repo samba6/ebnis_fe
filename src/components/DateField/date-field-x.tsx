@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useRef } from "react";
 import { Form, Dropdown } from "semantic-ui-react";
 
-import { FieldComponentProps } from "../../routes/Exp/exp";
+import { FieldComponentProps } from "../Exp/exp";
 import {
   MONTHS,
   getToday,

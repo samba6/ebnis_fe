@@ -1,4 +1,3 @@
-import { withClientState } from "apollo-link-state";
 import { InMemoryCache } from "apollo-cache-inmemory";
 
 import { UserFragment } from "../graphql/apollo-gql.d";
@@ -67,9 +66,18 @@ const userMutation: ClientStateFn<UserMutationVar> = async (
   return loggedOutUser;
 };
 
-export default (cache: InMemoryCache) => {
-  return withClientState({
-    cache,
+export interface LocalState {
+  staleToken: string | null;
+  user: null;
+  loggedOutUser: null;
+  connected: {
+    __typename: string;
+    isConnected: boolean;
+  };
+}
+
+export function initState() {
+  return {
     resolvers: {
       Mutation: {
         connected: updateConn,
@@ -77,10 +85,13 @@ export default (cache: InMemoryCache) => {
       }
     },
     defaults: {
-      connected: false,
+      connected: {
+        __typename: "ConnectionStatus",
+        isConnected: true
+      },
       staleToken: getToken(),
       user: null,
       loggedOutUser: null
     }
-  });
-};
+  };
+}

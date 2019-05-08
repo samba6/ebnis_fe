@@ -2,12 +2,10 @@ const URL_ROOT = "/";
 const URL_SOCKET = "/socket";
 
 export const getBackendUrls = () => {
-  const apiUrl = process.env.REACT_APP_API_URL;
+  const apiUrl = process.env.API_URL;
 
   if (!apiUrl) {
-    throw new Error(
-      'You must set the "REACT_APP_API_URL" environment variable'
-    );
+    throw new Error('You must set the "API_URL" environment variable');
   }
 
   let websocketUrl;

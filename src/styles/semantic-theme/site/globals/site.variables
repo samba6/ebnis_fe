@@ -1,0 +1,35 @@
+/*******************************
+     User Global Variables
+*******************************/
+/*-------------------
+        Paths
+--------------------*/
+
+@imagePath : '~semantic-ui-less/themes/default/assets/images';
+@fontPath  : '~semantic-ui-less/themes/default/assets/fonts';
+
+/*-------------------
+        Sizes
+--------------------*/
+
+/*
+  Sizes are all expressed in terms of 14px/em (default em)
+  This ensures these "ratios" remain constant despite changes in EM
+*/
+
+
+@miniSize        : (11 / 14);
+@tinySize        : (12 / 14);
+@smallSize       : (13 / 14);
+@mediumSize      : (14 / 14);
+@largeSize       : (16 / 14);
+
+@appColor: #ff5b00;
+@hoveredTextColor: #fff;
+@primaryColor        : @appColor;
+@primaryColorFocus        : saturate(lighten(@primaryColor, 6), 20, relative);
+@primaryColorDown        : @primaryColorFocus;
+@primaryColorHover: @primaryColorFocus;
+@negativeTextColor: saturate(darken(@appColor, 6), 20, relative);
+@negativeHeaderColor: saturate(darken(@appColor, 10), 20, relative);
+//@negativeBorderColor: saturate(darken(@appColor, 5), 20, relative);

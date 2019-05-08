@@ -3,23 +3,18 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "start": "env-cmd -e dev yarn react-scripts start",
-    "build-prod": "env-cmd -e REACT_APP_API_prod  react-scripts build",
+    "start": "yarn remove-folders && env-cmd -e dev gatsby develop --port 3987",
+    "build-prod": "env-cmd -e prod  react-scripts build",
     "build-local-staging": "env-cmd -e local-staging react-scripts build",
     "test": "env-cmd -e test yarn jest --watch",
     "test:coverage": "env-cmd -e test yarn jest --coverage",
-    "eject": "react-scripts eject"
+    "remove-folders": "rimraf public && rimraf .cache"
   },
   "dependencies": {
     "@absinthe/socket": "0.2.1",
     "@absinthe/socket-apollo-link": "0.2.1",
     "apollo-boost": "0.3.1",
-    "apollo-cache-inmemory": "1.5.1",
     "apollo-cache-persist": "0.1.1",
-    "apollo-client": "2.5.1",
-    "apollo-link-error": "1.1.10",
-    "apollo-link-http": "1.5.14",
-    "apollo-link-state": "0.4.2",
     "classnames": "2.2.6",
     "date-fns": "1.29.0",
     "formik": "1.5.4",
@@ -34,8 +29,6 @@
     "react-dom": "16.9.0-alpha.0",
     "react-helmet-async": "1.0.2",
     "react-router-dom": "4.3.1",
-    "react-scripts": "3.0.0",
-    "semantic-ui-css-offline": "1.0.3-2.4.1",
     "semantic-ui-less": "2.4.1",
     "semantic-ui-react": "0.86.0",
     "yup": "0.27.0"
@@ -56,7 +49,9 @@
     "@typescript-eslint/eslint-plugin": "1.7.0",
     "@typescript-eslint/parser": "1.7.0",
     "apollo": "2.10.2",
+    "babel-jest": "24.8.0",
     "babel-preset-gatsby": "0.1.11",
+    "babel-preset-react-app": "9.0.0",
     "cross-env": "5.2.0",
     "cypress": "3.2.0",
     "cypress-file-upload": "3.1.1",
@@ -73,9 +68,12 @@
     "gatsby-plugin-offline": "2.1.0",
     "gatsby-plugin-react-helmet": "3.0.12",
     "gatsby-plugin-sass": "2.0.11",
+    "gatsby-plugin-sharp": "2.0.36",
     "gatsby-plugin-typescript": "2.0.13",
     "gatsby-source-filesystem": "2.0.33",
+    "gatsby-transformer-sharp": "2.1.19",
     "identity-obj-proxy": "3.0.0",
+    "jest": "24.8.0",
     "jest-dom": "3.1.3",
     "jest-environment-jsdom-fourteen": "0.1.0",
     "jest-resolve": "24.8.0",
@@ -83,6 +81,7 @@
     "less": "3.9.0",
     "node-sass": "4.11.0",
     "prettier": "1.17.0",
+    "react-app-polyfill": "1.0.1",
     "react-testing-library": "6.1.2",
     "rimraf": "2.6.3",
     "serve": "11.0.0",
@@ -94,22 +93,6 @@
   },
   "eslintConfig": {
     "extends": "react-app"
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
-  },
-  "resolutions": {
-    "babel-jest": "24.7.1",
-    "webpack": "4.29.6"
   },
   "babel": {
     "presets": [

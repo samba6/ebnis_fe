@@ -211,6 +211,7 @@ export default getSocket;
 
 interface DefineParams {
   onConnChange?: (connStatus: boolean) => void;
+  uri?: string;
 }
 
 type OnChannelMessage<T> = (msg: T) => void;
