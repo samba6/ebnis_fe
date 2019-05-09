@@ -4,9 +4,9 @@ import "react-testing-library/cleanup-after-each";
 import { render, fireEvent } from "react-testing-library";
 import { Formik, Field, FieldProps } from "formik";
 
-import PwdInput from ".";
-import { makeId } from "./pwd-input-x";
-import { reducer } from "./pwd-input";
+import PwdInput from "../components/PwdInput";
+import { makeId } from "../components/PwdInput/pwd-input-x";
+import { reducer } from "../components/PwdInput/pwd-input";
 
 it("renders correctly", () => {
   const name = "pwd";

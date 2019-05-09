@@ -4,16 +4,16 @@ import "react-testing-library/cleanup-after-each";
 import { render } from "react-testing-library";
 import { Switch, Route } from "react-router-dom";
 
-import { renderWithRouter } from "../../test_utils";
-import AuthRequired from "./auth-required-x";
-import { UserLocalGqlData } from "../../state/auth.local.query";
+import { renderWithRouter } from "./test_utils";
+import AuthRequired from "../components/AuthRequired/auth-required-x";
+import { UserLocalGqlData } from "../state/auth.local.query";
 
 function App(props: UserLocalGqlData = {}) {
   return (
     <Switch>
       <AuthRequired
         {...props}
-        exact
+        exact={true}
         path="/my-path"
         component={() => <div>Home</div>}
       />

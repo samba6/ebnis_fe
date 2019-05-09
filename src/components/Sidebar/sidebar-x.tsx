@@ -2,7 +2,7 @@ import React from "react";
 import { RouteComponentProps } from "react-router-dom";
 
 import "./sidebar.scss";
-import { NEW_EXP_URL, ROOT_URL } from "../../Routing";
+import { NEW_EXP_URL, ROOT_URL } from "../../routes";
 
 interface Props extends RouteComponentProps {
   show: boolean;

@@ -6,7 +6,7 @@ import dateFnFormat from "date-fns/format";
 import "./exp.scss";
 import { Props } from "./exp";
 import SidebarHeader from "../SidebarHeader";
-import { setTitle, makeNewEntryRoute } from "../../Routing";
+import { setTitle, makeNewEntryRoute } from "../../routes";
 import Loading from "../Loading";
 import {
   GetExpAllEntries_expEntries,

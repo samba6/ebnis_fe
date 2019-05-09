@@ -1,16 +1,18 @@
 module.exports = {
-  collectCoverageFrom: [
-    "src/**/*.{js,jsx,ts,tsx}",
-    "!src/**/*.d.ts",
-    "!src/**/Home/index.ts",
-    "!src/**/NewExp/index.ts"
+  coveragePathIgnorePatterns: [
+    "<rootDir>/node_modules/",
+    "<rootDir>/src/__tests__/test_utils",
+    "<rootDir>/src/logger.ts",
+    "<rootDir>/src/.+?\\.d\\.ts$",
+    "<rootDir>/src/.+?\\.scss$",
+    "<rootDir>/src/components/.+?/index\\.ts$",
+    "<rootDir>/src/state/",
+    "<rootDir>/src/pages/",
+    "<rootDir>/src/.*?refresh-to-app"
   ],
   setupFiles: ["react-app-polyfill/jsdom"],
   setupFilesAfterEnv: ["<rootDir>/config/jest/setupTests.js"],
-  testMatch: [
-    "<rootDir>/src/**/__tests__/**/*.{js,jsx,ts,tsx}",
-    "<rootDir>/src/**/*.{spec,test}.{js,jsx,ts,tsx}"
-  ],
+  testRegex: "src/__tests__/.+?\\.test\\.tsx?$",
   testEnvironment: "jest-environment-jsdom-fourteen",
   transform: {
     "^.+\\.tsx?$": "<rootDir>/node_modules/babel-jest",
@@ -23,26 +25,23 @@ module.exports = {
     "[/\\\\]node_modules[/\\\\].+\\.(js|jsx|ts|tsx)$",
     "^.+\\.module\\.(css|sass|scss)$"
   ],
-  modulePaths: [],
   moduleNameMapper: {
     "^react-native$": "react-native-web",
     "^.+\\.module\\.(css|sass|scss)$": "identity-obj-proxy"
   },
-  moduleFileExtensions: [
-    "web.js",
-    "js",
-    "web.ts",
-    "ts",
-    "web.tsx",
-    "tsx",
-    "json",
-    "web.jsx",
-    "jsx",
-    "node"
-  ],
+  moduleFileExtensions: ["js", "ts", "tsx", "json", "jsx", "node"],
   watchPlugins: [
     "jest-watch-typeahead/filename",
     "jest-watch-typeahead/testname"
+  ],
+  watchPathIgnorePatterns: [
+    "<rootDir>/node_modules/",
+    "<rootDir>/cypress/",
+    "<rootDir>/package.json",
+    "<rootDir>/gatsby-*",
+    "<rootDir>/src/pages/",
+    "<rootDir>/\\.cache/",
+    "<rootDir>/public/"
   ],
   globals: {
     __PATH_PREFIX__: ""

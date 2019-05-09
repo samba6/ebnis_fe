@@ -1,5 +1,5 @@
-import { ROOT_URL } from ".";
-import { SCHEMA_KEY } from "../constants";
+import { ROOT_URL } from "./routes";
+import { SCHEMA_KEY } from "./constants";
 
 /**
  * Wait for a newly created/logged in user to be written to local storage before

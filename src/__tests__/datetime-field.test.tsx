@@ -4,9 +4,9 @@ import "react-testing-library/cleanup-after-each";
 import { render, fireEvent } from "react-testing-library";
 import { getByText as domGetByText } from "dom-testing-library";
 
-import DatetimeField from "./index";
-import { getFieldName } from "./datetime-field";
-import { MONTH_LABELS } from "../DateField/date-field";
+import DatetimeField from "../components/DateTimeField/index";
+import { getFieldName } from "../components/DateTimeField/datetime-field";
+import { MONTH_LABELS } from "../components/DateField/date-field";
 
 function nextTime(curr: number, max: number) {
   let next = curr + 1;

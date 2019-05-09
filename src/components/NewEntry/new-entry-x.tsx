@@ -5,7 +5,7 @@ import dateFnFormat from "date-fns/format";
 import "./new-entry.scss";
 import { Props, FieldComponentProps, FormObj, FormObjVal } from "./new-entry";
 import SidebarHeader from "../SidebarHeader";
-import { setTitle, makeExpRoute } from "../../Routing";
+import { setTitle, makeExpRoute } from "../../routes";
 import Loading from "../Loading";
 import {
   GetAnExp_exp_fieldDefs,

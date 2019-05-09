@@ -11,9 +11,9 @@ import {
   FormValuesKey
 } from "./sign-up";
 import { Registration } from "../../graphql/apollo-gql";
-import { setTitle, LOGIN_URL } from "../../Routing";
+import { setTitle, LOGIN_URL } from "../../routes";
 import SidebarHeader from "../SidebarHeader";
-import refreshToHomeDefault from "../../Routing/refresh-to-home";
+import refreshToHomeDefault from "../../refresh-to-app";
 import {
   authFormErrorReducer,
   Action_Types,

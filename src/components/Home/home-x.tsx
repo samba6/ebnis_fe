@@ -5,7 +5,7 @@ import { History } from "history";
 import "./home.scss";
 import { Props } from "./home";
 import SidebarHeader from "../SidebarHeader";
-import { setTitle, NEW_EXP_URL, makeExpRoute } from "../../Routing";
+import { setTitle, NEW_EXP_URL, makeExpRoute } from "../../routes";
 import Loading from "../Loading";
 import { GetExps_exps } from "../../graphql/apollo-gql";
 

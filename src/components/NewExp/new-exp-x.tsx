@@ -42,13 +42,13 @@ import {
   GraphQlError
 } from "./new-exp";
 import SidebarHeader from "../SidebarHeader";
-import { setTitle } from "../../Routing";
+import { setTitle } from "../../routes";
 import {
   CreateExp as FormValues,
   CreateFieldDef,
   CreateExpMutation_exp
 } from "../../graphql/apollo-gql";
-import { makeExpRoute } from "../../Routing";
+import { makeExpRoute } from "../../routes";
 import EXPS_QUERY, { GetExpGqlProps } from "../../graphql/exps.query";
 
 export function NewExperience(props: Props) {

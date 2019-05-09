@@ -1,7 +1,7 @@
 import React from "react";
 import { RouteProps, Route, Redirect } from "react-router-dom";
 
-import { LOGIN_URL } from "../../Routing";
+import { LOGIN_URL } from "../../routes";
 import { UserLocalGqlData } from "../../state/auth.local.query";
 
 interface Props extends RouteProps, UserLocalGqlData {

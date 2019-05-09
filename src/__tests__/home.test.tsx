@@ -3,11 +3,11 @@ import "jest-dom/extend-expect";
 import "react-testing-library/cleanup-after-each";
 import { render, fireEvent } from "react-testing-library";
 
-import Home from "./home-x";
-import { Props } from "./home";
-import { testWithRouter } from "../../test_utils";
-import { ROOT_URL, NEW_EXP_URL, makeExpRoute } from "../../Routing";
-import { GetExps_exps } from "../../graphql/apollo-gql";
+import Home from "../components/Home/home-x";
+import { Props } from "../components/Home/home";
+import { testWithRouter } from "./test_utils";
+import { ROOT_URL, NEW_EXP_URL, makeExpRoute } from "../routes";
+import { GetExps_exps } from "../graphql/apollo-gql";
 
 it("renders loading state and not main", () => {
   const { Ui } = testWithRouter<Props>(Home);

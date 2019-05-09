@@ -1,7 +1,7 @@
 import React from "react";
 import "jest-dom/extend-expect";
 import { render } from "react-testing-library";
-import { Header } from "./header-x";
+import { Header } from "../components/Header/header-x";
 
 const title = "My App title";
 

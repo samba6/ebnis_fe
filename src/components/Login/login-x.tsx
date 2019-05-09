@@ -15,8 +15,8 @@ import {
 } from "./login";
 import SidebarHeader from "../SidebarHeader";
 import { LoginUser as FormValues } from "../../graphql/apollo-gql";
-import { setTitle, SIGN_UP_URL } from "../../Routing";
-import refreshToHomeDefault from "../../Routing/refresh-to-home";
+import { setTitle, SIGN_UP_URL } from "../../routes";
+import refreshToHomeDefault from "../../refresh-to-app";
 import PwdInput from "../PwdInput";
 import getConnDefault from "../../state/get-conn-status";
 

@@ -2,8 +2,8 @@ import React from "react";
 import "jest-dom/extend-expect";
 import { render, fireEvent } from "react-testing-library";
 
-import { SidebarHeader } from "./sidebar-header";
-import { renderWithRouter } from "../../test_utils";
+import { SidebarHeader } from "../components/SidebarHeader/sidebar-header";
+import { renderWithRouter } from "./test_utils";
 
 const title = "My shinning app";
 

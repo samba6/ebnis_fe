@@ -3,9 +3,9 @@ import "jest-dom/extend-expect";
 import "react-testing-library/cleanup-after-each";
 import { render, fireEvent, wait, waitForElement } from "react-testing-library";
 
-import { SignUp } from "./sign-up-x";
-import { Props } from "./sign-up";
-import { makeClient, renderWithRouter, fillField } from "../../test_utils";
+import { SignUp } from "../components/SignUp/sign-up-x";
+import { Props } from "../components/SignUp/sign-up";
+import { makeClient, renderWithRouter, fillField } from "./test_utils";
 
 it("renders correctly and submits", async () => {
   const user = {};

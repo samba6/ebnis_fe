@@ -3,14 +3,14 @@ import "jest-dom/extend-expect";
 import "react-testing-library/cleanup-after-each";
 import { render, fireEvent } from "react-testing-library";
 
-import DateField from "./index";
+import DateField from "../components/DateField/index";
 import {
   LABELS,
   makeFieldNames,
   MONTH_LABELS,
   getToday,
   getDisplayedDays
-} from "./date-field";
+} from "../components/DateField/date-field";
 
 it("renders correctly", () => {
   const compName = "date1";

@@ -9,15 +9,15 @@ import {
   SelectorMatcherOptions
 } from "dom-testing-library";
 
-import { NewExperience } from "./new-exp-x";
+import { NewExperience } from "../components/NewExp/new-exp-x";
 import {
   CreateExp as FormValues,
   CreateFieldDef,
   FieldType
-} from "../../graphql/apollo-gql.d";
-import { Props } from "./new-exp";
-import { testWithRouter, fillField } from "../../test_utils";
-import { makeExpRoute } from "../../Routing";
+} from "../graphql/apollo-gql.d";
+import { Props } from "../components/NewExp/new-exp";
+import { testWithRouter, fillField } from "./test_utils";
+import { makeExpRoute } from "../routes";
 
 it("renders main", async () => {
   const fieldDefs: CreateFieldDef[] = [
