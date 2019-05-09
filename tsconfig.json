@@ -26,14 +26,5 @@
     "isolatedModules": true
   },
   "include": ["src"],
-  "exclude": [
-    "node_modules",
-    "build",
-    "scripts",
-    "acceptance-tests",
-    "webpack",
-    "jest",
-    "src/setupTests.ts",
-    "sync-backend.js"
-  ]
+  "exclude": ["node_modules", "public", "config", ".cache"]
 }

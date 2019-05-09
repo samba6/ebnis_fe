@@ -1,5 +1,6 @@
 import React from "react";
 import { Icon } from "semantic-ui-react";
+import makeClassnames from "classnames";
 
 import "./header.scss";
 import logo from "./logo.png";
@@ -14,22 +15,22 @@ export interface Props {
 
 export const Header = (props: Props) => {
   const { title, wide, sidebar, toggleShowSidebar, show } = props;
-  let className = "components-header";
-
-  // if we are showing sidebar, we can't be wide
-  if (!sidebar) {
-    className = wide ? "wide " + className : className;
-  }
 
   return (
-    <header className={className} data-testid="app-header">
+    <header
+      className={makeClassnames({
+        "components-header": true,
+        wide: !sidebar && wide
+      })}
+      data-testid="app-header"
+    >
       <div className="logo-container">
         <img src={logo} className="logo" alt="logo" />
       </div>
 
       <div
         data-testid="app-header-title"
-        className={`title ${sidebar ? "" : "no-sidebar"}`}
+        className={makeClassnames({ title: true, "no-sidebar": !sidebar })}
       >
         <span className={sidebar ? "title_text" : ""}>{title}</span>
 
@@ -54,5 +55,3 @@ export const Header = (props: Props) => {
     </header>
   );
 };
-
-export default Header;
