@@ -1,9 +1,7 @@
 import { Socket, Channel } from "phoenix";
 import { logger } from "./logger";
 import { getToken } from "./state/tokens";
-import getBackendUrls from "./state/get-backend-urls";
-
-interface AllQueries {}
+import { getBackendUrls } from "./state/get-backend-urls";
 
 enum CHANNEL {
   "DATA_PLAIN" = "data:pxy",
@@ -239,5 +237,5 @@ type ChannelMessageSend<
 interface ConnectionPayload<TVariables = {}> {
   query: string;
   variables: TVariables;
-  onData: (data: { data: AllQueries }) => void;
+  onData: (data: { data: {} }) => void;
 }

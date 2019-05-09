@@ -3,12 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "start": "yarn remove-folders && env-cmd -e dev gatsby develop --port 3987",
+    "start": "yarn remove-folders && env-cmd -e dev gatsby develop --port 3022",
     "build-prod": "env-cmd -e prod  react-scripts build",
     "build-local-staging": "env-cmd -e local-staging react-scripts build",
     "test": "env-cmd -e test yarn jest --watch",
     "test:coverage": "env-cmd -e test yarn jest --coverage",
-    "remove-folders": "rimraf public && rimraf .cache"
+    "remove-folders": "rimraf public && rimraf .cache",
+    "gen-gatsby-types": "apollo codegen:generate --endpoint=http://localhost:3022/___graphql --tagName=graphql --target=typescript --includes=src/components/**/*.ts* --outputFlat=src/graphql/gatsby-types",
+    "gen-apollo-types": "apollo codegen:generate --endpoint=http://localhost:4022 --target typescript --output src/graphql/apollo-types"
   },
   "dependencies": {
     "@absinthe/socket": "0.2.1",
@@ -48,7 +50,7 @@
     "@types/yup": "0.26.13",
     "@typescript-eslint/eslint-plugin": "1.7.0",
     "@typescript-eslint/parser": "1.7.0",
-    "apollo": "2.10.2",
+    "apollo": "2.6.2",
     "babel-jest": "24.8.0",
     "babel-preset-gatsby": "0.1.11",
     "babel-preset-react-app": "9.0.0",
