@@ -7,23 +7,25 @@ import { WithLogo } from "./header";
 //   LogoImageQuery_file_childImageSharp_fixed
 // } from "../../graphql/gatsby/types/LogoImageQuery";
 
+const q = graphql`
+  query LogoImageQuery {
+    file(relativePath: { eq: "logo.png" }) {
+      childImageSharp {
+        fixed(width: 28, height: 28) {
+          src
+          width
+          height
+        }
+      }
+    }
+  }
+`;
+
 export function fetchLogoHOC(Component: React.FunctionComponent<WithLogo>) {
   return function renderComponent(props: {}) {
     return (
       <StaticQuery
-        query={graphql`
-          query LogoImageQuery {
-            file(relativePath: { eq: "logo.png" }) {
-              childImageSharp {
-                fixed(width: 28, height: 28) {
-                  src
-                  width
-                  height
-                }
-              }
-            }
-          }
-        `}
+        query={q}
         render={(imageData: any) => {
           const logoAttrs =
             (imageData.file &&

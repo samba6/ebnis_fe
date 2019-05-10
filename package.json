@@ -10,7 +10,7 @@
     "test:coverage": "env-cmd -e test yarn jest --coverage",
     "remove-folders": "rimraf public && rimraf .cache",
     "gen-gatsby-types": "apollo codegen:generate --endpoint=http://localhost:3022/___graphql --tagName=graphql --target=typescript --includes=src/components/**/*.ts* --outputFlat=src/graphql/gatsby-types",
-    "gen-apollo-types": "apollo codegen:generate --endpoint=http://localhost:4022 --target typescript --output src/graphql/apollo-types"
+    "gen-apollo-types": "apollo codegen:generate --endpoint=http://localhost:4022 --tagName=gql --target=typescript --outputFlat=src/graphql/apollo-types --includes=src/graphql/*.ts"
   },
   "dependencies": {
     "@absinthe/socket": "0.2.1",
@@ -100,5 +100,8 @@
     "presets": [
       "react-app"
     ]
+  },
+  "resolutions": {
+    "graphql": "14.2.1"
   }
 }
