@@ -4,19 +4,21 @@ import dateFnFormat from "date-fns/format";
 
 import "./new-entry.scss";
 import { Props, FieldComponentProps, FormObj, FormObjVal } from "./new-entry";
-import SidebarHeader from "../SidebarHeader";
+import { SidebarHeader } from "../SidebarHeader";
 import { setTitle, makeExpRoute } from "../../routes";
 import Loading from "../Loading";
-import {
-  GetAnExp_exp_fieldDefs,
-  FieldType,
-  GetExpAllEntries,
-  GetExpAllEntriesVariables,
-  GetAnExp_exp
-} from "../../graphql/apollo-gql";
+import { FieldType } from "../../graphql/apollo-types/globalTypes";
 import DateField from "../DateField";
 import DateTimeField from "../DateTimeField";
-import GET_EXP_ENTRIES_QUERY from "../../graphql/exp-entries.query";
+import { GET_EXP_ENTRIES_QUERY } from "../../graphql/exp-entries.query";
+import {
+  GetAnExp_exp_fieldDefs,
+  GetAnExp_exp
+} from "../../graphql/apollo-types/GetAnExp";
+import {
+  GetExpAllEntries,
+  GetExpAllEntriesVariables
+} from "../../graphql/apollo-types/GetExpAllEntries";
 
 const fieldTypeUtils = {
   [FieldType.SINGLE_LINE_TEXT]: {

@@ -1,10 +1,16 @@
 @import "./variables";
 
 %route-main {
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+%app-main {
   flex: 1;
-  padding: 5px;
-  overflow-x: hidden;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 %simple-error {

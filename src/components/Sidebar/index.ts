@@ -1,5 +1,4 @@
-import { withRouter } from "react-router-dom";
+import { Sidebar as Comp } from "./sidebar-x";
+import { withLocationHOC } from "../with-location";
 
-import Sidebar from "./sidebar-x";
-
-export default withRouter(Sidebar);
+export const Sidebar = withLocationHOC(Comp);

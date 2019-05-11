@@ -26,6 +26,7 @@
 
 .routes-sign-up-route {
   @extend %auth-root-styles;
+  @extend %app-main;
 
   .error-label {
     font-weight: bold;

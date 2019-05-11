@@ -1,149 +1,226 @@
-import React from "react";
+// tslint:disable:no-any
+import React, { ComponentType } from "react";
 import "jest-dom/extend-expect";
 import "react-testing-library/cleanup-after-each";
 import { render, fireEvent, wait, waitForElement } from "react-testing-library";
 
 import { SignUp } from "../components/SignUp/sign-up-x";
 import { Props } from "../components/SignUp/sign-up";
-import { makeClient, renderWithRouter, fillField } from "./test_utils";
+import { renderWithRouter, fillField } from "./test_utils";
+
+jest.mock("../state/get-conn-status");
+jest.mock("../refresh-to-app");
+jest.mock("../components/SignUp/scrollToTop");
+
+import { getConnStatus } from "../state/get-conn-status";
+import { refreshToHome } from "../refresh-to-app";
+import { scrollToTop } from "../components/SignUp/scrollToTop";
+
+const mockGetConnStatus = getConnStatus as jest.Mock;
+const mockRefreshToHome = refreshToHome as jest.Mock;
+const mockScrollToTop = scrollToTop as jest.Mock;
+
+const SignUpP = SignUp as ComponentType<Partial<Props>>;
 
 it("renders correctly and submits", async () => {
   const user = {};
-  const result = {
+
+  const { ui, mockRegUser, mockUpdateLocalUser } = makeComp();
+
+  mockRegUser.mockResolvedValue({
     data: {
       registration: user
     }
-  };
-
-  const mockRegUser = makeRegUserFunc(result);
-  const mockUpdateLocalUser = jest.fn();
-  const mockRefreshToHome = jest.fn();
-
-  const { ui } = makeComp({
-    regUser: mockRegUser,
-    updateLocalUser: mockUpdateLocalUser,
-    refreshToHome: mockRefreshToHome
   });
 
-  const { container, getByText, getByLabelText } = render(ui);
+  /**
+   * Given we are using the signup component
+   */
+  const { getByText, getByLabelText } = render(ui);
 
-  const $signUp = container.firstChild as HTMLDivElement;
-  expect($signUp).toContainElement(getByText(/Sign up for Ebnis/));
-  expect($signUp).toContainElement(
-    getByText(/Already have an account\? Login/)
-  );
-
+  /**
+   * Then the submit button should be disabled
+   */
   const $button = getByText(/Submit/);
-  expect($button.getAttribute("name")).toBe("sign-up-submit");
   expect($button).toBeDisabled();
 
+  /**
+   * And source field should be readonly
+   */
   const $source = getByLabelText("Source");
-  expect($source.getAttribute("value")).toBe("password");
   expect($source).toHaveAttribute("readonly");
   const $sourceParent = $source.closest(".form-field") as HTMLDivElement;
   expect($sourceParent.classList).toContain("disabled");
 
-  const $name = getByLabelText("Name");
-  expect($name).toBe(document.activeElement);
+  /**
+   * When we complete the form
+   */
+  fillField(getByLabelText("Name"), "Kanmii");
+  fillField(getByLabelText("Email"), "me@me.com");
+  fillField(getByLabelText("Password"), "awesome pass");
+  fillField(getByLabelText("Password Confirm"), "awesome pass");
 
-  const $email = getByLabelText("Email");
-  expect($email.getAttribute("type")).toBe("email");
-
-  const $pwd = getByLabelText("Password");
-  expect($pwd.getAttribute("type")).toBe("password");
-
-  const $pwdConfirm = getByLabelText("Password Confirm");
-  expect($pwdConfirm.getAttribute("type")).toBe("password");
-
-  fillField($name, "Kanmii");
-  fillField($email, "me@me.com");
-  fillField($pwd, "awesome pass");
-  fillField($pwdConfirm, "awesome pass");
+  /**
+   * Then the submit button should be enabled
+   */
   expect($button).not.toHaveAttribute("disabled");
+
+  /**
+   * When we submit the form
+   */
   fireEvent.click($button);
 
-  await wait(() =>
-    expect(mockUpdateLocalUser).toHaveBeenCalledWith({ variables: { user } })
+  /**
+   * Then correct data should be sent to the server
+   */
+  await wait(
+    () =>
+      expect(mockRegUser).toHaveBeenCalledWith({
+        variables: {
+          registration: {
+            name: "Kanmii",
+            email: "me@me.com",
+            password: "awesome pass",
+            passwordConfirmation: "awesome pass",
+            source: "password"
+          }
+        }
+      }),
+    { interval: 1 }
   );
 
+  /**
+   * And data received from server should be saved locally on the client
+   */
+  expect(mockUpdateLocalUser).toHaveBeenCalledWith({ variables: { user } });
+
+  /**
+   * And we should be redirected
+   */
   expect(mockRefreshToHome).toBeCalled();
 });
 
-it("renders error if regUser function is null", async () => {
-  const { ui, mockScrollToTop } = makeComp({ regUser: undefined });
-  const { getByText, getByLabelText, getByTestId } = render(ui);
-
-  fillForm(getByLabelText, getByText);
-  const $error = await waitForElement(() => getByTestId("sign-up-form-error"));
-  expect($error).toContainElement(getByText(/Unknown error/));
-  expect(mockScrollToTop).toBeCalled();
-});
-
 it("renders error if socket not connected", async () => {
-  const { ui, mockScrollToTop } = makeComp({
-    regUser: makeRegUserFunc(),
-    getConn: makeConn(false)
-  });
+  /**
+   * Given that we are not connected to the server
+   */
+  const { ui } = makeComp(false);
 
-  const { getByText, getByLabelText, getByTestId } = render(ui);
+  /**
+   * And we are using the signup component
+   */
+  const { getByText, getByLabelText, getByTestId, queryByTestId } = render(ui);
+
+  /**
+   * Then we should not see any error UI
+   */
+  expect(queryByTestId("sign-up-form-error")).not.toBeInTheDocument();
+
+  /**
+   * When we complete and submit the form
+   */
   fillForm(getByLabelText, getByText);
 
+  /**
+   * Then we should see error UI
+   */
   const $error = await waitForElement(() => getByTestId("sign-up-form-error"));
-  expect($error).toContainElement(getByText(/You are not connected/));
+  expect($error).toBeInTheDocument();
+
+  /**
+   * And page should be automatically scrolled to the top of page
+   */
   expect(mockScrollToTop).toBeCalled();
+  mockScrollToTop.mockReset();
 });
 
 it("renders error if password and password confirm are not same", async () => {
-  const { ui, mockScrollToTop } = makeComp({ regUser: makeRegUserFunc() });
-  const { getByText, getByLabelText, getByTestId } = render(ui);
+  const { ui } = makeComp();
 
+  /**
+   * Given we are using signup component
+   */
+  const { getByText, getByLabelText, getByTestId, queryByTestId } = render(ui);
+
+  /**
+   * Then we should not see any error UI
+   */
+  expect(queryByTestId("sign-up-form-error")).not.toBeInTheDocument();
+
+  /**
+   * When complete the form, but the password and password confirm fields
+   * do not match
+   */
   fillField(getByLabelText("Name"), "Kanmii");
   fillField(getByLabelText("Email"), "me@me.com");
   fillField(getByLabelText("Password"), "awesome pass");
   fillField(getByLabelText("Password Confirm"), "awesome pass1");
+
+  /**
+   * And we submit the form
+   */
   fireEvent.click(getByText(/Submit/));
 
+  /**
+   * Then we should see error UI
+   */
   const $error = await waitForElement(() => getByTestId("sign-up-form-error"));
-  expect($error).toContainElement(getByText(/Passwords do not match/i));
+  expect($error).toBeInTheDocument();
+
+  /**
+   * And the page should be automatically scrolled up
+   */
   expect(mockScrollToTop).toBeCalled();
+  mockScrollToTop.mockReset();
 });
 
 it("renders error if server returns error", async () => {
-  const mockRegUser = jest.fn(() =>
-    Promise.reject({
-      message: "email"
-    })
-  );
+  const { ui, mockRegUser } = makeComp();
 
-  const { ui, mockScrollToTop } = makeComp({
-    regUser: mockRegUser,
-    updateLocalUser: jest.fn()
+  /**
+   * Given that our server return error on form submission
+   */
+  mockRegUser.mockRejectedValue({
+    message: "email"
   });
 
-  const { getByText, getByLabelText, getByTestId } = render(ui);
+  /**
+   * And that we are using the signup component
+   */
+  const { getByText, getByLabelText, getByTestId, queryByTestId } = render(ui);
+
+  /**
+   * Then we should not see any error UI
+   */
+  expect(queryByTestId("sign-up-form-error")).not.toBeInTheDocument();
+
+  /**
+   * When we complete and submit the form
+   */
   fillForm(getByLabelText, getByText);
 
+  /**
+   * Then we should see error UI
+   */
   const $error = await waitForElement(() => getByTestId("sign-up-form-error"));
-  expect($error).toContainElement(getByText(/email/i));
+  expect($error).toBeInTheDocument();
+
+  /**
+   * And we should be automatically scrolled to top
+   */
   expect(mockScrollToTop).toBeCalled();
+
+  /**
+   * When we click on close button of error UI
+   */
+  fireEvent.click($error.querySelector(`[class="close icon"]`) as any);
+
+  /**
+   * Then the error UI should no longer ve visible
+   */
+  expect(queryByTestId("sign-up-form-error")).not.toBeInTheDocument();
 });
 
-///////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////
-////////////////////////// HELPER FUNCTIONS ///////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////
-
-// tslint:disable-next-line:no-any
-function makeRegUserFunc(data?: any) {
-  if (data) {
-    return jest.fn(() => Promise.resolve(data));
-  }
-
-  return jest.fn();
-}
-
-// tslint:disable-next-line:no-any
 function fillForm(getByLabelText: any, getByText: any) {
   fillField(getByLabelText("Name"), "Kanmii");
   fillField(getByLabelText("Email"), "me@me.com");
@@ -152,24 +229,25 @@ function fillForm(getByLabelText: any, getByText: any) {
   fireEvent.click(getByText(/Submit/));
 }
 
-function makeComp(params: Props | {} = {}) {
-  const mockScrollToTop = jest.fn();
-  // tslint:disable-next-line:no-any
-  const SignUp1 = SignUp as (props: Props | any) => JSX.Element;
-  const client = makeClient();
+function makeComp(isServerConnected: boolean = true) {
+  mockGetConnStatus.mockResolvedValue(isServerConnected);
+  const { Ui, ...rest } = renderWithRouter(SignUpP);
+
+  const mockRegUser = jest.fn();
+  const mockUpdateLocalUser = jest.fn();
+
   return {
-    ...renderWithRouter(
-      <SignUp1
-        scrollToTop={mockScrollToTop}
-        client={client}
-        getConn={makeConn(true)}
-        {...params}
+    ui: (
+      <Ui
+        regUser={mockRegUser}
+        updateLocalUser={mockUpdateLocalUser}
+        ToOtherAuthLink={jest.fn(() => (
+          <div />
+        ))}
       />
     ),
-    mockScrollToTop
+    mockRegUser,
+    mockUpdateLocalUser,
+    ...rest
   };
-}
-
-function makeConn(conn?: boolean) {
-  return jest.fn(() => Promise.resolve(conn));
 }

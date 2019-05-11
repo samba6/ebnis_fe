@@ -2,17 +2,20 @@ import { graphql, compose } from "react-apollo";
 
 import { NewEntry as Comp } from "./new-entry-x";
 import { OwnProps } from "./new-entry";
-import GET_EXP_QUERY, { GetExpGqlProps } from "../../graphql/get-exp.query";
+import { GET_EXP_QUERY, GetExpGqlProps } from "../../graphql/get-exp.query";
 import {
-  GetAnExp,
-  GetAnExpVariables,
   CreateAnEntry,
   CreateAnEntryVariables
-} from "../../graphql/apollo-gql";
-import CREATE_ENTRY_MUTATION, {
+} from "../../graphql/apollo-types/CreateAnEntry";
+import {
+  CREATE_ENTRY_MUTATION,
   CreateEntryFn,
   CreateEntryGqlProps
 } from "../../graphql/create-entry.mutation";
+import {
+  GetAnExp,
+  GetAnExpVariables
+} from "../../graphql/apollo-types/GetAnExp";
 
 const getExpGql = graphql<
   OwnProps,

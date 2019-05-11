@@ -5,7 +5,7 @@ import { SCHEMA_KEY } from "./constants";
  * Wait for a newly created/logged in user to be written to local storage before
  * redirecting user.  On slow systems, we wait for up to 10secs!!!!!!!!!
  */
-export default function refreshToHome() {
+export function refreshToHome() {
   function getUser() {
     const data = localStorage.getItem(SCHEMA_KEY);
 

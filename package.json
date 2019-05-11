@@ -50,7 +50,7 @@
     "@types/yup": "0.26.13",
     "@typescript-eslint/eslint-plugin": "1.7.0",
     "@typescript-eslint/parser": "1.7.0",
-    "apollo": "2.6.2",
+    "apollo": "2.11.0",
     "babel-jest": "24.8.0",
     "babel-preset-gatsby": "0.1.11",
     "babel-preset-react-app": "9.0.0",

@@ -1,10 +1,13 @@
 import gql from "graphql-tag";
 import { DataValue } from "react-apollo";
 
-import { GetExpAllEntries, GetExpAllEntriesVariables } from "./apollo-gql";
+import {
+  GetExpAllEntries,
+  GetExpAllEntriesVariables
+} from "./apollo-types/GetExpAllEntries";
 import { entryFrag } from "./entry.frag";
 
-export const getExpEntries = gql`
+export const GET_EXP_ENTRIES_QUERY = gql`
   query GetExpAllEntries($entry: GetExpEntries!) {
     expEntries(entry: $entry) {
       ...EntryFrag
@@ -13,8 +16,6 @@ export const getExpEntries = gql`
 
   ${entryFrag}
 `;
-
-export default getExpEntries;
 
 export type GetExpEntriesGqlProps = DataValue<
   GetExpAllEntries,

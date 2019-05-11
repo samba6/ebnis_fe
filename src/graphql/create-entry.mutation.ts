@@ -2,9 +2,12 @@ import gql from "graphql-tag";
 import { MutationFn } from "react-apollo";
 
 import { entryFrag } from "./entry.frag";
-import { CreateAnEntry, CreateAnEntryVariables } from "./apollo-gql.d";
+import {
+  CreateAnEntry,
+  CreateAnEntryVariables
+} from "./apollo-types/CreateAnEntry";
 
-export const createEntry = gql`
+export const CREATE_ENTRY_MUTATION = gql`
   mutation CreateAnEntry($entry: CreateEntry!) {
     entry(entry: $entry) {
       ...EntryFrag
@@ -13,8 +16,6 @@ export const createEntry = gql`
 
   ${entryFrag}
 `;
-
-export default createEntry;
 
 export type CreateEntryFn = MutationFn<CreateAnEntry, CreateAnEntryVariables>;
 

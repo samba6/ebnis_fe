@@ -1,5 +1,10 @@
 import React from "react";
-import { RouteComponentProps } from "react-router-dom";
+import {
+  RouteComponentProps,
+  NavigateFn,
+  WindowLocation,
+  navigate
+} from "@reach/router";
 
 import "./sidebar.scss";
 import { NEW_EXP_URL, ROOT_URL } from "../../routes";
@@ -13,14 +18,10 @@ const blockClicks: React.MouseEventHandler<HTMLDivElement> = evt =>
   evt.stopPropagation();
 
 export function Sidebar(props: Props) {
-  const {
-    history,
-    location: { pathname },
-    show,
-    toggleShowSidebar
-  } = props;
+  const { location, show, toggleShowSidebar } = props;
 
   let visibleClass = "";
+  const pathname = (location as WindowLocation).pathname;
 
   if (show === true) {
     visibleClass = "visible";
@@ -33,7 +34,7 @@ export function Sidebar(props: Props) {
   function onGoToExperience(where: string) {
     return function goToExperience() {
       hideSidebar();
-      history.push(where);
+      (navigate as NavigateFn)(where);
     };
   }
 
@@ -63,5 +64,3 @@ export function Sidebar(props: Props) {
     </aside>
   );
 }
-
-export default Sidebar;

@@ -1,5 +1,5 @@
 // tslint:disable:no-any
-import React from "react";
+import React, { ComponentType } from "react";
 import "jest-dom/extend-expect";
 import "react-testing-library/cleanup-after-each";
 import { render, fireEvent, wait } from "react-testing-library";
@@ -14,10 +14,12 @@ import {
   CreateExp as FormValues,
   CreateFieldDef,
   FieldType
-} from "../graphql/apollo-gql.d";
+} from "../graphql/apollo-types/globalTypes";
 import { Props } from "../components/NewExp/new-exp";
-import { testWithRouter, fillField } from "./test_utils";
+import { fillField, renderWithRouter } from "./test_utils";
 import { makeExpRoute } from "../routes";
+
+const NewExperienceP = NewExperience as ComponentType<Partial<Props>>;
 
 it("renders main", async () => {
   const fieldDefs: CreateFieldDef[] = [
@@ -43,24 +45,15 @@ it("renders main", async () => {
     fieldDefs
   };
 
-  const mockReplace = jest.fn();
-  const { Ui } = testWithRouter<Props>(NewExperience, { replace: mockReplace });
-  const mockCreateExpUpdate = jest.fn();
+  const { Ui, mockNavigate, mockCreateExpUpdate, mockCreateExp } = makeComp();
 
-  const result = {
+  mockCreateExp.mockResolvedValue({
     data: {
       exp: {
         id: "expId1"
       }
     }
-  };
-
-  const mockCreateExp = jest.fn(() => Promise.resolve(result));
-
-  const props: Props = {
-    createExp: mockCreateExp,
-    createExpUpdate: mockCreateExpUpdate
-  } as any;
+  });
 
   /**
    * Given we are using new experience component
@@ -71,15 +64,10 @@ it("renders main", async () => {
     getByLabelText,
     getByTestId,
     queryByTestId
-  } = render(<Ui {...props} />);
+  } = render(<Ui />);
 
   /**
-   * Then the title should be visible
-   */
-  expect(getByText("New Experience")).toBeInTheDocument();
-
-  /**
-   * And description field should be visible
+   * Then description field should be visible
    */
   expect(getByLabelText("Description")).toBeInTheDocument();
 
@@ -423,7 +411,7 @@ it("renders main", async () => {
   /**
    * And we should be redirected away from the page
    */
-  expect(mockReplace).toBeCalledWith(makeExpRoute("expId1"));
+  expect(mockNavigate).toBeCalledWith(makeExpRoute("expId1"));
 });
 
 it("renders errors if two field defs have same name", async () => {
@@ -444,27 +432,23 @@ it("renders errors if two field defs have same name", async () => {
     fieldDefs
   };
 
-  const { Ui } = testWithRouter<Props>(NewExperience);
+  const { Ui, mockCreateExp } = makeComp();
 
-  const props: Props = {
-    createExp: jest.fn(() =>
-      Promise.reject({
-        graphQLErrors: [
-          {
-            message: `{\"field_defs\":[{\"name\":\"${
-              fieldDefs[1].name
-            }---1 has already been taken\"}]}`
-          }
-        ]
-      })
-    )
-  } as any;
+  mockCreateExp.mockRejectedValue({
+    graphQLErrors: [
+      {
+        message: `{\"field_defs\":[{\"name\":\"${
+          fieldDefs[1].name
+        }---1 has already been taken\"}]}`
+      }
+    ]
+  });
 
   /**
    * Given we are using new exp component
    */
   const { getByText, getByLabelText, getByTestId, queryByText } = render(
-    <Ui {...props} />
+    <Ui />
   );
 
   /**
@@ -528,27 +512,23 @@ it("renders error if all fields not completely filled on submission", async () =
     fieldDefs
   };
 
-  const { Ui } = testWithRouter<Props>(NewExperience);
+  const { Ui, mockCreateExp } = makeComp();
 
-  const props: Props = {
-    createExp: jest.fn(() =>
-      Promise.reject({
-        graphQLErrors: [
-          {
-            message: `{\"field_defs\":[{\"name\":\"${
-              fieldDefs[1].name
-            }---1 has already been taken\"}]}`
-          }
-        ]
-      })
-    )
-  } as any;
+  mockCreateExp.mockRejectedValue({
+    graphQLErrors: [
+      {
+        message: `{\"field_defs\":[{\"name\":\"${
+          fieldDefs[1].name
+        }---1 has already been taken\"}]}`
+      }
+    ]
+  });
 
   /**
    * Given we are using new exp component
    */
   const { getByText, getByLabelText, getByTestId, queryByText } = render(
-    <Ui {...props} />
+    <Ui />
   );
 
   /**
@@ -606,4 +586,27 @@ function selectDataType(
     getByText(labelText).parentElement as HTMLDivElement,
     dataType
   );
+}
+
+function makeComp(props: Partial<Props> = {}) {
+  const mockCreateExpUpdate = jest.fn();
+  const mockCreateExp = jest.fn();
+
+  const { Ui, ...rest } = renderWithRouter(
+    NewExperienceP,
+    {},
+    {
+      SidebarHeader: jest.fn(() => <div />),
+      createExpUpdate: mockCreateExpUpdate,
+      createExp: mockCreateExp,
+      ...props
+    }
+  );
+
+  return {
+    Ui,
+    mockCreateExpUpdate,
+    mockCreateExp,
+    ...rest
+  };
 }

@@ -1,16 +1,24 @@
-import React, { useState } from "react";
+import React, { useState, ComponentType } from "react";
 
-import Header from "../Header";
-import Sidebar from "../Sidebar";
+import { OwnProps as HeaderProps } from "../Header/header";
+import { Sidebar } from "../Sidebar";
 
-interface Props {
+export interface OwnProps {
   title: string;
   wide?: boolean;
   sidebar?: boolean;
 }
 
+export interface Props extends OwnProps {
+  Header: ComponentType<HeaderProps>;
+}
+
+export interface WithSideBar {
+  SidebarHeader: ComponentType<OwnProps>;
+}
+
 export function SidebarHeader(props: Props) {
-  const { title, sidebar, wide } = props;
+  const { title, sidebar, wide, Header } = props;
   const [showSidebar, toggleShowSidebar] = useState(false);
 
   return (
@@ -29,5 +37,3 @@ export function SidebarHeader(props: Props) {
     </>
   );
 }
-
-export default SidebarHeader;

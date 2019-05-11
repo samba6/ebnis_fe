@@ -5,13 +5,15 @@ import { OwnProps } from "./exp";
 import GET_EXP_QUERY, { GetExpGqlProps } from "../../graphql/get-exp.query";
 import {
   GetAnExp,
-  GetAnExpVariables,
-  GetExpAllEntries,
-  GetExpAllEntriesVariables
-} from "../../graphql/apollo-gql";
+  GetAnExpVariables
+} from "../../graphql/apollo-types/GetAnExp";
 import GET_EXP_ENTRIES_QUERY, {
   GetExpEntriesGqlProps
 } from "../../graphql/exp-entries.query";
+import {
+  GetExpAllEntries,
+  GetExpAllEntriesVariables
+} from "../../graphql/apollo-types/GetExpAllEntries";
 
 const getExpGql = graphql<
   OwnProps,

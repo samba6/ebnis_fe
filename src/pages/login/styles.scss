@@ -1,0 +1,5 @@
+@import "../../styles/extensions";
+
+.pages-login {
+  @extend %route-main;
+}

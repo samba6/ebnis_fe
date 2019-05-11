@@ -1,6 +1,6 @@
 export const ROOT_URL = "/";
 export const LOGIN_URL = "/login";
-export const SIGN_UP_URL = "/sign-up";
+export const SIGN_UP_URL = "/signup";
 export const NEW_EXP_URL = "/exp";
 export const EXP_URL = "/exp/:id";
 export const NEW_ENTRY_URL = "/exp/:expId/entry";

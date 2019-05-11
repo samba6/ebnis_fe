@@ -1,16 +1,19 @@
 import React, { useEffect, useState } from "react";
 import { Icon } from "semantic-ui-react";
-import { History } from "history";
+import { NavigateFn } from "@reach/router";
 
 import "./home.scss";
 import { Props } from "./home";
-import SidebarHeader from "../SidebarHeader";
 import { setTitle, NEW_EXP_URL, makeExpRoute } from "../../routes";
 import Loading from "../Loading";
-import { GetExps_exps } from "../../graphql/apollo-gql";
+import { GetExps_exps } from "../../graphql/apollo-types/GetExps";
 
 export const Home = (props: Props) => {
-  const { history, loading, exps } = props;
+  const {
+    navigate,
+    getExpDefsResult: { loading, exps },
+    SidebarHeader
+  } = props;
   const [toggleDescriptions, setToggleDescriptions] = useState<{
     [k: string]: boolean;
   }>({});
@@ -22,7 +25,7 @@ export const Home = (props: Props) => {
   }, []);
 
   function goToNewExp() {
-    history.push(NEW_EXP_URL);
+    (navigate as NavigateFn)(NEW_EXP_URL);
   }
 
   function renderExperiences() {
@@ -43,7 +46,7 @@ export const Home = (props: Props) => {
             index={index}
             toggleDescriptions={toggleDescriptions}
             setToggleDescriptions={setToggleDescriptions}
-            history={history}
+            navigate={navigate as NavigateFn}
           />
         ))}
       </div>
@@ -76,32 +79,28 @@ export const Home = (props: Props) => {
     <div className="app-container">
       <SidebarHeader title="Home" sidebar={true} />
 
-      <div className="app-main routes-home">{renderMain()}</div>
+      <div className="routes-home">{renderMain()}</div>
     </div>
   );
 };
-
-export default Home;
 
 interface ExperienceProps {
   expDef: GetExps_exps | null;
   index: number;
   toggleDescriptions: { [k: string]: boolean };
   setToggleDescriptions: (toggleDescriptions: { [k: string]: boolean }) => void;
-  history: History;
+  navigate: NavigateFn;
 }
 
 const Experience = React.memo(
   function ExperienceMemo({
-    expDef,
+    expDef: expDef1,
     index,
     toggleDescriptions,
     setToggleDescriptions,
-    history
+    navigate
   }: ExperienceProps) {
-    if (!expDef) {
-      return null;
-    }
+    const expDef = expDef1 as GetExps_exps;
 
     const { title, description, id } = expDef;
     const showingDescription = toggleDescriptions[index];
@@ -120,7 +119,10 @@ const Experience = React.memo(
           }}
         />
 
-        <div className="main" onClick={() => history.push(makeExpRoute(id))}>
+        <div
+          className="main"
+          onClick={() => (navigate as NavigateFn)(makeExpRoute(id))}
+        >
           <span className="exp_title">{title}</span>
 
           {showingDescription && (

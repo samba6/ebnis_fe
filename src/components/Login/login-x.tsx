@@ -1,6 +1,7 @@
 import React, { useEffect, useReducer, Dispatch } from "react";
 import { Button, Card, Input, Message, Icon, Form } from "semantic-ui-react";
 import { Formik, FastField, FieldProps, FormikProps, Field } from "formik";
+import { WindowLocation } from "@reach/router";
 
 import "./login.scss";
 import {
@@ -13,24 +14,19 @@ import {
   Action,
   initialState
 } from "./login";
-import SidebarHeader from "../SidebarHeader";
-import { LoginUser as FormValues } from "../../graphql/apollo-gql";
-import { setTitle, SIGN_UP_URL } from "../../routes";
-import refreshToHomeDefault from "../../refresh-to-app";
+import { LoginUser as FormValues } from "../../graphql/apollo-types/globalTypes";
+import { setTitle } from "../../routes";
+import { refreshToHome } from "../../refresh-to-app";
 import PwdInput from "../PwdInput";
-import getConnDefault from "../../state/get-conn-status";
+import { getConnStatus } from "../../state/get-conn-status";
+import { noop } from "../../constants";
+import { LoginMutationFn } from "../../graphql/login.mutation";
+import { LoginMutation_login } from "../../graphql/apollo-types/LoginMutation";
 
 const Errors = React.memo(ErrorsComp, ErrorsCompEqual);
 
 export function Login(props: Props) {
-  const {
-    history,
-    login,
-    updateLocalUser,
-    client,
-    getConn = getConnDefault,
-    refreshToHome = refreshToHomeDefault
-  } = props;
+  const { login, updateLocalUser, client, location, ToOtherAuthLink } = props;
 
   const [state, dispatch] = useReducer(authFormErrorReducer, initialState);
 
@@ -53,9 +49,12 @@ export function Login(props: Props) {
         <Card.Content>
           <Form
             onSubmit={async function onSubmit() {
-              handleErrorsDismissed(dispatch);
+              dispatch({
+                type: Action_Types.CLEAR_ALL_ERRORS,
+                payload: null
+              });
 
-              if (!(await getConn(client))) {
+              if (!(await getConnStatus(client))) {
                 formikBag.setSubmitting(false);
                 dispatch({
                   type: Action_Types.SET_OTHER_ERRORS,
@@ -69,8 +68,7 @@ export function Login(props: Props) {
                 formikBag,
                 login,
                 dispatch,
-                updateLocalUser,
-                refreshToHome
+                updateLocalUser
               });
             }}
           >
@@ -99,42 +97,28 @@ export function Login(props: Props) {
         </Card.Content>
 
         <Card.Content extra={true}>
-          <Button
+          <ToOtherAuthLink
+            pathname={(location as WindowLocation).pathname}
             className="to-sign-up-button"
-            type="button"
-            fluid={true}
-            onClick={() => history.replace(SIGN_UP_URL)}
-            disabled={isSubmitting}
             name="to-sign-up"
-          >
-            Don't have an account? Sign Up
-          </Button>
+            isSubmitting={isSubmitting}
+          />
         </Card.Content>
       </Card>
     );
   }
 
   return (
-    <div className="app-container">
-      <SidebarHeader title="Login to your account" wide={true} />
-
-      <div className="app-main routes-login">
-        <Formik
-          initialValues={{ email: "", password: "" }}
-          onSubmit={() => null}
-          render={renderForm}
-          validationSchema={ValidationSchema}
-          validateOnChange={false}
-        />
-      </div>
+    <div className="routes-login">
+      <Formik
+        initialValues={{ email: "", password: "" }}
+        onSubmit={noop}
+        render={renderForm}
+        validationSchema={ValidationSchema}
+        validateOnChange={false}
+      />
     </div>
   );
-}
-
-function handleErrorsDismissed(dispatch: Dispatch<Action>) {
-  dispatch({ type: Action_Types.SET_FORM_ERROR, payload: undefined });
-  dispatch({ type: Action_Types.SET_GRAPHQL_ERROR, payload: undefined });
-  dispatch({ type: Action_Types.SET_OTHER_ERRORS, payload: undefined });
 }
 
 function EmailInput(props: FieldProps<FormValues>) {
@@ -177,10 +161,6 @@ function ErrorsComp(props: ErrorsProps) {
     errors: { otherErrors, formErrors, graphQlErrors },
     dispatch
   } = props;
-
-  function onDismiss() {
-    handleErrorsDismissed(dispatch);
-  }
 
   function messageContent() {
     if (otherErrors) {
@@ -226,7 +206,15 @@ function ErrorsComp(props: ErrorsProps) {
 
   return (
     <Card.Content data-testid="login-form-error" extra={true}>
-      <Message error={true} onDismiss={onDismiss}>
+      <Message
+        error={true}
+        onDismiss={function onDismiss() {
+          dispatch({
+            type: Action_Types.CLEAR_ALL_ERRORS,
+            payload: null
+          });
+        }}
+      >
         <Message.Content>{content}</Message.Content>
       </Message>
     </Card.Content>
@@ -238,18 +226,8 @@ async function submit({
   formikBag,
   dispatch,
   login,
-  updateLocalUser,
-  refreshToHome
+  updateLocalUser
 }: SubmitArg) {
-  if (!login) {
-    formikBag.setSubmitting(false);
-    dispatch({
-      type: Action_Types.SET_OTHER_ERRORS,
-      payload: "Unknown error"
-    });
-    return;
-  }
-
   formikBag.setSubmitting(true);
 
   const errors = await formikBag.validateForm(values);
@@ -264,21 +242,21 @@ async function submit({
   }
 
   try {
-    const result = await login({
+    const result = await (login as LoginMutationFn)({
       variables: {
         login: values
       }
     });
 
-    if (result && result.data) {
-      const user = result.data.login;
+    const user = (result &&
+      result.data &&
+      result.data.login) as LoginMutation_login;
 
-      await updateLocalUser({
-        variables: { user }
-      });
+    await updateLocalUser({
+      variables: { user }
+    });
 
-      refreshToHome();
-    }
+    refreshToHome();
   } catch (error) {
     formikBag.setSubmitting(false);
     dispatch({ type: Action_Types.SET_GRAPHQL_ERROR, payload: error });

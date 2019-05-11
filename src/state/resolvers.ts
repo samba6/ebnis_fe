@@ -1,6 +1,6 @@
 import { InMemoryCache } from "apollo-cache-inmemory";
 
-import { UserFragment } from "../graphql/apollo-gql.d";
+import { UserFragment } from "../graphql/apollo-types/UserFragment";
 import { Variable as UserMutationVar } from "./user.local.mutation";
 import USER_QUERY, { UserLocalGqlData } from "./auth.local.query";
 // import { resetClientAndPersistor } from "../containers/AppContext/set-up";

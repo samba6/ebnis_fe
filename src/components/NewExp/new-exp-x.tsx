@@ -25,6 +25,7 @@ import {
   Dropdown
 } from "semantic-ui-react";
 import { ApolloError } from "apollo-client";
+import { NavigateFn } from "@reach/router";
 
 import "./new-exp.scss";
 import {
@@ -41,21 +42,22 @@ import {
   GraphQlErrorState,
   GraphQlError
 } from "./new-exp";
-import SidebarHeader from "../SidebarHeader";
 import { setTitle } from "../../routes";
+import { GetExps } from "../../graphql/apollo-types/GetExps";
+import { CreateExpMutation_exp } from "../../graphql/apollo-types/CreateExpMutation";
 import {
   CreateExp as FormValues,
-  CreateFieldDef,
-  CreateExpMutation_exp
-} from "../../graphql/apollo-gql";
+  CreateFieldDef
+} from "../../graphql/apollo-types/globalTypes";
 import { makeExpRoute } from "../../routes";
-import EXPS_QUERY, { GetExpGqlProps } from "../../graphql/exps.query";
+import { GET_EXP_DEFS_QUERY } from "../../graphql/exps.query";
 
 export function NewExperience(props: Props) {
   const {
     createExp,
-    history,
-    createExpUpdate = createExpUpdateDefault
+    navigate,
+    createExpUpdate = createExpUpdateDefault,
+    SidebarHeader
   } = props;
   const [state, dispatch] = useReducer(reducer, {
     showDescriptionInput: true,
@@ -183,7 +185,7 @@ export function NewExperience(props: Props) {
               result.data &&
               result.data.exp) as CreateExpMutation_exp;
 
-            history.replace(makeExpRoute(exp.id));
+            (navigate as NavigateFn)(makeExpRoute(exp.id));
           } catch (error) {
             dispatch({
               type: Action_Types.SET_GRAPHQL_ERROR,
@@ -276,8 +278,8 @@ const createExpUpdateDefault: CreateExpUpdateFn = async (
     return;
   }
 
-  const data = client.readQuery<GetExpGqlProps>({
-    query: EXPS_QUERY
+  const data = client.readQuery<GetExps>({
+    query: GET_EXP_DEFS_QUERY
   });
 
   if (!data) {
@@ -291,7 +293,7 @@ const createExpUpdateDefault: CreateExpUpdateFn = async (
   }
 
   await client.writeQuery({
-    query: EXPS_QUERY,
+    query: GET_EXP_DEFS_QUERY,
     data: { exps: [...exps, exp] }
   });
 };

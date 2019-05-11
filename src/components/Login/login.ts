@@ -1,22 +1,22 @@
 import * as Yup from "yup";
-import { RouteComponentProps } from "react-router-dom";
-import { Reducer } from "react";
+import { RouteComponentProps } from "@reach/router";
+import { Reducer, ComponentType } from "react";
 import { FormikErrors, FormikActions } from "formik";
-import { ApolloError, ApolloClient } from "apollo-client";
+import { ApolloError } from "apollo-client";
 import { Dispatch } from "react";
 import { WithApolloClient } from "react-apollo";
 
-import { LoginUser as FormValues } from "../../graphql/apollo-gql";
+import { LoginUser as FormValues } from "../../graphql/apollo-types/globalTypes";
 import { LoginMutationProps } from "../../graphql/login.mutation";
 import { UserLocalMutationProps } from "../../state/user.local.mutation";
 import { LoggedOutUserProps } from "../../state/logged-out-user.local.query";
 import { PwdInputActionTypes } from "../PwdInput/pwd-input";
+import { ToOtherAuthLinkProps } from "../ToOtherAuthLink";
 
 export interface OwnProps
   extends RouteComponentProps<{}>,
     WithApolloClient<{}> {
-  refreshToHome?: () => void;
-  getConn?: (client: ApolloClient<{}>) => Promise<boolean>;
+  ToOtherAuthLink: ComponentType<ToOtherAuthLinkProps>;
 }
 
 export type Props = OwnProps &
@@ -38,9 +38,10 @@ export const RouterThings = {
 };
 
 export enum Action_Types {
-  SET_OTHER_ERRORS = "@login/SET_OTHER_ERRORS",
-  SET_FORM_ERROR = "@login/SET_FORM_ERROR",
-  SET_GRAPHQL_ERROR = "@login/SET_GRAPHQL_ERROR"
+  SET_OTHER_ERRORS = "@components/login/SET_OTHER_ERRORS",
+  SET_FORM_ERROR = "@components/login/SET_FORM_ERROR",
+  SET_GRAPHQL_ERROR = "@components/login/SET_GRAPHQL_ERROR",
+  CLEAR_ALL_ERRORS = "@components/login/CLEAR_ALL_ERRORS"
 }
 
 export interface State {
@@ -59,6 +60,7 @@ export const initialState: State = {
 export interface Action {
   type: Action_Types | PwdInputActionTypes;
   payload:
+    | null
     | undefined
     | boolean
     | FormikErrors<FormValues>
@@ -80,9 +82,19 @@ export const authFormErrorReducer: Reducer<State, Action> = (state, action) => {
     case Action_Types.SET_GRAPHQL_ERROR:
       return { ...state, graphQlErrors: action.payload as ApolloError };
 
+    // istanbul ignore next: The password component owns this
     case PwdInputActionTypes.SET_PWD_TYPE:
       return { ...state, pwdType: action.payload as "password" | "text" };
 
+    case Action_Types.CLEAR_ALL_ERRORS:
+      return {
+        ...state,
+        otherErrors: undefined,
+        graphQlErrors: undefined,
+        formErrors: undefined
+      };
+
+    // istanbul ignore next: React.dispatch to the rescue
     default:
       return state;
   }
@@ -92,5 +104,4 @@ export interface SubmitArg extends LoginMutationProps, UserLocalMutationProps {
   values: FormValues;
   formikBag: FormikActions<FormValues>;
   dispatch: Dispatch<Action>;
-  refreshToHome: () => void;
 }

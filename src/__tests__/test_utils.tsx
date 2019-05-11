@@ -1,98 +1,35 @@
-import React, { FunctionComponent, ComponentClass } from "react";
-import { ApolloClient } from "apollo-client";
-import { InMemoryCache } from "apollo-cache-inmemory";
-import { ApolloLink } from "apollo-link";
-import { ApolloProvider } from "react-apollo";
-import { Router } from "react-router-dom";
-import { createMemoryHistory, History } from "history";
+import React, { ComponentType } from "react";
 import { fireEvent } from "react-testing-library";
+import { RouteComponentProps, WindowLocation } from "@reach/router";
 
-export function makeClient() {
-  return new ApolloClient({
-    cache: new InMemoryCache(),
-    link: new ApolloLink()
-  });
-}
-
-export function renderWithApollo(ui: JSX.Element) {
-  const client = makeClient();
-
-  return {
-    client,
-    ui: <ApolloProvider client={client}>{ui}</ApolloProvider>
-  };
-}
-
-export function renderWithRouter(
-  ui: JSX.Element,
-  {
-    route = "/",
-    history = createMemoryHistory({ initialEntries: [route] })
-  } = {}
+export function renderWithRouter<TProps extends RouteComponentProps>(
+  Ui: ComponentType<TProps>,
+  routerProps: Partial<RouteComponentProps> = {},
+  componentProps: Partial<TProps> = {}
 ) {
-  return {
-    // adding `history` to the returned utilities to allow us
-    // to reference it in our tests (just try to avoid using
-    // this to test implementation details).
-    history,
-    ui: <Router history={history}>{ui}</Router>
-  };
-}
-
-interface HistoryProps {
-  push?: (path: string) => void;
-  replace?: (path: string) => void;
-  path?: string;
-}
-
-const defaultHistoryProps: HistoryProps = {
-  push: jest.fn(),
-  replace: jest.fn()
-};
-
-export function makeHistory(params: HistoryProps = defaultHistoryProps) {
-  const history = createMemoryHistory({
-    initialEntries: [params.path || "/"]
-  });
-
-  return { ...history, ...params };
-}
-
-export function testWithRouter<TProps>(
-  Ui:
-    | FunctionComponent<TProps & { history: History }>
-    | ComponentClass<TProps & { history: History }>,
-  historyProps?: HistoryProps
-) {
-  const history = makeHistory(historyProps) as History;
+  const {
+    navigate = jest.fn(),
+    path = "/",
+    location: userLocation = {},
+    ...rest
+  } = routerProps;
+  const location = { pathname: path, ...userLocation } as WindowLocation;
 
   return {
-    // adding `history` to the returned utilities to allow us
-    // to reference it in our tests (just try to avoid using
-    // this to test implementation details).
-    history,
+    mockNavigate: navigate,
+    ...rest,
+    location,
     Ui: (props: TProps) => {
       return (
-        <Router history={history}>
-          <Ui history={history} {...props} />
-        </Router>
+        <Ui
+          navigate={navigate}
+          location={location}
+          {...rest}
+          {...componentProps}
+          {...props}
+        />
       );
     }
-  };
-}
-
-export function testWithApollo<TProps>(
-  Ui: FunctionComponent<TProps & { client: ApolloClient<{}> }>
-) {
-  const client = makeClient();
-
-  return {
-    client,
-    Ui: (props: TProps) => (
-      <ApolloProvider client={client}>
-        <Ui client={client} {...props} />
-      </ApolloProvider>
-    )
   };
 }
 

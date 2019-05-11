@@ -9,9 +9,10 @@ import USER_LOCAL_QUERY, {
 import {
   LoginMutation,
   LoginMutationVariables
-} from "../../graphql/apollo-gql";
-import LOGIN_MUTATION, {
-  LoginMutationProps
+} from "../../graphql/apollo-types/LoginMutation";
+import {
+  LoginMutationProps,
+  LOGIN_MUTATION
 } from "../../graphql/login.mutation";
 
 const loggedOutUserGql = graphql<

@@ -1,35 +1,32 @@
-import React from "react";
+// tslint:disable:no-any
+import React, { ComponentType } from "react";
 import "jest-dom/extend-expect";
 import "react-testing-library/cleanup-after-each";
 import { render, fireEvent } from "react-testing-library";
 
-import Home from "../components/Home/home-x";
+import { Home } from "../components/Home/home-x";
 import { Props } from "../components/Home/home";
-import { testWithRouter } from "./test_utils";
-import { ROOT_URL, NEW_EXP_URL, makeExpRoute } from "../routes";
-import { GetExps_exps } from "../graphql/apollo-gql";
+import { renderWithRouter } from "./test_utils";
+import { NEW_EXP_URL, makeExpRoute } from "../routes";
+import { GetExps_exps } from "../graphql/apollo-types/GetExps";
+
+const HomeP = Home as ComponentType<Partial<Props>>;
 
 it("renders loading state and not main", () => {
-  const { Ui } = testWithRouter<Props>(Home);
-  // tslint:disable-next-line:no-any
-  const props: Props = { loading: true } as any;
-  const { getByTestId, getByText, queryByTestId } = render(<Ui {...props} />);
+  const { Ui } = makeComp({
+    getExpDefsResult: { loading: true } as any
+  });
 
-  expect(getByText("Home")).toBeInTheDocument();
+  const { getByTestId, queryByTestId } = render(<Ui />);
+
   expect(getByTestId("loading-spinner")).toBeInTheDocument();
   expect(queryByTestId("home-route-main")).not.toBeInTheDocument();
   expect(queryByTestId("exps-container")).not.toBeInTheDocument();
 });
 
 it("renders empty exps", () => {
-  const mockPush = jest.fn();
+  const { Ui, mockNavigate } = makeComp({ getExpDefsResult: {} as any });
 
-  const { Ui } = testWithRouter<Props>(Home, {
-    push: mockPush,
-    path: ROOT_URL
-  });
-
-  // tslint:disable-next-line:no-any
   const props: Props = { exps: [] } as any;
   const { getByTestId, getByText, queryByTestId } = render(<Ui {...props} />);
 
@@ -42,22 +39,15 @@ it("renders empty exps", () => {
 
   const $goToNewExp = getByText(/Click here to create your first experience/);
   fireEvent.click($goToNewExp);
-  expect(mockPush).toBeCalledWith(NEW_EXP_URL);
+  expect(mockNavigate).toBeCalledWith(NEW_EXP_URL);
 });
 
 it("renders exps", () => {
-  const mockPush = jest.fn();
-
-  const { Ui } = testWithRouter<Props>(Home, {
-    push: mockPush,
-    path: ROOT_URL
-  });
-
   const [id1, id2] = [new Date(), new Date()].map((d, index) =>
     (d.getTime() + index).toString()
   );
 
-  const exps: GetExps_exps[] = [
+  const exps = [
     {
       id: id1,
       description: "lovely experience description 1",
@@ -69,13 +59,11 @@ it("renders exps", () => {
       title: "love experience title 2",
       description: null
     }
-  ];
+  ] as GetExps_exps[];
 
-  // tslint:disable-next-line:no-any
-  const props: Props = { exps } as any;
-  const { queryByText, getByText, queryByTestId, getByTestId } = render(
-    <Ui {...props} />
-  );
+  const { Ui, mockNavigate } = makeComp({ getExpDefsResult: { exps } as any });
+
+  const { queryByText, getByText, queryByTestId, getByTestId } = render(<Ui />);
 
   expect(getByText("love experience title 2")).toBeInTheDocument();
   expect(queryByTestId(`exp-toggle-${id2}`)).not.toBeInTheDocument();
@@ -102,11 +90,16 @@ it("renders exps", () => {
   ).not.toBeInTheDocument();
 
   fireEvent.click($exp1);
-  expect(mockPush).toBeCalledWith(makeExpRoute(id1));
+  expect(mockNavigate).toBeCalledWith(makeExpRoute(id1));
 });
 
-///////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////
-////////////////////////// HELPER FUNCTIONS ///////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////
+function makeComp(props: Partial<Props> = {}) {
+  return renderWithRouter(
+    HomeP,
+    {},
+    {
+      SidebarHeader: jest.fn(() => <div />),
+      ...props
+    }
+  );
+}

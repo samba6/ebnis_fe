@@ -1,7 +1,8 @@
-import { RouteComponentProps } from "react-router-dom";
+import { RouteComponentProps } from "@reach/router";
 
 import { GetExpGqlProps } from "../../graphql/exps.query";
+import { WithSideBar } from "../SidebarHeader/sidebar-header";
 
-export type OwnProps = RouteComponentProps<{}>;
+export interface OwnProps extends RouteComponentProps<{}> {}
 
-export type Props = OwnProps & GetExpGqlProps;
+export interface Props extends OwnProps, GetExpGqlProps, WithSideBar {}

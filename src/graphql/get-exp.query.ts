@@ -3,9 +3,9 @@ import { DataValue } from "react-apollo";
 
 import { fieldDefFrag } from "./field-def.fragment";
 import { expFrag } from "./exp.fragment";
-import { GetAnExp, GetAnExpVariables } from "./apollo-gql.d";
+import { GetAnExp, GetAnExpVariables } from "./apollo-types/GetAnExp";
 
-export const getExp = gql`
+export const GET_EXP_QUERY = gql`
   query GetAnExp($exp: GetExp!) {
     exp(exp: $exp) {
       ...ExpFrag
@@ -18,7 +18,5 @@ export const getExp = gql`
   ${expFrag}
   ${fieldDefFrag}
 `;
-
-export default getExp;
 
 export type GetExpGqlProps = DataValue<GetAnExp, GetAnExpVariables>;

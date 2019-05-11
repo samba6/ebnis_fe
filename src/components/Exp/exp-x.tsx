@@ -5,15 +5,15 @@ import dateFnFormat from "date-fns/format";
 
 import "./exp.scss";
 import { Props } from "./exp";
-import SidebarHeader from "../SidebarHeader";
+import { SidebarHeader } from "../SidebarHeader";
 import { setTitle, makeNewEntryRoute } from "../../routes";
 import Loading from "../Loading";
+import { FieldType } from "../../graphql/apollo-types/globalTypes";
 import {
   GetExpAllEntries_expEntries,
-  GetExpAllEntries_expEntries_fields,
-  FieldType,
-  GetAnExp_exp_fieldDefs
-} from "../../graphql/apollo-gql";
+  GetExpAllEntries_expEntries_fields
+} from "../../graphql/apollo-types/GetExpAllEntries";
+import { GetAnExp_exp_fieldDefs } from "../../graphql/apollo-types/GetAnExp";
 
 const displayFieldType = {
   [FieldType.SINGLE_LINE_TEXT](text: string) {

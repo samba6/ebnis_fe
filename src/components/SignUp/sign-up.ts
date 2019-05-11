@@ -1,20 +1,19 @@
 import * as Yup from "yup";
-import { RouteComponentProps } from "react-router-dom";
+import { RouteComponentProps } from "@reach/router";
 import { WithApolloClient } from "react-apollo";
-import ApolloClient from "apollo-client";
+import { ComponentType } from "react";
 
 import { RegMutationProps } from "../../graphql/user-reg.mutation";
 import { UserLocalMutationProps } from "../../state/user.local.mutation";
-import { Registration } from "../../graphql/apollo-gql";
+import { Registration } from "../../graphql/apollo-types/globalTypes";
+import { ToOtherAuthLinkProps } from "../ToOtherAuthLink";
 
 export interface Props
   extends RouteComponentProps,
     RegMutationProps,
     UserLocalMutationProps,
     WithApolloClient<{}> {
-  refreshToHome?: () => void;
-  scrollToTop?: () => void;
-  getConn?: (client: ApolloClient<{}>) => Promise<boolean>;
+  ToOtherAuthLink: ComponentType<ToOtherAuthLinkProps>;
 }
 
 export type FormValuesKey = keyof Registration;
@@ -44,9 +43,17 @@ export const ValidationSchema = Yup.object<Registration>().shape({
     .test("passwords-match", "Passwords do not match", function(val) {
       return this.parent.password === val;
     }),
-  source: Yup.string().default(() => "password")
+  source: Yup.string().default("password")
 });
 
 export const RouterThings = {
   documentTitle: "Sign up"
+};
+
+export const FORM_RENDER_PROPS = {
+  name: ["Name", "text"],
+  email: ["Email", "email"],
+  password: ["Password", "password"],
+  passwordConfirmation: ["Password Confirm", "password"],
+  source: ["Source", "text"]
 };

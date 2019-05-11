@@ -1,4 +1,4 @@
-import { RouteComponentProps } from "react-router-dom";
+import { RouteComponentProps } from "@reach/router";
 import * as Yup from "yup";
 import { DropdownItemProps } from "semantic-ui-react";
 import { MutationUpdaterFn } from "react-apollo";
@@ -9,9 +9,10 @@ import { CreateExpMutationProps } from "../../graphql/create-exp.mutation";
 import {
   CreateExp as FormValues,
   CreateFieldDef,
-  FieldType,
-  CreateExpMutation
-} from "../../graphql/apollo-gql.d";
+  FieldType
+} from "../../graphql/apollo-types/globalTypes";
+import { WithSideBar } from "../SidebarHeader/sidebar-header";
+import { CreateExpMutation } from "../../graphql/apollo-types/CreateExpMutation";
 
 export type CreateExpUpdateFn = MutationUpdaterFn<CreateExpMutation>;
 
@@ -19,7 +20,7 @@ export interface OwnProps extends RouteComponentProps<{}> {
   createExpUpdate?: CreateExpUpdateFn;
 }
 
-export type Props = OwnProps & CreateExpMutationProps;
+export interface Props extends WithSideBar, OwnProps, CreateExpMutationProps {}
 
 const fieldTypeKeys = Object.values(FieldType);
 

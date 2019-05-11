@@ -1,10 +1,10 @@
 import gql from "graphql-tag";
 import { DataValue } from "react-apollo";
 
-import { GetExps } from "./apollo-gql.d";
+import { GetExps } from "./apollo-types/GetExps";
 import { expFrag } from "./exp.fragment";
 
-export const getExp = gql`
+export const GET_EXP_DEFS_QUERY = gql`
   query GetExps {
     exps {
       ...ExpFrag
@@ -14,6 +14,6 @@ export const getExp = gql`
   ${expFrag}
 `;
 
-export default getExp;
-
-export type GetExpGqlProps = DataValue<GetExps>;
+export interface GetExpGqlProps {
+  getExpDefsResult: DataValue<GetExps>;
+}

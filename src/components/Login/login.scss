@@ -3,6 +3,7 @@
 
 .routes-login {
   @extend %auth-root-styles;
+  @extend %app-main;
 
   .to-sign-up-button {
     @extend %auth-redirect-btn;

@@ -4,14 +4,7 @@ import makeClassnames from "classnames";
 
 import "./header.scss";
 import logo from "./logo.png";
-
-export interface Props {
-  title: string;
-  wide?: boolean;
-  sidebar?: boolean;
-  show?: boolean;
-  toggleShowSidebar?: React.Dispatch<React.SetStateAction<boolean>>;
-}
+import { Props } from "./header";
 
 export const Header = (props: Props) => {
   const { title, wide, sidebar, toggleShowSidebar, show } = props;

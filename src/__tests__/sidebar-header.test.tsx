@@ -1,15 +1,22 @@
-import React from "react";
+// tslint:disable: no-any
+import React, { ComponentType } from "react";
 import "jest-dom/extend-expect";
 import { render, fireEvent } from "react-testing-library";
 
-import { SidebarHeader } from "../components/SidebarHeader/sidebar-header";
+import {
+  SidebarHeader,
+  Props
+} from "../components/SidebarHeader/sidebar-header";
 import { renderWithRouter } from "./test_utils";
+import { Header } from "../components/Header/header-x";
 
+const SidebarHeaderP = SidebarHeader as ComponentType<Partial<Props>>;
 const title = "My shinning app";
 
 it("renders with header no sidebar", () => {
+  const { Ui } = makeComp();
   const { container, getByTestId, queryByTestId } = render(
-    <SidebarHeader title={title} />
+    <Ui title={title} />
   );
 
   const sidebarHeader = container.firstChild;
@@ -18,12 +25,11 @@ it("renders with header no sidebar", () => {
 });
 
 it("renders with header and sidebar", () => {
-  const { ui } = renderWithRouter(
-    <SidebarHeader title={title} sidebar={true} />
+  const { Ui } = makeComp();
+
+  const { container: sidebarHeader, getByTestId, queryByTestId } = render(
+    <Ui title={title} sidebar={true} />
   );
-
-  const { container: sidebarHeader, getByTestId, queryByTestId } = render(ui);
-
   expect(sidebarHeader).toContainElement(getByTestId("app-header"));
 
   const sidebar = getByTestId("app-sidebar");
@@ -44,3 +50,7 @@ it("renders with header and sidebar", () => {
     queryByTestId("show-sidebar-icon")
   );
 });
+
+function makeComp() {
+  return renderWithRouter(SidebarHeaderP, {}, { Header: Header as any });
+}
