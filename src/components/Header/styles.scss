@@ -3,55 +3,38 @@
 
 .components-header {
   @extend %header-box-shadow;
-  z-index: 2;
   flex-shrink: 0;
-  display: flex;
-  justify-content: space-between;
-  padding: 5px 0 0 5px;
-  flex-direction: row;
-  min-height: 60px;
-
-  &.wide {
-    min-height: 20%;
-    flex-direction: column;
-  }
-
-  .title {
-    font-weight: 900;
-    color: $app-color;
-    font-size: 1.3em;
-    letter-spacing: 1.2px;
-
-    &:not(.no-sidebar) {
-      display: flex;
-      justify-content: space-between;
-      width: 250px;
-      align-items: center;
-      padding-left: 20px;
-      text-align: right;
-      z-index: 2;
-    }
-
-    &.no-sidebar {
-      text-align: center;
-    }
-  }
+  min-height: 80px;
+  z-index: 2; // otherwise app-main will cover it and the close button will be
+  // covered by sidebar
 
   .logo-container {
-    padding: 0 !important;
-    margin: 0 !important;
-    border: none;
-    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.15);
+    padding: 5px !important;
 
     &.with-pointer {
       cursor: pointer;
     }
+
+    &.center-children {
+      justify-content: center;
+      width: 100%;
+    }
   }
 
-  .title_text {
-    width: 200px;
+  .app-header-title {
     text-overflow: ellipsis;
     overflow: hidden;
+    max-width: 400px;
+    font-weight: bolder;
+    color: $app-color;
+    padding: 0 0 1px 10px;
+    font-size: 1.2em;
+    margin-top: -10px;
+    white-space: nowrap;
+
+    &.no-sidebar {
+      text-align: center;
+    }
   }
 
   @media (min-width: 600px) {
@@ -70,9 +53,12 @@
   }
 
   .sidebar-trigger {
-    min-width: 40px;
     cursor: pointer;
-    padding: 10px 5px 10px 20px;
+    padding: 12px 6px !important;
+    font-weight: 900 !important;
+    color: $app-color !important;
+    font-size: 1.5em;
+    margin: 0 !important;
   }
 
   .close-sidebar-icon {

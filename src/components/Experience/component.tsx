@@ -107,28 +107,29 @@ export const Experience = (props: Props) => {
         <div className="header">
           <div className="title">{title}</div>
 
-          <Button
-            className="new-exp-entry-button"
-            type="button"
-            name="new-exp-entry-button"
-            basic={true}
-            compact={true}
-            onClick={goToNewEntry}
-          >
-            New entry
-          </Button>
+          <div className="new-experience-entry-button">
+            <Button
+              type="button"
+              name="new-exp-entry-button"
+              basic={true}
+              compact={true}
+              onClick={goToNewEntry}
+            >
+              New entry
+            </Button>
+          </div>
         </div>
 
-        <div className="main">{renderEntries()}</div>
+        {renderEntries()}
       </>
     );
   }
 
   const render = (
-    <div className="app-container">
+    <div className="components-experience">
       <SidebarHeader title={title} sidebar={true} />
 
-      <div className="app-main routes-exp">{renderMainOr()}</div>
+      <div className="main">{renderMainOr()}</div>
     </div>
   );
 

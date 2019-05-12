@@ -1,4 +1,4 @@
-import { Sidebar as Comp } from "./sidebar-x";
+import { Sidebar as Comp } from "./component";
 import { withLocationHOC } from "../with-location";
 
 export const Sidebar = withLocationHOC(Comp);

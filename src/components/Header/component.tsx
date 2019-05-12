@@ -1,7 +1,7 @@
 import React from "react";
 import { Icon, Menu } from "semantic-ui-react";
 import makeClassnames from "classnames";
-import { navigate, WindowLocation } from "@reach/router";
+import { WindowLocation, NavigateFn } from "@reach/router";
 
 import "./styles.scss";
 import { Props } from "./utils";
@@ -10,55 +10,47 @@ import { EXPERIENCES_URL, ROOT_URL } from "../../routes";
 export const Header = (props: Props) => {
   const {
     title,
-    wide,
     sidebar,
     toggleShowSidebar,
     show,
     user,
     location,
+    navigate,
     logoAttrs: { src, height, width }
   } = props;
 
   const pathname = (location as WindowLocation).pathname;
-  const isHome = pathname === (EXPERIENCES_URL || ROOT_URL);
+  const isHome = pathname === EXPERIENCES_URL || pathname === ROOT_URL;
 
   const asUrlProps = isHome
     ? {}
     : {
-        onClick: () => navigate(user ? EXPERIENCES_URL : ROOT_URL)
+        onClick: () =>
+          (navigate as NavigateFn)(user ? EXPERIENCES_URL : ROOT_URL)
       };
 
   return (
-    <header
-      className={makeClassnames({
-        "components-header": true,
-        wide: !sidebar && wide
-      })}
-      data-testid="app-header"
-    >
-      <>
+    <header className="components-header" data-testid="app-header">
+      <Menu secondary={true}>
         <style>
-          {`#components-header-logo{ background: url(${src}) no-repeat 0 !important; background-size: ${width}px ${height}px !important; min-width: ${width}px;}`}
+          {`#components-header-logo{ background: url(${src}) no-repeat 0 !important; background-size: ${width}px ${height}px !important; min-width: ${width}px; min-height: ${height}px;}`}
         </style>
 
-        <Menu
+        <Menu.Item
+          data-testid="logo-container"
           className={makeClassnames({
             "logo-container": true,
-            "with-pointer": !isHome
+            "with-pointer": !isHome,
+            "center-children": !sidebar
           })}
-          id="components-header-logo"
           {...asUrlProps}
-        />
-      </>
-
-      <div
-        data-testid="app-header-title"
-        className={makeClassnames({ title: true, "no-sidebar": !sidebar })}
-      >
-        <span className={sidebar ? "title_text" : ""}>{title}</span>
+        >
+          <div id="components-header-logo" />
+        </Menu.Item>
 
         {sidebar && (
-          <span
+          <Menu.Item
+            position="right"
             className="sidebar-trigger item"
             onClick={() => toggleShowSidebar && toggleShowSidebar(!show)}
             data-testid="sidebar-trigger"
@@ -72,8 +64,18 @@ export const Header = (props: Props) => {
             ) : (
               <Icon data-testid="show-sidebar-icon" name="content" />
             )}
-          </span>
+          </Menu.Item>
         )}
+      </Menu>
+
+      <div
+        data-testid="app-header-title"
+        className={makeClassnames({
+          "app-header-title": true,
+          "no-sidebar": !sidebar
+        })}
+      >
+        {title}
       </div>
     </header>
   );

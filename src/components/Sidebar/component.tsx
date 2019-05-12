@@ -1,31 +1,27 @@
-import React from "react";
+import React, { Dispatch, MouseEventHandler, SetStateAction } from "react";
 import {
   RouteComponentProps,
   NavigateFn,
   WindowLocation,
   navigate
 } from "@reach/router";
+import makeClassNames from "classnames";
 
-import "./sidebar.scss";
+import "./styles.scss";
 import { EXPERIENCE_DEFINITION_URL, EXPERIENCES_URL } from "../../routes";
 
 interface Props extends RouteComponentProps {
   show: boolean;
-  toggleShowSidebar: React.Dispatch<React.SetStateAction<boolean>>;
+  toggleShowSidebar: Dispatch<SetStateAction<boolean>>;
 }
 
-const blockClicks: React.MouseEventHandler<HTMLDivElement> = evt =>
+const blockClicks: MouseEventHandler<HTMLDivElement> = evt =>
   evt.stopPropagation();
 
 export function Sidebar(props: Props) {
   const { location, show, toggleShowSidebar } = props;
 
-  let visibleClass = "";
   const pathname = (location as WindowLocation).pathname;
-
-  if (show === true) {
-    visibleClass = "visible";
-  }
 
   function hideSidebar() {
     toggleShowSidebar(false);
@@ -41,7 +37,7 @@ export function Sidebar(props: Props) {
   return (
     <aside
       data-testid="app-sidebar"
-      className={visibleClass + " components-sidebar"}
+      className={makeClassNames({ "components-sidebar": true, visible: show })}
       onClick={hideSidebar}
     >
       <nav

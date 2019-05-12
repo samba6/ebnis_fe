@@ -4,6 +4,7 @@
 .components-sidebar {
   --main-container-height: 100vh;
   --main-container-width: 100vw;
+  z-index: 1; // so that it can cover app-main
 
   display: flex;
   flex-direction: row-reverse;
@@ -14,7 +15,6 @@
   height: var(--main-container-height);
   overflow: hidden;
   pointer-events: none;
-  z-index: 1;
 
   &:before {
     content: "";
@@ -90,6 +90,7 @@
 
   .sidebar-hide {
     @extend %header-box-shadow;
+    height: 78px;
     display: flex;
     flex-direction: row-reverse;
     cursor: pointer;

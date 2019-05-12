@@ -1,76 +1,238 @@
 // tslint:disable: no-any
 import React, { ComponentType } from "react";
 import "jest-dom/extend-expect";
-import { render } from "react-testing-library";
+import { render, fireEvent } from "react-testing-library";
 
 import { Header } from "../components/Header/component";
 import { Props } from "../components/Header/utils";
 import { renderWithRouter } from "./test_utils";
+import { EXPERIENCES_URL, ROOT_URL } from "../routes";
 
 type P = ComponentType<Partial<Props>>;
 const HeaderP = Header as P;
 
 const title = "My App title";
 
-it("renders with sidebar, and no wide", () => {
+it("renders sidebar", () => {
   const { ui } = setup({ title, sidebar: true });
 
   /**
    * Given we are using header component
    */
-  const { getByTestId, container, getByText } = render(ui);
+  const { getByTestId } = render(ui);
 
   /**
-   * Then header should not contain 'wide' class name
+   * Then header should contain the sidebar trigger UI
    */
-  const header = container.firstChild as HTMLElement;
-  expect(header.classList).not.toContain("wide");
+  expect(getByTestId("sidebar-trigger")).toBeInTheDocument();
 
-  const sidebarTrigger = getByTestId("sidebar-trigger");
-  expect(header).toContainElement(sidebarTrigger);
+  /**
+   * And the logo should not be centered
+   */
+  expect(getByTestId("logo-container").classList).not.toContain(
+    "center-children"
+  );
 
-  const $titleContainer = getByTestId("app-header-title");
-  expect($titleContainer.classList).not.toContain("no-sidebar");
-
-  const $title = getByText(title);
-  expect($title.classList).toContain("title_text");
+  /**
+   * And app title should reflect that we are showing sidebar
+   */
 });
 
-it("if we have sidebar, then wide has no effect", () => {
-  const { ui } = setup({ title, wide: true, sidebar: true });
-  const { container } = render(ui);
-
-  const header = container.firstChild as HTMLElement;
-  expect(header.classList).not.toContain("wide");
-});
-
-it("if no sidebar, then wide has effect", () => {
-  const { ui } = setup({ title, wide: true });
-  const { container } = render(ui);
-
-  const header = container.firstChild as HTMLElement;
-  expect(header.classList).toContain("wide");
-});
-
-it("renders with logo, title, no sidebar, no wide", () => {
+it("does not render sidebar", () => {
   const { ui } = setup({ title });
 
-  const { queryByTestId, getByText, getByTestId, container } = render(ui);
+  /**
+   * Given we are using header component
+   */
+  const { queryByTestId, getByTestId } = render(ui);
 
-  const header = container.firstChild as HTMLElement;
-  expect(header.classList).not.toContain("wide");
-
+  /**
+   * Then header should not render sidebar trigger UI
+   */
   expect(queryByTestId("sidebar-trigger")).not.toBeInTheDocument();
 
-  const $titleContainer = getByTestId("app-header-title");
-  expect($titleContainer.classList).toContain("no-sidebar");
+  /**
+   * And the logo should be centered
+   */
+  expect(getByTestId("logo-container").classList).toContain("center-children");
+});
 
-  const $title = getByText(title);
-  expect($title.classList).not.toContain("title_text");
+it("should not navigate when in experiences route", () => {
+  const { ui, mockNavigate } = setup({
+    title,
+    sidebar: true,
+    location: { pathname: EXPERIENCES_URL } as any
+  });
+
+  const { getByTestId } = render(ui);
+
+  /**
+   * Then the logo should not have a pointer
+   */
+  const $logo = getByTestId("logo-container");
+  expect($logo.classList).not.toContain("with-pointer");
+
+  /**
+   * When we click on the logo
+   */
+  fireEvent.click($logo);
+
+  /**
+   * Then we should not be navigated away
+   */
+  expect(mockNavigate).not.toHaveBeenCalled();
+});
+
+it("should not navigate when in root route", () => {
+  const { ui, mockNavigate } = setup({
+    title,
+    sidebar: true,
+    location: { pathname: ROOT_URL } as any
+  });
+
+  const { getByTestId } = render(ui);
+
+  /**
+   * Then the logo should not have a pointer
+   */
+  const $logo = getByTestId("logo-container");
+  expect($logo.classList).not.toContain("with-pointer");
+
+  /**
+   * When we click on the logo
+   */
+  fireEvent.click($logo);
+
+  /**
+   * Then we should not be navigated away
+   */
+  expect(mockNavigate).not.toHaveBeenCalled();
+});
+
+it("should navigate to experiences route when on any url except root and experiences routes and we are logged in", () => {
+  const { ui, mockNavigate } = setup({
+    title,
+    sidebar: true,
+    location: { pathname: ROOT_URL + 5 } as any,
+    user: {} as any
+  });
+
+  const { getByTestId } = render(ui);
+
+  /**
+   * Then the logo should not have a pointer
+   */
+  const $logo = getByTestId("logo-container");
+  expect($logo.classList).toContain("with-pointer");
+
+  /**
+   * When we click on the logo
+   */
+  fireEvent.click($logo);
+
+  /**
+   * Then we should be navigated away to root url
+   */
+  expect(mockNavigate).toHaveBeenCalledWith(EXPERIENCES_URL);
+});
+
+it("should navigate to root route when on any url except root and experiences routes and we are not logged in", () => {
+  const { ui, mockNavigate } = setup({
+    title,
+    sidebar: true,
+    location: { pathname: ROOT_URL + 5 } as any,
+    user: undefined
+  });
+
+  const { getByTestId } = render(ui);
+
+  /**
+   * When we click on the logo
+   */
+  fireEvent.click(getByTestId("logo-container"));
+
+  /**
+   * Then we should be navigated away to root url
+   */
+  expect(mockNavigate).toHaveBeenCalledWith(ROOT_URL);
+});
+
+it("renders close sidebar icon but not show icon", () => {
+  const mockToggleShowSidebar = jest.fn();
+  const { ui } = setup({
+    title,
+    sidebar: true,
+    toggleShowSidebar: mockToggleShowSidebar,
+    show: true
+  });
+
+  /**
+   * Given we are using header component and we are showing sidebar
+   */
+  const { getByTestId, queryByTestId } = render(ui);
+
+  /**
+   * Then show sidebar icon should not be visible
+   */
+
+  expect(queryByTestId("show-sidebar-icon")).not.toBeInTheDocument();
+
+  /**
+   * And close sidebar icon should be visible
+   */
+  const $close = getByTestId("close-sidebar-icon");
+  expect($close).toBeInTheDocument();
+
+  /**
+   * When we click the close icon
+   */
+  fireEvent.click($close);
+
+  /**
+   * Then sidebar should be toggled
+   */
+  expect(mockToggleShowSidebar).toHaveBeenCalledWith(false);
+});
+
+it("renders show sidebar icon but not close icon", () => {
+  const mockToggleShowSidebar = jest.fn();
+  const { ui } = setup({
+    title,
+    sidebar: true,
+    toggleShowSidebar: mockToggleShowSidebar,
+    show: false
+  });
+
+  /**
+   * Given we are using header component and we are showing sidebar
+   */
+  const { getByTestId, queryByTestId } = render(ui);
+
+  /**
+   * Then show sidebar icon should be visible
+   */
+
+  const $show = getByTestId("show-sidebar-icon");
+  expect($show).toBeInTheDocument();
+
+  /**
+   * And close sidebar icon should not be visible
+   */
+  expect(queryByTestId("close-sidebar-icon")).not.toBeInTheDocument();
+
+  /**
+   * When we click on the show icon
+   */
+  fireEvent.click($show);
+
+  /**
+   * Then sidebar should be toggled
+   */
+  expect(mockToggleShowSidebar).toBeCalledWith(true);
 });
 
 function setup(props: Partial<Props>) {
-  const { Ui } = renderWithRouter(
+  const { Ui, ...rest } = renderWithRouter(
     HeaderP,
     {},
 
@@ -78,6 +240,7 @@ function setup(props: Partial<Props>) {
   );
 
   return {
-    ui: <Ui />
+    ui: <Ui />,
+    ...rest
   };
 }

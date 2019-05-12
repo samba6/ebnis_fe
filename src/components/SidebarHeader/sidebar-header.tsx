@@ -5,7 +5,6 @@ import { Sidebar } from "../Sidebar";
 
 export interface OwnProps {
   title: string;
-  wide?: boolean;
   sidebar?: boolean;
 }
 
@@ -18,14 +17,13 @@ export interface WithSideBar {
 }
 
 export function SidebarHeader(props: Props) {
-  const { title, sidebar, wide, Header } = props;
+  const { title, sidebar, Header } = props;
   const [showSidebar, toggleShowSidebar] = useState(false);
 
   return (
     <>
       <Header
         title={title}
-        wide={wide}
         show={showSidebar}
         toggleShowSidebar={toggleShowSidebar}
         sidebar={sidebar}
