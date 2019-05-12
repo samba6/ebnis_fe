@@ -6,15 +6,13 @@ import { withUserHOC } from "../with-user";
 
 // tslint:disable-next-line: no-any
 function AuthRequiredComp(props: any) {
-  const { component, user, ...rest } = props;
+  const { component: AuthComponent, user, ...rest } = props;
 
   useEffect(() => {
     if (!user) {
       navigate(LOGIN_URL);
     }
   }, [user]);
-
-  const AuthComponent = component;
 
   return user ? <AuthComponent {...rest} /> : null;
 }
