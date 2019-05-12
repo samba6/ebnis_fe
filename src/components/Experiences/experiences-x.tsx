@@ -2,13 +2,17 @@ import React, { useEffect, useState } from "react";
 import { Icon } from "semantic-ui-react";
 import { NavigateFn } from "@reach/router";
 
-import "./home.scss";
-import { Props } from "./home";
-import { setTitle, NEW_EXP_URL, makeExpRoute } from "../../routes";
+import "./experiences.scss";
+import { Props } from "./experiences";
+import {
+  setTitle,
+  EXPERIENCE_DEFINITION_URL,
+  makeExpRoute
+} from "../../routes";
 import Loading from "../Loading";
 import { GetExps_exps } from "../../graphql/apollo-types/GetExps";
 
-export const Home = (props: Props) => {
+export const Experiences = (props: Props) => {
   const {
     navigate,
     getExpDefsResult: { loading, exps },
@@ -25,7 +29,7 @@ export const Home = (props: Props) => {
   }, []);
 
   function goToNewExp() {
-    (navigate as NavigateFn)(NEW_EXP_URL);
+    (navigate as NavigateFn)(EXPERIENCE_DEFINITION_URL);
   }
 
   function renderExperiences() {

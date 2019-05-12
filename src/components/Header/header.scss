@@ -3,6 +3,7 @@
 
 .components-header {
   @extend %header-box-shadow;
+  z-index: 2;
   flex-shrink: 0;
   display: flex;
   justify-content: space-between;

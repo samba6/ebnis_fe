@@ -1,4 +1,4 @@
-import { ROOT_URL } from "./routes";
+import { EXPERIENCES_URL } from "./routes";
 import { SCHEMA_KEY } from "./constants";
 
 /**
@@ -27,7 +27,7 @@ export function refreshToHome() {
   }
 
   if (getUser()) {
-    window.location.href = ROOT_URL;
+    window.location.href = EXPERIENCES_URL;
     return;
   }
 
@@ -37,7 +37,7 @@ export function refreshToHome() {
   intervalId = setInterval(() => {
     if (getUser() || counter === 1000) {
       clearInterval(intervalId);
-      window.location.href = ROOT_URL;
+      window.location.href = EXPERIENCES_URL;
     }
 
     counter++;

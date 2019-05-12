@@ -4,13 +4,13 @@ import "jest-dom/extend-expect";
 import "react-testing-library/cleanup-after-each";
 import { render, fireEvent } from "react-testing-library";
 
-import { Home } from "../components/Home/home-x";
-import { Props } from "../components/Home/home";
+import { Experiences } from "../components/Experiences/experiences-x";
+import { Props } from "../components/Experiences/experiences";
 import { renderWithRouter } from "./test_utils";
-import { NEW_EXP_URL, makeExpRoute } from "../routes";
+import { EXPERIENCE_DEFINITION_URL, makeExpRoute } from "../routes";
 import { GetExps_exps } from "../graphql/apollo-types/GetExps";
 
-const HomeP = Home as ComponentType<Partial<Props>>;
+const HomeP = Experiences as ComponentType<Partial<Props>>;
 
 it("renders loading state and not main", () => {
   const { Ui } = makeComp({
@@ -39,7 +39,7 @@ it("renders empty exps", () => {
 
   const $goToNewExp = getByText(/Click here to create your first experience/);
   fireEvent.click($goToNewExp);
-  expect(mockNavigate).toBeCalledWith(NEW_EXP_URL);
+  expect(mockNavigate).toBeCalledWith(EXPERIENCE_DEFINITION_URL);
 });
 
 it("renders exps", () => {

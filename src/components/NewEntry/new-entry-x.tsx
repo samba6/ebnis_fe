@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { Form, Input, Button, TextArea } from "semantic-ui-react";
 import dateFnFormat from "date-fns/format";
+import { NavigateFn } from "@reach/router";
 
 import "./new-entry.scss";
 import { Props, FieldComponentProps, FormObj, FormObjVal } from "./new-entry";
-import { SidebarHeader } from "../SidebarHeader";
 import { setTitle, makeExpRoute } from "../../routes";
 import Loading from "../Loading";
 import { FieldType } from "../../graphql/apollo-types/globalTypes";
@@ -122,7 +122,7 @@ const fieldTypeUtils = {
 };
 
 export const NewEntry = (props: Props) => {
-  const { loading, exp, history, createEntry } = props;
+  const { loading, exp, navigate, createEntry, SidebarHeader } = props;
   const [formValues, setFormValues] = useState<FormObj>({} as FormObj);
 
   useEffect(
@@ -190,7 +190,7 @@ export const NewEntry = (props: Props) => {
   }
 
   function goToExp() {
-    history.push(makeExpRoute((exp && exp.id) || ""));
+    (navigate as NavigateFn)(makeExpRoute((exp && exp.id) || ""));
   }
 
   async function submit() {

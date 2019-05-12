@@ -1,12 +1,15 @@
-import { RouteComponentProps } from "react-router-dom";
+import { RouteComponentProps } from "@reach/router";
 
 import { GetExpGqlProps } from "../../graphql/get-exp.query";
 import { NewEntryRouteParams } from "../../routes";
 import { CreateEntryGqlProps } from "../../graphql/create-entry.mutation";
+import { WithSideBar } from "../SidebarHeader/sidebar-header";
 
-export type OwnProps = RouteComponentProps<NewEntryRouteParams>;
+export interface OwnProps
+  extends WithSideBar,
+    RouteComponentProps<NewEntryRouteParams> {}
 
-export type Props = OwnProps & GetExpGqlProps & CreateEntryGqlProps;
+export interface Props extends OwnProps, GetExpGqlProps, CreateEntryGqlProps {}
 
 export type FormObjVal = Date | string;
 export interface FormObj {

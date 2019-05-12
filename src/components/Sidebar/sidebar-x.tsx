@@ -7,7 +7,7 @@ import {
 } from "@reach/router";
 
 import "./sidebar.scss";
-import { NEW_EXP_URL, ROOT_URL } from "../../routes";
+import { EXPERIENCE_DEFINITION_URL, EXPERIENCES_URL } from "../../routes";
 
 interface Props extends RouteComponentProps {
   show: boolean;
@@ -52,12 +52,14 @@ export function Sidebar(props: Props) {
         <div className="sidebar-hide item" onClick={hideSidebar} />
 
         <ul className="sidebar__content">
-          {pathname !== ROOT_URL && (
-            <li onClick={onGoToExperience(ROOT_URL)}>Home</li>
+          {pathname !== EXPERIENCES_URL && (
+            <li onClick={onGoToExperience(EXPERIENCES_URL)}>Home</li>
           )}
 
-          {pathname !== NEW_EXP_URL && (
-            <li onClick={onGoToExperience(NEW_EXP_URL)}>New Experience</li>
+          {pathname !== EXPERIENCE_DEFINITION_URL && (
+            <li onClick={onGoToExperience(EXPERIENCE_DEFINITION_URL)}>
+              New Experience
+            </li>
           )}
         </ul>
       </nav>

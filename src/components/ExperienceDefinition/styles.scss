@@ -1,17 +1,24 @@
 @import "../../styles/variables";
 @import "../../styles/extensions";
 
-.routes-new-exp {
-  padding: 10px 5px 20px 5px;
-  overflow-x: hidden;
-  overflow-y: auto;
+.components-experience-definition {
+  @extend %route-main;
+
+  .main {
+    @extend %app-main;
+    padding: 15px 25px 0 25px;
+  }
+
+  .form {
+    padding-bottom: 30px;
+  }
 
   .field {
     @extend %field-margin-bottom;
   }
 
-  .new-exp-submit {
-    margin-top: 20px;
+  .submit-btn {
+    margin-top: 40px;
   }
 
   .field-def-container {
@@ -38,8 +45,6 @@
 
   .graphql-errors-header.header {
     margin-bottom: 1em;
-    position: relative;
-    left: -15px;
   }
 
   .graphql-field-defs-error-container {
@@ -52,11 +57,6 @@
     & > span {
       display: inline-block;
 
-      &:first-child {
-        width: 2em;
-        text-align: right;
-      }
-
       &:last-child {
         padding-left: 0.5em;
       }
@@ -66,9 +66,5 @@
   .description-field-toggle {
     opacity: 0.6;
     cursor: pointer;
-  }
-
-  .submit-btn-hr {
-    @extend %submit-btn-hr;
   }
 }

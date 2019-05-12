@@ -17,11 +17,11 @@ export const EXP_MUTATION = gql`
   ${expFrag}
 `;
 
-export type ExpMutationFn = MutationFn<
+export type CreateExpMutationFn = MutationFn<
   CreateExpMutation,
   CreateExpMutationVariables
 >;
 
 export interface CreateExpMutationProps {
-  createExp?: ExpMutationFn;
+  createExp?: CreateExpMutationFn;
 }

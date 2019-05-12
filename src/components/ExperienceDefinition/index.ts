@@ -1,18 +1,16 @@
 import { graphql } from "react-apollo";
-import React from "react";
 
-import { NewExperience as Comp } from "./new-exp-x";
-import { OwnProps, Props } from "./new-exp";
+import { ExperienceDefinition as Comp } from "./component";
+import { OwnProps } from "./utils";
 import {
   EXP_MUTATION,
   CreateExpMutationProps,
-  ExpMutationFn
+  CreateExpMutationFn
 } from "../../graphql/create-exp.mutation";
 import {
   CreateExpMutation,
   CreateExpMutationVariables
 } from "../../graphql/apollo-types/CreateExpMutation";
-import { SidebarHeader } from "../SidebarHeader";
 
 const expMutationGql = graphql<
   OwnProps,
@@ -21,17 +19,11 @@ const expMutationGql = graphql<
   CreateExpMutationProps | void
 >(EXP_MUTATION, {
   props: props => {
-    const mutate = props.mutate as ExpMutationFn;
+    const mutate = props.mutate as CreateExpMutationFn;
     return {
       createExp: mutate
     };
   }
 });
 
-function NewExperienceComp(
-  props: Pick<Props, Exclude<keyof Props, "SidebarHeader">>
-) {
-  return <Comp {...props} SidebarHeader={SidebarHeader} />;
-}
-
-export const NewExperience = expMutationGql(NewExperienceComp);
+export const ExperienceDefinition = expMutationGql(Comp);

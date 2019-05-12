@@ -1,10 +1,4 @@
-import React, {
-  useEffect,
-  Fragment,
-  Dispatch,
-  useRef,
-  useReducer
-} from "react";
+import React, { useEffect, Dispatch, useRef, useReducer } from "react";
 import {
   Formik,
   FastField,
@@ -27,41 +21,40 @@ import {
 import { ApolloError } from "apollo-client";
 import { NavigateFn } from "@reach/router";
 
-import "./new-exp.scss";
+import "./styles.scss";
 import {
   Props,
   ValidationSchema,
   FIELD_TYPES,
-  CreateExpUpdateFn,
   EMPTY_FIELD,
   reducer,
   State,
   Action_Types,
   Action,
-  SelectFieldTypeState,
   GraphQlErrorState,
   GraphQlError
-} from "./new-exp";
+} from "./utils";
 import { setTitle } from "../../routes";
-import { GetExps } from "../../graphql/apollo-types/GetExps";
 import { CreateExpMutation_exp } from "../../graphql/apollo-types/CreateExpMutation";
 import {
   CreateExp as FormValues,
   CreateFieldDef
 } from "../../graphql/apollo-types/globalTypes";
 import { makeExpRoute } from "../../routes";
-import { GET_EXP_DEFS_QUERY } from "../../graphql/exps.query";
+import { noop } from "../../constants";
+import { ExperienceDefinitionUpdate } from "./update";
+import { CreateExpMutationFn } from "../../graphql/create-exp.mutation";
+import { scrollTop } from "./scrollTop";
 
-export function NewExperience(props: Props) {
+export function ExperienceDefinition(props: Props) {
   const {
     createExp,
     navigate,
-    createExpUpdate = createExpUpdateDefault,
+
     SidebarHeader
   } = props;
   const [state, dispatch] = useReducer(reducer, {
-    showDescriptionInput: true,
-    selectValues: {}
+    showDescriptionInput: true
   } as State);
 
   const routeRef = useRef<HTMLDivElement | null>(null);
@@ -72,18 +65,13 @@ export function NewExperience(props: Props) {
     return setTitle;
   }, []);
 
-  const FieldDef = (
+  function FieldDef(
     values: FormValues,
     arrayHelpers: ArrayHelpers,
-    field: CreateFieldDef | null,
+    field: CreateFieldDef,
     index: number
-  ) => {
-    // istanbul ignore next: satisfying typescript
-    if (!field) {
-      return null;
-    }
-
-    const { submittedFormErrors, graphQlError, selectValues } = state;
+  ) {
+    const { submittedFormErrors, graphQlError } = state;
 
     const errorClass =
       getFieldContainerErrorClassFromForm(index, submittedFormErrors) ||
@@ -102,7 +90,7 @@ export function NewExperience(props: Props) {
         <FastField
           name={makeFieldName(index, "name")}
           index={index}
-          component={FieldName}
+          component={FieldNameComponent}
           dispatch={dispatch}
           submittedFormErrors={submittedFormErrors}
           graphQlError={graphQlError}
@@ -112,33 +100,78 @@ export function NewExperience(props: Props) {
           index={index}
           name={makeFieldName(index, "type")}
           submittedFormErrors={submittedFormErrors}
-          dispatch={dispatch}
-          selectValues={selectValues}
-          component={FieldDataType}
+          component={FieldDataTypeComponent}
         />
 
-        <FieldBtnCtrls
+        <FieldBtnCtrlsComponent
           index={index}
           values={values}
           arrayHelpers={arrayHelpers}
           dispatch={dispatch}
-          selectValues={state.selectValues}
         />
       </div>
     );
-  };
+  }
 
   const renderFieldDefs = (values: FormValues) => (
     arrayHelpers: ArrayHelpers
   ) => {
     return (
-      <Fragment>
+      <>
         {values.fieldDefs.map((field, index) =>
-          FieldDef(values, arrayHelpers, field, index)
+          FieldDef(values, arrayHelpers, field as CreateFieldDef, index)
         )}
-      </Fragment>
+      </>
     );
   };
+
+  function onSubmit(formikProps: FormikProps<FormValues>) {
+    return async function() {
+      dispatch({
+        type: Action_Types.CLEAR_ALL_ERRORS
+      });
+
+      const { validateForm, setSubmitting, values } = formikProps;
+      setSubmitting(true);
+
+      const errors = await validateForm(values);
+
+      if (errors.title || errors.fieldDefs) {
+        dispatch({
+          type: Action_Types.SET_FORM_ERROR,
+          payload: errors
+        });
+
+        setSubmitting(false);
+        return;
+      }
+
+      try {
+        const result = await (createExp as CreateExpMutationFn)({
+          variables: {
+            exp: values
+          },
+
+          update: ExperienceDefinitionUpdate
+        });
+
+        const exp = (result &&
+          result.data &&
+          result.data.exp) as CreateExpMutation_exp;
+
+        (navigate as NavigateFn)(makeExpRoute(exp.id));
+      } catch (error) {
+        dispatch({
+          type: Action_Types.SET_GRAPHQL_ERROR,
+          payload: parseGraphQlError(error)
+        });
+
+        scrollTop(routeRef);
+      }
+
+      setSubmitting(false);
+    };
+  }
 
   function renderForm(formikProps: FormikProps<FormValues>) {
     const { dirty, isSubmitting, values } = formikProps;
@@ -146,62 +179,8 @@ export function NewExperience(props: Props) {
     const formInvalid = !(!!title && !!fieldDefs.length);
 
     return (
-      <Form
-        onSubmit={async function onSubmit() {
-          dispatch({
-            type: Action_Types.RESET_FORM_ERRORS
-          });
-
-          const { validateForm, setSubmitting } = formikProps;
-          setSubmitting(true);
-
-          const errors = await validateForm(values);
-
-          if (errors.title || errors.fieldDefs) {
-            dispatch({
-              type: Action_Types.SET_FORM_ERROR,
-              payload: errors
-            });
-
-            setSubmitting(false);
-            return;
-          }
-
-          // istanbul ignore next: satisfying typescript
-          if (!createExp) {
-            return;
-          }
-
-          try {
-            const result = await createExp({
-              variables: {
-                exp: values
-              },
-
-              update: createExpUpdate
-            });
-
-            const exp = (result &&
-              result.data &&
-              result.data.exp) as CreateExpMutation_exp;
-
-            (navigate as NavigateFn)(makeExpRoute(exp.id));
-          } catch (error) {
-            dispatch({
-              type: Action_Types.SET_GRAPHQL_ERROR,
-              payload: parseGraphQlError(error)
-            });
-
-            // istanbul ignore next: satisfying typescript
-            if (routeRef.current) {
-              routeRef.current.scrollTop = 0;
-            }
-          }
-
-          setSubmitting(false);
-        }}
-      >
-        <GraphQlErrorComponent
+      <Form onSubmit={onSubmit(formikProps)}>
+        <GraphQlErrorsSummaryComponent
           graphQlError={state.graphQlError}
           dispatch={dispatch}
         />
@@ -209,24 +188,22 @@ export function NewExperience(props: Props) {
         <FastField
           name="title"
           graphQlError={state.graphQlError}
-          component={TitleInput}
+          component={TitleInputComponent}
         />
 
         <Field
           name="description"
           dispatch={dispatch}
           showDescriptionInput={state.showDescriptionInput}
-          component={DescriptionInput}
+          component={DescriptionInputComponent}
         />
 
         <FieldArray name="fieldDefs" render={renderFieldDefs(values)} />
 
-        <hr className="submit-btn-hr" />
-
         <Button
-          className="new-exp-submit"
-          id="new-exp-submit"
-          name="new-exp-submit"
+          className="submit-btn"
+          id="experience-def-submit-btn"
+          name="experience-def-submit-btn"
           color="green"
           inverted={true}
           disabled={!dirty || formInvalid || isSubmitting}
@@ -241,17 +218,17 @@ export function NewExperience(props: Props) {
   }
 
   const render = (
-    <div className="app-container">
+    <div className="components-experience-definition">
       <SidebarHeader title="New Experience" sidebar={true} />
 
-      <div className="app-main routes-new-exp" ref={routeRef}>
+      <div className="main" ref={routeRef}>
         <Formik<FormValues>
           initialValues={{
             title: "",
             description: "",
             fieldDefs: [{ ...EMPTY_FIELD }]
           }}
-          onSubmit={nullSubmit}
+          onSubmit={noop}
           render={renderForm}
           validationSchema={ValidationSchema}
           validateOnChange={false}
@@ -263,42 +240,7 @@ export function NewExperience(props: Props) {
   return render;
 }
 
-// istanbul ignore next: trust apollo to act in good faith
-const createExpUpdateDefault: CreateExpUpdateFn = async (
-  client,
-  { data: newExperience }
-) => {
-  if (!newExperience) {
-    return;
-  }
-
-  const { exp } = newExperience;
-
-  if (!exp) {
-    return;
-  }
-
-  const data = client.readQuery<GetExps>({
-    query: GET_EXP_DEFS_QUERY
-  });
-
-  if (!data) {
-    return;
-  }
-
-  const { exps } = data;
-
-  if (!exps) {
-    return;
-  }
-
-  await client.writeQuery({
-    query: GET_EXP_DEFS_QUERY,
-    data: { exps: [...exps, exp] }
-  });
-};
-
-function FieldName({
+function FieldNameComponent({
   field,
   index,
   dispatch,
@@ -321,36 +263,20 @@ function FieldName({
     <Form.Field error={!!error}>
       <label htmlFor={name}>{`Field ${index + 1} Name`}</label>
 
-      <Input
-        {...rest}
-        value={value}
-        autoComplete="off"
-        name={name}
-        id={name}
-        onFocus={() =>
-          dispatch({
-            type: Action_Types.SET_FORM_ERROR,
-            payload: undefined
-          })
-        }
-      />
+      <Input {...rest} value={value} autoComplete="off" name={name} id={name} />
 
-      <FormCtrlError error={error} />
+      <FormCtrlError error={error} index1={index + 1} />
     </Form.Field>
   );
 }
 
-function FieldDataType({
+function FieldDataTypeComponent({
   field: { name, value },
   form: { setFieldValue },
   submittedFormErrors,
-  dispatch,
-  selectValues,
   index
 }: FieldProps<FormValues> & {
   submittedFormErrors: FormikErrors<FormValues>;
-  dispatch: Dispatch<Action>;
-  selectValues: SelectFieldTypeState;
   index: number;
 }) {
   const error = getFieldError(name, "type", submittedFormErrors);
@@ -370,55 +296,40 @@ function FieldDataType({
           const val = data.value as string;
 
           setFieldValue(name, val);
-          dispatch({
-            type: Action_Types.SELECT_VALUES,
-            payload: {
-              selectValues,
-              [index]: val
-            }
-          });
         }}
-        onFocus={() =>
-          dispatch({
-            type: Action_Types.SET_FORM_ERROR,
-            payload: undefined
-          })
-        }
       />
 
-      <FormCtrlError error={error} />
+      <FormCtrlError error={error} index1={index + 1} />
     </Form.Field>
   );
 }
 
 /**
  * SUMMARY OF RULES FOR FIELD CTRL BUTTONS
- * 1. If only one field and the field is empty, not buttons
- * 2. If only one field and the field is filled, add button only
+ * 1. If only one field and the field is empty, no button is shown
+ * 2. If only one field and the field is filled, add button only is shown
  * 3. Any field that is not completely filled does not get the add button
  *    *completely* means filling field name and selecting a data type
  * 4. The first field never gets an up button
  * 5. The last field never gets a down button
  */
-function FieldBtnCtrls({
+function FieldBtnCtrlsComponent({
   index,
   values,
   arrayHelpers,
-  dispatch,
-  selectValues
+  dispatch
 }: {
   index: number;
   values: FormValues;
   arrayHelpers: ArrayHelpers;
   dispatch: Dispatch<Action>;
-  selectValues: SelectFieldTypeState;
 }) {
-  const fieldDefs = (values.fieldDefs && values.fieldDefs) || [];
+  const fieldDefs = values.fieldDefs as CreateFieldDef[];
   const field = fieldDefs[index];
   const len = fieldDefs.length;
-  const withData = field && field.name && field.type;
+  const isCompletelyFilled = field.name && field.type;
 
-  if (len === 1 && !withData) {
+  if (len === 1 && !isCompletelyFilled) {
     return null;
   }
 
@@ -429,16 +340,17 @@ function FieldBtnCtrls({
   return (
     <div data-testid={`field-controls-${index1}`} className="field-controls">
       <Button.Group className="control-buttons" basic={true} compact={true}>
-        {withData && (
+        {isCompletelyFilled && (
           <Button
             data-testid={`add-field-btn-${index1}`}
             type="button"
             onClick={function onFieldAddClicked() {
+              arrayHelpers.insert(index1, { ...EMPTY_FIELD });
+
               dispatch({
-                type: Action_Types.SET_FORM_ERROR,
+                type: Action_Types.CLEAR_ALL_ERRORS,
                 payload: undefined
               });
-              arrayHelpers.insert(index1, { ...EMPTY_FIELD });
             }}
           >
             <Icon name="plus" />
@@ -450,14 +362,10 @@ function FieldBtnCtrls({
             data-testid={`remove-field-btn-${index1}`}
             type="button"
             onClick={function onFieldDeleteClicked() {
-              dispatch({
-                type: Action_Types.SELECT_VALUES,
-                payload: removeSelectedField(index, fieldDefs)
-              });
-
               arrayHelpers.remove(index);
+
               dispatch({
-                type: Action_Types.SET_FORM_ERROR,
+                type: Action_Types.CLEAR_ALL_ERRORS,
                 payload: undefined
               });
             }}
@@ -474,16 +382,6 @@ function FieldBtnCtrls({
               const indexUp = index;
               const indexDown = index - 1;
               arrayHelpers.swap(indexUp, indexDown);
-
-              dispatch({
-                type: Action_Types.SELECT_VALUES,
-                payload: swapSelectField(
-                  fieldDefs,
-                  indexUp,
-                  indexDown,
-                  selectValues
-                )
-              });
             }}
           >
             <Icon name="arrow up" />
@@ -496,11 +394,6 @@ function FieldBtnCtrls({
             type="button"
             onClick={function onFieldDownClicked() {
               arrayHelpers.swap(index, index1);
-
-              dispatch({
-                type: Action_Types.SELECT_VALUES,
-                payload: swapSelectField(fieldDefs, index, index1, selectValues)
-              });
             }}
           >
             <Icon name="arrow down" />
@@ -511,7 +404,7 @@ function FieldBtnCtrls({
   );
 }
 
-function DescriptionInput({
+function DescriptionInputComponent({
   field,
   showDescriptionInput,
   dispatch
@@ -533,8 +426,11 @@ function DescriptionInput({
         }
       >
         Description
-        {!showDescriptionInput && <Icon name="caret left" />}
-        {showDescriptionInput && <Icon name="caret down" />}
+        {showDescriptionInput ? (
+          <Icon name="caret down" data-testid="description-visible-icon" />
+        ) : (
+          <Icon name="caret left" data-testid="description-not-visible-icon" />
+        )}
       </label>
 
       {showDescriptionInput && <TextArea {...field} id={field.name} />}
@@ -542,7 +438,7 @@ function DescriptionInput({
   );
 }
 
-function TitleInput({
+function TitleInputComponent({
   field,
   graphQlError
 }: FieldProps<FormValues> & {
@@ -554,23 +450,35 @@ function TitleInput({
     <Form.Field error={!!error}>
       <label htmlFor={field.name}>Title</label>
 
-      <Input {...field} autoFocus={true} autoComplete="off" id={field.name} />
+      <Input {...field} autoComplete="off" id={field.name} />
 
-      <FormCtrlError error={error} />
+      <FormCtrlError error={error} index1={0} />
     </Form.Field>
   );
 }
 
-function parseGraphQlError(error: ApolloError) {
+function parseGraphQlError({ graphQLErrors }: ApolloError) {
   const transformedError = {} as GraphQlErrorState;
 
-  for (const err of error.graphQLErrors) {
+  for (const err of graphQLErrors) {
+    /**
+     * example of err.message JSON string:
+     * {
+     *  "field_defs":[
+     *    {"name":"aaaaaaaaaaaa---1 has already been taken"},
+     *    {"name":"aaaaaaaaaaaa---2 has already been taken"}
+     *  ],
+     *  "title": "too short"
+     * }
+     */
     const { field_defs, title } = JSON.parse(err.message) as GraphQlError;
 
+    // istanbul ignore next: this is trivial. The complexity is with field_defs
     if (title) {
       transformedError.title = title;
     }
 
+    // istanbul ignore next: this is trivial also - no need to set up test
     if (!field_defs) {
       continue;
     }
@@ -578,37 +486,70 @@ function parseGraphQlError(error: ApolloError) {
     for (const { name } of field_defs) {
       const fieldNameError = parseGraphQlErrorFieldName(name);
 
-      if (fieldNameError) {
-        const [index, nameError] = fieldNameError;
-        transformedError[makeFieldName(index, "name")] = nameError;
-
-        // we also store the field index and corresponding error so we can easily
-        // access error with field index (no transformation required)
-        const fieldDefs = transformedError.fieldDefs || {};
-        fieldDefs[index] = `name ${nameError}`;
-        transformedError.fieldDefs = fieldDefs;
+      // istanbul ignore next: we trust server to give us expected JSON string
+      if (!fieldNameError) {
+        continue;
       }
-    }
 
-    // we store the formik path names on the upper level so we can easily access
-    // them from render without transforming the error (an earlier attempt
-    // required calling functions to transform the data into forms that can
-    // be used - this is no longer required because all shapes in which the
-    // data can be consumed are now stored on this object).  This potentially
-    // makes this object large and convinent but I'm not sure if it is better
-    // than the previous approach)
+      const [index, nameError] = fieldNameError;
+      // we store the errors as formik field name so we can trivially access
+      // the errors at places where we have formik field name
+      transformedError[makeFieldName(index, "name")] = nameError;
+
+      // we also store the field index and corresponding error so we can easily
+      // access error with field index (no transformation required)
+      const fieldDefs = transformedError.fieldDefs || {};
+      fieldDefs[index] = `name ${nameError}`;
+      transformedError.fieldDefs = fieldDefs;
+    }
   }
+
+  /**
+   * At the end of the day, transformedError looks like this:
+   * {
+   *    title: "title related error",
+   *    "fieldDefs[0].name": "field definition 0 name error",
+   *    "fieldDefs[1].name": "field definition 1 name error",
+   *    fieldDefs: {
+   *      "1": "field definition 0 name error",
+   *      "2": "field definition 1 name error",
+   *    }
+   * }
+   *
+   * we store the formik path names
+   * (fieldDefs[0].name, fieldDefs[1].name, fieldDefs[index].name)
+   * on the upper level so we can easily access
+   * them from render without transforming the error.
+   * An earlier attempt
+   * required calling functions to transform the data into forms that can
+   * be used - this is no longer required because all shapes in which the
+   * data can be consumed (formik field names and indices)
+   * are now stored on this object. This potentially
+   * makes this object large and convenient but I'm not sure if it is better
+   * than the previous approach of calling functions to tranform errors
+   */
 
   return transformedError;
 }
 
+/**
+ * The server will return field definition errors in the form
+ * {\"name\":\"aaaaaaaaaaaa---2 has already been taken\"}
+ * we are interested in the number following --- (2 in this case) which
+ * represents the 1-based index of the field and the texts following the
+ * number which represent the error associated with that field
+ */
+const graphQLErrorsRegExp = /---(\d+)\s*(.+)/;
+
 function parseGraphQlErrorFieldName(val?: string): [number, string] | null {
+  // istanbul ignore next: trivial
   if (!val) {
     return null;
   }
 
-  const exec = /---(\d+)\s*(.+)/.exec(val);
+  const exec = graphQLErrorsRegExp.exec(val);
 
+  // istanbul ignore next: trust the server to return the correct string
   if (!exec) {
     return null;
   }
@@ -616,7 +557,7 @@ function parseGraphQlErrorFieldName(val?: string): [number, string] | null {
   return [Number(exec[1]), exec[2]];
 }
 
-function GraphQlErrorComponent({
+function GraphQlErrorsSummaryComponent({
   graphQlError,
   dispatch
 }: {
@@ -631,6 +572,7 @@ function GraphQlErrorComponent({
 
   return (
     <Message
+      data-testid="graphql-errors-summary"
       style={{ display: "block" }}
       error={true}
       onDismiss={() =>
@@ -644,91 +586,39 @@ function GraphQlErrorComponent({
         Error in submitted form!
       </Message.Header>
 
-      {title && <div>Title {title}</div>}
-
       <Message.Content>
-        {renderGraphQlErrorFieldDefs(fieldDefs)}
+        {title && <div>Title {title}</div>}
+
+        <GraphQlErrorFieldDefsComponent fieldDefs={fieldDefs} />
       </Message.Content>
     </Message>
   );
 }
 
-function renderGraphQlErrorFieldDefs(fieldDefs?: { [k: string]: string }) {
+function GraphQlErrorFieldDefsComponent({
+  fieldDefs
+}: {
+  fieldDefs?: { [k: string]: string };
+}) {
+  // istanbul ignore next: trivial
   if (!fieldDefs) {
     return null;
   }
 
   return (
-    <Fragment>
-      <div className="graphql-field-defs-error-container">Fields</div>
-
+    <>
       {Object.entries(fieldDefs).map(([index, error]) => (
         <div key={index} className="graphql-field-defs-error-inner">
-          <span>{Number(index) + 1}</span>
+          <span>Field {Number(index) + 1}</span>
           <span>{error}</span>
         </div>
       ))}
-    </Fragment>
+    </>
   );
-}
-
-function swapSelectField(
-  fieldDefs: Array<CreateFieldDef | null>,
-  indexA: number,
-  indexB: number,
-  selectedValues: SelectFieldTypeState
-) {
-  const values = {} as SelectFieldTypeState;
-  const fieldA = fieldDefs[indexA];
-  const fieldB = fieldDefs[indexB];
-
-  if (fieldA && fieldA.type) {
-    values[indexB] = fieldA.type;
-  } else {
-    values[indexB] = null;
-  }
-
-  if (fieldB && fieldB.type) {
-    values[indexA] = fieldB.type;
-  } else {
-    values[indexA] = null;
-  }
-
-  const newSelectedVals = {
-    ...selectedValues,
-    ...values
-  };
-
-  return newSelectedVals;
-}
-
-function removeSelectedField(
-  removedIndex: number,
-  fieldDefs: Array<null | CreateFieldDef>
-) {
-  const selected = {} as SelectFieldTypeState;
-  const len = fieldDefs.length - 1;
-
-  for (let i = removedIndex; i < len; i++) {
-    const nextIndex = i + 1;
-    const field = fieldDefs[nextIndex];
-
-    if (!field) {
-      continue;
-    }
-
-    selected[i] = field.type;
-  }
-
-  return selected;
 }
 
 function makeFieldName(index: number, key: keyof CreateFieldDef) {
   return `fieldDefs[${index}].${key}`;
-}
-
-function nullSubmit() {
-  return null;
 }
 
 function getFieldContainerErrorClassFromForm(
@@ -739,11 +629,7 @@ function getFieldContainerErrorClassFromForm(
     return "";
   }
 
-  const { fieldDefs } = submittedFormErrors;
-
-  if (!fieldDefs) {
-    return "";
-  }
+  const fieldDefs = submittedFormErrors.fieldDefs as string[];
 
   if (fieldDefs[index]) {
     return "errors";
@@ -760,11 +646,7 @@ function getFieldError(
     return null;
   }
 
-  const { fieldDefs } = submittedFormErrors;
-
-  if (!(fieldDefs && fieldDefs.length)) {
-    return null;
-  }
+  const fieldDefs = submittedFormErrors.fieldDefs as string[];
 
   // tslint:disable-next-line:prefer-for-of
   for (let i = 0; i < fieldDefs.length; i++) {
@@ -779,6 +661,19 @@ function getFieldError(
   return null;
 }
 
-function FormCtrlError({ error }: { error: null | string }) {
-  return error ? <div className="form-control-error">{error}</div> : null;
+function FormCtrlError({
+  error,
+  index1
+}: {
+  error: null | string;
+  index1: number;
+}) {
+  return error ? (
+    <div
+      className="form-control-error"
+      data-testid={`form-control-error-${index1}`}
+    >
+      {error}
+    </div>
+  ) : null;
 }

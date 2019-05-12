@@ -16,11 +16,9 @@ import { CreateExpMutation } from "../../graphql/apollo-types/CreateExpMutation"
 
 export type CreateExpUpdateFn = MutationUpdaterFn<CreateExpMutation>;
 
-export interface OwnProps extends RouteComponentProps<{}> {
-  createExpUpdate?: CreateExpUpdateFn;
-}
+export interface OwnProps extends RouteComponentProps<{}>, WithSideBar {}
 
-export interface Props extends WithSideBar, OwnProps, CreateExpMutationProps {}
+export interface Props extends OwnProps, CreateExpMutationProps {}
 
 const fieldTypeKeys = Object.values(FieldType);
 
@@ -58,12 +56,7 @@ for (const k of fieldTypeKeys) {
 
 export interface Action {
   type: Action_Types;
-  payload?:
-    | undefined
-    | boolean
-    | FormikErrors<FormValues>
-    | GraphQlErrorState
-    | SelectFieldTypeState;
+  payload?: undefined | boolean | FormikErrors<FormValues> | GraphQlErrorState;
 }
 
 export interface State {
@@ -71,21 +64,17 @@ export interface State {
   readonly submittedFormErrors?: FormikErrors<FormValues>;
   readonly graphQlError?: GraphQlErrorState;
   readonly showDescriptionInput: boolean;
-  readonly selectValues: SelectFieldTypeState;
 }
 
 export const reducer: Reducer<State, Action> = (state, action) => {
   switch (action.type) {
-    case Action_Types.RESET_FORM_ERRORS:
+    case Action_Types.CLEAR_ALL_ERRORS:
       return {
         ...state,
         otherErrors: undefined,
         submittedFormErrors: undefined,
         graphQlError: undefined
       };
-
-    case Action_Types.SET_OTHER_ERRORS:
-      return { ...state, otherErrors: action.payload as string };
 
     case Action_Types.SET_FORM_ERROR:
       return {
@@ -99,9 +88,7 @@ export const reducer: Reducer<State, Action> = (state, action) => {
     case Action_Types.SET_SHOW_DESCRIPTION_INPUT:
       return { ...state, showDescriptionInput: action.payload as boolean };
 
-    case Action_Types.SELECT_VALUES:
-      return { ...state, selectValues: action.payload as SelectFieldTypeState };
-
+    // istanbul ignore next - trust React.useReducer
     default:
       return state;
   }
@@ -110,16 +97,15 @@ export const reducer: Reducer<State, Action> = (state, action) => {
 export const EMPTY_FIELD = { name: "", type: "" as FieldType };
 
 export enum Action_Types {
-  SET_OTHER_ERRORS = "@new-exp/SET_OTHER_ERRORS",
-  SET_FORM_ERROR = "@new-exp/SET_FORM_ERROR",
-  SET_GRAPHQL_ERROR = "@new-exp/SET_GRAPHQL_ERROR",
-  SET_SHOW_DESCRIPTION_INPUT = "@new-exp/SET_SHOW_DESCRIPTION_INPUT",
-  SELECT_VALUES = "@new-exp/SELECT_VALUES",
-  RESET_FORM_ERRORS = "@new-exp/RESET_FORM_ERRORS"
-}
+  SET_FORM_ERROR = "@components/new-experience/SET_FORM_ERROR",
 
-export interface SelectFieldTypeState {
-  [k: number]: string | null;
+  SET_GRAPHQL_ERROR = "@components/new-experience/SET_GRAPHQL_ERROR",
+
+  SET_SHOW_DESCRIPTION_INPUT = "@components/new-experience/SET_SHOW_DESCRIPTION_INPUT",
+
+  SELECT_VALUES = "@components/new-experience/SELECT_VALUES",
+
+  CLEAR_ALL_ERRORS = "@components/new-experience/CLEAR_ALL_ERRORS"
 }
 
 export interface GraphQlError {

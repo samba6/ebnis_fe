@@ -4,7 +4,13 @@ import { UserFragment } from "../graphql/apollo-types/UserFragment";
 import { Variable as UserMutationVar } from "./user.local.mutation";
 import USER_QUERY, { UserLocalGqlData } from "./auth.local.query";
 // import { resetClientAndPersistor } from "../containers/AppContext/set-up";
-import { getToken, clearToken, storeToken } from "./tokens";
+import {
+  getToken,
+  clearToken,
+  storeToken,
+  storeUser,
+  clearUser
+} from "./tokens";
 
 type ClientStateFn<TVariables> = (
   fieldName: string,
@@ -30,6 +36,12 @@ const userMutation: ClientStateFn<UserMutationVar> = async (
   { cache }
 ) => {
   if (user) {
+    /**
+     * We store user in local storage as a temporary fix because reading user
+     * out of apollo local state immediately after login does not seem to work
+     */
+    storeUser(user);
+
     cache.writeData({ data: { user, staleToken: null, loggedOutUser: null } });
     storeToken(user.jwt);
 
@@ -57,6 +69,8 @@ const userMutation: ClientStateFn<UserMutationVar> = async (
     // await resetClientAndPersistor();
     data.loggedOutUser = loggedOutUser;
   }
+
+  clearUser();
 
   await cache.writeData({
     data

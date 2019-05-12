@@ -2,12 +2,13 @@ import { graphql, compose } from "react-apollo";
 
 import { Exp as Comp } from "./exp-x";
 import { OwnProps } from "./exp";
-import GET_EXP_QUERY, { GetExpGqlProps } from "../../graphql/get-exp.query";
+import { GET_EXP_QUERY, GetExpGqlProps } from "../../graphql/get-exp.query";
 import {
   GetAnExp,
   GetAnExpVariables
 } from "../../graphql/apollo-types/GetAnExp";
-import GET_EXP_ENTRIES_QUERY, {
+import {
+  GET_EXP_ENTRIES_QUERY,
   GetExpEntriesGqlProps
 } from "../../graphql/exp-entries.query";
 import {
