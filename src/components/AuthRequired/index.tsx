@@ -16,7 +16,7 @@ function AuthRequiredComp(props: any) {
 
   const AuthComponent = component;
 
-  return <AuthComponent {...rest} />;
+  return user ? <AuthComponent {...rest} /> : null;
 }
 
 export const AuthRequired = withUserHOC(AuthRequiredComp);
