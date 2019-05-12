@@ -4,10 +4,10 @@ import "jest-dom/extend-expect";
 import "react-testing-library/cleanup-after-each";
 import { render, fireEvent } from "react-testing-library";
 
-import { Experiences } from "../components/Experiences/experiences-x";
-import { Props } from "../components/Experiences/experiences";
+import { Experiences } from "../components/Experiences/component";
+import { Props } from "../components/Experiences/utils";
 import { renderWithRouter } from "./test_utils";
-import { EXPERIENCE_DEFINITION_URL, makeExpRoute } from "../routes";
+import { EXPERIENCE_DEFINITION_URL, makeExperienceRoute } from "../routes";
 import { GetExps_exps } from "../graphql/apollo-types/GetExps";
 
 const HomeP = Experiences as ComponentType<Partial<Props>>;
@@ -90,7 +90,7 @@ it("renders exps", () => {
   ).not.toBeInTheDocument();
 
   fireEvent.click($exp1);
-  expect(mockNavigate).toBeCalledWith(makeExpRoute(id1));
+  expect(mockNavigate).toBeCalledWith(makeExperienceRoute(id1));
 });
 
 function makeComp(props: Partial<Props> = {}) {

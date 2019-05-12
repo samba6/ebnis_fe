@@ -7,11 +7,13 @@ import { NewEntry } from "../../components/NewEntry";
 import {
   EXPERIENCE_DEFINITION_URL,
   NEW_ENTRY_URL,
-  EXPERIENCES_URL
+  EXPERIENCES_URL,
+  EXPERIENCE_URL
 } from "../../routes";
 import { NotFound } from "../../components/NotFound";
 import { SidebarHeader } from "../../components/SidebarHeader";
 import { Experiences } from "../../components/Experiences";
+import { Experience } from "../../components/Experience";
 import { Layout } from "../../components/Layout";
 
 export function App(props: RouteComponentProps) {
@@ -19,14 +21,20 @@ export function App(props: RouteComponentProps) {
     <Layout>
       <Router style={{ height: "100%" }}>
         <AuthRequired
-          path={NEW_ENTRY_URL}
-          component={NewEntry}
+          path={EXPERIENCE_DEFINITION_URL}
+          component={ExperienceDefinition}
           SidebarHeader={SidebarHeader}
         />
 
         <AuthRequired
-          path={EXPERIENCE_DEFINITION_URL}
-          component={ExperienceDefinition}
+          path={EXPERIENCE_URL}
+          component={Experience}
+          SidebarHeader={SidebarHeader}
+        />
+
+        <AuthRequired
+          path={NEW_ENTRY_URL}
+          component={NewEntry}
           SidebarHeader={SidebarHeader}
         />
 

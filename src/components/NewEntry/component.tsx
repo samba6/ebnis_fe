@@ -3,9 +3,9 @@ import { Form, Input, Button, TextArea } from "semantic-ui-react";
 import dateFnFormat from "date-fns/format";
 import { NavigateFn } from "@reach/router";
 
-import "./new-entry.scss";
-import { Props, FieldComponentProps, FormObj, FormObjVal } from "./new-entry";
-import { setTitle, makeExpRoute } from "../../routes";
+import "./styles.scss";
+import { Props, FieldComponentProps, FormObj, FormObjVal } from "./utils";
+import { setTitle, makeExperienceRoute } from "../../routes";
 import Loading from "../Loading";
 import { FieldType } from "../../graphql/apollo-types/globalTypes";
 import DateField from "../DateField";
@@ -122,7 +122,12 @@ const fieldTypeUtils = {
 };
 
 export const NewEntry = (props: Props) => {
-  const { loading, exp, navigate, createEntry, SidebarHeader } = props;
+  const {
+    getExperienceGql: { loading, exp },
+    navigate,
+    createEntry,
+    SidebarHeader
+  } = props;
   const [formValues, setFormValues] = useState<FormObj>({} as FormObj);
 
   useEffect(
@@ -190,7 +195,7 @@ export const NewEntry = (props: Props) => {
   }
 
   function goToExp() {
-    (navigate as NavigateFn)(makeExpRoute((exp && exp.id) || ""));
+    (navigate as NavigateFn)(makeExperienceRoute((exp && exp.id) || ""));
   }
 
   async function submit() {
@@ -310,9 +315,8 @@ export const NewEntry = (props: Props) => {
         <Form>
           {fieldDefs.map(renderField)}
 
-          <hr />
-
           <Button
+            className="submit-btn"
             type="submit"
             inverted={true}
             color="green"
@@ -327,10 +331,10 @@ export const NewEntry = (props: Props) => {
   }
 
   return (
-    <div className="app-container">
+    <div className="component-new-entry">
       <SidebarHeader title={pageTitle(exp)} sidebar={true} />
 
-      <div className="app-main routes-new-entry"> {renderMainOr()}</div>
+      {renderMainOr()}
     </div>
   );
 };

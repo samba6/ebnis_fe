@@ -19,4 +19,6 @@ export const GET_EXP_QUERY = gql`
   ${fieldDefFrag}
 `;
 
-export type GetExpGqlProps = DataValue<GetAnExp, GetAnExpVariables>;
+export interface GetExperienceGqlProps {
+  getExperienceGql: DataValue<GetAnExp, GetAnExpVariables>;
+}

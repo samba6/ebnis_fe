@@ -2,7 +2,7 @@ import React, { useState, useRef } from "react";
 import { Form, Dropdown } from "semantic-ui-react";
 
 import DateField from "../DateField";
-import { FieldComponentProps, FormObjVal } from "../Exp/exp";
+import { FieldComponentProps, FormObjVal } from "../Experience/utils";
 import {
   HOUR_OPTIONS,
   MINUTE_OPTIONS,

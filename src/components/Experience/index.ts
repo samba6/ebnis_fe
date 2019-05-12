@@ -1,8 +1,11 @@
 import { graphql, compose } from "react-apollo";
 
-import { Exp as Comp } from "./exp-x";
-import { OwnProps } from "./exp";
-import { GET_EXP_QUERY, GetExpGqlProps } from "../../graphql/get-exp.query";
+import { Experience as Comp } from "./component";
+import { OwnProps } from "./utils";
+import {
+  GET_EXP_QUERY,
+  GetExperienceGqlProps
+} from "../../graphql/get-exp.query";
 import {
   GetAnExp,
   GetAnExpVariables
@@ -20,14 +23,14 @@ const getExpGql = graphql<
   OwnProps,
   GetAnExp,
   GetAnExpVariables,
-  GetExpGqlProps | undefined
+  GetExperienceGqlProps | undefined
 >(GET_EXP_QUERY, {
-  props: props => props.data,
-  options: ({ match }) => {
+  props: ({ data }) => data && { getExperienceGql: data },
+  options: ({ experienceId }) => {
     return {
       variables: {
         exp: {
-          id: match.params.id
+          id: experienceId as string
         }
       },
       fetchPolicy: "cache-and-network"
@@ -42,11 +45,11 @@ const getExpEntriesGql = graphql<
   GetExpEntriesGqlProps | undefined
 >(GET_EXP_ENTRIES_QUERY, {
   props: props => props.data,
-  options: ({ match }) => {
+  options: ({ experienceId }) => {
     return {
       variables: {
         entry: {
-          expId: match.params.id
+          expId: experienceId as string
         }
       },
 
@@ -55,7 +58,7 @@ const getExpEntriesGql = graphql<
   }
 });
 
-export const Exp = compose(
+export const Experience = compose(
   getExpGql,
   getExpEntriesGql
 )(Comp);

@@ -1,10 +1,11 @@
+// tslint:disable: no-any
 import React, { ComponentType } from "react";
 import "jest-dom/extend-expect";
 import { render } from "react-testing-library";
 
-import { Header } from "../components/Header/header-x";
-import { Props } from "../components/Header/header";
-import { LogoImageQuery_file_childImageSharp_fixed } from "../graphql/gatsby-types/LogoImageQuery";
+import { Header } from "../components/Header/component";
+import { Props } from "../components/Header/utils";
+import { renderWithRouter } from "./test_utils";
 
 type P = ComponentType<Partial<Props>>;
 const HeaderP = Header as P;
@@ -54,18 +55,10 @@ it("if no sidebar, then wide has effect", () => {
 it("renders with logo, title, no sidebar, no wide", () => {
   const { ui } = setup({ title });
 
-  const {
-    queryByTestId,
-    getByAltText,
-    getByText,
-    getByTestId,
-    container
-  } = render(ui);
+  const { queryByTestId, getByText, getByTestId, container } = render(ui);
 
   const header = container.firstChild as HTMLElement;
   expect(header.classList).not.toContain("wide");
-
-  expect(getByAltText(/logo/i)).toBeInTheDocument();
 
   expect(queryByTestId("sidebar-trigger")).not.toBeInTheDocument();
 
@@ -77,12 +70,14 @@ it("renders with logo, title, no sidebar, no wide", () => {
 });
 
 function setup(props: Partial<Props>) {
+  const { Ui } = renderWithRouter(
+    HeaderP,
+    {},
+
+    { logoAttrs: {} as any, ...props }
+  );
+
   return {
-    ui: (
-      <HeaderP
-        logoAttrs={{} as LogoImageQuery_file_childImageSharp_fixed}
-        {...props}
-      />
-    )
+    ui: <Ui />
   };
 }

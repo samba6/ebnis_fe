@@ -5,16 +5,17 @@ export const CLIENT_ONLY_PATH_PREFIX = "/app";
 export const EXPERIENCES_URL = CLIENT_ONLY_PATH_PREFIX;
 export const EXPERIENCE_DEFINITION_URL =
   CLIENT_ONLY_PATH_PREFIX + "/define-experience";
-export const EXP_URL = CLIENT_ONLY_PATH_PREFIX + "/experience/:experienceId";
+export const EXPERIENCE_URL =
+  CLIENT_ONLY_PATH_PREFIX + "/experience/:experienceId";
 export const NEW_ENTRY_URL =
   CLIENT_ONLY_PATH_PREFIX + "/experience/:experienceId/entry";
 
-export function makeExpRoute(id: string) {
-  return EXP_URL.replace(":experienceId", id);
+export function makeExperienceRoute(experienceId: string) {
+  return EXPERIENCE_URL.replace(":experienceId", experienceId);
 }
 
-export function makeNewEntryRoute(expId: string) {
-  return NEW_ENTRY_URL.replace(":expId", expId);
+export function makeNewEntryRoute(experienceId: string) {
+  return NEW_ENTRY_URL.replace(":experienceId", experienceId);
 }
 
 export interface ExpRouteParams {
@@ -22,7 +23,7 @@ export interface ExpRouteParams {
 }
 
 export interface NewEntryRouteParams {
-  expId: string;
+  experienceId: string;
 }
 
 export const setTitle = (title?: string) => {

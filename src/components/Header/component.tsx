@@ -1,13 +1,32 @@
 import React from "react";
-import { Icon } from "semantic-ui-react";
+import { Icon, Menu } from "semantic-ui-react";
 import makeClassnames from "classnames";
+import { navigate, WindowLocation } from "@reach/router";
 
-import "./header.scss";
-import logo from "./logo.png";
-import { Props } from "./header";
+import "./styles.scss";
+import { Props } from "./utils";
+import { EXPERIENCES_URL, ROOT_URL } from "../../routes";
 
 export const Header = (props: Props) => {
-  const { title, wide, sidebar, toggleShowSidebar, show } = props;
+  const {
+    title,
+    wide,
+    sidebar,
+    toggleShowSidebar,
+    show,
+    user,
+    location,
+    logoAttrs: { src, height, width }
+  } = props;
+
+  const pathname = (location as WindowLocation).pathname;
+  const isHome = pathname === (EXPERIENCES_URL || ROOT_URL);
+
+  const asUrlProps = isHome
+    ? {}
+    : {
+        onClick: () => navigate(user ? EXPERIENCES_URL : ROOT_URL)
+      };
 
   return (
     <header
@@ -17,9 +36,20 @@ export const Header = (props: Props) => {
       })}
       data-testid="app-header"
     >
-      <div className="logo-container">
-        <img src={logo} className="logo" alt="logo" />
-      </div>
+      <>
+        <style>
+          {`#components-header-logo{ background: url(${src}) no-repeat 0 !important; background-size: ${width}px ${height}px !important; min-width: ${width}px;}`}
+        </style>
+
+        <Menu
+          className={makeClassnames({
+            "logo-container": true,
+            "with-pointer": !isHome
+          })}
+          id="components-header-logo"
+          {...asUrlProps}
+        />
+      </>
 
       <div
         data-testid="app-header-title"

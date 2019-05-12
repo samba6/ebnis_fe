@@ -40,7 +40,7 @@ import {
   CreateExp as FormValues,
   CreateFieldDef
 } from "../../graphql/apollo-types/globalTypes";
-import { makeExpRoute } from "../../routes";
+import { makeExperienceRoute } from "../../routes";
 import { noop } from "../../constants";
 import { ExperienceDefinitionUpdate } from "./update";
 import { CreateExpMutationFn } from "../../graphql/create-exp.mutation";
@@ -159,7 +159,7 @@ export function ExperienceDefinition(props: Props) {
           result.data &&
           result.data.exp) as CreateExpMutation_exp;
 
-        (navigate as NavigateFn)(makeExpRoute(exp.id));
+        (navigate as NavigateFn)(makeExperienceRoute(exp.id));
       } catch (error) {
         dispatch({
           type: Action_Types.SET_GRAPHQL_ERROR,

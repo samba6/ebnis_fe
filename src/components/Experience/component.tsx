@@ -1,52 +1,25 @@
 import React, { useEffect, useMemo } from "react";
 import { Button } from "semantic-ui-react";
-import dateFnParse from "date-fns/parse";
-import dateFnFormat from "date-fns/format";
+import { NavigateFn } from "@reach/router";
 
-import "./exp.scss";
-import { Props } from "./exp";
-import { SidebarHeader } from "../SidebarHeader";
+import "./styles.scss";
+import { Props, displayFieldType } from "./utils";
 import { setTitle, makeNewEntryRoute } from "../../routes";
 import Loading from "../Loading";
-import { FieldType } from "../../graphql/apollo-types/globalTypes";
 import {
   GetExpAllEntries_expEntries,
   GetExpAllEntries_expEntries_fields
 } from "../../graphql/apollo-types/GetExpAllEntries";
 import { GetAnExp_exp_fieldDefs } from "../../graphql/apollo-types/GetAnExp";
 
-const displayFieldType = {
-  [FieldType.SINGLE_LINE_TEXT](text: string) {
-    return text;
-  },
-
-  [FieldType.MULTI_LINE_TEXT](text: string) {
-    return text;
-  },
-
-  [FieldType.DATE](text: string) {
-    const date = dateFnParse(text);
-
-    return dateFnFormat(date, "Do MMM, YYYY");
-  },
-
-  [FieldType.DATETIME](text: string) {
-    const date = dateFnParse(text);
-
-    return dateFnFormat(date, "Do MMM, YYYY hh:mm A");
-  },
-
-  [FieldType.DECIMAL](text: string) {
-    return Number(text);
-  },
-
-  [FieldType.INTEGER](text: string) {
-    return Number(text);
-  }
-};
-
-export const Exp = (props: Props) => {
-  const { loading, exp, expEntries, history } = props;
+export const Experience = (props: Props) => {
+  const {
+    loading,
+    getExperienceGql: { exp },
+    expEntries,
+    navigate,
+    SidebarHeader
+  } = props;
   const title = exp ? exp.title : "Experience";
 
   const fieldDefs = useMemo(
@@ -66,7 +39,7 @@ export const Exp = (props: Props) => {
   );
 
   function goToNewEntry() {
-    history.push(makeNewEntryRoute((exp && exp.id) || ""));
+    (navigate as NavigateFn)(makeNewEntryRoute((exp && exp.id) || ""));
   }
 
   function renderEntryField(field: GetExpAllEntries_expEntries_fields | null) {

@@ -2,12 +2,12 @@ import React, { useEffect, useState } from "react";
 import { Icon } from "semantic-ui-react";
 import { NavigateFn } from "@reach/router";
 
-import "./experiences.scss";
-import { Props } from "./experiences";
+import "./styles.scss";
+import { Props } from "./utils";
 import {
   setTitle,
   EXPERIENCE_DEFINITION_URL,
-  makeExpRoute
+  makeExperienceRoute
 } from "../../routes";
 import Loading from "../Loading";
 import { GetExps_exps } from "../../graphql/apollo-types/GetExps";
@@ -63,7 +63,7 @@ export const Experiences = (props: Props) => {
     }
 
     return (
-      <div className="route-main" data-testid="home-route-main">
+      <>
         {renderExperiences()}
 
         <button
@@ -75,15 +75,15 @@ export const Experiences = (props: Props) => {
         >
           +
         </button>
-      </div>
+      </>
     );
   }
 
   return (
-    <div className="app-container">
+    <div className="components-experiences">
       <SidebarHeader title="Home" sidebar={true} />
 
-      <div className="routes-home">{renderMain()}</div>
+      <div className="main">{renderMain()}</div>
     </div>
   );
 };
@@ -97,7 +97,7 @@ interface ExperienceProps {
 }
 
 const Experience = React.memo(
-  function ExperienceMemo({
+  function ExperienceFn({
     expDef: expDef1,
     index,
     toggleDescriptions,
@@ -124,8 +124,8 @@ const Experience = React.memo(
         />
 
         <div
-          className="main"
-          onClick={() => (navigate as NavigateFn)(makeExpRoute(id))}
+          className="exp-container-main"
+          onClick={() => (navigate as NavigateFn)(makeExperienceRoute(id))}
         >
           <span className="exp_title">{title}</span>
 
@@ -136,7 +136,8 @@ const Experience = React.memo(
       </div>
     );
   },
-  function ExperienceMemoDiff(prevProps, currProps) {
+
+  function ExperiencePropsDiff(prevProps, currProps) {
     if (
       prevProps.toggleDescriptions[prevProps.index] !==
       currProps.toggleDescriptions[currProps.index]
@@ -149,7 +150,7 @@ const Experience = React.memo(
 );
 
 const ShowDescriptionToggle = React.memo(
-  function ShowDescriptionToggleMemo({
+  function ShowDescriptionToggleFn({
     description,
     showingDescription,
     id,
@@ -184,6 +185,7 @@ const ShowDescriptionToggle = React.memo(
       />
     );
   },
+
   function ShowDescriptionToggleDiff(oldProps, newProps) {
     return oldProps.showingDescription === newProps.showingDescription;
   }

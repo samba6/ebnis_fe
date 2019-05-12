@@ -1,10 +1,11 @@
 @import "../../styles/variables";
 @import "../../styles/extensions";
 
-.routes-home {
-  & > .route-main {
-    overflow-x: hidden;
-    overflow-y: auto;
+.components-experiences {
+  @extend %route-main;
+
+  .main {
+    @extend %app-main;
   }
 
   .exps-container {
@@ -22,29 +23,33 @@
   .exp-container {
     margin-bottom: 15px;
     cursor: pointer;
-    display: flex;
     border-bottom: 1px solid lighten($color: $app-color, $amount: 35);
     padding-bottom: 2px;
 
-    & > .main {
-      flex: 1;
+    &::after {
+      content: "";
+      clear: both;
+      height: 0;
+      width: 0;
     }
   }
 
   .exp_title {
     display: block;
-    font-weight: bolder;
-    font-size: 1.1em;
+    padding-left: 10px;
   }
 
   .reveal-hide-description {
-    padding: 0 30px 25px 10px;
+    padding: 0 35px 35px 10px;
+    float: left;
   }
 
   .exp_description {
     position: relative;
-    left: -20px;
+    left: 20px;
     margin-top: 10px;
+    font-style: italic;
+    font-size: 0.92em;
   }
 
   .new-exp-btn {

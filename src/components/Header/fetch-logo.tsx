@@ -1,7 +1,7 @@
 import React, { ComponentType } from "react";
 import { graphql, StaticQuery } from "gatsby";
 
-import { WithLogo } from "./header";
+import { WithLogo } from "./utils";
 import {
   LogoImageQuery,
   LogoImageQuery_file_childImageSharp_fixed
@@ -17,7 +17,7 @@ export function fetchLogoHOC<TProps>(
           query LogoImageQuery {
             file(relativePath: { eq: "logo.png" }) {
               childImageSharp {
-                fixed(width: 28, height: 28) {
+                fixed(width: 42, height: 42) {
                   src
                   width
                   height

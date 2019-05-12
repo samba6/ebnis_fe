@@ -1,25 +1,29 @@
 @import "../../styles/variables";
 @import "../../styles/extensions";
 
-.routes-new-entry {
-  & > .main {
+.component-new-entry {
+  @extend %route-main;
+
+  .main {
+    @extend %app-main;
+    padding: 15px 25px 0 25px;
     display: flex;
     flex-direction: column;
-    // padding: 10px 5px 20px 5px;
-    flex: 1;
 
     & > .title {
       display: block;
       flex-shrink: 0;
       margin: 10px 5px 25px;
     }
+  }
 
-    & > .form {
-      padding: 0px 5px 20px 5px;
-      flex: 1;
-      overflow-x: hidden;
-      overflow-y: auto;
-    }
+  .form {
+    padding-bottom: 30px;
+    flex: 1;
+  }
+
+  .submit-btn {
+    margin-top: 40px;
   }
 
   .date-field {
@@ -48,9 +52,5 @@
   .datetime-field-time {
     display: flex;
     width: 50%;
-  }
-
-  hr {
-    @extend %submit-btn-hr;
   }
 }

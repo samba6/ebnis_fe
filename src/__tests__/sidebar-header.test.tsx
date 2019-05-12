@@ -8,7 +8,7 @@ import {
   Props
 } from "../components/SidebarHeader/sidebar-header";
 import { renderWithRouter } from "./test_utils";
-import { Header } from "../components/Header/header-x";
+import { Header } from "../components/Header/component";
 
 const SidebarHeaderP = SidebarHeader as ComponentType<Partial<Props>>;
 const title = "My shinning app";
@@ -52,5 +52,16 @@ it("renders with header and sidebar", () => {
 });
 
 function makeComp() {
-  return renderWithRouter(SidebarHeaderP, {}, { Header: Header as any });
+  return renderWithRouter(
+    SidebarHeaderP,
+    {},
+    {
+      Header: function HeaderComp(props: any) {
+        const Ui = renderWithRouter(Header, {}, { logoAttrs: {}, ...props })
+          .Ui as any;
+
+        return <Ui />;
+      }
+    }
+  );
 }

@@ -1,6 +1,6 @@
 import React, { useState, ComponentType } from "react";
 
-import { OwnProps as HeaderProps } from "../Header/header";
+import { OwnProps as HeaderProps } from "../Header/utils";
 import { Sidebar } from "../Sidebar";
 
 export interface OwnProps {

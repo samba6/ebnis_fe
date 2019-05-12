@@ -13,7 +13,7 @@ import { ExperienceDefinition } from "../components/ExperienceDefinition/compone
 import { CreateFieldDef, FieldType } from "../graphql/apollo-types/globalTypes";
 import { Props } from "../components/ExperienceDefinition/utils";
 import { fillField, renderWithRouter } from "./test_utils";
-import { makeExpRoute } from "../routes";
+import { makeExperienceRoute } from "../routes";
 
 jest.mock("../components/ExperienceDefinition/update");
 jest.mock("../components/ExperienceDefinition/scrollTop");
@@ -200,7 +200,7 @@ it("adds field from top", async () => {
   /**
    * And we should be redirected away from the page
    */
-  expect(mockNavigate).toBeCalledWith(makeExpRoute("expId1"));
+  expect(mockNavigate).toBeCalledWith(makeExperienceRoute("expId1"));
 });
 
 it("adds field in middle", async () => {
@@ -295,7 +295,7 @@ it("adds field in middle", async () => {
   /**
    * And we should be redirected away from the page
    */
-  expect(mockNavigate).toBeCalledWith(makeExpRoute("expId1"));
+  expect(mockNavigate).toBeCalledWith(makeExperienceRoute("expId1"));
 });
 
 it("adds field at bottom", async () => {
@@ -380,7 +380,7 @@ it("adds field at bottom", async () => {
   /**
    * And we should be redirected away from the page
    */
-  expect(mockNavigate).toBeCalledWith(makeExpRoute("expId1"));
+  expect(mockNavigate).toBeCalledWith(makeExperienceRoute("expId1"));
 });
 
 it("removes field from top", async () => {
@@ -481,7 +481,7 @@ it("removes field from top", async () => {
   /**
    * And we should be redirected away from the page
    */
-  expect(mockNavigate).toBeCalledWith(makeExpRoute("expId1"));
+  expect(mockNavigate).toBeCalledWith(makeExperienceRoute("expId1"));
 });
 
 it("removes field from bottom", async () => {
@@ -582,7 +582,7 @@ it("removes field from bottom", async () => {
   /**
    * And we should be redirected away from the page
    */
-  expect(mockNavigate).toBeCalledWith(makeExpRoute("expId1"));
+  expect(mockNavigate).toBeCalledWith(makeExperienceRoute("expId1"));
 });
 
 it("removes field from middle", async () => {
@@ -666,7 +666,7 @@ it("removes field from middle", async () => {
   /**
    * And we should be redirected away from the page
    */
-  expect(mockNavigate).toBeCalledWith(makeExpRoute("expId1"));
+  expect(mockNavigate).toBeCalledWith(makeExperienceRoute("expId1"));
 });
 
 it("moves field up from bottom", async () => {
