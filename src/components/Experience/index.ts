@@ -59,6 +59,6 @@ const getExpEntriesGql = graphql<
 });
 
 export const Experience = compose(
-  getExpGql,
-  getExpEntriesGql
+  getExpEntriesGql,
+  getExpGql
 )(Comp);
