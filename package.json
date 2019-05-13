@@ -6,7 +6,7 @@
     "start": "yarn remove-folders && env-cmd -e dev gatsby develop --port 3022",
     "build-prod": "env-cmd -e prod gatsby build",
     "build-local-staging": "env-cmd -e local-staging gatsby build",
-    "test": "env-cmd -e test yarn jest --watch",
+    "test": "env-cmd -e test yarn jest --watch --runInBand",
     "test:coverage": "env-cmd -e test yarn jest --coverage",
     "remove-folders": "rimraf public && rimraf .cache",
     "gen-gatsby-types": "apollo codegen:generate --endpoint=http://localhost:3022/___graphql --tagName=graphql --target=typescript --includes=src/components/**/*.ts* --outputFlat=src/graphql/gatsby-types",
@@ -89,6 +89,7 @@
     "rimraf": "2.6.3",
     "serve": "11.0.0",
     "start-server-and-test": "1.9.0",
+    "ts-jest": "24.0.2",
     "tslint": "5.16.0",
     "tslint-config-prettier": "1.18.0",
     "tslint-react": "4.0.0",
@@ -96,11 +97,6 @@
   },
   "eslintConfig": {
     "extends": "react-app"
-  },
-  "babel": {
-    "presets": [
-      "react-app"
-    ]
   },
   "resolutions": {
     "graphql": "14.2.1"

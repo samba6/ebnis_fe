@@ -1,4 +1,5 @@
 module.exports = {
+  preset: "ts-jest",
   collectCoverageFrom: [
     "src/**/*.ts*",
     "!src/__tests__/**",
@@ -27,7 +28,7 @@ module.exports = {
   testRegex: "src/__tests__/.+?\\.test\\.tsx?$",
   testEnvironment: "jest-environment-jsdom-fourteen",
   transform: {
-    "^.+\\.tsx?$": "<rootDir>/node_modules/babel-jest",
+    "^.+\\.tsx?$": "ts-jest",
     "^.+\\.jsx?$": "<rootDir>/config/jest/gatsby-preprocess.js",
     "^.+\\.css$": "<rootDir>/config/jest/cssTransform.js",
     "^(?!.*\\.(js|jsx|ts|tsx|css|json)$)":
@@ -56,6 +57,9 @@ module.exports = {
     "<rootDir>/public/"
   ],
   globals: {
-    __PATH_PREFIX__: ""
+    __PATH_PREFIX__: "",
+    "ts-jest": {
+      isolatedModules: true
+    }
   }
 };
