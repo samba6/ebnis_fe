@@ -1,134 +1,38 @@
-import React, { useEffect, useState } from "react";
-import { Form, Input, Button, TextArea } from "semantic-ui-react";
-import dateFnFormat from "date-fns/format";
+import React, { useEffect, useReducer } from "react";
+import { Form, Button } from "semantic-ui-react";
 import { NavigateFn } from "@reach/router";
 
 import "./styles.scss";
-import { Props, FieldComponentProps, FormObj, FormObjVal } from "./utils";
+import {
+  Props,
+  FormObj,
+  FormObjVal,
+  ToString,
+  pageTitle,
+  formFieldNameFromIndex,
+  reducer,
+  DispatchType,
+  Action_Types
+} from "./utils";
 import { setTitle, makeExperienceRoute } from "../../routes";
 import Loading from "../Loading";
-import { FieldType } from "../../graphql/apollo-types/globalTypes";
-import DateField from "../DateField";
-import DateTimeField from "../DateTimeField";
-import { GET_EXP_ENTRIES_QUERY } from "../../graphql/exp-entries.query";
 import {
   GetAnExp_exp_fieldDefs,
   GetAnExp_exp
 } from "../../graphql/apollo-types/GetAnExp";
-import {
-  GetExpAllEntries,
-  GetExpAllEntriesVariables
-} from "../../graphql/apollo-types/GetExpAllEntries";
+import { CreateEntryFn } from "../../graphql/create-entry.mutation";
+import { update } from "./update";
+import { fieldTypeUtils } from "./field-types-utils";
 
-const fieldTypeUtils = {
-  [FieldType.SINGLE_LINE_TEXT]: {
-    component(props: FieldComponentProps) {
-      return <Input id={props.name} name={props.name} fluid={true} />;
-    },
-    default: "",
-    toString(text: string) {
-      return text;
-    }
-  },
-
-  [FieldType.MULTI_LINE_TEXT]: {
-    component(props: FieldComponentProps) {
-      return <TextArea id={props.name} name={props.name} />;
-    },
-
-    default: "",
-    toString(text: string) {
-      return text;
-    }
-  },
-
-  [FieldType.DATE]: {
-    component({ value, ...props }: FieldComponentProps) {
-      return (
-        <DateField value={value as Date} {...props} className="light-border" />
-      );
-    },
-
-    default: new Date(),
-
-    toString(date: Date) {
-      return dateFnFormat(date, "YYYY-MM-DD");
-    }
-  },
-
-  [FieldType.DATETIME]: {
-    component({ value, ...props }: FieldComponentProps) {
-      return (
-        <DateTimeField
-          value={value as Date}
-          {...props}
-          className="light-border"
-        />
-      );
-    },
-
-    default: new Date(),
-
-    toString(date: Date) {
-      return date.toJSON();
-    }
-  },
-
-  [FieldType.DECIMAL]: {
-    component({ name, value, setValue }: FieldComponentProps) {
-      return (
-        <Input
-          type="number"
-          id={name}
-          name={name}
-          value={value}
-          fluid={true}
-          onChange={e => {
-            setValue(name, Number(e.target.value) as any);
-          }}
-        />
-      );
-    },
-
-    default: "",
-
-    toString(val: number) {
-      return val + "";
-    }
-  },
-
-  [FieldType.INTEGER]: {
-    component({ name, value, setValue }: FieldComponentProps) {
-      return (
-        <Input
-          type="number"
-          id={name}
-          name={name}
-          value={value}
-          fluid={true}
-          onChange={e => {
-            setValue(name, Number(e.target.value) as any);
-          }}
-        />
-      );
-    },
-
-    default: "",
-
-    toString(val: number) {
-      return val + "";
-    }
-  }
-};
-
-export const NewEntry = (props: Props) => {
+export function NewEntry(props: Props) {
   const {
     getExperienceGql: { loading, exp },
     navigate,
     createEntry,
     SidebarHeader
   } = props;
-  const [formValues, setFormValues] = useState<FormObj>({} as FormObj);
+
+  const [state, dispatch] = useReducer(reducer, { formObj: {} });
 
   useEffect(
     function setRouteTitle() {
@@ -141,81 +45,32 @@ export const NewEntry = (props: Props) => {
 
   useEffect(
     function setInitialFormValues() {
-      if (!exp) {
-        return;
+      if (exp) {
+        dispatch({
+          type: Action_Types.experienceToFormValues,
+          payload: {
+            experience: exp
+          }
+        });
       }
-
-      const { fieldDefs } = exp;
-
-      if (!(fieldDefs && fieldDefs.length)) {
-        return;
-      }
-
-      const initialFormValues = fieldDefs.reduce(function fieldDefReducer(
-        acc,
-        field,
-        index
-      ) {
-        if (!field) {
-          return acc;
-        }
-
-        acc[index] = fieldTypeUtils[field.type].default;
-        return acc;
-      },
-      {});
-
-      setFormValues(initialFormValues);
     },
     [exp]
   );
-
-  function setValue(fieldName: string, value: FormObjVal) {
-    const fieldIndex = getIndexFromFieldName(fieldName);
-
-    if (fieldIndex === undefined) {
-      return;
-    }
-
-    setFormValues({ ...formValues, [fieldIndex]: value });
-  }
-
-  function getFieldName(index: number) {
-    return `fields[${index}]`;
-  }
-
-  function getIndexFromFieldName(fieldName: string) {
-    const exec = /fields.+(\d+)/.exec(fieldName);
-
-    if (!exec) {
-      return undefined;
-    }
-
-    return exec[1];
-  }
 
   function goToExp() {
     (navigate as NavigateFn)(makeExperienceRoute((exp && exp.id) || ""));
   }
 
-  async function submit() {
-    if (!(exp && createEntry)) {
-      return;
-    }
-
+  async function onSubmit() {
     const fields = [];
-    const { fieldDefs } = exp;
+    const { fieldDefs, id: expId } = exp as GetAnExp_exp;
 
-    for (const [index, val] of Object.entries(formValues)) {
-      const index1 = Number(index);
-      const field = fieldDefs[index1];
-
-      if (!field) {
-        continue;
-      }
+    for (const [stringIndex, val] of Object.entries(state.formObj)) {
+      const index = Number(stringIndex);
+      const field = fieldDefs[index] as GetAnExp_exp_fieldDefs;
 
       const { type, id } = field;
-      const toString = fieldTypeUtils[type].toString as any;
+      const toString = fieldTypeUtils[type].toString as ToString;
 
       fields.push({
         defId: id,
@@ -223,77 +78,18 @@ export const NewEntry = (props: Props) => {
       });
     }
 
-    const { id: expId } = exp;
-
-    const variables = {
-      entry: {
-        expId,
-        fields
-      }
-    };
-
-    await createEntry({
-      variables,
-      async update(client, { data: newEntry }) {
-        if (!newEntry) {
-          return;
+    await (createEntry as CreateEntryFn)({
+      variables: {
+        entry: {
+          expId,
+          fields
         }
+      },
 
-        const { entry } = newEntry;
-
-        if (!entry) {
-          return;
-        }
-
-        const variables = {
-          entry: { expId }
-        };
-
-        const data = client.readQuery<
-          GetExpAllEntries,
-          GetExpAllEntriesVariables
-        >({
-          query: GET_EXP_ENTRIES_QUERY,
-          variables
-        });
-
-        if (!data) {
-          return;
-        }
-
-        await client.writeQuery({
-          query: GET_EXP_ENTRIES_QUERY,
-          variables,
-          data: {
-            expEntries: [...(data.expEntries || []), entry]
-          }
-        });
-      }
+      update: update(expId)
     });
 
     goToExp();
-  }
-
-  function renderField(field: GetAnExp_exp_fieldDefs | null, index: number) {
-    if (!field) {
-      return null;
-    }
-
-    const { name: fieldName, type } = field;
-    const name = getFieldName(index);
-    const utils = fieldTypeUtils[type];
-
-    return (
-      <Form.Field key={index}>
-        <label htmlFor={fieldName}>{fieldName}</label>
-
-        {utils.component({
-          name,
-          setValue,
-          value: formValues[index] || (utils.default as any)
-        })}
-      </Form.Field>
-    );
   }
 
   function renderMainOr() {
@@ -312,8 +108,19 @@ export const NewEntry = (props: Props) => {
         <Button type="button" onClick={goToExp} className="title" basic={true}>
           {title}
         </Button>
-        <Form>
-          {fieldDefs.map(renderField)}
+        <Form onSubmit={onSubmit}>
+          {fieldDefs.map((obj, index) => {
+            const field = obj as GetAnExp_exp_fieldDefs;
+            return (
+              <FieldComponent
+                key={field.id}
+                field={field}
+                index={index}
+                formValues={state.formObj}
+                dispatch={dispatch}
+              />
+            );
+          })}
 
           <Button
             className="submit-btn"
@@ -321,7 +128,6 @@ export const NewEntry = (props: Props) => {
             inverted={true}
             color="green"
             fluid={true}
-            onClick={submit}
           >
             Submit
           </Button>
@@ -337,8 +143,56 @@ export const NewEntry = (props: Props) => {
       {renderMainOr()}
     </div>
   );
-};
-
-function pageTitle(exp: GetAnExp_exp | null | undefined) {
-  return "New " + ((exp && exp.title) || "entry");
 }
+
+interface FieldComponentProps {
+  field: GetAnExp_exp_fieldDefs;
+  index: number;
+  formValues: FormObj;
+  dispatch: DispatchType;
+}
+
+const FieldComponent = React.memo(
+  function FieldComponentFn({
+    field,
+    index,
+    dispatch,
+    formValues
+  }: FieldComponentProps) {
+    const { name: fieldTitle, type } = field;
+    const formFieldName = formFieldNameFromIndex(index);
+    const utils = fieldTypeUtils[type];
+    const value = formValues[index] || (utils.default as FormObjVal);
+
+    return (
+      <Form.Field key={index}>
+        <label htmlFor={formFieldName}>{fieldTitle + " [" + type + "]"}</label>
+
+        {utils.component({
+          formFieldName,
+          dispatch,
+          value
+        })}
+      </Form.Field>
+    );
+  },
+
+  function FieldComponentDiff(prevProps, nextProps) {
+    const {
+      field: { type: prevType },
+      formValues: prevFormValues
+    } = prevProps;
+    const {
+      field: { type: nextType },
+      formValues: nextFormValues
+    } = nextProps;
+
+    const prevVal =
+      prevFormValues[prevProps.index] || fieldTypeUtils[prevType].default;
+
+    const nextVal =
+      nextFormValues[nextProps.index] || fieldTypeUtils[nextType].default;
+
+    return prevVal === nextVal;
+  }
+);
