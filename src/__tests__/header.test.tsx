@@ -58,12 +58,18 @@ it("does not render sidebar", () => {
 });
 
 it("should not navigate when in experiences route", () => {
+  /**
+   * Given we are on experiences route
+   */
   const { ui, mockNavigate } = setup({
     title,
     sidebar: true,
     location: { pathname: EXPERIENCES_URL } as any
   });
 
+  /**
+   * And we are using header component
+   */
   const { getByTestId } = render(ui);
 
   /**
@@ -84,12 +90,18 @@ it("should not navigate when in experiences route", () => {
 });
 
 it("should not navigate when in root route", () => {
+  /**
+   * Given we are on ROOT route
+   */
   const { ui, mockNavigate } = setup({
     title,
     sidebar: true,
     location: { pathname: ROOT_URL } as any
   });
 
+  /**
+   * And we are using header component
+   */
   const { getByTestId } = render(ui);
 
   /**
@@ -110,6 +122,9 @@ it("should not navigate when in root route", () => {
 });
 
 it("should navigate to experiences route when on any url except root and experiences routes and we are logged in", () => {
+  /**
+   * Given we are logged in and are on a route except ROOT and experiences
+   */
   const { ui, mockNavigate } = setup({
     title,
     sidebar: true,
@@ -117,10 +132,13 @@ it("should navigate to experiences route when on any url except root and experie
     user: {} as any
   });
 
+  /**
+   * And we are using header component
+   */
   const { getByTestId } = render(ui);
 
   /**
-   * Then the logo should not have a pointer
+   * Then the logo should have a pointer
    */
   const $logo = getByTestId("logo-container");
   expect($logo.classList).toContain("with-pointer");
@@ -131,12 +149,15 @@ it("should navigate to experiences route when on any url except root and experie
   fireEvent.click($logo);
 
   /**
-   * Then we should be navigated away to root url
+   * Then we should be navigated away to experiences url
    */
   expect(mockNavigate).toHaveBeenCalledWith(EXPERIENCES_URL);
 });
 
 it("should navigate to root route when on any url except root and experiences routes and we are not logged in", () => {
+  /**
+   * Given we are not logged in and are on a route except ROOT and experiences
+   */
   const { ui, mockNavigate } = setup({
     title,
     sidebar: true,
@@ -144,6 +165,9 @@ it("should navigate to root route when on any url except root and experiences ro
     user: undefined
   });
 
+  /**
+   * And we are using header component
+   */
   const { getByTestId } = render(ui);
 
   /**
@@ -158,6 +182,9 @@ it("should navigate to root route when on any url except root and experiences ro
 });
 
 it("renders close sidebar icon but not show icon", () => {
+  /**
+   * Given we are using header component and we are showing sidebar
+   */
   const mockToggleShowSidebar = jest.fn();
   const { ui } = setup({
     title,
@@ -166,9 +193,6 @@ it("renders close sidebar icon but not show icon", () => {
     show: true
   });
 
-  /**
-   * Given we are using header component and we are showing sidebar
-   */
   const { getByTestId, queryByTestId } = render(ui);
 
   /**
@@ -189,12 +213,15 @@ it("renders close sidebar icon but not show icon", () => {
   fireEvent.click($close);
 
   /**
-   * Then sidebar should be toggled
+   * Then sidebar should be toggled close
    */
   expect(mockToggleShowSidebar).toHaveBeenCalledWith(false);
 });
 
 it("renders show sidebar icon but not close icon", () => {
+  /**
+   * Given we are using header component and we are showing sidebar
+   */
   const mockToggleShowSidebar = jest.fn();
   const { ui } = setup({
     title,
@@ -203,9 +230,6 @@ it("renders show sidebar icon but not close icon", () => {
     show: false
   });
 
-  /**
-   * Given we are using header component and we are showing sidebar
-   */
   const { getByTestId, queryByTestId } = render(ui);
 
   /**
@@ -226,12 +250,12 @@ it("renders show sidebar icon but not close icon", () => {
   fireEvent.click($show);
 
   /**
-   * Then sidebar should be toggled
+   * Then sidebar should be toggled open
    */
   expect(mockToggleShowSidebar).toBeCalledWith(true);
 });
 
-function setup(props: Partial<Props>) {
+function setup(props: Partial<Props> = {}) {
   const { Ui, ...rest } = renderWithRouter(
     HeaderP,
     {},

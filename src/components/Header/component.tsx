@@ -51,7 +51,7 @@ export const Header = (props: Props) => {
         {sidebar && (
           <Menu.Item
             position="right"
-            className="sidebar-trigger item"
+            className="sidebar-trigger"
             onClick={() => toggleShowSidebar && toggleShowSidebar(!show)}
             data-testid="sidebar-trigger"
           >
