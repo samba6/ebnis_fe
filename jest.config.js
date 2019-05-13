@@ -9,7 +9,6 @@ module.exports = {
     "!src/pages/**",
     "!src/**/refresh-to-app.ts",
     "!src/graphql/**",
-    "!src/components/ToOtherAuthLink/**",
     "!src/components/AuthRequired/**",
     "!src/components/Layout/**",
     "!src/components/Page404/**",

@@ -12,8 +12,8 @@ export interface ToOtherAuthLinkProps {
 }
 
 const linkTexts = {
-  [LOGIN_URL]: "Don't have an account? Sign Up",
-  [SIGN_UP_URL]: " Already have an account? Login"
+  [SIGN_UP_URL]: "Don't have an account? Sign Up",
+  [LOGIN_URL]: " Already have an account? Login"
 };
 
 export function ToOtherAuthLink(props: ToOtherAuthLinkProps) {
