@@ -23,7 +23,7 @@ module.exports = {
     "!src/context.ts",
     "!src/socket.ts"
   ],
-  setupFiles: ["react-app-polyfill/jsdom"],
+  setupFiles: ["<rootDir>/loadershim.js", "react-app-polyfill/jsdom"],
   setupFilesAfterEnv: ["<rootDir>/config/jest/setupTests.js"],
   testRegex: "src/__tests__/.+?\\.test\\.tsx?$",
   testEnvironment: "jest-environment-jsdom-fourteen",
@@ -61,5 +61,6 @@ module.exports = {
     "ts-jest": {
       isolatedModules: true
     }
-  }
+  },
+  testURL: "http://localhost"
 };
