@@ -11,7 +11,8 @@
     "remove-folders": "rimraf public && rimraf .cache",
     "gen-gatsby-types": "apollo codegen:generate --endpoint=http://localhost:3022/___graphql --tagName=graphql --target=typescript --includes=src/components/**/*.ts* --outputFlat=src/graphql/gatsby-types",
     "gen-apollo-types": "apollo codegen:generate --endpoint=http://localhost:4022 --tagName=gql --target=typescript --outputFlat=src/graphql/apollo-types --includes=src/graphql/*.ts",
-    "serve-local-staging": "yarn build-local-staging && yarn serve --listen 3023 public",
+    "build-serve-local-staging": "yarn build-local-staging && yarn serve-local-staging",
+    "serve-local-staging": "serve --listen 3023 public",
     "build-deploy": "yarn build-prod && netlify deploy -p -d public",
     "deploy": "netlify deploy -p -d public"
   },
