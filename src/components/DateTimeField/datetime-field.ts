@@ -1,3 +1,5 @@
+import { FieldComponentProps } from "../Experience/utils";
+
 type DropdownOptions = Array<{
   key: number;
   text: string;
@@ -28,4 +30,9 @@ export const LABELS = ["date", "hr", "min"];
 
 export function getFieldName(compName: string, field: string) {
   return compName + "." + field;
+}
+
+export interface Props extends FieldComponentProps {
+  className?: string;
+  value: Date;
 }

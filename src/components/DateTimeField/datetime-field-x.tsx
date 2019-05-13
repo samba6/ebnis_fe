@@ -2,20 +2,16 @@ import React, { useState, useRef } from "react";
 import { Form, Dropdown } from "semantic-ui-react";
 
 import DateField from "../DateField";
-import { FieldComponentProps, FormObjVal } from "../Experience/utils";
+import { FormObjVal } from "../Experience/utils";
 import {
   HOUR_OPTIONS,
   MINUTE_OPTIONS,
   getFieldName,
-  LABELS
+  LABELS,
+  Props
 } from "./datetime-field";
 
-interface DateTimeProps extends FieldComponentProps {
-  className?: string;
-  value: Date;
-}
-
-export function DateTimeField(props: DateTimeProps) {
+export function DateTimeField(props: Props) {
   const { className, name: compName, setValue, value } = props;
   const [datetime, setDatetime] = useState(value);
 

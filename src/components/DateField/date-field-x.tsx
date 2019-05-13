@@ -1,21 +1,16 @@
 import React, { useState, useMemo, useRef } from "react";
 import { Form, Dropdown } from "semantic-ui-react";
 
-import { FieldComponentProps } from "../Experience/utils";
 import {
   MONTHS,
   getToday,
   getDisplayedDays,
   LABELS,
-  makeFieldNames
+  makeFieldNames,
+  Props
 } from "./date-field";
 
-interface DateFieldProps extends FieldComponentProps {
-  className?: string;
-  value: Date;
-}
-
-export function DateField(props: DateFieldProps) {
+export function DateField(props: Props) {
   const { className, setValue, value, name: compName } = props;
 
   const { years, currYr, currMonth, currDay } = useMemo(

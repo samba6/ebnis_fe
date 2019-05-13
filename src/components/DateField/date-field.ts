@@ -1,5 +1,7 @@
 import getDaysInMonth from "date-fns/get_days_in_month";
 
+import { FieldComponentProps } from "../Experience/utils";
+
 export const MONTH_LABELS = [
   "Jan",
   "Feb",
@@ -76,4 +78,9 @@ export function getDisplayedDays(year: number, month: number) {
   const numDaysInMonth = getDaysInMonth(new Date(year, month));
 
   return DAYS.slice(0, numDaysInMonth);
+}
+
+export interface Props extends FieldComponentProps {
+  className?: string;
+  value: Date;
 }
