@@ -16,22 +16,28 @@ export interface WithSideBar {
   SidebarHeader: ComponentType<OwnProps>;
 }
 
-export function SidebarHeader(props: Props) {
-  const { title, sidebar, Header } = props;
-  const [showSidebar, toggleShowSidebar] = useState(false);
+export const SidebarHeader = React.memo(
+  function SidebarHeaderFn(props: Props) {
+    const { title, sidebar, Header } = props;
+    const [showSidebar, toggleShowSidebar] = useState(false);
 
-  return (
-    <>
-      <Header
-        title={title}
-        show={showSidebar}
-        toggleShowSidebar={toggleShowSidebar}
-        sidebar={sidebar}
-      />
+    return (
+      <>
+        <Header
+          title={title}
+          show={showSidebar}
+          toggleShowSidebar={toggleShowSidebar}
+          sidebar={sidebar}
+        />
 
-      {sidebar && (
-        <Sidebar show={showSidebar} toggleShowSidebar={toggleShowSidebar} />
-      )}
-    </>
-  );
-}
+        {sidebar && (
+          <Sidebar show={showSidebar} toggleShowSidebar={toggleShowSidebar} />
+        )}
+      </>
+    );
+  },
+
+  function SidebarHeaderDiff(prevProps, nextProps) {
+    return prevProps.title === nextProps.title;
+  }
+);
