@@ -1,5 +1,6 @@
 import { MutationUpdaterFn } from "react-apollo";
 
+// istanbul ignore next: why flag import?
 import { GET_EXP_ENTRIES_QUERY } from "../../graphql/exp-entries.query";
 import { CreateAnEntry } from "../../graphql/apollo-types/CreateAnEntry";
 import {
@@ -7,8 +8,8 @@ import {
   GetExpAllEntriesVariables
 } from "../../graphql/apollo-types/GetExpAllEntries";
 
-// istanbul ignore next: trust apollo to do the right thing -
 // TODO: will be tested in e2e
+// istanbul ignore next: trust apollo to do the right thing -
 export const update: (
   expId: string
 ) => MutationUpdaterFn<CreateAnEntry> = function updateFn(expId: string) {

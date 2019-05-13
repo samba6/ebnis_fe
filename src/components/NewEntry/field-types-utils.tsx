@@ -48,7 +48,7 @@ export const fieldTypeUtils = {
           onChange={(e, { value: inputVal }) => {
             dispatch({
               type: Action_Types.setFormObjField,
-              payload: { formFieldName: name, value: inputVal || "" }
+              payload: { formFieldName: name, value: inputVal as string }
             });
           }}
         />

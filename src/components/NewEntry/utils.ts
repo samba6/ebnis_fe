@@ -21,6 +21,10 @@ export interface Props
     CreateEntryGqlProps {}
 
 export type FormObjVal = Date | string | number;
+
+// the keys are the indices of the field definitions and the values are the
+// default values for each field data type e.g number for integer and date
+// for date
 export interface FormObj {
   [k: string]: FormObjVal;
 }
@@ -36,10 +40,14 @@ export type ToString = (val: FormObjVal) => string;
 function initialFormValuesFromExperience(exp: GetAnExp_exp) {
   const fieldDefs = exp.fieldDefs as GetAnExp_exp_fieldDefs[];
 
-  return fieldDefs.reduce(function fieldDefReducer(acc, field, index) {
-    acc[index] = fieldTypeUtils[(field as GetAnExp_exp_fieldDefs).type].default;
-    return acc;
-  }, {});
+  return fieldDefs.reduce(
+    function fieldDefReducer(acc, field, index) {
+      acc[index] =
+        fieldTypeUtils[(field as GetAnExp_exp_fieldDefs).type].default;
+      return acc;
+    },
+    {} as FormObj
+  );
 }
 
 export function pageTitle(exp: GetAnExp_exp | null | undefined) {
@@ -107,6 +115,7 @@ export const reducer: Reducer<State, Action> = function reducerFn(
         )
       };
 
+    // istanbul ignore next: redux magic
     default:
       return prevState;
   }
