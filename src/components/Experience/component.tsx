@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo } from "react";
 import { Button } from "semantic-ui-react";
-import { NavigateFn } from "@reach/router";
+import { Link } from "gatsby";
 
 import "./styles.scss";
 import { Props, displayFieldType } from "./utils";
@@ -10,14 +10,16 @@ import {
   GetExpAllEntries_expEntries,
   GetExpAllEntries_expEntries_fields
 } from "../../graphql/apollo-types/GetExpAllEntries";
-import { GetAnExp_exp_fieldDefs } from "../../graphql/apollo-types/GetAnExp";
+import {
+  GetAnExp_exp_fieldDefs,
+  GetAnExp_exp
+} from "../../graphql/apollo-types/GetAnExp";
 
-export const Experience = (props: Props) => {
+export function Experience(props: Props) {
   const {
     loading,
     getExperienceGql: { exp },
     expEntries,
-    navigate,
     SidebarHeader
   } = props;
   const title = exp ? exp.title : "Experience";
@@ -37,10 +39,6 @@ export const Experience = (props: Props) => {
     },
     [title]
   );
-
-  function goToNewEntry() {
-    (navigate as NavigateFn)(makeNewEntryRoute((exp && exp.id) || ""));
-  }
 
   function renderEntryField(field: GetExpAllEntries_expEntries_fields | null) {
     if (!field) {
@@ -88,9 +86,12 @@ export const Experience = (props: Props) => {
   function renderEntries() {
     if (!(expEntries && expEntries.length)) {
       return (
-        <span className="no-entries" onClick={goToNewEntry}>
+        <Link
+          className="no-entries"
+          to={makeNewEntryRoute((exp as GetAnExp_exp).id)}
+        >
           No entries. Click here to add one
-        </span>
+        </Link>
       );
     }
 
@@ -113,7 +114,8 @@ export const Experience = (props: Props) => {
               name="new-exp-entry-button"
               basic={true}
               compact={true}
-              onClick={goToNewEntry}
+              as={Link}
+              to={makeNewEntryRoute((exp as GetAnExp_exp).id)}
             >
               New entry
             </Button>
@@ -134,4 +136,4 @@ export const Experience = (props: Props) => {
   );
 
   return render;
-};
+}
