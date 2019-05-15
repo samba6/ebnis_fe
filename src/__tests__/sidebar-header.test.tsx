@@ -1,62 +1,28 @@
 // tslint:disable: no-any
 import React, { ComponentType } from "react";
 import "jest-dom/extend-expect";
-import { render, fireEvent } from "react-testing-library";
+import { render } from "react-testing-library";
 
-import {
-  SidebarHeader,
-  Props
-} from "../components/SidebarHeader/sidebar-header";
-import { renderWithRouter } from "./test_utils";
-import { Header } from "../components/Header/component";
+import { SidebarHeader, Props } from "../components/SidebarHeader/component";
 
 jest.mock("../components/Header", () => ({
-  Header: function HeaderComp(props: any) {
-    const Ui = renderWithRouter(Header, {}, { logoAttrs: {}, ...props })
-      .Ui as any;
+  Header: jest.fn(() => null)
+}));
 
-    return <Ui />;
-  }
+jest.mock("../components/Sidebar", () => ({
+  Sidebar: jest.fn(props => <div {...props}>side bar side</div>)
 }));
 
 const SidebarHeaderP = SidebarHeader as ComponentType<Partial<Props>>;
-const title = "My shinning app";
 
 it("renders no sidebar", () => {
-  const { Ui } = makeComp();
-  const { container, queryByTestId } = render(<Ui title={title} />);
+  const { queryByText } = render(<SidebarHeaderP />);
 
-  const sidebarHeader = container.firstChild;
-  expect(sidebarHeader).not.toContainElement(queryByTestId("app-sidebar"));
+  expect(queryByText("side bar side")).not.toBeInTheDocument();
 });
 
-it("renders with header and sidebar", () => {
-  const { Ui } = makeComp();
+it("renders sidebar", () => {
+  const { getByText } = render(<SidebarHeaderP sidebar={true} />);
 
-  const { container: sidebarHeader, getByTestId, queryByTestId } = render(
-    <Ui title={title} sidebar={true} />
-  );
-  expect(sidebarHeader).toContainElement(getByTestId("app-header"));
-
-  const sidebar = getByTestId("app-sidebar");
-  expect(sidebarHeader).toContainElement(sidebar);
-  expect(sidebar.classList).not.toContain("visible");
-
-  expect(sidebarHeader).toContainElement(getByTestId("show-sidebar-icon"));
-  expect(sidebarHeader).not.toContainElement(
-    queryByTestId("close-sidebar-icon")
-  );
-
-  const sidebarTrigger = getByTestId("sidebar-trigger");
-  fireEvent.click(sidebarTrigger);
-
-  expect(sidebar.classList).toContain("visible");
-  expect(sidebarHeader).toContainElement(getByTestId("close-sidebar-icon"));
-  expect(sidebarHeader).not.toContainElement(
-    queryByTestId("show-sidebar-icon")
-  );
+  expect(getByText("side bar side")).toBeInTheDocument();
 });
-
-function makeComp() {
-  return renderWithRouter(SidebarHeaderP, {});
-}

@@ -36,6 +36,7 @@ export const SidebarHeader = React.memo(
     );
   },
 
+  // istanbul ignore next: React.memo
   function SidebarHeaderDiff(prevProps, nextProps) {
     return prevProps.title === nextProps.title;
   }

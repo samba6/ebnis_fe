@@ -1,3 +1,3 @@
-import { SidebarHeader as Comp } from "./sidebar-header";
+import { SidebarHeader as Comp } from "./component";
 
 export const SidebarHeader = Comp;

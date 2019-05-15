@@ -1,12 +1,17 @@
+// tslint:disable: no-any
 import React, { ComponentType } from "react";
 import "jest-dom/extend-expect";
 import "react-testing-library/cleanup-after-each";
-import { render, fireEvent } from "react-testing-library";
+import { render, fireEvent, wait } from "react-testing-library";
 
 import { Sidebar, Props } from "../components/Sidebar/component";
 import { renderWithRouter } from "./test_utils";
 import { RouteComponentProps } from "@reach/router";
-import { EXPERIENCES_URL, EXPERIENCE_DEFINITION_URL } from "../routes";
+import {
+  EXPERIENCES_URL,
+  EXPERIENCE_DEFINITION_URL,
+  LOGIN_URL
+} from "../routes";
 
 const SidebarP = Sidebar as ComponentType<Partial<Props>>;
 
@@ -156,6 +161,61 @@ it("renders 'New Experience Definition' link when not in 'New Experience Definit
   expect(mockToggleShowSidebar.mock.calls[0][0]).toBe(false);
 });
 
+it("logs out user", async () => {
+  /**
+   * Given that user is logged in
+   */
+
+  const { ui, mockUpdateLocalUser, mockNavigate } = setup({
+    props: { user: {} as any }
+  });
+  /**
+   * When we are interacting with the component
+   */
+
+  const { getByText } = render(ui);
+
+  /**
+   * When we click on log out button
+   */
+  fireEvent.click(getByText(/log out/i));
+
+  /**
+   * Then we should be logged out
+   */
+
+  await wait(() => {
+    expect((mockUpdateLocalUser.mock.calls[0][0] as any).variables.user).toBe(
+      null
+    );
+  });
+
+  /**
+   * And we should be redirected
+   */
+  expect(mockNavigate).toBeCalledWith(LOGIN_URL);
+});
+
+it("does not render logout button if we are not logged in", () => {
+  /**
+   * Given that user is not logged in
+   */
+
+  const { ui } = setup({
+    props: { user: null as any }
+  });
+  /**
+   * When we are interacting with the component
+   */
+
+  const { queryByText } = render(ui);
+
+  /**
+   * Then logout button should not be rendered
+   */
+  expect(queryByText(/log out/i)).not.toBeInTheDocument();
+});
+
 function setup({
   props = {},
   routeProps = {}
@@ -164,14 +224,18 @@ function setup({
   routeProps?: Partial<RouteComponentProps>;
 } = {}) {
   const mockToggleShowSidebar = jest.fn();
+  const mockUpdateLocalUser = jest.fn();
+
   const { Ui, ...rest } = renderWithRouter(SidebarP, routeProps, {
     toggleShowSidebar: mockToggleShowSidebar,
+    updateLocalUser: mockUpdateLocalUser,
     ...props
   });
 
   return {
     ui: <Ui />,
     ...rest,
-    mockToggleShowSidebar
+    mockToggleShowSidebar,
+    mockUpdateLocalUser
   };
 }
