@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "start": "yarn remove-folders && env-cmd -e dev gatsby develop --port 3022",
-    "build-prod": "env-cmd -e prod gatsby build",
-    "build-local-staging": "env-cmd -e local-staging gatsby build",
+    "build-prod": "yarn remove-folders && env-cmd -e prod gatsby build",
+    "build-local-staging": "yarn remove-folders && env-cmd -e local-staging gatsby build",
     "test:watch": "env-cmd -e test yarn jest --watch --runInBand --no-cache",
     "test:coverage": "rimraf coverage && env-cmd -e test yarn jest --coverage --runInBand",
     "remove-folders": "rimraf public && rimraf .cache",
