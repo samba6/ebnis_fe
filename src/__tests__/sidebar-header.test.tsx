@@ -10,7 +10,7 @@ jest.mock("../components/Header", () => ({
 }));
 
 jest.mock("../components/Sidebar", () => ({
-  Sidebar: jest.fn(props => <div {...props}>side bar side</div>)
+  Sidebar: jest.fn(() => <div>side bar side</div>)
 }));
 
 const SidebarHeaderP = SidebarHeader as ComponentType<Partial<Props>>;
