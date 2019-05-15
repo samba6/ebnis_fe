@@ -25,6 +25,8 @@
     cursor: pointer;
     border-bottom: 1px solid lighten($color: $app-color, $amount: 35);
     padding-bottom: 2px;
+    padding-left: 5px;
+    padding-right: 5px;
 
     &::after {
       content: "";
@@ -65,7 +67,7 @@
     background: $app-color;
     font-weight: bolder;
     font-size: 2em;
-    bottom: 40px;
+    bottom: 10px;
     right: 15px;
     cursor: pointer;
     z-index: 1;
