@@ -22,11 +22,10 @@ import { renderWithRouter, fillField } from "./test_utils";
 import { GetAnExp_exp } from "../graphql/apollo-types/GetAnExp";
 import { FieldType } from "../graphql/apollo-types/globalTypes";
 
-jest.mock("../components/NewEntry/update", function mockUpdateFn() {
-  return {
-    update: jest.fn()
-  };
-});
+jest.mock("../components/NewEntry/update");
+jest.mock("../components/SidebarHeader", () => ({
+  SidebarHeader: jest.fn(() => null)
+}));
 
 import { update as mockUpdate } from "../components/NewEntry/update";
 
@@ -357,8 +356,7 @@ function makeComp(props: Partial<Props> = { getExperienceGql: {} as any }) {
     {},
     {
       createEntry: mockCreateEntry,
-      ...props,
-      SidebarHeader: jest.fn(() => null)
+      ...props
     }
   );
 

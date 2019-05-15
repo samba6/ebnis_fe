@@ -1,0 +1,14 @@
+@import "../../styles/extensions";
+
+.components-login {
+  @extend %route-main;
+
+  .main {
+    @extend %auth-root-styles;
+    @extend %app-main;
+  }
+
+  .to-sign-up-button {
+    @extend %auth-redirect-btn;
+  }
+}

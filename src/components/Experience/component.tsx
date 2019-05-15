@@ -4,7 +4,7 @@ import { Link } from "gatsby";
 
 import "./styles.scss";
 import { Props, displayFieldType } from "./utils";
-import { setTitle, makeNewEntryRoute } from "../../routes";
+import { makeNewEntryRoute } from "../../routes";
 import Loading from "../Loading";
 import {
   GetExpAllEntries_expEntries,
@@ -14,13 +14,14 @@ import {
   GetAnExp_exp_fieldDefs,
   GetAnExp_exp
 } from "../../graphql/apollo-types/GetAnExp";
+import { SidebarHeader } from "../SidebarHeader";
+import { setDocumentTitle, makeSiteTitle } from "../../constants";
 
 export function Experience(props: Props) {
   const {
     loading,
     getExperienceGql: { exp },
-    expEntries,
-    SidebarHeader
+    expEntries
   } = props;
   const title = exp ? exp.title : "Experience";
 
@@ -33,9 +34,9 @@ export function Experience(props: Props) {
 
   useEffect(
     function setRouteTitle() {
-      setTitle(title);
+      setDocumentTitle(makeSiteTitle(title));
 
-      return setTitle;
+      return setDocumentTitle;
     },
     [title]
   );

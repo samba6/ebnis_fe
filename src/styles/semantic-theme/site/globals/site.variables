@@ -24,7 +24,7 @@
 @mediumSize      : (14 / 14);
 @largeSize       : (16 / 14);
 
-@appColor: #ff5b00;
+@appColor: #5faac7;
 @hoveredTextColor: #fff;
 @primaryColor        : @appColor;
 @primaryColorFocus        : saturate(lighten(@primaryColor, 6), 20, relative);

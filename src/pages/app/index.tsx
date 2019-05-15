@@ -11,7 +11,6 @@ import {
   EXPERIENCE_URL
 } from "../../routes";
 import { NotFound } from "../../components/NotFound";
-import { SidebarHeader } from "../../components/SidebarHeader";
 import { Experiences } from "../../components/Experiences";
 import { Experience } from "../../components/Experience";
 import { Layout } from "../../components/Layout";
@@ -23,26 +22,13 @@ export function App(props: RouteComponentProps) {
         <AuthRequired
           path={EXPERIENCE_DEFINITION_URL}
           component={ExperienceDefinition}
-          SidebarHeader={SidebarHeader}
         />
 
-        <AuthRequired
-          path={EXPERIENCE_URL}
-          component={Experience}
-          SidebarHeader={SidebarHeader}
-        />
+        <AuthRequired path={EXPERIENCE_URL} component={Experience} />
 
-        <AuthRequired
-          path={NEW_ENTRY_URL}
-          component={NewEntry}
-          SidebarHeader={SidebarHeader}
-        />
+        <AuthRequired path={NEW_ENTRY_URL} component={NewEntry} />
 
-        <AuthRequired
-          path={EXPERIENCES_URL}
-          component={Experiences}
-          SidebarHeader={SidebarHeader}
-        />
+        <AuthRequired path={EXPERIENCES_URL} component={Experiences} />
 
         <NotFound default={true} />
       </Router>

@@ -4,28 +4,25 @@ import { NavigateFn } from "@reach/router";
 
 import "./styles.scss";
 import { Props } from "./utils";
-import {
-  setTitle,
-  EXPERIENCE_DEFINITION_URL,
-  makeExperienceRoute
-} from "../../routes";
+import { EXPERIENCE_DEFINITION_URL, makeExperienceRoute } from "../../routes";
 import Loading from "../Loading";
 import { GetExps_exps } from "../../graphql/apollo-types/GetExps";
+import { SidebarHeader } from "../SidebarHeader";
+import { setDocumentTitle, makeSiteTitle } from "../../constants";
 
 export const Experiences = (props: Props) => {
   const {
     navigate,
-    getExpDefsResult: { loading, exps },
-    SidebarHeader
+    getExpDefsResult: { loading, exps }
   } = props;
   const [toggleDescriptions, setToggleDescriptions] = useState<{
     [k: string]: boolean;
   }>({});
 
   useEffect(() => {
-    setTitle("Home");
+    setDocumentTitle(makeSiteTitle("My Experiences"));
 
-    return setTitle;
+    return setDocumentTitle;
   }, []);
 
   function goToNewExp() {

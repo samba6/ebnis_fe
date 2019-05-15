@@ -1,20 +1,16 @@
 import * as Yup from "yup";
 import { RouteComponentProps } from "@reach/router";
 import { WithApolloClient } from "react-apollo";
-import { ComponentType } from "react";
 
 import { RegMutationProps } from "../../graphql/user-reg.mutation";
 import { UserLocalMutationProps } from "../../state/user.local.mutation";
 import { Registration } from "../../graphql/apollo-types/globalTypes";
-import { ToOtherAuthLinkProps } from "../ToOtherAuthLink";
 
 export interface Props
   extends RouteComponentProps,
     RegMutationProps,
     UserLocalMutationProps,
-    WithApolloClient<{}> {
-  ToOtherAuthLink: ComponentType<ToOtherAuthLinkProps>;
-}
+    WithApolloClient<{}> {}
 
 export type FormValuesKey = keyof Registration;
 

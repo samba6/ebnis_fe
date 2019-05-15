@@ -10,17 +10,23 @@ import {
 import { renderWithRouter } from "./test_utils";
 import { Header } from "../components/Header/component";
 
+jest.mock("../components/Header", () => ({
+  Header: function HeaderComp(props: any) {
+    const Ui = renderWithRouter(Header, {}, { logoAttrs: {}, ...props })
+      .Ui as any;
+
+    return <Ui />;
+  }
+}));
+
 const SidebarHeaderP = SidebarHeader as ComponentType<Partial<Props>>;
 const title = "My shinning app";
 
-it("renders with header no sidebar", () => {
+it("renders no sidebar", () => {
   const { Ui } = makeComp();
-  const { container, getByTestId, queryByTestId } = render(
-    <Ui title={title} />
-  );
+  const { container, queryByTestId } = render(<Ui title={title} />);
 
   const sidebarHeader = container.firstChild;
-  expect(sidebarHeader).toContainElement(getByTestId("app-header"));
   expect(sidebarHeader).not.toContainElement(queryByTestId("app-sidebar"));
 });
 
@@ -52,16 +58,5 @@ it("renders with header and sidebar", () => {
 });
 
 function makeComp() {
-  return renderWithRouter(
-    SidebarHeaderP,
-    {},
-    {
-      Header: function HeaderComp(props: any) {
-        const Ui = renderWithRouter(Header, {}, { logoAttrs: {}, ...props })
-          .Ui as any;
-
-        return <Ui />;
-      }
-    }
-  );
+  return renderWithRouter(SidebarHeaderP, {});
 }

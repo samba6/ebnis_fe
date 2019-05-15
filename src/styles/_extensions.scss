@@ -134,3 +134,27 @@
   margin: 4em 0 1em;
   opacity: 0.3;
 }
+
+%auth-root-styles {
+  display: block !important;
+  overflow-y: auto;
+  margin-top: 1px;
+
+  .card {
+    max-width: 400px;
+    min-width: 98%;
+    margin: 10px auto 35px !important;
+
+    @media screen and (min-width: 420px) {
+      min-width: 400px;
+    }
+  }
+
+  .form-title {
+    @extend %form-title;
+  }
+
+  @extend %msg-error-close;
+
+  @extend %form;
+}

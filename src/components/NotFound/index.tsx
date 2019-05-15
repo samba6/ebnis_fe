@@ -1,24 +1,22 @@
-import React, { useEffect, useState, ReactNode } from "react";
+import React, { useEffect } from "react";
 import { RouteComponentProps } from "@reach/router";
 
 import { Page404 } from "../Page404";
+import {
+  setDocumentTitle,
+  makeSiteTitle,
+  PAGE_NOT_FOUND_TITLE
+} from "../../constants";
 
-export function NotFound(props: RouteComponentProps & { default: boolean }) {
-  const [child, setChild] = useState<ReactNode>(null);
-
+export function NotFound({
+  default: defaultVal,
+  ...props
+}: RouteComponentProps & { default: boolean }) {
   useEffect(() => {
-    /**
-     * The idea is that in production, if user visits a client only page
-     * directly from browser address bar (not by clicking a link in the app),
-     * this component will be showed briefly by gatsby before redirecting to
-     * the visited url. If the url is found, Page404 will never be rendered.
-     * But if after 500ms we have not been redirected by gatsby (because
-     * url is unknown to this app), then we render Page404.
-     */
-    setTimeout(() => {
-      setChild(<Page404 />);
-    }, 500);
+    setDocumentTitle(makeSiteTitle(PAGE_NOT_FOUND_TITLE));
+
+    return setDocumentTitle;
   }, []);
 
-  return <>{child}</>;
+  return <Page404 {...props} />;
 }

@@ -1,6 +1,6 @@
 import { graphql, compose, withApollo } from "react-apollo";
 
-import { Login as Comp } from "./login-x";
+import { Login as Comp } from "./component";
 import { userLocalMutationGql } from "../../state/user.local.mutation";
 import USER_LOCAL_QUERY, {
   LoggedOutUserData,

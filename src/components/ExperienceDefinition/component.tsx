@@ -34,25 +34,20 @@ import {
   GraphQlErrorState,
   GraphQlError
 } from "./utils";
-import { setTitle } from "../../routes";
 import { CreateExpMutation_exp } from "../../graphql/apollo-types/CreateExpMutation";
 import {
   CreateExp as FormValues,
   CreateFieldDef
 } from "../../graphql/apollo-types/globalTypes";
 import { makeExperienceRoute } from "../../routes";
-import { noop } from "../../constants";
+import { noop, setDocumentTitle, makeSiteTitle } from "../../constants";
 import { ExperienceDefinitionUpdate } from "./update";
 import { CreateExpMutationFn } from "../../graphql/create-exp.mutation";
 import { scrollTop } from "./scrollTop";
+import { SidebarHeader } from "../SidebarHeader";
 
 export function ExperienceDefinition(props: Props) {
-  const {
-    createExp,
-    navigate,
-
-    SidebarHeader
-  } = props;
+  const { createExp, navigate } = props;
   const [state, dispatch] = useReducer(reducer, {
     showDescriptionInput: true
   } as State);
@@ -60,9 +55,9 @@ export function ExperienceDefinition(props: Props) {
   const routeRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(function setCompTitle() {
-    setTitle("New Experience");
+    setDocumentTitle(makeSiteTitle("New Experience"));
 
-    return setTitle;
+    return setDocumentTitle;
   }, []);
 
   function FieldDef(

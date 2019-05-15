@@ -1,0 +1,22 @@
+@import "../../styles/extensions";
+
+.routes-sign-up-route {
+  @extend %route-main;
+
+  .main {
+    @extend %auth-root-styles;
+    @extend %app-main;
+  }
+
+  .error-label {
+    font-weight: bold;
+  }
+
+  .error-text {
+    margin-left: 15px;
+  }
+
+  .to-login-button {
+    @extend %auth-redirect-btn;
+  }
+}

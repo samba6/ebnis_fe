@@ -1,16 +1,15 @@
 import React, { useState, ComponentType } from "react";
 
-import { OwnProps as HeaderProps } from "../Header/utils";
 import { Sidebar } from "../Sidebar";
+import { Header } from "../Header";
 
 export interface OwnProps {
   title: string;
   sidebar?: boolean;
 }
 
-export interface Props extends OwnProps {
-  Header: ComponentType<HeaderProps>;
-}
+// tslint:disable-next-line: no-empty-interface
+export interface Props extends OwnProps {}
 
 export interface WithSideBar {
   SidebarHeader: ComponentType<OwnProps>;
@@ -18,7 +17,7 @@ export interface WithSideBar {
 
 export const SidebarHeader = React.memo(
   function SidebarHeaderFn(props: Props) {
-    const { title, sidebar, Header } = props;
+    const { title, sidebar } = props;
     const [showSidebar, toggleShowSidebar] = useState(false);
 
     return (

@@ -1,6 +1,6 @@
 import React from "react";
 import { Helmet } from "react-helmet-async";
-import { SITE_TITLE, THEME_COLOR } from "../../constants";
+import { THEME_COLOR } from "../../constants";
 
 export function RootHelmet() {
   return (
@@ -20,8 +20,6 @@ export function RootHelmet() {
         content="Take control of your wallet, purse. Manage your expenses"
       />
       <meta name="application" content="nina" />
-
-      <title>{SITE_TITLE}</title>
     </Helmet>
   );
 }

@@ -5,13 +5,11 @@ import { FieldType } from "../../graphql/apollo-types/globalTypes";
 
 import { GetExperienceGqlProps } from "../../graphql/get-exp.query";
 import { GetExpEntriesGqlProps } from "../../graphql/exp-entries.query";
-import { WithSideBar } from "../SidebarHeader/sidebar-header";
 
 export interface OwnProps
-  extends WithSideBar,
-    RouteComponentProps<{
-      experienceId: string;
-    }> {}
+  extends RouteComponentProps<{
+    experienceId: string;
+  }> {}
 
 export interface Props
   extends OwnProps,

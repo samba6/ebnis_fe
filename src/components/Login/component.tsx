@@ -1,9 +1,9 @@
-import React, { useEffect, useReducer, Dispatch } from "react";
+import React, { useReducer, Dispatch } from "react";
 import { Button, Card, Input, Message, Icon, Form } from "semantic-ui-react";
 import { Formik, FastField, FieldProps, FormikProps, Field } from "formik";
 import { WindowLocation } from "@reach/router";
 
-import "./login.scss";
+import "./styles.scss";
 import {
   Props,
   ValidationSchema,
@@ -13,28 +13,23 @@ import {
   SubmitArg,
   Action,
   initialState
-} from "./login";
+} from "./utils";
 import { LoginUser as FormValues } from "../../graphql/apollo-types/globalTypes";
-import { setTitle } from "../../routes";
 import { refreshToHome } from "../../refresh-to-app";
 import PwdInput from "../PwdInput";
 import { getConnStatus } from "../../state/get-conn-status";
 import { noop } from "../../constants";
 import { LoginMutationFn } from "../../graphql/login.mutation";
 import { LoginMutation_login } from "../../graphql/apollo-types/LoginMutation";
+import { SidebarHeader } from "../SidebarHeader";
+import { ToOtherAuthLink } from "../ToOtherAuthLink";
 
 const Errors = React.memo(ErrorsComp, ErrorsCompEqual);
 
 export function Login(props: Props) {
-  const { login, updateLocalUser, client, location, ToOtherAuthLink } = props;
+  const { login, updateLocalUser, client, location } = props;
 
   const [state, dispatch] = useReducer(authFormErrorReducer, initialState);
-
-  useEffect(function setPageTitle() {
-    setTitle("Log in");
-
-    return setTitle;
-  }, []);
 
   function renderForm({
     dirty,
@@ -109,14 +104,18 @@ export function Login(props: Props) {
   }
 
   return (
-    <div className="routes-login">
-      <Formik
-        initialValues={{ email: "", password: "" }}
-        onSubmit={noop}
-        render={renderForm}
-        validationSchema={ValidationSchema}
-        validateOnChange={false}
-      />
+    <div className="components-login">
+      <SidebarHeader title="Login to Ebnis" />
+
+      <div className="main">
+        <Formik
+          initialValues={{ email: "", password: "" }}
+          onSubmit={noop}
+          render={renderForm}
+          validationSchema={ValidationSchema}
+          validateOnChange={false}
+        />
+      </div>
     </div>
   );
 }

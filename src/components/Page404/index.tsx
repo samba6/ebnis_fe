@@ -1,21 +1,15 @@
 import React from "react";
-import { Helmet } from "react-helmet-async";
 import { Link } from "gatsby";
 import { Button } from "semantic-ui-react";
 
-import { Layout } from "../Layout";
 import { SidebarHeader } from "../SidebarHeader";
-import { makeSiteTitle } from "../../constants";
 import { ROOT_URL } from "../../routes";
+import { RouteComponentProps } from "@reach/router";
 
-export function Page404() {
+export function Page404(props: RouteComponentProps) {
   return (
-    <Layout>
+    <>
       <SidebarHeader title="Page Not Found" />
-
-      <Helmet>
-        <title>{makeSiteTitle("Page Not Found")}</title>
-      </Helmet>
 
       <div
         style={{
@@ -38,6 +32,6 @@ export function Page404() {
           Get back home
         </Button>
       </div>
-    </Layout>
+    </>
   );
 }

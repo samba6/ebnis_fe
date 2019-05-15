@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { navigate } from "gatsby";
 
 import { LOGIN_URL } from "../../routes";
-import { withUserHOC } from "../with-user";
+import { withUserHOC } from "../with-user-hoc";
 
 // tslint:disable-next-line: no-any
 function AuthRequiredComp(props: any) {

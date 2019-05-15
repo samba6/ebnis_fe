@@ -11,12 +11,11 @@ import {
   CreateFieldDef,
   FieldType
 } from "../../graphql/apollo-types/globalTypes";
-import { WithSideBar } from "../SidebarHeader/sidebar-header";
 import { CreateExpMutation } from "../../graphql/apollo-types/CreateExpMutation";
 
 export type CreateExpUpdateFn = MutationUpdaterFn<CreateExpMutation>;
 
-export interface OwnProps extends RouteComponentProps<{}>, WithSideBar {}
+export interface OwnProps extends RouteComponentProps<{}> {}
 
 export interface Props extends OwnProps, CreateExpMutationProps {}
 

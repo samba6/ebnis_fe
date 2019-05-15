@@ -25,7 +25,3 @@ export interface ExpRouteParams {
 export interface NewEntryRouteParams {
   experienceId: string;
 }
-
-export const setTitle = (title?: string) => {
-  document.title = title ? `${title} | Ebnis` : "Ebnis";
-};

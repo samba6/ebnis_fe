@@ -4,16 +4,13 @@ import { Reducer, Dispatch } from "react";
 import { GetExperienceGqlProps } from "../../graphql/get-exp.query";
 import { NewEntryRouteParams } from "../../routes";
 import { CreateEntryGqlProps } from "../../graphql/create-entry.mutation";
-import { WithSideBar } from "../SidebarHeader/sidebar-header";
 import {
   GetAnExp_exp,
   GetAnExp_exp_fieldDefs
 } from "../../graphql/apollo-types/GetAnExp";
 import { fieldTypeUtils } from "./field-types-utils";
 
-export interface OwnProps
-  extends WithSideBar,
-    RouteComponentProps<NewEntryRouteParams> {}
+export interface OwnProps extends RouteComponentProps<NewEntryRouteParams> {}
 
 export interface Props
   extends OwnProps,

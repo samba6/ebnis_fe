@@ -1,42 +1,37 @@
-import React, { useEffect, useRef, useReducer, Dispatch } from "react";
+import React, { useRef, useReducer, Dispatch } from "react";
 import { Button, Card, Input, Message, Icon, Form } from "semantic-ui-react";
 import { Formik, FastField, FieldProps, FormikProps } from "formik";
 import loIsEmpty from "lodash/isEmpty";
 import { WindowLocation } from "@reach/router";
 
-import "./sign-up.scss";
+import "./styles.scss";
 import {
   Props,
   initialFormValues,
   ValidationSchema,
   FormValuesKey,
   FORM_RENDER_PROPS
-} from "./sign-up";
+} from "./utils";
 import { Registration } from "../../graphql/apollo-types/globalTypes";
-import { setTitle } from "../../routes";
 import { refreshToHome } from "../../refresh-to-app";
 import {
   authFormErrorReducer,
   Action_Types,
   State,
   Action
-} from "../Login/login";
+} from "../Login/utils";
 import { getConnStatus } from "../../state/get-conn-status";
 import { noop } from "../../constants";
 import { UserRegMutationFn } from "../../graphql/user-reg.mutation";
 import { scrollToTop } from "./scrollToTop";
 import { UserFragment } from "../../graphql/apollo-types/UserFragment";
+import { SidebarHeader } from "../SidebarHeader";
+import { ToOtherAuthLink } from "../ToOtherAuthLink";
 
 export function SignUp(props: Props) {
-  const { client, regUser, updateLocalUser, location, ToOtherAuthLink } = props;
+  const { client, regUser, updateLocalUser, location } = props;
   const mainRef = useRef<HTMLDivElement | null>(null);
   const [state, dispatch] = useReducer(authFormErrorReducer, {} as State);
-
-  useEffect(function setPageTitle() {
-    setTitle("Sign up");
-
-    return setTitle;
-  }, []);
 
   function renderForm({
     dirty,
@@ -138,13 +133,17 @@ export function SignUp(props: Props) {
 
   return (
     <div className="routes-sign-up-route" ref={mainRef}>
-      <Formik
-        initialValues={initialFormValues}
-        onSubmit={noop}
-        render={renderForm}
-        validationSchema={ValidationSchema}
-        validateOnChange={false}
-      />
+      <SidebarHeader title="Sign up for Ebnis" />
+
+      <div className="main">
+        <Formik
+          initialValues={initialFormValues}
+          onSubmit={noop}
+          render={renderForm}
+          validationSchema={ValidationSchema}
+          validateOnChange={false}
+        />
+      </div>
     </div>
   );
 }

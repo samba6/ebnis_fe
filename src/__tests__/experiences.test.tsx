@@ -10,6 +10,10 @@ import { renderWithRouter } from "./test_utils";
 import { EXPERIENCE_DEFINITION_URL, makeExperienceRoute } from "../routes";
 import { GetExps_exps } from "../graphql/apollo-types/GetExps";
 
+jest.mock("../components/SidebarHeader", () => ({
+  SidebarHeader: jest.fn(() => null)
+}));
+
 const HomeP = Experiences as ComponentType<Partial<Props>>;
 
 it("renders loading state and not main", () => {
@@ -98,7 +102,6 @@ function makeComp(props: Partial<Props> = {}) {
     HomeP,
     {},
     {
-      SidebarHeader: jest.fn(() => <div />),
       ...props
     }
   );

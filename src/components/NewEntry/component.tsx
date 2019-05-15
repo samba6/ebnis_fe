@@ -14,7 +14,7 @@ import {
   DispatchType,
   Action_Types
 } from "./utils";
-import { setTitle, makeExperienceRoute } from "../../routes";
+import { makeExperienceRoute } from "../../routes";
 import Loading from "../Loading";
 import {
   GetAnExp_exp_fieldDefs,
@@ -23,22 +23,23 @@ import {
 import { CreateEntryFn } from "../../graphql/create-entry.mutation";
 import { update } from "./update";
 import { fieldTypeUtils } from "./field-types-utils";
+import { SidebarHeader } from "../SidebarHeader";
+import { setDocumentTitle, makeSiteTitle } from "../../constants";
 
 export function NewEntry(props: Props) {
   const {
     getExperienceGql: { loading, exp },
     navigate,
-    createEntry,
-    SidebarHeader
+    createEntry
   } = props;
 
   const [state, dispatch] = useReducer(reducer, { formObj: {} });
 
   useEffect(
     function setRouteTitle() {
-      setTitle(pageTitle(exp));
+      setDocumentTitle(makeSiteTitle(pageTitle(exp)));
 
-      return setTitle;
+      return setDocumentTitle;
     },
     [exp]
   );

@@ -4,12 +4,15 @@ import "jest-dom/extend-expect";
 import "react-testing-library/cleanup-after-each";
 import { render, fireEvent, wait, waitForElement } from "react-testing-library";
 
-import { Login } from "../components/Login/login-x";
-import { Props } from "../components/Login/login";
+import { Login } from "../components/Login/component";
+import { Props } from "../components/Login/utils";
 import { renderWithRouter, fillField } from "./test_utils";
 
 jest.mock("../state/get-conn-status");
 jest.mock("../refresh-to-app");
+jest.mock("../components/SidebarHeader", () => ({
+  SidebarHeader: jest.fn(() => null)
+}));
 
 import { getConnStatus } from "../state/get-conn-status";
 import { refreshToHome } from "../refresh-to-app";

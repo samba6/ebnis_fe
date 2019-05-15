@@ -13,7 +13,7 @@ import addYears from "date-fns/add_years";
 import addMonths from "date-fns/add_months";
 import addMinutes from "date-fns/add_minutes";
 import addHours from "date-fns/add_hours";
-import setHours from "date-fns/set_hours";
+import setMinutes from "date-fns/set_minutes";
 
 import { DateTimeField } from "../components/DateTimeField/datetime-field-x";
 import { Props } from "../components/DateTimeField/datetime-field";
@@ -24,18 +24,18 @@ const DateTimeFieldP = DateTimeField as P;
 it("renders ", () => {
   const mockSetValue = jest.fn();
 
-  // lets hard code the hours otherwise the test will fail at midnight
-  const today = setHours(new Date(), 6);
+  // lets hard code the minutes otherwise the test will fail at xx:00 hours
+  const today = setMinutes(new Date(), 25);
 
   /**
-   * Given that we want the component to render today's date
+   * Given that we want the component to render a date
    */
   const { getByTestId } = render(
     <DateTimeFieldP value={today} setValue={mockSetValue} name="f" />
   );
 
   /**
-   * Then today's date should be visible on the page
+   * Then the date should be visible on the page
    */
   const [y, m, d, h, mi] = formatDate(today, "YYYY MMM D HH mm").split(" ");
   const $day = getByTestId("f.date.day");

@@ -4,13 +4,16 @@ import "jest-dom/extend-expect";
 import "react-testing-library/cleanup-after-each";
 import { render, fireEvent, wait, waitForElement } from "react-testing-library";
 
-import { SignUp } from "../components/SignUp/sign-up-x";
-import { Props } from "../components/SignUp/sign-up";
+import { SignUp } from "../components/SignUp/component";
+import { Props } from "../components/SignUp/utils";
 import { renderWithRouter, fillField } from "./test_utils";
 
 jest.mock("../state/get-conn-status");
 jest.mock("../refresh-to-app");
 jest.mock("../components/SignUp/scrollToTop");
+jest.mock("../components/SidebarHeader", () => ({
+  SidebarHeader: jest.fn(() => null)
+}));
 
 import { getConnStatus } from "../state/get-conn-status";
 import { refreshToHome } from "../refresh-to-app";
@@ -237,15 +240,7 @@ function makeComp(isServerConnected: boolean = true) {
   const mockUpdateLocalUser = jest.fn();
 
   return {
-    ui: (
-      <Ui
-        regUser={mockRegUser}
-        updateLocalUser={mockUpdateLocalUser}
-        ToOtherAuthLink={jest.fn(() => (
-          <div />
-        ))}
-      />
-    ),
+    ui: <Ui regUser={mockRegUser} updateLocalUser={mockUpdateLocalUser} />,
     mockRegUser,
     mockUpdateLocalUser,
     ...rest

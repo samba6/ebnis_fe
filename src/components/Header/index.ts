@@ -1,8 +1,8 @@
 import { compose } from "react-apollo";
 
 import { Header as Comp } from "./component";
-import { fetchLogoHOC } from "./fetch-logo";
-import { withUserHOC } from "../with-user";
+import { fetchLogoHOC } from "./fetch-logo-hoc";
+import { withUserHOC } from "../with-user-hoc";
 import { withLocationHOC } from "../with-location";
 
 export const Header = compose(

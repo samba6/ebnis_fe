@@ -17,6 +17,9 @@ import { makeExperienceRoute } from "../routes";
 
 jest.mock("../components/ExperienceDefinition/update");
 jest.mock("../components/ExperienceDefinition/scrollTop");
+jest.mock("../components/SidebarHeader", () => ({
+  SidebarHeader: jest.fn(() => null)
+}));
 
 import { ExperienceDefinitionUpdate } from "../components/ExperienceDefinition/update";
 import { scrollTop } from "../components/ExperienceDefinition/scrollTop";
@@ -1285,7 +1288,6 @@ function makeComp(props: Partial<Props> = {}) {
     ExperienceDefinitionP,
     {},
     {
-      SidebarHeader: jest.fn(() => <div />),
       createExp: mockCreateExp,
       ...props
     }

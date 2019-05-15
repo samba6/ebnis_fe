@@ -49,7 +49,7 @@ module.exports = {
         short_name: "Ebnis",
         start_url: "/",
         background_color: "#ffffff",
-        theme_color: "#ff5b00",
+        theme_color: "#5faac7",
         // Enables "Add to Home screen" prompt and disables browser UI (including back button)
         // see https://developers.google.com/web/fundamentals/web-app-manifest/#display
         display: "standalone",
