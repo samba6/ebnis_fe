@@ -55,7 +55,7 @@ export function ExperienceDefinition(props: Props) {
   const routeRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(function setCompTitle() {
-    setDocumentTitle(makeSiteTitle("New Experience"));
+    setDocumentTitle(makeSiteTitle("Experience Definition"));
 
     return setDocumentTitle;
   }, []);
@@ -214,7 +214,7 @@ export function ExperienceDefinition(props: Props) {
 
   const render = (
     <div className="components-experience-definition">
-      <SidebarHeader title="New Experience" sidebar={true} />
+      <SidebarHeader title="[New] Experience Definition" sidebar={true} />
 
       <div className="main" ref={routeRef}>
         <Formik<FormValues>

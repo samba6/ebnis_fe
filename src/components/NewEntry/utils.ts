@@ -48,7 +48,7 @@ function initialFormValuesFromExperience(exp: GetAnExp_exp) {
 }
 
 export function pageTitle(exp: GetAnExp_exp | null | undefined) {
-  return "New " + ((exp && exp.title) || "entry");
+  return "[New] " + ((exp && exp.title) || "entry");
 }
 
 export function formFieldNameFromIndex(index: number) {
