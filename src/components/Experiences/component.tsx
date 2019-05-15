@@ -78,7 +78,7 @@ export const Experiences = (props: Props) => {
 
   return (
     <div className="components-experiences">
-      <SidebarHeader title="Home" sidebar={true} />
+      <SidebarHeader title="My Experiences" sidebar={true} />
 
       <div className="main">{renderMain()}</div>
     </div>
