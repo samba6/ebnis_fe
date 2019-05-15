@@ -14,6 +14,7 @@ import addMonths from "date-fns/add_months";
 import addMinutes from "date-fns/add_minutes";
 import addHours from "date-fns/add_hours";
 import setMinutes from "date-fns/set_minutes";
+import setHours from "date-fns/set_hours";
 
 import { DateTimeField } from "../components/DateTimeField/datetime-field-x";
 import { Props } from "../components/DateTimeField/datetime-field";
@@ -24,8 +25,9 @@ const DateTimeFieldP = DateTimeField as P;
 it("renders ", () => {
   const mockSetValue = jest.fn();
 
-  // lets hard code the minutes otherwise the test will fail at xx:00 hours
-  const today = setMinutes(new Date(), 25);
+  // lets hard code the minutes otherwise the test will fail at xy:00 hours
+  // we also hard code the hour otherwise test will fail at 00:xy hours
+  const today = setHours(setMinutes(new Date(), 25), 7);
 
   /**
    * Given that we want the component to render a date
