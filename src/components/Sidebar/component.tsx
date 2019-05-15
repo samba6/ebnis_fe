@@ -1,16 +1,11 @@
 import React, { Dispatch, MouseEventHandler, SetStateAction } from "react";
-import {
-  RouteComponentProps,
-  NavigateFn,
-  WindowLocation,
-  navigate
-} from "@reach/router";
+import { RouteComponentProps, NavigateFn, WindowLocation } from "@reach/router";
 import makeClassNames from "classnames";
 
 import "./styles.scss";
 import { EXPERIENCE_DEFINITION_URL, EXPERIENCES_URL } from "../../routes";
 
-interface Props extends RouteComponentProps {
+export interface Props extends RouteComponentProps {
   show: boolean;
   toggleShowSidebar: Dispatch<SetStateAction<boolean>>;
 }
@@ -19,7 +14,7 @@ const blockClicks: MouseEventHandler<HTMLDivElement> = evt =>
   evt.stopPropagation();
 
 export function Sidebar(props: Props) {
-  const { location, show, toggleShowSidebar } = props;
+  const { location, show, toggleShowSidebar, navigate } = props;
 
   const pathname = (location as WindowLocation).pathname;
 
@@ -45,7 +40,11 @@ export function Sidebar(props: Props) {
         data-testid="sidebar-container"
         onClick={blockClicks}
       >
-        <div className="sidebar-hide item" onClick={hideSidebar} />
+        <div
+          className="sidebar-hide item"
+          data-testid="sidebar-hide"
+          onClick={hideSidebar}
+        />
 
         <ul className="sidebar__content">
           {pathname !== EXPERIENCES_URL && (
