@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "gatsby";
 import { Button } from "semantic-ui-react";
+import makeClassNames from "classnames";
 
 import { SIGN_UP_URL, LOGIN_URL } from "../../routes";
 
@@ -17,12 +18,15 @@ const linkTexts = {
 };
 
 export function ToOtherAuthLink(props: ToOtherAuthLinkProps) {
-  const { isSubmitting, pathname } = props;
+  const { isSubmitting, pathname, className = "" } = props;
   const to = pathname === LOGIN_URL ? SIGN_UP_URL : LOGIN_URL;
 
   return (
     <Button
-      className="to-sign-up-button"
+      className={makeClassNames({
+        "to-other-auth-button": true,
+        [className]: className
+      })}
       type="button"
       fluid={true}
       to={to}

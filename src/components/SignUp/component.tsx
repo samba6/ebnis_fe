@@ -137,12 +137,11 @@ export function SignUp(props: Props) {
             <Button
               id="sign-up-submit"
               name="sign-up-submit"
-              color="green"
-              inverted={true}
               disabled={!dirty || isSubmitting}
               loading={isSubmitting}
               type="submit"
               fluid={true}
+              basic={true}
             >
               <Icon name="checkmark" /> Submit
             </Button>
