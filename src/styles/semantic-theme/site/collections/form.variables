@@ -1,1 +1,2 @@
 @inputBorderRadius: 3px;
+@formErrorNegativeColor: #DD8686;

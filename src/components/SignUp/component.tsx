@@ -1,8 +1,9 @@
-import React, { useRef, useReducer, Dispatch } from "react";
+import React, { useRef, useReducer } from "react";
 import { Button, Card, Input, Message, Icon, Form } from "semantic-ui-react";
-import { Formik, FastField, FieldProps, FormikProps } from "formik";
+import { Formik, Field, FieldProps, FormikProps } from "formik";
 import loIsEmpty from "lodash/isEmpty";
 import { WindowLocation } from "@reach/router";
+import makeClassNames from "classnames";
 
 import "./styles.scss";
 import {
@@ -10,16 +11,17 @@ import {
   initialFormValues,
   ValidationSchema,
   FormValuesKey,
-  FORM_RENDER_PROPS
+  FORM_RENDER_PROPS,
+  reducer,
+  initialState,
+  DispatchType,
+  ActionTypes,
+  ErrorSummary,
+  FormFieldErrors,
+  FormErrors
 } from "./utils";
 import { Registration } from "../../graphql/apollo-types/globalTypes";
 import { refreshToHome } from "../../refresh-to-app";
-import {
-  authFormErrorReducer,
-  Action_Types,
-  State,
-  Action
-} from "../Login/utils";
 import { getConnStatus } from "../../state/get-conn-status";
 import { noop } from "../../constants";
 import { UserRegMutationFn } from "../../graphql/user-reg.mutation";
@@ -31,7 +33,14 @@ import { ToOtherAuthLink } from "../ToOtherAuthLink";
 export function SignUp(props: Props) {
   const { client, regUser, updateLocalUser, location } = props;
   const mainRef = useRef<HTMLDivElement | null>(null);
-  const [state, dispatch] = useReducer(authFormErrorReducer, {} as State);
+  const [state, dispatch] = useReducer(reducer, initialState);
+  const {
+    otherErrors,
+    showingErrorSummary,
+    formErrors,
+    networkError,
+    serverFieldsErrors
+  } = state;
 
   function renderForm({
     dirty,
@@ -41,20 +50,29 @@ export function SignUp(props: Props) {
   }: FormikProps<Registration>) {
     return (
       <Card>
-        <FormErrors errors={state} dispatch={dispatch} />
+        <ErrorsSummary
+          errors={{
+            otherErrors,
+            showingErrorSummary,
+            formErrors,
+            networkError,
+            serverFieldsErrors
+          }}
+          dispatch={dispatch}
+        />
 
         <Card.Content>
           <Form
             onSubmit={async function onSubmit() {
               dispatch({
-                type: Action_Types.CLEAR_ALL_ERRORS,
+                type: ActionTypes.clear_all_errors,
                 payload: null
               });
 
               if (!(await getConnStatus(client))) {
                 formikBag.setSubmitting(false);
                 dispatch({
-                  type: Action_Types.SET_OTHER_ERRORS,
+                  type: ActionTypes.set_other_errors,
                   payload: "You are not connected"
                 });
                 scrollToTop(mainRef);
@@ -67,7 +85,7 @@ export function SignUp(props: Props) {
               if (!loIsEmpty(errors)) {
                 formikBag.setSubmitting(false);
                 dispatch({
-                  type: Action_Types.SET_FORM_ERROR,
+                  type: ActionTypes.set_form_errors,
                   payload: errors
                 });
                 scrollToTop(mainRef);
@@ -89,7 +107,7 @@ export function SignUp(props: Props) {
               } catch (error) {
                 formikBag.setSubmitting(false);
                 dispatch({
-                  type: Action_Types.SET_GRAPHQL_ERROR,
+                  type: ActionTypes.set_server_errors,
                   payload: error
                 });
                 scrollToTop(mainRef);
@@ -98,10 +116,20 @@ export function SignUp(props: Props) {
           >
             {Object.entries(FORM_RENDER_PROPS).map(([name, [label, type]]) => {
               return (
-                <FastField
+                <Field
                   key={name}
                   name={name}
-                  render={renderInput(label, type)}
+                  render={(formProps: FieldProps<Registration>) => (
+                    <InputComponent
+                      label={label}
+                      type={type}
+                      formProps={formProps}
+                      errors={{
+                        formErrors,
+                        serverFieldsErrors
+                      }}
+                    />
+                  )}
                 />
               );
             })}
@@ -132,10 +160,10 @@ export function SignUp(props: Props) {
   }
 
   return (
-    <div className="routes-sign-up-route" ref={mainRef}>
+    <div className="routes-sign-up-route">
       <SidebarHeader title="Sign up for Ebnis" />
 
-      <div className="main">
+      <div className="main" ref={mainRef} data-testid="components-signup-main">
         <Formik
           initialValues={initialFormValues}
           onSubmit={noop}
@@ -149,26 +177,39 @@ export function SignUp(props: Props) {
 }
 
 interface FormErrorsProps {
-  errors: State;
-  dispatch: Dispatch<Action>;
+  errors: ErrorSummary;
+  dispatch: DispatchType;
 }
 
-function FormErrors(props: FormErrorsProps) {
+function ErrorsSummary(props: FormErrorsProps) {
+  const { errors, dispatch } = props;
+
   const {
-    errors: { formErrors, graphQlErrors, otherErrors },
-    dispatch
-  } = props;
+    networkError,
+    otherErrors,
+    showingErrorSummary,
+    formErrors,
+    serverFieldsErrors
+  } = errors;
 
-  function getContent() {
-    if (otherErrors) {
-      return otherErrors;
-    }
+  if (!showingErrorSummary) {
+    return null;
+  }
 
-    if (formErrors) {
-      return (
-        <>
-          <span>Errors in fields:</span>
-          {Object.entries(formErrors).map(([k, err]) => {
+  let content = otherErrors as React.ReactNode;
+  let testId = "other-errors";
+
+  if (networkError) {
+    content = networkError;
+    testId = "network-error";
+  } else if (formErrors || serverFieldsErrors) {
+    testId = formErrors ? "form-errors" : "server-field-error";
+
+    content = (
+      <>
+        <span>Errors in fields:</span>
+        {Object.entries((formErrors || serverFieldsErrors) as FormErrors).map(
+          ([k, err]: [string, string | undefined]) => {
             const label = FORM_RENDER_PROPS[k][0];
             return (
               <div key={label}>
@@ -176,58 +217,64 @@ function FormErrors(props: FormErrorsProps) {
                 <div className="error-text">{err}</div>
               </div>
             );
-          })}
-        </>
-      );
-    }
-
-    if (graphQlErrors) {
-      return graphQlErrors.message;
-    }
-
-    return null;
-  }
-
-  const content = getContent();
-
-  if (content) {
-    return (
-      <Card.Content extra={true} data-testid="sign-up-form-error">
-        <Message
-          error={true}
-          onDismiss={function onDismissed() {
-            dispatch({
-              type: Action_Types.CLEAR_ALL_ERRORS,
-              payload: null
-            });
-          }}
-        >
-          <Message.Content>{content}</Message.Content>
-        </Message>
-      </Card.Content>
+          }
+        )}
+      </>
     );
   }
 
-  return null;
+  return (
+    <Card.Content extra={true} data-testid={testId}>
+      <Message
+        error={true}
+        onDismiss={function onDismissed() {
+          dispatch({
+            type: ActionTypes.clear_error_summary
+          });
+        }}
+      >
+        <Message.Content>{content}</Message.Content>
+      </Message>
+    </Card.Content>
+  );
 }
 
-function renderInput(label: string, type: string) {
-  return function renderInputInner(formProps: FieldProps<Registration>) {
-    const { field } = formProps;
-    const name = field.name as FormValuesKey;
-    const isSourceField = name === "source";
+function InputComponent({
+  label,
+  type,
+  formProps,
+  errors
+}: {
+  label: string;
+  type: string;
+  formProps: FieldProps<Registration>;
+  errors: FormFieldErrors;
+}) {
+  const { field } = formProps;
+  const name = field.name as FormValuesKey;
+  const isSourceField = name === "source";
+  const { formErrors, serverFieldsErrors } = errors;
+  const fieldError = (formErrors || serverFieldsErrors || {})[name];
 
-    return (
-      <Form.Field
+  return (
+    <Form.Field
+      className={makeClassNames({
+        "form-field": true,
+        disabled: isSourceField,
+        error: fieldError
+      })}
+    >
+      <label htmlFor={name}>{label}</label>
+
+      <Input
         {...field}
-        className={`form-field ${isSourceField ? "disabled" : ""}`}
         type={type}
-        control={Input}
         autoComplete="off"
-        label={label}
         id={name}
         readOnly={isSourceField}
       />
-    );
-  };
+
+      {fieldError && <div className="field-error">{fieldError}</div>}
+    </Form.Field>
+  );
 }

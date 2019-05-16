@@ -18,6 +18,8 @@ jest.mock("../components/SidebarHeader", () => ({
 import { getConnStatus } from "../state/get-conn-status";
 import { refreshToHome } from "../refresh-to-app";
 import { scrollToTop } from "../components/SignUp/scrollToTop";
+import { ApolloError } from "apollo-client";
+import { GraphQLError } from "graphql";
 
 const mockGetConnStatus = getConnStatus as jest.Mock;
 const mockRefreshToHome = refreshToHome as jest.Mock;
@@ -117,7 +119,7 @@ it("renders error if socket not connected", async () => {
   /**
    * Then we should not see any error UI
    */
-  expect(queryByTestId("sign-up-form-error")).not.toBeInTheDocument();
+  expect(queryByTestId("other-errors")).not.toBeInTheDocument();
 
   /**
    * When we complete and submit the form
@@ -127,14 +129,15 @@ it("renders error if socket not connected", async () => {
   /**
    * Then we should see error UI
    */
-  const $error = await waitForElement(() => getByTestId("sign-up-form-error"));
+  const $error = await waitForElement(() => getByTestId("other-errors"));
   expect($error).toBeInTheDocument();
 
   /**
    * And page should be automatically scrolled to the top of page
    */
-  expect(mockScrollToTop).toBeCalled();
-  mockScrollToTop.mockReset();
+  expect((mockScrollToTop.mock.calls[0][0] as any).current.dataset.testid).toBe(
+    "components-signup-main"
+  );
 });
 
 it("renders error if password and password confirm are not same", async () => {
@@ -143,12 +146,17 @@ it("renders error if password and password confirm are not same", async () => {
   /**
    * Given we are using signup component
    */
-  const { getByText, getByLabelText, getByTestId, queryByTestId } = render(ui);
+  const { getByText, getByLabelText, queryByText } = render(ui);
 
   /**
    * Then we should not see any error UI
    */
-  expect(queryByTestId("sign-up-form-error")).not.toBeInTheDocument();
+  const passwordConfirmErrorRegexp = /Passwords do not match/i;
+  expect(queryByText(passwordConfirmErrorRegexp)).not.toBeInTheDocument();
+  const $passwordConfirmParent = getByLabelText("Password Confirm").closest(
+    ".form-field"
+  ) as HTMLElement;
+  expect($passwordConfirmParent.classList).not.toContain("error");
 
   /**
    * When complete the form, but the password and password confirm fields
@@ -167,35 +175,39 @@ it("renders error if password and password confirm are not same", async () => {
   /**
    * Then we should see error UI
    */
-  const $error = await waitForElement(() => getByTestId("sign-up-form-error"));
+  const $error = await waitForElement(() =>
+    getByText(passwordConfirmErrorRegexp)
+  );
   expect($error).toBeInTheDocument();
+  expect($passwordConfirmParent.classList).toContain("error");
 
   /**
    * And the page should be automatically scrolled up
    */
   expect(mockScrollToTop).toBeCalled();
-  mockScrollToTop.mockReset();
 });
 
-it("renders error if server returns error", async () => {
+it("renders errors if server returns network errors", async () => {
   const { ui, mockRegUser } = makeComp();
 
   /**
-   * Given that our server return error on form submission
+   * Given that our server will return network error on form submission
    */
-  mockRegUser.mockRejectedValue({
-    message: "email"
-  });
+  mockRegUser.mockRejectedValue(
+    new ApolloError({
+      networkError: new Error("network error")
+    })
+  );
 
   /**
-   * And that we are using the signup component
+   * When we start using the component
    */
   const { getByText, getByLabelText, getByTestId, queryByTestId } = render(ui);
 
   /**
    * Then we should not see any error UI
    */
-  expect(queryByTestId("sign-up-form-error")).not.toBeInTheDocument();
+  expect(queryByTestId("network-error")).not.toBeInTheDocument();
 
   /**
    * When we complete and submit the form
@@ -205,8 +217,74 @@ it("renders error if server returns error", async () => {
   /**
    * Then we should see error UI
    */
-  const $error = await waitForElement(() => getByTestId("sign-up-form-error"));
+  const $error = await waitForElement(() => getByTestId("network-error"));
   expect($error).toBeInTheDocument();
+
+  /**
+   * And we should be automatically scrolled to top
+   */
+  expect(mockScrollToTop).toBeCalled();
+});
+
+it("renders errors if server returns field errors", async () => {
+  const { ui, mockRegUser } = makeComp();
+
+  /**
+   * Given that our server will return field errors on form submission
+   */
+  mockRegUser.mockRejectedValue(
+    new ApolloError({
+      graphQLErrors: [
+        new GraphQLError(`{"errors":{"email":"has already been taken"}}`)
+      ]
+    })
+  );
+
+  /**
+   * When we start using the component
+   */
+  const {
+    getByText,
+    getByLabelText,
+    getByTestId,
+    queryByTestId,
+    queryByText
+  } = render(ui);
+
+  /**
+   * Then we should not see error summary UI
+   */
+  expect(queryByTestId("server-field-error")).not.toBeInTheDocument();
+
+  /**
+   * And we should not see field error
+   */
+  expect(queryByText("has already been taken")).not.toBeInTheDocument();
+  const $emailParent = getByLabelText(/email/i).closest(
+    ".form-field"
+  ) as HTMLElement;
+  expect($emailParent.classList).not.toContain("error");
+
+  /**
+   * When we complete and submit the form
+   */
+  fillForm(getByLabelText, getByText);
+
+  /**
+   * Then we should see error summary
+   */
+  const $error = await waitForElement(() => getByTestId("server-field-error"));
+  expect($error).toBeInTheDocument();
+
+  /**
+   * And we should see field error
+   */
+  expect(getByText("has already been taken")).toBeInTheDocument();
+
+  /**
+   * And field error should visually indicate so
+   */
+  expect($emailParent.classList).toContain("error");
 
   /**
    * And we should be automatically scrolled to top
@@ -219,9 +297,14 @@ it("renders error if server returns error", async () => {
   fireEvent.click($error.querySelector(`[class="close icon"]`) as any);
 
   /**
-   * Then the error UI should no longer ve visible
+   * Then error summary should no longer ve visible
    */
-  expect(queryByTestId("sign-up-form-error")).not.toBeInTheDocument();
+  expect(queryByTestId("server-field-error")).not.toBeInTheDocument();
+
+  /**
+   * But field error should still be visible
+   */
+  expect(getByText("has already been taken")).toBeInTheDocument();
 });
 
 function fillForm(getByLabelText: any, getByText: any) {
@@ -233,6 +316,7 @@ function fillForm(getByLabelText: any, getByText: any) {
 }
 
 function makeComp(isServerConnected: boolean = true) {
+  mockScrollToTop.mockReset();
   mockGetConnStatus.mockResolvedValue(isServerConnected);
   const { Ui, ...rest } = renderWithRouter(SignUpP);
 
