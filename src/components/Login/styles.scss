@@ -11,4 +11,8 @@
   .to-sign-up-button {
     @extend %auth-redirect-btn;
   }
+
+  .field-error {
+    margin-left: 20px;
+  }
 }

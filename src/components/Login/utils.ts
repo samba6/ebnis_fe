@@ -1,9 +1,8 @@
 import * as Yup from "yup";
 import { RouteComponentProps } from "@reach/router";
 import { Reducer, ComponentType } from "react";
-import { FormikErrors, FormikActions } from "formik";
+import { FormikErrors } from "formik";
 import { ApolloError } from "apollo-client";
-import { Dispatch } from "react";
 import { WithApolloClient } from "react-apollo";
 
 import { LoginUser as FormValues } from "../../graphql/apollo-types/globalTypes";
@@ -26,82 +25,102 @@ export type Props = OwnProps &
 
 export const ValidationSchema = Yup.object<FormValues>().shape({
   email: Yup.string()
-    .email("Must be valid email address")
+    .email("must be valid email address")
     .required(),
   password: Yup.string()
     .required()
-    .min(4, "Too short")
+    .min(4, "too short")
 });
 
 export const RouterThings = {
   documentTitle: "Log in"
 };
 
-export enum Action_Types {
-  SET_OTHER_ERRORS = "@components/login/SET_OTHER_ERRORS",
-  SET_FORM_ERROR = "@components/login/SET_FORM_ERROR",
-  SET_GRAPHQL_ERROR = "@components/login/SET_GRAPHQL_ERROR",
-  CLEAR_ALL_ERRORS = "@components/login/CLEAR_ALL_ERRORS"
+export enum ActionTypes {
+  set_other_errors = "@components/login/set_other_errors",
+  set_form_error = "@components/login/set_form_error",
+  set_server_errors = "@components/login/set_server_errors",
+  clear_all_errors = "@components/login/clear_all_errors"
 }
 
 export interface State {
-  readonly otherErrors?: string;
-  readonly formErrors?: FormikErrors<FormValues>;
-  readonly graphQlErrors?: ApolloError;
+  readonly otherErrors?: string | null;
+  readonly formErrors?: FormikErrors<FormValues> | null;
+  readonly serverFieldErrors?: string | null;
   readonly pwdType?: "password" | "text";
+  readonly networkError?: string | null;
 }
 
-export const initialState: State = {
-  otherErrors: undefined,
-  formErrors: undefined,
-  graphQlErrors: undefined
-};
+export const initialState = {} as State;
+
+type Payload =
+  | null
+  | undefined
+  | boolean
+  | FormikErrors<FormValues>
+  | ApolloError
+  | string;
+
+type ActionSuperType = ActionTypes | PwdInputActionTypes;
 
 export interface Action {
-  type: Action_Types | PwdInputActionTypes;
-  payload:
-    | null
-    | undefined
-    | boolean
-    | FormikErrors<FormValues>
-    | ApolloError
-    | string;
+  type: ActionSuperType;
+  payload?: Payload;
 }
 
-export const authFormErrorReducer: Reducer<State, Action> = (state, action) => {
-  switch (action.type) {
-    case Action_Types.SET_OTHER_ERRORS:
-      return { ...state, otherErrors: action.payload as string };
+const reducerFunctionsObject: {
+  [k in ActionSuperType]: (state: State, payload: Payload) => State
+} = {
+  [ActionTypes.set_other_errors]: (prevState, payload) => ({
+    ...prevState,
+    otherErrors: payload as string
+  }),
 
-    case Action_Types.SET_FORM_ERROR:
-      return {
-        ...state,
-        formErrors: action.payload as FormikErrors<FormValues>
-      };
+  [ActionTypes.set_form_error]: (prevState, payload) => ({
+    ...prevState,
+    formErrors: payload as FormikErrors<FormValues>
+  }),
 
-    case Action_Types.SET_GRAPHQL_ERROR:
-      return { ...state, graphQlErrors: action.payload as ApolloError };
+  [ActionTypes.set_server_errors]: (prevState, payload) => {
+    const { graphQLErrors, networkError } = payload as ApolloError;
 
-    // istanbul ignore next: The password component owns this
-    case PwdInputActionTypes.SET_PWD_TYPE:
-      return { ...state, pwdType: action.payload as "password" | "text" };
+    let error = null;
 
-    case Action_Types.CLEAR_ALL_ERRORS:
-      return {
-        ...state,
-        otherErrors: undefined,
-        graphQlErrors: undefined,
-        formErrors: undefined
-      };
+    if (graphQLErrors && graphQLErrors[0]) {
+      error = JSON.parse(graphQLErrors[0].message).error;
+    }
 
-    // istanbul ignore next: React.dispatch to the rescue
-    default:
-      return state;
-  }
+    return {
+      ...prevState,
+      serverFieldErrors: error,
+      networkError: networkError ? networkError.message : null
+    };
+  },
+
+  [PwdInputActionTypes.SET_PWD_TYPE]: (prevState, payload) => ({
+    ...prevState,
+    pwdType: payload as "password" | "text"
+  }),
+
+  [ActionTypes.clear_all_errors]: prevState => ({
+    ...prevState,
+    otherErrors: null,
+    serverFieldErrors: null,
+    formErrors: null,
+    networkError: null
+  })
 };
 
-export interface SubmitArg extends LoginMutationProps, UserLocalMutationProps {
-  values: FormValues;
-  formikBag: FormikActions<FormValues>;
-  dispatch: Dispatch<Action>;
-}
+export const reducer: Reducer<State, Action> = (
+  prevState,
+  { type, payload }
+) => {
+  const fn = reducerFunctionsObject[type];
+
+  if (fn) {
+    return fn(prevState, payload as Payload);
+  }
+
+  // istanbul ignore next: React.dispatch to the rescue
+  return prevState;
+};

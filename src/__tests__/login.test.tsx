@@ -7,33 +7,39 @@ import { render, fireEvent, wait, waitForElement } from "react-testing-library";
 import { Login } from "../components/Login/component";
 import { Props } from "../components/Login/utils";
 import { renderWithRouter, fillField } from "./test_utils";
+import { ApolloError } from "apollo-client";
+import { GraphQLError } from "graphql";
 
 jest.mock("../state/get-conn-status");
 jest.mock("../refresh-to-app");
 jest.mock("../components/SidebarHeader", () => ({
   SidebarHeader: jest.fn(() => null)
 }));
+jest.mock("../components/Login/scroll-to-top");
 
 import { getConnStatus } from "../state/get-conn-status";
 import { refreshToHome } from "../refresh-to-app";
+import { scrollToTop } from "../components/Login/scroll-to-top";
 
 const mockRefreshToHome = refreshToHome as jest.Mock;
 const mockGetConnStatus = getConnStatus as jest.Mock;
+const mockScrollToTop = scrollToTop as jest.Mock;
 
 it("renders correctly and submits", async () => {
+  /**
+   * Given that server will return a valid user after form submission
+   */
   const user = {};
-  const result = {
+  const { ui, mockLogin, mockUpdateLocalUser } = makeComp();
+
+  mockLogin.mockResolvedValue({
     data: {
       login: user
     }
-  };
-
-  const { ui, mockLogin, mockUpdateLocalUser } = makeComp();
-
-  mockLogin.mockResolvedValue(result);
+  });
 
   /**
-   * Given that we are using the login component
+   * When we start to use the login component
    */
   const { getByText, getByLabelText } = render(ui);
 
@@ -84,19 +90,28 @@ it("renders correctly and submits", async () => {
    * And we should be redirected
    */
   expect(mockRefreshToHome).toBeCalled();
+
+  /**
+   * And page should not be scrolled to top
+   */
+  expect(mockScrollToTop).not.toBeCalled();
 });
 
 it("renders error if socket not connected", async () => {
-  const { ui } = makeComp(false);
+  /**
+   * Given that server is not connected
+   */
+  const { ui } = makeComp({ isConnected: false });
 
   /**
-   * Given that we using the login component
+   * When we start using the login component
    */
-  const { getByText, getByLabelText, getByTestId } = render(ui);
+  const { getByText, getByLabelText, getByTestId, queryByTestId } = render(ui);
 
   /**
-   * But we are not connected to the server
+   * Then we should not see any error UI
    */
+  expect(queryByTestId("other-errors")).not.toBeInTheDocument();
 
   /**
    * When we complete and submit the form
@@ -106,8 +121,15 @@ it("renders error if socket not connected", async () => {
   /**
    * Then we should see an error about not being connected
    */
-  const $error = await waitForElement(() => getByTestId("login-form-error"));
-  expect($error).toContainElement(getByText(/You are not connected/));
+  const $error = await waitForElement(() => getByTestId("other-errors"));
+  expect($error).toBeInTheDocument();
+
+  /**
+   * And page should be scrolled to top
+   */
+  expect(
+    (mockScrollToTop.mock.calls[0][0] as HTMLElement).dataset.testid
+  ).toEqual("components-login-main");
 });
 
 it("renders error if email is invalid", async () => {
@@ -116,7 +138,12 @@ it("renders error if email is invalid", async () => {
   /**
    * Given that we are using the login component
    */
-  const { getByText, getByLabelText, getByTestId } = render(ui);
+  const { getByText, getByLabelText, getByTestId, queryByTestId } = render(ui);
+
+  /**
+   * Then we should not see any error UI
+   */
+  expect(queryByTestId("form-errors")).not.toBeInTheDocument();
 
   /**
    * When we complete the form with invalid email and submit
@@ -128,8 +155,8 @@ it("renders error if email is invalid", async () => {
   /**
    * Then we should see an error UI
    */
-  const $error = await waitForElement(() => getByTestId("login-form-error"));
-  expect($error).toContainElement(getByText(/email/i));
+  const $error = await waitForElement(() => getByTestId("form-errors"));
+  expect($error).toBeInTheDocument();
 });
 
 it("renders error if password is invalid", async () => {
@@ -150,16 +177,26 @@ it("renders error if password is invalid", async () => {
   /**
    * Then we should see an error about the wrong password
    */
-  const $error = await waitForElement(() => getByTestId("login-form-error"));
-  expect($error).toContainElement(getByText(/too short/i));
+  const $error = await waitForElement(() => getByTestId("form-errors"));
+  expect($error).toBeInTheDocument();
+
+  /**
+   * And page should be scrolled to top
+   */
+  expect(mockScrollToTop).toBeCalled();
 });
 
-it("renders error if server returns error", async () => {
+it("renders error if server returns field errors", async () => {
+  /**
+   * Given that server will return field errors
+   */
   const { ui, mockLogin } = makeComp();
 
-  mockLogin.mockRejectedValue({
-    message: "Invalid email/password"
-  });
+  mockLogin.mockRejectedValue(
+    new ApolloError({
+      graphQLErrors: [new GraphQLError(`{"error":"Invalid email/password"}`)]
+    })
+  );
 
   /**
    * Given that we are using the login component
@@ -169,7 +206,7 @@ it("renders error if server returns error", async () => {
   /**
    * Then we should not see any error UI
    */
-  expect(queryByTestId("login-form-error")).not.toBeInTheDocument();
+  expect(queryByTestId("server-field-errors")).not.toBeInTheDocument();
 
   /**
    * When we complete and submit the form, but server returns an error
@@ -179,18 +216,62 @@ it("renders error if server returns error", async () => {
   /**
    * Then we should see an error message
    */
-  const $error = await waitForElement(() => getByTestId("login-form-error"));
+  const $error = await waitForElement(() => getByTestId("server-field-errors"));
   expect($error).toBeInTheDocument();
 
   /**
    * When we click on close button of error UI
    */
-  fireEvent.click($error.querySelector(`[class="close icon"]`) as any);
+  fireEvent.click($error.querySelector(`.close.icon`) as any);
 
   /**
-   * Then the error UI should no longer ve visible
+   * Then the error UI should no longer be visible
    */
-  expect(queryByTestId("login-form-error")).not.toBeInTheDocument();
+  expect(queryByTestId("server-field-errors")).not.toBeInTheDocument();
+
+  /**
+   * And page should be scrolled to top
+   */
+  expect(mockScrollToTop).toBeCalled();
+});
+
+it("renders error if server returns network errors", async () => {
+  const { ui, mockLogin } = makeComp();
+
+  /**
+   * Given that server will return network error
+   */
+  mockLogin.mockRejectedValue(
+    new ApolloError({
+      networkError: new Error("network error")
+    })
+  );
+
+  /**
+   * When we start to use the login component
+   */
+  const { getByText, getByLabelText, getByTestId, queryByTestId } = render(ui);
+
+  /**
+   * Then we should not see any error UI
+   */
+  expect(queryByTestId("network-error")).not.toBeInTheDocument();
+
+  /**
+   * When we complete and submit the form
+   */
+  fillForm(getByLabelText, getByText);
+
+  /**
+   * Then we should see an error message
+   */
+  const $error = await waitForElement(() => getByTestId("network-error"));
+  expect($error).toBeInTheDocument();
+
+  /**
+   * And page should be scrolled to top
+   */
+  expect(mockScrollToTop).toBeCalled();
 });
 
 function fillForm(getByLabelText: any, getByText: any) {
@@ -199,8 +280,12 @@ function fillForm(getByLabelText: any, getByText: any) {
   fireEvent.click(getByText(/Submit/));
 }
 
-function makeComp(isServerConnected: boolean = true) {
-  mockGetConnStatus.mockResolvedValue(isServerConnected);
+function makeComp({ isConnected = true }: { isConnected?: boolean } = {}) {
+  mockScrollToTop.mockReset();
+
+  mockGetConnStatus.mockReset();
+  mockGetConnStatus.mockResolvedValue(isConnected);
+
   const LoginP = Login as ComponentType<Partial<Props>>;
   const mockLogin = jest.fn();
   const mockUpdateLocalUser = jest.fn();
