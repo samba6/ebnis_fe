@@ -1,5 +1,4 @@
 module.exports = {
-  preset: "ts-jest",
   collectCoverageFrom: [
     "src/**/*.ts*",
     "!src/__tests__/**",
@@ -23,7 +22,7 @@ module.exports = {
   testRegex: "src/__tests__/.+?\\.test\\.tsx?$",
   testEnvironment: "jest-environment-jsdom-fourteen",
   transform: {
-    "^.+\\.tsx?$": "ts-jest",
+    "^.+\\.tsx?$": "<rootDir>/node_modules/babel-jest",
     "^.+\\.jsx?$": "<rootDir>/config/jest/gatsby-preprocess.js",
     "^.+\\.css$": "<rootDir>/config/jest/cssTransform.js",
     "^(?!.*\\.(js|jsx|ts|tsx|css|json)$)":
@@ -33,6 +32,7 @@ module.exports = {
     "[/\\\\]node_modules[/\\\\].+\\.(js|jsx|ts|tsx)$",
     "^.+\\.module\\.(css|sass|scss)$"
   ],
+  modulePaths: [],
   moduleNameMapper: {
     "^react-native$": "react-native-web",
     "^.+\\.module\\.(css|sass|scss)$": "identity-obj-proxy"
@@ -52,10 +52,7 @@ module.exports = {
     "<rootDir>/public/"
   ],
   globals: {
-    __PATH_PREFIX__: "",
-    "ts-jest": {
-      isolatedModules: true
-    }
+    __PATH_PREFIX__: ""
   },
   testURL: "http://localhost"
 };
