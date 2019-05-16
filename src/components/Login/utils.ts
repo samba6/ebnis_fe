@@ -97,10 +97,14 @@ const reducerFunctionsObject: {
     };
   },
 
-  [PwdInputActionTypes.SET_PWD_TYPE]: (prevState, payload) => ({
-    ...prevState,
-    pwdType: payload as "password" | "text"
-  }),
+  // istanbul ignore next: covered in password input.
+  [PwdInputActionTypes.SET_PWD_TYPE]: (prevState, payload) => {
+    // istanbul ignore next: covered in password input.
+    return {
+      ...prevState,
+      pwdType: payload as "password" | "text"
+    };
+  },
 
   [ActionTypes.clear_all_errors]: prevState => ({
     ...prevState,
