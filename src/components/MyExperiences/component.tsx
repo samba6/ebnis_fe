@@ -14,7 +14,7 @@ import {
   MY_EXPERIENCES_TITLE
 } from "../../constants";
 
-export const Experiences = (props: Props) => {
+export const MyExperiences = (props: Props) => {
   const {
     navigate,
     getExpDefsResult: { loading, exps }

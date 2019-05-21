@@ -4,8 +4,8 @@ import "jest-dom/extend-expect";
 import "react-testing-library/cleanup-after-each";
 import { render, fireEvent } from "react-testing-library";
 
-import { Experiences } from "../components/Experiences/component";
-import { Props } from "../components/Experiences/utils";
+import { MyExperiences } from "../components/MyExperiences/component";
+import { Props } from "../components/MyExperiences/utils";
 import { renderWithRouter } from "./test_utils";
 import { EXPERIENCE_DEFINITION_URL, makeExperienceRoute } from "../routes";
 import { GetExps_exps } from "../graphql/apollo-types/GetExps";
@@ -14,7 +14,7 @@ jest.mock("../components/SidebarHeader", () => ({
   SidebarHeader: jest.fn(() => null)
 }));
 
-const HomeP = Experiences as ComponentType<Partial<Props>>;
+const MyExperiencesP = MyExperiences as ComponentType<Partial<Props>>;
 
 it("renders loading state and not main", () => {
   const { Ui } = makeComp({
@@ -99,7 +99,7 @@ it("renders exps", () => {
 
 function makeComp(props: Partial<Props> = {}) {
   return renderWithRouter(
-    HomeP,
+    MyExperiencesP,
     {},
     {
       ...props

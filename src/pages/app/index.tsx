@@ -11,7 +11,7 @@ import {
   EXPERIENCE_URL
 } from "../../routes";
 import { NotFound } from "../../components/NotFound";
-import { Experiences } from "../../components/Experiences";
+import { MyExperiences } from "../../components/MyExperiences";
 import { Experience } from "../../components/Experience";
 import { Layout } from "../../components/Layout";
 
@@ -28,7 +28,7 @@ export function App(props: RouteComponentProps) {
 
         <AuthRequired path={NEW_ENTRY_URL} component={NewEntry} />
 
-        <AuthRequired path={EXPERIENCES_URL} component={Experiences} />
+        <AuthRequired path={EXPERIENCES_URL} component={MyExperiences} />
 
         <NotFound default={true} />
       </Router>
