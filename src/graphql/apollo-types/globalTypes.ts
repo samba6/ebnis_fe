@@ -6,6 +6,9 @@
 // START Enums and Input Objects
 //==============================================================
 
+/**
+ * The possible field type that can be defined for an experience
+ */
 export enum FieldType {
   DATE = "DATE",
   DATETIME = "DATETIME",
@@ -16,7 +19,7 @@ export enum FieldType {
 }
 
 /**
- * Variables for creating an xperience entry
+ * Variables for creating an experience entry
  */
 export interface CreateEntry {
   expId: string;
@@ -24,7 +27,7 @@ export interface CreateEntry {
 }
 
 /**
- * Variables for creating Experience
+ * Variables for defining a new Experience
  */
 export interface CreateExp {
   description?: string | null;
@@ -41,7 +44,7 @@ export interface CreateField {
 }
 
 /**
- * Variables for creating field for an existing experience
+ * Variables for defining field while defining a new experience
  */
 export interface CreateFieldDef {
   name: string;
