@@ -5,7 +5,7 @@ import { MutationFn } from "react-apollo";
 import { UserFragment } from "../graphql/apollo-types/UserFragment";
 import { userFragment } from "../graphql/user.fragment";
 
-export const userLocalMutation = gql`
+export const USER_LOCAL_MUTATION = gql`
   mutation UserLocalMutation($user: LocalUserInput!) {
     user(user: $user) @client {
       ...UserFragment
@@ -15,13 +15,11 @@ export const userLocalMutation = gql`
   ${userFragment}
 `;
 
-export default userLocalMutation;
-
-export interface Variable {
+export interface UserLocalMutationVariable {
   user: UserFragment | null;
 }
 
-type Fn = MutationFn<Variable, Variable>;
+type Fn = MutationFn<UserLocalMutationVariable, UserLocalMutationVariable>;
 
 export interface UserLocalMutationProps {
   updateLocalUser: Fn;
@@ -29,10 +27,10 @@ export interface UserLocalMutationProps {
 
 export const userLocalMutationGql = graphql<
   {},
-  Variable,
-  Variable,
+  UserLocalMutationVariable,
+  UserLocalMutationVariable,
   UserLocalMutationProps
->(userLocalMutation, {
+>(USER_LOCAL_MUTATION, {
   props: props => {
     const mutate = props.mutate as Fn;
 

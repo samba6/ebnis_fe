@@ -1,7 +1,7 @@
 import { InMemoryCache } from "apollo-cache-inmemory";
 
 import { UserFragment } from "../graphql/apollo-types/UserFragment";
-import { Variable as UserMutationVar } from "./user.local.mutation";
+import { UserLocalMutationVariable } from "./user.local.mutation";
 import USER_QUERY, { UserLocalGqlData } from "./auth.local.query";
 // import { resetClientAndPersistor } from "../containers/AppContext/set-up";
 import {
@@ -30,7 +30,7 @@ const updateConn: ClientStateFn<{
   return connected;
 };
 
-const userMutation: ClientStateFn<UserMutationVar> = async (
+const userMutation: ClientStateFn<UserLocalMutationVariable> = async (
   _,
   { user },
   { cache }
