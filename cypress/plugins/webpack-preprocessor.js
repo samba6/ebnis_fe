@@ -1,4 +1,4 @@
-const wp = require("@cypress/webpack-preprocessor");
+const webpackPreprocessor = require("@cypress/webpack-preprocessor");
 
 const webpackOptions = {
   resolve: {
@@ -11,9 +11,9 @@ const webpackOptions = {
         exclude: [/node_modules/],
         use: [
           {
-            loader: "ts-loader",
+            loader: require.resolve("babel-loader"),
             options: {
-              transpileOnly: true
+              presets: [require.resolve("@babel/preset-typescript")]
             }
           }
         ]
@@ -26,4 +26,4 @@ const options = {
   webpackOptions
 };
 
-module.exports = wp(options);
+exports.webpackPreprocessorFn = webpackPreprocessor(options);

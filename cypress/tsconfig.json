@@ -1,0 +1,6 @@
+{
+  "compilerOptions": {
+    "noUnusedLocals": true,
+    "types": ["cypress", "cypress-testing-library/typings"]
+  }
+}

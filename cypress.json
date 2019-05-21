@@ -1,5 +1,6 @@
 {
   "chromeWebSecurity": false,
   "ignoreTestFiles": "*.js",
-  "video": false
+  "video": false,
+  "baseUrl": "http://localhost:3022"
 }
