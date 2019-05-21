@@ -18,22 +18,34 @@ export const ExperienceDefinitionUpdate: CreateExpUpdateFn = async (
     return;
   }
 
-  const data = client.readQuery<GetExps>({
-    query: GET_EXP_DEFS_QUERY
-  });
+  // if we have not fetched GET_EXP_DEFS_QUERY (e.g. by visiting
+  // 'my experiences' page) in which case graphql field exps would have been
+  // written to apollo ROOT_QUERY, then this part of the code will error because
+  // what we are trying to read does not exist on apollo ROOT_QUERY
+  try {
+    const data = client.readQuery<GetExps>({
+      query: GET_EXP_DEFS_QUERY
+    });
 
-  if (!data) {
-    return;
+    if (!data) {
+      return;
+    }
+
+    const { exps } = data;
+
+    if (!exps) {
+      return;
+    }
+
+    await client.writeQuery({
+      query: GET_EXP_DEFS_QUERY,
+      data: { exps: [...exps, exp] }
+    });
+  } catch (error) {
+    if (
+      !(error.message as string).startsWith("Can't find field exps on object")
+    ) {
+      throw error;
+    }
   }
-
-  const { exps } = data;
-
-  if (!exps) {
-    return;
-  }
-
-  await client.writeQuery({
-    query: GET_EXP_DEFS_QUERY,
-    data: { exps: [...exps, exp] }
-  });
 };
