@@ -39,8 +39,9 @@ function initialFormValuesFromExperience(exp: GetAnExp_exp) {
 
   return fieldDefs.reduce(
     function fieldDefReducer(acc, field, index) {
-      acc[index] =
-        fieldTypeUtils[(field as GetAnExp_exp_fieldDefs).type].default;
+      acc[index] = fieldTypeUtils[
+        (field as GetAnExp_exp_fieldDefs).type
+      ].default();
       return acc;
     },
     {} as FormObj

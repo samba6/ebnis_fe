@@ -31,7 +31,7 @@ export const fieldTypeUtils = {
       );
     },
 
-    default: "",
+    default: () => "",
 
     toString(text: string) {
       return text;
@@ -55,7 +55,7 @@ export const fieldTypeUtils = {
       );
     },
 
-    default: "",
+    default: () => "",
 
     toString(text: string) {
       return text;
@@ -80,7 +80,7 @@ export const fieldTypeUtils = {
       );
     },
 
-    default: new Date(),
+    default: () => new Date(),
 
     toString(date: Date) {
       return dateFnFormat(date, "YYYY-MM-DD");
@@ -105,7 +105,7 @@ export const fieldTypeUtils = {
       );
     },
 
-    default: new Date(),
+    default: () => new Date(),
 
     toString(date: Date) {
       return date.toJSON();
@@ -131,7 +131,7 @@ export const fieldTypeUtils = {
       );
     },
 
-    default: "",
+    default: () => "",
 
     toString(val: number) {
       return (val || 0) + "";
@@ -157,7 +157,7 @@ export const fieldTypeUtils = {
       );
     },
 
-    default: "",
+    default: () => "",
 
     toString(val: number) {
       return (val || 0) + "";

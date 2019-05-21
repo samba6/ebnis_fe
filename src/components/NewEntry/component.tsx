@@ -163,7 +163,7 @@ const FieldComponent = React.memo(
     const { name: fieldTitle, type } = field;
     const formFieldName = formFieldNameFromIndex(index);
     const utils = fieldTypeUtils[type];
-    const value = formValues[index] || (utils.default as FormObjVal);
+    const value = formValues[index] || (utils.default() as FormObjVal);
 
     return (
       <Form.Field key={index}>
