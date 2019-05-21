@@ -8,7 +8,11 @@ import { EXPERIENCE_DEFINITION_URL, makeExperienceRoute } from "../../routes";
 import Loading from "../Loading";
 import { GetExps_exps } from "../../graphql/apollo-types/GetExps";
 import { SidebarHeader } from "../SidebarHeader";
-import { setDocumentTitle, makeSiteTitle } from "../../constants";
+import {
+  setDocumentTitle,
+  makeSiteTitle,
+  MY_EXPERIENCES_TITLE
+} from "../../constants";
 
 export const Experiences = (props: Props) => {
   const {
@@ -20,7 +24,7 @@ export const Experiences = (props: Props) => {
   }>({});
 
   useEffect(() => {
-    setDocumentTitle(makeSiteTitle("My Experiences"));
+    setDocumentTitle(makeSiteTitle(MY_EXPERIENCES_TITLE));
 
     return setDocumentTitle;
   }, []);
