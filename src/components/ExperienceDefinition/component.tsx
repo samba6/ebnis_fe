@@ -40,7 +40,12 @@ import {
   CreateFieldDef
 } from "../../graphql/apollo-types/globalTypes";
 import { makeExperienceRoute } from "../../routes";
-import { noop, setDocumentTitle, makeSiteTitle } from "../../constants";
+import {
+  noop,
+  setDocumentTitle,
+  makeSiteTitle,
+  EXPERIENCE_DEFINITION_TITLE
+} from "../../constants";
 import { ExperienceDefinitionUpdate } from "./update";
 import { CreateExpMutationFn } from "../../graphql/create-exp.mutation";
 import { scrollTop } from "./scrollTop";
@@ -55,7 +60,7 @@ export function ExperienceDefinition(props: Props) {
   const routeRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(function setCompTitle() {
-    setDocumentTitle(makeSiteTitle("Experience Definition"));
+    setDocumentTitle(makeSiteTitle(EXPERIENCE_DEFINITION_TITLE));
 
     return setDocumentTitle;
   }, []);

@@ -3,6 +3,8 @@ import {
   getDescendantByText
 } from "../support/utils";
 import { FieldType } from "../../src/graphql/apollo-types/globalTypes";
+import { EXPERIENCE_DEFINITION_URL } from "../../src/routes";
+import { EXPERIENCE_DEFINITION_TITLE } from "../../src/constants";
 
 context("define experience page", () => {
   beforeEach(() => {
@@ -18,12 +20,12 @@ context("define experience page", () => {
     /**
      * Given we are on experiences page
      */
-    cy.visit("/app/define-experience");
+    cy.visit(EXPERIENCE_DEFINITION_URL);
 
     /**
      * Then we should see the page title
      */
-    cy.title().should("contain", "Experience Definition");
+    cy.title().should("contain", EXPERIENCE_DEFINITION_TITLE);
 
     /**
      * When we complete the title field with new experience definition title
@@ -81,7 +83,7 @@ context("define experience page", () => {
     /**
      * When we visit the page
      */
-    cy.visit("/app/define-experience");
+    cy.visit(EXPERIENCE_DEFINITION_URL);
 
     /**
      * Then we should not see any error
