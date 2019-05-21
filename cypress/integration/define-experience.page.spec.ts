@@ -1,10 +1,8 @@
-import {
-  USER_REGISTRATION_OBJECT,
-  getDescendantByText
-} from "../support/utils";
+import { USER_REGISTRATION_OBJECT } from "../support/user-registration-object";
 import { FieldType } from "../../src/graphql/apollo-types/globalTypes";
 import { EXPERIENCE_DEFINITION_URL } from "../../src/routes";
 import { EXPERIENCE_DEFINITION_TITLE } from "../../src/constants";
+import { getDescendantByText } from "../support/get-descendant-by-text";
 
 context("define experience page", () => {
   beforeEach(() => {
@@ -49,7 +47,7 @@ context("define experience page", () => {
     cy.get('[name="fieldDefs[0].type"]')
       .click()
       .then($fieldType => {
-        getDescendantByText($fieldType, FieldType.DATETIME).click();
+        getDescendantByText(FieldType.DATETIME, $fieldType).click();
       });
 
     /**
@@ -101,7 +99,7 @@ context("define experience page", () => {
     cy.get('[name="fieldDefs[0].type"]')
       .click()
       .then($fieldType => {
-        getDescendantByText($fieldType, FieldType.MULTI_LINE_TEXT).click();
+        getDescendantByText(FieldType.MULTI_LINE_TEXT, $fieldType).click();
       });
 
     cy.getByText("Submit").click();

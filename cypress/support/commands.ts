@@ -25,7 +25,8 @@
 // Cypress.Commands.overwrite("visit", (originalFn, url, options) => { ... })
 import "cypress-testing-library/add-commands";
 import { MutationOptions } from "apollo-client/core/watchQueryOptions";
-import { USER_JWT_ENV, UserCreationObject } from "./utils";
+import { USER_JWT_ENV } from "./user-jwt-env";
+import { UserCreationObject } from "./user-creation-object";
 import { buildClientCache } from "../../src/state/apollo-setup";
 import {
   Registration,
