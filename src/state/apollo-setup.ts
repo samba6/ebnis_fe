@@ -28,6 +28,8 @@ interface BuildClientCache {
   isNodeJs?: boolean;
 
   fetch?: GlobalFetch["fetch"];
+
+  forceSocketConnection?: boolean;
 }
 
 function onConnChange(isConnected: boolean) {
@@ -40,7 +42,13 @@ function onConnChange(isConnected: boolean) {
 }
 
 export function buildClientCache(
-  { uri, headers, isNodeJs, fetch }: BuildClientCache = {} as BuildClientCache
+  {
+    uri,
+    headers,
+    isNodeJs,
+    fetch,
+    forceSocketConnection
+  }: BuildClientCache = {} as BuildClientCache
 ) {
   if (!cache) {
     cache = new InMemoryCache({
@@ -48,7 +56,7 @@ export function buildClientCache(
     });
   }
 
-  if (!client || headers) {
+  if (forceSocketConnection || !client) {
     let resolvers = {} as Resolvers;
     let defaultState = {} as LocalState;
     let link: ApolloLink;
@@ -63,12 +71,18 @@ export function buildClientCache(
         fetch
       });
     } else {
+      const apolloHeaders = headers || {};
+
       const absintheSocket = AbsintheSocket.create(
-        getSocket({ onConnChange, uri })
+        getSocket({
+          onConnChange,
+          uri,
+          token: apolloHeaders.jwt
+        })
       );
 
       link = createAbsintheSocketLink(absintheSocket);
-      link = middlewareAuthLink(headers).concat(link);
+      link = middlewareAuthLink(apolloHeaders).concat(link);
       link = middlewareErrorLink().concat(link);
       link = middlewareLoggerLink(link);
 
@@ -137,7 +151,7 @@ export const resetClientAndPersistor = async (
 
 function middlewareAuthLink(headers: { [k: string]: string } = {}) {
   return new ApolloLink((operation, forward) => {
-    const token = getToken() || headers.jwt;
+    const token = headers.jwt || getToken();
 
     if (token) {
       headers.authorization = `Bearer ${token}`;

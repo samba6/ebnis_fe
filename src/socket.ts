@@ -28,7 +28,11 @@ export interface AppSocket extends Socket {
 
 let socket: AppSocket;
 
-export const defineSocket = (props: DefineParams) => {
+export const defineSocket = ({
+  uri,
+  onConnChange,
+  token: connToken
+}: DefineParams) => {
   // if we are disconnected, phoenix will keep trying to connect which means
   // we will keep dispatching disconnect.  So we track if we already dispatched
   // disconnect (socketDisconnectedCount = 1) and if so we do not send another
@@ -37,9 +41,9 @@ export const defineSocket = (props: DefineParams) => {
   let dataAuthChannel: Channel;
   // let initialDataSynced = false
 
-  function ebnisConnect(token = getToken(), payload?: ConnectionPayload) {
+  function ebnisConnect(token, payload?: ConnectionPayload) {
     const params = makeParams(token);
-    socket = new Socket(getBackendUrls().websocketUrl, params) as AppSocket;
+    socket = new Socket(getBackendUrls(uri).websocketUrl, params) as AppSocket;
     socket.ebnisConnect = ebnisConnect;
     socket.sendDataAuth = sendDataAuth;
     socket.connect();
@@ -63,7 +67,7 @@ export const defineSocket = (props: DefineParams) => {
     return socket;
   }
 
-  ebnisConnect();
+  ebnisConnect(connToken);
 
   function sendDataAuth<TVariables, TData, TError = {}>(
     query: string,
@@ -84,16 +88,16 @@ export const defineSocket = (props: DefineParams) => {
 
   function dispatchDisconnected() {
     if (socketDisconnectedCount === 0) {
-      if (props.onConnChange) {
-        props.onConnChange(false);
+      if (onConnChange) {
+        onConnChange(false);
       }
       socketDisconnectedCount = 1;
     }
   }
 
   function dispatchConnected() {
-    if (props.onConnChange) {
-      props.onConnChange(true);
+    if (onConnChange) {
+      onConnChange(true);
     }
 
     socketDisconnectedCount = 0;
@@ -197,7 +201,24 @@ export const defineSocket = (props: DefineParams) => {
   return socket;
 };
 
-export function getSocket(params: DefineParams = {}) {
+let prevToken: string | null = null;
+
+export function getSocket({ token: connToken, ...params }: DefineParams = {}) {
+  const token = connToken || getToken();
+  (params as DefineParams).token = token;
+
+  // if user auth token changes, we'll need to reconnect
+  if (token !== prevToken) {
+    prevToken = token;
+
+    if (socket) {
+      socket.disconnect();
+      socket = null;
+    }
+
+    return defineSocket(params);
+  }
+
   if (socket) {
     return socket;
   }
@@ -205,11 +226,10 @@ export function getSocket(params: DefineParams = {}) {
   return defineSocket(params);
 }
 
-export default getSocket;
-
 interface DefineParams {
   onConnChange?: (connStatus: boolean) => void;
   uri?: string;
+  token?: string | null;
 }
 
 type OnChannelMessage<T> = (msg: T) => void;
