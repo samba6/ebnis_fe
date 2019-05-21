@@ -1,6 +1,7 @@
 // babel.config.js
 module.exports = api => {
   api.cache(true);
+
   const isUnitTest = process.env.IS_UNIT_TEST === "true";
 
   if (isUnitTest) {
@@ -9,5 +10,7 @@ module.exports = api => {
     };
   }
 
-  return {};
+  return {
+    presets: ["babel-preset-gatsby"]
+  };
 };
