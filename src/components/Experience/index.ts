@@ -32,8 +32,7 @@ const getExpGql = graphql<
         exp: {
           id: experienceId as string
         }
-      },
-      fetchPolicy: "cache-and-network"
+      }
     };
   }
 });

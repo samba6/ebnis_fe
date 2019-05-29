@@ -8,13 +8,7 @@ import { OwnProps } from "./utils";
 const expDefsGql = graphql<OwnProps, GetExps, {}, undefined | GetExpGqlProps>(
   GET_EXP_DEFS_QUERY,
   {
-    props: ({ data }) => data && { getExpDefsResult: data },
-
-    options() {
-      return {
-        fetchPolicy: "cache-and-network"
-      };
-    }
+    props: ({ data }) => data && { getExpDefsResult: data }
   }
 );
 
