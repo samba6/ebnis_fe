@@ -7,7 +7,6 @@ import { render, fireEvent } from "react-testing-library";
 import { MyExperiences } from "../components/MyExperiences/component";
 import { Props } from "../components/MyExperiences/utils";
 import { renderWithRouter } from "./test_utils";
-import { EXPERIENCE_DEFINITION_URL, makeExperienceRoute } from "../routes";
 import { GetExps_exps } from "../graphql/apollo-types/GetExps";
 
 jest.mock("../components/SidebarHeader", () => ({
@@ -29,21 +28,17 @@ it("renders loading state and not main", () => {
 });
 
 it("renders empty exps", () => {
-  const { Ui, mockNavigate } = makeComp({ getExpDefsResult: {} as any });
+  const { Ui } = makeComp({ getExpDefsResult: {} as any });
 
   const props: Props = { exps: [] } as any;
-  const { getByTestId, getByText, queryByTestId } = render(<Ui {...props} />);
+  const { getByText, queryByTestId } = render(<Ui {...props} />);
 
   expect(queryByTestId("loading-spinner")).not.toBeInTheDocument();
   expect(queryByTestId("exps-container")).not.toBeInTheDocument();
 
-  const $btn = getByTestId("go-to-new-exp");
-  expect($btn.getAttribute("name")).toBe("go-to-new-exp");
-  expect($btn).toHaveTextContent("+");
-
-  const $goToNewExp = getByText(/Click here to create your first experience/);
-  fireEvent.click($goToNewExp);
-  expect(mockNavigate).toBeCalledWith(EXPERIENCE_DEFINITION_URL);
+  expect(
+    getByText(/Click here to create your first experience/)
+  ).toBeInTheDocument();
 });
 
 it("renders exps", () => {
@@ -65,7 +60,7 @@ it("renders exps", () => {
     }
   ] as GetExps_exps[];
 
-  const { Ui, mockNavigate } = makeComp({ getExpDefsResult: { exps } as any });
+  const { Ui } = makeComp({ getExpDefsResult: { exps } as any });
 
   const { queryByText, getByText, queryByTestId, getByTestId } = render(<Ui />);
 
@@ -92,9 +87,6 @@ it("renders exps", () => {
   expect(
     queryByText("lovely experience description 1")
   ).not.toBeInTheDocument();
-
-  fireEvent.click($exp1);
-  expect(mockNavigate).toBeCalledWith(makeExperienceRoute(id1));
 });
 
 function makeComp(props: Partial<Props> = {}) {

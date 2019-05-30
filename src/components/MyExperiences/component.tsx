@@ -1,9 +1,14 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useReducer } from "react";
 import { Icon } from "semantic-ui-react";
-import { NavigateFn } from "@reach/router";
 
 import "./styles.scss";
-import { Props } from "./utils";
+import {
+  Props,
+  reducer,
+  initialState,
+  DispatchType,
+  ActionTypes
+} from "./utils";
 import { EXPERIENCE_DEFINITION_URL, makeExperienceRoute } from "../../routes";
 import Loading from "../Loading";
 import { GetExps_exps } from "../../graphql/apollo-types/GetExps";
@@ -13,15 +18,14 @@ import {
   makeSiteTitle,
   MY_EXPERIENCES_TITLE
 } from "../../constants";
+import { Link } from "gatsby";
 
 export const MyExperiences = (props: Props) => {
   const {
-    navigate,
     getExpDefsResult: { loading, exps }
   } = props;
-  const [toggleDescriptions, setToggleDescriptions] = useState<{
-    [k: string]: boolean;
-  }>({});
+
+  const [state, dispatch] = useReducer(reducer, initialState);
 
   useEffect(() => {
     setDocumentTitle(makeSiteTitle(MY_EXPERIENCES_TITLE));
@@ -29,31 +33,30 @@ export const MyExperiences = (props: Props) => {
     return setDocumentTitle;
   }, []);
 
-  function goToNewExp() {
-    (navigate as NavigateFn)(EXPERIENCE_DEFINITION_URL);
-  }
-
   function renderExperiences() {
     if (!(exps && exps.length)) {
       return (
-        <span onClick={goToNewExp} className="no-exp-info">
+        <Link to={EXPERIENCE_DEFINITION_URL} className="no-exp-info">
           Click here to create your first experience
-        </span>
+        </Link>
       );
     }
 
     return (
       <div data-testid="exps-container" className="exps-container">
-        {exps.map((exp, index) => (
-          <Experience
-            key={index}
-            expDef={exp}
-            index={index}
-            toggleDescriptions={toggleDescriptions}
-            setToggleDescriptions={setToggleDescriptions}
-            navigate={navigate as NavigateFn}
-          />
-        ))}
+        {exps.map(experience => {
+          const { id, ...rest } = experience as GetExps_exps;
+
+          return (
+            <Experience
+              key={id}
+              showingDescription={state.toggleDescriptionStates[id]}
+              dispatch={dispatch}
+              id={id}
+              {...rest}
+            />
+          );
+        })}
       </div>
     );
   }
@@ -67,15 +70,13 @@ export const MyExperiences = (props: Props) => {
       <>
         {renderExperiences()}
 
-        <button
+        <Link
           className="new-exp-btn"
-          name="go-to-new-exp"
-          type="button"
-          onClick={goToNewExp}
           data-testid="go-to-new-exp"
+          to={EXPERIENCE_DEFINITION_URL}
         >
           +
-        </button>
+        </Link>
       </>
     );
   }
@@ -89,64 +90,41 @@ export const MyExperiences = (props: Props) => {
   );
 };
 
-interface ExperienceProps {
-  expDef: GetExps_exps | null;
-  index: number;
-  toggleDescriptions: { [k: string]: boolean };
-  setToggleDescriptions: (toggleDescriptions: { [k: string]: boolean }) => void;
-  navigate: NavigateFn;
+interface ExperienceProps extends GetExps_exps {
+  showingDescription: boolean;
+  dispatch: DispatchType;
 }
 
 const Experience = React.memo(
   function ExperienceFn({
-    expDef: expDef1,
-    index,
-    toggleDescriptions,
-    setToggleDescriptions,
-    navigate
+    showingDescription,
+    dispatch,
+    title,
+    description,
+    id
   }: ExperienceProps) {
-    const expDef = expDef1 as GetExps_exps;
-
-    const { title, description, id } = expDef;
-    const showingDescription = toggleDescriptions[index];
-
     return (
-      <div key={index} className="exp-container" data-index={index}>
+      <div className="exp-container">
         <ShowDescriptionToggle
           description={description}
           showingDescription={showingDescription}
           id={id}
-          onClick={() => {
-            setToggleDescriptions({
-              ...toggleDescriptions,
-              [index]: !toggleDescriptions[index]
-            });
-          }}
+          dispatch={dispatch}
         />
 
-        <div
-          className="exp-container-main"
-          onClick={() => (navigate as NavigateFn)(makeExperienceRoute(id))}
-        >
+        <Link className="exp-container-main" to={makeExperienceRoute(id)}>
           <span className="exp_title">{title}</span>
 
           {showingDescription && (
             <div className="exp_description">{description}</div>
           )}
-        </div>
+        </Link>
       </div>
     );
   },
 
   function ExperiencePropsDiff(prevProps, currProps) {
-    if (
-      prevProps.toggleDescriptions[prevProps.index] !==
-      currProps.toggleDescriptions[currProps.index]
-    ) {
-      return false;
-    }
-
-    return true;
+    return prevProps.showingDescription === currProps.showingDescription;
   }
 );
 
@@ -155,35 +133,31 @@ const ShowDescriptionToggle = React.memo(
     description,
     showingDescription,
     id,
-    onClick
+    dispatch
   }: {
     description: string | null;
     showingDescription: boolean;
     id: string;
-    onClick: () => void;
+    dispatch: DispatchType;
   }) {
     if (!description) {
       return null;
     }
 
-    if (!showingDescription) {
-      return (
-        <Icon
-          data-testid={`exp-toggle-${id}`}
-          name="caret right"
-          className="reveal-hide-description"
-          onClick={onClick}
-        />
-      );
-    }
+    const props = {
+      className: "reveal-hide-description",
+      "data-testid": `exp-toggle-${id}`,
+      onClick: () =>
+        dispatch({
+          type: ActionTypes.setToggleDescription,
+          payload: id
+        })
+    };
 
-    return (
-      <Icon
-        data-testid={`exp-toggle-${id}`}
-        name="caret down"
-        className="reveal-hide-description"
-        onClick={onClick}
-      />
+    return showingDescription ? (
+      <Icon name="caret down" {...props} />
+    ) : (
+      <Icon name="caret right" {...props} />
     );
   },
 

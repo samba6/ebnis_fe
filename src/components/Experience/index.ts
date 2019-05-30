@@ -50,9 +50,7 @@ const getExpEntriesGql = graphql<
         entry: {
           expId: experienceId as string
         }
-      },
-
-      fetchPolicy: "cache-and-network"
+      }
     };
   }
 });

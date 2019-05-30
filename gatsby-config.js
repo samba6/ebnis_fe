@@ -45,7 +45,7 @@ module.exports = {
     {
       resolve: "gatsby-plugin-manifest",
       options: {
-        name: "Ebnis - my life",
+        name: "Ebnis - Life",
         short_name: "Ebnis",
         start_url: "/",
         background_color: "#ffffff",

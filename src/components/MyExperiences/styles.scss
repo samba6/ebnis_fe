@@ -12,6 +12,10 @@
     padding: 10px 5px 0 5px;
   }
 
+  .exp-container-main {
+    color: initial;
+  }
+
   .no-exp-info {
     cursor: pointer;
 
@@ -49,6 +53,7 @@
   .exp_description {
     position: relative;
     left: 20px;
+    margin-right: 15px;
     margin-top: 10px;
     font-style: italic;
     font-size: 0.92em;
