@@ -64,7 +64,12 @@ export function Sidebar(props: Props) {
 
         <ul className="sidebar__content up">
           {pathname !== EXPERIENCES_URL && (
-            <li onClick={onGoToExperience(EXPERIENCES_URL)}>My Experiences</li>
+            <li
+              className="sidebar__item"
+              onClick={onGoToExperience(EXPERIENCES_URL)}
+            >
+              My Experiences
+            </li>
           )}
 
           {pathname !== EXPERIENCE_DEFINITION_URL && (

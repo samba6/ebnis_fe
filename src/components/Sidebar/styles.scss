@@ -8,8 +8,8 @@ $sidebar-item-border: 0.1px solid
   );
 
 .components-sidebar {
-  --main-container-height: 100vh;
-  --main-container-width: 100vw;
+  --main-container-height: 100%;
+  --main-container-width: 100%;
   z-index: 1; // so that it can cover app-main
 
   display: flex;
@@ -102,7 +102,6 @@ $sidebar-item-border: 0.1px solid
   }
 
   .sidebar-hide {
-    @extend %header-box-shadow;
     height: 78px;
     display: flex;
     flex-direction: row-reverse;
