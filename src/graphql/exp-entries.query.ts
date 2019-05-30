@@ -17,7 +17,11 @@ export const GET_EXP_ENTRIES_QUERY = gql`
   ${entryFrag}
 `;
 
-export type GetExpEntriesGqlProps = DataValue<
+export type GetExpEntriesGqlValue = DataValue<
   GetExpAllEntries,
   GetExpAllEntriesVariables
 >;
+
+export interface GetExpEntriesGqlProps {
+  experienceEntries: GetExpEntriesGqlValue;
+}

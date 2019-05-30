@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect } from "react";
 import { Button } from "semantic-ui-react";
 import { Link } from "gatsby";
 
@@ -19,18 +19,10 @@ import { setDocumentTitle, makeSiteTitle } from "../../constants";
 
 export function Experience(props: Props) {
   const {
-    loading,
-    getExperienceGql: { exp },
-    expEntries
+    getExperienceGql: { exp, loading: loadingExperience },
+    experienceEntries: { expEntries, loading: experienceEntriesLoading }
   } = props;
   const title = exp ? exp.title : "Experience";
-
-  const fieldDefs = useMemo(
-    function computeFieldDefs() {
-      return (exp && exp.fieldDefs) || [];
-    },
-    [exp]
-  );
 
   useEffect(
     function setRouteTitle() {
@@ -41,16 +33,17 @@ export function Experience(props: Props) {
     [title]
   );
 
-  function renderEntryField(field: GetExpAllEntries_expEntries_fields | null) {
-    if (!field) {
-      return null;
-    }
-
+  function renderEntryField(field: GetExpAllEntries_expEntries_fields) {
     const { defId, data } = field;
-    const fieldDef = fieldDefs.find((f: GetAnExp_exp_fieldDefs | null) =>
-      f ? f.id === defId : false
+
+    const fieldDefs = (exp as GetAnExp_exp)
+      .fieldDefs as GetAnExp_exp_fieldDefs[];
+
+    const fieldDef = fieldDefs.find(
+      (aFieldDef: GetAnExp_exp_fieldDefs) => aFieldDef.id === defId
     );
 
+    // istanbul ignore next: impossible state?
     if (!fieldDef) {
       return;
     }
@@ -67,25 +60,8 @@ export function Experience(props: Props) {
     );
   }
 
-  function renderEntry(
-    entry: GetExpAllEntries_expEntries | null,
-    index: number
-  ) {
-    if (!entry) {
-      return null;
-    }
-
-    const { fields } = entry;
-
-    return (
-      <div key={index} className="entry-container">
-        {fields.map(renderEntryField)}
-      </div>
-    );
-  }
-
   function renderEntries() {
-    if (!(expEntries && expEntries.length)) {
+    if ((expEntries as GetExpAllEntries_expEntries[]).length === 0) {
       return (
         <Link
           className="no-entries"
@@ -96,34 +72,19 @@ export function Experience(props: Props) {
       );
     }
 
-    return <>{expEntries.map(renderEntry)}</>;
-  }
-
-  function renderMainOr() {
-    if (loading) {
-      return <Loading />;
-    }
-
     return (
       <>
-        <div className="header">
-          <div className="title">{title}</div>
-
-          <div className="new-experience-entry-button">
-            <Button
-              type="button"
-              name="new-exp-entry-button"
-              basic={true}
-              compact={true}
-              as={Link}
-              to={makeNewEntryRoute((exp as GetAnExp_exp).id)}
-            >
-              New entry
-            </Button>
-          </div>
-        </div>
-
-        {renderEntries()}
+        {(expEntries as GetExpAllEntries_expEntries[]).map(
+          (entry: GetExpAllEntries_expEntries) => {
+            return (
+              <div key={entry.id} className="entry-container">
+                {(entry.fields as GetExpAllEntries_expEntries_fields[]).map(
+                  renderEntryField
+                )}
+              </div>
+            );
+          }
+        )}
       </>
     );
   }
@@ -132,7 +93,32 @@ export function Experience(props: Props) {
     <div className="components-experience">
       <SidebarHeader title={title} sidebar={true} />
 
-      <div className="main">{renderMainOr()}</div>
+      <div className="main">
+        {loadingExperience || experienceEntriesLoading ? (
+          <Loading />
+        ) : (
+          <>
+            <div className="header" data-testid="experience-entries">
+              <div className="title">{title}</div>
+
+              <div className="new-experience-entry-button">
+                <Button
+                  type="button"
+                  name="new-exp-entry-button"
+                  basic={true}
+                  compact={true}
+                  as={Link}
+                  to={makeNewEntryRoute((exp as GetAnExp_exp).id)}
+                >
+                  New entry
+                </Button>
+              </div>
+            </div>
+
+            {renderEntries()}
+          </>
+        )}
+      </div>
     </div>
   );
 

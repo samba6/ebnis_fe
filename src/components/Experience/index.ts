@@ -26,6 +26,7 @@ const getExpGql = graphql<
   GetExperienceGqlProps | undefined
 >(GET_EXP_QUERY, {
   props: ({ data }) => data && { getExperienceGql: data },
+
   options: ({ experienceId }) => {
     return {
       variables: {
@@ -43,7 +44,11 @@ const getExpEntriesGql = graphql<
   GetExpAllEntriesVariables,
   GetExpEntriesGqlProps | undefined
 >(GET_EXP_ENTRIES_QUERY, {
-  props: props => props.data,
+  props: ({ data }) =>
+    data && {
+      experienceEntries: data
+    },
+
   options: ({ experienceId }) => {
     return {
       variables: {
