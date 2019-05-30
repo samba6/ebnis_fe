@@ -52,12 +52,7 @@ export const reducer: Reducer<State, Action> = (
 ) => {
   const reducerFn = reducerObject[type];
 
-  // istanbul ignore next:
-  // if (reducerFn) {
   return reducerFn(prevState, payload as ActionPayload);
-  // }
-
-  // return prevState;
 };
 
 export type DispatchType = Dispatch<Action>;

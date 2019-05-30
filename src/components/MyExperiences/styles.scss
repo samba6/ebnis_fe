@@ -9,15 +9,19 @@
   }
 
   .exps-container {
-    padding: 10px 5px 0 5px;
+    padding: 10px 5px 60px 5px;
   }
 
   .exp-container-main {
     color: initial;
+    display: block;
   }
 
   .no-exp-info {
     cursor: pointer;
+    color: initial;
+    padding: 15px 5px 10px 10px;
+    display: block;
 
     &:hover {
       color: $app-color;
@@ -57,14 +61,15 @@
     margin-top: 10px;
     font-style: italic;
     font-size: 0.92em;
+    word-break: break-all;
   }
 
   .new-exp-btn {
     position: absolute;
     border: 1px solid darken($color: $app-color, $amount: 10);
     border-radius: 50%;
-    width: 55px;
-    height: 55px;
+    width: 50px;
+    height: 50px;
     display: flex;
     align-items: center;
     justify-content: center;

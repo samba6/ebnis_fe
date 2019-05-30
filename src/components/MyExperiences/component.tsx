@@ -123,7 +123,7 @@ const Experience = React.memo(
     );
   },
 
-  function ExperiencePropsDiff(prevProps, currProps) {
+  function ExperienceDiff(prevProps, currProps) {
     return prevProps.showingDescription === currProps.showingDescription;
   }
 );
@@ -146,7 +146,9 @@ const ShowDescriptionToggle = React.memo(
 
     const props = {
       className: "reveal-hide-description",
+
       "data-testid": `exp-toggle-${id}`,
+
       onClick: () =>
         dispatch({
           type: ActionTypes.setToggleDescription,

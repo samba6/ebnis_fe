@@ -71,7 +71,6 @@ it("renders exps", () => {
   expect($exp1).toBeInTheDocument();
 
   let $expToggle = getByTestId(`exp-toggle-${id1}`);
-  expect($expToggle).toBeInTheDocument();
   expect($expToggle.classList).toContain("right");
   expect($expToggle.classList).not.toContain("down");
 
