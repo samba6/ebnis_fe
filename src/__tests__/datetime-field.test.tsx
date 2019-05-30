@@ -13,8 +13,6 @@ import addYears from "date-fns/add_years";
 import addMonths from "date-fns/add_months";
 import addMinutes from "date-fns/add_minutes";
 import addHours from "date-fns/add_hours";
-import setMinutes from "date-fns/set_minutes";
-import setHours from "date-fns/set_hours";
 
 import { DateTimeField } from "../components/DateTimeField/datetime-field-x";
 import { Props } from "../components/DateTimeField/datetime-field";
@@ -27,19 +25,22 @@ it("renders ", () => {
 
   // lets hard code the minutes otherwise the test will fail at xy:00 hours
   // we also hard code the hour otherwise test will fail at 00:xy hours
-  const today = setHours(setMinutes(new Date(), 25), 7);
+  // well we need to hard code the day also otherwise failure on the 30th
+  const currentDate = new Date("2019-05-28T07:25");
 
   /**
    * Given that we want the component to render a date
    */
   const { getByTestId } = render(
-    <DateTimeFieldP value={today} setValue={mockSetValue} name="f" />
+    <DateTimeFieldP value={currentDate} setValue={mockSetValue} name="f" />
   );
 
   /**
    * Then the date should be visible on the page
    */
-  const [y, m, d, h, mi] = formatDate(today, "YYYY MMM D HH mm").split(" ");
+  const [y, m, d, h, mi] = formatDate(currentDate, "YYYY MMM D HH mm").split(
+    " "
+  );
   const $day = getByTestId("f.date.day");
 
   expect(($day.querySelector(".active") as any).innerHTML).toMatch(d);
@@ -61,7 +62,7 @@ it("renders ", () => {
    * 4 minutes ago
    */
   const newDate = addMinutes(
-    addHours(addMonths(addDays(addYears(today, -2), -5), -3), -2),
+    addHours(addMonths(addDays(addYears(currentDate, -2), -5), -3), -2),
     -4
   );
 
@@ -82,33 +83,33 @@ it("renders ", () => {
   );
   const [c01, c02] = mockSetValue.mock.calls[0];
   expect(c01).toEqual("f");
-  expect(c02.getFullYear()).toBe(today.getFullYear() - 2); // 2 years ago
+  expect(c02.getFullYear()).toBe(currentDate.getFullYear() - 2); // 2 years ago
 
   expect(($month.querySelector(".active") as HTMLDivElement).innerHTML).toMatch(
     m1
   );
   const [c11, c12] = mockSetValue.mock.calls[1];
   expect(c11).toEqual("f");
-  expect(c12.getMonth()).toBe(today.getMonth() - 3); // 3 months ago
+  expect(c12.getMonth()).toBe(currentDate.getMonth() - 3); // 3 months ago
 
   expect(($day.querySelector(".active") as HTMLDivElement).innerHTML).toMatch(
     d1
   );
   const [c21, c22] = mockSetValue.mock.calls[2];
   expect(c21).toEqual("f");
-  expect(c22.getDate()).toBe(today.getDate() - 5); // 5 days ago
+  expect(c22.getDate()).toBe(currentDate.getDate() - 5); // 5 days ago
 
   expect(($hr.querySelector(".active") as HTMLDivElement).innerHTML).toMatch(
     h1
   );
   const [c31, c32] = mockSetValue.mock.calls[3];
   expect(c31).toEqual("f");
-  expect(c32.getHours()).toBe(today.getHours() - 2); // 2 hours ago
+  expect(c32.getHours()).toBe(currentDate.getHours() - 2); // 2 hours ago
 
   expect(($min.querySelector(".active") as HTMLDivElement).innerHTML).toMatch(
     mi1
   );
   const [c41, c42] = mockSetValue.mock.calls[4];
   expect(c41).toEqual("f");
-  expect(c42.getMinutes()).toBe(today.getMinutes() - 4); // 4 minutes ago
+  expect(c42.getMinutes()).toBe(currentDate.getMinutes() - 4); // 4 minutes ago
 });
