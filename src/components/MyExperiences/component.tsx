@@ -13,11 +13,8 @@ import { EXPERIENCE_DEFINITION_URL, makeExperienceRoute } from "../../routes";
 import Loading from "../Loading";
 import { GetExps_exps } from "../../graphql/apollo-types/GetExps";
 import { SidebarHeader } from "../SidebarHeader";
-import {
-  setDocumentTitle,
-  makeSiteTitle,
-  MY_EXPERIENCES_TITLE
-} from "../../constants";
+import { setDocumentTitle, makeSiteTitle } from "../../constants";
+import { MY_EXPERIENCES_TITLE } from "../../constants/my-experiences-title";
 import { Link } from "gatsby";
 
 export const MyExperiences = (props: Props) => {

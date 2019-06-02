@@ -1,7 +1,7 @@
 import { USER_REGISTRATION_OBJECT } from "../support/user-registration-object";
 import { FieldType } from "../../src/graphql/apollo-types/globalTypes";
 import { EXPERIENCE_DEFINITION_URL } from "../../src/routes";
-import { EXPERIENCE_DEFINITION_TITLE } from "../../src/constants";
+import { EXPERIENCE_DEFINITION_TITLE } from "../../src/constants/experience-definition-title";
 import { getDescendantByText } from "../support/get-descendant-by-text";
 
 context("define experience page", () => {

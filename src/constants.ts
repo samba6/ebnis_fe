@@ -6,8 +6,6 @@ export const SITE_TITLE = "Ebnis";
 export const THEME_COLOR = "#5faac7";
 export const USER_KEY = "nOQhAH4V54h9MMBS3BSwtE/2eZeQWHRnPfoC4K+RDuWairX";
 export const PAGE_NOT_FOUND_TITLE = "Page Not Found";
-export const EXPERIENCE_DEFINITION_TITLE = "Experience Definition";
-export const MY_EXPERIENCES_TITLE = "My Experiences";
 
 export function makeSiteTitle(title: string) {
   return `${title} | ${SITE_TITLE}`;
