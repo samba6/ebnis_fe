@@ -8,6 +8,7 @@ const title = "My experience no. 1";
 
 context("my experiences page", () => {
   beforeEach(() => {
+    cy.closeSession();
     cy.checkoutSession();
     cy.registerUser(USER_REGISTRATION_OBJECT);
     cy.defineExperience({
@@ -31,11 +32,7 @@ context("my experiences page", () => {
     });
   });
 
-  afterEach(() => {
-    cy.closeSession();
-  });
-
-  it("creates entry successfully", () => {
+  it("navigates to entry page", () => {
     /**
      * Given we are at my experiences page
      */
@@ -57,5 +54,15 @@ context("my experiences page", () => {
      * Then we should be directed to the experience's detailed page
      */
     cy.title().should("contain", title);
+
+    /**
+     * When we click on "No entries" link
+     */
+    cy.getByText("No entries. Click here to add one").click();
+
+    /**
+     * Then we should be directed to entry page for the experience
+     */
+    cy.title().should("contain", `[New] ${title}`);
   });
 });
