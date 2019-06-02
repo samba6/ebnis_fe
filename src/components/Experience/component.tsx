@@ -16,11 +16,17 @@ import {
 } from "../../graphql/apollo-types/GetAnExp";
 import { SidebarHeader } from "../SidebarHeader";
 import { setDocumentTitle, makeSiteTitle } from "../../constants";
+import { NavigateFn } from "@reach/router";
 
 export function Experience(props: Props) {
   const {
-    getExperienceGql: { exp, loading: loadingExperience },
-    experienceEntries: { expEntries, loading: experienceEntriesLoading }
+    getExperienceGql: {
+      exp,
+      loading: loadingExperience,
+      error: getExperienceError
+    },
+    experienceEntries: { expEntries, loading: experienceEntriesLoading },
+    navigate
   } = props;
   const title = exp ? exp.title : "Experience";
 
@@ -32,6 +38,16 @@ export function Experience(props: Props) {
     },
     [title]
   );
+
+  useEffect(() => {
+    if (getExperienceError) {
+      (navigate as NavigateFn)("/404");
+    }
+  }, [getExperienceError]);
+
+  if (getExperienceError) {
+    return null;
+  }
 
   function renderEntryField(field: GetExpAllEntries_expEntries_fields) {
     const { defId, data } = field;

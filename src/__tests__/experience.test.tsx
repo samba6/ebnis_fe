@@ -2,7 +2,7 @@
 import React, { ComponentType } from "react";
 import "jest-dom/extend-expect";
 import "react-testing-library/cleanup-after-each";
-import { render } from "react-testing-library";
+import { render, wait } from "react-testing-library";
 
 import { Experience } from "../components/Experience/component";
 import { Props } from "../components/Experience/utils";
@@ -11,6 +11,7 @@ import { GetExpEntriesGqlValue } from "../graphql/exp-entries.query";
 import { FieldType } from "../graphql/apollo-types/globalTypes";
 import { GetAnExp_exp_fieldDefs } from "../graphql/apollo-types/GetAnExp";
 import { GetExperienceGqlValues } from "../graphql/get-exp.query";
+import { renderWithRouter } from "./test_utils";
 
 jest.mock("../components/SidebarHeader", () => ({
   SidebarHeader: jest.fn(() => null)
@@ -247,14 +248,39 @@ it("renders entries", () => {
   expect(getByText(/field name 6/)).toBeInTheDocument();
 });
 
+it("renders errors while getting experience", async () => {
+  /**
+   * Given that server returns error
+   */
+  const { ui, mockNavigate } = makeComp({
+    getExperienceGql: { error: {} } as any
+  });
+
+  /**
+   * While using the component
+   */
+  const {} = render(ui);
+
+  /**
+   * Then we should be redirected to 404 page
+   */
+  await wait(() => {
+    expect(mockNavigate).toBeCalledWith("/404");
+  });
+});
+
 function makeComp(props: Partial<Props> = {}) {
+  const { Ui, mockNavigate } = renderWithRouter(ExperienceP, {});
+
   return {
     ui: (
-      <ExperienceP
+      <Ui
         getExperienceGql={{ exp: {} } as any}
         experienceEntries={{ expEntries: [] } as any}
         {...props}
       />
-    )
+    ),
+
+    mockNavigate
   };
 }
