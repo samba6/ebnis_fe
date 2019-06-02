@@ -14,7 +14,7 @@ import {
   DispatchType,
   Action_Types
 } from "./utils";
-import { makeExperienceRoute } from "../../routes";
+import { makeExperienceRoute } from "../../constants/experience-route";
 import Loading from "../Loading";
 import {
   GetAnExp_exp_fieldDefs,

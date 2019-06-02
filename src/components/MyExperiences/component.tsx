@@ -9,7 +9,8 @@ import {
   DispatchType,
   ActionTypes
 } from "./utils";
-import { EXPERIENCE_DEFINITION_URL, makeExperienceRoute } from "../../routes";
+import { EXPERIENCE_DEFINITION_URL } from "../../routes";
+import { makeExperienceRoute } from "../../constants/experience-route";
 import Loading from "../Loading";
 import { GetExps_exps } from "../../graphql/apollo-types/GetExps";
 import { SidebarHeader } from "../SidebarHeader";

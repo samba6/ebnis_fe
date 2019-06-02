@@ -39,7 +39,7 @@ import {
   CreateExp as FormValues,
   CreateFieldDef
 } from "../../graphql/apollo-types/globalTypes";
-import { makeExperienceRoute } from "../../routes";
+import { makeExperienceRoute } from "../../constants/experience-route";
 import { noop, setDocumentTitle, makeSiteTitle } from "../../constants";
 import { EXPERIENCE_DEFINITION_TITLE } from "../../constants/experience-definition-title";
 import { ExperienceDefinitionUpdate } from "./update";
