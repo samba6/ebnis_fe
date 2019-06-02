@@ -1,8 +1,9 @@
 import { USER_REGISTRATION_OBJECT } from "../support/user-registration-object";
 import { FieldType } from "../../src/graphql/apollo-types/globalTypes";
 import { EXPERIENCES_URL } from "../../src/routes";
-import { MY_EXPERIENCES_TITLE } from "../../src/constants";
 import { getDescendantByText } from "../support/get-descendant-by-text";
+import { EXPERIENCE_DEFINITION_TITLE } from "../../src/constants/experience-definition-title";
+import { MY_EXPERIENCES_TITLE } from "../../src/constants/my-experiences-title";
 
 const title = "My experience no. 1";
 
@@ -11,37 +12,67 @@ context("my experiences page", () => {
     cy.closeSession();
     cy.checkoutSession();
     cy.registerUser(USER_REGISTRATION_OBJECT);
-    cy.defineExperience({
-      title,
-      fieldDefs: [
-        {
-          name: "Field date",
-          type: FieldType.DATE
-        },
-
-        {
-          name: "Field datetime",
-          type: FieldType.DATETIME
-        },
-
-        {
-          name: "Field integer",
-          type: FieldType.INTEGER
-        }
-      ]
-    });
   });
 
-  it("navigates to entry page", () => {
+  it("navigates to definition page from text", () => {
     /**
-     * Given we are at my experiences page
+     * When we visit experiences page
      */
+
     cy.visit(EXPERIENCES_URL);
 
     /**
      * Then we should see the title
      */
     cy.title().should("contain", MY_EXPERIENCES_TITLE);
+
+    /**
+     * When we click on link to create new experience
+     */
+    cy.getByText("Click here to create your first experience").click();
+
+    /**
+     * Then we should be taken to new experience definition page
+     */
+    cy.title().should("contain", EXPERIENCE_DEFINITION_TITLE);
+  });
+
+  it("navigates to definition page from button", () => {
+    /**
+     * When we visit experiences page
+     */
+
+    cy.visit(EXPERIENCES_URL);
+
+    /**
+     * And click on the button
+     */
+    cy.getByText("+").click();
+
+    /**
+     * Then we should be taken to new experience definition page
+     */
+    cy.title().should("contain", EXPERIENCE_DEFINITION_TITLE);
+  });
+
+  it("navigates to entry page", () => {
+    /**
+     * Given there is an experience in the system
+     */
+    cy.defineExperience({
+      title,
+      fieldDefs: [
+        {
+          name: "Field integer",
+          type: FieldType.INTEGER
+        }
+      ]
+    });
+
+    /**
+     * And we are at my experiences page
+     */
+    cy.visit(EXPERIENCES_URL);
 
     /**
      * When we click on the title of experience to which we want to add entry
