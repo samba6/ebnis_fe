@@ -13,7 +13,7 @@ import { ExperienceDefinition } from "../components/ExperienceDefinition/compone
 import { CreateFieldDef, FieldType } from "../graphql/apollo-types/globalTypes";
 import { Props } from "../components/ExperienceDefinition/utils";
 import { fillField, renderWithRouter } from "./test_utils";
-import { makeExperienceRoute } from "../routes";
+import { makeExperienceRoute } from "../constants/experience-route";
 
 jest.mock("../components/ExperienceDefinition/update");
 jest.mock("../components/ExperienceDefinition/scrollTop");
