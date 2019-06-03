@@ -5,10 +5,10 @@
 import { CreateExp, FieldType } from "./globalTypes";
 
 // ====================================================
-// GraphQL mutation operation: CreateExperienceWithFieldDefinitionMutation
+// GraphQL mutation operation: CreateExperienceExperienceReturnAllFieldsMutation
 // ====================================================
 
-export interface CreateExperienceWithFieldDefinitionMutation_exp_fieldDefs {
+export interface CreateExperienceExperienceReturnAllFieldsMutation_exp_fieldDefs {
   __typename: "FieldDef";
   id: string;
   /**
@@ -21,7 +21,7 @@ export interface CreateExperienceWithFieldDefinitionMutation_exp_fieldDefs {
   type: FieldType;
 }
 
-export interface CreateExperienceWithFieldDefinitionMutation_exp {
+export interface CreateExperienceExperienceReturnAllFieldsMutation_exp {
   __typename: "Experience";
   id: string;
   title: string;
@@ -29,13 +29,13 @@ export interface CreateExperienceWithFieldDefinitionMutation_exp {
   /**
    * The field definitions used for the experience entries
    */
-  fieldDefs: (CreateExperienceWithFieldDefinitionMutation_exp_fieldDefs | null)[];
+  fieldDefs: (CreateExperienceExperienceReturnAllFieldsMutation_exp_fieldDefs | null)[];
 }
 
-export interface CreateExperienceWithFieldDefinitionMutation {
-  exp: CreateExperienceWithFieldDefinitionMutation_exp | null;
+export interface CreateExperienceExperienceReturnAllFieldsMutation {
+  exp: CreateExperienceExperienceReturnAllFieldsMutation_exp | null;
 }
 
-export interface CreateExperienceWithFieldDefinitionMutationVariables {
+export interface CreateExperienceExperienceReturnAllFieldsMutationVariables {
   exp: CreateExp;
 }

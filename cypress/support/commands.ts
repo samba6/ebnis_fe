@@ -43,12 +43,12 @@ import {
   USER_LOCAL_MUTATION,
   UserLocalMutationVariable
 } from "../../src/state/user.local.mutation";
-import { CREATE_EXPERIENCE_WITH_FIELD_DEFINITION_MUTATION } from "../../src/graphql/create-experience-with-field-definition.mutation";
+import { CREATE_EXPERIENCE_RETURN_ALL_FIELDS_MUTATION } from "../../src/graphql/create-experience-return-all-fields.mutation";
 import {
-  CreateExperienceWithFieldDefinitionMutation,
-  CreateExperienceWithFieldDefinitionMutationVariables,
-  CreateExperienceWithFieldDefinitionMutation_exp
-} from "../../src/graphql/apollo-types/CreateExperienceWithFieldDefinitionMutation";
+  CreateExperienceExperienceReturnAllFieldsMutation,
+  CreateExperienceExperienceReturnAllFieldsMutationVariables,
+  CreateExperienceExperienceReturnAllFieldsMutation_exp
+} from "../../src/graphql/apollo-types/CreateExperienceExperienceReturnAllFieldsMutation";
 import { FetchResult } from "react-apollo";
 import {
   CreateEntriesMutation,
@@ -120,10 +120,10 @@ function registerUser(userData: Registration) {
 
 function defineExperience(experienceDefinitionArgs: CreateExp) {
   return mutate<
-    CreateExperienceWithFieldDefinitionMutation,
-    CreateExperienceWithFieldDefinitionMutationVariables
+    CreateExperienceExperienceReturnAllFieldsMutation,
+    CreateExperienceExperienceReturnAllFieldsMutationVariables
   >({
-    mutation: CREATE_EXPERIENCE_WITH_FIELD_DEFINITION_MUTATION,
+    mutation: CREATE_EXPERIENCE_RETURN_ALL_FIELDS_MUTATION,
     variables: {
       exp: experienceDefinitionArgs
     }
@@ -131,14 +131,15 @@ function defineExperience(experienceDefinitionArgs: CreateExp) {
     const exp =
       result &&
       result.data &&
-      (result.data.exp as CreateExperienceWithFieldDefinitionMutation_exp);
+      (result.data
+        .exp as CreateExperienceExperienceReturnAllFieldsMutation_exp);
 
     return exp;
   });
 }
 
 function createExperienceEntries(
-  experience: CreateExperienceWithFieldDefinitionMutation_exp,
+  experience: CreateExperienceExperienceReturnAllFieldsMutation_exp,
   createEntriesArgs: CreateField[][]
 ) {
   return mutate<CreateEntriesMutation, CreateEntriesMutationVariables>({
@@ -223,17 +224,17 @@ declare global {
        */
       defineExperience: (
         experienceDefinitionArgs: CreateExp
-      ) => Promise<CreateExperienceWithFieldDefinitionMutation_exp>;
+      ) => Promise<CreateExperienceExperienceReturnAllFieldsMutation_exp>;
 
       /**
        *
        */
       createExperienceEntries: (
-        experience: CreateExperienceWithFieldDefinitionMutation_exp,
+        experience: CreateExperienceExperienceReturnAllFieldsMutation_exp,
         createEntriesArgs: CreateField[][]
       ) => Promise<
         [
-          CreateExperienceWithFieldDefinitionMutation_exp,
+          CreateExperienceExperienceReturnAllFieldsMutation_exp,
           CreateEntriesMutation_createEntries_successes_entry[]
         ]
       >;
