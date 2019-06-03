@@ -1,4 +1,4 @@
-import { graphql } from "react-apollo";
+import { graphql, compose, withApollo } from "react-apollo";
 
 import { ExperienceDefinition as Comp } from "./component";
 import { OwnProps } from "./utils";
@@ -11,6 +11,10 @@ import {
   CreateExpMutation,
   CreateExpMutationVariables
 } from "../../graphql/apollo-types/CreateExpMutation";
+import { createUnsavedExperienceGql } from "./local-queries";
+import { resolvers } from "./resolvers";
+
+let resolverAdded = false;
 
 const expMutationGql = graphql<
   OwnProps,
@@ -23,7 +27,21 @@ const expMutationGql = graphql<
     return {
       createExp: mutate
     };
+  },
+
+  options: ({ client }) => {
+    if (!resolverAdded) {
+      client.addResolvers(resolvers);
+    }
+
+    resolverAdded = true;
+
+    return {};
   }
 });
 
-export const ExperienceDefinition = expMutationGql(Comp);
+export const ExperienceDefinition = compose(
+  withApollo,
+  expMutationGql,
+  createUnsavedExperienceGql
+)(Comp);

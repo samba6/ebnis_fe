@@ -17,11 +17,17 @@ import { SidebarHeader } from "../SidebarHeader";
 import { setDocumentTitle, makeSiteTitle } from "../../constants";
 import { MY_EXPERIENCES_TITLE } from "../../constants/my-experiences-title";
 import { Link } from "gatsby";
+import { EXPERIENCES_OFFLINE_QUERY } from "./local.queries";
 
 export const MyExperiences = (props: Props) => {
   const {
-    getExpDefsResult: { loading, exps }
+    getExpDefsResult,
+    isConnected,
+    unsavedExperiences = [],
+    client
   } = props;
+
+  const { loading, exps, networkStatus } = getExpDefsResult;
 
   const [state, dispatch] = useReducer(reducer, initialState);
 
@@ -31,8 +37,28 @@ export const MyExperiences = (props: Props) => {
     return setDocumentTitle;
   }, []);
 
+  useEffect(() => {
+    // force read from cache if we are offline and user visits page directly
+    // from browser address bar (perhaps I should file an issue with absinthe-
+    // socket npm package managers. http behaves appropriately)
+
+    if (!exps && networkStatus === 1 && loading && !isConnected) {
+      client.query({
+        query: EXPERIENCES_OFFLINE_QUERY
+      });
+    }
+  }, [isConnected, loading, networkStatus, exps]);
+
   function renderExperiences() {
-    if (!(exps && exps.length)) {
+    let experiencesForDisplay = unsavedExperiences as GetExps_exps[];
+
+    if (exps) {
+      experiencesForDisplay = (exps as GetExps_exps[]).concat(
+        unsavedExperiences
+      );
+    }
+
+    if (!experiencesForDisplay.length) {
       return (
         <Link to={EXPERIENCE_DEFINITION_URL} className="no-exp-info">
           Click here to create your first experience
@@ -42,7 +68,7 @@ export const MyExperiences = (props: Props) => {
 
     return (
       <div data-testid="exps-container" className="exps-container">
-        {exps.map(experience => {
+        {experiencesForDisplay.map(experience => {
           const { id, ...rest } = experience as GetExps_exps;
 
           return (
@@ -60,7 +86,7 @@ export const MyExperiences = (props: Props) => {
   }
 
   function renderMain() {
-    if (loading) {
+    if (loading && !exps) {
       return <Loading />;
     }
 
@@ -110,7 +136,11 @@ const Experience = React.memo(
           dispatch={dispatch}
         />
 
-        <Link className="exp-container-main" to={makeExperienceRoute(id)}>
+        <Link
+          className="exp-container-main"
+          to={makeExperienceRoute(id)}
+          data-testid={`experience-main-${id}`}
+        >
           <span className="exp_title">{title}</span>
 
           {showingDescription && (

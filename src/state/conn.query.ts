@@ -1,18 +1,33 @@
 import gql from "graphql-tag";
-import { DataValue } from "react-apollo";
+import { graphql } from "react-apollo";
+import { ConnectionMutationData } from "./conn.mutation";
 
-export const CONN_QUERY = gql`
+export const CONNECTION_QUERY = gql`
   query ConnQuery {
     connected @client {
       isConnected
+      appNewlyLoaded
     }
   }
 `;
 
-export default CONN_QUERY;
+export default CONNECTION_QUERY;
 
-export interface ConnData {
-  connected?: { isConnected: boolean };
+export interface ConnectionQueryData {
+  connected?: ConnectionMutationData;
 }
 
-export type ConnProps = DataValue<ConnData>;
+export const connectionGql = graphql<
+  {},
+  ConnectionQueryData,
+  {},
+  ConnectionMutationData | undefined
+>(CONNECTION_QUERY, {
+  props: ({ data }) => {
+    if (!data) {
+      return data;
+    }
+
+    return data.connected;
+  }
+});

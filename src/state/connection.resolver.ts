@@ -1,11 +1,12 @@
 import { LocalResolverFn } from "./resolvers";
 
-export const updateConnectionResolver: LocalResolverFn<{
+export const connectionResolver: LocalResolverFn<{
   isConnected: boolean;
 }> = (_, { isConnected }, { cache }) => {
   const connected = {
     __typename: "ConnectionStatus",
-    isConnected
+    isConnected,
+    appNewlyLoaded: false
   };
 
   cache.writeData({ data: { connected } });

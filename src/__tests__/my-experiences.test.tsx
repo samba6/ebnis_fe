@@ -2,7 +2,7 @@
 import React, { ComponentType } from "react";
 import "jest-dom/extend-expect";
 import "react-testing-library/cleanup-after-each";
-import { render, fireEvent } from "react-testing-library";
+import { render, fireEvent, wait } from "react-testing-library";
 
 import { MyExperiences } from "../components/MyExperiences/component";
 import { Props } from "../components/MyExperiences/utils";
@@ -27,7 +27,7 @@ it("renders loading state and not main", () => {
   expect(queryByTestId("exps-container")).not.toBeInTheDocument();
 });
 
-it("renders empty exps", () => {
+it("does not render empty experiences", () => {
   const { Ui } = makeComp({ getExpDefsResult: {} as any });
 
   const props: Props = { exps: [] } as any;
@@ -41,7 +41,7 @@ it("renders empty exps", () => {
   ).toBeInTheDocument();
 });
 
-it("renders exps", () => {
+it("renders experiences from server", () => {
   const [id1, id2] = [new Date(), new Date()].map((d, index) =>
     (d.getTime() + index).toString()
   );
@@ -88,12 +88,90 @@ it("renders exps", () => {
   ).not.toBeInTheDocument();
 });
 
-function makeComp(props: Partial<Props> = {}) {
-  return renderWithRouter(
+it("renders unsaved and saved experiences", () => {
+  /**
+   * Given that client has 2 unsaved experiences and 1 saved experience
+   */
+  const unsavedExperiences = [
+    {
+      id: "1",
+      title: "1"
+    },
+
+    {
+      id: "2",
+      title: "2"
+    }
+  ] as GetExps_exps[];
+
+  const exps = [
+    {
+      id: "3",
+      title: "3"
+    }
+  ] as GetExps_exps[];
+
+  const { Ui } = makeComp({
+    unsavedExperiences: unsavedExperiences as any,
+    getExpDefsResult: { exps } as any
+  });
+
+  /**
+   * When we use the component
+   */
+  const { getAllByTestId } = render(<Ui />);
+
+  /**
+   * Then we should only see 3 experiences
+   */
+  expect(getAllByTestId(/experience-main-/).length).toBe(3);
+});
+
+it("renders offline experiences when server unavailable", async () => {
+  /**
+   * Given server is unavailable
+   */
+  const { Ui, client } = makeComp({
+    getExpDefsResult: {
+      loading: true,
+      networkStatus: 1
+    } as any,
+
+    isConnected: false
+  });
+
+  const mockQuery = client.query as jest.Mock;
+
+  /**
+   * When we use the component
+   */
+  render(<Ui />);
+
+  /**
+   * Then we should load experiences from user cache
+   */
+  await wait(() => {
+    expect(mockQuery).toHaveBeenCalled();
+  });
+});
+
+function makeComp({
+  getExpDefsResult = {} as any,
+  ...props
+}: Partial<Props> = {}) {
+  const client = {
+    query: jest.fn()
+  } as any;
+
+  const { Ui, ...rest } = renderWithRouter(
     MyExperiencesP,
     {},
     {
+      getExpDefsResult,
+      client,
       ...props
     }
   );
+
+  return { Ui, client, ...rest };
 }

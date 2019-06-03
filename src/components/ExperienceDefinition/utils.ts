@@ -12,12 +12,19 @@ import {
   FieldType
 } from "../../graphql/apollo-types/globalTypes";
 import { CreateExpMutation } from "../../graphql/apollo-types/CreateExpMutation";
+import { CreateUnsavedExperienceMutationProps } from "./local-queries";
+import { WithApolloClient } from "react-apollo";
 
 export type CreateExpUpdateFn = MutationUpdaterFn<CreateExpMutation>;
 
-export interface OwnProps extends RouteComponentProps<{}> {}
+export interface OwnProps
+  extends RouteComponentProps<{}>,
+    WithApolloClient<{}> {}
 
-export interface Props extends OwnProps, CreateExpMutationProps {}
+export interface Props
+  extends OwnProps,
+    CreateExpMutationProps,
+    CreateUnsavedExperienceMutationProps {}
 
 const fieldTypeKeys = Object.values(FieldType);
 

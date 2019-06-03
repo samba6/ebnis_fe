@@ -10,6 +10,11 @@ export const connMutation = gql`
 
 export default connMutation;
 
-export interface ConnMutData {
+export interface ConnectionMutationData {
+  isConnected: boolean;
+  appNewlyLoaded: boolean;
+}
+
+export interface ConnectionMutationVariables {
   isConnected: boolean;
 }

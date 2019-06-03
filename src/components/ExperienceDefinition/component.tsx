@@ -46,9 +46,11 @@ import { ExperienceDefinitionUpdate } from "./update";
 import { CreateExpMutationFn } from "../../graphql/create-exp.mutation";
 import { scrollTop } from "./scrollTop";
 import { SidebarHeader } from "../SidebarHeader";
+import { getConnStatus } from "../../state/get-conn-status";
+import { ExperienceAllFieldsFragment } from "../../graphql/apollo-types/ExperienceAllFieldsFragment";
 
 export function ExperienceDefinition(props: Props) {
-  const { createExp, navigate } = props;
+  const { createExp, navigate, client, createUnsavedExperience } = props;
   const [state, dispatch] = useReducer(reducer, {
     showDescriptionInput: true
   } as State);
@@ -143,19 +145,35 @@ export function ExperienceDefinition(props: Props) {
       }
 
       try {
-        const result = await (createExp as CreateExpMutationFn)({
-          variables: {
-            exp: values
-          },
+        let result;
+        let expId;
 
-          update: ExperienceDefinitionUpdate
-        });
+        if (await getConnStatus(client)) {
+          result = await (createExp as CreateExpMutationFn)({
+            variables: {
+              exp: values
+            },
 
-        const exp = (result &&
-          result.data &&
-          result.data.exp) as CreateExpMutation_exp;
+            update: ExperienceDefinitionUpdate
+          });
 
-        (navigate as NavigateFn)(makeExperienceRoute(exp.id));
+          expId = ((result &&
+            result.data &&
+            result.data.exp) as CreateExpMutation_exp).id;
+        } else {
+          result = await createUnsavedExperience({
+            variables: {
+              exp: values
+            }
+          });
+
+          expId = ((result &&
+            result.data &&
+            result.data.createUnsavedExperience) as ExperienceAllFieldsFragment)
+            .id;
+        }
+
+        (navigate as NavigateFn)(makeExperienceRoute(expId));
       } catch (error) {
         dispatch({
           type: Action_Types.SET_GRAPHQL_ERROR,

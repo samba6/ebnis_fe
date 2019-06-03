@@ -1,10 +1,10 @@
 import { ApolloClient } from "apollo-client";
 
-import { CONN_QUERY, ConnData } from "./conn.query";
+import { CONNECTION_QUERY, ConnectionQueryData } from "./conn.query";
 
 export async function getConnStatus(client: ApolloClient<{}>) {
-  const { data } = await client.query<ConnData>({
-    query: CONN_QUERY
+  const { data } = await client.query<ConnectionQueryData>({
+    query: CONNECTION_QUERY
   });
 
   if (!data) {

@@ -20,11 +20,14 @@ jest.mock("../components/ExperienceDefinition/scrollTop");
 jest.mock("../components/SidebarHeader", () => ({
   SidebarHeader: jest.fn(() => null)
 }));
+jest.mock("../state/get-conn-status");
 
 import { ExperienceDefinitionUpdate } from "../components/ExperienceDefinition/update";
 import { scrollTop } from "../components/ExperienceDefinition/scrollTop";
+import { getConnStatus } from "../state/get-conn-status";
 
 const mockScrollTop = scrollTop as jest.Mock;
+const mockGetConnStatus = getConnStatus as jest.Mock;
 
 const ExperienceDefinitionP = ExperienceDefinition as ComponentType<
   Partial<Props>
@@ -1267,6 +1270,71 @@ it("renders error if all fields not completely filled on submission", async () =
   expect($field2).toContainElement(getByText("must be at least 2 characters"));
 });
 
+it("saves experience when we not connected", async () => {
+  const fieldDefs: CreateFieldDef[] = [
+    {
+      name: "f1",
+      type: FieldType.SINGLE_LINE_TEXT
+    },
+
+    {
+      name: "f2",
+      type: FieldType.DATETIME
+    }
+  ];
+
+  /**
+   * Given server is not connected
+   */
+  const { Ui, mockNavigate, mockCreateUnsavedExperience } = makeComp(
+    {},
+    {
+      isConnected: false
+    }
+  );
+
+  mockCreateUnsavedExperience.mockResolvedValue({
+    data: {
+      createUnsavedExperience: {
+        id: "expId1"
+      }
+    }
+  });
+
+  /**
+   * While we are using new experience component
+   */
+  const { getByText, getByLabelText, getByTestId } = render(<Ui />);
+
+  /**
+   * When we complete and submit the form
+   */
+  fillFields(getByLabelText, getByText, getByTestId, fieldDefs);
+  fireEvent.click(getByText("Submit"));
+
+  /**
+   * Then correct data should be uploaded to the server
+   */
+  await wait(
+    () =>
+      expect(mockCreateUnsavedExperience).toBeCalledWith({
+        variables: {
+          exp: {
+            title,
+            fieldDefs,
+            description: ""
+          }
+        }
+      }),
+    { interval: 1 }
+  );
+
+  /**
+   * And we should be redirected away from the page
+   */
+  expect(mockNavigate).toBeCalledWith(makeExperienceRoute("expId1"));
+});
+
 function selectDataType(
   getByText: (
     text: Matcher,
@@ -1281,14 +1349,21 @@ function selectDataType(
   );
 }
 
-function makeComp(props: Partial<Props> = {}) {
+function makeComp(
+  props: Partial<Props> = {},
+  { isConnected = true }: { isConnected?: boolean } = {}
+) {
   const mockCreateExp = jest.fn();
+  mockGetConnStatus.mockReset();
+  mockGetConnStatus.mockResolvedValue(isConnected);
+  const mockCreateUnsavedExperience = jest.fn();
 
   const { Ui, ...rest } = renderWithRouter(
     ExperienceDefinitionP,
     {},
     {
       createExp: mockCreateExp,
+      createUnsavedExperience: mockCreateUnsavedExperience,
       ...props
     }
   );
@@ -1296,6 +1371,7 @@ function makeComp(props: Partial<Props> = {}) {
   return {
     Ui,
     mockCreateExp,
+    mockCreateUnsavedExperience,
     ...rest
   };
 }

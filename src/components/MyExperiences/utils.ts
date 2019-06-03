@@ -1,9 +1,16 @@
 import { RouteComponentProps } from "@reach/router";
 import { Reducer, Dispatch } from "react";
+import { WithApolloClient } from "react-apollo";
 
 import { GetExpGqlProps } from "../../graphql/exps.query";
+import { ConnectionMutationData } from "../../state/conn.mutation";
+import { UnsavedExperiencesQueryProps } from "./local.queries";
 
-export interface OwnProps extends RouteComponentProps<{}> {}
+export interface OwnProps
+  extends RouteComponentProps<{}>,
+    WithApolloClient<{}>,
+    ConnectionMutationData,
+    UnsavedExperiencesQueryProps {}
 
 export interface Props extends OwnProps, GetExpGqlProps {}
 
@@ -18,7 +25,7 @@ export const initialState: State = {
 };
 
 export enum ActionTypes {
-  setToggleDescription = "setToggleDescription"
+  setToggleDescription = "@components/MyExpriences/setToggleDescription"
 }
 
 type ActionPayload = null | string;
@@ -29,10 +36,7 @@ interface Action {
 }
 
 const reducerObject: {
-  [k in keyof typeof ActionTypes]: (
-    prevState: State,
-    payload: ActionPayload
-  ) => State
+  [k in ActionTypes]: (prevState: State, payload: ActionPayload) => State
 } = {
   [ActionTypes.setToggleDescription]: (prevState, payload) => {
     const { toggleDescriptionStates } = prevState;
