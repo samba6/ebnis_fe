@@ -94,6 +94,6 @@ context("my experiences page", () => {
     /**
      * Then we should be directed to entry page for the experience
      */
-    cy.title().should("contain", `[New] ${title}`);
+    cy.title().should("contain", `[New Entry] ${title}`);
   });
 });
