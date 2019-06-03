@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, Fragment } from "react";
 import { Button } from "semantic-ui-react";
 import { Link } from "gatsby";
 
@@ -70,9 +70,9 @@ export function Experience(props: Props) {
     const text = displayFieldType[type](fieldData);
 
     return (
-      <div key={defId}>
+      <Fragment key={defId}>
         {fieldName} {text}
-      </div>
+      </Fragment>
     );
   }
 
@@ -81,6 +81,7 @@ export function Experience(props: Props) {
       return (
         <Link
           className="no-entries"
+          data-testid="no-entries"
           to={makeNewEntryRoute((exp as GetAnExp_exp).id)}
         >
           No entries. Click here to add one
@@ -93,7 +94,11 @@ export function Experience(props: Props) {
         {(expEntries as GetExpAllEntries_expEntries[]).map(
           (entry: GetExpAllEntries_expEntries) => {
             return (
-              <div key={entry.id} className="entry-container">
+              <div
+                key={entry.id}
+                className="entry-container"
+                data-testid="entry-container"
+              >
                 {(entry.fields as GetExpAllEntries_expEntries_fields[]).map(
                   renderEntryField
                 )}
@@ -120,7 +125,7 @@ export function Experience(props: Props) {
               <div className="new-experience-entry-button">
                 <Button
                   type="button"
-                  name="new-exp-entry-button"
+                  data-testid="new-exp-entry-button"
                   basic={true}
                   compact={true}
                   as={Link}
