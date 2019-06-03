@@ -30,7 +30,8 @@ import { UserCreationObject } from "./user-creation-object";
 import { buildClientCache } from "../../src/state/apollo-setup";
 import {
   Registration,
-  CreateExp
+  CreateExp,
+  CreateField
 } from "../../src/graphql/apollo-types/globalTypes";
 import {
   UserRegMutation,
@@ -42,13 +43,20 @@ import {
   USER_LOCAL_MUTATION,
   UserLocalMutationVariable
 } from "../../src/state/user.local.mutation";
-import { EXP_MUTATION } from "../../src/graphql/create-exp.mutation";
+import { CREATE_EXPERIENCE_WITH_FIELD_DEFINITION_MUTATION } from "../../src/graphql/create-experience-with-field-definition.mutation";
 import {
-  CreateExpMutation,
-  CreateExpMutationVariables,
-  CreateExpMutation_exp
-} from "../../src/graphql/apollo-types/CreateExpMutation";
+  CreateExperienceWithFieldDefinitionMutation,
+  CreateExperienceWithFieldDefinitionMutationVariables,
+  CreateExperienceWithFieldDefinitionMutation_exp
+} from "../../src/graphql/apollo-types/CreateExperienceWithFieldDefinitionMutation";
 import { FetchResult } from "react-apollo";
+import {
+  CreateEntriesMutation,
+  CreateEntriesMutationVariables,
+  CreateEntriesMutation_createEntries,
+  CreateEntriesMutation_createEntries_successes_entry
+} from "../../src/graphql/apollo-types/CreateEntriesMutation";
+import { CREATE_ENTRIES_MUTATION } from "../../src/graphql/create-entries.mutation";
 
 const serverUrl = Cypress.env("API_URL") as string;
 
@@ -93,7 +101,6 @@ function registerUser(userData: Registration) {
 
       const { jwt } = user;
 
-      expect(jwt).to.be.a("string");
       Cypress.env(USER_JWT_ENV, jwt);
 
       return mutate<UserLocalMutationVariable, UserLocalMutationVariable>({
@@ -112,16 +119,45 @@ function registerUser(userData: Registration) {
 }
 
 function defineExperience(experienceDefinitionArgs: CreateExp) {
-  return mutate<CreateExpMutation, CreateExpMutationVariables>({
-    mutation: EXP_MUTATION,
+  return mutate<
+    CreateExperienceWithFieldDefinitionMutation,
+    CreateExperienceWithFieldDefinitionMutationVariables
+  >({
+    mutation: CREATE_EXPERIENCE_WITH_FIELD_DEFINITION_MUTATION,
     variables: {
       exp: experienceDefinitionArgs
     }
   }).then(result => {
     const exp =
-      result && result.data && (result.data.exp as CreateExpMutation_exp);
+      result &&
+      result.data &&
+      (result.data.exp as CreateExperienceWithFieldDefinitionMutation_exp);
 
-    expect(exp.id).to.be.a("string");
+    return exp;
+  });
+}
+
+function createExperienceEntries(
+  experience: CreateExperienceWithFieldDefinitionMutation_exp,
+  createEntriesArgs: CreateField[][]
+) {
+  return mutate<CreateEntriesMutation, CreateEntriesMutationVariables>({
+    mutation: CREATE_ENTRIES_MUTATION,
+    variables: {
+      createEntries: {
+        expId: experience.id,
+        listOfFields: createEntriesArgs
+      }
+    }
+  }).then(result => {
+    const { successes } = (result &&
+      result.data &&
+      result.data.createEntries) as CreateEntriesMutation_createEntries;
+
+    return [
+      experience,
+      successes.sort((a, b) => a.index - b.index).map(a => a.entry)
+    ];
   });
 }
 
@@ -145,6 +181,7 @@ Cypress.Commands.add("createUser", createUser);
 Cypress.Commands.add("registerUser", registerUser);
 Cypress.Commands.add("mutate", mutate);
 Cypress.Commands.add("defineExperience", defineExperience);
+Cypress.Commands.add("createExperienceEntries", createExperienceEntries);
 
 declare global {
   namespace Cypress {
@@ -184,7 +221,22 @@ declare global {
       /**
        *
        */
-      defineExperience: (experienceDefinitionArgs: CreateExp) => void;
+      defineExperience: (
+        experienceDefinitionArgs: CreateExp
+      ) => Promise<CreateExperienceWithFieldDefinitionMutation_exp>;
+
+      /**
+       *
+       */
+      createExperienceEntries: (
+        experience: CreateExperienceWithFieldDefinitionMutation_exp,
+        createEntriesArgs: CreateField[][]
+      ) => Promise<
+        [
+          CreateExperienceWithFieldDefinitionMutation_exp,
+          CreateEntriesMutation_createEntries_successes_entry[]
+        ]
+      >;
     }
   }
 }

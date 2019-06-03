@@ -19,6 +19,37 @@ export enum FieldType {
 }
 
 /**
+ * Variables for creating several entries for an experience.
+ * 
+ * It is of the form:
+ * {
+ *                                            // The ID of the experience
+ *   expId: string;
+ * 
+ *                                            // list of fields making up the entries.
+ *   listOFields: CreateField[][];
+ * }
+ * 
+ * 
+ * listOFields is basically a list of lists like so:
+ * [
+ *   [{defId: string, data: string}, {}, {}]  // list of fields for entry 1,
+ *   [{}, {}, {}]                             // list of fields for entry 2,
+ *   .
+ *   .
+ *   .
+ *   [{}, {}, {}]                             // list of fields for entry n,
+ * ]
+ * 
+ * The length of each member list must be the same because all entries for
+ * a particular experience will have the same number of fields
+ */
+export interface CreateEntriesInput {
+  expId: string;
+  listOfFields: ((CreateField | null)[] | null)[];
+}
+
+/**
  * Variables for creating an experience entry
  */
 export interface CreateEntry {
@@ -37,6 +68,24 @@ export interface CreateExp {
 
 /**
  * Variables for creating an entry field
+ * 
+ * It is of the form:
+ * {
+ *   defId: string;
+ *   data: JSON_string;
+ * }
+ * 
+ * The `defId` key comes from experience to which this entry is associated and
+ * using this `defId`, we will retrieve the associated field definition for
+ * each field so as to ensure that we are storing valid JSON string data for
+ * the field. For instance, if user submits a field with JSON string data:
+ *     {date: "2016-05-10"}
+ * and defId:
+ *     field_definition_id_10000
+ * but when we query the experience for field definition id
+ * `field_definition_id_10000`, it tells us it should be associated with an
+ * integer data, then we will return error with explanation `invalid data type`
+ * for this field.
  */
 export interface CreateField {
   data: any;
