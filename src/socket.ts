@@ -86,7 +86,7 @@ export const defineSocket = ({
     });
   }
 
-  function dispatchDisconnected() {
+  async function dispatchDisconnected() {
     if (socketDisconnectedCount === 0) {
       if (onConnChange) {
         onConnChange(false);
@@ -95,7 +95,7 @@ export const defineSocket = ({
     }
   }
 
-  function dispatchConnected() {
+  async function dispatchConnected() {
     if (onConnChange) {
       onConnChange(true);
     }
