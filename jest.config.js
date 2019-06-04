@@ -13,6 +13,8 @@ module.exports = {
     "!src/components/use-is-*",
     "!src/components/RootHelmet/**",
     "!src/components/**/index.ts",
+    "!src/components/**/local*queries.ts",
+    "!src/components/**/resolvers.ts",
     "!src/**/*.d.ts",
     "!src/context.ts",
     "!src/socket.ts"
