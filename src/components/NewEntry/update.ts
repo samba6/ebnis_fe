@@ -51,7 +51,7 @@ export const update: (
       edges.push({
         node: entry,
         cursor: "",
-        __typename: "EntryRelayEdge"
+        __typename: "EntryEdge"
       });
 
       entries.edges = edges;

@@ -15,7 +15,7 @@ export interface CreateAnEntry_entry_fields {
 }
 
 export interface CreateAnEntry_entry {
-  __typename: "EntryRelay";
+  __typename: "Entry";
   /**
    * Internal ID of the entry. Field `id` is the global opaque ID
    */

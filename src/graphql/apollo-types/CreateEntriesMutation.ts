@@ -16,8 +16,17 @@ export interface CreateEntriesMutation_createEntries_successes_entry_fields {
 
 export interface CreateEntriesMutation_createEntries_successes_entry {
   __typename: "Entry";
+  /**
+   * The ID of an object
+   */
   id: string;
+  /**
+   * The ID of experience to which this entry belongs
+   */
   expId: string;
+  /**
+   * The data fields belonging to this entry
+   */
   fields: (CreateEntriesMutation_createEntries_successes_entry_fields | null)[];
   insertedAt: any;
 }

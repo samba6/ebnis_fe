@@ -25,7 +25,7 @@ export interface EntryConnectionFragment_edges_node_fields {
 }
 
 export interface EntryConnectionFragment_edges_node {
-  __typename: "EntryRelay";
+  __typename: "Entry";
   /**
    * Internal ID of the entry. Field `id` is the global opaque ID
    */
@@ -46,7 +46,7 @@ export interface EntryConnectionFragment_edges_node {
 }
 
 export interface EntryConnectionFragment_edges {
-  __typename: "EntryRelayEdge";
+  __typename: "EntryEdge";
   /**
    * A cursor for use in pagination
    */
@@ -58,7 +58,7 @@ export interface EntryConnectionFragment_edges {
 }
 
 export interface EntryConnectionFragment {
-  __typename: "EntryRelayConnection";
+  __typename: "EntryConnection";
   pageInfo: EntryConnectionFragment_pageInfo;
   edges: (EntryConnectionFragment_edges | null)[] | null;
 }

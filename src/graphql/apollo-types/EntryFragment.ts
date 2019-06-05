@@ -3,17 +3,17 @@
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL fragment: EntryRelayFragment
+// GraphQL fragment: EntryFragment
 // ====================================================
 
-export interface EntryRelayFragment_fields {
+export interface EntryFragment_fields {
   __typename: "Field";
   defId: string;
   data: any;
 }
 
-export interface EntryRelayFragment {
-  __typename: "EntryRelay";
+export interface EntryFragment {
+  __typename: "Entry";
   /**
    * Internal ID of the entry. Field `id` is the global opaque ID
    */
@@ -29,6 +29,6 @@ export interface EntryRelayFragment {
   /**
    * The data fields belonging to this entry
    */
-  fields: (EntryRelayFragment_fields | null)[];
+  fields: (EntryFragment_fields | null)[];
   insertedAt: any;
 }

@@ -27,7 +27,7 @@ export interface ListExperiencesEntries_listExperiencesEntries_edges_node_fields
 }
 
 export interface ListExperiencesEntries_listExperiencesEntries_edges_node {
-  __typename: "EntryRelay";
+  __typename: "Entry";
   /**
    * Internal ID of the entry. Field `id` is the global opaque ID
    */
@@ -48,7 +48,7 @@ export interface ListExperiencesEntries_listExperiencesEntries_edges_node {
 }
 
 export interface ListExperiencesEntries_listExperiencesEntries_edges {
-  __typename: "EntryRelayEdge";
+  __typename: "EntryEdge";
   /**
    * A cursor for use in pagination
    */
@@ -60,7 +60,7 @@ export interface ListExperiencesEntries_listExperiencesEntries_edges {
 }
 
 export interface ListExperiencesEntries_listExperiencesEntries {
-  __typename: "EntryRelayConnection";
+  __typename: "EntryConnection";
   pageInfo: ListExperiencesEntries_listExperiencesEntries_pageInfo;
   edges: (ListExperiencesEntries_listExperiencesEntries_edges | null)[] | null;
 }
@@ -79,7 +79,7 @@ export interface ListExperiencesEntries {
    *       edges {
    *         cursor
    *         node {
-   *           ...EntryRelayFragment
+   *           ...EntryFragment
    *         }
    *       }
    *     }

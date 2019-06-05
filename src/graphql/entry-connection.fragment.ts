@@ -1,8 +1,8 @@
 import gql from "graphql-tag";
-import { ENTRY_RELAY_FRAGMENT } from "./entry-relay.fragment";
+import { ENTRY_FRAGMENT } from "./entry.fragment";
 
 export const ENTRY_CONNECTION_FRAGMENT = gql`
-  fragment EntryConnectionFragment on EntryRelayConnection {
+  fragment EntryConnectionFragment on EntryConnection {
     pageInfo {
       hasNextPage
       hasPreviousPage
@@ -11,10 +11,10 @@ export const ENTRY_CONNECTION_FRAGMENT = gql`
     edges {
       cursor
       node {
-        ...EntryRelayFragment
+        ...EntryFragment
       }
     }
   }
 
-  ${ENTRY_RELAY_FRAGMENT}
+  ${ENTRY_FRAGMENT}
 `;

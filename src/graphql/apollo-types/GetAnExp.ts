@@ -40,7 +40,7 @@ export interface GetAnExp_exp_entries_edges_node_fields {
 }
 
 export interface GetAnExp_exp_entries_edges_node {
-  __typename: "EntryRelay";
+  __typename: "Entry";
   /**
    * Internal ID of the entry. Field `id` is the global opaque ID
    */
@@ -61,7 +61,7 @@ export interface GetAnExp_exp_entries_edges_node {
 }
 
 export interface GetAnExp_exp_entries_edges {
-  __typename: "EntryRelayEdge";
+  __typename: "EntryEdge";
   /**
    * A cursor for use in pagination
    */
@@ -73,7 +73,7 @@ export interface GetAnExp_exp_entries_edges {
 }
 
 export interface GetAnExp_exp_entries {
-  __typename: "EntryRelayConnection";
+  __typename: "EntryConnection";
   pageInfo: GetAnExp_exp_entries_pageInfo;
   edges: (GetAnExp_exp_entries_edges | null)[] | null;
 }
