@@ -27,7 +27,7 @@ export interface EntryConnectionFragment_edges_node_fields {
 export interface EntryConnectionFragment_edges_node {
   __typename: "Entry";
   /**
-   * Internal ID of the entry. Field `id` is the global opaque ID
+   * Internal ID of the schema. Field `id` is the global opaque ID
    */
   _id: string;
   /**

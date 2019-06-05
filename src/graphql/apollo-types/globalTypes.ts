@@ -23,7 +23,7 @@ export enum FieldType {
  * 
  * It is of the form:
  * {
- *                                            // The ID of the experience
+ *                                            // The global ID of the experience
  *   expId: string;
  * 
  *                                            // list of fields making up the entries.

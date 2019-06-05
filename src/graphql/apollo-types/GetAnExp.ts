@@ -42,7 +42,7 @@ export interface GetAnExp_exp_entries_edges_node_fields {
 export interface GetAnExp_exp_entries_edges_node {
   __typename: "Entry";
   /**
-   * Internal ID of the entry. Field `id` is the global opaque ID
+   * Internal ID of the schema. Field `id` is the global opaque ID
    */
   _id: string;
   /**
@@ -80,13 +80,25 @@ export interface GetAnExp_exp_entries {
 
 export interface GetAnExp_exp {
   __typename: "Experience";
+  /**
+   * The ID of an object
+   */
   id: string;
+  /**
+   * The title of the experience
+   */
   title: string;
+  /**
+   * The description of the experience
+   */
   description: string | null;
   /**
    * The field definitions used for the experience entries
    */
   fieldDefs: (GetAnExp_exp_fieldDefs | null)[];
+  /**
+   * The entries of the experience - can be paginated
+   */
   entries: GetAnExp_exp_entries;
 }
 

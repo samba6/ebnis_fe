@@ -45,10 +45,10 @@ import {
 } from "../../src/state/user.local.mutation";
 import { CREATE_EXPERIENCE_RETURN_ALL_FIELDS_MUTATION } from "../../src/graphql/create-experience-return-all-fields.mutation";
 import {
-  CreateExperienceExperienceReturnAllFieldsMutation,
-  CreateExperienceExperienceReturnAllFieldsMutationVariables,
-  CreateExperienceExperienceReturnAllFieldsMutation_exp
-} from "../../src/graphql/apollo-types/CreateExperienceExperienceReturnAllFieldsMutation";
+  CreateExperienceReturnAllFieldsMutation,
+  CreateExperienceReturnAllFieldsMutationVariables,
+  CreateExperienceReturnAllFieldsMutation_exp
+} from "../../src/graphql/apollo-types/CreateExperienceReturnAllFieldsMutation";
 import { FetchResult } from "react-apollo";
 import {
   CreateEntriesMutation,
@@ -120,8 +120,8 @@ function registerUser(userData: Registration) {
 
 function defineExperience(experienceDefinitionArgs: CreateExp) {
   return mutate<
-    CreateExperienceExperienceReturnAllFieldsMutation,
-    CreateExperienceExperienceReturnAllFieldsMutationVariables
+    CreateExperienceReturnAllFieldsMutation,
+    CreateExperienceReturnAllFieldsMutationVariables
   >({
     mutation: CREATE_EXPERIENCE_RETURN_ALL_FIELDS_MUTATION,
     variables: {
@@ -131,15 +131,14 @@ function defineExperience(experienceDefinitionArgs: CreateExp) {
     const exp =
       result &&
       result.data &&
-      (result.data
-        .exp as CreateExperienceExperienceReturnAllFieldsMutation_exp);
+      (result.data.exp as CreateExperienceReturnAllFieldsMutation_exp);
 
     return exp;
   });
 }
 
 function createExperienceEntries(
-  experience: CreateExperienceExperienceReturnAllFieldsMutation_exp,
+  experience: CreateExperienceReturnAllFieldsMutation_exp,
   createEntriesArgs: CreateField[][]
 ) {
   return mutate<CreateEntriesMutation, CreateEntriesMutationVariables>({
@@ -224,17 +223,17 @@ declare global {
        */
       defineExperience: (
         experienceDefinitionArgs: CreateExp
-      ) => Promise<CreateExperienceExperienceReturnAllFieldsMutation_exp>;
+      ) => Promise<CreateExperienceReturnAllFieldsMutation_exp>;
 
       /**
        *
        */
       createExperienceEntries: (
-        experience: CreateExperienceExperienceReturnAllFieldsMutation_exp,
+        experience: CreateExperienceReturnAllFieldsMutation_exp,
         createEntriesArgs: CreateField[][]
       ) => Promise<
         [
-          CreateExperienceExperienceReturnAllFieldsMutation_exp,
+          CreateExperienceReturnAllFieldsMutation_exp,
           CreateEntriesMutation_createEntries_successes_entry[]
         ]
       >;

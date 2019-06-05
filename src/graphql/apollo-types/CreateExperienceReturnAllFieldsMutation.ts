@@ -5,10 +5,10 @@
 import { CreateExp, FieldType } from "./globalTypes";
 
 // ====================================================
-// GraphQL mutation operation: CreateExperienceExperienceReturnAllFieldsMutation
+// GraphQL mutation operation: CreateExperienceReturnAllFieldsMutation
 // ====================================================
 
-export interface CreateExperienceExperienceReturnAllFieldsMutation_exp_fieldDefs {
+export interface CreateExperienceReturnAllFieldsMutation_exp_fieldDefs {
   __typename: "FieldDef";
   id: string;
   /**
@@ -21,21 +21,30 @@ export interface CreateExperienceExperienceReturnAllFieldsMutation_exp_fieldDefs
   type: FieldType;
 }
 
-export interface CreateExperienceExperienceReturnAllFieldsMutation_exp {
+export interface CreateExperienceReturnAllFieldsMutation_exp {
   __typename: "Experience";
+  /**
+   * The ID of an object
+   */
   id: string;
+  /**
+   * The title of the experience
+   */
   title: string;
+  /**
+   * The description of the experience
+   */
   description: string | null;
   /**
    * The field definitions used for the experience entries
    */
-  fieldDefs: (CreateExperienceExperienceReturnAllFieldsMutation_exp_fieldDefs | null)[];
+  fieldDefs: (CreateExperienceReturnAllFieldsMutation_exp_fieldDefs | null)[];
 }
 
-export interface CreateExperienceExperienceReturnAllFieldsMutation {
-  exp: CreateExperienceExperienceReturnAllFieldsMutation_exp | null;
+export interface CreateExperienceReturnAllFieldsMutation {
+  exp: CreateExperienceReturnAllFieldsMutation_exp | null;
 }
 
-export interface CreateExperienceExperienceReturnAllFieldsMutationVariables {
+export interface CreateExperienceReturnAllFieldsMutationVariables {
   exp: CreateExp;
 }

@@ -10,8 +10,17 @@ import { CreateExp } from "./globalTypes";
 
 export interface CreateExpMutation_exp {
   __typename: "Experience";
+  /**
+   * The ID of an object
+   */
   id: string;
+  /**
+   * The title of the experience
+   */
   title: string;
+  /**
+   * The description of the experience
+   */
   description: string | null;
 }
 

@@ -7,7 +7,10 @@ import { render, fireEvent, wait } from "react-testing-library";
 import { MyExperiences } from "../components/MyExperiences/component";
 import { Props } from "../components/MyExperiences/utils";
 import { renderWithRouter } from "./test_utils";
-import { GetExps_exps } from "../graphql/apollo-types/GetExps";
+import {
+  GetExps_exps,
+  GetExps_exps_edges_node
+} from "../graphql/apollo-types/GetExps";
 
 jest.mock("../components/SidebarHeader", () => ({
   SidebarHeader: jest.fn(() => null)
@@ -46,19 +49,25 @@ it("renders experiences from server", () => {
     (d.getTime() + index).toString()
   );
 
-  const exps = [
-    {
-      id: id1,
-      description: "lovely experience description 1",
-      title: "love experience title 1"
-    },
+  const exps = {
+    edges: [
+      {
+        node: {
+          id: id1,
+          description: "lovely experience description 1",
+          title: "love experience title 1"
+        }
+      },
 
-    {
-      id: id2,
-      title: "love experience title 2",
-      description: null
-    }
-  ] as GetExps_exps[];
+      {
+        node: {
+          id: id2,
+          title: "love experience title 2",
+          description: null
+        }
+      }
+    ]
+  } as GetExps_exps;
 
   const { Ui } = makeComp({ getExpDefsResult: { exps } as any });
 
@@ -102,14 +111,18 @@ it("renders unsaved and saved experiences", () => {
       id: "2",
       title: "2"
     }
-  ] as GetExps_exps[];
+  ] as GetExps_exps_edges_node[];
 
-  const exps = [
-    {
-      id: "3",
-      title: "3"
-    }
-  ] as GetExps_exps[];
+  const exps = {
+    edges: [
+      {
+        node: {
+          id: "3",
+          title: "3"
+        }
+      }
+    ]
+  } as GetExps_exps;
 
   const { Ui } = makeComp({
     unsavedExperiences: unsavedExperiences as any,
@@ -157,17 +170,23 @@ it("loads entries in the background when experiences are loaded", () => {
   /**
    * Given there are experiences in the system
    */
-  const exps = [
-    {
-      id: "1",
-      title: "1"
-    },
+  const exps = {
+    edges: [
+      {
+        node: {
+          id: "1",
+          title: "1"
+        }
+      },
 
-    {
-      id: "2",
-      title: "2"
-    }
-  ] as GetExps_exps[];
+      {
+        node: {
+          id: "2",
+          title: "2"
+        }
+      }
+    ]
+  } as GetExps_exps;
 
   const { Ui, mockQuery } = makeComp({ getExpDefsResult: { exps } as any });
 

@@ -6,13 +6,13 @@ import "./styles.scss";
 import { Props, displayFieldType } from "./utils";
 import { makeNewEntryRoute } from "../../routes";
 import Loading from "../Loading";
-import { GetExpAllEntries_expEntries_fields } from "../../graphql/apollo-types/GetExpAllEntries";
 import {
   GetAnExp_exp_fieldDefs,
   GetAnExp_exp,
   GetAnExp_exp_entries,
   GetAnExp_exp_entries_edges,
-  GetAnExp_exp_entries_edges_node
+  GetAnExp_exp_entries_edges_node,
+  GetAnExp_exp_entries_edges_node_fields
 } from "../../graphql/apollo-types/GetAnExp";
 import { SidebarHeader } from "../SidebarHeader";
 import { setDocumentTitle, makeSiteTitle } from "../../constants";
@@ -49,7 +49,7 @@ export function Experience(props: Props) {
     return null;
   }
 
-  function renderEntryField(field: GetExpAllEntries_expEntries_fields) {
+  function renderEntryField(field: GetAnExp_exp_entries_edges_node_fields) {
     const { defId, data } = field;
 
     const fieldDefs = (exp as GetAnExp_exp)
@@ -103,7 +103,7 @@ export function Experience(props: Props) {
               className="entry-container"
               data-testid="entry-container"
             >
-              {(entry.fields as GetExpAllEntries_expEntries_fields[]).map(
+              {(entry.fields as GetAnExp_exp_entries_edges_node_fields[]).map(
                 renderEntryField
               )}
             </div>

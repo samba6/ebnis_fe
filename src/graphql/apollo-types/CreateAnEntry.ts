@@ -17,7 +17,7 @@ export interface CreateAnEntry_entry_fields {
 export interface CreateAnEntry_entry {
   __typename: "Entry";
   /**
-   * Internal ID of the entry. Field `id` is the global opaque ID
+   * Internal ID of the schema. Field `id` is the global opaque ID
    */
   _id: string;
   /**

@@ -2,13 +2,11 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
-import { PaginationInput } from "./globalTypes";
-
 // ====================================================
-// GraphQL query operation: GetExps
+// GraphQL fragment: ExperienceConnectionFragment
 // ====================================================
 
-export interface GetExps_exps_pageInfo {
+export interface ExperienceConnectionFragment_pageInfo {
   __typename: "PageInfo";
   /**
    * When paginating forwards, are there more items?
@@ -20,7 +18,7 @@ export interface GetExps_exps_pageInfo {
   hasPreviousPage: boolean;
 }
 
-export interface GetExps_exps_edges_node {
+export interface ExperienceConnectionFragment_edges_node {
   __typename: "Experience";
   /**
    * The ID of an object
@@ -36,7 +34,7 @@ export interface GetExps_exps_edges_node {
   description: string | null;
 }
 
-export interface GetExps_exps_edges {
+export interface ExperienceConnectionFragment_edges {
   __typename: "ExperienceEdge";
   /**
    * A cursor for use in pagination
@@ -45,22 +43,11 @@ export interface GetExps_exps_edges {
   /**
    * The item at the end of the edge
    */
-  node: GetExps_exps_edges_node | null;
+  node: ExperienceConnectionFragment_edges_node | null;
 }
 
-export interface GetExps_exps {
+export interface ExperienceConnectionFragment {
   __typename: "ExperienceConnection";
-  pageInfo: GetExps_exps_pageInfo;
-  edges: (GetExps_exps_edges | null)[] | null;
-}
-
-export interface GetExps {
-  /**
-   * Get all experiences belonging to a user
-   */
-  exps: GetExps_exps | null;
-}
-
-export interface GetExpsVariables {
-  pagination: PaginationInput;
+  pageInfo: ExperienceConnectionFragment_pageInfo;
+  edges: (ExperienceConnectionFragment_edges | null)[] | null;
 }

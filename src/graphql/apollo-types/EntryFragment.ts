@@ -15,7 +15,7 @@ export interface EntryFragment_fields {
 export interface EntryFragment {
   __typename: "Entry";
   /**
-   * Internal ID of the entry. Field `id` is the global opaque ID
+   * Internal ID of the schema. Field `id` is the global opaque ID
    */
   _id: string;
   /**
