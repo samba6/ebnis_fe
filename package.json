@@ -18,7 +18,8 @@
     "deploy": "netlify deploy -p -d public",
     "cy-open": "env-cmd -e local-staging cypress open",
     "cy-run-task": "env-cmd -e local-staging cypress run",
-    "cy-run": "start-server-and-test build-serve-local-staging :3022 cy-run-task"
+    "cy-run": "start-server-and-test build-serve-local-staging :3022 cy-run-task",
+    "type-check": "yarn tsc --noEmit --project ."
   },
   "dependencies": {
     "@absinthe/socket": "0.2.1",
@@ -31,6 +32,7 @@
     "gatsby": "2.4.2",
     "graphql": "14.2.1",
     "graphql-tag": "2.10.1",
+    "immer": "3.1.2",
     "isomorphic-fetch": "2.2.1",
     "lodash-es": "4.17.11",
     "phoenix": "1.4.3",
