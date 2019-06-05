@@ -1,12 +1,15 @@
 import { MutationUpdaterFn } from "react-apollo";
+import immer from "immer";
 
 // istanbul ignore next: why flag import?
-import { GET_EXP_ENTRIES_QUERY } from "../../graphql/exp-entries.query";
 import { CreateAnEntry } from "../../graphql/apollo-types/CreateAnEntry";
 import {
-  GetExpAllEntries,
-  GetExpAllEntriesVariables
-} from "../../graphql/apollo-types/GetExpAllEntries";
+  GetAnExp,
+  GetAnExpVariables,
+  GetAnExp_exp,
+  GetAnExp_exp_entries
+} from "../../graphql/apollo-types/GetAnExp";
+import { GET_EXP_QUERY } from "../../graphql/get-exp.query";
 
 // TODO: will be tested in e2e
 // istanbul ignore next: trust apollo to do the right thing -
@@ -25,11 +28,14 @@ export const update: (
     }
 
     const variables = {
-      entry: { expId }
+      exp: { id: expId },
+      pagination: {
+        first: 20
+      }
     };
 
-    const data = client.readQuery<GetExpAllEntries, GetExpAllEntriesVariables>({
-      query: GET_EXP_ENTRIES_QUERY,
+    const data = client.readQuery<GetAnExp, GetAnExpVariables>({
+      query: GET_EXP_QUERY,
       variables
     });
 
@@ -37,11 +43,26 @@ export const update: (
       return;
     }
 
+    const exp = data.exp as GetAnExp_exp;
+
+    const newExp = immer(exp, draft => {
+      const entries = draft.entries as GetAnExp_exp_entries;
+      const edges = entries.edges || [];
+      edges.push({
+        node: entry,
+        cursor: "",
+        __typename: "EntryRelayEdge"
+      });
+
+      entries.edges = edges;
+      draft.entries = entries;
+    });
+
     await client.writeQuery({
-      query: GET_EXP_ENTRIES_QUERY,
+      query: GET_EXP_QUERY,
       variables,
       data: {
-        expEntries: [...(data.expEntries || []), entry]
+        exp: newExp
       }
     });
   };

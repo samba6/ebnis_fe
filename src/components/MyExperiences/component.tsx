@@ -1,4 +1,4 @@
-import React, { useEffect, useReducer } from "react";
+import React, { useEffect, useReducer, useRef } from "react";
 import { Icon } from "semantic-ui-react";
 
 import "./styles.scss";
@@ -18,6 +18,11 @@ import { setDocumentTitle, makeSiteTitle } from "../../constants";
 import { MY_EXPERIENCES_TITLE } from "../../constants/my-experiences-title";
 import { Link } from "gatsby";
 import { EXPERIENCES_OFFLINE_QUERY } from "./local.queries";
+import { LIST_EXPERIENCES_ENTRIES } from "../../graphql/list-experiences-entries";
+import {
+  ListExperiencesEntries,
+  ListExperiencesEntriesVariables
+} from "../../graphql/apollo-types/ListExperiencesEntries";
 
 export const MyExperiences = (props: Props) => {
   const {
@@ -30,6 +35,10 @@ export const MyExperiences = (props: Props) => {
   const { loading, exps, networkStatus } = getExpDefsResult;
 
   const [state, dispatch] = useReducer(reducer, initialState);
+
+  // make sure we are only loading entries in the background once and not on
+  // every render
+  const entriesLoadedRef = useRef(false);
 
   useEffect(() => {
     setDocumentTitle(makeSiteTitle(MY_EXPERIENCES_TITLE));
@@ -48,6 +57,24 @@ export const MyExperiences = (props: Props) => {
       });
     }
   }, [isConnected, loading, networkStatus, exps]);
+
+  useEffect(() => {
+    if (exps && !entriesLoadedRef.current) {
+      client.query<ListExperiencesEntries, ListExperiencesEntriesVariables>({
+        query: LIST_EXPERIENCES_ENTRIES,
+        variables: {
+          input: {
+            experiencesIds: (exps as GetExps_exps[]).map(({ id }) => id),
+            pagination: {
+              first: 10
+            }
+          }
+        }
+      });
+
+      entriesLoadedRef.current = true;
+    }
+  }, [exps]);
 
   function renderExperiences() {
     let experiencesForDisplay = unsavedExperiences as GetExps_exps[];

@@ -4,17 +4,13 @@ import dateFnFormat from "date-fns/format";
 import { FieldType } from "../../graphql/apollo-types/globalTypes";
 
 import { GetExperienceGqlProps } from "../../graphql/get-exp.query";
-import { GetExpEntriesGqlProps } from "../../graphql/exp-entries.query";
 
 export interface OwnProps
   extends RouteComponentProps<{
     experienceId: string;
   }> {}
 
-export interface Props
-  extends OwnProps,
-    GetExperienceGqlProps,
-    GetExpEntriesGqlProps {}
+export interface Props extends OwnProps, GetExperienceGqlProps {}
 
 export type FormObjVal = Date | string;
 export interface FormObj {

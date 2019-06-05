@@ -19,7 +19,10 @@ import differenceInHours from "date-fns/difference_in_hours";
 import { NewEntry } from "../components/NewEntry/component";
 import { Props } from "../components/NewEntry/utils";
 import { renderWithRouter, fillField } from "./test_utils";
-import { GetAnExp_exp } from "../graphql/apollo-types/GetAnExp";
+import {
+  GetAnExp_exp,
+  GetAnExp_exp_entries
+} from "../graphql/apollo-types/GetAnExp";
 import { FieldType } from "../graphql/apollo-types/globalTypes";
 
 jest.mock("../components/NewEntry/update");
@@ -118,7 +121,9 @@ it("creates new experience entry", async () => {
 
     description: "lovely",
 
-    __typename: "Experience"
+    __typename: "Experience",
+
+    entries: {} as GetAnExp_exp_entries
   };
 
   const { ui, mockCreateEntry } = makeComp({
@@ -282,7 +287,9 @@ it("sets values of date and datetime fields", async () => {
 
     description: "lovely",
 
-    __typename: "Experience"
+    __typename: "Experience",
+
+    entries: {} as GetAnExp_exp_entries
   };
 
   const { ui, mockCreateEntry } = makeComp({

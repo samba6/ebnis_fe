@@ -107,11 +107,9 @@ export interface GetExp {
   id: string;
 }
 
-/**
- * Variables for getting all entries belonging to an experience
- */
-export interface GetExpEntries {
-  expId: string;
+export interface ListExperiencesEntriesInput {
+  experiencesIds: (string | null)[];
+  pagination?: PaginationInput | null;
 }
 
 /**
@@ -120,6 +118,13 @@ export interface GetExpEntries {
 export interface LoginUser {
   email: string;
   password: string;
+}
+
+export interface PaginationInput {
+  after?: number | null;
+  before?: number | null;
+  first?: number | null;
+  last?: number | null;
 }
 
 /**

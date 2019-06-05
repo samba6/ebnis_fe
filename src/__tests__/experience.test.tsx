@@ -6,10 +6,11 @@ import { render, wait } from "react-testing-library";
 
 import { Experience } from "../components/Experience/component";
 import { Props } from "../components/Experience/utils";
-import { GetExpAllEntries_expEntries } from "../graphql/apollo-types/GetExpAllEntries";
-import { GetExpEntriesGqlValue } from "../graphql/exp-entries.query";
 import { FieldType } from "../graphql/apollo-types/globalTypes";
-import { GetAnExp_exp_fieldDefs } from "../graphql/apollo-types/GetAnExp";
+import {
+  GetAnExp_exp_fieldDefs,
+  GetAnExp_exp_entries_edges
+} from "../graphql/apollo-types/GetAnExp";
 import { GetExperienceGqlValues } from "../graphql/get-exp.query";
 import { renderWithRouter } from "./test_utils";
 
@@ -39,37 +40,19 @@ it("renders loading while getting experience", () => {
   expect(getByTestId("loading-spinner")).toBeInTheDocument();
 });
 
-it("renders loading while getting entries", () => {
-  /**
-   * Given that server has not returned entries to us
-   */
-  const { ui } = makeComp({
-    experienceEntries: { loading: true } as any
-  });
-
-  /**
-   * While using the component
-   */
-  const { getByTestId, queryByText } = render(ui);
-
-  /**
-   * Then we should see loading indicator
-   */
-  expect(getByTestId("loading-spinner")).toBeInTheDocument();
-
-  /**
-   * And we should not see texts that there not entries
-   */
-  expect(
-    queryByText("No entries. Click here to add one")
-  ).not.toBeInTheDocument();
-});
-
 it("renders ui to show empty entries", () => {
   /**
    * Given that there is experience with no entry in the system
    */
-  const { ui } = makeComp();
+  const { ui } = makeComp({
+    getExperienceGql: {
+      exp: {
+        entries: {
+          edges: []
+        }
+      }
+    } as any
+  });
 
   /**
    * When we use the component
@@ -96,79 +79,91 @@ it("renders entries", () => {
   /**
    * Given that experience and associated entries exist in the system
    */
-  const expEntries = [
+  const edges = [
     {
-      id: "1",
-      fields: [
-        {
-          defId: "1",
-          data: JSON.stringify({
-            [FieldType.SINGLE_LINE_TEXT]: "cat man 1"
-          })
-        }
-      ]
+      node: {
+        id: "1",
+        fields: [
+          {
+            defId: "1",
+            data: JSON.stringify({
+              [FieldType.SINGLE_LINE_TEXT]: "cat man 1"
+            })
+          }
+        ]
+      }
     },
 
     {
-      id: "2",
-      fields: [
-        {
-          defId: "2",
-          data: JSON.stringify({
-            [FieldType.MULTI_LINE_TEXT]: "cat man 2"
-          })
-        }
-      ]
+      node: {
+        id: "2",
+        fields: [
+          {
+            defId: "2",
+            data: JSON.stringify({
+              [FieldType.MULTI_LINE_TEXT]: "cat man 2"
+            })
+          }
+        ]
+      }
     },
 
     {
-      id: "3",
-      fields: [
-        {
-          defId: "3",
-          data: JSON.stringify({
-            [FieldType.DATE]: "2019-05-01"
-          })
-        }
-      ]
+      node: {
+        id: "3",
+        fields: [
+          {
+            defId: "3",
+            data: JSON.stringify({
+              [FieldType.DATE]: "2019-05-01"
+            })
+          }
+        ]
+      }
     },
 
     {
-      id: "4",
-      fields: [
-        {
-          defId: "4",
-          data: JSON.stringify({
-            [FieldType.DATETIME]: "2019-05-01"
-          })
-        }
-      ]
+      node: {
+        id: "4",
+        fields: [
+          {
+            defId: "4",
+            data: JSON.stringify({
+              [FieldType.DATETIME]: "2019-05-01"
+            })
+          }
+        ]
+      }
     },
 
     {
-      id: "5",
-      fields: [
-        {
-          defId: "5",
-          data: JSON.stringify({
-            [FieldType.DECIMAL]: "500.689"
-          })
-        }
-      ]
+      node: {
+        id: "5",
+        fields: [
+          {
+            defId: "5",
+            data: JSON.stringify({
+              [FieldType.DECIMAL]: "500.689"
+            })
+          }
+        ]
+      }
     },
 
     {
-      id: "6",
-      fields: [
-        {
-          defId: "6",
-          data: JSON.stringify({
-            [FieldType.INTEGER]: "567012"
-          })
-        }
-      ]
+      node: {
+        id: "6",
+        fields: [
+          {
+            defId: "6",
+            data: JSON.stringify({
+              [FieldType.INTEGER]: "567012"
+            })
+          }
+        ]
+      }
     }
-  ] as GetExpAllEntries_expEntries[];
+  ] as GetAnExp_exp_entries_edges[];
 
   const fieldDefs = [
     {
@@ -209,13 +204,11 @@ it("renders entries", () => {
   ] as GetAnExp_exp_fieldDefs[];
 
   const { ui } = makeComp({
-    experienceEntries: {
-      expEntries
-    } as GetExpEntriesGqlValue,
-
     getExperienceGql: {
       exp: {
-        fieldDefs
+        fieldDefs,
+
+        entries: { edges }
       }
     } as GetExperienceGqlValues
   });
@@ -273,13 +266,7 @@ function makeComp(props: Partial<Props> = {}) {
   const { Ui, mockNavigate } = renderWithRouter(ExperienceP, {});
 
   return {
-    ui: (
-      <Ui
-        getExperienceGql={{ exp: {} } as any}
-        experienceEntries={{ expEntries: [] } as any}
-        {...props}
-      />
-    ),
+    ui: <Ui getExperienceGql={{ exp: {} } as any} {...props} />,
 
     mockNavigate
   };

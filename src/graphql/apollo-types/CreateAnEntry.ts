@@ -15,14 +15,46 @@ export interface CreateAnEntry_entry_fields {
 }
 
 export interface CreateAnEntry_entry {
-  __typename: "Entry";
+  __typename: "EntryRelay";
+  /**
+   * Internal ID of the entry. Field `id` is the global opaque ID
+   */
+  _id: string;
+  /**
+   * The ID of an object
+   */
   id: string;
+  /**
+   * The ID of experience to which this entry belongs
+   */
   expId: string;
+  /**
+   * The data fields belonging to this entry
+   */
   fields: (CreateAnEntry_entry_fields | null)[];
   insertedAt: any;
 }
 
 export interface CreateAnEntry {
+  /**
+   * Create an experience
+   * 
+   *   The error returned will be of the form:
+   *   {
+   *     expId?: "does not exist",
+   *     fields?: [
+   *       {
+   *         meta: {
+   *           defId: defId,
+   *           index: fieldIndex
+   *         },
+   *         errors: {
+   *           defId: "does not exist" | "has already been taken"
+   *         }
+   *       }
+   *     ]
+   *   }
+   */
   entry: CreateAnEntry_entry | null;
 }
 

@@ -2,7 +2,7 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
-import { GetExp, FieldType } from "./globalTypes";
+import { GetExp, PaginationInput, FieldType } from "./globalTypes";
 
 // ====================================================
 // GraphQL query operation: GetAnExp
@@ -21,6 +21,63 @@ export interface GetAnExp_exp_fieldDefs {
   type: FieldType;
 }
 
+export interface GetAnExp_exp_entries_pageInfo {
+  __typename: "PageInfo";
+  /**
+   * When paginating forwards, are there more items?
+   */
+  hasNextPage: boolean;
+  /**
+   * When paginating backwards, are there more items?
+   */
+  hasPreviousPage: boolean;
+}
+
+export interface GetAnExp_exp_entries_edges_node_fields {
+  __typename: "Field";
+  defId: string;
+  data: any;
+}
+
+export interface GetAnExp_exp_entries_edges_node {
+  __typename: "EntryRelay";
+  /**
+   * Internal ID of the entry. Field `id` is the global opaque ID
+   */
+  _id: string;
+  /**
+   * The ID of an object
+   */
+  id: string;
+  /**
+   * The ID of experience to which this entry belongs
+   */
+  expId: string;
+  /**
+   * The data fields belonging to this entry
+   */
+  fields: (GetAnExp_exp_entries_edges_node_fields | null)[];
+  insertedAt: any;
+}
+
+export interface GetAnExp_exp_entries_edges {
+  __typename: "EntryRelayEdge";
+  /**
+   * A cursor for use in pagination
+   */
+  cursor: string;
+  /**
+   * The item at the end of the edge
+   */
+  node: GetAnExp_exp_entries_edges_node | null;
+}
+
+export interface GetAnExp_exp_entries {
+  __typename: "EntryRelayConnection";
+  pageInfo: GetAnExp_exp_entries_pageInfo;
+  edges: (GetAnExp_exp_entries_edges | null)[] | null;
+}
+
 export interface GetAnExp_exp {
   __typename: "Experience";
   id: string;
@@ -30,6 +87,7 @@ export interface GetAnExp_exp {
    * The field definitions used for the experience entries
    */
   fieldDefs: (GetAnExp_exp_fieldDefs | null)[];
+  entries: GetAnExp_exp_entries;
 }
 
 export interface GetAnExp {
@@ -41,4 +99,5 @@ export interface GetAnExp {
 
 export interface GetAnExpVariables {
   exp: GetExp;
+  pagination: PaginationInput;
 }

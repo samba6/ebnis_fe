@@ -10,14 +10,6 @@ import {
   GetAnExp,
   GetAnExpVariables
 } from "../../graphql/apollo-types/GetAnExp";
-import {
-  GET_EXP_ENTRIES_QUERY,
-  GetExpEntriesGqlProps
-} from "../../graphql/exp-entries.query";
-import {
-  GetExpAllEntries,
-  GetExpAllEntriesVariables
-} from "../../graphql/apollo-types/GetExpAllEntries";
 
 const getExpGql = graphql<
   OwnProps,
@@ -32,35 +24,14 @@ const getExpGql = graphql<
       variables: {
         exp: {
           id: experienceId as string
+        },
+
+        pagination: {
+          first: 20
         }
       }
     };
   }
 });
 
-const getExpEntriesGql = graphql<
-  OwnProps,
-  GetExpAllEntries,
-  GetExpAllEntriesVariables,
-  GetExpEntriesGqlProps | undefined
->(GET_EXP_ENTRIES_QUERY, {
-  props: ({ data }) =>
-    data && {
-      experienceEntries: data
-    },
-
-  options: ({ experienceId }) => {
-    return {
-      variables: {
-        entry: {
-          expId: experienceId as string
-        }
-      }
-    };
-  }
-});
-
-export const Experience = compose(
-  getExpEntriesGql,
-  getExpGql
-)(Comp);
+export const Experience = compose(getExpGql)(Comp);

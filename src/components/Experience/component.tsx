@@ -6,13 +6,13 @@ import "./styles.scss";
 import { Props, displayFieldType } from "./utils";
 import { makeNewEntryRoute } from "../../routes";
 import Loading from "../Loading";
-import {
-  GetExpAllEntries_expEntries,
-  GetExpAllEntries_expEntries_fields
-} from "../../graphql/apollo-types/GetExpAllEntries";
+import { GetExpAllEntries_expEntries_fields } from "../../graphql/apollo-types/GetExpAllEntries";
 import {
   GetAnExp_exp_fieldDefs,
-  GetAnExp_exp
+  GetAnExp_exp,
+  GetAnExp_exp_entries,
+  GetAnExp_exp_entries_edges,
+  GetAnExp_exp_entries_edges_node
 } from "../../graphql/apollo-types/GetAnExp";
 import { SidebarHeader } from "../SidebarHeader";
 import { setDocumentTitle, makeSiteTitle } from "../../constants";
@@ -25,7 +25,7 @@ export function Experience(props: Props) {
       loading: loadingExperience,
       error: getExperienceError
     },
-    experienceEntries: { expEntries, loading: experienceEntriesLoading },
+
     navigate
   } = props;
   const title = exp ? exp.title : "Experience";
@@ -77,7 +77,10 @@ export function Experience(props: Props) {
   }
 
   function renderEntries() {
-    if ((expEntries as GetExpAllEntries_expEntries[]).length === 0) {
+    const entries = (exp as GetAnExp_exp).entries as GetAnExp_exp_entries;
+    const edges = entries.edges as GetAnExp_exp_entries_edges[];
+
+    if (edges.length === 0) {
       return (
         <Link
           className="no-entries"
@@ -91,21 +94,21 @@ export function Experience(props: Props) {
 
     return (
       <>
-        {(expEntries as GetExpAllEntries_expEntries[]).map(
-          (entry: GetExpAllEntries_expEntries) => {
-            return (
-              <div
-                key={entry.id}
-                className="entry-container"
-                data-testid="entry-container"
-              >
-                {(entry.fields as GetExpAllEntries_expEntries_fields[]).map(
-                  renderEntryField
-                )}
-              </div>
-            );
-          }
-        )}
+        {edges.map((edge: GetAnExp_exp_entries_edges) => {
+          const entry = edge.node as GetAnExp_exp_entries_edges_node;
+
+          return (
+            <div
+              key={entry.id}
+              className="entry-container"
+              data-testid="entry-container"
+            >
+              {(entry.fields as GetExpAllEntries_expEntries_fields[]).map(
+                renderEntryField
+              )}
+            </div>
+          );
+        })}
       </>
     );
   }
@@ -115,7 +118,7 @@ export function Experience(props: Props) {
       <SidebarHeader title={title} sidebar={true} />
 
       <div className="main">
-        {loadingExperience || experienceEntriesLoading ? (
+        {loadingExperience ? (
           <Loading />
         ) : (
           <>

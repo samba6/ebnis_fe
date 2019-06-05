@@ -131,7 +131,7 @@ it("renders offline experiences when server unavailable", async () => {
   /**
    * Given server is unavailable
    */
-  const { Ui, client } = makeComp({
+  const { Ui, mockQuery } = makeComp({
     getExpDefsResult: {
       loading: true,
       networkStatus: 1
@@ -139,8 +139,6 @@ it("renders offline experiences when server unavailable", async () => {
 
     isConnected: false
   });
-
-  const mockQuery = client.query as jest.Mock;
 
   /**
    * When we use the component
@@ -151,16 +149,49 @@ it("renders offline experiences when server unavailable", async () => {
    * Then we should load experiences from user cache
    */
   await wait(() => {
-    expect(mockQuery).toHaveBeenCalled();
+    expect((mockQuery.mock.calls[0][0] as any).query).not.toBeUndefined();
   });
+});
+
+it("loads entries in the background when experiences are loaded", () => {
+  /**
+   * Given there are experiences in the system
+   */
+  const exps = [
+    {
+      id: "1",
+      title: "1"
+    },
+
+    {
+      id: "2",
+      title: "2"
+    }
+  ] as GetExps_exps[];
+
+  const { Ui, mockQuery } = makeComp({ getExpDefsResult: { exps } as any });
+
+  /**
+   * When we use the component
+   */
+  render(<Ui />);
+
+  /**
+   * Then we should load entries for the experiences in the background
+   */
+
+  expect(
+    (mockQuery.mock.calls[0][0] as any).variables.input.experiencesIds
+  ).toEqual(["1", "2"]);
 });
 
 function makeComp({
   getExpDefsResult = {} as any,
   ...props
 }: Partial<Props> = {}) {
+  const mockQuery = jest.fn();
   const client = {
-    query: jest.fn()
+    query: mockQuery
   } as any;
 
   const { Ui, ...rest } = renderWithRouter(
@@ -173,5 +204,5 @@ function makeComp({
     }
   );
 
-  return { Ui, client, ...rest };
+  return { Ui, mockQuery, ...rest };
 }

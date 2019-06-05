@@ -31,6 +31,10 @@ const getExpGql = graphql<
       variables: {
         exp: {
           id: experienceId as string
+        },
+
+        pagination: {
+          first: 20
         }
       }
     };
