@@ -17,7 +17,8 @@ module.exports = {
     "!src/components/**/resolvers.ts",
     "!src/**/*.d.ts",
     "!src/context.ts",
-    "!src/socket.ts"
+    "!src/socket.ts",
+    "!src/components/NewEntry/update.ts"
   ],
   setupFiles: ["<rootDir>/loadershim.js", "react-app-polyfill/jsdom"],
   setupFilesAfterEnv: ["<rootDir>/config/jest/setupTests.js"],
