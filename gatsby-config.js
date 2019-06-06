@@ -58,9 +58,18 @@ module.exports = {
     },
 
     {
-      resolve: "gatsby-plugin-offline",
+      resolve: "offline-plugin",
       options: {
-        cacheId: `ebnis-offline`
+        cacheId: `ebnis-offline`,
+
+        otherOptions: {
+          preCachePages: [
+            "app/index.html",
+            "login/index.html",
+            "signup/index.html",
+            "index.html"
+          ]
+        }
       }
     },
 
