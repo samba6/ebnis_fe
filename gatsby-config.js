@@ -68,7 +68,9 @@ module.exports = {
             "login/index.html",
             "signup/index.html",
             "index.html"
-          ]
+          ],
+
+          preCacheStaticDir: true
         }
       }
     },

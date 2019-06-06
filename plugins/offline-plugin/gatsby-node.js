@@ -64,11 +64,31 @@ exports.onPostBuild = function (args, _ref2) {
     return path.slice(pathPrefix.length);
   };
 
+  var preCacheStaticDir = [];
+
+  if (otherOptions.preCacheStaticDir) {
+    var staticPath = process.cwd() + "/" + rootDir + "/static";
+    preCacheStaticDir = fs.readdirSync(staticPath).reduce(function (acc, fileOrDir) {
+      if (fileOrDir === "d") {
+        return acc;
+      }
+
+      var fullPath = path.resolve(staticPath, fileOrDir);
+
+      if (fs.lstatSync(fullPath).isDirectory()) {
+        return acc;
+      }
+
+      acc.push("static/" + fileOrDir);
+      return acc;
+    }, []);
+  }
+
   var preCachePages = _.flatten((otherOptions.preCachePages || []).map(function (page) {
     return getResourcesFromHTML(process.cwd() + "/" + rootDir + "/" + page);
   }));
 
-  var criticalFilePaths = _.uniq(_.concat(getResourcesFromHTML(process.cwd() + "/" + rootDir + "/404.html"), getResourcesFromHTML(process.cwd() + "/" + rootDir + "/offline-plugin-app-shell-fallback/index.html"), preCachePages)).map(omitPrefix);
+  var criticalFilePaths = _.uniq(_.concat(getResourcesFromHTML(process.cwd() + "/" + rootDir + "/404.html"), getResourcesFromHTML(process.cwd() + "/" + rootDir + "/offline-plugin-app-shell-fallback/index.html"), preCachePages, preCacheStaticDir)).map(omitPrefix);
 
   var globPatterns = files.concat(["offline-plugin-app-shell-fallback/index.html"].concat(criticalFilePaths));
   var manifests = ["manifest.json", "manifest.webmanifest"];
