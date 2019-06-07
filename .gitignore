@@ -24,4 +24,4 @@ yarn-error.log*
 /.netlify
 .env-cmdrc
 .cache/
-public/
+public*/

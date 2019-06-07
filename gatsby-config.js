@@ -1,4 +1,6 @@
 const path = require("path");
+const cheerio = require("cheerio");
+const fs = require("fs");
 
 module.exports = {
   siteMetadata: {
@@ -58,26 +60,23 @@ module.exports = {
     },
 
     {
-      resolve: "offline-plugin",
-      options: {
-        cacheId: `ebnis-offline`,
-
-        otherOptions: {
-          preCachePages: [
-            "app/index.html",
-            "login/index.html",
-            "signup/index.html",
-            "index.html"
-          ],
-
-          preCacheStaticDir: true
-        }
-      }
+      resolve: `gatsby-plugin-create-client-paths`,
+      options: { prefixes: [`/app/*`] }
     },
 
     {
-      resolve: `gatsby-plugin-create-client-paths`,
-      options: { prefixes: [`/app/*`] }
+      resolve: "offline-plugin",
+      options: {
+        cacheId: `ebnis-offline`,
+        ignoreURLParametersMatching: [/v/],
+        cleanupOutdatedCaches: true,
+        clientsClaim: false,
+        skipWaiting: false,
+        otherOptions: {
+          globPatternsFn,
+          directoriesToCache: ["icons"]
+        }
+      }
     },
 
     "gatsby-plugin-sass",
@@ -87,3 +86,20 @@ module.exports = {
     "gatsby-plugin-netlify"
   ]
 };
+
+function globPatternsFn() {
+  const indexHTML = fs.readFileSync(
+    path.resolve(".", "public/index.html"),
+    "utf-8"
+  );
+
+  const chunks = [];
+
+  const $ = cheerio.load(indexHTML);
+  $('link[href^="/icons/icon-"]').each((_, elem) => {
+    const $elem = $(elem);
+    chunks.push($elem.attr("href"));
+  });
+
+  return chunks;
+}

@@ -5,9 +5,9 @@
   "scripts": {
     "start": "yarn remove-folders && env-cmd -e dev gatsby develop --port 3022",
     "start:e2e": "yarn remove-folders && env-cmd -e local-staging gatsby develop --port 3022",
-    "build": "yarn copy-plugins && gatsby build",
+    "build": "gatsby build",
     "build-prod": "yarn remove-folders && env-cmd -e prod yarn build",
-    "build-local-staging": "yarn remove-folders && env-cmd -e local-staging yarn build",
+    "build-local-staging": "yarn remove-folders && yarn env-cmd -e local-staging yarn build",
     "test:watch": "env-cmd -e test yarn jest --watch --runInBand",
     "test:coverage": "rimraf coverage && env-cmd -e test yarn jest --coverage --runInBand",
     "remove-folders": "rimraf public && rimraf .cache",
@@ -20,8 +20,7 @@
     "cy-open": "env-cmd -e local-staging cypress open",
     "cy-run-task": "env-cmd -e local-staging cypress run",
     "cy-run": "start-server-and-test build-serve-local-staging :3022 cy-run-task",
-    "type-check": "yarn tsc --noEmit --project .",
-    "copy-plugins": "cpx -v \"../../gatsby-plugin-offline/plugin/**\" plugins/offline-plugin"
+    "type-check": "yarn tsc --noEmit --project ."
   },
   "dependencies": {
     "@absinthe/socket": "0.2.1",
@@ -36,7 +35,7 @@
     "graphql-tag": "2.10.1",
     "immer": "3.1.2",
     "isomorphic-fetch": "2.2.1",
-    "lodash-es": "4.17.11",
+    "lodash": "4.17.11",
     "phoenix": "1.4.3",
     "react": "16.9.0-alpha.0",
     "react-apollo": "2.5.4",
@@ -66,7 +65,7 @@
     "babel-loader": "8.0.6",
     "babel-preset-gatsby": "0.1.11",
     "babel-preset-react-app": "9.0.0",
-    "cpx": "1.5.0",
+    "cheerio": "1.0.0-rc.3",
     "cypress": "3.3.1",
     "cypress-file-upload": "3.1.1",
     "cypress-testing-library": "3.0.1",
@@ -79,7 +78,6 @@
     "gatsby-plugin-less": "2.0.12",
     "gatsby-plugin-manifest": "2.1.1",
     "gatsby-plugin-netlify": "2.0.16",
-    "gatsby-plugin-offline": "2.1.0",
     "gatsby-plugin-react-helmet": "3.0.12",
     "gatsby-plugin-sass": "2.0.11",
     "gatsby-plugin-sharp": "2.0.36",
@@ -103,7 +101,8 @@
     "tslint": "5.16.0",
     "tslint-config-prettier": "1.18.0",
     "tslint-react": "4.0.0",
-    "typescript": "3.4.5"
+    "typescript": "3.4.5",
+    "workbox-window": "4.3.1"
   },
   "eslintConfig": {
     "extends": "react-app"

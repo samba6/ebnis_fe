@@ -1,6 +1,7 @@
 import React from "react";
 import { ApolloProvider } from "react-apollo";
 import { HelmetProvider } from "react-helmet-async";
+import { Workbox } from "workbox-window";
 
 import "./src/styles/semantic-theme/semantic.less";
 import "./src/styles/globals.scss";
@@ -28,4 +29,22 @@ export const wrapRootElement = ({ element }) => {
       </EbnisAppProvider>
     </ApolloProvider>
   );
+};
+
+export const onServiceWorkerUpdateReady = () => {
+  const wb = new Workbox("/sw.js");
+  wb.register();
+
+  const answer = window.confirm(
+    `This application has been updated. ` +
+      `Reload to display the latest version?`
+  );
+
+  if (answer === true) {
+    wb.addEventListener("controlling", event => {
+      window.location.reload();
+    });
+
+    wb.messageSW({ type: "SKIP_WAITING" });
+  }
 };
