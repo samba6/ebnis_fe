@@ -4,7 +4,7 @@ import { EXPERIENCE_DEFINITION_URL } from "../../src/routes";
 import { EXPERIENCE_DEFINITION_TITLE } from "../../src/constants/experience-definition-title";
 import { getDescendantByText } from "../support/get-descendant-by-text";
 
-context("define experience page", () => {
+context("experience definition page", () => {
   beforeEach(() => {
     cy.checkoutSession();
     cy.registerUser(USER_REGISTRATION_OBJECT);
