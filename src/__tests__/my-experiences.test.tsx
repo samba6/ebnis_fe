@@ -204,6 +204,28 @@ it("loads entries in the background when experiences are loaded", () => {
   ).toEqual(["1", "2"]);
 });
 
+it("does not load entries in background when experiences are loaded but empty", () => {
+  /**
+   * Given there are experiences in the system
+   */
+  const exps = {
+    edges: []
+  } as any;
+
+  const { Ui, mockQuery } = makeComp({ getExpDefsResult: { exps } as any });
+
+  /**
+   * When we use the component
+   */
+  render(<Ui />);
+
+  /**
+   * Then we should load entries for the experiences in the background
+   */
+
+  expect(mockQuery).not.toHaveBeenCalled();
+});
+
 function makeComp({
   getExpDefsResult = {} as any,
   ...props

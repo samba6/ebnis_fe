@@ -64,13 +64,19 @@ export const MyExperiences = (props: Props) => {
 
   useEffect(() => {
     if (exps && !entriesLoadedRef.current) {
+      const experiencesIds = getIdsFromExperienceConnection(
+        exps as GetExps_exps
+      );
+
+      if (experiencesIds.length === 0) {
+        return;
+      }
+
       client.query<ListExperiencesEntries, ListExperiencesEntriesVariables>({
         query: LIST_EXPERIENCES_ENTRIES,
         variables: {
           input: {
-            experiencesIds: getIdsFromExperienceConnection(
-              exps as GetExps_exps
-            ),
+            experiencesIds,
             pagination: {
               first: 20
             }
