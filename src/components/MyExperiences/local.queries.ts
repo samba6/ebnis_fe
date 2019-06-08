@@ -3,7 +3,6 @@ import { graphql } from "react-apollo";
 
 import { EXPERIENCE_ALL_FIELDS_FRAGMENT } from "../../graphql/experience-all-fields.fragment";
 import { ExperienceAllFieldsFragment } from "../../graphql/apollo-types/ExperienceAllFieldsFragment";
-import expFrag from "../../graphql/exp.fragment";
 import { GetExps_exps } from "../../graphql/apollo-types/GetExps";
 import { EXPERIENCE_CONNECTION_FRAGMENT } from "../../graphql/experience-connection.fragment";
 
