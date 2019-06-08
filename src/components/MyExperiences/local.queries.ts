@@ -5,6 +5,7 @@ import { EXPERIENCE_ALL_FIELDS_FRAGMENT } from "../../graphql/experience-all-fie
 import { ExperienceAllFieldsFragment } from "../../graphql/apollo-types/ExperienceAllFieldsFragment";
 import expFrag from "../../graphql/exp.fragment";
 import { GetExps_exps } from "../../graphql/apollo-types/GetExps";
+import { EXPERIENCE_CONNECTION_FRAGMENT } from "../../graphql/experience-connection.fragment";
 
 export const UNSAVED_EXPERIENCES_QUERY = gql`
   query UnsavedExperiencesQuery {
@@ -35,13 +36,13 @@ export const unsavedExperiencesGql = graphql<
 //////////////////////////////////////////////////
 
 export const EXPERIENCES_OFFLINE_QUERY = gql`
-  query ExperiencesOfflineQuery {
-    experiencesOffline @client {
-      ...ExpFrag
+  query ExperiencesOfflineQuery($pagination: PaginationInput!) {
+    experiencesOffline(pagination: $pagination) @client {
+      ...ExperienceConnectionFragment
     }
   }
 
-  ${expFrag}
+  ${EXPERIENCE_CONNECTION_FRAGMENT}
 `;
 
 export interface ExperiencesOfflineQueryReturned {

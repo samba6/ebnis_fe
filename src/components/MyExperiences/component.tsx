@@ -15,7 +15,9 @@ import Loading from "../Loading";
 import {
   GetExps_exps,
   GetExps_exps_edges,
-  GetExps_exps_edges_node
+  GetExps_exps_edges_node,
+  GetExpsVariables,
+  GetExps
 } from "../../graphql/apollo-types/GetExps";
 import { SidebarHeader } from "../SidebarHeader";
 import { setDocumentTitle, makeSiteTitle } from "../../constants";
@@ -56,8 +58,13 @@ export const MyExperiences = (props: Props) => {
     // socket npm package managers. http behaves appropriately)
 
     if (!exps && networkStatus === 1 && loading && !isConnected) {
-      client.query({
-        query: EXPERIENCES_OFFLINE_QUERY
+      client.query<GetExps, GetExpsVariables>({
+        query: EXPERIENCES_OFFLINE_QUERY,
+        variables: {
+          pagination: {
+            first: 20
+          }
+        }
       });
     }
   }, [isConnected, loading, networkStatus, exps]);

@@ -1,5 +1,9 @@
 import { LocalResolverFn } from "../../state/resolvers";
-import { GetExps_exps, GetExps } from "../../graphql/apollo-types/GetExps";
+import {
+  GetExps_exps,
+  GetExps,
+  GetExpsVariables
+} from "../../graphql/apollo-types/GetExps";
 import { GET_EXP_DEFS_QUERY } from "../../graphql/exps.query";
 
 const EMPTY_EXPERIENCE_CONNECTION: GetExps_exps = {
@@ -12,14 +16,14 @@ const EMPTY_EXPERIENCE_CONNECTION: GetExps_exps = {
   }
 };
 
-const experiencesOfflineResolver: LocalResolverFn<{}, GetExps_exps> = (
-  root,
-  variables,
-  { cache }
-) => {
+const experiencesOfflineResolver: LocalResolverFn<
+  GetExpsVariables,
+  GetExps_exps
+> = (root, variables, { cache }) => {
   try {
-    const data = cache.readQuery<GetExps>({
-      query: GET_EXP_DEFS_QUERY
+    const data = cache.readQuery<GetExps, GetExpsVariables>({
+      query: GET_EXP_DEFS_QUERY,
+      variables
     });
 
     if (!data) {
