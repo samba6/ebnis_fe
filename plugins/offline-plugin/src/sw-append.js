@@ -44,7 +44,7 @@ let updatingWhitelist = null;
 
 function rawWhitelistPathnames(pathnames) {
   if (updatingWhitelist !== null) {
-    // Prevent the whitelist from being updated twice at the same time.
+    // Prevent the whitelist from being updated twice at the same time
     return updatingWhitelist.then(() => rawWhitelistPathnames(pathnames));
   }
 
