@@ -28,9 +28,7 @@ const experiencesOfflineResolver: LocalResolverFn<{}, GetExps_exps> = (
 
     return data.exps as GetExps_exps;
   } catch (error) {
-    if (
-      !(error.message as string).startsWith("Can't find field exps on object")
-    ) {
+    if (!(error.message as string).includes("Can't find field exps")) {
       throw error;
     }
 
