@@ -41,7 +41,7 @@ export const defineSocket = ({
   let dataAuthChannel: Channel;
   // let initialDataSynced = false
 
-  function ebnisConnect(token, payload?: ConnectionPayload) {
+  function ebnisConnect(token?: string | null, payload?: ConnectionPayload) {
     const params = makeParams(token);
     socket = new Socket(getBackendUrls(uri).websocketUrl, params) as AppSocket;
     socket.ebnisConnect = ebnisConnect;
@@ -213,7 +213,7 @@ export function getSocket({ token: connToken, ...params }: DefineParams = {}) {
 
     if (socket) {
       socket.disconnect();
-      socket = null;
+      socket = (null as unknown) as AppSocket;
     }
 
     return defineSocket(params);
