@@ -31,10 +31,9 @@ it("renders loading state and not main", () => {
 });
 
 it("does not render empty experiences", () => {
-  const { Ui } = makeComp({ getExpDefsResult: {} as any });
+  const { Ui } = makeComp({ getExpDefsResult: { exps: { edges: [] } } as any });
 
-  const props: Props = { exps: [] } as any;
-  const { getByText, queryByTestId } = render(<Ui {...props} />);
+  const { getByText, queryByTestId } = render(<Ui />);
 
   expect(queryByTestId("loading-spinner")).not.toBeInTheDocument();
   expect(queryByTestId("exps-container")).not.toBeInTheDocument();
