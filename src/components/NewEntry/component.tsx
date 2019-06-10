@@ -25,10 +25,11 @@ import { update } from "./update";
 import { fieldTypeUtils } from "./field-types-utils";
 import { SidebarHeader } from "../SidebarHeader";
 import { setDocumentTitle, makeSiteTitle } from "../../constants";
+import { GetExperienceGqlValues } from "../../graphql/get-exp.query";
 
 export function NewEntry(props: Props) {
   const {
-    getExperienceGql: { loading, exp },
+    getExperienceGql: { loading, exp } = {} as GetExperienceGqlValues,
     navigate,
     createEntry
   } = props;

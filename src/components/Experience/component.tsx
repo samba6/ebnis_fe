@@ -10,7 +10,6 @@ import {
   defaultState,
   ActionType
 } from "./utils";
-import { makeNewEntryRoute } from "../../routes";
 import Loading from "../Loading";
 import {
   GetAnExp_exp_fieldDefs,
@@ -30,6 +29,7 @@ import {
   UnsavedExperienceReturnedValue,
   UnsavedExperienceVariables
 } from "./resolvers";
+import { makeNewEntryRoute } from "../../constants/new-entry-route";
 export function Experience(props: Props) {
   const {
     getExperienceGql: {

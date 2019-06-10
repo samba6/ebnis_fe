@@ -4,16 +4,13 @@ import { Router, RouteComponentProps } from "@reach/router";
 import { AuthRequired } from "../../components/AuthRequired";
 import { ExperienceDefinition } from "../../components/ExperienceDefinition";
 import { NewEntry } from "../../components/NewEntry";
-import {
-  EXPERIENCE_DEFINITION_URL,
-  NEW_ENTRY_URL,
-  EXPERIENCES_URL
-} from "../../routes";
+import { EXPERIENCE_DEFINITION_URL, EXPERIENCES_URL } from "../../routes";
 import { NotFound } from "../../components/NotFound";
 import { MyExperiences } from "../../components/MyExperiences";
 import { Experience } from "../../components/Experience";
 import { Layout } from "../../components/Layout";
 import { EXPERIENCE_URL } from "../../constants/experience-route";
+import { NEW_ENTRY_URL } from "../../constants/new-entry-route";
 
 export function App(props: RouteComponentProps) {
   return (
