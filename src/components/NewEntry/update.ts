@@ -13,15 +13,15 @@ import { GET_EXP_QUERY } from "../../graphql/get-exp.query";
 
 // TODO: will be tested in e2e
 // istanbul ignore next: trust apollo to do the right thing -
-export const update: (
+export const updateExperienceWithNewEntry: (
   expId: string
 ) => MutationUpdaterFn<CreateAnEntry> = function updateFn(expId: string) {
-  return async function updateFnInner(client, { data: newEntry }) {
-    if (!newEntry) {
+  return async function updateFnInner(dataProxy, { data: newEntryEntry }) {
+    if (!newEntryEntry) {
       return;
     }
 
-    const { entry } = newEntry;
+    const { entry } = newEntryEntry;
 
     if (!entry) {
       return;
@@ -34,7 +34,7 @@ export const update: (
       }
     };
 
-    const data = client.readQuery<GetAnExp, GetAnExpVariables>({
+    const data = dataProxy.readQuery<GetAnExp, GetAnExpVariables>({
       query: GET_EXP_QUERY,
       variables
     });
@@ -58,7 +58,7 @@ export const update: (
       draft.entries = entries;
     });
 
-    await client.writeQuery({
+    await dataProxy.writeQuery({
       query: GET_EXP_QUERY,
       variables,
       data: {

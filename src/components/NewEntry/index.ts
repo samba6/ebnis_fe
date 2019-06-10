@@ -1,11 +1,7 @@
-import { graphql, compose } from "react-apollo";
+import { graphql, compose, withApollo } from "react-apollo";
 
 import { NewEntry as Comp } from "./component";
 import { OwnProps } from "./utils";
-import {
-  GET_EXP_QUERY,
-  GetExperienceGqlProps
-} from "../../graphql/get-exp.query";
 import {
   CreateAnEntry,
   CreateAnEntryVariables
@@ -14,32 +10,9 @@ import {
   CREATE_ENTRY_MUTATION,
   CreateEntryGqlProps
 } from "../../graphql/create-entry.mutation";
-import {
-  GetAnExp,
-  GetAnExpVariables
-} from "../../graphql/apollo-types/GetAnExp";
-
-const getExpGql = graphql<
-  OwnProps,
-  GetAnExp,
-  GetAnExpVariables,
-  GetExperienceGqlProps | undefined
->(GET_EXP_QUERY, {
-  props: ({ data }) => data && { getExperienceGql: data },
-  options: ({ experienceId }) => {
-    return {
-      variables: {
-        exp: {
-          id: experienceId as string
-        },
-
-        pagination: {
-          first: 20
-        }
-      }
-    };
-  }
-});
+import { getExperienceGql } from "../Experience/get-experience-gql";
+import { getUnsavedExperienceGql } from "../Experience/get-unsaved-experience-gql";
+import { createUnsavedEntryGql, resolvers } from "./resolvers";
 
 const createEntryGql = graphql<
   {},
@@ -53,7 +26,13 @@ const createEntryGql = graphql<
     }
 });
 
+// tslint:disable-next-line: prefer-const
+let resolverAdded = false;
+
 export const NewEntry = compose(
-  getExpGql,
-  createEntryGql
+  withApollo,
+  getExperienceGql<OwnProps>(resolvers, resolverAdded),
+  getUnsavedExperienceGql<OwnProps>(),
+  createEntryGql,
+  createUnsavedEntryGql
 )(Comp);

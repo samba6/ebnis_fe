@@ -9,13 +9,20 @@ import {
   GetAnExp_exp_fieldDefs
 } from "../../graphql/apollo-types/GetAnExp";
 import { fieldTypeUtils } from "./field-types-utils";
+import { WithApolloClient } from "react-apollo";
+import { UnsavedExperienceGqlProps } from "../Experience/resolvers";
+import { CreateUnsavedEntryMutationProps } from "./resolvers";
 
-export interface OwnProps extends RouteComponentProps<NewEntryRouteParams> {}
+export interface OwnProps
+  extends WithApolloClient<{}>,
+    RouteComponentProps<NewEntryRouteParams> {}
 
 export interface Props
   extends OwnProps,
     GetExperienceGqlProps,
-    CreateEntryGqlProps {}
+    CreateEntryGqlProps,
+    UnsavedExperienceGqlProps,
+    CreateUnsavedEntryMutationProps {}
 
 export type FormObjVal = Date | string | number;
 
@@ -48,7 +55,7 @@ function initialFormValuesFromExperience(exp: GetAnExp_exp) {
   );
 }
 
-export function pageTitle(exp: GetAnExp_exp | null | undefined) {
+export function makePageTitle(exp: GetAnExp_exp | null | undefined) {
   return "[New Entry] " + ((exp && exp.title) || "entry");
 }
 

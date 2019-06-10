@@ -1,19 +1,12 @@
-import React, { useEffect, Fragment, useReducer, useRef } from "react";
+import React, { useEffect, Fragment } from "react";
 import { Button } from "semantic-ui-react";
 import { Link } from "gatsby";
 
 import "./styles.scss";
-import {
-  Props,
-  displayFieldType,
-  reducer,
-  defaultState,
-  ActionType
-} from "./utils";
+import { Props, displayFieldType } from "./utils";
 import Loading from "../Loading";
 import {
   GetAnExp_exp_fieldDefs,
-  GetAnExp_exp,
   GetAnExp_exp_entries,
   GetAnExp_exp_entries_edges,
   GetAnExp_exp_entries_edges_node,
@@ -23,40 +16,27 @@ import { SidebarHeader } from "../SidebarHeader";
 import { setDocumentTitle, makeSiteTitle } from "../../constants";
 import { NavigateFn } from "@reach/router";
 import { GetExperienceGqlValues } from "../../graphql/get-exp.query";
-import {
-  UnsavedExperienceDataValue,
-  GET_UNSAVED_EXPERIENCE_QUERY,
-  UnsavedExperienceReturnedValue,
-  UnsavedExperienceVariables
-} from "./resolvers";
+import { UnsavedExperienceDataValue } from "./resolvers";
 import { makeNewEntryRoute } from "../../constants/new-entry-route";
+import { useManualUnsavedExperience } from "./use-manual-unsaved-experience";
 export function Experience(props: Props) {
   const {
+    navigate,
+
     getExperienceGql: {
-      exp,
       loading: loadingExperience,
       error: getExperienceError
     } = {} as GetExperienceGqlValues,
 
-    navigate,
-    client,
-    experienceId,
     unsavedExperienceGql: {
-      unsavedExperience,
       loading: loadingUnsavedExperience
     } = {} as UnsavedExperienceDataValue
   } = props;
 
-  const [state, dispatch] = useReducer(reducer, defaultState);
-
   const {
-    unsavedExperienceFromState,
+    experienceToRender,
     loadingUnsavedExperienceForState
-  } = state;
-
-  const experienceToRender = (exp ||
-    unsavedExperience ||
-    unsavedExperienceFromState) as GetAnExp_exp;
+  } = useManualUnsavedExperience(props);
 
   const title = getTitle(experienceToRender);
 
@@ -79,66 +59,10 @@ export function Experience(props: Props) {
     return null;
   }
 
-  const loadingUnsavedExperienceTimeoutRef = useRef<number | null>(null);
-
-  /**
-   * When server is offline and
-   * user visits this page directly from browser address bar rather
-   * than by navigating from another link, it is possible that the cache
-   * will not have been ready so that the `unsavedExperience` query will
-   * return undefined even when the unsaved experience is in the cache. So we
-   * wait for some time and manually fetch the unsaved experience.
-   */
-  useEffect(() => {
-    const { current: timeout } = loadingUnsavedExperienceTimeoutRef;
-
-    if (
-      loadingUnsavedExperience === false &&
-      !loadingUnsavedExperienceForState &&
-      !unsavedExperience &&
-      !unsavedExperienceFromState
-    ) {
-      dispatch({
-        type: ActionType.loadingUnsavedExperience,
-        payload: true
-      });
-
-      loadingUnsavedExperienceTimeoutRef.current = (setTimeout(async () => {
-        const result = await client.query<
-          UnsavedExperienceReturnedValue,
-          UnsavedExperienceVariables
-        >({
-          query: GET_UNSAVED_EXPERIENCE_QUERY,
-          variables: {
-            id: experienceId as string
-          }
-        });
-
-        dispatch({
-          type: ActionType.unsavedExperienceLoaded,
-          payload: result && result.data && result.data.unsavedExperience
-        });
-      }, 200) as unknown) as number;
-
-      return;
-    }
-
-    if (timeout !== null && (unsavedExperienceFromState || unsavedExperience)) {
-      clearTimeout(timeout);
-      loadingUnsavedExperienceTimeoutRef.current = null;
-    }
-  }, [
-    loadingUnsavedExperience,
-    unsavedExperience,
-    loadingUnsavedExperienceForState,
-    unsavedExperienceFromState
-  ]);
-
   function renderEntryField(field: GetAnExp_exp_entries_edges_node_fields) {
     const { defId, data } = field;
 
-    const fieldDefs = (exp as GetAnExp_exp)
-      .fieldDefs as GetAnExp_exp_fieldDefs[];
+    const fieldDefs = experienceToRender.fieldDefs as GetAnExp_exp_fieldDefs[];
 
     const fieldDef = fieldDefs.find(
       (aFieldDef: GetAnExp_exp_fieldDefs) => aFieldDef.id === defId

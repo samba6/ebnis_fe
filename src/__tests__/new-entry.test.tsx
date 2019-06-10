@@ -29,8 +29,13 @@ jest.mock("../components/NewEntry/update");
 jest.mock("../components/SidebarHeader", () => ({
   SidebarHeader: jest.fn(() => null)
 }));
+jest.mock("../state/get-conn-status");
 
-import { update as mockUpdate } from "../components/NewEntry/update";
+import { updateExperienceWithNewEntry } from "../components/NewEntry/update";
+import { getConnStatus } from "../state/get-conn-status";
+
+const mockGetConnStatus = getConnStatus as jest.Mock;
+const mockUpdate = updateExperienceWithNewEntry as jest.Mock;
 
 type P = ComponentType<Partial<Props>>;
 const NewEntryP = NewEntry as P;
@@ -53,24 +58,7 @@ it("renders loading indicator if we have not returned from server", () => {
   expect(getByTestId("loading-spinner")).toBeInTheDocument();
 });
 
-it("renders loading indicator if we get no experience from server", () => {
-  /**
-   * Given that we have received null experience from server
-   */
-  const { ui } = makeComp({ getExperienceGql: { exp: null } as any });
-
-  /**
-   * While we are on new entry page
-   */
-  const { getByTestId } = render(ui);
-
-  /**
-   * Then we should see loading indicator
-   */
-  expect(getByTestId("loading-spinner")).toBeInTheDocument();
-});
-
-it("creates new experience entry", async () => {
+it("creates new experience entry when online", async () => {
   // an hour earlier
   const now = addHours(new Date(), -1);
 
@@ -358,14 +346,93 @@ it("sets values of date and datetime fields", async () => {
   });
 });
 
-function makeComp(props: Partial<Props> = { getExperienceGql: {} as any }) {
+it("creates new experience entry when offline", async () => {
+  /**
+   * Given we have received experiences from server
+   */
+  const exp = {
+    id: "1000",
+
+    title,
+
+    fieldDefs: [
+      {
+        id: "f1",
+        name: "f1",
+        type: FieldType.SINGLE_LINE_TEXT,
+        __typename: "FieldDef"
+      }
+    ],
+
+    entries: {}
+  };
+
+  const { ui, mockCreateUnsavedEntry, mockCreateEntry } = makeComp(
+    {
+      getExperienceGql: { exp } as any
+    },
+    false
+  );
+
+  /**
+   * While we are on new entry page
+   */
+  const { queryByTestId, getByLabelText, getByText } = render(ui);
+
+  /**
+   * Then we should not see loading indicator
+   */
+  expect(queryByTestId("loading-spinner")).not.toBeInTheDocument();
+
+  /**
+   * When we complete and submit the form
+   */
+  const $singleText = getByLabelText(
+    "f1 [SINGLE_LINE_TEXT]"
+  ) as HTMLInputElement;
+
+  fillField($singleText, "s");
+
+  fireEvent.click(getByText(/submit/i));
+
+  /**
+   * Then the correct values should be saved locally
+   */
+  await wait(() => {
+    const {
+      variables: { experience, fields }
+    } = mockCreateUnsavedEntry.mock.calls[0][0] as any;
+
+    expect(experience.id).toBe("1000");
+
+    const [f1] = fields;
+
+    expect(f1.defId).toBe("f1");
+    expect(JSON.parse(f1.data).single_line_text).toBe("s");
+  });
+
+  /**
+   * No values should be uploaded to the server
+   */
+  expect(mockCreateEntry).not.toBeCalled();
+});
+
+function makeComp(
+  props: Partial<Props> = { getExperienceGql: {} as any },
+  connectionStatus: boolean = true
+) {
+  mockGetConnStatus.mockReset();
+  mockGetConnStatus.mockResolvedValue(connectionStatus);
+  mockUpdate.mockReset();
   const mockCreateEntry = jest.fn();
+  const mockCreateUnsavedEntry = jest.fn();
 
   const { Ui, ...rest } = renderWithRouter(
     NewEntryP,
     {},
     {
       createEntry: mockCreateEntry,
+      createUnsavedEntry: mockCreateUnsavedEntry,
       ...props
     }
   );
@@ -373,6 +440,7 @@ function makeComp(props: Partial<Props> = { getExperienceGql: {} as any }) {
   return {
     ui: <Ui />,
     mockCreateEntry,
+    mockCreateUnsavedEntry,
     ...rest
   };
 }

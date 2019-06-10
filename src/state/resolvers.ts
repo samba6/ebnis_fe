@@ -39,7 +39,8 @@ export function initState() {
       staleToken: getToken(),
       user: null,
       loggedOutUser: null,
-      unsavedExperiences: []
+      unsavedExperiences: [],
+      unsavedEntries: []
     }
   };
 }
