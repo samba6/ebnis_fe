@@ -24,12 +24,8 @@ import { setDocumentTitle, makeSiteTitle } from "../../constants";
 import { MY_EXPERIENCES_TITLE } from "../../constants/my-experiences-title";
 import { Link } from "gatsby";
 import { SERVER_OFFLINE_EXPERIENCES_QUERY } from "./resolvers";
-import { LIST_EXPERIENCES_ENTRIES } from "../../graphql/list-experiences-entries";
-import {
-  ListExperiencesEntries,
-  ListExperiencesEntriesVariables
-} from "../../graphql/apollo-types/ListExperiencesEntries";
 import { UnsavedExperience } from "../ExperienceDefinition/resolver-utils";
+import { preloadEntries } from "./preload-entries";
 
 export const MyExperiences = (props: Props) => {
   const { getExpDefsResult, isConnected, unsavedExperiences, client } = props;
@@ -66,7 +62,7 @@ export const MyExperiences = (props: Props) => {
   }, [isConnected, loading, networkStatus, exps]);
 
   useEffect(() => {
-    if (exps && !entriesLoadedRef.current) {
+    if (exps && entriesLoadedRef.current === false) {
       const experiencesIds = getIdsFromExperienceConnection(
         exps as GetExps_exps
       );
@@ -75,17 +71,7 @@ export const MyExperiences = (props: Props) => {
         return;
       }
 
-      client.query<ListExperiencesEntries, ListExperiencesEntriesVariables>({
-        query: LIST_EXPERIENCES_ENTRIES,
-        variables: {
-          input: {
-            experiencesIds,
-            pagination: {
-              first: 20
-            }
-          }
-        }
-      });
+      preloadEntries(experiencesIds, client);
 
       entriesLoadedRef.current = true;
     }

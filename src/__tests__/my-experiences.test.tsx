@@ -16,6 +16,12 @@ jest.mock("../components/SidebarHeader", () => ({
   SidebarHeader: jest.fn(() => null)
 }));
 
+jest.mock("../components/MyExperiences/preload-entries");
+
+import { preloadEntries } from "../components/MyExperiences/preload-entries";
+
+const mockPreloadEntries = preloadEntries as jest.Mock;
+
 const MyExperiencesP = MyExperiences as ComponentType<Partial<Props>>;
 
 it("renders loading state and not main", () => {
@@ -187,7 +193,7 @@ it("loads entries in the background when experiences are loaded", () => {
     ]
   } as GetExps_exps;
 
-  const { Ui, mockQuery } = makeComp({ getExpDefsResult: { exps } as any });
+  const { Ui } = makeComp({ getExpDefsResult: { exps } as any });
 
   /**
    * When we use the component
@@ -198,9 +204,7 @@ it("loads entries in the background when experiences are loaded", () => {
    * Then we should load entries for the experiences in the background
    */
 
-  expect(
-    (mockQuery.mock.calls[0][0] as any).variables.input.experiencesIds
-  ).toEqual(["1", "2"]);
+  expect(mockPreloadEntries.mock.calls[0][0] as any).toEqual(["1", "2"]);
 });
 
 it("does not load entries in background when experiences are loaded but empty", () => {
@@ -211,7 +215,7 @@ it("does not load entries in background when experiences are loaded but empty", 
     edges: []
   } as any;
 
-  const { Ui, mockQuery } = makeComp({ getExpDefsResult: { exps } as any });
+  const { Ui } = makeComp({ getExpDefsResult: { exps } as any });
 
   /**
    * When we use the component
@@ -222,13 +226,15 @@ it("does not load entries in background when experiences are loaded but empty", 
    * Then we should load entries for the experiences in the background
    */
 
-  expect(mockQuery).not.toHaveBeenCalled();
+  expect(mockPreloadEntries).not.toHaveBeenCalled();
 });
 
 function makeComp({
   getExpDefsResult = {} as any,
   ...props
 }: Partial<Props> = {}) {
+  mockPreloadEntries.mockReset();
+
   const mockQuery = jest.fn();
   const client = {
     query: mockQuery
