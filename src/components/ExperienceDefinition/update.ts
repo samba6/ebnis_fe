@@ -1,5 +1,5 @@
 import { GET_EXP_DEFS_QUERY } from "../../graphql/exps.query";
-import { GetExps } from "../../graphql/apollo-types/GetExps";
+import { GetExps, GetExpsVariables } from "../../graphql/apollo-types/GetExps";
 import { CreateExpUpdateFn } from "./utils";
 import immer from "immer";
 
@@ -24,8 +24,15 @@ export const ExperienceDefinitionUpdate: CreateExpUpdateFn = async (
   // written to apollo ROOT_QUERY, then this part of the code will error because
   // what we are trying to read does not exist on apollo ROOT_QUERY
   try {
-    const data = client.readQuery<GetExps>({
-      query: GET_EXP_DEFS_QUERY
+    const variables = {
+      pagination: {
+        first: 20
+      }
+    };
+
+    const data = client.readQuery<GetExps, GetExpsVariables>({
+      query: GET_EXP_DEFS_QUERY,
+      variables
     });
 
     if (!data) {
@@ -52,6 +59,7 @@ export const ExperienceDefinitionUpdate: CreateExpUpdateFn = async (
 
     await client.writeQuery({
       query: GET_EXP_DEFS_QUERY,
+      variables,
       data: { exps: newExperienceConnection }
     });
   } catch (error) {
