@@ -18,7 +18,8 @@ module.exports = {
     "!src/**/*.d.ts",
     "!src/context.ts",
     "!src/socket.ts",
-    "!src/components/NewEntry/update.ts"
+    "!src/components/NewEntry/update.ts",
+    "!src/test-utils/**"
   ],
   setupFiles: ["<rootDir>/loadershim.js", "react-app-polyfill/jsdom"],
   setupFilesAfterEnv: ["<rootDir>/config/jest/setupTests.js"],
