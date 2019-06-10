@@ -47,7 +47,7 @@ import { CreateExpMutationFn } from "../../graphql/create-exp.mutation";
 import { scrollTop } from "./scrollTop";
 import { SidebarHeader } from "../SidebarHeader";
 import { getConnStatus } from "../../state/get-conn-status";
-import { ExperienceAllFieldsFragment } from "../../graphql/apollo-types/ExperienceAllFieldsFragment";
+import { UnsavedExperience } from "./resolver-utils";
 
 export function ExperienceDefinition(props: Props) {
   const { createExp, navigate, client, createUnsavedExperience } = props;
@@ -169,8 +169,7 @@ export function ExperienceDefinition(props: Props) {
 
           expId = ((result &&
             result.data &&
-            result.data.createUnsavedExperience) as ExperienceAllFieldsFragment)
-            .id;
+            result.data.createUnsavedExperience) as UnsavedExperience).id;
         }
 
         (navigate as NavigateFn)(makeExperienceRoute(expId));

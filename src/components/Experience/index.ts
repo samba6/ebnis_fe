@@ -1,4 +1,4 @@
-import { graphql, compose } from "react-apollo";
+import { graphql, compose, withApollo } from "react-apollo";
 
 import { Experience as Comp } from "./component";
 import { OwnProps } from "./utils";
@@ -10,6 +10,15 @@ import {
   GetAnExp,
   GetAnExpVariables
 } from "../../graphql/apollo-types/GetAnExp";
+import { isUnsavedId } from "../../constants";
+import {
+  GET_UNSAVED_EXPERIENCE_QUERY,
+  UnsavedExperienceReturnedValue,
+  resolvers,
+  UnsavedExperienceGqlProps
+} from "./resolvers";
+
+let resolverAdded = false;
 
 const getExpGql = graphql<
   OwnProps,
@@ -31,7 +40,45 @@ const getExpGql = graphql<
         }
       }
     };
+  },
+
+  skip: ({ experienceId, client }) => {
+    if (!resolverAdded) {
+      client.addResolvers(resolvers);
+
+      resolverAdded = true;
+    }
+
+    return isUnsavedId(experienceId);
   }
 });
 
-export const Experience = compose(getExpGql)(Comp);
+const getUnsavedExperienceGql = graphql<
+  OwnProps,
+  UnsavedExperienceReturnedValue,
+  {},
+  UnsavedExperienceGqlProps | undefined
+>(GET_UNSAVED_EXPERIENCE_QUERY, {
+  props: ({ data }) =>
+    data && {
+      unsavedExperienceGql: data
+    },
+
+  options: ({ experienceId }) => {
+    return {
+      variables: {
+        id: experienceId as string
+      }
+    };
+  },
+
+  skip: ({ experienceId }) => {
+    return !isUnsavedId(experienceId);
+  }
+});
+
+export const Experience = compose(
+  withApollo,
+  getUnsavedExperienceGql,
+  getExpGql
+)(Comp);

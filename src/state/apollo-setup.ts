@@ -11,10 +11,11 @@ import { getSocket } from "../socket";
 import { initState, LocalState } from "./resolvers";
 import { getToken } from "./tokens";
 import { SCHEMA_VERSION, SCHEMA_VERSION_KEY, SCHEMA_KEY } from "../constants";
-import CONN_MUTATION, {
-  ConnectionMutationData,
+import {
+  CONNECTION_MUTATION,
+  ConnectionStatus,
   ConnectionMutationVariables
-} from "./conn.mutation";
+} from "./connection.resolver";
 
 let cache: InMemoryCache;
 let client: ApolloClient<{}>;
@@ -36,8 +37,8 @@ interface BuildClientCache {
 }
 
 function onConnChange(isConnected: boolean) {
-  client.mutate<ConnectionMutationData, ConnectionMutationVariables>({
-    mutation: CONN_MUTATION,
+  client.mutate<ConnectionStatus, ConnectionMutationVariables>({
+    mutation: CONNECTION_MUTATION,
     variables: {
       isConnected
     }

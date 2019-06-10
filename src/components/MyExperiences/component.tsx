@@ -23,20 +23,16 @@ import { SidebarHeader } from "../SidebarHeader";
 import { setDocumentTitle, makeSiteTitle } from "../../constants";
 import { MY_EXPERIENCES_TITLE } from "../../constants/my-experiences-title";
 import { Link } from "gatsby";
-import { EXPERIENCES_OFFLINE_QUERY } from "./local.queries";
+import { SERVER_OFFLINE_EXPERIENCES_QUERY } from "./resolvers";
 import { LIST_EXPERIENCES_ENTRIES } from "../../graphql/list-experiences-entries";
 import {
   ListExperiencesEntries,
   ListExperiencesEntriesVariables
 } from "../../graphql/apollo-types/ListExperiencesEntries";
+import { UnsavedExperience } from "../ExperienceDefinition/resolver-utils";
 
 export const MyExperiences = (props: Props) => {
-  const {
-    getExpDefsResult,
-    isConnected,
-    unsavedExperiences = [],
-    client
-  } = props;
+  const { getExpDefsResult, isConnected, unsavedExperiences, client } = props;
 
   const { loading, exps, networkStatus } = getExpDefsResult;
 
@@ -59,7 +55,7 @@ export const MyExperiences = (props: Props) => {
 
     if (!exps && networkStatus === 1 && loading && !isConnected) {
       client.query<GetExps, GetExpsVariables>({
-        query: EXPERIENCES_OFFLINE_QUERY,
+        query: SERVER_OFFLINE_EXPERIENCES_QUERY,
         variables: {
           pagination: {
             first: 20
@@ -96,13 +92,15 @@ export const MyExperiences = (props: Props) => {
   }, [exps]);
 
   const unsavedExperiencesAsEdges = useMemo(() => {
-    return unsavedExperiences.map(
-      (unsavedExperience: GetExps_exps_edges_node) => {
-        return {
-          node: unsavedExperience
-        } as GetExps_exps_edges;
-      }
-    );
+    if (!unsavedExperiences) {
+      return;
+    }
+
+    return unsavedExperiences.map((unsavedExperience: UnsavedExperience) => {
+      return ({
+        node: unsavedExperience
+      } as unknown) as GetExps_exps_edges;
+    });
   }, [unsavedExperiences]);
 
   const experiencesForDisplay = useMemo(() => {
@@ -110,12 +108,12 @@ export const MyExperiences = (props: Props) => {
       return unsavedExperiencesAsEdges;
     }
 
-    const edges = (exps.edges || []).concat(unsavedExperiencesAsEdges);
+    const edges = (exps.edges || []).concat(unsavedExperiencesAsEdges || []);
     return edges;
   }, [exps, unsavedExperiences]);
 
   function renderExperiences() {
-    if (!experiencesForDisplay.length) {
+    if ((experiencesForDisplay as GetExps_exps_edges[]).length === 0) {
       return (
         <Link to={EXPERIENCE_DEFINITION_URL} className="no-exp-info">
           Click here to create your first experience
@@ -125,7 +123,7 @@ export const MyExperiences = (props: Props) => {
 
     return (
       <div data-testid="exps-container" className="exps-container">
-        {experiencesForDisplay.map(edge => {
+        {(experiencesForDisplay as GetExps_exps_edges[]).map(edge => {
           const experience = (edge as GetExps_exps_edges)
             .node as GetExps_exps_edges_node;
 
@@ -146,7 +144,7 @@ export const MyExperiences = (props: Props) => {
   }
 
   function renderMain() {
-    if (loading && !exps) {
+    if (loading && !unsavedExperiences) {
       return <Loading />;
     }
 

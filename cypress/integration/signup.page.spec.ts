@@ -2,16 +2,13 @@ import { USER_CREATION_OBJECT } from "../support/user-creation-object";
 
 context("signup page", () => {
   beforeEach(() => {
+    cy.closeSession();
     cy.checkoutSession();
 
     /**
      * Given that we are on signup page
      */
     cy.visit("/signup");
-  });
-
-  afterEach(() => {
-    cy.closeSession();
   });
 
   it("creates user successfully", () => {

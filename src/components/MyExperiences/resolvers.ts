@@ -5,6 +5,15 @@ import {
   GetExpsVariables
 } from "../../graphql/apollo-types/GetExps";
 import { GET_EXP_DEFS_QUERY } from "../../graphql/exps.query";
+import { EXPERIENCE_CONNECTION_FRAGMENT } from "../../graphql/experience-connection.fragment";
+import gql from "graphql-tag";
+import { graphql } from "react-apollo";
+import {
+  UNSAVED_EXPERIENCES_QUERY,
+  UnsavedExperiencesQueryValues
+} from "../ExperienceDefinition/resolver-utils";
+
+///////////// OFFLINE EXPERIENCE /////////////////////////////
 
 const EMPTY_EXPERIENCE_CONNECTION: GetExps_exps = {
   edges: [],
@@ -16,7 +25,7 @@ const EMPTY_EXPERIENCE_CONNECTION: GetExps_exps = {
   }
 };
 
-const experiencesOfflineResolver: LocalResolverFn<
+const serverOfflineExperiencesResolver: LocalResolverFn<
   GetExpsVariables,
   GetExps_exps
 > = (root, variables, { cache }) => {
@@ -40,8 +49,38 @@ const experiencesOfflineResolver: LocalResolverFn<
   }
 };
 
+export const SERVER_OFFLINE_EXPERIENCES_QUERY = gql`
+  query ExperiencesOfflineQuery($pagination: PaginationInput!) {
+    serverOfflineExperiences(pagination: $pagination) @client {
+      ...ExperienceConnectionFragment
+    }
+  }
+
+  ${EXPERIENCE_CONNECTION_FRAGMENT}
+`;
+
+//////////////////////// END OFFLINE EXPERIENCE /////////////////////////////
+
+////////////////////// UNSAVED EXPERIENCES //////////////////////////////////
+
+// the `unsavedExperiences` is on the root resolver and that's why we don't
+// need a resolver here.
+
+export const unsavedExperiencesGql = graphql<
+  {},
+  UnsavedExperiencesQueryValues,
+  {},
+  UnsavedExperiencesQueryValues | undefined
+>(UNSAVED_EXPERIENCES_QUERY, {
+  props: ({ data }) =>
+    data && {
+      unsavedExperiences: data.unsavedExperiences || []
+    }
+});
+///////////////////// END UNSAVED EXPERIENCES ///////////////////////////////
+
 export const resolvers = {
   Query: {
-    experiencesOffline: experiencesOfflineResolver
+    serverOfflineExperiences: serverOfflineExperiencesResolver
   }
 };

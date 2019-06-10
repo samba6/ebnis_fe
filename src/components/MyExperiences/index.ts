@@ -4,9 +4,8 @@ import { MyExperiences as Comp } from "./component";
 import { GetExps, GetExpsVariables } from "../../graphql/apollo-types/GetExps";
 import { GetExpGqlProps, GET_EXP_DEFS_QUERY } from "../../graphql/exps.query";
 import { OwnProps } from "./utils";
-import { connectionGql } from "../../state/conn.query";
-import { unsavedExperiencesGql } from "./local.queries";
-import { resolvers } from "./resolvers";
+import { connectionGql } from "../../state/connection.resolver";
+import { resolvers, unsavedExperiencesGql } from "./resolvers";
 
 let resolverAdded = false;
 
@@ -21,9 +20,8 @@ const expDefsGql = graphql<
   options: ({ client }) => {
     if (!resolverAdded) {
       client.addResolvers(resolvers);
+      resolverAdded = true;
     }
-
-    resolverAdded = true;
 
     return {
       variables: {

@@ -11,8 +11,7 @@ import {
   CreateExpMutation,
   CreateExpMutationVariables
 } from "../../graphql/apollo-types/CreateExpMutation";
-import { createUnsavedExperienceGql } from "./local-queries";
-import { resolvers } from "./resolvers";
+import { resolvers, createUnsavedExperienceGql } from "./resolvers";
 
 let resolverAdded = false;
 
@@ -32,9 +31,8 @@ const expMutationGql = graphql<
   options: ({ client }) => {
     if (!resolverAdded) {
       client.addResolvers(resolvers);
+      resolverAdded = true;
     }
-
-    resolverAdded = true;
 
     return {};
   }

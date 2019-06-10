@@ -21,6 +21,63 @@ export interface ExperienceAllFieldsFragment_fieldDefs {
   type: FieldType;
 }
 
+export interface ExperienceAllFieldsFragment_entries_pageInfo {
+  __typename: "PageInfo";
+  /**
+   * When paginating forwards, are there more items?
+   */
+  hasNextPage: boolean;
+  /**
+   * When paginating backwards, are there more items?
+   */
+  hasPreviousPage: boolean;
+}
+
+export interface ExperienceAllFieldsFragment_entries_edges_node_fields {
+  __typename: "Field";
+  defId: string;
+  data: any;
+}
+
+export interface ExperienceAllFieldsFragment_entries_edges_node {
+  __typename: "Entry";
+  /**
+   * Internal ID of the schema. Field `id` is the global opaque ID
+   */
+  _id: string;
+  /**
+   * The ID of an object
+   */
+  id: string;
+  /**
+   * The ID of experience to which this entry belongs
+   */
+  expId: string;
+  /**
+   * The data fields belonging to this entry
+   */
+  fields: (ExperienceAllFieldsFragment_entries_edges_node_fields | null)[];
+  insertedAt: any;
+}
+
+export interface ExperienceAllFieldsFragment_entries_edges {
+  __typename: "EntryEdge";
+  /**
+   * A cursor for use in pagination
+   */
+  cursor: string;
+  /**
+   * The item at the end of the edge
+   */
+  node: ExperienceAllFieldsFragment_entries_edges_node | null;
+}
+
+export interface ExperienceAllFieldsFragment_entries {
+  __typename: "EntryConnection";
+  pageInfo: ExperienceAllFieldsFragment_entries_pageInfo;
+  edges: (ExperienceAllFieldsFragment_entries_edges | null)[] | null;
+}
+
 export interface ExperienceAllFieldsFragment {
   __typename: "Experience";
   /**
@@ -39,4 +96,8 @@ export interface ExperienceAllFieldsFragment {
    * The field definitions used for the experience entries
    */
   fieldDefs: (ExperienceAllFieldsFragment_fieldDefs | null)[];
+  /**
+   * The entries of the experience - can be paginated
+   */
+  entries: ExperienceAllFieldsFragment_entries;
 }

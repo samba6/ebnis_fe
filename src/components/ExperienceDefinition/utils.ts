@@ -12,7 +12,7 @@ import {
   FieldType
 } from "../../graphql/apollo-types/globalTypes";
 import { CreateExpMutation } from "../../graphql/apollo-types/CreateExpMutation";
-import { CreateUnsavedExperienceMutationProps } from "./local-queries";
+import { CreateUnsavedExperienceMutationProps } from "./resolvers";
 import { WithApolloClient } from "react-apollo";
 
 export type CreateExpUpdateFn = MutationUpdaterFn<CreateExpMutation>;

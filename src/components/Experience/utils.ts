@@ -2,15 +2,23 @@ import { RouteComponentProps } from "@reach/router";
 import dateFnParse from "date-fns/parse";
 import dateFnFormat from "date-fns/format";
 import { FieldType } from "../../graphql/apollo-types/globalTypes";
-
 import { GetExperienceGqlProps } from "../../graphql/get-exp.query";
+import { WithApolloClient } from "react-apollo";
+import { UnsavedExperienceGqlProps } from "./resolvers";
+import { UnsavedExperience } from "../ExperienceDefinition/resolver-utils";
+import { Reducer } from "react";
+import immer from "immer";
 
 export interface OwnProps
   extends RouteComponentProps<{
-    experienceId: string;
-  }> {}
+      experienceId: string;
+    }>,
+    WithApolloClient<{}> {}
 
-export interface Props extends OwnProps, GetExperienceGqlProps {}
+export interface Props
+  extends OwnProps,
+    GetExperienceGqlProps,
+    UnsavedExperienceGqlProps {}
 
 export type FormObjVal = Date | string;
 export interface FormObj {
@@ -50,4 +58,39 @@ export const displayFieldType = {
   [FieldType.INTEGER](text: string) {
     return Number(text);
   }
+};
+
+interface State {
+  readonly unsavedExperienceFromState?: UnsavedExperience;
+  readonly loadingUnsavedExperienceForState?: boolean | null;
+}
+
+export const defaultState: State = {};
+
+export enum ActionType {
+  unsavedExperienceLoaded = "unsavedExperienceLoaded",
+  loadingUnsavedExperience = "loadingUnsavedExperience"
+}
+
+interface Actions {
+  payload?: null | undefined | UnsavedExperience | boolean;
+  type: ActionType;
+}
+
+export const reducer: Reducer<State, Actions> = (
+  previousState,
+  { type, payload }
+) => {
+  return immer(previousState, stateProxy => {
+    switch (type) {
+      case ActionType.unsavedExperienceLoaded:
+        stateProxy.unsavedExperienceFromState = payload as UnsavedExperience;
+        stateProxy.loadingUnsavedExperienceForState = null;
+        break;
+
+      case ActionType.loadingUnsavedExperience:
+        stateProxy.loadingUnsavedExperienceForState = payload as boolean;
+        break;
+    }
+  });
 };

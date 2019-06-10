@@ -29,5 +29,5 @@ export const GET_EXP_QUERY = gql`
 export type GetExperienceGqlValues = DataValue<GetAnExp, GetAnExpVariables>;
 
 export interface GetExperienceGqlProps {
-  getExperienceGql: GetExperienceGqlValues;
+  getExperienceGql?: GetExperienceGqlValues;
 }

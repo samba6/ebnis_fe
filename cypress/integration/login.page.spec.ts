@@ -2,6 +2,7 @@ import { USER_CREATION_OBJECT } from "../support/user-creation-object";
 
 context("login page", () => {
   beforeEach(() => {
+    cy.closeSession();
     cy.checkoutSession();
 
     /**
@@ -9,10 +10,6 @@ context("login page", () => {
      */
 
     cy.visit("/login");
-  });
-
-  afterEach(() => {
-    cy.closeSession();
   });
 
   it("errors if we login with non existent user", () => {

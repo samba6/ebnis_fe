@@ -57,6 +57,10 @@ import {
   CreateEntriesMutation_createEntries_successes_entry
 } from "../../src/graphql/apollo-types/CreateEntriesMutation";
 import { CREATE_ENTRIES_MUTATION } from "../../src/graphql/create-entries.mutation";
+import {
+  ManualConnectionStatus,
+  setManualConnection
+} from "../../src/test-utils/manual-connection-setting";
 
 const serverUrl = Cypress.env("API_URL") as string;
 
@@ -67,6 +71,7 @@ function checkoutSession() {
 }
 
 function closeSession() {
+  setManualConnection(ManualConnectionStatus.unset);
   Cypress.env(USER_JWT_ENV, null);
 
   return mutate<UserLocalMutationVariable, UserLocalMutationVariable>({
@@ -175,6 +180,10 @@ function mutate<TData, TVariables>(
   return client.mutate<TData, TVariables>(options);
 }
 
+function setConnectionStatus(status: ManualConnectionStatus) {
+  setManualConnection(status);
+}
+
 Cypress.Commands.add("checkoutSession", checkoutSession);
 Cypress.Commands.add("closeSession", closeSession);
 Cypress.Commands.add("createUser", createUser);
@@ -182,6 +191,7 @@ Cypress.Commands.add("registerUser", registerUser);
 Cypress.Commands.add("mutate", mutate);
 Cypress.Commands.add("defineExperience", defineExperience);
 Cypress.Commands.add("createExperienceEntries", createExperienceEntries);
+Cypress.Commands.add("setConnectionStatus", setConnectionStatus);
 
 declare global {
   namespace Cypress {
@@ -237,6 +247,11 @@ declare global {
           CreateEntriesMutation_createEntries_successes_entry[]
         ]
       >;
+
+      /**
+       *
+       */
+      setConnectionStatus: (status: ManualConnectionStatus) => void;
     }
   }
 }
