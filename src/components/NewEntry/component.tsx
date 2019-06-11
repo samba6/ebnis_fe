@@ -25,6 +25,8 @@ import { setDocumentTitle, makeSiteTitle } from "../../constants";
 import { GetExperienceGqlValues } from "../../graphql/get-exp.query";
 import { getConnStatus } from "../../state/get-conn-status";
 import { useManualUnsavedExperience } from "../Experience/use-manual-unsaved-experience";
+import { UnsavedExperienceDataValue } from "../Experience/resolvers";
+import { useGoto404OnExperienceNotFound } from "../Experience/use-goto-404";
 
 export function NewEntry(props: Props) {
   const {
@@ -34,7 +36,10 @@ export function NewEntry(props: Props) {
     navigate,
     createEntry,
     createUnsavedEntry,
-    client
+    client,
+    unsavedExperienceGql: {
+      loading: loadingUnsavedExperience
+    } = {} as UnsavedExperienceDataValue
   } = props;
 
   const {
@@ -45,6 +50,13 @@ export function NewEntry(props: Props) {
   const [state, dispatch] = useReducer(reducer, { formObj: {} });
 
   const pageTitle = makePageTitle(experienceToRender);
+
+  const loading =
+    loadingServerExperience ||
+    loadingUnsavedExperienceForState ||
+    loadingUnsavedExperience;
+
+  useGoto404OnExperienceNotFound(props, loading, experienceToRender);
 
   useEffect(
     function setRouteTitle() {
@@ -114,9 +126,12 @@ export function NewEntry(props: Props) {
   }
 
   function renderMainOr() {
-    const loading = loadingServerExperience || loadingUnsavedExperienceForState;
-    if (loading && !experienceToRender) {
+    if (loading) {
       return <Loading loading={loading} />;
+    }
+
+    if (!experienceToRender) {
+      return null;
     }
 
     const { fieldDefs, title } = experienceToRender;

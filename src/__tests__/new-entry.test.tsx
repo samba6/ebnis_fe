@@ -33,6 +33,7 @@ jest.mock("../state/get-conn-status");
 
 import { updateExperienceWithNewEntry } from "../components/NewEntry/update";
 import { getConnStatus } from "../state/get-conn-status";
+import ApolloClient from "apollo-client";
 
 const mockGetConnStatus = getConnStatus as jest.Mock;
 const mockUpdate = updateExperienceWithNewEntry as jest.Mock;
@@ -427,30 +428,51 @@ it("creates new experience entry when offline", async () => {
   expect(mockCreateEntry).not.toBeCalled();
 });
 
-function makeComp(
-  props: Partial<Props> = { getExperienceGql: {} as any },
-  connectionStatus: boolean = true
-) {
+it("redirects to 404 page when no experience to render", () => {
+  /**
+   * Given there is no experience matching that requested on this page
+   */
+  const { mockNavigate, mockQuery, ui } = makeComp({});
+  mockQuery.mockResolvedValue(null);
+
+  /**
+   * When we use the component
+   */
+  render(ui);
+
+  /**
+   * Then we should be redirected to 404 page
+   */
+
+  expect(mockNavigate).toBeCalledWith("/404");
+});
+
+function makeComp(props: Partial<Props>, connectionStatus: boolean = true) {
   mockGetConnStatus.mockReset();
   mockGetConnStatus.mockResolvedValue(connectionStatus);
   mockUpdate.mockReset();
   const mockCreateEntry = jest.fn();
   const mockCreateUnsavedEntry = jest.fn();
+  const mockQuery = jest.fn();
 
-  const { Ui, ...rest } = renderWithRouter(
-    NewEntryP,
-    {},
-    {
-      createEntry: mockCreateEntry,
-      createUnsavedEntry: mockCreateUnsavedEntry,
-      ...props
-    }
-  );
+  const client = {
+    query: mockQuery
+  };
+
+  const { Ui, ...rest } = renderWithRouter(NewEntryP);
 
   return {
-    ui: <Ui />,
+    ui: (
+      <Ui
+        createEntry={mockCreateEntry}
+        createUnsavedEntry={mockCreateUnsavedEntry}
+        client={(client as unknown) as ApolloClient<{}>}
+        {...props}
+      />
+    ),
     mockCreateEntry,
     mockCreateUnsavedEntry,
-    ...rest
+    ...rest,
+    mockQuery
   };
 }
