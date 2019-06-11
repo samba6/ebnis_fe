@@ -328,14 +328,12 @@ it("renders unsaved experience when cache is not ready", async () => {
     } as any
   } as UnsavedExperience;
 
-  const { ui, query } = makeComp({
+  const { ui, mockQuery } = makeComp({
     getExperienceGql: undefined,
     unsavedExperienceGql: {
       loading: false
     } as any
   });
-
-  const mockQuery = query as jest.Mock;
 
   mockQuery.mockResolvedValue({
     data: {
@@ -367,15 +365,30 @@ it("renders unsaved experience when cache is not ready", async () => {
   expect(queryByTestId("experience-entry")).not.toBeInTheDocument();
 });
 
+it("redirects to 404 page when there is no experience to render", () => {
+  /**
+   * Given there is no experience to render in the system
+   */
+  const { mockNavigate, mockQuery, ui } = makeComp({
+    getExperienceGql: undefined
+  });
+
+  mockQuery.mockResolvedValue(null);
+
+  render(ui);
+
+  expect(mockNavigate).toBeCalledWith("/404");
+});
+
 function makeComp(props: Partial<Props> = {}) {
   const { Ui, mockNavigate } = renderWithRouter(ExperienceP, {});
 
-  const query = jest.fn();
-  const client = ({ query } as unknown) as ApolloClient<{}>;
+  const mockQuery = jest.fn();
+  const client = ({ query: mockQuery } as unknown) as ApolloClient<{}>;
 
   return {
     ui: <Ui getExperienceGql={{ exp: {} } as any} client={client} {...props} />,
     mockNavigate,
-    query
+    mockQuery
   };
 }

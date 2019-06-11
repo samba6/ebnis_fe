@@ -14,18 +14,15 @@ import {
 } from "../../graphql/apollo-types/GetAnExp";
 import { SidebarHeader } from "../SidebarHeader";
 import { setDocumentTitle, makeSiteTitle } from "../../constants";
-import { NavigateFn } from "@reach/router";
 import { GetExperienceGqlValues } from "../../graphql/get-exp.query";
 import { UnsavedExperienceDataValue } from "./resolvers";
 import { makeNewEntryRoute } from "../../constants/new-entry-route";
 import { useManualUnsavedExperience } from "./use-manual-unsaved-experience";
+import { useGoto404OnExperienceNotFound } from "./use-goto-404";
 export function Experience(props: Props) {
   const {
-    navigate,
-
     getExperienceGql: {
-      loading: loadingExperience,
-      error: getExperienceError
+      loading: loadingExperience
     } = {} as GetExperienceGqlValues,
 
     unsavedExperienceGql: {
@@ -38,7 +35,14 @@ export function Experience(props: Props) {
     loadingUnsavedExperienceForState
   } = useManualUnsavedExperience(props);
 
+  const loading =
+    loadingExperience ||
+    loadingUnsavedExperience ||
+    loadingUnsavedExperienceForState;
+
   const title = getTitle(experienceToRender);
+
+  useGoto404OnExperienceNotFound(props, loading, experienceToRender);
 
   useEffect(
     function setRouteTitle() {
@@ -48,16 +52,6 @@ export function Experience(props: Props) {
     },
     [title]
   );
-
-  useEffect(() => {
-    if (getExperienceError) {
-      (navigate as NavigateFn)("/404");
-    }
-  }, [getExperienceError]);
-
-  if (getExperienceError) {
-    return null;
-  }
 
   function renderEntryField(field: GetAnExp_exp_entries_edges_node_fields) {
     const { defId, data } = field;
@@ -123,17 +117,12 @@ export function Experience(props: Props) {
   }
 
   function renderMain() {
-    const loading =
-      loadingExperience ||
-      loadingUnsavedExperience ||
-      loadingUnsavedExperienceForState;
-
-    if (loading && !experienceToRender) {
+    if (loading) {
       return <Loading loading={loading} />;
     }
 
     if (!experienceToRender) {
-      return <h1>Error !!!</h1>;
+      return null;
     }
 
     return (

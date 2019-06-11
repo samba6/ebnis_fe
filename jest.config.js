@@ -19,6 +19,7 @@ module.exports = {
     "!src/context.ts",
     "!src/socket.ts",
     "!src/components/NewEntry/update.ts",
+    "!src/components/**/*gql.ts",
     "!src/test-utils/**"
   ],
   setupFiles: ["<rootDir>/loadershim.js", "react-app-polyfill/jsdom"],
