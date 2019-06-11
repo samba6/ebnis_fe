@@ -57,6 +57,7 @@ export function useManualUnsavedExperience<T extends Args>({
     const { current: timeout } = loadingUnsavedExperienceTimeoutRef;
 
     if (
+      timeout === null &&
       loadingUnsavedExperience === false &&
       !loadingUnsavedExperienceForState &&
       !unsavedExperience &&
@@ -81,14 +82,19 @@ export function useManualUnsavedExperience<T extends Args>({
 
         setLoadingUnsavedExperienceForState(false);
       }, 200) as unknown) as number;
-
-      return;
-    }
-
-    if (timeout !== null && (unsavedExperienceFromState || unsavedExperience)) {
+    } else if (
+      timeout !== null &&
+      (unsavedExperienceFromState || unsavedExperience)
+    ) {
       clearTimeout(timeout);
       loadingUnsavedExperienceTimeoutRef.current = null;
     }
+
+    return () => {
+      if (timeout !== null) {
+        clearTimeout(timeout);
+      }
+    };
   }, [
     loadingUnsavedExperience,
     unsavedExperience,
