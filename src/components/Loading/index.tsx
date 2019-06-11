@@ -18,12 +18,17 @@ export function Loading({
         clearTimeout(loadingRef.current);
       }
       setShouldShow(false);
-      return;
+    } else {
+      loadingRef.current = (setTimeout(() => {
+        setShouldShow(true);
+      }, 1000) as unknown) as number;
     }
 
-    loadingRef.current = (setTimeout(() => {
-      setShouldShow(true);
-    }, 1000) as unknown) as number;
+    return () => {
+      if (loadingRef.current) {
+        clearTimeout(loadingRef.current);
+      }
+    };
   }, [loading]);
 
   return shouldShow ? (
