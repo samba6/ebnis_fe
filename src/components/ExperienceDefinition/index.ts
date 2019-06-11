@@ -43,3 +43,5 @@ export const ExperienceDefinition = compose(
   expMutationGql,
   createUnsavedExperienceGql
 )(Comp);
+
+export default ExperienceDefinition;

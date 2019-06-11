@@ -2,15 +2,33 @@ import React from "react";
 import { Router, RouteComponentProps } from "@reach/router";
 
 import { AuthRequired } from "../../components/AuthRequired";
-import { ExperienceDefinition } from "../../components/ExperienceDefinition";
-import { NewEntry } from "../../components/NewEntry";
 import { EXPERIENCE_DEFINITION_URL, EXPERIENCES_URL } from "../../routes";
 import { NotFound } from "../../components/NotFound";
-import { MyExperiences } from "../../components/MyExperiences";
-import { Experience } from "../../components/Experience";
 import { Layout } from "../../components/Layout";
 import { EXPERIENCE_URL } from "../../constants/experience-route";
 import { NEW_ENTRY_URL } from "../../constants/new-entry-route";
+import Loadable from "react-loadable";
+import { Loading } from "../../components/Loading";
+
+const ExperienceDefinition = Loadable({
+  loader: () => import("../../components/ExperienceDefinition"),
+  loading: Loading
+});
+
+const NewEntry = Loadable({
+  loader: () => import("../../components/NewEntry"),
+  loading: Loading
+});
+
+const MyExperiences = Loadable({
+  loader: () => import("../../components/MyExperiences"),
+  loading: Loading
+});
+
+const Experience = Loadable({
+  loader: () => import("../../components/Experience"),
+  loading: Loading
+});
 
 export function App(props: RouteComponentProps) {
   return (

@@ -15,3 +15,5 @@ export const Experience = compose(
   getUnsavedExperienceGql<OwnProps>(),
   getExperienceGql<OwnProps>(resolvers, resolverAdded)
 )(Comp);
+
+export default Experience;

@@ -36,3 +36,5 @@ export const NewEntry = compose(
   createEntryGql,
   createUnsavedEntryGql
 )(Comp);
+
+export default NewEntry;

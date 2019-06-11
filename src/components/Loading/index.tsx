@@ -6,9 +6,9 @@ import makeClassNames from "classnames";
 export function Loading({
   className,
   children,
-  loading,
+  loading = true,
   ...props
-}: PropsWithChildren<{ className?: string; loading: boolean }>) {
+}: PropsWithChildren<{ className?: string; loading?: boolean }>) {
   const loadingRef = useRef<number | null>(null);
   const [shouldShow, setShouldShow] = useState(false);
 

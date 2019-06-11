@@ -39,3 +39,5 @@ export const MyExperiences = compose(
   expDefsGql,
   unsavedExperiencesGql
 )(Comp);
+
+export default MyExperiences;
