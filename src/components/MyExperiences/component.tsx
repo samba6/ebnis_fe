@@ -11,7 +11,7 @@ import {
 } from "./utils";
 import { EXPERIENCE_DEFINITION_URL } from "../../routes";
 import { makeExperienceRoute } from "../../constants/experience-route";
-import Loading from "../Loading";
+import { Loading } from "../Loading";
 import {
   GetExps_exps,
   GetExps_exps_edges,
@@ -131,7 +131,7 @@ export const MyExperiences = (props: Props) => {
 
   function renderMain() {
     if (loading && !unsavedExperiences) {
-      return <Loading />;
+      return <Loading loading={loading} />;
     }
 
     return (

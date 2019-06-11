@@ -41,6 +41,14 @@ type P = ComponentType<Partial<Props>>;
 const NewEntryP = NewEntry as P;
 const title = "what lovely experience";
 
+beforeEach(() => {
+  jest.useFakeTimers();
+});
+
+afterEach(() => {
+  jest.clearAllTimers();
+});
+
 it("renders loading indicator if we have not returned from server", () => {
   /**
    * Given that we have not received experience from server
@@ -51,6 +59,8 @@ it("renders loading indicator if we have not returned from server", () => {
    * While we are on new entry page
    */
   const { getByTestId } = render(ui);
+
+  jest.advanceTimersByTime(10000);
 
   /**
    * Then we should see loading indicator

@@ -15,7 +15,7 @@ import {
   Action_Types
 } from "./utils";
 import { makeExperienceRoute } from "../../constants/experience-route";
-import Loading from "../Loading";
+import { Loading } from "../Loading";
 import { GetAnExp_exp_fieldDefs } from "../../graphql/apollo-types/GetAnExp";
 import { CreateEntryFn } from "../../graphql/create-entry.mutation";
 import { updateExperienceWithNewEntry } from "./update";
@@ -28,7 +28,9 @@ import { useManualUnsavedExperience } from "../Experience/use-manual-unsaved-exp
 
 export function NewEntry(props: Props) {
   const {
-    getExperienceGql: { loading } = {} as GetExperienceGqlValues,
+    getExperienceGql: {
+      loading: loadingServerExperience
+    } = {} as GetExperienceGqlValues,
     navigate,
     createEntry,
     createUnsavedEntry,
@@ -112,8 +114,9 @@ export function NewEntry(props: Props) {
   }
 
   function renderMainOr() {
-    if ((loading || loadingUnsavedExperienceForState) && !experienceToRender) {
-      return <Loading />;
+    const loading = loadingServerExperience || loadingUnsavedExperienceForState;
+    if (loading && !experienceToRender) {
+      return <Loading loading={loading} />;
     }
 
     const { fieldDefs, title } = experienceToRender;

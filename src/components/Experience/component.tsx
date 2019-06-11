@@ -4,7 +4,7 @@ import { Link } from "gatsby";
 
 import "./styles.scss";
 import { Props, displayFieldType } from "./utils";
-import Loading from "../Loading";
+import { Loading } from "../Loading";
 import {
   GetAnExp_exp_fieldDefs,
   GetAnExp_exp_entries,
@@ -129,7 +129,7 @@ export function Experience(props: Props) {
       loadingUnsavedExperienceForState;
 
     if (loading && !experienceToRender) {
-      return <Loading />;
+      return <Loading loading={loading} />;
     }
 
     if (!experienceToRender) {

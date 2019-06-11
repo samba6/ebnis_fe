@@ -67,7 +67,7 @@ context("new experience entry page", () => {
     });
   });
 
-  it.only("creates entry successfully when user offline", () => {
+  it("creates entry successfully when user offline", () => {
     /**
      * Given there is an experience in the system with no entries
      */

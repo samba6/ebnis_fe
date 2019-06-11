@@ -24,12 +24,22 @@ const mockPreloadEntries = preloadEntries as jest.Mock;
 
 const MyExperiencesP = MyExperiences as ComponentType<Partial<Props>>;
 
+beforeEach(() => {
+  jest.useFakeTimers();
+});
+
+afterEach(() => {
+  jest.clearAllTimers();
+});
+
 it("renders loading state and not main", () => {
   const { Ui } = makeComp({
     getExpDefsResult: { loading: true } as any
   });
 
   const { getByTestId, queryByTestId } = render(<Ui />);
+
+  jest.advanceTimersByTime(10000);
 
   expect(getByTestId("loading-spinner")).toBeInTheDocument();
   expect(queryByTestId("home-route-main")).not.toBeInTheDocument();

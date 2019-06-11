@@ -23,6 +23,10 @@ jest.mock("../components/SidebarHeader", () => ({
 type P = ComponentType<Partial<Props>>;
 const ExperienceP = Experience as P;
 
+beforeEach(() => {
+  jest.useFakeTimers();
+});
+
 afterEach(() => {
   jest.clearAllTimers();
 });
@@ -39,6 +43,8 @@ it("renders loading while getting experience", () => {
    * While using the component
    */
   const { getByTestId } = render(ui);
+
+  jest.advanceTimersByTime(10000);
 
   /**
    * Then we should see loading indicator
@@ -308,8 +314,6 @@ it("renders unsaved experience when cache is ready", () => {
 });
 
 it("renders unsaved experience when cache is not ready", async () => {
-  jest.useFakeTimers();
-
   /**
    * Given there is unsaved experience in the system
    */
