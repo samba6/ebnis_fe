@@ -157,5 +157,9 @@ function getAllChunks(otherOptions) {
 
   (otherOptions.directoriesToCache || []).forEach(getChunksFromDir);
 
+  if (otherOptions.globPatternsFn) {
+    chunks = chunks.concat(otherOptions.globPatternsFn());
+  }
+
   return chunks;
 }

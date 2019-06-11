@@ -1,5 +1,4 @@
 const path = require("path");
-const cheerio = require("cheerio");
 const fs = require("fs");
 
 module.exports = {
@@ -88,17 +87,14 @@ module.exports = {
 };
 
 function globPatternsFn() {
-  const indexHTML = fs.readFileSync(
-    path.resolve(".", "public/index.html"),
-    "utf-8"
-  );
+  const rootPath = path.resolve(".", "public");
 
   const chunks = [];
 
-  const $ = cheerio.load(indexHTML);
-  $('link[href^="/icons/icon-"]').each((_, elem) => {
-    const $elem = $(elem);
-    chunks.push($elem.attr("href"));
+  fs.readdirSync(rootPath).forEach(filePath => {
+    if (/^\d+-.+?\.js$/.test(filePath)) {
+      chunks.push(filePath);
+    }
   });
 
   return chunks;
