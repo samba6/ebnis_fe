@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "start": "yarn remove-folders && env-cmd -e dev gatsby develop --port 3022",
-    "start:e2e": "yarn remove-folders && env-cmd -e local-staging gatsby develop --port 3022",
+    "start": "env-cmd -e dev gatsby develop --port 3022",
+    "start:e2e": "env-cmd -e local-staging gatsby develop --port 3022",
     "build": "gatsby build",
     "build-prod": "yarn remove-folders && env-cmd -e prod yarn build",
     "build-local-staging": "yarn remove-folders && yarn env-cmd -e local-staging yarn build",
