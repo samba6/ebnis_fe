@@ -56,7 +56,9 @@ module.exports = {
     "<rootDir>/gatsby-*",
     "<rootDir>/src/pages/",
     "<rootDir>/\\.cache/",
-    "<rootDir>/public/"
+    "<rootDir>/public/",
+    "<rootDir>/src/graphql/.+?types",
+    "<rootDir>/jest\\.config\\.js"
   ],
   globals: {
     __PATH_PREFIX__: ""
