@@ -19,6 +19,7 @@ import {
   ConnectionStatus,
   ConnectionMutationVariables
 } from "./connection.resolver";
+import { PersistentStorage, PersistedData } from "apollo-cache-persist/types";
 
 let cache: InMemoryCache;
 let client: ApolloClient<{}>;
@@ -127,7 +128,9 @@ export type PersistCacheFn = (
 export function makePersistor(appCache: InMemoryCache) {
   return new CachePersistor({
     cache: appCache,
-    storage: localStorage,
+    storage: localStorage as PersistentStorage<
+      PersistedData<NormalizedCacheObject>
+    >,
     key: SCHEMA_KEY,
     maxSize: false
   });
