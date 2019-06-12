@@ -6,9 +6,9 @@ import { ApolloError } from "apollo-client";
 import { Reducer, Dispatch } from "react";
 
 import { RegMutationProps } from "../../graphql/user-reg.mutation";
-import { UserLocalMutationProps } from "../../state/user.local.mutation";
 import { Registration } from "../../graphql/apollo-types/globalTypes";
 import { PwdInputActionTypes } from "../PwdInput/pwd-input";
+import { UserLocalMutationProps } from "../../state/user.resolver";
 
 export interface Props
   extends RouteComponentProps,

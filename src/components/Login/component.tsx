@@ -1,4 +1,4 @@
-import React, { useReducer, Dispatch, useRef } from "react";
+import React, { useReducer, Dispatch, useRef, useContext } from "react";
 import { Button, Card, Input, Message, Icon, Form } from "semantic-ui-react";
 import { Formik, FastField, FieldProps, FormikProps, Field } from "formik";
 import { WindowLocation } from "@reach/router";
@@ -23,13 +23,22 @@ import { LoginMutation_login } from "../../graphql/apollo-types/LoginMutation";
 import { SidebarHeader } from "../SidebarHeader";
 import { ToOtherAuthLink } from "../ToOtherAuthLink";
 import { scrollToTop } from "./scroll-to-top";
+import { UserLocalQueryData } from "../../state/user.resolver";
+import { LayoutContext } from "../Layout/utils";
 
 export function Login(props: Props) {
-  const { login, updateLocalUser, client, location } = props;
+  const {
+    login,
+    updateLocalUser,
+    client,
+    location,
+    localUser: { loggedOutUser } = {} as UserLocalQueryData
+  } = props;
 
   const [state, dispatch] = useReducer(reducer, initialState);
   const { otherErrors, formErrors, serverFieldErrors, networkError } = state;
   const mainRef = useRef<HTMLDivElement>(null);
+  const { persistor } = useContext(LayoutContext);
 
   function renderForm({
     dirty,
@@ -97,7 +106,7 @@ export function Login(props: Props) {
                   variables: { user }
                 });
 
-                refreshToHome();
+                refreshToHome(persistor);
               } catch (error) {
                 scrollToTop(mainRef.current);
 
@@ -151,7 +160,10 @@ export function Login(props: Props) {
 
       <div className="main" ref={mainRef} data-testid="components-login-main">
         <Formik
-          initialValues={{ email: "", password: "" }}
+          initialValues={{
+            email: loggedOutUser ? loggedOutUser.email : "",
+            password: ""
+          }}
           onSubmit={noop}
           render={renderForm}
           validationSchema={ValidationSchema}

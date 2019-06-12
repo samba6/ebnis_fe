@@ -2,17 +2,25 @@ import React, {
   useContext,
   PropsWithChildren,
   useState,
-  useEffect
+  useEffect,
+  useRef
 } from "react";
 import { EbnisAppContext } from "../../context";
 import { Loading } from "../Loading";
+import { LayoutProvider } from "./utils";
+import { CachePersistor } from "apollo-cache-persist";
 
 export function Layout({ children }: PropsWithChildren<{}>) {
   const { cache, persistCache } = useContext(EbnisAppContext);
+  const persistorRef = useRef<null | CachePersistor<{}>>(null);
 
   // this will be true if we are server rendering in gatsby build
   if (!(cache && persistCache)) {
-    return <>{children}</>;
+    return (
+      <LayoutProvider value={{ persistor: persistorRef.current }}>
+        {children}
+      </LayoutProvider>
+    );
   }
 
   const [renderChildren, setRenderChildren] = useState(false);
@@ -20,7 +28,8 @@ export function Layout({ children }: PropsWithChildren<{}>) {
   useEffect(function PersistCache() {
     (async function doPersistCache() {
       try {
-        await persistCache(cache);
+        persistorRef.current = await persistCache(cache);
+
         setRenderChildren(true);
       } catch (error) {
         return setRenderChildren(true);
@@ -32,5 +41,9 @@ export function Layout({ children }: PropsWithChildren<{}>) {
     return <Loading />;
   }
 
-  return renderChildren ? <>{children}</> : null;
+  return renderChildren ? (
+    <LayoutProvider value={{ persistor: persistorRef.current }}>
+      {children}
+    </LayoutProvider>
+  ) : null;
 }

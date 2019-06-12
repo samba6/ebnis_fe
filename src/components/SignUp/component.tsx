@@ -1,4 +1,4 @@
-import React, { useRef, useReducer } from "react";
+import React, { useRef, useReducer, useContext } from "react";
 import { Button, Card, Input, Message, Icon, Form } from "semantic-ui-react";
 import { Formik, Field, FieldProps, FormikProps } from "formik";
 import loIsEmpty from "lodash/isEmpty";
@@ -29,6 +29,7 @@ import { scrollToTop } from "./scrollToTop";
 import { UserFragment } from "../../graphql/apollo-types/UserFragment";
 import { SidebarHeader } from "../SidebarHeader";
 import { ToOtherAuthLink } from "../ToOtherAuthLink";
+import { LayoutContext } from "../Layout/utils";
 
 export function SignUp(props: Props) {
   const { client, regUser, updateLocalUser, location } = props;
@@ -41,6 +42,8 @@ export function SignUp(props: Props) {
     networkError,
     serverFieldsErrors
   } = state;
+
+  const { persistor } = useContext(LayoutContext);
 
   function renderForm({
     dirty,
@@ -103,7 +106,7 @@ export function SignUp(props: Props) {
                   result.data.registration) as UserFragment;
 
                 await updateLocalUser({ variables: { user } });
-                refreshToHome();
+                refreshToHome(persistor);
               } catch (error) {
                 formikBag.setSubmitting(false);
                 dispatch({

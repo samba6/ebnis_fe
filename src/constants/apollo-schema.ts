@@ -1,3 +1,3 @@
-export const SCHEMA_VERSION = "1.03"; // Must be a string.
-export const SCHEMA_VERSION_KEY = "ebnis-apollo-schema-version";
-export const SCHEMA_KEY = "ebnis-apollo-cache-persist";
+export const SCHEMA_VERSION = "1.04"; // Must be a string.
+export const SCHEMA_VERSION_KEY = "GQ7Fl9vKDh6cR8aiWAXnOMkiGCq5iL61PZZo";
+export const SCHEMA_KEY = "3oujRi00WHDSC42NhbS3cgREmvH6";

@@ -44,6 +44,12 @@ it("renders correctly and submits", async () => {
   const { getByText, getByLabelText } = render(ui);
 
   /**
+   * Then email field should be empty
+   */
+  const $email = getByLabelText("Email") as any;
+  expect($email.value).toBe("");
+
+  /**
    * Then the submit button should be disabled
    */
   const $button = getByText(/Submit/);
@@ -52,7 +58,7 @@ it("renders correctly and submits", async () => {
   /**
    * When the form is correctly completed
    */
-  fillField(getByLabelText("Email"), "me@me.com");
+  fillField($email, "me@me.com");
   fillField(getByLabelText("Password"), "awesome pass");
 
   /**
@@ -274,13 +280,42 @@ it("renders error if server returns network errors", async () => {
   expect(mockScrollToTop).toBeCalled();
 });
 
+it("pre-fills form with user data", async () => {
+  /**
+   * Given user has logged out
+   */
+
+  const { ui } = makeComp({
+    props: {
+      localUser: {
+        loggedOutUser: {
+          email: "me@me.com"
+        }
+      } as any
+    }
+  });
+
+  /**
+   * When we start to use the login component
+   */
+  const { getByLabelText } = render(ui);
+
+  /**
+   * Then email input should be pre-filled with user email
+   */
+  expect((getByLabelText("Email") as any).value).toBe("me@me.com");
+});
+
 function fillForm(getByLabelText: any, getByText: any) {
   fillField(getByLabelText("Email"), "me@me.com");
   fillField(getByLabelText("Password"), "awesome pass");
   fireEvent.click(getByText(/Submit/));
 }
 
-function makeComp({ isConnected = true }: { isConnected?: boolean } = {}) {
+function makeComp({
+  isConnected = true,
+  props = {}
+}: { isConnected?: boolean; props?: Partial<Props> } = {}) {
   mockScrollToTop.mockReset();
 
   mockGetConnStatus.mockReset();
@@ -293,13 +328,7 @@ function makeComp({ isConnected = true }: { isConnected?: boolean } = {}) {
 
   return {
     ui: (
-      <Ui
-        login={mockLogin}
-        updateLocalUser={mockUpdateLocalUser}
-        ToOtherAuthLink={jest.fn(() => (
-          <div />
-        ))}
-      />
+      <Ui login={mockLogin} updateLocalUser={mockUpdateLocalUser} {...props} />
     ),
     ...rest,
     mockLogin,

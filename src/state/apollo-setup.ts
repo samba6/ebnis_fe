@@ -154,6 +154,13 @@ export async function persistCache(appCache: InMemoryCache) {
     }
   }
 
+  setTimeout(() => {
+    // These are old keys. We simply need to get rid of them on all clients.
+    localStorage.removeItem("ebnis-token-key");
+    localStorage.removeItem("ebnis-apollo-schema-version");
+    localStorage.removeItem("ebnis-apollo-cache-persist");
+  });
+
   return persistor;
 }
 

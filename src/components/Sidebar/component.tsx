@@ -9,7 +9,7 @@ import {
   LOGIN_URL
 } from "../../routes";
 import { WithUser } from "../with-user-hoc";
-import { UserLocalMutationProps } from "../../state/user.local.mutation";
+import { UserLocalMutationProps } from "../../state/user.resolver";
 
 export interface Props
   extends RouteComponentProps,

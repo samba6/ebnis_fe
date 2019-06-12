@@ -1,27 +1,26 @@
 import * as Yup from "yup";
 import { RouteComponentProps } from "@reach/router";
-import { Reducer, ComponentType } from "react";
+import { Reducer } from "react";
 import { FormikErrors } from "formik";
 import { ApolloError } from "apollo-client";
 import { WithApolloClient } from "react-apollo";
 
 import { LoginUser as FormValues } from "../../graphql/apollo-types/globalTypes";
 import { LoginMutationProps } from "../../graphql/login.mutation";
-import { UserLocalMutationProps } from "../../state/user.local.mutation";
-import { LoggedOutUserProps } from "../../state/logged-out-user.local.query";
 import { PwdInputActionTypes } from "../PwdInput/pwd-input";
-import { ToOtherAuthLinkProps } from "../ToOtherAuthLink";
+import {
+  UserLocalMutationProps,
+  UserLocalGqlProps
+} from "../../state/user.resolver";
 
 export interface OwnProps
   extends RouteComponentProps<{}>,
-    WithApolloClient<{}> {
-  ToOtherAuthLink: ComponentType<ToOtherAuthLinkProps>;
-}
+    WithApolloClient<{}> {}
 
 export type Props = OwnProps &
   LoginMutationProps &
   UserLocalMutationProps &
-  LoggedOutUserProps;
+  UserLocalGqlProps;
 
 export const ValidationSchema = Yup.object<FormValues>().shape({
   email: Yup.string()

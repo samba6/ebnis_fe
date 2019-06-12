@@ -1,21 +1,99 @@
 import { LocalResolverFn } from "./resolvers";
 import { UserFragment } from "../graphql/apollo-types/UserFragment";
-import { UserLocalMutationVariable } from "./user.local.mutation";
-import USER_QUERY, { UserLocalGqlData } from "./auth.local.query";
-import { clearToken, storeToken, storeUser, clearUser } from "./tokens";
+import {
+  clearToken,
+  storeToken,
+  storeUser,
+  clearUser,
+  getUser
+} from "./tokens";
+import gql from "graphql-tag";
+import { DataValue } from "react-apollo";
+import { userFragment } from "../graphql/user.fragment";
+import { graphql } from "react-apollo";
+import { MutationFn } from "react-apollo";
 
-export const userResolver: LocalResolverFn<
+const USER_LOCAL_QUERY = gql`
+  query UserLocalQuery {
+    loggedOutUser @client {
+      ...UserFragment
+    }
+
+    staleToken @client
+  }
+
+  ${userFragment}
+`;
+
+export const userLocalGql = graphql<
+  {},
+  UserLocalQueryReturned,
+  {},
+  UserLocalGqlProps | undefined
+>(USER_LOCAL_QUERY, {
+  props: ({ data }) =>
+    data && {
+      localUser: data
+    }
+});
+
+interface UserLocalQueryReturned {
+  loggedOutUser?: UserFragment | null;
+  staleToken?: string | null;
+}
+
+export type UserLocalQueryData = DataValue<UserLocalQueryReturned>;
+
+export interface UserLocalGqlProps {
+  localUser?: UserLocalQueryData;
+}
+
+export const USER_LOCAL_MUTATION = gql`
+  mutation UserLocalMutation($user: LocalUserInput!) {
+    localUser(user: $user) @client {
+      ...UserFragment
+    }
+  }
+
+  ${userFragment}
+`;
+
+export interface UserLocalMutationVariable {
+  user: UserFragment | null;
+}
+
+type UserLocalMutationFn = MutationFn<
   UserLocalMutationVariable,
-  Promise<UserFragment | null | undefined>
-> = async (_, { user }, { cache }) => {
+  UserLocalMutationVariable
+>;
+
+export interface UserLocalMutationProps {
+  updateLocalUser: UserLocalMutationFn;
+}
+
+export const userLocalMutationGql = graphql<
+  {},
+  UserLocalMutationVariable,
+  UserLocalMutationVariable,
+  UserLocalMutationProps | undefined
+>(USER_LOCAL_MUTATION, {
+  props: ({ mutate }) =>
+    mutate && {
+      updateLocalUser: mutate
+    }
+});
+
+export const userMutationResolver: LocalResolverFn<
+  UserLocalMutationVariable,
+  UserFragment | null | undefined
+> = (_, { user }, { cache }) => {
   if (user) {
-    /**
-     * We store user in local storage as a temporary fix because reading user
-     * out of apollo local state immediately after login does not seem to work
-     */
     storeUser(user);
 
-    cache.writeData({ data: { user, staleToken: null, loggedOutUser: null } });
+    cache.writeData({
+      data: { staleToken: user.jwt, loggedOutUser: null }
+    });
+
     storeToken(user.jwt);
 
     return user;
@@ -23,30 +101,23 @@ export const userResolver: LocalResolverFn<
   // MEANS WE HAVE LOGGED OUT. we store the current user as `loggedOutUser`
   // so we can pre-fill the sign in form with e.g. user email
 
-  const { user: loggedOutUser } = {
-    ...(cache.readQuery<UserLocalGqlData>({ query: USER_QUERY }) || {
-      user: null
-    })
-  };
-
-  const data = {
-    user: null,
-    staleToken: null
-  } as {
-    loggedOutUser?: UserFragment | null;
-  };
-
-  if (loggedOutUser) {
-    // await resetClientAndPersistor();
-    data.loggedOutUser = loggedOutUser;
-  }
+  const loggedOutUser = getUser();
 
   clearUser();
 
-  await cache.writeData({
-    data
+  cache.writeData({
+    data: { loggedOutUser, staleToken: null }
   });
+
   clearToken();
 
   return loggedOutUser;
+};
+
+export const userLocalResolvers = {
+  Mutation: {
+    localUser: userMutationResolver
+  },
+
+  Query: {}
 };

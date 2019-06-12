@@ -9,8 +9,8 @@ import {
   UserRegMutationFn,
   RegMutationProps
 } from "../../graphql/user-reg.mutation";
-import { userLocalMutationGql } from "../../state/user.local.mutation";
 import { SignUp as Comp } from "./component";
+import { userLocalMutationGql } from "../../state/user.resolver";
 
 const regUserGql = graphql<
   {},

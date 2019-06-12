@@ -41,7 +41,7 @@ import { REG_USER_MUTATION } from "../../src/graphql/user-reg.mutation";
 import {
   USER_LOCAL_MUTATION,
   UserLocalMutationVariable
-} from "../../src/state/user.local.mutation";
+} from "../../src/state/user.resolver";
 import { CREATE_EXPERIENCE_RETURN_ALL_FIELDS_MUTATION } from "../../src/graphql/create-experience-return-all-fields.mutation";
 import {
   CreateExperienceReturnAllFieldsMutation,

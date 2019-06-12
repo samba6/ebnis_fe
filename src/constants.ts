@@ -1,4 +1,4 @@
-export const TOKEN_KEY = "ebnis-token-key";
+export const TOKEN_KEY = "oVQ0XGQycGExYQdkeD2X2mCdVQ8GxrHTh";
 export const SITE_TITLE = "Ebnis";
 export const THEME_COLOR = "#5faac7";
 export const USER_KEY = "nOQhAH4V54h9MMBS3BSwtE/2eZeQWHRnPfoC4K+RDuWairX";
