@@ -1,6 +1,5 @@
 import { InMemoryCache } from "apollo-cache-inmemory";
 
-// import { resetClientAndPersistor } from "../containers/AppContext/set-up";
 import { getToken } from "./tokens";
 import {
   connectionResolver,
@@ -10,14 +9,16 @@ import {
 import { userResolver } from "./user.resolver";
 import ApolloClient from "apollo-client";
 
+export interface CacheContext {
+  cache: InMemoryCache;
+  client: ApolloClient<{}>;
+  getCacheKey: (args: { __typename: string; id: string }) => string;
+}
+
 export type LocalResolverFn<TVariables, TReturnedValue = void> = (
   root: object,
   variables: TVariables,
-  context: {
-    cache: InMemoryCache;
-    client: ApolloClient<{}>;
-    getCacheKey: (args: { __typename: string; id: string }) => string;
-  }
+  context: CacheContext
 ) => TReturnedValue;
 
 export type LocalState = ConnectionQueryData & {
@@ -32,7 +33,9 @@ export function initState() {
       Mutation: {
         connected: connectionResolver,
         user: userResolver
-      }
+      },
+
+      Query: {}
     },
     defaults: {
       connected: DEFAULT_CONNECTION_STATUS,

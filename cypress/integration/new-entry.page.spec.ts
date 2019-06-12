@@ -18,7 +18,7 @@ context("new experience entry page", () => {
      */
     const fieldName = "Total purchases";
 
-    cy.defineExperience({
+    cy.defineOnlineExperience({
       title,
       fieldDefs: [
         {
@@ -67,13 +67,13 @@ context("new experience entry page", () => {
     });
   });
 
-  it("creates entry successfully when user offline", () => {
+  it("creates entry for saved experience successfully when user offline", () => {
     /**
-     * Given there is an experience in the system with no entries
+     * Given there is an online experience in the system
      */
     const fieldName = "Total purchases";
 
-    cy.defineExperience({
+    cy.defineOnlineExperience({
       title,
       fieldDefs: [
         {
@@ -122,5 +122,70 @@ context("new experience entry page", () => {
        */
       cy.getByText(fieldValueRegex).should("exist");
     });
+  });
+
+  it("creates entry for unsaved experience successfully when user offline", () => {
+    /**
+     * Given there is an unsaved experience in the system
+     */
+    const fieldName = "Total purchases";
+
+    cy.defineUnsavedExperience({
+      title,
+      fieldDefs: [
+        {
+          name: fieldName,
+          type: FieldType.INTEGER
+        }
+      ]
+    })
+      .then(experience => {
+        return cy.persistCache().then(isPersisted => {
+          expect(isPersisted).to.eq(true);
+
+          return experience;
+        });
+      })
+      .then(experience => {
+        /**
+         * And user wishes to create new entry
+         */
+        const fieldValue = "4567890";
+        const fieldValueRegex = new RegExp(fieldValue);
+
+        /**
+         * When we visit new entry page
+         */
+        cy.visit(makeNewEntryRoute(experience.id));
+
+        /**
+         * Then we should see the title
+         */
+        cy.title().should("contain", `[New Entry] ${title}`);
+
+        /**
+         * And data user wishes to create should not exist on page
+         */
+        cy.queryByText(fieldValueRegex).should("not.exist");
+
+        cy.setConnectionStatus(ManualConnectionStatus.disconnected);
+
+        /**
+         * When user completes and submits the form
+         */
+        cy.getByLabelText(new RegExp(fieldName, "i")).type(fieldValue);
+        cy.getByText(/submit/i).click();
+
+        /**
+         * Then user should redirected to experience page
+         */
+        cy.title().should("not.contain", `[New Entry]`);
+        cy.title().should("contain", title);
+
+        /**
+         * And data user wishes to create should exist on page
+         */
+        cy.getByText(fieldValueRegex).should("exist");
+      });
   });
 });

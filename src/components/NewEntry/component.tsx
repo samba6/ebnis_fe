@@ -15,48 +15,27 @@ import {
   Action_Types
 } from "./utils";
 import { makeExperienceRoute } from "../../constants/experience-route";
-import { Loading } from "../Loading";
 import { GetAnExp_exp_fieldDefs } from "../../graphql/apollo-types/GetAnExp";
 import { CreateEntryFn } from "../../graphql/create-entry.mutation";
 import { updateExperienceWithNewEntry } from "./update";
 import { fieldTypeUtils } from "./field-types-utils";
 import { SidebarHeader } from "../SidebarHeader";
 import { setDocumentTitle, makeSiteTitle } from "../../constants";
-import { GetExperienceGqlValues } from "../../graphql/get-exp.query";
 import { getConnStatus } from "../../state/get-conn-status";
-import { useManualUnsavedExperience } from "../Experience/use-manual-unsaved-experience";
-import { UnsavedExperienceDataValue } from "../Experience/resolvers";
-import { useGoto404OnExperienceNotFound } from "../Experience/use-goto-404";
+import { UnsavedExperience } from "../ExperienceDefinition/resolver-utils";
 
 export function NewEntry(props: Props) {
   const {
-    getExperienceGql: {
-      loading: loadingServerExperience
-    } = {} as GetExperienceGqlValues,
     navigate,
     createEntry,
     createUnsavedEntry,
     client,
-    unsavedExperienceGql: {
-      loading: loadingUnsavedExperience
-    } = {} as UnsavedExperienceDataValue
+    experience
   } = props;
-
-  const {
-    experienceToRender,
-    loadingUnsavedExperienceForState
-  } = useManualUnsavedExperience(props);
 
   const [state, dispatch] = useReducer(reducer, { formObj: {} });
 
-  const pageTitle = makePageTitle(experienceToRender);
-
-  const loading =
-    loadingServerExperience ||
-    loadingUnsavedExperienceForState ||
-    loadingUnsavedExperience;
-
-  useGoto404OnExperienceNotFound(props, loading, experienceToRender);
+  const pageTitle = makePageTitle(experience);
 
   useEffect(
     function setRouteTitle() {
@@ -69,25 +48,25 @@ export function NewEntry(props: Props) {
 
   useEffect(
     function setInitialFormValues() {
-      if (experienceToRender) {
+      if (experience) {
         dispatch({
           type: Action_Types.experienceToFormValues,
           payload: {
-            experience: experienceToRender
+            experience
           }
         });
       }
     },
-    [experienceToRender]
+    [experience]
   );
 
   function goToExp() {
-    (navigate as NavigateFn)(makeExperienceRoute(experienceToRender.id));
+    (navigate as NavigateFn)(makeExperienceRoute(experience.id));
   }
 
   async function onSubmit() {
     const fields = [];
-    const { fieldDefs, id: expId } = experienceToRender;
+    const { fieldDefs, id: expId } = experience;
 
     for (const [stringIndex, val] of Object.entries(state.formObj)) {
       const index = Number(stringIndex);
@@ -116,7 +95,7 @@ export function NewEntry(props: Props) {
     } else {
       await createUnsavedEntry({
         variables: {
-          experience: experienceToRender,
+          experience: (experience as unknown) as UnsavedExperience,
           fields
         }
       });
@@ -126,15 +105,7 @@ export function NewEntry(props: Props) {
   }
 
   function renderMainOr() {
-    if (loading) {
-      return <Loading loading={loading} />;
-    }
-
-    if (!experienceToRender) {
-      return null;
-    }
-
-    const { fieldDefs, title } = experienceToRender;
+    const { fieldDefs, title } = experience;
 
     return (
       <div className="main">

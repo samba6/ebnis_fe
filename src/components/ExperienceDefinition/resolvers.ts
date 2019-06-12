@@ -20,7 +20,7 @@ const createUnsavedExperienceResolver: LocalResolverFn<
 > = (
   root,
   { exp: { description = null, title, fieldDefs: createFieldDefs } },
-  { cache, getCacheKey }
+  { cache }
 ) => {
   const experienceId = makeUnsavedId(new Date().getTime());
 
@@ -79,7 +79,7 @@ export const CREATE_UNSAVED_EXPERIENCE_MUTATION = gql`
   ${UNSAVED_EXPERIENCE_FRAGMENT}
 `;
 
-interface CreateUnsavedExperienceMutationData {
+export interface CreateUnsavedExperienceMutationData {
   createUnsavedExperience: UnsavedExperience;
 }
 

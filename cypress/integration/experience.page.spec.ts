@@ -15,7 +15,7 @@ context("experience page", () => {
     /**
      * Given there is an experience in the system with no entries
      */
-    cy.defineExperience({
+    cy.defineOnlineExperience({
       title,
       fieldDefs: [
         {
@@ -51,7 +51,7 @@ context("experience page", () => {
     /**
      * Given there is an experience in the system with entries
      */
-    cy.defineExperience({
+    cy.defineOnlineExperience({
       title,
       fieldDefs: [
         {

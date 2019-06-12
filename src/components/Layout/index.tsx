@@ -1,9 +1,36 @@
-import React from "react";
+import React, {
+  useContext,
+  PropsWithChildren,
+  useState,
+  useEffect
+} from "react";
+import { EbnisAppContext } from "../../context";
+import { Loading } from "../Loading";
 
-import { useSetupCachePersistor } from "../../context";
+export function Layout({ children }: PropsWithChildren<{}>) {
+  const { cache, persistCache } = useContext(EbnisAppContext);
 
-export function Layout({ children }: React.PropsWithChildren<{}>) {
-  useSetupCachePersistor();
+  // this will be true if we are server rendering in gatsby build
+  if (!(cache && persistCache)) {
+    return <>{children}</>;
+  }
 
-  return <>{children}</>;
+  const [renderChildren, setRenderChildren] = useState(false);
+
+  useEffect(function PersistCache() {
+    (async function doPersistCache() {
+      try {
+        await persistCache(cache);
+        setRenderChildren(true);
+      } catch (error) {
+        return setRenderChildren(true);
+      }
+    })();
+  }, []);
+
+  if (!renderChildren) {
+    return <Loading />;
+  }
+
+  return renderChildren ? <>{children}</> : null;
 }

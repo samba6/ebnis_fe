@@ -33,7 +33,6 @@ jest.mock("../state/get-conn-status");
 
 import { updateExperienceWithNewEntry } from "../components/NewEntry/update";
 import { getConnStatus } from "../state/get-conn-status";
-import ApolloClient from "apollo-client";
 
 const mockGetConnStatus = getConnStatus as jest.Mock;
 const mockUpdate = updateExperienceWithNewEntry as jest.Mock;
@@ -48,25 +47,6 @@ beforeEach(() => {
 
 afterEach(() => {
   jest.clearAllTimers();
-});
-
-it("renders loading indicator if we have not returned from server", () => {
-  /**
-   * Given that we have not received experience from server
-   */
-  const { ui } = makeComp({ getExperienceGql: { loading: true } as any });
-
-  /**
-   * While we are on new entry page
-   */
-  const { getByTestId } = render(ui);
-
-  jest.advanceTimersByTime(10000);
-
-  /**
-   * Then we should see loading indicator
-   */
-  expect(getByTestId("loading-spinner")).toBeInTheDocument();
 });
 
 it("creates new experience entry when online", async () => {
@@ -126,7 +106,7 @@ it("creates new experience entry when online", async () => {
   };
 
   const { ui, mockCreateEntry } = makeComp({
-    getExperienceGql: { exp } as any
+    experience: exp
   });
 
   /**
@@ -231,7 +211,7 @@ it("sets decimal and integer fields to default to 0", async () => {
   } as GetAnExp_exp;
 
   const { ui, mockCreateEntry } = makeComp({
-    getExperienceGql: { exp } as any
+    experience: exp
   });
 
   /**
@@ -292,7 +272,7 @@ it("sets values of date and datetime fields", async () => {
   };
 
   const { ui, mockCreateEntry } = makeComp({
-    getExperienceGql: { exp } as any
+    experience: exp
   });
 
   /**
@@ -380,7 +360,7 @@ it("creates new experience entry when offline", async () => {
 
   const { ui, mockCreateUnsavedEntry, mockCreateEntry } = makeComp(
     {
-      getExperienceGql: { exp } as any
+      experience: exp as any
     },
     false
   );
@@ -428,36 +408,12 @@ it("creates new experience entry when offline", async () => {
   expect(mockCreateEntry).not.toBeCalled();
 });
 
-it("redirects to 404 page when no experience to render", () => {
-  /**
-   * Given there is no experience matching that requested on this page
-   */
-  const { mockNavigate, mockQuery, ui } = makeComp({});
-  mockQuery.mockResolvedValue(null);
-
-  /**
-   * When we use the component
-   */
-  render(ui);
-
-  /**
-   * Then we should be redirected to 404 page
-   */
-
-  expect(mockNavigate).toBeCalledWith("/404");
-});
-
 function makeComp(props: Partial<Props>, connectionStatus: boolean = true) {
   mockGetConnStatus.mockReset();
   mockGetConnStatus.mockResolvedValue(connectionStatus);
   mockUpdate.mockReset();
   const mockCreateEntry = jest.fn();
   const mockCreateUnsavedEntry = jest.fn();
-  const mockQuery = jest.fn();
-
-  const client = {
-    query: mockQuery
-  };
 
   const { Ui, ...rest } = renderWithRouter(NewEntryP);
 
@@ -466,13 +422,11 @@ function makeComp(props: Partial<Props>, connectionStatus: boolean = true) {
       <Ui
         createEntry={mockCreateEntry}
         createUnsavedEntry={mockCreateUnsavedEntry}
-        client={(client as unknown) as ApolloClient<{}>}
         {...props}
       />
     ),
     mockCreateEntry,
     mockCreateUnsavedEntry,
-    ...rest,
-    mockQuery
+    ...rest
   };
 }

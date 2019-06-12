@@ -66,7 +66,7 @@ context("experience definition page", () => {
      */
     const title = "new experience title";
 
-    cy.defineExperience({
+    cy.defineOnlineExperience({
       title,
       fieldDefs: [
         {

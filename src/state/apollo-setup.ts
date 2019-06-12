@@ -6,11 +6,14 @@ import * as AbsintheSocket from "@absinthe/socket";
 import { createAbsintheSocketLink } from "@absinthe/socket-apollo-link";
 import { onError } from "apollo-link-error";
 import { HttpLink } from "apollo-link-http";
-
+import {
+  SCHEMA_KEY,
+  SCHEMA_VERSION,
+  SCHEMA_VERSION_KEY
+} from "../constants/apollo-schema";
 import { getSocket } from "../socket";
 import { initState, LocalState } from "./resolvers";
 import { getToken } from "./tokens";
-import { SCHEMA_VERSION, SCHEMA_VERSION_KEY, SCHEMA_KEY } from "../constants";
 import {
   CONNECTION_MUTATION,
   ConnectionStatus,
@@ -34,6 +37,8 @@ interface BuildClientCache {
   fetch?: GlobalFetch["fetch"];
 
   forceSocketConnection?: boolean;
+
+  resolvers?: Resolvers[];
 }
 
 function onConnChange(isConnected: boolean) {
@@ -51,7 +56,8 @@ export function buildClientCache(
     headers,
     isNodeJs,
     fetch,
-    forceSocketConnection
+    forceSocketConnection,
+    resolvers
   }: BuildClientCache = {} as BuildClientCache
 ) {
   if (!cache) {
@@ -61,7 +67,7 @@ export function buildClientCache(
   }
 
   if (forceSocketConnection || !client) {
-    let resolvers = {} as Resolvers;
+    let defaultResolvers = [] as Resolvers[];
     let defaultState = {} as LocalState;
     let link: ApolloLink;
 
@@ -91,14 +97,15 @@ export function buildClientCache(
       link = middlewareLoggerLink(link);
 
       const state = initState();
-      resolvers = state.resolvers;
+      defaultResolvers = [state.resolvers as Resolvers].concat(resolvers || []);
+
       defaultState = state.defaults;
     }
 
     client = new ApolloClient({
       cache,
       link,
-      resolvers
+      resolvers: defaultResolvers
     });
 
     if (!isNodeJs) {
@@ -117,14 +124,18 @@ export type PersistCacheFn = (
   appCache: InMemoryCache
 ) => Promise<CachePersistor<NormalizedCacheObject>>;
 
+export function makePersistor(appCache: InMemoryCache) {
+  return new CachePersistor({
+    cache: appCache,
+    storage: localStorage,
+    key: SCHEMA_KEY,
+    maxSize: false
+  });
+}
+
 export async function persistCache(appCache: InMemoryCache) {
   if (!persistor) {
-    persistor = new CachePersistor({
-      cache: appCache,
-      // tslint:disable-next-line: no-any
-      storage: localStorage as any,
-      key: SCHEMA_KEY
-    });
+    persistor = makePersistor(appCache);
 
     const currentVersion = localStorage.getItem(SCHEMA_VERSION_KEY);
 

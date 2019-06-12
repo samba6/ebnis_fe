@@ -2,13 +2,23 @@ import React, { PropsWithChildren, useRef, useState, useEffect } from "react";
 
 import "./styles.scss";
 import makeClassNames from "classnames";
+import { LoadingComponentProps } from "react-loadable";
+
+export function LoadableLoading(props: LoadingComponentProps) {
+  return <Loading loadableProps={props} />;
+}
 
 export function Loading({
   className,
   children,
   loading = true,
+  loadableProps,
   ...props
-}: PropsWithChildren<{ className?: string; loading?: boolean }>) {
+}: PropsWithChildren<{
+  className?: string;
+  loading?: boolean;
+  loadableProps?: LoadingComponentProps;
+}>) {
   const loadingRef = useRef<number | null>(null);
   const [shouldShow, setShouldShow] = useState(false);
 

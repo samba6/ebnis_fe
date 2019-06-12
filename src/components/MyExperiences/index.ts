@@ -5,9 +5,10 @@ import { GetExps, GetExpsVariables } from "../../graphql/apollo-types/GetExps";
 import { GetExpGqlProps, GET_EXP_DEFS_QUERY } from "../../graphql/exps.query";
 import { OwnProps } from "./utils";
 import { connectionGql } from "../../state/connection.resolver";
-import { resolvers, unsavedExperiencesGql } from "./resolvers";
-
-let resolverAdded = false;
+import {
+  UNSAVED_EXPERIENCES_QUERY,
+  UnsavedExperiencesQueryValues
+} from "../ExperienceDefinition/resolver-utils";
 
 const expDefsGql = graphql<
   OwnProps,
@@ -18,11 +19,6 @@ const expDefsGql = graphql<
   props: ({ data }) => data && { getExpDefsResult: data },
 
   options: ({ client }) => {
-    if (!resolverAdded) {
-      client.addResolvers(resolvers);
-      resolverAdded = true;
-    }
-
     return {
       variables: {
         pagination: {
@@ -31,6 +27,18 @@ const expDefsGql = graphql<
       }
     };
   }
+});
+
+const unsavedExperiencesGql = graphql<
+  {},
+  UnsavedExperiencesQueryValues,
+  {},
+  UnsavedExperiencesQueryValues | undefined
+>(UNSAVED_EXPERIENCES_QUERY, {
+  props: ({ data }) =>
+    data && {
+      unsavedExperiences: data.unsavedExperiences || []
+    }
 });
 
 export const MyExperiences = compose(

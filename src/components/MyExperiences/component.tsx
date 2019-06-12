@@ -15,22 +15,19 @@ import { Loading } from "../Loading";
 import {
   GetExps_exps,
   GetExps_exps_edges,
-  GetExps_exps_edges_node,
-  GetExpsVariables,
-  GetExps
+  GetExps_exps_edges_node
 } from "../../graphql/apollo-types/GetExps";
 import { SidebarHeader } from "../SidebarHeader";
 import { setDocumentTitle, makeSiteTitle } from "../../constants";
 import { MY_EXPERIENCES_TITLE } from "../../constants/my-experiences-title";
 import { Link } from "gatsby";
-import { SERVER_OFFLINE_EXPERIENCES_QUERY } from "./resolvers";
 import { UnsavedExperience } from "../ExperienceDefinition/resolver-utils";
 import { preloadEntries } from "./preload-entries";
 
 export const MyExperiences = (props: Props) => {
-  const { getExpDefsResult, isConnected, unsavedExperiences, client } = props;
+  const { getExpDefsResult, unsavedExperiences, client } = props;
 
-  const { loading, exps, networkStatus } = getExpDefsResult;
+  const { loading, exps } = getExpDefsResult;
 
   const [state, dispatch] = useReducer(reducer, initialState);
 
@@ -43,23 +40,6 @@ export const MyExperiences = (props: Props) => {
 
     return setDocumentTitle;
   }, []);
-
-  useEffect(() => {
-    // force read from cache if we are offline and user visits page directly
-    // from browser address bar (perhaps I should file an issue with absinthe-
-    // socket npm package managers. http behaves appropriately)
-
-    if (!exps && networkStatus === 1 && loading && !isConnected) {
-      client.query<GetExps, GetExpsVariables>({
-        query: SERVER_OFFLINE_EXPERIENCES_QUERY,
-        variables: {
-          pagination: {
-            first: 20
-          }
-        }
-      });
-    }
-  }, [isConnected, loading, networkStatus, exps]);
 
   useEffect(() => {
     if (exps && entriesLoadedRef.current === false) {

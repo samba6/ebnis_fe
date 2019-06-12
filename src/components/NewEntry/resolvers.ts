@@ -1,11 +1,18 @@
-import { LocalResolverFn } from "../../state/resolvers";
+import { LocalResolverFn, CacheContext } from "../../state/resolvers";
 import { CreateAnEntry_entry } from "../../graphql/apollo-types/CreateAnEntry";
-import { GetAnExp_exp } from "../../graphql/apollo-types/GetAnExp";
-import { makeUnsavedId } from "../../constants";
+import { GetAnExp_exp_entries } from "../../graphql/apollo-types/GetAnExp";
+import { makeUnsavedId, isUnsavedId } from "../../constants";
 import { CreateField } from "../../graphql/apollo-types/globalTypes";
 import gql from "graphql-tag";
 import { graphql, MutationFn } from "react-apollo";
 import { updateExperienceWithNewEntry } from "./update";
+import {
+  UnsavedExperience,
+  UNSAVED_EXPERIENCE_TYPENAME,
+  UNSAVED_EXPERIENCE_FRAGMENT,
+  UNSAVED_EXPERIENCE_FRAGMENT_NAME
+} from "../ExperienceDefinition/resolver-utils";
+import immer from "immer";
 
 const CREATE_UNSAVED_ENTRY_MUTATION = gql`
   mutation CreateUnsavedEntry($experience: Experience!, $fields: [Fields!]!) {
@@ -39,11 +46,12 @@ interface CreateUnsavedEntryMutationReturned {
 const createUnsavedEntryResolver: LocalResolverFn<
   CreateUnsavedEntryVariables,
   Promise<CreateAnEntry_entry>
-> = async (root, variables, { cache }) => {
-  const {
-    experience: { id: experienceId }
-  } = variables;
+> = async (root, variables, context) => {
+  const { cache } = context;
 
+  const { experience } = variables;
+
+  const experienceId = experience.id;
   const today = new Date();
 
   const id = makeUnsavedId(today.getTime());
@@ -64,16 +72,53 @@ const createUnsavedEntryResolver: LocalResolverFn<
     insertedAt: today.toJSON()
   };
 
-  await updateExperienceWithNewEntry(experienceId)(cache, {
-    data: { entry }
-  });
+  if (isUnsavedId(experienceId)) {
+    updateUnsavedExperiencesWithNewEntry(context, experience, entry);
+  } else {
+    await updateExperienceWithNewEntry(experienceId)(cache, {
+      data: { entry }
+    });
+  }
 
   return entry;
 };
 
+function updateUnsavedExperiencesWithNewEntry(
+  { cache, getCacheKey }: CacheContext,
+  experience: UnsavedExperience,
+  entry: CreateAnEntry_entry
+) {
+  const id = experience.id;
+
+  const cacheId = getCacheKey({
+    __typename: UNSAVED_EXPERIENCE_TYPENAME,
+    id
+  });
+
+  const newExperience = immer(experience, proxy => {
+    const entries = proxy.entries as GetAnExp_exp_entries;
+    const edges = entries.edges || [];
+    edges.push({
+      node: entry,
+      cursor: "",
+      __typename: "EntryEdge"
+    });
+
+    entries.edges = edges;
+    proxy.entries = entries;
+  });
+
+  cache.writeFragment({
+    fragment: UNSAVED_EXPERIENCE_FRAGMENT,
+    id: cacheId,
+    fragmentName: UNSAVED_EXPERIENCE_FRAGMENT_NAME,
+    data: newExperience
+  });
+}
+
 interface CreateUnsavedEntryVariables {
   fields: CreateField[];
-  experience: GetAnExp_exp;
+  experience: UnsavedExperience;
 }
 
 export const resolvers = {

@@ -1,5 +1,5 @@
 import { EXPERIENCES_URL } from "./routes";
-import { SCHEMA_KEY } from "./constants";
+import { SCHEMA_KEY } from "./constants/apollo-schema";
 
 /**
  * Wait for a newly created/logged in user to be written to local storage before

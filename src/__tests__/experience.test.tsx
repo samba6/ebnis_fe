@@ -2,7 +2,7 @@
 import React, { ComponentType } from "react";
 import "jest-dom/extend-expect";
 import "react-testing-library/cleanup-after-each";
-import { render, wait, waitForElement } from "react-testing-library";
+import { render } from "react-testing-library";
 
 import { Experience } from "../components/Experience/component";
 import { Props } from "../components/Experience/utils";
@@ -11,10 +11,7 @@ import {
   GetAnExp_exp_fieldDefs,
   GetAnExp_exp_entries_edges
 } from "../graphql/apollo-types/GetAnExp";
-import { GetExperienceGqlValues } from "../graphql/get-exp.query";
 import { renderWithRouter } from "./test_utils";
-import { UnsavedExperience } from "../components/ExperienceDefinition/resolver-utils";
-import ApolloClient from "apollo-client";
 
 jest.mock("../components/SidebarHeader", () => ({
   SidebarHeader: jest.fn(() => null)
@@ -31,37 +28,14 @@ afterEach(() => {
   jest.clearAllTimers();
 });
 
-it("renders loading while getting experience", () => {
-  /**
-   * Given that server has not returned experience to us
-   */
-  const { ui } = makeComp({
-    getExperienceGql: { loading: true } as any
-  });
-
-  /**
-   * While using the component
-   */
-  const { getByTestId } = render(ui);
-
-  jest.advanceTimersByTime(10000);
-
-  /**
-   * Then we should see loading indicator
-   */
-  expect(getByTestId("loading-spinner")).toBeInTheDocument();
-});
-
 it("renders ui to show empty entries", () => {
   /**
    * Given that there is experience with no entry in the system
    */
   const { ui } = makeComp({
-    getExperienceGql: {
-      exp: {
-        entries: {
-          edges: []
-        }
+    experience: {
+      entries: {
+        edges: []
       }
     } as any
   });
@@ -216,13 +190,11 @@ it("renders entries", () => {
   ] as GetAnExp_exp_fieldDefs[];
 
   const { ui } = makeComp({
-    getExperienceGql: {
-      exp: {
-        fieldDefs,
+    experience: {
+      fieldDefs,
 
-        entries: { edges }
-      }
-    } as GetExperienceGqlValues
+      entries: { edges }
+    } as any
   });
 
   /**
@@ -253,142 +225,11 @@ it("renders entries", () => {
   expect(getByText(/field name 6/)).toBeInTheDocument();
 });
 
-it("renders errors while getting experience", async () => {
-  /**
-   * Given that server returns error
-   */
-  const { ui, mockNavigate } = makeComp({
-    getExperienceGql: { error: {} } as any
-  });
-
-  /**
-   * While using the component
-   */
-  const {} = render(ui);
-
-  /**
-   * Then we should be redirected to 404 page
-   */
-  await wait(() => {
-    expect(mockNavigate).toBeCalledWith("/404");
-  });
-});
-
-it("renders unsaved experience when cache is ready", () => {
-  /**
-   * Given there is unsaved experience in the system
-   */
-
-  const unsavedExperience = {
-    id: "id",
-    title: "unsaved experience",
-    entries: {
-      edges: []
-    } as any
-  } as UnsavedExperience;
-
-  const { ui } = makeComp({
-    getExperienceGql: undefined,
-    unsavedExperienceGql: { unsavedExperience } as any
-  });
-
-  /**
-   * When we use the component
-   */
-  const { queryByTestId, getByText } = render(ui);
-
-  /**
-   * Then we should not see loading spinner
-   */
-  expect(queryByTestId("loading-spinner")).not.toBeInTheDocument();
-
-  /**
-   * And we should see texts informing us that there are not entries
-   */
-  expect(getByText("No entries. Click here to add one")).toBeInTheDocument();
-
-  /**
-   * And we should not see any UI for an entry
-   */
-  expect(queryByTestId("experience-entry")).not.toBeInTheDocument();
-});
-
-it("renders unsaved experience when cache is not ready", async () => {
-  /**
-   * Given there is unsaved experience in the system
-   */
-
-  const id = "id";
-
-  const unsavedExperience = {
-    id,
-    title: "unsaved experience",
-    entries: {
-      edges: []
-    } as any
-  } as UnsavedExperience;
-
-  const { ui, mockQuery } = makeComp({
-    getExperienceGql: undefined,
-    unsavedExperienceGql: {
-      loading: false
-    } as any
-  });
-
-  mockQuery.mockResolvedValue({
-    data: {
-      unsavedExperience
-    }
-  });
-
-  /**
-   * When we use the component
-   */
-  const { queryByTestId, getByText } = render(ui);
-
-  /**
-   * After a little while
-   */
-  jest.runAllTimers();
-
-  /**
-   * Then we should see texts informing us that there are no entries
-   */
-  const $noEntry = await waitForElement(() =>
-    getByText("No entries. Click here to add one")
-  );
-  expect($noEntry).toBeInTheDocument();
-
-  /**
-   * And we should not see any UI for an entry
-   */
-  expect(queryByTestId("experience-entry")).not.toBeInTheDocument();
-});
-
-it("redirects to 404 page when there is no experience to render", () => {
-  /**
-   * Given there is no experience to render in the system
-   */
-  const { mockNavigate, mockQuery, ui } = makeComp({
-    getExperienceGql: undefined
-  });
-
-  mockQuery.mockResolvedValue(null);
-
-  render(ui);
-
-  expect(mockNavigate).toBeCalledWith("/404");
-});
-
 function makeComp(props: Partial<Props> = {}) {
   const { Ui, mockNavigate } = renderWithRouter(ExperienceP, {});
 
-  const mockQuery = jest.fn();
-  const client = ({ query: mockQuery } as unknown) as ApolloClient<{}>;
-
   return {
-    ui: <Ui getExperienceGql={{ exp: {} } as any} client={client} {...props} />,
-    mockNavigate,
-    mockQuery
+    ui: <Ui {...props} />,
+    mockNavigate
   };
 }

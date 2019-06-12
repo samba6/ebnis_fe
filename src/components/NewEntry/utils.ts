@@ -1,7 +1,6 @@
 import { RouteComponentProps } from "@reach/router";
 import { Reducer, Dispatch } from "react";
 
-import { GetExperienceGqlProps } from "../../graphql/get-exp.query";
 import { NewEntryRouteParams } from "../../routes";
 import { CreateEntryGqlProps } from "../../graphql/create-entry.mutation";
 import {
@@ -10,18 +9,17 @@ import {
 } from "../../graphql/apollo-types/GetAnExp";
 import { fieldTypeUtils } from "./field-types-utils";
 import { WithApolloClient } from "react-apollo";
-import { UnsavedExperienceGqlProps } from "../Experience/resolvers";
 import { CreateUnsavedEntryMutationProps } from "./resolvers";
 
 export interface OwnProps
   extends WithApolloClient<{}>,
-    RouteComponentProps<NewEntryRouteParams> {}
+    RouteComponentProps<NewEntryRouteParams> {
+  experience: GetAnExp_exp;
+}
 
 export interface Props
   extends OwnProps,
-    GetExperienceGqlProps,
     CreateEntryGqlProps,
-    UnsavedExperienceGqlProps,
     CreateUnsavedEntryMutationProps {}
 
 export type FormObjVal = Date | string | number;

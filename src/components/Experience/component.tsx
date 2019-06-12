@@ -4,7 +4,6 @@ import { Link } from "gatsby";
 
 import "./styles.scss";
 import { Props, displayFieldType } from "./utils";
-import { Loading } from "../Loading";
 import {
   GetAnExp_exp_fieldDefs,
   GetAnExp_exp_entries,
@@ -14,35 +13,12 @@ import {
 } from "../../graphql/apollo-types/GetAnExp";
 import { SidebarHeader } from "../SidebarHeader";
 import { setDocumentTitle, makeSiteTitle } from "../../constants";
-import { GetExperienceGqlValues } from "../../graphql/get-exp.query";
-import { UnsavedExperienceDataValue } from "./resolvers";
 import { makeNewEntryRoute } from "../../constants/new-entry-route";
-import { useManualUnsavedExperience } from "./use-manual-unsaved-experience";
-import { useGoto404OnExperienceNotFound } from "./use-goto-404";
+
 export function Experience(props: Props) {
-  const {
-    getExperienceGql: {
-      loading: loadingExperience
-    } = {} as GetExperienceGqlValues,
+  const { experience } = props;
 
-    unsavedExperienceGql: {
-      loading: loadingUnsavedExperience
-    } = {} as UnsavedExperienceDataValue
-  } = props;
-
-  const {
-    experienceToRender,
-    loadingUnsavedExperienceForState
-  } = useManualUnsavedExperience(props);
-
-  const loading =
-    loadingExperience ||
-    loadingUnsavedExperience ||
-    loadingUnsavedExperienceForState;
-
-  const title = getTitle(experienceToRender);
-
-  useGoto404OnExperienceNotFound(props, loading, experienceToRender);
+  const title = getTitle(experience);
 
   useEffect(
     function setRouteTitle() {
@@ -56,7 +32,7 @@ export function Experience(props: Props) {
   function renderEntryField(field: GetAnExp_exp_entries_edges_node_fields) {
     const { defId, data } = field;
 
-    const fieldDefs = experienceToRender.fieldDefs as GetAnExp_exp_fieldDefs[];
+    const fieldDefs = experience.fieldDefs as GetAnExp_exp_fieldDefs[];
 
     const fieldDef = fieldDefs.find(
       (aFieldDef: GetAnExp_exp_fieldDefs) => aFieldDef.id === defId
@@ -80,7 +56,7 @@ export function Experience(props: Props) {
   }
 
   function renderEntries() {
-    const entries = experienceToRender.entries as GetAnExp_exp_entries;
+    const entries = experience.entries as GetAnExp_exp_entries;
     const edges = entries.edges as GetAnExp_exp_entries_edges[];
 
     if (edges.length === 0) {
@@ -88,7 +64,7 @@ export function Experience(props: Props) {
         <Link
           className="no-entries"
           data-testid="no-entries"
-          to={makeNewEntryRoute(experienceToRender.id)}
+          to={makeNewEntryRoute(experience.id)}
         >
           No entries. Click here to add one
         </Link>
@@ -117,14 +93,6 @@ export function Experience(props: Props) {
   }
 
   function renderMain() {
-    if (loading) {
-      return <Loading loading={loading} />;
-    }
-
-    if (!experienceToRender) {
-      return null;
-    }
-
     return (
       <>
         <div className="header" data-testid="experience-entries">
@@ -137,7 +105,7 @@ export function Experience(props: Props) {
               basic={true}
               compact={true}
               as={Link}
-              to={makeNewEntryRoute(experienceToRender.id)}
+              to={makeNewEntryRoute(experience.id)}
             >
               New entry
             </Button>

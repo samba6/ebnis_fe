@@ -31,9 +31,7 @@ export const userResolver: LocalResolverFn<
 
   const data = {
     user: null,
-    staleToken: null,
-    currentProject: null,
-    searchComponentState: null
+    staleToken: null
   } as {
     loggedOutUser?: UserFragment | null;
   };

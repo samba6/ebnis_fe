@@ -2,7 +2,7 @@
 import React, { ComponentType } from "react";
 import "jest-dom/extend-expect";
 import "react-testing-library/cleanup-after-each";
-import { render, fireEvent, wait } from "react-testing-library";
+import { render, fireEvent } from "react-testing-library";
 
 import { MyExperiences } from "../components/MyExperiences/component";
 import { Props } from "../components/MyExperiences/utils";
@@ -153,32 +153,6 @@ it("renders unsaved and saved experiences", () => {
    * Then we should only see 3 experiences
    */
   expect(getAllByTestId(/experience-main-/).length).toBe(3);
-});
-
-it("renders offline experiences when server unavailable", async () => {
-  /**
-   * Given server is unavailable
-   */
-  const { Ui, mockQuery } = makeComp({
-    getExpDefsResult: {
-      loading: true,
-      networkStatus: 1
-    } as any,
-
-    isConnected: false
-  });
-
-  /**
-   * When we use the component
-   */
-  render(<Ui />);
-
-  /**
-   * Then we should load experiences from user cache
-   */
-  await wait(() => {
-    expect((mockQuery.mock.calls[0][0] as any).query).not.toBeUndefined();
-  });
 });
 
 it("loads entries in the background when experiences are loaded", () => {

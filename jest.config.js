@@ -14,13 +14,15 @@ module.exports = {
     "!src/components/RootHelmet/**",
     "!src/components/**/index.ts",
     "!src/components/**/local*queries.ts",
-    "!src/components/**/resolvers.ts",
+    "!src/components/**/resolver*",
     "!src/**/*.d.ts",
     "!src/context.ts",
     "!src/socket.ts",
     "!src/components/NewEntry/update.ts",
     "!src/components/**/*gql.ts",
-    "!src/test-utils/**"
+    "!src/test-utils/**",
+    "!src/components/ExperienceNewEntryParent/loadables.ts",
+    "!src/components/MyExperiences/preload-entries.ts"
   ],
   setupFiles: ["<rootDir>/loadershim.js", "react-app-polyfill/jsdom"],
   setupFilesAfterEnv: ["<rootDir>/config/jest/setupTests.js"],

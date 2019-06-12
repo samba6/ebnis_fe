@@ -2,19 +2,12 @@ import { RouteComponentProps } from "@reach/router";
 import dateFnParse from "date-fns/parse";
 import dateFnFormat from "date-fns/format";
 import { FieldType } from "../../graphql/apollo-types/globalTypes";
-import { GetExperienceGqlProps } from "../../graphql/get-exp.query";
-import { WithApolloClient } from "react-apollo";
-import { UnsavedExperienceGqlProps } from "./resolvers";
 import { NewEntryRouteParams } from "../../routes";
+import { GetAnExp_exp } from "../../graphql/apollo-types/GetAnExp";
 
-export interface OwnProps
-  extends RouteComponentProps<NewEntryRouteParams>,
-    WithApolloClient<{}> {}
-
-export interface Props
-  extends OwnProps,
-    GetExperienceGqlProps,
-    UnsavedExperienceGqlProps {}
+export interface Props extends RouteComponentProps<NewEntryRouteParams> {
+  experience: GetAnExp_exp;
+}
 
 export type FormObjVal = Date | string;
 export interface FormObj {

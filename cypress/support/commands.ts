@@ -25,9 +25,8 @@
 // Cypress.Commands.overwrite("visit", (originalFn, url, options) => { ... })
 import "cypress-testing-library/add-commands";
 import { MutationOptions } from "apollo-client/core/watchQueryOptions";
-import { USER_JWT_ENV } from "./user-jwt-env";
 import { UserCreationObject } from "./user-creation-object";
-import { buildClientCache } from "../../src/state/apollo-setup";
+import { buildClientCache, makePersistor } from "../../src/state/apollo-setup";
 import {
   Registration,
   CreateExp,
@@ -61,6 +60,17 @@ import {
   ManualConnectionStatus,
   setManualConnection
 } from "../../src/test-utils/manual-connection-setting";
+import {
+  CreateUnsavedExperienceMutationData,
+  CREATE_UNSAVED_EXPERIENCE_MUTATION,
+  resolvers
+} from "../../src/components/ExperienceDefinition/resolvers";
+import { UnsavedExperience } from "../../src/components/ExperienceDefinition/resolver-utils";
+import { CACHE_ENV_NAME, USER_JWT_ENV } from "./constants";
+import {
+  SCHEMA_VERSION,
+  SCHEMA_VERSION_KEY
+} from "../../src/constants/apollo-schema";
 
 const serverUrl = Cypress.env("API_URL") as string;
 
@@ -73,6 +83,8 @@ function checkoutSession() {
 function closeSession() {
   setManualConnection(ManualConnectionStatus.unset);
   Cypress.env(USER_JWT_ENV, null);
+  Cypress.env(CACHE_ENV_NAME, null);
+  localStorage.removeItem(SCHEMA_VERSION_KEY);
 
   return mutate<UserLocalMutationVariable, UserLocalMutationVariable>({
     mutation: USER_LOCAL_MUTATION,
@@ -123,7 +135,7 @@ function registerUser(userData: Registration) {
     });
 }
 
-function defineExperience(experienceDefinitionArgs: CreateExp) {
+function defineOnlineExperience(experienceDefinitionArgs: CreateExp) {
   return mutate<
     CreateExperienceReturnAllFieldsMutation,
     CreateExperienceReturnAllFieldsMutationVariables
@@ -137,6 +149,25 @@ function defineExperience(experienceDefinitionArgs: CreateExp) {
       result &&
       result.data &&
       (result.data.exp as CreateExperienceReturnAllFieldsMutation_exp);
+
+    return exp;
+  });
+}
+
+function defineUnsavedExperience(experienceDefinitionArgs: CreateExp) {
+  return mutate<
+    CreateUnsavedExperienceMutationData,
+    CreateExperienceReturnAllFieldsMutationVariables
+  >({
+    mutation: CREATE_UNSAVED_EXPERIENCE_MUTATION,
+    variables: {
+      exp: experienceDefinitionArgs
+    }
+  }).then(result => {
+    const exp =
+      result &&
+      result.data &&
+      (result.data.createUnsavedExperience as UnsavedExperience);
 
     return exp;
   });
@@ -169,13 +200,16 @@ function createExperienceEntries(
 function mutate<TData, TVariables>(
   options: MutationOptions<TData, TVariables>
 ) {
-  const { client } = buildClientCache({
+  const { client, cache } = buildClientCache({
     uri: serverUrl,
     headers: {
       jwt: Cypress.env(USER_JWT_ENV)
     },
-    forceSocketConnection: true
+    forceSocketConnection: true,
+    resolvers: [resolvers]
   });
+
+  Cypress.env(CACHE_ENV_NAME, cache);
 
   return client.mutate<TData, TVariables>(options);
 }
@@ -184,14 +218,32 @@ function setConnectionStatus(status: ManualConnectionStatus) {
   setManualConnection(status);
 }
 
+async function persistCache() {
+  const cache = Cypress.env(CACHE_ENV_NAME);
+
+  if (!cache) {
+    return false;
+  }
+
+  localStorage.setItem(SCHEMA_VERSION_KEY, SCHEMA_VERSION);
+
+  const persistor = makePersistor(cache);
+
+  await persistor.persist();
+
+  return true;
+}
+
 Cypress.Commands.add("checkoutSession", checkoutSession);
 Cypress.Commands.add("closeSession", closeSession);
 Cypress.Commands.add("createUser", createUser);
 Cypress.Commands.add("registerUser", registerUser);
 Cypress.Commands.add("mutate", mutate);
-Cypress.Commands.add("defineExperience", defineExperience);
+Cypress.Commands.add("defineOnlineExperience", defineOnlineExperience);
+Cypress.Commands.add("defineUnsavedExperience", defineUnsavedExperience);
 Cypress.Commands.add("createExperienceEntries", createExperienceEntries);
 Cypress.Commands.add("setConnectionStatus", setConnectionStatus);
+Cypress.Commands.add("persistCache", persistCache);
 
 declare global {
   namespace Cypress {
@@ -231,9 +283,13 @@ declare global {
       /**
        *
        */
-      defineExperience: (
+      defineOnlineExperience: (
         experienceDefinitionArgs: CreateExp
       ) => Promise<CreateExperienceReturnAllFieldsMutation_exp>;
+
+      defineUnsavedExperience: (
+        experienceDefinitionArgs: CreateExp
+      ) => Promise<UnsavedExperience>;
 
       /**
        *
@@ -252,6 +308,11 @@ declare global {
        *
        */
       setConnectionStatus: (status: ManualConnectionStatus) => void;
+
+      /**
+       *
+       */
+      persistCache: () => Promise<boolean>;
     }
   }
 }

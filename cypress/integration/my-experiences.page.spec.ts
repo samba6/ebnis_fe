@@ -59,7 +59,7 @@ context("my experiences page", () => {
     /**
      * Given there is an experience in the system
      */
-    cy.defineExperience({
+    cy.defineOnlineExperience({
       title,
       fieldDefs: [
         {
