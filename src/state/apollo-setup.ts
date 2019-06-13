@@ -1,5 +1,5 @@
 import { InMemoryCache, NormalizedCacheObject } from "apollo-cache-inmemory";
-import { ApolloClient, Resolvers } from "apollo-client";
+import { ApolloClient } from "apollo-client";
 import { ApolloLink } from "apollo-link";
 import { CachePersistor } from "apollo-cache-persist";
 import * as AbsintheSocket from "@absinthe/socket";
@@ -11,7 +11,7 @@ import {
   SCHEMA_VERSION_KEY
 } from "../constants/apollo-schema";
 import { getSocket } from "../socket";
-import { initState, LocalState } from "./resolvers";
+import { initState } from "./resolvers";
 import {
   CONNECTION_MUTATION,
   ConnectionStatus,
@@ -41,8 +41,6 @@ interface BuildClientCache extends E2eOptions {
   isNodeJs?: boolean;
 
   fetch?: GlobalFetch["fetch"];
-
-  resolvers?: Resolvers[];
 }
 
 function onConnChange(isConnected: boolean) {
@@ -60,7 +58,6 @@ export function buildClientCache(
     headers,
     isNodeJs,
     fetch,
-    resolvers,
     ...e2eOptions
   }: BuildClientCache = {} as BuildClientCache
 ) {
@@ -71,8 +68,6 @@ export function buildClientCache(
   }
 
   if (!client) {
-    let defaultResolvers = (resolvers || []) as Resolvers[];
-    let defaultState = {} as LocalState;
     let link: ApolloLink;
 
     if (isNodeJs) {
@@ -101,24 +96,24 @@ export function buildClientCache(
       link = middlewareAuthLink(makeSocketLink, headers);
       link = middlewareErrorLink(link, e2eOptions);
       link = middlewareLoggerLink(link, e2eOptions);
-
-      const state = initState();
-      defaultResolvers = defaultResolvers.concat(state.resolvers);
-      defaultState = state.defaults;
     }
 
     client = new ApolloClient({
       cache,
-      link,
-      resolvers: defaultResolvers
+      link
     });
 
     if (!isNodeJs) {
+      const state = initState();
+
       cache.writeData({
-        data: defaultState
+        data: state.defaults
       });
 
+      client.addResolvers(state.resolvers);
+
       makePersistor(cache);
+      setupE2e();
     }
   }
 
@@ -180,3 +175,27 @@ export const resetClientAndPersistor = async (
   await appClient.clearStore();
   await appPersistor.resume();
 };
+
+///////////////////// END TO END TESTS THINGS ///////////////////////
+export interface E2EWindowObject {
+  cache: InMemoryCache;
+  client: ApolloClient<{}>;
+  persistor: CachePersistor<NormalizedCacheObject>;
+}
+
+declare global {
+  // tslint:disable-next-line: no-empty-interface
+  interface Window {
+    ___e2e: E2EWindowObject;
+  }
+}
+
+function setupE2e() {
+  if (process.env.IS_E2E) {
+    window.___e2e = {
+      cache,
+      client,
+      persistor
+    };
+  }
+}

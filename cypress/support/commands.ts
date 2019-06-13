@@ -26,7 +26,10 @@
 import "cypress-testing-library/add-commands";
 import { MutationOptions } from "apollo-client/core/watchQueryOptions";
 import { UserCreationObject } from "./user-creation-object";
-import { buildClientCache } from "../../src/state/apollo-setup";
+import {
+  buildClientCache,
+  E2EWindowObject
+} from "../../src/state/apollo-setup";
 import {
   Registration,
   CreateExp,
@@ -62,8 +65,7 @@ import {
 } from "../../src/test-utils/manual-connection-setting";
 import {
   CreateUnsavedExperienceMutationData,
-  CREATE_UNSAVED_EXPERIENCE_MUTATION,
-  experienceDefinitionResolvers
+  CREATE_UNSAVED_EXPERIENCE_MUTATION
 } from "../../src/components/ExperienceDefinition/resolvers";
 import { UnsavedExperience } from "../../src/components/ExperienceDefinition/resolver-utils";
 import { USER_JWT_ENV } from "./constants";
@@ -74,11 +76,13 @@ import {
 import ApolloClient from "apollo-client";
 import { NormalizedCacheObject } from "apollo-cache-inmemory";
 import { CachePersistor } from "apollo-cache-persist";
+import { allResolvers } from "../../src/state/all-resolvers";
 
 const serverUrl = Cypress.env("API_URL") as string;
 // let cache: InMemoryCache;
 let client: ApolloClient<{}>;
 let persistor: CachePersistor<NormalizedCacheObject>;
+const emptyE2eWindowObject = {} as E2EWindowObject;
 
 function checkoutSession() {
   cy.request("GET", serverUrl + "/reset_db").then(response => {
@@ -87,6 +91,7 @@ function checkoutSession() {
 }
 
 function closeSession() {
+  window.___e2e = null;
   client = null;
   persistor = null;
   setManualConnection(ManualConnectionStatus.unset);
@@ -150,6 +155,8 @@ function defineOnlineExperience(experienceDefinitionArgs: CreateExp) {
       result.data &&
       (result.data.exp as CreateExperienceReturnAllFieldsMutation_exp);
 
+    expect(exp.id).to.be.a("string");
+
     return exp;
   });
 }
@@ -168,6 +175,8 @@ function defineUnsavedExperience(experienceDefinitionArgs: CreateExp) {
       result &&
       result.data &&
       (result.data.createUnsavedExperience as UnsavedExperience);
+
+    expect(exp.id).to.be.a("string");
 
     return exp;
   });
@@ -200,21 +209,42 @@ function createExperienceEntries(
 function mutate<TData, TVariables>(
   options: MutationOptions<TData, TVariables>
 ) {
-  if (!client) {
-    const apolloSetup = buildClientCache({
-      uri: serverUrl,
-      headers: {
-        jwt: Cypress.env(USER_JWT_ENV)
-      },
-      resolvers: [experienceDefinitionResolvers],
-      isE2e: true
-    });
+  return cy.window().then(win => {
+    const e2eWindowObject = win.___e2e || emptyE2eWindowObject;
+    const windowClient = e2eWindowObject.client;
 
-    client = apolloSetup.client;
-    persistor = apolloSetup.persistor;
-  }
+    /**
+     * When the browser starts loading frontend code, the frontend code will
+     * attach its apollo client, cache and persistor to the window object.
+     * We will then use the client and persistor from the frontend code so
+     * that we can send command from here to affect the operation of the
+     * frontend.
+     */
+    if (windowClient && client !== windowClient) {
+      // we need to add all resolvers because resolvers are loaded per page on
+      // frontend while here we may need resolvers for a page that has not
+      // loaded.
+      windowClient.addResolvers(allResolvers);
+      client = windowClient;
+      persistor = e2eWindowObject.persistor;
+    }
 
-  return client.mutate<TData, TVariables>(options);
+    if (!client) {
+      const apolloSetup = buildClientCache({
+        uri: serverUrl,
+        headers: {
+          jwt: Cypress.env(USER_JWT_ENV)
+        },
+        isE2e: true
+      });
+
+      client = apolloSetup.client;
+      client.addResolvers(allResolvers);
+      persistor = apolloSetup.persistor;
+    }
+
+    return client.mutate<TData, TVariables>(options);
+  });
 }
 
 function setConnectionStatus(status: ManualConnectionStatus) {
