@@ -4,7 +4,6 @@ import { ApolloLink } from "apollo-link";
 import { CachePersistor } from "apollo-cache-persist";
 import * as AbsintheSocket from "@absinthe/socket";
 import { createAbsintheSocketLink } from "@absinthe/socket-apollo-link";
-import { onError } from "apollo-link-error";
 import { HttpLink } from "apollo-link-http";
 import {
   SCHEMA_KEY,
@@ -13,21 +12,23 @@ import {
 } from "../constants/apollo-schema";
 import { getSocket } from "../socket";
 import { initState, LocalState } from "./resolvers";
-import { getToken } from "./tokens";
 import {
   CONNECTION_MUTATION,
   ConnectionStatus,
   ConnectionMutationVariables
 } from "./connection.resolver";
 import { PersistentStorage, PersistedData } from "apollo-cache-persist/types";
+import {
+  E2eOptions,
+  MakeSocketLink,
+  middlewareErrorLink,
+  middlewareLoggerLink,
+  middlewareAuthLink
+} from "./apollo-middlewares";
 
 let cache: InMemoryCache;
 let client: ApolloClient<{}>;
 let persistor: CachePersistor<NormalizedCacheObject>;
-
-interface E2eOptions {
-  isE2e?: boolean;
-}
 
 interface BuildClientCache extends E2eOptions {
   uri?: string;
@@ -43,8 +44,6 @@ interface BuildClientCache extends E2eOptions {
 
   resolvers?: Resolvers[];
 }
-
-type MakeSocketLink = (token: string, forceReconnect?: boolean) => ApolloLink;
 
 function onConnChange(isConnected: boolean) {
   client.mutate<ConnectionStatus, ConnectionMutationVariables>({
@@ -86,8 +85,6 @@ export function buildClientCache(
         fetch
       });
     } else {
-      const apolloHeaders = headers || {};
-
       const makeSocketLink: MakeSocketLink = (token, forceReconnect) => {
         const absintheSocket = AbsintheSocket.create(
           getSocket({
@@ -101,13 +98,12 @@ export function buildClientCache(
         return createAbsintheSocketLink(absintheSocket);
       };
 
-      link = middlewareAuthLink(makeSocketLink, apolloHeaders);
+      link = middlewareAuthLink(makeSocketLink, headers);
       link = middlewareErrorLink(link, e2eOptions);
       link = middlewareLoggerLink(link, e2eOptions);
 
       const state = initState();
       defaultResolvers = defaultResolvers.concat(state.resolvers);
-
       defaultState = state.defaults;
     }
 
@@ -129,13 +125,11 @@ export function buildClientCache(
   return { client, cache, persistor };
 }
 
-export default buildClientCache;
-
 export type PersistCacheFn = (
   appCache: InMemoryCache
 ) => Promise<CachePersistor<NormalizedCacheObject>>;
 
-export function makePersistor(appCache: InMemoryCache) {
+function makePersistor(appCache: InMemoryCache) {
   persistor = new CachePersistor({
     cache: appCache,
     storage: localStorage as PersistentStorage<
@@ -168,6 +162,7 @@ export async function persistCache(appCache: InMemoryCache) {
 
   setTimeout(() => {
     // These are old keys. We simply need to get rid of them on all clients.
+    // We will get rid of this code sometime later.
     localStorage.removeItem("ebnis-token-key");
     localStorage.removeItem("ebnis-apollo-schema-version");
     localStorage.removeItem("ebnis-apollo-cache-persist");
@@ -185,130 +180,3 @@ export const resetClientAndPersistor = async (
   await appClient.clearStore();
   await appPersistor.resume();
 };
-
-function middlewareAuthLink(
-  makeSocketLink: MakeSocketLink,
-  headers: { [k: string]: string } = {}
-) {
-  let previousToken = getToken();
-  let socketLink = makeSocketLink(previousToken);
-
-  return new ApolloLink((operation, forward) => {
-    const token = getToken();
-
-    if (token !== previousToken) {
-      previousToken = token;
-      socketLink = makeSocketLink(token, true);
-    }
-
-    if (token) {
-      headers.authorization = `Bearer ${token}`;
-    }
-
-    operation.setContext({
-      headers
-    });
-
-    return socketLink.request(operation, forward);
-  });
-}
-
-const getNow = () => {
-  const n = new Date();
-  return `${n.getHours()}:${n.getMinutes()}:${n.getSeconds()}:${n.getMilliseconds()}`;
-};
-
-function middlewareLoggerLink(link: ApolloLink, { isE2e }: E2eOptions = {}) {
-  let loggerLink = new ApolloLink((operation, forward) => {
-    const operationName = `Apollo operation: ${operation.operationName}`;
-
-    // tslint:disable-next-line:no-console
-    console.log(
-      "\n\n\n",
-      getNow(),
-      `\n====${operationName}===\n\n`,
-      {
-        query: operation.query.loc ? operation.query.loc.source.body : "",
-        variables: operation.variables
-      },
-      `\n\n===End ${operationName}====`
-    );
-
-    if (!forward) {
-      return null;
-    }
-
-    const fop = forward(operation);
-
-    if (fop.map) {
-      return fop.map(response => {
-        // tslint:disable-next-line:no-console
-        console.log(
-          "\n\n\n",
-          getNow(),
-          `\n=Received response from ${operationName}=\n\n`,
-          response,
-          `\n\n=End Received response from ${operationName}=`
-        );
-        return response;
-      });
-    }
-
-    return fop;
-  }).concat(link);
-
-  if (isE2e) {
-    return loggerLink;
-  }
-
-  if (process.env.NODE_ENV === "production") {
-    loggerLink = null;
-    return link;
-  }
-
-  return loggerLink;
-}
-
-function middlewareErrorLink(link: ApolloLink, { isE2e }: E2eOptions = {}) {
-  let errorLink = onError(
-    ({ graphQLErrors, networkError, response, operation }) => {
-      const logError = (errorName: string, obj: object) => {
-        const operationName = `[${errorName} error] from Apollo operation: ${
-          operation.operationName
-        }`;
-
-        // tslint:disable-next-line:no-console
-        console.error(
-          "\n\n\n",
-          getNow(),
-          `\n=${operationName}=\n\n`,
-          obj,
-          `\n\n=End ${operationName}=`
-        );
-      };
-
-      if (graphQLErrors) {
-        logError("Response graphQLErrors", graphQLErrors);
-      }
-
-      if (response) {
-        logError("Response", response);
-      }
-
-      if (networkError) {
-        logError("Response Network Error", networkError);
-      }
-    }
-  ).concat(link);
-
-  if (isE2e) {
-    return errorLink;
-  }
-
-  if (process.env.NODE_ENV === "production") {
-    errorLink = null;
-    return link;
-  }
-
-  return errorLink;
-}
