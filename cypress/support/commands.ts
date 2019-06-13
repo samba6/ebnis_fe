@@ -66,11 +66,12 @@ import {
   experienceDefinitionResolvers
 } from "../../src/components/ExperienceDefinition/resolvers";
 import { UnsavedExperience } from "../../src/components/ExperienceDefinition/resolver-utils";
-import { CACHE_ENV_NAME, USER_JWT_ENV } from "./constants";
+import { CACHE_ENV_NAME, USER_JWT_ENV, CLIENT_ENV_NAME } from "./constants";
 import {
   SCHEMA_VERSION,
   SCHEMA_VERSION_KEY
 } from "../../src/constants/apollo-schema";
+import ApolloClient from "apollo-client";
 
 const serverUrl = Cypress.env("API_URL") as string;
 
@@ -81,15 +82,24 @@ function checkoutSession() {
 }
 
 function closeSession() {
-  setManualConnection(ManualConnectionStatus.unset);
-  Cypress.env(USER_JWT_ENV, null);
+  Cypress.env(CLIENT_ENV_NAME, null);
   Cypress.env(CACHE_ENV_NAME, null);
   localStorage.removeItem(SCHEMA_VERSION_KEY);
+  setManualConnection(ManualConnectionStatus.unset);
+  Cypress.env(USER_JWT_ENV, null);
 
-  return mutate<UserLocalMutationVariable, UserLocalMutationVariable>({
-    mutation: USER_LOCAL_MUTATION,
-    variables: { user: null }
-  });
+  // return mutate<UserLocalMutationVariable, UserLocalMutationVariable>({
+  //   mutation: USER_LOCAL_MUTATION,
+  //   variables: { user: null }
+  // }).then(() => {
+  //   // client = null;
+  //   // cache = null;
+  //   Cypress.env(CLIENT_ENV_NAME, null);
+  //   Cypress.env(CACHE_ENV_NAME, null);
+  //   localStorage.removeItem(SCHEMA_VERSION_KEY);
+  //   setManualConnection(ManualConnectionStatus.unset);
+  //   Cypress.env(USER_JWT_ENV, null);
+  // });
 }
 
 function createUser(userData: UserCreationObject) {
@@ -200,16 +210,23 @@ function createExperienceEntries(
 function mutate<TData, TVariables>(
   options: MutationOptions<TData, TVariables>
 ) {
-  const { client, cache } = buildClientCache({
-    uri: serverUrl,
-    headers: {
-      jwt: Cypress.env(USER_JWT_ENV)
-    },
-    isE2e: true,
-    resolvers: [experienceDefinitionResolvers]
-  });
+  let client = Cypress.env(CLIENT_ENV_NAME) as ApolloClient<{}>;
 
-  Cypress.env(CACHE_ENV_NAME, cache);
+  if (!client) {
+    const apolloSetup = buildClientCache({
+      uri: serverUrl,
+      headers: {
+        jwt: Cypress.env(USER_JWT_ENV)
+      },
+      resolvers: [experienceDefinitionResolvers],
+      isE2e: true
+    });
+
+    Cypress.env(CLIENT_ENV_NAME, apolloSetup.client);
+    Cypress.env(CACHE_ENV_NAME, apolloSetup.cache);
+
+    client = apolloSetup.client;
+  }
 
   return client.mutate<TData, TVariables>(options);
 }

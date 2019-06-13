@@ -1,8 +1,14 @@
 import { TOKEN_KEY, USER_KEY } from "../constants";
 import { UserFragment } from "../graphql/apollo-types/UserFragment";
 
-export const getToken = (): string | null =>
-  localStorage.getItem(TOKEN_KEY) || null;
+export const getToken = (): string | null => {
+  // istanbul ignore next: branch required only for ssr
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  return localStorage.getItem(TOKEN_KEY) || null;
+};
 
 export const storeToken = (token: string) =>
   localStorage.setItem(TOKEN_KEY, token);

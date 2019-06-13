@@ -1,6 +1,6 @@
 import { InMemoryCache, NormalizedCacheObject } from "apollo-cache-inmemory";
 import { ApolloClient, Resolvers } from "apollo-client";
-import { ApolloLink, Operation } from "apollo-link";
+import { ApolloLink } from "apollo-link";
 import { CachePersistor } from "apollo-cache-persist";
 import * as AbsintheSocket from "@absinthe/socket";
 import { createAbsintheSocketLink } from "@absinthe/socket-apollo-link";
@@ -25,7 +25,11 @@ let cache: InMemoryCache;
 let client: ApolloClient<{}>;
 let persistor: CachePersistor<NormalizedCacheObject>;
 
-interface BuildClientCache {
+interface E2eOptions {
+  isE2e?: boolean;
+}
+
+interface BuildClientCache extends E2eOptions {
   uri?: string;
 
   headers?: { [k: string]: string };
@@ -37,10 +41,10 @@ interface BuildClientCache {
 
   fetch?: GlobalFetch["fetch"];
 
-  isE2e?: boolean;
-
   resolvers?: Resolvers[];
 }
+
+type MakeSocketLink = (token: string, forceReconnect?: boolean) => ApolloLink;
 
 function onConnChange(isConnected: boolean) {
   client.mutate<ConnectionStatus, ConnectionMutationVariables>({
@@ -57,8 +61,8 @@ export function buildClientCache(
     headers,
     isNodeJs,
     fetch,
-    isE2e,
-    resolvers
+    resolvers,
+    ...e2eOptions
   }: BuildClientCache = {} as BuildClientCache
 ) {
   if (!cache) {
@@ -67,7 +71,7 @@ export function buildClientCache(
     });
   }
 
-  if (isE2e || !client) {
+  if (!client) {
     let defaultResolvers = (resolvers || []) as Resolvers[];
     let defaultState = {} as LocalState;
     let link: ApolloLink;
@@ -84,18 +88,22 @@ export function buildClientCache(
     } else {
       const apolloHeaders = headers || {};
 
-      const absintheSocket = AbsintheSocket.create(
-        getSocket({
-          onConnChange,
-          uri,
-          token: apolloHeaders.jwt
-        })
-      );
+      const makeSocketLink: MakeSocketLink = (token, forceReconnect) => {
+        const absintheSocket = AbsintheSocket.create(
+          getSocket({
+            onConnChange,
+            uri,
+            token,
+            forceReconnect
+          })
+        );
 
-      link = createAbsintheSocketLink(absintheSocket);
-      link = middlewareAuthLink(apolloHeaders).concat(link);
-      link = middlewareErrorLink().concat(link);
-      link = middlewareLoggerLink(link);
+        return createAbsintheSocketLink(absintheSocket);
+      };
+
+      link = middlewareAuthLink(makeSocketLink, apolloHeaders);
+      link = middlewareErrorLink(link, e2eOptions);
+      link = middlewareLoggerLink(link, e2eOptions);
 
       const state = initState();
       defaultResolvers = defaultResolvers.concat(state.resolvers);
@@ -174,9 +182,20 @@ export const resetClientAndPersistor = async (
   await appPersistor.resume();
 };
 
-function middlewareAuthLink(headers: { [k: string]: string } = {}) {
+function middlewareAuthLink(
+  makeSocketLink: MakeSocketLink,
+  headers: { [k: string]: string } = {}
+) {
+  let previousToken = getToken();
+  let socketLink = makeSocketLink(previousToken);
+
   return new ApolloLink((operation, forward) => {
-    const token = headers.jwt || getToken();
+    const token = getToken();
+
+    if (token !== previousToken) {
+      previousToken = token;
+      socketLink = makeSocketLink(token, true);
+    }
 
     if (token) {
       headers.authorization = `Bearer ${token}`;
@@ -186,35 +205,29 @@ function middlewareAuthLink(headers: { [k: string]: string } = {}) {
       headers
     });
 
-    return forward ? forward(operation) : null;
+    return socketLink.request(operation, forward);
   });
 }
 
 const getNow = () => {
   const n = new Date();
-  return `${n.getHours()}:${n.getMinutes()}:${n.getSeconds()}`;
+  return `${n.getHours()}:${n.getMinutes()}:${n.getSeconds()}:${n.getMilliseconds()}`;
 };
 
-function middlewareLoggerLink(link: ApolloLink) {
-  if (process.env.NODE_ENV === "production") {
-    return link;
-  }
-
-  const processOperation = (operation: Operation) => ({
-    query: operation.query.loc ? operation.query.loc.source.body : "",
-    variables: operation.variables
-  });
-
-  const logger = new ApolloLink((operation, forward) => {
+function middlewareLoggerLink(link: ApolloLink, { isE2e }: E2eOptions = {}) {
+  let loggerLink = new ApolloLink((operation, forward) => {
     const operationName = `Apollo operation: ${operation.operationName}`;
 
     // tslint:disable-next-line:no-console
     console.log(
       "\n\n\n",
       getNow(),
-      `=============================${operationName}========================\n`,
-      processOperation(operation),
-      `\n=========================End ${operationName}=========================`
+      `\n====${operationName}===\n\n`,
+      {
+        query: operation.query.loc ? operation.query.loc.source.body : "",
+        variables: operation.variables
+      },
+      `\n\n===End ${operationName}====`
     );
 
     if (!forward) {
@@ -229,52 +242,69 @@ function middlewareLoggerLink(link: ApolloLink) {
         console.log(
           "\n\n\n",
           getNow(),
-          `==============Received response from ${operationName}============\n`,
+          `\n=Received response from ${operationName}=\n\n`,
           response,
-          `\n==========End Received response from ${operationName}=============`
+          `\n\n=End Received response from ${operationName}=`
         );
         return response;
       });
     }
 
     return fop;
-  });
+  }).concat(link);
 
-  return logger.concat(link);
+  if (isE2e) {
+    return loggerLink;
+  }
+
+  if (process.env.NODE_ENV === "production") {
+    loggerLink = null;
+    return link;
+  }
+
+  return loggerLink;
 }
 
-function middlewareErrorLink() {
-  return onError(({ graphQLErrors, networkError, response, operation }) => {
-    // tslint:disable-next-line:ban-types
-    const logError = (errorName: string, obj: Object) => {
-      if (process.env.NODE_ENV === "production") {
-        return;
+function middlewareErrorLink(link: ApolloLink, { isE2e }: E2eOptions = {}) {
+  let errorLink = onError(
+    ({ graphQLErrors, networkError, response, operation }) => {
+      const logError = (errorName: string, obj: object) => {
+        const operationName = `[${errorName} error] from Apollo operation: ${
+          operation.operationName
+        }`;
+
+        // tslint:disable-next-line:no-console
+        console.error(
+          "\n\n\n",
+          getNow(),
+          `\n=${operationName}=\n\n`,
+          obj,
+          `\n\n=End ${operationName}=`
+        );
+      };
+
+      if (graphQLErrors) {
+        logError("Response graphQLErrors", graphQLErrors);
       }
 
-      const operationName = `[${errorName} error] from Apollo operation: ${
-        operation.operationName
-      }`;
+      if (response) {
+        logError("Response", response);
+      }
 
-      // tslint:disable-next-line:no-console
-      console.error(
-        "\n\n\n",
-        getNow(),
-        `============================${operationName}=======================\n`,
-        obj,
-        `\n====================End ${operationName}============================`
-      );
-    };
-
-    if (graphQLErrors) {
-      logError("Response", graphQLErrors);
+      if (networkError) {
+        logError("Response Network Error", networkError);
+      }
     }
+  ).concat(link);
 
-    if (response) {
-      logError("Response", response);
-    }
+  if (isE2e) {
+    return errorLink;
+  }
 
-    if (networkError) {
-      logError("Network", networkError);
-    }
-  });
+  if (process.env.NODE_ENV === "production") {
+    errorLink = null;
+    return link;
+  }
+
+  return errorLink;
 }

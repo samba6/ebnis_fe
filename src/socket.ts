@@ -1,6 +1,5 @@
 import { Socket, Channel } from "phoenix";
 import { logger } from "./logger";
-import { getToken } from "./state/tokens";
 import { getBackendUrls } from "./state/get-backend-urls";
 
 enum CHANNEL {
@@ -201,35 +200,19 @@ export const defineSocket = ({
   return socket;
 };
 
-let prevToken: string | null = null;
-
-export function getSocket({ token: connToken, ...params }: DefineParams = {}) {
-  const token = connToken || getToken();
-  (params as DefineParams).token = token;
-
-  // if user auth token changes, we'll need to reconnect
-  if (token !== prevToken) {
-    prevToken = token;
-
-    if (socket) {
-      socket.disconnect();
-      socket = (null as unknown) as AppSocket;
-    }
-
+export function getSocket({ forceReconnect, ...params }: DefineParams = {}) {
+  if (forceReconnect) {
     return defineSocket(params);
   }
 
-  if (socket) {
-    return socket;
-  }
-
-  return defineSocket(params);
+  return socket ? socket : defineSocket(params);
 }
 
 interface DefineParams {
   onConnChange?: (connStatus: boolean) => void;
   uri?: string;
   token?: string | null;
+  forceReconnect?: boolean;
 }
 
 type OnChannelMessage<T> = (msg: T) => void;
