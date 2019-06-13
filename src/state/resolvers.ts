@@ -1,7 +1,7 @@
 import { InMemoryCache } from "apollo-cache-inmemory";
 
 import {
-  connectionResolver,
+  connectionResolvers,
   ConnectionQueryData,
   DEFAULT_CONNECTION_STATUS
 } from "./connection.resolver";
@@ -27,22 +27,13 @@ export type LocalState = ConnectionQueryData & {
 
 export function initState() {
   return {
-    resolvers: {
-      Mutation: {
-        connected: connectionResolver,
-        ...userLocalResolvers.Mutation
-      },
-
-      Query: {
-        ...userLocalResolvers.Query
-      }
-    },
+    resolvers: [connectionResolvers, userLocalResolvers],
     defaults: {
       connected: DEFAULT_CONNECTION_STATUS,
       staleToken: null,
       loggedOutUser: null,
       unsavedExperiences: [],
-      unsavedEntries: []
+      savedExperiencesUnsavedEntries: []
     }
   };
 }

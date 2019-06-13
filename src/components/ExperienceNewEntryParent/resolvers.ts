@@ -73,7 +73,7 @@ export interface UnsavedExperienceGqlProps {
   unsavedExperienceGql?: UnsavedExperienceDataValue;
 }
 
-export const resolvers = {
+export const experienceNewEntryParentResolvers = {
   Mutation: {},
 
   Query: {

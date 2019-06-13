@@ -10,7 +10,7 @@ import {
   CREATE_ENTRY_MUTATION,
   CreateEntryGqlProps
 } from "../../graphql/create-entry.mutation";
-import { createUnsavedEntryGql, resolvers } from "./resolvers";
+import { createUnsavedEntryGql, newEntryResolvers } from "./resolvers";
 
 // tslint:disable-next-line: prefer-const
 let resolverAdded = false;
@@ -23,7 +23,7 @@ const createEntryGql = graphql<
 >(CREATE_ENTRY_MUTATION, {
   props: ({ mutate, ownProps: { client } }) => {
     if (!resolverAdded) {
-      client.addResolvers(resolvers);
+      client.addResolvers(newEntryResolvers);
       resolverAdded = true;
     }
 

@@ -4,10 +4,9 @@ import { MyExperiences as Comp } from "./component";
 import { GetExps, GetExpsVariables } from "../../graphql/apollo-types/GetExps";
 import { GetExpGqlProps, GET_EXP_DEFS_QUERY } from "../../graphql/exps.query";
 import { OwnProps } from "./utils";
-import { connectionGql } from "../../state/connection.resolver";
 import {
   UNSAVED_EXPERIENCES_QUERY,
-  UnsavedExperiencesQueryValues
+  UnsavedExperiencesQueryReturned
 } from "../ExperienceDefinition/resolver-utils";
 
 const expDefsGql = graphql<
@@ -31,9 +30,9 @@ const expDefsGql = graphql<
 
 const unsavedExperiencesGql = graphql<
   {},
-  UnsavedExperiencesQueryValues,
+  UnsavedExperiencesQueryReturned,
   {},
-  UnsavedExperiencesQueryValues | undefined
+  UnsavedExperiencesQueryReturned | undefined
 >(UNSAVED_EXPERIENCES_QUERY, {
   props: ({ data }) =>
     data && {
@@ -43,7 +42,6 @@ const unsavedExperiencesGql = graphql<
 
 export const MyExperiences = compose(
   withApollo,
-  connectionGql,
   expDefsGql,
   unsavedExperiencesGql
 )(Comp);

@@ -5,7 +5,7 @@ import { makeUnsavedId, isUnsavedId } from "../../constants";
 import { CreateField } from "../../graphql/apollo-types/globalTypes";
 import gql from "graphql-tag";
 import { graphql, MutationFn } from "react-apollo";
-import { updateExperienceWithNewEntry } from "./update";
+import { updateExperienceWithNewEntry as updateSavedExperienceWithNewEntry } from "./update";
 import {
   UnsavedExperience,
   UNSAVED_EXPERIENCE_TYPENAME,
@@ -13,11 +13,16 @@ import {
   UNSAVED_EXPERIENCE_FRAGMENT_NAME
 } from "../ExperienceDefinition/resolver-utils";
 import immer from "immer";
+import { ENTRY_FRAGMENT } from "../../graphql/entry.fragment";
 
 const CREATE_UNSAVED_ENTRY_MUTATION = gql`
   mutation CreateUnsavedEntry($experience: Experience!, $fields: [Fields!]!) {
-    createUnsavedEntry(experience: $experience, fields: $fields) @client
+    createUnsavedEntry(experience: $experience, fields: $fields) @client {
+      ...EntryFragment
+    }
   }
+
+  ${ENTRY_FRAGMENT}
 `;
 
 export const createUnsavedEntryGql = graphql<
@@ -41,6 +46,20 @@ export interface CreateUnsavedEntryMutationProps {
 
 interface CreateUnsavedEntryMutationReturned {
   createUnsavedEntry: CreateAnEntry_entry;
+}
+
+export const GET_SAVED_EXPERIENCES_UNSAVED_ENTRIES_QUERY = gql`
+  query GetSavedExperiencesUnsavedEntries {
+    savedExperiencesUnsavedEntries @client {
+      ...EntryFragment
+    }
+  }
+
+  ${ENTRY_FRAGMENT}
+`;
+
+export interface UnsavedEntriesQueryReturned {
+  savedExperiencesUnsavedEntries: CreateAnEntry_entry[];
 }
 
 const createUnsavedEntryResolver: LocalResolverFn<
@@ -73,17 +92,19 @@ const createUnsavedEntryResolver: LocalResolverFn<
   };
 
   if (isUnsavedId(experienceId)) {
-    updateUnsavedExperiencesWithNewEntry(context, experience, entry);
+    updateUnsavedExperienceEntry(context, experience, entry);
   } else {
-    await updateExperienceWithNewEntry(experienceId)(cache, {
+    await updateSavedExperienceWithNewEntry(experienceId)(cache, {
       data: { entry }
     });
+
+    updateSavedExperiencesUnsavedEntries(context, entry);
   }
 
   return entry;
 };
 
-function updateUnsavedExperiencesWithNewEntry(
+function updateUnsavedExperienceEntry(
   { cache, getCacheKey }: CacheContext,
   experience: UnsavedExperience,
   entry: CreateAnEntry_entry
@@ -116,13 +137,36 @@ function updateUnsavedExperiencesWithNewEntry(
   });
 }
 
+async function updateSavedExperiencesUnsavedEntries(
+  { cache }: CacheContext,
+  entry: CreateAnEntry_entry
+) {
+  const data = cache.readQuery<UnsavedEntriesQueryReturned>({
+    query: GET_SAVED_EXPERIENCES_UNSAVED_ENTRIES_QUERY
+  });
+
+  const savedExperiencesUnsavedEntries = immer(
+    data ? data.savedExperiencesUnsavedEntries : [],
+    proxy => {
+      proxy.push(entry);
+    }
+  );
+
+  cache.writeQuery<UnsavedEntriesQueryReturned>({
+    query: GET_SAVED_EXPERIENCES_UNSAVED_ENTRIES_QUERY,
+    data: { savedExperiencesUnsavedEntries }
+  });
+}
+
 interface CreateUnsavedEntryVariables {
   fields: CreateField[];
   experience: UnsavedExperience;
 }
 
-export const resolvers = {
+export const newEntryResolvers = {
   Mutation: {
     createUnsavedEntry: createUnsavedEntryResolver
-  }
+  },
+
+  Query: {}
 };

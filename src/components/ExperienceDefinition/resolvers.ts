@@ -11,7 +11,7 @@ import {
   UnsavedExperience,
   UNSAVED_EXPERIENCE_TYPENAME,
   UNSAVED_EXPERIENCES_QUERY,
-  UnsavedExperiencesQueryValues
+  UnsavedExperiencesQueryReturned
 } from "./resolver-utils";
 
 const createUnsavedExperienceResolver: LocalResolverFn<
@@ -52,7 +52,7 @@ const createUnsavedExperienceResolver: LocalResolverFn<
     }
   };
 
-  const data = cache.readQuery<UnsavedExperiencesQueryValues>({
+  const data = cache.readQuery<UnsavedExperiencesQueryReturned>({
     query: UNSAVED_EXPERIENCES_QUERY
   });
 
@@ -61,7 +61,7 @@ const createUnsavedExperienceResolver: LocalResolverFn<
     experience
   ];
 
-  cache.writeQuery<UnsavedExperiencesQueryValues>({
+  cache.writeQuery<UnsavedExperiencesQueryReturned>({
     query: UNSAVED_EXPERIENCES_QUERY,
     data: { unsavedExperiences }
   });
@@ -108,7 +108,7 @@ export const createUnsavedExperienceGql = graphql<
 
 //////////////////////////// END QUERIES ////////////////////////////
 
-export const resolvers = {
+export const experienceDefinitionResolvers = {
   Mutation: {
     createUnsavedExperience: createUnsavedExperienceResolver
   },

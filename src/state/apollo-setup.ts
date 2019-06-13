@@ -37,7 +37,7 @@ interface BuildClientCache {
 
   fetch?: GlobalFetch["fetch"];
 
-  forceSocketConnection?: boolean;
+  isE2e?: boolean;
 
   resolvers?: Resolvers[];
 }
@@ -57,7 +57,7 @@ export function buildClientCache(
     headers,
     isNodeJs,
     fetch,
-    forceSocketConnection,
+    isE2e,
     resolvers
   }: BuildClientCache = {} as BuildClientCache
 ) {
@@ -67,8 +67,8 @@ export function buildClientCache(
     });
   }
 
-  if (forceSocketConnection || !client) {
-    let defaultResolvers = [] as Resolvers[];
+  if (isE2e || !client) {
+    let defaultResolvers = (resolvers || []) as Resolvers[];
     let defaultState = {} as LocalState;
     let link: ApolloLink;
 
@@ -98,7 +98,7 @@ export function buildClientCache(
       link = middlewareLoggerLink(link);
 
       const state = initState();
-      defaultResolvers = [state.resolvers as Resolvers].concat(resolvers || []);
+      defaultResolvers = defaultResolvers.concat(state.resolvers);
 
       defaultState = state.defaults;
     }

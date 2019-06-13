@@ -3,14 +3,12 @@ import { Reducer, Dispatch } from "react";
 import { WithApolloClient } from "react-apollo";
 
 import { GetExpGqlProps } from "../../graphql/exps.query";
-import { ConnectionStatus } from "../../state/connection.resolver";
-import { UnsavedExperiencesQueryValues } from "../ExperienceDefinition/resolver-utils";
+import { UnsavedExperiencesQueryReturned } from "../ExperienceDefinition/resolver-utils";
 
 export interface OwnProps
   extends RouteComponentProps<{}>,
     WithApolloClient<{}>,
-    ConnectionStatus,
-    UnsavedExperiencesQueryValues {}
+    UnsavedExperiencesQueryReturned {}
 
 export interface Props extends OwnProps, GetExpGqlProps {}
 

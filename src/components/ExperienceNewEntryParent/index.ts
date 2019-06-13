@@ -4,7 +4,7 @@ import {
   UnsavedExperienceReturnedValue,
   UnsavedExperienceGqlProps,
   GET_UNSAVED_EXPERIENCE_QUERY,
-  resolvers
+  experienceNewEntryParentResolvers
 } from "./resolvers";
 import { isUnsavedId } from "../../constants";
 import { ExperienceNewEntryParent as Comp } from "./component";
@@ -40,7 +40,7 @@ const unsavedExperienceGql = graphql<
 
   skip: ({ experienceId, client }) => {
     if (!resolverAdded) {
-      client.addResolvers(resolvers);
+      client.addResolvers(experienceNewEntryParentResolvers);
       resolverAdded = true;
     }
 

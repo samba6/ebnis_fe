@@ -63,7 +63,7 @@ import {
 import {
   CreateUnsavedExperienceMutationData,
   CREATE_UNSAVED_EXPERIENCE_MUTATION,
-  resolvers
+  experienceDefinitionResolvers
 } from "../../src/components/ExperienceDefinition/resolvers";
 import { UnsavedExperience } from "../../src/components/ExperienceDefinition/resolver-utils";
 import { CACHE_ENV_NAME, USER_JWT_ENV } from "./constants";
@@ -205,8 +205,8 @@ function mutate<TData, TVariables>(
     headers: {
       jwt: Cypress.env(USER_JWT_ENV)
     },
-    forceSocketConnection: true,
-    resolvers: [resolvers]
+    isE2e: true,
+    resolvers: [experienceDefinitionResolvers]
   });
 
   Cypress.env(CACHE_ENV_NAME, cache);

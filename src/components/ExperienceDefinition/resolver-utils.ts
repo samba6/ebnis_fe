@@ -46,6 +46,6 @@ export const UNSAVED_EXPERIENCES_QUERY = gql`
   ${UNSAVED_EXPERIENCE_FRAGMENT}
 `;
 
-export interface UnsavedExperiencesQueryValues {
+export interface UnsavedExperiencesQueryReturned {
   unsavedExperiences: UnsavedExperience[];
 }

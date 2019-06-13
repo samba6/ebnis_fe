@@ -27,6 +27,8 @@ context("new experience entry page", () => {
         }
       ]
     }).then(experience => {
+      expect(experience.id).to.be.a("string");
+
       /**
        * And user wishes to create new entry
        */
@@ -82,6 +84,8 @@ context("new experience entry page", () => {
         }
       ]
     }).then(experience => {
+      expect(experience.id).to.be.a("string");
+
       /**
        * And user wishes to create new entry
        */
@@ -140,6 +144,8 @@ context("new experience entry page", () => {
       ]
     })
       .then(experience => {
+        expect(experience.id).to.be.a("string");
+
         return cy.persistCache().then(isPersisted => {
           expect(isPersisted).to.eq(true);
 
