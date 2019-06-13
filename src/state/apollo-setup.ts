@@ -121,10 +121,12 @@ export function buildClientCache(
       cache.writeData({
         data: defaultState
       });
+
+      makePersistor(cache);
     }
   }
 
-  return { client, cache };
+  return { client, cache, persistor };
 }
 
 export default buildClientCache;
@@ -134,7 +136,7 @@ export type PersistCacheFn = (
 ) => Promise<CachePersistor<NormalizedCacheObject>>;
 
 export function makePersistor(appCache: InMemoryCache) {
-  return new CachePersistor({
+  persistor = new CachePersistor({
     cache: appCache,
     storage: localStorage as PersistentStorage<
       PersistedData<NormalizedCacheObject>
@@ -142,24 +144,26 @@ export function makePersistor(appCache: InMemoryCache) {
     key: SCHEMA_KEY,
     maxSize: false
   });
+
+  return persistor;
 }
 
 export async function persistCache(appCache: InMemoryCache) {
   if (!persistor) {
     persistor = makePersistor(appCache);
+  }
 
-    const currentVersion = localStorage.getItem(SCHEMA_VERSION_KEY);
+  const currentVersion = localStorage.getItem(SCHEMA_VERSION_KEY);
 
-    if (currentVersion === SCHEMA_VERSION) {
-      // If the current version matches the latest version,
-      // we're good to go and can restore the cache.
-      await persistor.restore();
-    } else {
-      // Otherwise, we'll want to purge the outdated persisted cache
-      // and mark ourselves as having updated to the latest version.
-      await persistor.purge();
-      localStorage.setItem(SCHEMA_VERSION_KEY, SCHEMA_VERSION);
-    }
+  if (currentVersion === SCHEMA_VERSION) {
+    // If the current version matches the latest version,
+    // we're good to go and can restore the cache.
+    await persistor.restore();
+  } else {
+    // Otherwise, we'll want to purge the outdated persisted cache
+    // and mark ourselves as having updated to the latest version.
+    await persistor.purge();
+    localStorage.setItem(SCHEMA_VERSION_KEY, SCHEMA_VERSION);
   }
 
   setTimeout(() => {

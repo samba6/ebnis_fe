@@ -26,7 +26,7 @@
 import "cypress-testing-library/add-commands";
 import { MutationOptions } from "apollo-client/core/watchQueryOptions";
 import { UserCreationObject } from "./user-creation-object";
-import { buildClientCache, makePersistor } from "../../src/state/apollo-setup";
+import { buildClientCache } from "../../src/state/apollo-setup";
 import {
   Registration,
   CreateExp,
@@ -66,14 +66,19 @@ import {
   experienceDefinitionResolvers
 } from "../../src/components/ExperienceDefinition/resolvers";
 import { UnsavedExperience } from "../../src/components/ExperienceDefinition/resolver-utils";
-import { CACHE_ENV_NAME, USER_JWT_ENV, CLIENT_ENV_NAME } from "./constants";
+import { USER_JWT_ENV } from "./constants";
 import {
   SCHEMA_VERSION,
   SCHEMA_VERSION_KEY
 } from "../../src/constants/apollo-schema";
 import ApolloClient from "apollo-client";
+import { NormalizedCacheObject } from "apollo-cache-inmemory";
+import { CachePersistor } from "apollo-cache-persist";
 
 const serverUrl = Cypress.env("API_URL") as string;
+// let cache: InMemoryCache;
+let client: ApolloClient<{}>;
+let persistor: CachePersistor<NormalizedCacheObject>;
 
 function checkoutSession() {
   cy.request("GET", serverUrl + "/reset_db").then(response => {
@@ -82,24 +87,9 @@ function checkoutSession() {
 }
 
 function closeSession() {
-  Cypress.env(CLIENT_ENV_NAME, null);
-  Cypress.env(CACHE_ENV_NAME, null);
-  localStorage.removeItem(SCHEMA_VERSION_KEY);
+  client = null;
+  persistor = null;
   setManualConnection(ManualConnectionStatus.unset);
-  Cypress.env(USER_JWT_ENV, null);
-
-  // return mutate<UserLocalMutationVariable, UserLocalMutationVariable>({
-  //   mutation: USER_LOCAL_MUTATION,
-  //   variables: { user: null }
-  // }).then(() => {
-  //   // client = null;
-  //   // cache = null;
-  //   Cypress.env(CLIENT_ENV_NAME, null);
-  //   Cypress.env(CACHE_ENV_NAME, null);
-  //   localStorage.removeItem(SCHEMA_VERSION_KEY);
-  //   setManualConnection(ManualConnectionStatus.unset);
-  //   Cypress.env(USER_JWT_ENV, null);
-  // });
 }
 
 function createUser(userData: UserCreationObject) {
@@ -210,8 +200,6 @@ function createExperienceEntries(
 function mutate<TData, TVariables>(
   options: MutationOptions<TData, TVariables>
 ) {
-  let client = Cypress.env(CLIENT_ENV_NAME) as ApolloClient<{}>;
-
   if (!client) {
     const apolloSetup = buildClientCache({
       uri: serverUrl,
@@ -222,10 +210,8 @@ function mutate<TData, TVariables>(
       isE2e: true
     });
 
-    Cypress.env(CLIENT_ENV_NAME, apolloSetup.client);
-    Cypress.env(CACHE_ENV_NAME, apolloSetup.cache);
-
     client = apolloSetup.client;
+    persistor = apolloSetup.persistor;
   }
 
   return client.mutate<TData, TVariables>(options);
@@ -236,15 +222,11 @@ function setConnectionStatus(status: ManualConnectionStatus) {
 }
 
 async function persistCache() {
-  const cache = Cypress.env(CACHE_ENV_NAME);
-
-  if (!cache) {
+  if (!persistor) {
     return false;
   }
 
   localStorage.setItem(SCHEMA_VERSION_KEY, SCHEMA_VERSION);
-
-  const persistor = makePersistor(cache);
 
   await persistor.persist();
 
