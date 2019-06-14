@@ -1,4 +1,5 @@
 import { Observable, ZenObservable } from "zen-observable-ts";
+import { ConnectionStatus } from "./state/connection.resolver";
 
 export enum EmitAction {
   connectionChanged = "@emit-action/connection-changed"
@@ -6,7 +7,7 @@ export enum EmitAction {
 
 interface EmitPayload {
   type: EmitAction;
-  data: boolean;
+  data: ConnectionStatus;
 }
 
 let observable: Observable<EmitPayload>;

@@ -1,12 +1,14 @@
 import { createContext } from "react";
-import { InMemoryCache } from "apollo-cache-inmemory";
+import { InMemoryCache, NormalizedCacheObject } from "apollo-cache-inmemory";
 import ApolloClient from "apollo-client";
 import { PersistCacheFn } from "./state/apollo-setup";
+import { CachePersistor } from "apollo-cache-persist";
 
 interface EbnisContextProps {
   cache?: InMemoryCache;
   client?: ApolloClient<{}>;
   persistCache?: PersistCacheFn;
+  persistor?: CachePersistor<NormalizedCacheObject>;
 }
 
 export const EbnisAppContext = createContext<EbnisContextProps>({});

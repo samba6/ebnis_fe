@@ -32,13 +32,13 @@ export const defineSocket = ({
   onConnChange,
   token: connToken
 }: DefineParams) => {
-  // if we are disconnected, phoenix will keep trying to connect which means
+  // if we are disconnected, phoenix will keep trying to connect using
+  // exponential back off which means
   // we will keep dispatching disconnect.  So we track if we already dispatched
-  // disconnect (socketDisconnectedCount = 1) and if so we do not send another
-  // message.  We only dispatch the message if socketDisconnectedCount = 0.
-  let socketDisconnectedCount = 0;
+  // disconnect (isDisconnected = true) and if so we do not send another
+  // message.  We only dispatch the message if isDisconnected = false.
+  let isDisconnected = null;
   let dataAuthChannel: Channel;
-  // let initialDataSynced = false
 
   function ebnisConnect(token?: string | null, payload?: ConnectionPayload) {
     const params = makeParams(token);
@@ -86,20 +86,21 @@ export const defineSocket = ({
   }
 
   async function dispatchDisconnected() {
-    if (socketDisconnectedCount === 0) {
+    if (isDisconnected === false) {
       if (onConnChange) {
-        onConnChange(false);
+        onConnChange({ isConnected: false, reconnected: "false" });
       }
-      socketDisconnectedCount = 1;
+
+      isDisconnected = true;
     }
   }
 
   async function dispatchConnected() {
     if (onConnChange) {
-      onConnChange(true);
+      onConnChange({ isConnected: true, reconnected: "true" });
     }
 
-    socketDisconnectedCount = 0;
+    isDisconnected = false;
   }
 
   function joinDataAuthChannel(payload?: ConnectionPayload) {
@@ -118,7 +119,7 @@ export const defineSocket = ({
     dataAuthChannel
       .join()
       .receive("ok", message => {
-        socketDisconnectedCount = 0;
+        isDisconnected = 0;
 
         if (payload) {
           payload.onData(message);
@@ -208,8 +209,13 @@ export function getSocket({ forceReconnect, ...params }: DefineParams = {}) {
   return socket ? socket : defineSocket(params);
 }
 
+export type OnConnectionChanged = (args: {
+  isConnected: boolean;
+  reconnected: string;
+}) => void;
+
 interface DefineParams {
-  onConnChange?: (connStatus: boolean) => void;
+  onConnChange?: OnConnectionChanged;
   uri?: string;
   token?: string | null;
   forceReconnect?: boolean;

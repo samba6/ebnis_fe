@@ -10,7 +10,7 @@ import {
   SCHEMA_VERSION,
   SCHEMA_VERSION_KEY
 } from "../constants/apollo-schema";
-import { getSocket } from "../socket";
+import { getSocket, OnConnectionChanged } from "../socket";
 import { initState } from "./resolvers";
 import {
   CONNECTION_MUTATION,
@@ -43,14 +43,12 @@ interface BuildClientCache extends E2eOptions {
   fetch?: GlobalFetch["fetch"];
 }
 
-function onConnChange(isConnected: boolean) {
+const onConnChange: OnConnectionChanged = args => {
   client.mutate<ConnectionStatus, ConnectionMutationVariables>({
     mutation: CONNECTION_MUTATION,
-    variables: {
-      isConnected
-    }
+    variables: args
   });
-}
+};
 
 export function buildClientCache(
   {

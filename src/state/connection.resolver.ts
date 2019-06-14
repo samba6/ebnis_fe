@@ -8,13 +8,15 @@ const CONNECTION_STATUS_ID = "connection-status";
 export const DEFAULT_CONNECTION_STATUS: ConnectionStatus = {
   id: CONNECTION_STATUS_ID,
   __typename: "ConnectionStatus" as "ConnectionStatus",
-  isConnected: false
+  isConnected: false,
+  reconnected: "false"
 };
 
 export interface ConnectionStatus {
   id: string;
   __typename: "ConnectionStatus";
   isConnected: boolean;
+  reconnected: string;
 }
 
 export interface ConnectionQueryData {
@@ -25,12 +27,13 @@ const CONNECTION_FRAGMENT = gql`
   fragment ConnectionFragment on ConnectionStatus {
     id
     isConnected
+    reconnected
   }
 `;
 
 export const CONNECTION_MUTATION = gql`
-  mutation ConnectionMutation($isConnected: Boolean) {
-    connected(isConnected: $isConnected) @client {
+  mutation ConnectionMutation($isConnected: Boolean!, $reconnected: String!) {
+    connected(isConnected: $isConnected, reconnected: $reconnected) @client {
       ...ConnectionFragment
     }
   }
@@ -49,6 +52,7 @@ export const CONNECTION_QUERY = gql`
 
 export interface ConnectionMutationVariables {
   isConnected: boolean;
+  reconnected: string;
 }
 
 export const connectionGql = graphql<
@@ -98,35 +102,10 @@ const connectionMutationResolver: LocalResolverFn<
 
   emitData({
     type: EmitAction.connectionChanged,
-    data: variables.isConnected
+    data: connected
   });
 
   return connected;
-};
-
-const connectionQueryResolver: LocalResolverFn<ConnectionMutationVariables> = (
-  _,
-  variables,
-  { cache, getCacheKey }
-) => {
-  const id = getCacheKey({
-    __typename: "ConnectionStatus",
-    id: CONNECTION_STATUS_ID
-  });
-
-  const data = cache.readFragment<ConnectionStatus>({
-    fragment: CONNECTION_FRAGMENT,
-    id
-  }) as ConnectionStatus;
-
-  // tslint:disable-next-line:no-console
-  console.log(
-    "\n\t\tLogging start\n\n\n\n data from query resolver\n",
-    data,
-    "\n\n\n\n\t\tLogging ends\n"
-  );
-
-  return data;
 };
 
 export const connectionResolvers = {
@@ -134,7 +113,5 @@ export const connectionResolvers = {
     connected: connectionMutationResolver
   },
 
-  Query: {
-    connected: connectionQueryResolver
-  }
+  Query: {}
 };

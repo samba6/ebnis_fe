@@ -10,7 +10,7 @@ import { EbnisAppProvider } from "./src/context";
 import { RootHelmet } from "./src/components/RootHelmet";
 
 export const wrapRootElement = ({ element }) => {
-  const { client, cache } = buildClientCache();
+  const { client, cache, persistor } = buildClientCache();
 
   return (
     <ApolloProvider client={client}>
@@ -18,7 +18,8 @@ export const wrapRootElement = ({ element }) => {
         value={{
           client,
           cache,
-          persistCache
+          persistCache,
+          persistor
         }}
       >
         <HelmetProvider>

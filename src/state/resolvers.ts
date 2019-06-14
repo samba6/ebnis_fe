@@ -1,5 +1,4 @@
 import { InMemoryCache } from "apollo-cache-inmemory";
-
 import {
   connectionResolvers,
   ConnectionQueryData,
@@ -7,6 +6,7 @@ import {
 } from "./connection.resolver";
 import { userLocalResolvers } from "./user.resolver";
 import ApolloClient from "apollo-client";
+import { defaultUploadUnsaved } from "./upload-unsaved-resolvers";
 
 export interface CacheContext {
   cache: InMemoryCache;
@@ -33,7 +33,8 @@ export function initState() {
       staleToken: null,
       loggedOutUser: null,
       unsavedExperiences: [],
-      savedExperiencesUnsavedEntries: []
+      savedExperiencesUnsavedEntries: [],
+      ...defaultUploadUnsaved
     }
   };
 }
