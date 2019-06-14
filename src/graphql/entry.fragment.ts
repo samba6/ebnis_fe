@@ -5,10 +5,12 @@ export const ENTRY_FRAGMENT = gql`
     id
     expId
     clientId
+    insertedAt
+    updatedAt
+
     fields {
       defId
       data
     }
-    insertedAt
   }
 `;

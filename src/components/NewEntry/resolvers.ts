@@ -88,7 +88,8 @@ const createUnsavedEntryResolver: LocalResolverFn<
     clientId: id,
     expId: experienceId,
     fields,
-    insertedAt: today.toJSON()
+    insertedAt: today.toJSON(),
+    updatedAt: today.toJSON()
   };
 
   if (isUnsavedId(experienceId)) {

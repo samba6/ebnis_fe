@@ -29,9 +29,10 @@ export interface EntryFragment {
    *   a fresh experience.
    */
   clientId: string | null;
+  insertedAt: any;
+  updatedAt: any;
   /**
    * The data fields belonging to this entry
    */
   fields: (EntryFragment_fields | null)[];
-  insertedAt: any;
 }

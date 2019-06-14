@@ -8,6 +8,9 @@ export const CREATE_EXPERIENCE_FRAGMENT = gql`
     title
     description
     clientId
+    insertedAt
+    updatedAt
+
     fieldDefs {
       ...FieldDefFragment
     }

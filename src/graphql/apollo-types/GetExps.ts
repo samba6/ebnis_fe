@@ -68,11 +68,12 @@ export interface GetExps_exps_edges_node_entries_edges_node {
    *   a fresh experience.
    */
   clientId: string | null;
+  insertedAt: any;
+  updatedAt: any;
   /**
    * The data fields belonging to this entry
    */
   fields: (GetExps_exps_edges_node_entries_edges_node_fields | null)[];
-  insertedAt: any;
 }
 
 export interface GetExps_exps_edges_node_entries_edges {
@@ -114,6 +115,8 @@ export interface GetExps_exps_edges_node {
    *   a fresh experience.
    */
   clientId: string | null;
+  insertedAt: any;
+  updatedAt: any;
   /**
    * The field definitions used for the experience entries
    */

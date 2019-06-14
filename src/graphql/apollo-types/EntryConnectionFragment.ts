@@ -41,11 +41,12 @@ export interface EntryConnectionFragment_edges_node {
    *   a fresh experience.
    */
   clientId: string | null;
+  insertedAt: any;
+  updatedAt: any;
   /**
    * The data fields belonging to this entry
    */
   fields: (EntryConnectionFragment_edges_node_fields | null)[];
-  insertedAt: any;
 }
 
 export interface EntryConnectionFragment_edges {

@@ -88,8 +88,23 @@ export async function uploadUnsaved(
 
   unsavedExperiences = immer(unsavedExperiences, (proxy: CreateExp[]) => {
     for (let i = 0, len = proxy.length; i < len; i++) {
-      const { clientId, description, fieldDefs, title } = proxy[i];
-      proxy[i] = { clientId, description, fieldDefs, title };
+      const {
+        clientId,
+        description,
+        fieldDefs,
+        title,
+        updatedAt,
+        insertedAt
+      } = proxy[i];
+
+      proxy[i] = {
+        clientId,
+        description,
+        fieldDefs,
+        title,
+        updatedAt,
+        insertedAt
+      };
     }
   });
 
@@ -114,8 +129,9 @@ export async function uploadUnsaved(
     savedExperiencesUnsavedEntries,
     (proxy: CreateEntry[]) => {
       for (let i = 0, len = proxy.length; i < len; i++) {
-        const { clientId, expId, fields } = proxy[i];
-        proxy[i] = { clientId, expId, fields };
+        const { clientId, expId, fields, updatedAt, insertedAt } = proxy[i];
+
+        proxy[i] = { clientId, expId, fields, updatedAt, insertedAt };
       }
     }
   );

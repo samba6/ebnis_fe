@@ -56,6 +56,8 @@ export interface CreateEntry {
   clientId?: string | null;
   expId: string;
   fields: (CreateField | null)[];
+  insertedAt?: any | null;
+  updatedAt?: any | null;
 }
 
 /**
@@ -65,7 +67,9 @@ export interface CreateExp {
   clientId?: string | null;
   description?: string | null;
   fieldDefs: (CreateFieldDef | null)[];
+  insertedAt?: any | null;
   title: string;
+  updatedAt?: any | null;
 }
 
 /**

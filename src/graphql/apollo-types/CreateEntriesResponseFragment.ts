@@ -29,11 +29,12 @@ export interface CreateEntriesResponseFragment_successes_entry {
    *   a fresh experience.
    */
   clientId: string | null;
+  insertedAt: any;
+  updatedAt: any;
   /**
    * The data fields belonging to this entry
    */
   fields: (CreateEntriesResponseFragment_successes_entry_fields | null)[];
-  insertedAt: any;
 }
 
 export interface CreateEntriesResponseFragment_successes {
