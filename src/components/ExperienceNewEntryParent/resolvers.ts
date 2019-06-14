@@ -5,7 +5,7 @@ import {
   UNSAVED_EXPERIENCE_TYPENAME,
   UNSAVED_EXPERIENCE_FRAGMENT_NAME
 } from "../ExperienceDefinition/resolver-utils";
-import { ExperienceAllFieldsFragment } from "../../graphql/apollo-types/ExperienceAllFieldsFragment";
+import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragment";
 import { DataValue } from "react-apollo";
 import { ApolloError } from "apollo-client";
 import { GraphQLError } from "graphql";
@@ -55,8 +55,8 @@ export const GET_UNSAVED_EXPERIENCE_QUERY = gql`
 type UnsavedExperienceTypename = "UnsavedExperience";
 
 export type UnsavedExperience = Pick<
-  ExperienceAllFieldsFragment,
-  Exclude<keyof ExperienceAllFieldsFragment, "__typename">
+  ExperienceFragment,
+  Exclude<keyof ExperienceFragment, "__typename">
 > & {
   __typename: UnsavedExperienceTypename;
 };

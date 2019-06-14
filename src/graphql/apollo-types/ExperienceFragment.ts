@@ -2,13 +2,13 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
-import { CreateExp, FieldType } from "./globalTypes";
+import { FieldType } from "./globalTypes";
 
 // ====================================================
-// GraphQL mutation operation: CreateExperienceReturnAllFieldsMutation
+// GraphQL fragment: ExperienceFragment
 // ====================================================
 
-export interface CreateExperienceReturnAllFieldsMutation_exp_fieldDefs {
+export interface ExperienceFragment_fieldDefs {
   __typename: "FieldDef";
   id: string;
   /**
@@ -21,7 +21,7 @@ export interface CreateExperienceReturnAllFieldsMutation_exp_fieldDefs {
   type: FieldType;
 }
 
-export interface CreateExperienceReturnAllFieldsMutation_exp_entries_pageInfo {
+export interface ExperienceFragment_entries_pageInfo {
   __typename: "PageInfo";
   /**
    * When paginating forwards, are there more items?
@@ -33,13 +33,13 @@ export interface CreateExperienceReturnAllFieldsMutation_exp_entries_pageInfo {
   hasPreviousPage: boolean;
 }
 
-export interface CreateExperienceReturnAllFieldsMutation_exp_entries_edges_node_fields {
+export interface ExperienceFragment_entries_edges_node_fields {
   __typename: "Field";
   defId: string;
   data: any;
 }
 
-export interface CreateExperienceReturnAllFieldsMutation_exp_entries_edges_node {
+export interface ExperienceFragment_entries_edges_node {
   __typename: "Entry";
   /**
    * The ID of an object
@@ -59,11 +59,11 @@ export interface CreateExperienceReturnAllFieldsMutation_exp_entries_edges_node 
   /**
    * The data fields belonging to this entry
    */
-  fields: (CreateExperienceReturnAllFieldsMutation_exp_entries_edges_node_fields | null)[];
+  fields: (ExperienceFragment_entries_edges_node_fields | null)[];
   insertedAt: any;
 }
 
-export interface CreateExperienceReturnAllFieldsMutation_exp_entries_edges {
+export interface ExperienceFragment_entries_edges {
   __typename: "EntryEdge";
   /**
    * A cursor for use in pagination
@@ -72,16 +72,16 @@ export interface CreateExperienceReturnAllFieldsMutation_exp_entries_edges {
   /**
    * The item at the end of the edge
    */
-  node: CreateExperienceReturnAllFieldsMutation_exp_entries_edges_node | null;
+  node: ExperienceFragment_entries_edges_node | null;
 }
 
-export interface CreateExperienceReturnAllFieldsMutation_exp_entries {
+export interface ExperienceFragment_entries {
   __typename: "EntryConnection";
-  pageInfo: CreateExperienceReturnAllFieldsMutation_exp_entries_pageInfo;
-  edges: (CreateExperienceReturnAllFieldsMutation_exp_entries_edges | null)[] | null;
+  pageInfo: ExperienceFragment_entries_pageInfo;
+  edges: (ExperienceFragment_entries_edges | null)[] | null;
 }
 
-export interface CreateExperienceReturnAllFieldsMutation_exp {
+export interface ExperienceFragment {
   __typename: "Experience";
   /**
    * The ID of an object
@@ -105,17 +105,9 @@ export interface CreateExperienceReturnAllFieldsMutation_exp {
   /**
    * The field definitions used for the experience entries
    */
-  fieldDefs: (CreateExperienceReturnAllFieldsMutation_exp_fieldDefs | null)[];
+  fieldDefs: (ExperienceFragment_fieldDefs | null)[];
   /**
    * The entries of the experience - can be paginated
    */
-  entries: CreateExperienceReturnAllFieldsMutation_exp_entries;
-}
-
-export interface CreateExperienceReturnAllFieldsMutation {
-  exp: CreateExperienceReturnAllFieldsMutation_exp | null;
-}
-
-export interface CreateExperienceReturnAllFieldsMutationVariables {
-  exp: CreateExp;
+  entries: ExperienceFragment_entries;
 }

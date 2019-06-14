@@ -1,5 +1,5 @@
 import gql from "graphql-tag";
-import expFrag from "./exp.fragment";
+import { EXPERIENCE_FRAGMENT } from "./experience.fragment";
 
 export const EXPERIENCE_CONNECTION_FRAGMENT = gql`
   fragment ExperienceConnectionFragment on ExperienceConnection {
@@ -11,10 +11,10 @@ export const EXPERIENCE_CONNECTION_FRAGMENT = gql`
     edges {
       cursor
       node {
-        ...ExpFrag
+        ...ExperienceFragment
       }
     }
   }
 
-  ${expFrag}
+  ${EXPERIENCE_FRAGMENT}
 `;

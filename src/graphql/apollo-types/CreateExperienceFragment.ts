@@ -5,10 +5,10 @@
 import { FieldType } from "./globalTypes";
 
 // ====================================================
-// GraphQL fragment: ExperienceAllFieldsFragment
+// GraphQL fragment: CreateExperienceFragment
 // ====================================================
 
-export interface ExperienceAllFieldsFragment_fieldDefs {
+export interface CreateExperienceFragment_fieldDefs {
   __typename: "FieldDef";
   id: string;
   /**
@@ -21,7 +21,7 @@ export interface ExperienceAllFieldsFragment_fieldDefs {
   type: FieldType;
 }
 
-export interface ExperienceAllFieldsFragment_entries_pageInfo {
+export interface CreateExperienceFragment_entries_pageInfo {
   __typename: "PageInfo";
   /**
    * When paginating forwards, are there more items?
@@ -33,13 +33,13 @@ export interface ExperienceAllFieldsFragment_entries_pageInfo {
   hasPreviousPage: boolean;
 }
 
-export interface ExperienceAllFieldsFragment_entries_edges_node_fields {
+export interface CreateExperienceFragment_entries_edges_node_fields {
   __typename: "Field";
   defId: string;
   data: any;
 }
 
-export interface ExperienceAllFieldsFragment_entries_edges_node {
+export interface CreateExperienceFragment_entries_edges_node {
   __typename: "Entry";
   /**
    * The ID of an object
@@ -59,11 +59,11 @@ export interface ExperienceAllFieldsFragment_entries_edges_node {
   /**
    * The data fields belonging to this entry
    */
-  fields: (ExperienceAllFieldsFragment_entries_edges_node_fields | null)[];
+  fields: (CreateExperienceFragment_entries_edges_node_fields | null)[];
   insertedAt: any;
 }
 
-export interface ExperienceAllFieldsFragment_entries_edges {
+export interface CreateExperienceFragment_entries_edges {
   __typename: "EntryEdge";
   /**
    * A cursor for use in pagination
@@ -72,16 +72,16 @@ export interface ExperienceAllFieldsFragment_entries_edges {
   /**
    * The item at the end of the edge
    */
-  node: ExperienceAllFieldsFragment_entries_edges_node | null;
+  node: CreateExperienceFragment_entries_edges_node | null;
 }
 
-export interface ExperienceAllFieldsFragment_entries {
+export interface CreateExperienceFragment_entries {
   __typename: "EntryConnection";
-  pageInfo: ExperienceAllFieldsFragment_entries_pageInfo;
-  edges: (ExperienceAllFieldsFragment_entries_edges | null)[] | null;
+  pageInfo: CreateExperienceFragment_entries_pageInfo;
+  edges: (CreateExperienceFragment_entries_edges | null)[] | null;
 }
 
-export interface ExperienceAllFieldsFragment {
+export interface CreateExperienceFragment {
   __typename: "Experience";
   /**
    * The ID of an object
@@ -105,9 +105,9 @@ export interface ExperienceAllFieldsFragment {
   /**
    * The field definitions used for the experience entries
    */
-  fieldDefs: (ExperienceAllFieldsFragment_fieldDefs | null)[];
+  fieldDefs: (CreateExperienceFragment_fieldDefs | null)[];
   /**
    * The entries of the experience - can be paginated
    */
-  entries: ExperienceAllFieldsFragment_entries;
+  entries: CreateExperienceFragment_entries;
 }

@@ -1,13 +1,13 @@
 import gql from "graphql-tag";
 
-import { entryFrag } from "./entry.frag";
+import { ENTRY_FRAGMENT } from "./entry.fragment";
 
 export const CREATE_ENTRIES_RESPONSE_FRAGMENT = gql`
   fragment CreateEntriesResponseFragment on CreateEntriesResponse {
     successes {
       index
       entry {
-        ...EntryFrag
+        ...EntryFragment
       }
     }
 
@@ -17,5 +17,5 @@ export const CREATE_ENTRIES_RESPONSE_FRAGMENT = gql`
     }
   }
 
-  ${entryFrag}
+  ${ENTRY_FRAGMENT}
 `;

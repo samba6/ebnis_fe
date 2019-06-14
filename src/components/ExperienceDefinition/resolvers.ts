@@ -1,7 +1,6 @@
 import { LocalResolverFn } from "../../state/resolvers";
 import { CreateExpMutationVariables } from "../../graphql/apollo-types/CreateExpMutation";
 import { CreateFieldDef } from "../../graphql/apollo-types/globalTypes";
-import { ExperienceAllFieldsFragment_fieldDefs } from "../../graphql/apollo-types/ExperienceAllFieldsFragment";
 import { makeUnsavedId } from "../../constants";
 import { graphql } from "react-apollo";
 import { MutationFn } from "react-apollo";
@@ -13,6 +12,7 @@ import {
   UNSAVED_EXPERIENCES_QUERY,
   UnsavedExperiencesQueryReturned
 } from "./resolver-utils";
+import { ExperienceFragment_fieldDefs } from "../../graphql/apollo-types/ExperienceFragment";
 
 const createUnsavedExperienceResolver: LocalResolverFn<
   CreateExpMutationVariables,
@@ -24,7 +24,7 @@ const createUnsavedExperienceResolver: LocalResolverFn<
 ) => {
   const experienceId = makeUnsavedId(new Date().getTime());
 
-  const fieldDefs: ExperienceAllFieldsFragment_fieldDefs[] = (createFieldDefs as CreateFieldDef[]).map(
+  const fieldDefs: ExperienceFragment_fieldDefs[] = (createFieldDefs as CreateFieldDef[]).map(
     ({ name, type }, index) => {
       return {
         __typename: "FieldDef",
@@ -104,7 +104,6 @@ export const createUnsavedExperienceGql = graphql<
       createUnsavedExperience: mutate
     }
 });
-
 //////////////////////////// QUERIES /////////////////////////////////
 
 //////////////////////////// END QUERIES ////////////////////////////

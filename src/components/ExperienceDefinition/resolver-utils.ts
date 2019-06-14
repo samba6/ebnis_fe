@@ -1,16 +1,16 @@
 import gql from "graphql-tag";
 
-import { fieldDefFrag } from "../../graphql/field-def.fragment";
+import { FIELD_DEF_FRAGMENT } from "../../graphql/field-def.fragment";
 import { ENTRY_CONNECTION_FRAGMENT } from "../../graphql/entry-connection.fragment";
-import { ExperienceAllFieldsFragment } from "../../graphql/apollo-types/ExperienceAllFieldsFragment";
+import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragment";
 
 type UnsavedExperienceTypename = "UnsavedExperience";
 
 export const UNSAVED_EXPERIENCE_TYPENAME = "UnsavedExperience" as UnsavedExperienceTypename;
 
 export type UnsavedExperience = Pick<
-  ExperienceAllFieldsFragment,
-  Exclude<keyof ExperienceAllFieldsFragment, "__typename">
+  ExperienceFragment,
+  Exclude<keyof ExperienceFragment, "__typename">
 > & {
   __typename: UnsavedExperienceTypename;
 };
@@ -22,9 +22,9 @@ export const UNSAVED_EXPERIENCE_FRAGMENT = gql`
     id
     title
     description
-
+    clientId
     fieldDefs {
-      ...FieldDefFrag
+      ...FieldDefFragment
     }
 
     entries {
@@ -32,7 +32,7 @@ export const UNSAVED_EXPERIENCE_FRAGMENT = gql`
     }
   }
 
-  ${fieldDefFrag}
+  ${FIELD_DEF_FRAGMENT}
   ${ENTRY_CONNECTION_FRAGMENT}
 `;
 

@@ -5,16 +5,16 @@ import {
   CreateExpMutation,
   CreateExpMutationVariables
 } from "./apollo-types/CreateExpMutation";
-import { expFrag } from "./exp.fragment";
+import { CREATE_EXPERIENCE_FRAGMENT } from "./create-experience.fragment";
 
 export const EXP_MUTATION = gql`
   mutation CreateExpMutation($exp: CreateExp!) {
     exp(exp: $exp) {
-      ...ExpFrag
+      ...CreateExperienceFragment
     }
   }
 
-  ${expFrag}
+  ${CREATE_EXPERIENCE_FRAGMENT}
 `;
 
 export type CreateExpMutationFn = MutationFn<

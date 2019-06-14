@@ -45,12 +45,6 @@ import {
   USER_LOCAL_MUTATION,
   UserLocalMutationVariable
 } from "../../src/state/user.resolver";
-import { CREATE_EXPERIENCE_RETURN_ALL_FIELDS_MUTATION } from "../../src/graphql/create-experience-return-all-fields.mutation";
-import {
-  CreateExperienceReturnAllFieldsMutation,
-  CreateExperienceReturnAllFieldsMutationVariables,
-  CreateExperienceReturnAllFieldsMutation_exp
-} from "../../src/graphql/apollo-types/CreateExperienceReturnAllFieldsMutation";
 import { FetchResult } from "react-apollo";
 import {
   CreateEntriesMutation,
@@ -77,6 +71,12 @@ import ApolloClient from "apollo-client";
 import { NormalizedCacheObject } from "apollo-cache-inmemory";
 import { CachePersistor } from "apollo-cache-persist";
 import { allResolvers } from "../../src/state/all-resolvers";
+import {
+  CreateExpMutation,
+  CreateExpMutationVariables,
+  CreateExpMutation_exp
+} from "../../src/graphql/apollo-types/CreateExpMutation";
+import { EXP_MUTATION } from "../../src/graphql/create-exp.mutation";
 
 const serverUrl = Cypress.env("API_URL") as string;
 // let cache: InMemoryCache;
@@ -141,19 +141,14 @@ function registerUser(userData: Registration) {
 }
 
 function defineOnlineExperience(experienceDefinitionArgs: CreateExp) {
-  return mutate<
-    CreateExperienceReturnAllFieldsMutation,
-    CreateExperienceReturnAllFieldsMutationVariables
-  >({
-    mutation: CREATE_EXPERIENCE_RETURN_ALL_FIELDS_MUTATION,
+  return mutate<CreateExpMutation, CreateExpMutationVariables>({
+    mutation: EXP_MUTATION,
     variables: {
       exp: experienceDefinitionArgs
     }
   }).then(result => {
     const exp =
-      result &&
-      result.data &&
-      (result.data.exp as CreateExperienceReturnAllFieldsMutation_exp);
+      result && result.data && (result.data.exp as CreateExpMutation_exp);
 
     expect(exp.id).to.be.a("string");
 
@@ -164,7 +159,7 @@ function defineOnlineExperience(experienceDefinitionArgs: CreateExp) {
 function defineUnsavedExperience(experienceDefinitionArgs: CreateExp) {
   return mutate<
     CreateUnsavedExperienceMutationData,
-    CreateExperienceReturnAllFieldsMutationVariables
+    CreateExpMutationVariables
   >({
     mutation: CREATE_UNSAVED_EXPERIENCE_MUTATION,
     variables: {
@@ -183,7 +178,7 @@ function defineUnsavedExperience(experienceDefinitionArgs: CreateExp) {
 }
 
 function createExperienceEntries(
-  experience: CreateExperienceReturnAllFieldsMutation_exp,
+  experience: CreateExpMutation_exp,
   createEntriesArgs: CreateField[][]
 ) {
   return mutate<CreateEntriesMutation, CreateEntriesMutationVariables>({
@@ -314,7 +309,7 @@ declare global {
        */
       defineOnlineExperience: (
         experienceDefinitionArgs: CreateExp
-      ) => Promise<CreateExperienceReturnAllFieldsMutation_exp>;
+      ) => Promise<CreateExpMutation_exp>;
 
       defineUnsavedExperience: (
         experienceDefinitionArgs: CreateExp
@@ -324,11 +319,11 @@ declare global {
        *
        */
       createExperienceEntries: (
-        experience: CreateExperienceReturnAllFieldsMutation_exp,
+        experience: CreateExpMutation_exp,
         createEntriesArgs: CreateField[][]
       ) => Promise<
         [
-          CreateExperienceReturnAllFieldsMutation_exp,
+          CreateExpMutation_exp,
           CreateEntriesMutation_createEntries_successes_entry[]
         ]
       >;

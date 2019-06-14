@@ -10,6 +10,8 @@ import {
 } from "../components/NewEntry/resolvers";
 import { CachePersistor } from "apollo-cache-persist";
 import gql from "graphql-tag";
+import immer from "immer";
+import { CreateExp, CreateEntry } from "../graphql/apollo-types/globalTypes";
 
 const UPLOAD_UNSAVED_FRAGMENT = gql`
   fragment UploadUnsavedFragment on UploadUnsaved {
@@ -80,9 +82,16 @@ export async function uploadUnsaved(
     query: UNSAVED_EXPERIENCES_QUERY
   });
 
-  const unsavedExperiences = unsavedExperiencesData
+  let unsavedExperiences = unsavedExperiencesData
     ? unsavedExperiencesData.unsavedExperiences
     : [];
+
+  unsavedExperiences = immer(unsavedExperiences, (proxy: CreateExp[]) => {
+    for (let i = 0, len = proxy.length; i < len; i++) {
+      const { clientId, description, fieldDefs, title } = proxy[i];
+      proxy[i] = { clientId, description, fieldDefs, title };
+    }
+  });
 
   // tslint:disable-next-line:no-console
   console.log(
@@ -97,9 +106,19 @@ export async function uploadUnsaved(
     query: GET_SAVED_EXPERIENCES_UNSAVED_ENTRIES_QUERY
   });
 
-  const savedExperiencesUnsavedEntries = savedExperiencesUnsavedEntriesData
+  let savedExperiencesUnsavedEntries = savedExperiencesUnsavedEntriesData
     ? savedExperiencesUnsavedEntriesData.savedExperiencesUnsavedEntries
     : [];
+
+  savedExperiencesUnsavedEntries = immer(
+    savedExperiencesUnsavedEntries,
+    (proxy: CreateEntry[]) => {
+      for (let i = 0, len = proxy.length; i < len; i++) {
+        const { clientId, expId, fields } = proxy[i];
+        proxy[i] = { clientId, expId, fields };
+      }
+    }
+  );
 
   // tslint:disable-next-line:no-console
   console.log(

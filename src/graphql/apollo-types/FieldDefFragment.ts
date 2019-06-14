@@ -5,10 +5,10 @@
 import { FieldType } from "./globalTypes";
 
 // ====================================================
-// GraphQL fragment: FieldDefFrag
+// GraphQL fragment: FieldDefFragment
 // ====================================================
 
-export interface FieldDefFrag {
+export interface FieldDefFragment {
   __typename: "FieldDef";
   id: string;
   /**
