@@ -5,6 +5,7 @@ export const expFrag = gql`
     id
     title
     description
+    clientId
   }
 `;
 

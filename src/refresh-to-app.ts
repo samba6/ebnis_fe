@@ -1,7 +1,9 @@
 import { EXPERIENCES_URL } from "./routes";
 import { CachePersistor } from "apollo-cache-persist";
 
-export async function refreshToHome(persistor: null | CachePersistor<{}>) {
+export async function refreshToHome(
+  persistor: null | CachePersistor<{}> | undefined
+) {
   if (persistor) {
     await persistor.persist();
   }

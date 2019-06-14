@@ -37,7 +37,7 @@ export const defineSocket = ({
   // we will keep dispatching disconnect.  So we track if we already dispatched
   // disconnect (isDisconnected = true) and if so we do not send another
   // message.  We only dispatch the message if isDisconnected = false.
-  let isDisconnected = null;
+  let isDisconnected = false;
   let dataAuthChannel: Channel;
 
   function ebnisConnect(token?: string | null, payload?: ConnectionPayload) {
@@ -119,7 +119,7 @@ export const defineSocket = ({
     dataAuthChannel
       .join()
       .receive("ok", message => {
-        isDisconnected = 0;
+        isDisconnected = false;
 
         if (payload) {
           payload.onData(message);

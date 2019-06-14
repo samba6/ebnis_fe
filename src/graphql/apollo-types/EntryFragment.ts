@@ -15,10 +15,6 @@ export interface EntryFragment_fields {
 export interface EntryFragment {
   __typename: "Entry";
   /**
-   * Internal ID of the schema. Field `id` is the global opaque ID
-   */
-  _id: string;
-  /**
    * The ID of an object
    */
   id: string;
@@ -26,6 +22,13 @@ export interface EntryFragment {
    * The ID of experience to which this entry belongs
    */
   expId: string;
+  /**
+   * The client ID. For experiences created on the client and to be synced
+   *   with the server, the client ID uniquely identifies such and can be used
+   *   to enforce uniqueness at the DB level. Not providing client_id assumes
+   *   a fresh experience.
+   */
+  clientId: string | null;
   /**
    * The data fields belonging to this entry
    */

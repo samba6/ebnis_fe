@@ -85,7 +85,7 @@ const createUnsavedEntryResolver: LocalResolverFn<
   const entry: CreateAnEntry_entry = {
     __typename: "Entry",
     id,
-    _id: id,
+    clientId: id,
     expId: experienceId,
     fields,
     insertedAt: today.toJSON()

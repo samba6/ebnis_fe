@@ -20,4 +20,11 @@ export interface ExpFrag {
    * The description of the experience
    */
   description: string | null;
+  /**
+   * The client ID. For experiences created on the client and to be synced
+   *   with the server, the client ID uniquely identifies such and can be used
+   *   to enforce uniqueness at the DB level. Not providing client_id assumes
+   *   a fresh experience.
+   */
+  clientId: string | null;
 }

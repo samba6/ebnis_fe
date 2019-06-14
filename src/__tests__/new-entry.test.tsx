@@ -64,7 +64,7 @@ it("creates new experience entry when online", async () => {
   /**
    * Given we have received experiences from server
    */
-  const exp: GetAnExp_exp = {
+  const exp = {
     id: "1000",
 
     title,
@@ -103,7 +103,7 @@ it("creates new experience entry when online", async () => {
     __typename: "Experience",
 
     entries: {} as GetAnExp_exp_entries
-  };
+  } as GetAnExp_exp;
 
   const { ui, mockCreateEntry } = makeComp({
     experience: exp
@@ -248,7 +248,7 @@ it("sets values of date and datetime fields", async () => {
   /**
    * Given we have received experiences from server
    */
-  const exp: GetAnExp_exp = {
+  const exp = {
     id: "1000",
 
     title,
@@ -269,7 +269,7 @@ it("sets values of date and datetime fields", async () => {
     __typename: "Experience",
 
     entries: {} as GetAnExp_exp_entries
-  };
+  } as GetAnExp_exp;
 
   const { ui, mockCreateEntry } = makeComp({
     experience: exp

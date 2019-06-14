@@ -81,7 +81,7 @@ export function middlewareLoggerLink(
   }).concat(link) as ApolloLink | null;
 
   if (isE2e) {
-    return loggerLink;
+    return loggerLink as ApolloLink;
   }
 
   if (process.env.NODE_ENV === "production") {
@@ -89,7 +89,7 @@ export function middlewareLoggerLink(
     return link;
   }
 
-  return loggerLink;
+  return loggerLink as ApolloLink;
 }
 
 export function middlewareErrorLink(
@@ -128,7 +128,7 @@ export function middlewareErrorLink(
   ).concat(link) as ApolloLink | null;
 
   if (isE2e) {
-    return errorLink;
+    return errorLink as ApolloLink;
   }
 
   if (process.env.NODE_ENV === "production") {
@@ -136,7 +136,7 @@ export function middlewareErrorLink(
     return link;
   }
 
-  return errorLink;
+  return errorLink as ApolloLink;
 }
 
 function getNow() {

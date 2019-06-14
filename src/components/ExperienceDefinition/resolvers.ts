@@ -38,6 +38,7 @@ const createUnsavedExperienceResolver: LocalResolverFn<
   const experience: UnsavedExperience = {
     __typename: UNSAVED_EXPERIENCE_TYPENAME,
     id: experienceId,
+    clientId: experienceId,
     description,
     title,
     fieldDefs,
