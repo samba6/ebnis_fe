@@ -46,14 +46,13 @@ export interface GetAnExp_exp_entries_edges_node {
    */
   id: string;
   /**
-   * The ID of experience to which this entry belongs
+   * The ID of experience to which this entry belongs.
    */
   expId: string;
   /**
-   * The client ID. For experiences created on the client and to be synced
-   *   with the server, the client ID uniquely identifies such and can be used
-   *   to enforce uniqueness at the DB level. Not providing client_id assumes
-   *   a fresh experience.
+   * The client ID which indicates that an entry has been created offline
+   *   and is to be synced with the server, the client ID uniquely identifies
+   *   this entry and will be used prevent sync conflict.
    */
   clientId: string | null;
   insertedAt: any;

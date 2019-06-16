@@ -66,6 +66,7 @@ export interface CreateEntry {
 export interface CreateExp {
   clientId?: string | null;
   description?: string | null;
+  entries?: (CreateEntry | null)[] | null;
   fieldDefs: (CreateFieldDef | null)[];
   insertedAt?: any | null;
   title: string;
@@ -102,6 +103,7 @@ export interface CreateField {
  * Variables for defining field while defining a new experience
  */
 export interface CreateFieldDef {
+  clientId?: string | null;
   name: string;
   type: FieldType;
 }
