@@ -92,6 +92,20 @@ const createUnsavedEntryResolver: LocalResolverFn<
     updatedAt: today.toJSON()
   };
 
+  // tslint:disable-next-line:no-console
+  console.log(
+    "\n\t\tLogging start\n\n\n\n experience\n",
+    experience,
+    "\n\n\n\n\t\tLogging ends\n"
+  );
+
+  // tslint:disable-next-line:no-console
+  console.log(
+    "\n\t\tLogging start\n\n\n\n entry\n",
+    entry,
+    "\n\n\n\n\t\tLogging ends\n"
+  );
+
   if (isUnsavedId(experienceId)) {
     updateUnsavedExperienceEntry(context, experience, entry);
   } else {
