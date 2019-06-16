@@ -72,6 +72,16 @@ export const Header = (props: Props) => {
         )}
       </Menu>
 
+      {unsavedCount > 0 && (
+        <Link
+          to="/"
+          data-testid="unsaved-count-label"
+          className="unsaved-count-label"
+        >
+          {unsavedCount}
+        </Link>
+      )}
+
       <div
         data-testid="app-header-title"
         className={makeClassnames({
@@ -79,16 +89,6 @@ export const Header = (props: Props) => {
           "no-sidebar": !sidebar
         })}
       >
-        {unsavedCount > 0 && (
-          <Link
-            to="/"
-            data-testid="unsaved-count-label"
-            className="unsaved-count-label"
-          >
-            {unsavedCount}
-          </Link>
-        )}
-
         {title}
       </div>
     </header>
