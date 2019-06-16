@@ -13,7 +13,7 @@ module.exports = {
     "!src/components/RootHelmet/**",
     "!src/components/**/index.ts",
     "!src/components/**/local*queries.ts",
-    "!src/components/**/resolver*",
+    // "!src/components/**/resolver*",
     "!src/**/*.d.ts",
     "!src/context.ts",
     "!src/socket.ts",
@@ -63,5 +63,6 @@ module.exports = {
   globals: {
     __PATH_PREFIX__: ""
   },
-  testURL: "http://localhost"
+  testURL: "http://localhost",
+  extraGlobals: ["Date"]
 };

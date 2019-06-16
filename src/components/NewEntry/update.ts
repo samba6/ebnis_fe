@@ -45,7 +45,7 @@ export const updateExperienceWithNewEntry: (
 
     const exp = data.exp as GetAnExp_exp;
 
-    const newExp = immer(exp, draft => {
+    const updatedExperience = immer(exp, draft => {
       const entries = draft.entries as GetAnExp_exp_entries;
       const edges = entries.edges || [];
       edges.push({
@@ -62,8 +62,10 @@ export const updateExperienceWithNewEntry: (
       query: GET_EXP_QUERY,
       variables,
       data: {
-        exp: newExp
+        exp: updatedExperience
       }
     });
+
+    return updatedExperience;
   };
 };

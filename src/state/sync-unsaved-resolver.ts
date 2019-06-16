@@ -4,13 +4,13 @@ import {
   UnsavedExperiencesQueryReturned
 } from "../components/ExperienceDefinition/resolver-utils";
 import {
-  GET_SAVED_EXPERIENCES_UNSAVED_ENTRIES_QUERY,
-  UnsavedEntriesQueryReturned
+  GET_UNSAVED_ENTRY_SAVED_EXPERIENCE_IDS_QUERY,
+  UnsavedEntriesSavedExperiencesQueryReturned
 } from "../components/NewEntry/resolvers";
 
 export async function getUnsavedCount(cache: InMemoryCache) {
   return (
-    getSavedExperiencesUnsavedEntries(cache).length +
+    getUnsavedEntriesSavedExperiences(cache).length +
     getUnsavedExperiences(cache).length
   );
 }
@@ -27,14 +27,23 @@ function getUnsavedExperiences(cache: InMemoryCache) {
     : [];
 }
 
-function getSavedExperiencesUnsavedEntries(cache: InMemoryCache) {
-  const savedExperiencesUnsavedEntriesData = cache.readQuery<
-    UnsavedEntriesQueryReturned
+function getUnsavedEntriesSavedExperiences(cache: InMemoryCache) {
+  const unsavedEntriesSavedExperiencesData = cache.readQuery<
+    UnsavedEntriesSavedExperiencesQueryReturned
   >({
-    query: GET_SAVED_EXPERIENCES_UNSAVED_ENTRIES_QUERY
+    query: GET_UNSAVED_ENTRY_SAVED_EXPERIENCE_IDS_QUERY
   });
 
-  return savedExperiencesUnsavedEntriesData
-    ? savedExperiencesUnsavedEntriesData.savedExperiencesUnsavedEntries
+  const unsavedEntriesSavedExperiences = unsavedEntriesSavedExperiencesData
+    ? unsavedEntriesSavedExperiencesData.unsavedEntriesSavedExperiences
     : [];
+
+  // tslint:disable-next-line:no-console
+  console.log(
+    "\n\t\tLogging start\n\n\n\n unsavedEntriesSavedExperiences\n",
+    unsavedEntriesSavedExperiences,
+    "\n\n\n\n\t\tLogging ends\n"
+  );
+
+  return unsavedEntriesSavedExperiences;
 }

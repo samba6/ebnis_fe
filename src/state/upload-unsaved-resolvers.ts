@@ -5,8 +5,8 @@ import {
   UnsavedExperiencesQueryReturned
 } from "../components/ExperienceDefinition/resolver-utils";
 import {
-  GET_SAVED_EXPERIENCES_UNSAVED_ENTRIES_QUERY,
-  UnsavedEntriesQueryReturned
+  GET_UNSAVED_ENTRY_SAVED_EXPERIENCE_IDS_QUERY,
+  UnsavedEntriesSavedExperiencesQueryReturned
 } from "../components/NewEntry/resolvers";
 import { CachePersistor } from "apollo-cache-persist";
 import gql from "graphql-tag";
@@ -116,13 +116,13 @@ export async function uploadUnsaved(
   );
 
   const savedExperiencesUnsavedEntriesData = cache.readQuery<
-    UnsavedEntriesQueryReturned
+    UnsavedEntriesSavedExperiencesQueryReturned
   >({
-    query: GET_SAVED_EXPERIENCES_UNSAVED_ENTRIES_QUERY
+    query: GET_UNSAVED_ENTRY_SAVED_EXPERIENCE_IDS_QUERY
   });
 
   let savedExperiencesUnsavedEntries = savedExperiencesUnsavedEntriesData
-    ? savedExperiencesUnsavedEntriesData.savedExperiencesUnsavedEntries
+    ? savedExperiencesUnsavedEntriesData.unsavedEntriesSavedExperiences
     : [];
 
   savedExperiencesUnsavedEntries = immer(

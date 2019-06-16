@@ -38,3 +38,20 @@ export function fillField(element: Element, value: string) {
     target: { value }
   });
 }
+
+export function makeTestCache() {
+  const mockWriteFragment = jest.fn();
+  const mockReadQuery = jest.fn();
+  const mockWriteQuery = jest.fn();
+
+  const cache = {
+    writeFragment: mockWriteFragment,
+    readQuery: mockReadQuery,
+    writeQuery: mockWriteQuery
+  };
+
+  return {
+    cache,
+    mockReadQuery
+  };
+}

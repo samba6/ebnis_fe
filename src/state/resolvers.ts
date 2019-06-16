@@ -32,7 +32,7 @@ export function initState() {
       staleToken: null,
       loggedOutUser: null,
       unsavedExperiences: [],
-      savedExperiencesUnsavedEntries: []
+      unsavedEntriesSavedExperiences: []
     }
   };
 }
