@@ -7,7 +7,7 @@ import { Layout } from "../components/Layout/component";
 import { EbnisAppProvider } from "../context";
 
 jest.mock("../state/tokens");
-jest.mock("../state/how_many_unsaved");
+jest.mock("../state/sync-unsaved-resolver");
 jest.mock("../state/get-conn-status");
 jest.mock("../components/Loading", () => ({
   Loading: jest.fn(() => <div data-testid="loading" />)
@@ -24,13 +24,13 @@ jest.mock("../components/Layout/utils", () => ({
 }));
 
 import { getUser } from "../state/tokens";
-import { howManyUnsaved } from "../state/how_many_unsaved";
+import { getUnsavedCount } from "../state/sync-unsaved-resolver";
 import { getConnStatus } from "../state/get-conn-status";
 import { emitData, EmitAction } from "../setup-observable";
 import { ILayoutContextContext } from "../components/Layout/utils";
 
 const mockGetUser = getUser as jest.Mock;
-const mockHowManyUnsaved = howManyUnsaved as jest.Mock;
+const mockGetUnsavedCount = getUnsavedCount as jest.Mock;
 const mockGetConnStatus = getConnStatus as jest.Mock;
 
 const LayoutP = Layout as ComponentType<{}>;
@@ -134,7 +134,7 @@ it("queries unsaved when there is user and connection", async () => {
   /**
    * Then component should query for unsaved data
    */
-  expect(mockHowManyUnsaved).toHaveBeenCalled();
+  expect(mockGetUnsavedCount).toHaveBeenCalled();
 });
 
 it("queries unsaved when connection returns and we are reconnecting", async done => {
@@ -143,7 +143,7 @@ it("queries unsaved when connection returns and we are reconnecting", async done
    */
   const { ui } = makeComp();
   mockGetUser.mockReturnValue({});
-  mockHowManyUnsaved.mockResolvedValue(5);
+  mockGetUnsavedCount.mockResolvedValue(5);
   mockGetConnStatus.mockResolvedValue(false);
 
   const { getByTestId } = render(ui);
@@ -200,7 +200,7 @@ it("does not query unsaved when connection returns and we are not reconnecting",
    * Then component should not query for unsaved data
    */
   await wait(() => {
-    expect(mockHowManyUnsaved).not.toHaveBeenCalled();
+    expect(mockGetUnsavedCount).not.toHaveBeenCalled();
   });
 
   done();
@@ -210,7 +210,7 @@ it("resets unsaved count when we lose connection", async done => {
   const { ui } = makeComp();
   mockGetUser.mockReturnValue({});
   mockGetConnStatus.mockResolvedValue(true);
-  mockHowManyUnsaved.mockResolvedValue(2);
+  mockGetUnsavedCount.mockResolvedValue(2);
 
   const { getByTestId } = render(ui);
 
@@ -235,7 +235,7 @@ function makeComp({
   testId = browserRenderedTestId
 }: { context?: {}; testId?: string } = {}) {
   layoutContextValue = (null as unknown) as ILayoutContextContext;
-  mockHowManyUnsaved.mockReset();
+  mockGetUnsavedCount.mockReset();
   mockGetUser.mockReset();
   mockGetConnStatus.mockReset();
 

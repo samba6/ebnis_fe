@@ -8,26 +8,33 @@ import {
   UnsavedEntriesQueryReturned
 } from "../components/NewEntry/resolvers";
 
-export async function howManyUnsaved(cache: InMemoryCache) {
+export async function getUnsavedCount(cache: InMemoryCache) {
+  return (
+    getSavedExperiencesUnsavedEntries(cache).length +
+    getUnsavedExperiences(cache).length
+  );
+}
+
+function getUnsavedExperiences(cache: InMemoryCache) {
   const unsavedExperiencesData = cache.readQuery<
     UnsavedExperiencesQueryReturned
   >({
     query: UNSAVED_EXPERIENCES_QUERY
   });
 
-  const unsavedExperiences = unsavedExperiencesData
+  return unsavedExperiencesData
     ? unsavedExperiencesData.unsavedExperiences
     : [];
+}
 
+function getSavedExperiencesUnsavedEntries(cache: InMemoryCache) {
   const savedExperiencesUnsavedEntriesData = cache.readQuery<
     UnsavedEntriesQueryReturned
   >({
     query: GET_SAVED_EXPERIENCES_UNSAVED_ENTRIES_QUERY
   });
 
-  const savedExperiencesUnsavedEntries = savedExperiencesUnsavedEntriesData
+  return savedExperiencesUnsavedEntriesData
     ? savedExperiencesUnsavedEntriesData.savedExperiencesUnsavedEntries
     : [];
-
-  return savedExperiencesUnsavedEntries.length + unsavedExperiences.length;
 }

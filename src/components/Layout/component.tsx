@@ -14,7 +14,7 @@ import { ZenObservable } from "zen-observable-ts";
 import { getConnStatus } from "../../state/get-conn-status";
 import { CachePersistor } from "apollo-cache-persist";
 import { NormalizedCacheObject } from "apollo-cache-inmemory";
-import { howManyUnsaved } from "../../state/how_many_unsaved";
+import { getUnsavedCount } from "../../state/sync-unsaved-resolver";
 
 export function Layout({ children }: PropsWithChildren<{}>) {
   const { cache, persistCache, client } = useContext(EbnisAppContext);
@@ -43,8 +43,8 @@ export function Layout({ children }: PropsWithChildren<{}>) {
       if (renderChildren) {
         (async function() {
           if (await getConnStatus(client)) {
-            const newTotalUnsaved = await howManyUnsaved(cache);
-            setUnsavedCount(newTotalUnsaved);
+            const newUnsavedCount = await getUnsavedCount(cache);
+            setUnsavedCount(newUnsavedCount);
           }
         })();
       }
@@ -56,9 +56,7 @@ export function Layout({ children }: PropsWithChildren<{}>) {
 
             if (type === EmitAction.connectionChanged) {
               if (isConnected && reconnected === "true") {
-                howManyUnsaved(cache).then(newTotalUnsaved => {
-                  setUnsavedCount(newTotalUnsaved);
-                });
+                getUnsavedCount(cache).then(setUnsavedCount);
               } else if (isConnected === false) {
                 // if we are disconnected, then we don't display unsaved UI
                 setUnsavedCount(0);
