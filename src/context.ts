@@ -4,7 +4,7 @@ import ApolloClient from "apollo-client";
 import { PersistCacheFn } from "./state/apollo-setup";
 import { CachePersistor } from "apollo-cache-persist";
 
-interface EbnisContextProps {
+export interface EbnisContextProps {
   cache?: InMemoryCache;
   client?: ApolloClient<{}>;
   persistCache?: PersistCacheFn;

@@ -8,47 +8,43 @@ import React, {
 import { EbnisAppContext } from "../../context";
 import { Loading } from "../Loading";
 import { LayoutProvider } from "./utils";
-import { uploadUnsaved } from "../../state/upload-unsaved-resolvers";
 import { getObservable, EmitAction } from "../../setup-observable";
 import { getUser } from "../../state/tokens";
 import { ZenObservable } from "zen-observable-ts";
 import { getConnStatus } from "../../state/get-conn-status";
 import { CachePersistor } from "apollo-cache-persist";
 import { NormalizedCacheObject } from "apollo-cache-inmemory";
+import { howManyUnsaved } from "../../state/how_many_unsaved";
 
 export function Layout({ children }: PropsWithChildren<{}>) {
-  const { cache, persistCache, client, persistor } = useContext(
-    EbnisAppContext
-  );
+  const { cache, persistCache, client } = useContext(EbnisAppContext);
+
+  // this will be true if we are server rendering in gatsby build
+  if (!(cache && persistCache && client)) {
+    return (
+      <LayoutProvider value={{ unsavedCount: 0 }}>{children}</LayoutProvider>
+    );
+  }
 
   const persistorRef = useRef<
     CachePersistor<NormalizedCacheObject> | undefined
   >();
 
   const subscriptionRef = useRef<ZenObservable.Subscription | null>(null);
-
-  // this will be true if we are server rendering in gatsby build
-  if (!(cache && persistCache && client && persistor)) {
-    return (
-      <LayoutProvider value={{ persistor: persistorRef.current }}>
-        {children}
-      </LayoutProvider>
-    );
-  }
-
+  const [totalUnsaved, setTotalUnsaved] = useState(0);
   const [renderChildren, setRenderChildren] = useState(false);
 
   useEffect(() => {
     const user = getUser();
 
     if (user) {
-      // by now we are done persisting cache so let's save unsaved
+      // by now we are done persisting cache so let's see if user has unsaved
+      // data
       if (renderChildren) {
         (async function() {
           if (await getConnStatus(client)) {
-            uploadUnsaved(cache, client, persistorRef.current as CachePersistor<
-              NormalizedCacheObject
-            >);
+            const newTotalUnsaved = await howManyUnsaved(cache);
+            setTotalUnsaved(newTotalUnsaved);
           }
         })();
       }
@@ -56,23 +52,17 @@ export function Layout({ children }: PropsWithChildren<{}>) {
       if (!subscriptionRef.current) {
         subscriptionRef.current = getObservable().subscribe({
           next({ type, data }) {
+            const { isConnected, reconnected } = data;
+
             if (type === EmitAction.connectionChanged) {
-              if (!(data.isConnected && data.reconnected === "true")) {
-                return;
+              if (isConnected && reconnected === "true") {
+                howManyUnsaved(cache).then(newTotalUnsaved => {
+                  setTotalUnsaved(newTotalUnsaved);
+                });
+              } else if (isConnected === false) {
+                // if we are disconnected, then we don't display unsaved UI
+                setTotalUnsaved(0);
               }
-
-              // tslint:disable-next-line:no-console
-              console.log(
-                "\n\t\tLogging start\n\n\n\n conn data\n",
-                data,
-                "\n\n\n\n\t\tLogging ends\n"
-              );
-
-              uploadUnsaved(
-                cache,
-                client,
-                persistorRef.current as CachePersistor<NormalizedCacheObject>
-              );
             }
           }
         });
@@ -101,13 +91,16 @@ export function Layout({ children }: PropsWithChildren<{}>) {
     })();
   }, []);
 
-  if (!renderChildren) {
-    return <Loading />;
-  }
-
   return renderChildren ? (
-    <LayoutProvider value={{ persistor: persistorRef.current }}>
+    <LayoutProvider
+      value={{
+        persistor: persistorRef.current,
+        unsavedCount: totalUnsaved
+      }}
+    >
       {children}
     </LayoutProvider>
-  ) : null;
+  ) : (
+    <Loading />
+  );
 }

@@ -8,7 +8,6 @@ module.exports = {
     "!src/**/refresh-to-app.ts",
     "!src/graphql/**",
     "!src/components/AuthRequired/**",
-    "!src/components/Layout/**",
     "!src/components/**/*hoc.tsx",
     "!src/components/use-is-*",
     "!src/components/RootHelmet/**",
@@ -22,7 +21,8 @@ module.exports = {
     "!src/components/**/*gql.ts",
     "!src/test-utils/**",
     "!src/components/ExperienceNewEntryParent/loadables.ts",
-    "!src/components/MyExperiences/preload-entries.ts"
+    "!src/components/MyExperiences/preload-entries.ts",
+    "!src/constants/apollo-schema.ts"
   ],
   setupFiles: ["<rootDir>/loadershim.js", "react-app-polyfill/jsdom"],
   setupFilesAfterEnv: ["<rootDir>/config/jest/setupTests.js"],
