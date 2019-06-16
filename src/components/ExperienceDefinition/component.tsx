@@ -190,17 +190,19 @@ export function ExperienceDefinition(props: Props) {
     const { dirty, isSubmitting, values } = formikProps;
     const { title, fieldDefs } = values;
     const formInvalid = !(!!title && !!fieldDefs.length);
+    const { graphQlError, submittedFormErrors = {} } = state;
 
     return (
       <Form onSubmit={onSubmit(formikProps)}>
         <GraphQlErrorsSummaryComponent
-          graphQlError={state.graphQlError}
+          graphQlError={graphQlError}
           dispatch={dispatch}
         />
 
-        <FastField
+        <Field
           name="title"
-          graphQlError={state.graphQlError}
+          graphQlError={graphQlError}
+          formError={submittedFormErrors.title}
           component={TitleInputComponent}
         />
 
@@ -453,11 +455,13 @@ function DescriptionInputComponent({
 
 function TitleInputComponent({
   field,
-  graphQlError
+  graphQlError,
+  formError
 }: FieldProps<FormValues> & {
   graphQlError: GraphQlErrorState | undefined;
+  formError?: string;
 }) {
-  const error = (graphQlError && graphQlError.title) || "";
+  const error = formError || (graphQlError && graphQlError.title) || "";
 
   return (
     <Form.Field error={!!error}>
@@ -638,7 +642,7 @@ function getFieldContainerErrorClassFromForm(
   index: number,
   submittedFormErrors: FormikErrors<FormValues> | undefined
 ) {
-  if (!submittedFormErrors) {
+  if (!(submittedFormErrors && submittedFormErrors.fieldDefs)) {
     return "";
   }
 
@@ -655,7 +659,7 @@ function getFieldError(
   fieldName: keyof CreateFieldDef,
   submittedFormErrors: FormikErrors<FormValues> | undefined
 ) {
-  if (!submittedFormErrors) {
+  if (!(submittedFormErrors && submittedFormErrors.fieldDefs)) {
     return null;
   }
 

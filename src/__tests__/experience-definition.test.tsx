@@ -6,7 +6,8 @@ import { render, fireEvent, wait } from "react-testing-library";
 import {
   getByText as domGetByText,
   Matcher,
-  SelectorMatcherOptions
+  SelectorMatcherOptions,
+  waitForElement
 } from "dom-testing-library";
 
 import { ExperienceDefinition } from "../components/ExperienceDefinition/component";
@@ -1270,7 +1271,7 @@ it("renders error if all fields not completely filled on submission", async () =
   expect($field2).toContainElement(getByText("must be at least 2 characters"));
 });
 
-it("saves experience when we not connected", async () => {
+it("saves experience when we are not connected", async () => {
   const fieldDefs: CreateFieldDef[] = [
     {
       name: "f1",
@@ -1335,6 +1336,52 @@ it("saves experience when we not connected", async () => {
   expect(mockNavigate).toBeCalledWith(makeExperienceRoute("expId1"));
 });
 
+it("renders error even if there are no fields error", async done => {
+  const fieldDefs: CreateFieldDef[] = [
+    {
+      name: "12",
+      type: FieldType.SINGLE_LINE_TEXT
+    }
+  ];
+
+  const { Ui } = makeComp();
+
+  /**
+   * Given we are using new exp component
+   */
+  const { getByText, getByLabelText, getByTestId, queryByTestId } = render(
+    <Ui />
+  );
+
+  /**
+   * When we complete the form but with invalid title
+   */
+  fillFields(getByLabelText, getByText, getByTestId, fieldDefs, { title: "a" });
+
+  /**
+   * Then no error Uis should be visible
+   */
+  let $titleError = queryByTestId("form-control-error-0");
+  expect($titleError).not.toBeInTheDocument();
+
+  /**
+   * When we submit the form
+   */
+
+  fireEvent.click(getByText("Submit"));
+
+  /**
+   * Then error UIs should be visible
+   */
+  $titleError = await waitForElement(() =>
+    queryByTestId("form-control-error-0")
+  );
+
+  expect($titleError).toBeInTheDocument();
+
+  done();
+});
+
 function selectDataType(
   getByText: (
     text: Matcher,
@@ -1381,9 +1428,9 @@ function fillFields(
   getByText: any,
   getByTestId: any,
   fieldDefs: CreateFieldDef[],
-  description?: string
+  fieldData: { title?: string } = {}
 ) {
-  fillField(getByLabelText("Title"), title);
+  fillField(getByLabelText("Title"), fieldData.title || title);
   const len = fieldDefs.length;
 
   fieldDefs.map((fieldDef, index) => {
