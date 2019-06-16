@@ -7,6 +7,7 @@
   min-height: 80px;
   z-index: 2; // otherwise app-main will cover it and the close button will be
   // covered by sidebar
+  position: relative;
 
   .logo-container {
     padding: 5px !important;
@@ -65,5 +66,20 @@
 
   .close-sidebar-icon {
     color: #cc6363 !important;
+  }
+
+  .unsaved-count-label {
+    background-color: green !important;
+    border-color: green !important;
+    color: #ffffff !important;
+    position: absolute;
+    left: -0.5px;
+    bottom: -10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 20px;
   }
 }

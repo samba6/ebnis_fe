@@ -31,7 +31,7 @@ export function Layout({ children }: PropsWithChildren<{}>) {
   >();
 
   const subscriptionRef = useRef<ZenObservable.Subscription | null>(null);
-  const [totalUnsaved, setTotalUnsaved] = useState(0);
+  const [unsavedCount, setUnsavedCount] = useState(0);
   const [renderChildren, setRenderChildren] = useState(false);
 
   useEffect(() => {
@@ -44,7 +44,7 @@ export function Layout({ children }: PropsWithChildren<{}>) {
         (async function() {
           if (await getConnStatus(client)) {
             const newTotalUnsaved = await howManyUnsaved(cache);
-            setTotalUnsaved(newTotalUnsaved);
+            setUnsavedCount(newTotalUnsaved);
           }
         })();
       }
@@ -57,11 +57,11 @@ export function Layout({ children }: PropsWithChildren<{}>) {
             if (type === EmitAction.connectionChanged) {
               if (isConnected && reconnected === "true") {
                 howManyUnsaved(cache).then(newTotalUnsaved => {
-                  setTotalUnsaved(newTotalUnsaved);
+                  setUnsavedCount(newTotalUnsaved);
                 });
               } else if (isConnected === false) {
                 // if we are disconnected, then we don't display unsaved UI
-                setTotalUnsaved(0);
+                setUnsavedCount(0);
               }
             }
           }
@@ -95,7 +95,7 @@ export function Layout({ children }: PropsWithChildren<{}>) {
     <LayoutProvider
       value={{
         persistor: persistorRef.current,
-        unsavedCount: totalUnsaved
+        unsavedCount
       }}
     >
       {children}

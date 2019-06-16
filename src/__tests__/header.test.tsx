@@ -7,6 +7,10 @@ import { Header } from "../components/Header/component";
 import { Props } from "../components/Header/utils";
 import { renderWithRouter } from "./test_utils";
 import { EXPERIENCES_URL, ROOT_URL } from "../routes";
+import {
+  LayoutProvider,
+  ILayoutContextContext
+} from "../components/Layout/utils";
 
 type P = ComponentType<Partial<Props>>;
 const HeaderP = Header as P;
@@ -14,7 +18,7 @@ const HeaderP = Header as P;
 const title = "My App title";
 
 it("renders sidebar", () => {
-  const { ui } = setup({ title, sidebar: true });
+  const { ui } = setup({ props: { title, sidebar: true } });
 
   /**
    * Given we are using header component
@@ -39,7 +43,7 @@ it("renders sidebar", () => {
 });
 
 it("does not render sidebar", () => {
-  const { ui } = setup({ title });
+  const { ui } = setup({ props: { title } });
 
   /**
    * Given we are using header component
@@ -62,9 +66,11 @@ it("should not navigate when in experiences route", () => {
    * Given we are on experiences route
    */
   const { ui, mockNavigate } = setup({
-    title,
-    sidebar: true,
-    location: { pathname: EXPERIENCES_URL } as any
+    props: {
+      title,
+      sidebar: true,
+      location: { pathname: EXPERIENCES_URL } as any
+    }
   });
 
   /**
@@ -94,9 +100,11 @@ it("should not navigate when in root route", () => {
    * Given we are on ROOT route
    */
   const { ui, mockNavigate } = setup({
-    title,
-    sidebar: true,
-    location: { pathname: ROOT_URL } as any
+    props: {
+      title,
+      sidebar: true,
+      location: { pathname: ROOT_URL } as any
+    }
   });
 
   /**
@@ -126,10 +134,12 @@ it("should navigate to experiences route when on any url except root and experie
    * Given we are logged in and are on a route except ROOT and experiences
    */
   const { ui, mockNavigate } = setup({
-    title,
-    sidebar: true,
-    location: { pathname: ROOT_URL + 5 } as any,
-    user: {} as any
+    props: {
+      title,
+      sidebar: true,
+      location: { pathname: ROOT_URL + 5 } as any,
+      user: {} as any
+    }
   });
 
   /**
@@ -159,10 +169,12 @@ it("should navigate to root route when on any url except root and experiences ro
    * Given we are not logged in and are on a route except ROOT and experiences
    */
   const { ui, mockNavigate } = setup({
-    title,
-    sidebar: true,
-    location: { pathname: ROOT_URL + 5 } as any,
-    user: undefined
+    props: {
+      title,
+      sidebar: true,
+      location: { pathname: ROOT_URL + 5 } as any,
+      user: undefined
+    }
   });
 
   /**
@@ -187,10 +199,12 @@ it("renders close sidebar icon but not show icon", () => {
    */
   const mockToggleShowSidebar = jest.fn();
   const { ui } = setup({
-    title,
-    sidebar: true,
-    toggleShowSidebar: mockToggleShowSidebar,
-    show: true
+    props: {
+      title,
+      sidebar: true,
+      toggleShowSidebar: mockToggleShowSidebar,
+      show: true
+    }
   });
 
   const { getByTestId, queryByTestId } = render(ui);
@@ -224,10 +238,12 @@ it("renders show sidebar icon but not close icon", () => {
    */
   const mockToggleShowSidebar = jest.fn();
   const { ui } = setup({
-    title,
-    sidebar: true,
-    toggleShowSidebar: mockToggleShowSidebar,
-    show: false
+    props: {
+      title,
+      sidebar: true,
+      toggleShowSidebar: mockToggleShowSidebar,
+      show: false
+    }
   });
 
   const { getByTestId, queryByTestId } = render(ui);
@@ -253,9 +269,26 @@ it("renders show sidebar icon but not close icon", () => {
    * Then sidebar should be toggled open
    */
   expect(mockToggleShowSidebar).toBeCalledWith(true);
+
+  expect(queryByTestId("unsaved-count-label")).not.toBeInTheDocument();
 });
 
-function setup(props: Partial<Props> = {}) {
+it("renders unsaved count", () => {
+  const { ui } = setup({
+    context: {
+      unsavedCount: 1
+    }
+  });
+
+  const { queryByTestId } = render(ui);
+
+  expect(queryByTestId("unsaved-count-label")).toBeInTheDocument();
+});
+
+function setup({
+  props = {},
+  context = {}
+}: { props?: Partial<Props>; context?: Partial<ILayoutContextContext> } = {}) {
   const { Ui, ...rest } = renderWithRouter(
     HeaderP,
     {},
@@ -264,7 +297,11 @@ function setup(props: Partial<Props> = {}) {
   );
 
   return {
-    ui: <Ui />,
+    ui: (
+      <LayoutProvider value={context as any}>
+        <Ui />
+      </LayoutProvider>
+    ),
     ...rest
   };
 }

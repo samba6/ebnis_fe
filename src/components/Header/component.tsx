@@ -1,11 +1,13 @@
-import React from "react";
+import React, { useContext } from "react";
 import { Icon, Menu } from "semantic-ui-react";
 import makeClassnames from "classnames";
 import { WindowLocation, NavigateFn } from "@reach/router";
+import { Link } from "gatsby";
 
 import "./styles.scss";
 import { Props } from "./utils";
 import { EXPERIENCES_URL, ROOT_URL } from "../../routes";
+import { LayoutContext } from "../Layout/utils";
 
 export const Header = (props: Props) => {
   const {
@@ -21,6 +23,8 @@ export const Header = (props: Props) => {
 
   const pathname = (location as WindowLocation).pathname;
   const isHome = pathname === EXPERIENCES_URL || pathname === ROOT_URL;
+
+  const { unsavedCount } = useContext(LayoutContext);
 
   const asUrlProps = isHome
     ? {}
@@ -75,6 +79,16 @@ export const Header = (props: Props) => {
           "no-sidebar": !sidebar
         })}
       >
+        {unsavedCount > 0 && (
+          <Link
+            to="/"
+            data-testid="unsaved-count-label"
+            className="unsaved-count-label"
+          >
+            {unsavedCount}
+          </Link>
+        )}
+
         {title}
       </div>
     </header>
