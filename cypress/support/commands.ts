@@ -33,7 +33,7 @@ import {
 import {
   Registration,
   CreateExp,
-  CreateField
+  CreateEntry
 } from "../../src/graphql/apollo-types/globalTypes";
 import {
   UserRegMutation,
@@ -50,7 +50,7 @@ import {
   CreateEntriesMutation,
   CreateEntriesMutationVariables,
   CreateEntriesMutation_createEntries,
-  CreateEntriesMutation_createEntries_successes_entry
+  CreateEntriesMutation_createEntries_successes_entries
 } from "../../src/graphql/apollo-types/CreateEntriesMutation";
 import { CREATE_ENTRIES_MUTATION } from "../../src/graphql/create-entries.mutation";
 import {
@@ -178,26 +178,24 @@ function defineUnsavedExperience(experienceDefinitionArgs: CreateExp) {
 }
 
 function createExperienceEntries(
-  experience: CreateExpMutation_exp,
-  createEntriesArgs: CreateField[][]
+  experienceId: string,
+  createEntries: CreateEntry[]
 ) {
   return mutate<CreateEntriesMutation, CreateEntriesMutationVariables>({
     mutation: CREATE_ENTRIES_MUTATION,
     variables: {
-      createEntries: {
-        expId: experience.id,
-        listOfFields: createEntriesArgs
-      }
+      createEntries
     }
   }).then(result => {
     const { successes } = (result &&
       result.data &&
       result.data.createEntries) as CreateEntriesMutation_createEntries;
 
-    return [
-      experience,
-      successes.sort((a, b) => a.index - b.index).map(a => a.entry)
-    ];
+    const entries = successes.reduce((acc, obj) => {
+      return acc.concat(obj.entries);
+    }, []);
+
+    return entries;
   });
 }
 
@@ -319,14 +317,9 @@ declare global {
        *
        */
       createExperienceEntries: (
-        experience: CreateExpMutation_exp,
-        createEntriesArgs: CreateField[][]
-      ) => Promise<
-        [
-          CreateExpMutation_exp,
-          CreateEntriesMutation_createEntries_successes_entry[]
-        ]
-      >;
+        experienceId: string,
+        createEntries: CreateEntry[]
+      ) => Promise<CreateEntriesMutation_createEntries_successes_entries[]>;
 
       /**
        *

@@ -61,17 +61,32 @@ context("experience page", () => {
       ]
     })
       .then(experience => {
-        return cy.createExperienceEntries(
-          experience,
-          [1, 2, 3].map(int =>
-            experience.fieldDefs.map(({ id: defId }) => ({
-              defId,
-              data: JSON.stringify({ integer: int })
-            }))
+        const id = experience.id;
+        const [field] = experience.fieldDefs;
+        const { id: defId } = field;
+
+        return cy
+          .createExperienceEntries(
+            id,
+            [1, 2, 3].map(int => {
+              return {
+                expId: id,
+                clientId: int + "",
+                fields: [
+                  {
+                    defId,
+                    data: JSON.stringify({ integer: int })
+                  }
+                ]
+              };
+            })
           )
-        );
+          .then(entries => {
+            return [experience, entries];
+          });
       })
-      .then(([experience]) => {
+      // tslint:disable-next-line: no-any
+      .then(([experience]: any) => {
         /**
          * When we visit experience page
          */
