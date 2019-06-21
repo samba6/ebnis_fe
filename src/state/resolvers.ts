@@ -6,6 +6,7 @@ import {
 } from "./connection.resolver";
 import { userLocalResolvers } from "./user.resolver";
 import ApolloClient from "apollo-client";
+import { DEFAULT_UNSAVED_STATES } from "./sync-unsaved-resolver";
 
 export interface CacheContext {
   cache: InMemoryCache;
@@ -31,8 +32,7 @@ export function initState() {
       connected: DEFAULT_CONNECTION_STATUS,
       staleToken: null,
       loggedOutUser: null,
-      unsavedExperiences: [],
-      unsavedEntriesSavedExperiences: []
+      ...DEFAULT_UNSAVED_STATES
     }
   };
 }

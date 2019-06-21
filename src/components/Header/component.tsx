@@ -8,6 +8,7 @@ import "./styles.scss";
 import { Props } from "./utils";
 import { EXPERIENCES_URL, ROOT_URL } from "../../routes";
 import { LayoutContext } from "../Layout/utils";
+import { SYNC_PREVIEW_URL, SYNC_URL_START } from "../../constants/sync-routes";
 
 export const Header = (props: Props) => {
   const {
@@ -18,7 +19,9 @@ export const Header = (props: Props) => {
     user,
     location,
     navigate,
-    logoAttrs: { src, height, width }
+    logoAttrs: { src, height, width },
+    children,
+    className = ""
   } = props;
 
   const pathname = (location as WindowLocation).pathname;
@@ -34,7 +37,13 @@ export const Header = (props: Props) => {
       };
 
   return (
-    <header className="components-header" data-testid="app-header">
+    <header
+      className={makeClassnames({
+        "components-header": true,
+        [className]: true
+      })}
+      data-testid="app-header"
+    >
       <Menu secondary={true}>
         <style>
           {`#components-header-logo{ background: url(${src}) no-repeat 0 !important; background-size: ${width}px ${height}px !important; min-width: ${width}px; min-height: ${height}px;}`}
@@ -72,9 +81,9 @@ export const Header = (props: Props) => {
         )}
       </Menu>
 
-      {unsavedCount > 0 && (
+      {unsavedCount > 0 && !pathname.includes(SYNC_URL_START) && (
         <Link
-          to="/"
+          to={SYNC_PREVIEW_URL}
           data-testid="unsaved-count-label"
           className="unsaved-count-label"
         >
@@ -82,15 +91,20 @@ export const Header = (props: Props) => {
         </Link>
       )}
 
-      <div
-        data-testid="app-header-title"
-        className={makeClassnames({
-          "app-header-title": true,
-          "no-sidebar": !sidebar
-        })}
-      >
-        {title}
-      </div>
+      {(title || children) &&
+        (title ? (
+          <div
+            data-testid="app-header-title"
+            className={makeClassnames({
+              "app-header-title": true,
+              "no-sidebar": !sidebar
+            })}
+          >
+            {title}
+          </div>
+        ) : (
+          children
+        ))}
     </header>
   );
 };

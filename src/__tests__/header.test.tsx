@@ -11,6 +11,7 @@ import {
   LayoutProvider,
   ILayoutContextContext
 } from "../components/Layout/utils";
+import { SYNC_PREVIEW_URL } from "../constants/sync-routes";
 
 type P = ComponentType<Partial<Props>>;
 const HeaderP = Header as P;
@@ -273,7 +274,7 @@ it("renders show sidebar icon but not close icon", () => {
   expect(queryByTestId("unsaved-count-label")).not.toBeInTheDocument();
 });
 
-it("renders unsaved count", () => {
+it("renders unsaved count when not in sync route", () => {
   const { ui } = setup({
     context: {
       unsavedCount: 1
@@ -283,6 +284,76 @@ it("renders unsaved count", () => {
   const { queryByTestId } = render(ui);
 
   expect(queryByTestId("unsaved-count-label")).toBeInTheDocument();
+});
+
+it("does not render unsaved count in sync route", () => {
+  const { ui } = setup({
+    context: {
+      unsavedCount: 1
+    },
+
+    props: {
+      location: { pathname: SYNC_PREVIEW_URL } as any
+    }
+  });
+
+  const { queryByTestId } = render(ui);
+
+  expect(queryByTestId("unsaved-count-label")).not.toBeInTheDocument();
+});
+
+it("does not render title when there is none to render", () => {
+  const { ui } = setup({
+    props: {
+      title: ""
+    }
+  });
+
+  const { queryByTestId } = render(ui);
+
+  expect(queryByTestId("app-header-title")).not.toBeInTheDocument();
+});
+
+it("renders children", () => {
+  const { ui } = setup({
+    props: {
+      title: "",
+      children: <div data-testid="child" />
+    }
+  });
+
+  const { queryByTestId } = render(ui);
+
+  expect(queryByTestId("app-header-title")).not.toBeInTheDocument();
+  expect(queryByTestId("child")).toBeInTheDocument();
+});
+
+it("renders only title if there are title and children", () => {
+  const { ui } = setup({
+    props: {
+      title: "cool title",
+      children: <div data-testid="child" />
+    }
+  });
+
+  const { queryByTestId } = render(ui);
+
+  expect(queryByTestId("app-header-title")).toBeInTheDocument();
+  expect(queryByTestId("child")).not.toBeInTheDocument();
+});
+
+it("sets class name", () => {
+  const { ui } = setup({
+    props: {
+      className: "yahoo"
+    }
+  });
+
+  const {
+    container: { firstChild }
+  } = render(ui);
+
+  expect((firstChild as any).classList).toContain("yahoo");
 });
 
 function setup({

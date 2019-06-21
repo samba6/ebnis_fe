@@ -5,14 +5,14 @@ import { ENTRY_FRAGMENT } from "./entry.fragment";
 export const CREATE_ENTRIES_RESPONSE_FRAGMENT = gql`
   fragment CreateEntriesResponseFragment on CreateEntriesResponse {
     successes {
-      index
-      entry {
+      expId
+      entries {
         ...EntryFragment
       }
     }
 
     failures {
-      index
+      clientId
       error
     }
   }

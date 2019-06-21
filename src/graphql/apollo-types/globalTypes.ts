@@ -19,37 +19,6 @@ export enum FieldType {
 }
 
 /**
- * Variables for creating several entries for an experience.
- * 
- * It is of the form:
- * {
- *                                            // The global ID of the experience
- *   expId: string;
- * 
- *                                            // list of fields making up the entries.
- *   listOFields: CreateField[][];
- * }
- * 
- * 
- * listOFields is basically a list of lists like so:
- * [
- *   [{defId: string, data: string}, {}, {}]  // list of fields for entry 1,
- *   [{}, {}, {}]                             // list of fields for entry 2,
- *   .
- *   .
- *   .
- *   [{}, {}, {}]                             // list of fields for entry n,
- * ]
- * 
- * The length of each member list must be the same because all entries for
- * a particular experience will have the same number of fields
- */
-export interface CreateEntriesInput {
-  expId: string;
-  listOfFields: ((CreateField | null)[] | null)[];
-}
-
-/**
  * Variables for creating an experience entry
  */
 export interface CreateEntry {

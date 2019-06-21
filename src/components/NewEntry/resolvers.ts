@@ -14,13 +14,18 @@ import {
 } from "../ExperienceDefinition/resolver-utils";
 import immer from "immer";
 import { ENTRY_FRAGMENT } from "../../graphql/entry.fragment";
-import { EXPERIENCE_FRAGMENT } from "../../graphql/experience.fragment";
 import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragment";
+import {
+  GET_UNSAVED_ENTRIES_SAVED_EXPERIENCES_QUERY,
+  UnsavedEntriesSavedExperiencesQueryReturned
+} from "./resolver-utils";
 
 const CREATE_UNSAVED_ENTRY_MUTATION = gql`
   mutation CreateUnsavedEntry($experience: Experience!, $fields: [Fields!]!) {
     createUnsavedEntry(experience: $experience, fields: $fields) @client {
-      ...EntryFragment
+      entry {
+        ...EntryFragment
+      }
     }
   }
 
@@ -47,31 +52,22 @@ export interface CreateUnsavedEntryMutationProps {
   >;
 }
 
+type CreateUnsavedEntryTypename = "CreateUnsavedEntry";
+
+const CREATE_UNSAVED_ENTRY_TYPENAME = "CreateUnsavedEntry" as CreateUnsavedEntryTypename;
+
 interface CreateUnsavedEntryMutationReturned {
-  createUnsavedEntry: CreateAnEntry_entry;
-}
-
-export const GET_UNSAVED_ENTRY_SAVED_EXPERIENCE_IDS_QUERY = gql`
-  query {
-    unsavedEntriesSavedExperiences @client {
-      ...ExperienceFragment
-    }
-  }
-
-  ${EXPERIENCE_FRAGMENT}
-`;
-
-export interface UnsavedEntriesSavedExperiencesQueryReturned {
-  unsavedEntriesSavedExperiences: ExperienceFragment[];
+  createUnsavedEntry: {
+    entry: CreateAnEntry_entry;
+    experience: UnsavedExperience;
+    unsavedEntriesSavedExperiences: ExperienceFragment[] | null;
+    __typename: CreateUnsavedEntryTypename;
+  };
 }
 
 const createUnsavedEntryResolver: LocalResolverFn<
   CreateUnsavedEntryVariables,
-  Promise<{
-    entry: CreateAnEntry_entry;
-    experience: UnsavedExperience;
-    unsavedEntriesSavedExperiences: ExperienceFragment[] | null;
-  }>
+  Promise<CreateUnsavedEntryMutationReturned["createUnsavedEntry"]>
 > = async (root, variables, context) => {
   const { cache } = context;
 
@@ -117,7 +113,12 @@ const createUnsavedEntryResolver: LocalResolverFn<
     );
   }
 
-  return { entry, experience, unsavedEntriesSavedExperiences };
+  return {
+    entry,
+    experience,
+    unsavedEntriesSavedExperiences,
+    __typename: CREATE_UNSAVED_ENTRY_TYPENAME
+  };
 };
 
 function updateUnsavedExperienceEntry(
@@ -160,7 +161,7 @@ function updateUnsavedEntriesSavedExperiences(
   experience: ExperienceFragment
 ) {
   const data = cache.readQuery<UnsavedEntriesSavedExperiencesQueryReturned>({
-    query: GET_UNSAVED_ENTRY_SAVED_EXPERIENCE_IDS_QUERY
+    query: GET_UNSAVED_ENTRIES_SAVED_EXPERIENCES_QUERY
   });
 
   const experienceId = experience.id;
@@ -179,7 +180,7 @@ function updateUnsavedEntriesSavedExperiences(
   );
 
   cache.writeQuery<UnsavedEntriesSavedExperiencesQueryReturned>({
-    query: GET_UNSAVED_ENTRY_SAVED_EXPERIENCE_IDS_QUERY,
+    query: GET_UNSAVED_ENTRIES_SAVED_EXPERIENCES_QUERY,
     data: { unsavedEntriesSavedExperiences }
   });
 

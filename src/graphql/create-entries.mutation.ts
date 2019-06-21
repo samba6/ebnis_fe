@@ -8,7 +8,7 @@ import {
 } from "./apollo-types/CreateEntriesMutation";
 
 export const CREATE_ENTRIES_MUTATION = gql`
-  mutation CreateEntriesMutation($createEntries: CreateEntriesInput!) {
+  mutation CreateEntriesMutation($createEntries: [CreateEntry!]!) {
     createEntries(createEntries: $createEntries) {
       ...CreateEntriesResponseFragment
     }

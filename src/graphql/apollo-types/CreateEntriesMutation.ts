@@ -2,19 +2,19 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
-import { CreateEntriesInput } from "./globalTypes";
+import { CreateEntry } from "./globalTypes";
 
 // ====================================================
 // GraphQL mutation operation: CreateEntriesMutation
 // ====================================================
 
-export interface CreateEntriesMutation_createEntries_successes_entry_fields {
+export interface CreateEntriesMutation_createEntries_successes_entries_fields {
   __typename: "Field";
   defId: string;
   data: any;
 }
 
-export interface CreateEntriesMutation_createEntries_successes_entry {
+export interface CreateEntriesMutation_createEntries_successes_entries {
   __typename: "Entry";
   /**
    * The ID of an object
@@ -35,18 +35,18 @@ export interface CreateEntriesMutation_createEntries_successes_entry {
   /**
    * The data fields belonging to this entry
    */
-  fields: (CreateEntriesMutation_createEntries_successes_entry_fields | null)[];
+  fields: (CreateEntriesMutation_createEntries_successes_entries_fields | null)[];
 }
 
 export interface CreateEntriesMutation_createEntries_successes {
   __typename: "CreateEntriesResponseEntry";
-  index: number;
-  entry: CreateEntriesMutation_createEntries_successes_entry;
+  expId: string;
+  entries: (CreateEntriesMutation_createEntries_successes_entries | null)[];
 }
 
 export interface CreateEntriesMutation_createEntries_failures {
   __typename: "CreateEntriesResponseError";
-  index: number;
+  clientId: string;
   error: string;
 }
 
@@ -57,9 +57,12 @@ export interface CreateEntriesMutation_createEntries {
 }
 
 export interface CreateEntriesMutation {
+  /**
+   * Create several entries, for several experiences
+   */
   createEntries: CreateEntriesMutation_createEntries | null;
 }
 
 export interface CreateEntriesMutationVariables {
-  createEntries: CreateEntriesInput;
+  createEntries: CreateEntry[];
 }

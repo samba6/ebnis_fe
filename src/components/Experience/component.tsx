@@ -1,19 +1,19 @@
-import React, { useEffect, Fragment } from "react";
+import React, { useEffect } from "react";
 import { Button } from "semantic-ui-react";
 import { Link } from "gatsby";
 
 import "./styles.scss";
-import { Props, displayFieldType } from "./utils";
+import { Props } from "./utils";
 import {
   GetAnExp_exp_fieldDefs,
   GetAnExp_exp_entries,
   GetAnExp_exp_entries_edges,
-  GetAnExp_exp_entries_edges_node,
-  GetAnExp_exp_entries_edges_node_fields
+  GetAnExp_exp_entries_edges_node
 } from "../../graphql/apollo-types/GetAnExp";
 import { SidebarHeader } from "../SidebarHeader";
 import { setDocumentTitle, makeSiteTitle } from "../../constants";
 import { makeNewEntryRoute } from "../../constants/new-entry-route";
+import { Entry } from "./entry";
 
 export function Experience(props: Props) {
   const { experience } = props;
@@ -28,32 +28,6 @@ export function Experience(props: Props) {
     },
     [title]
   );
-
-  function renderEntryField(field: GetAnExp_exp_entries_edges_node_fields) {
-    const { defId, data } = field;
-
-    const fieldDefs = experience.fieldDefs as GetAnExp_exp_fieldDefs[];
-
-    const fieldDef = fieldDefs.find(
-      (aFieldDef: GetAnExp_exp_fieldDefs) => aFieldDef.id === defId
-    );
-
-    // istanbul ignore next: impossible state?
-    if (!fieldDef) {
-      return;
-    }
-
-    const { type, name: fieldName } = fieldDef;
-
-    const [fieldData] = Object.values(JSON.parse(data));
-    const text = displayFieldType[type](fieldData);
-
-    return (
-      <Fragment key={defId}>
-        {fieldName} {text}
-      </Fragment>
-    );
-  }
 
   function renderEntries() {
     const entries = experience.entries as GetAnExp_exp_entries;
@@ -77,15 +51,11 @@ export function Experience(props: Props) {
           const entry = edge.node as GetAnExp_exp_entries_edges_node;
 
           return (
-            <div
+            <Entry
               key={entry.id}
-              className="entry-container"
-              data-testid="entry-container"
-            >
-              {(entry.fields as GetAnExp_exp_entries_edges_node_fields[]).map(
-                renderEntryField
-              )}
-            </div>
+              entry={entry}
+              fieldDefs={experience.fieldDefs as GetAnExp_exp_fieldDefs[]}
+            />
           );
         })}
       </>

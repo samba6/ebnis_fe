@@ -39,7 +39,9 @@
 & {
   @import "~semantic-ui-less/definitions/collections/form";
 }
-// & { @import "~semantic-ui-less/definitions/collections/grid"; }
+& {
+  @import "~semantic-ui-less/definitions/collections/grid";
+}
 & {
   @import "~semantic-ui-less/definitions/collections/menu";
 }
@@ -75,7 +77,12 @@
 // & { @import "~semantic-ui-less/definitions/modules/shape"; }
 // & { @import "~semantic-ui-less/definitions/modules/sidebar"; }
 // & { @import "~semantic-ui-less/definitions/modules/sticky"; }
-// & { @import "~semantic-ui-less/definitions/modules/tab"; }
+& {
+  @import "~semantic-ui-less/definitions/modules/tab";
+}
 & {
   @import "~semantic-ui-less/definitions/modules/transition";
 }
+
+// load everything
+// & { @import "~semantic-ui-less/semantic.less"; }

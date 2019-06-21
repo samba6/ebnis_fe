@@ -9,6 +9,7 @@ import { EXPERIENCE_URL } from "../../constants/experience-route";
 import { NEW_ENTRY_URL } from "../../constants/new-entry-route";
 import Loadable from "react-loadable";
 import { LoadableLoading } from "../../components/Loading";
+import { SYNC_PREVIEW_URL } from "../../constants/sync-routes";
 
 const ExperienceDefinition = Loadable({
   loader: () => import("../../components/ExperienceDefinition"),
@@ -22,6 +23,11 @@ const ExperienceNewEntryParent = Loadable({
 
 const MyExperiences = Loadable({
   loader: () => import("../../components/MyExperiences"),
+  loading: LoadableLoading
+});
+
+const Sync = Loadable({
+  loader: () => import("../../components/Sync"),
   loading: LoadableLoading
 });
 
@@ -45,6 +51,8 @@ export function App(props: RouteComponentProps) {
         />
 
         <AuthRequired path={EXPERIENCES_URL} component={MyExperiences} />
+
+        <AuthRequired path={SYNC_PREVIEW_URL} component={Sync} />
 
         <NotFound default={true} />
       </Router>

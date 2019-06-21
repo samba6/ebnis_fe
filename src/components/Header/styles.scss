@@ -4,7 +4,7 @@
 .components-header {
   @extend %header-box-shadow;
   flex-shrink: 0;
-  min-height: 80px;
+  // min-height: 80px;
   z-index: 2; // otherwise app-main will cover it and the close button will be
   // covered by sidebar
   position: relative;
@@ -44,7 +44,7 @@
     flex-direction: row !important;
     min-height: 60px !important;
 
-    .title {
+    .app-header-title {
       font-size: 1.2em;
 
       &.no-sidebar {

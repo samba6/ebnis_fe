@@ -1,0 +1,79 @@
+@import "../../styles/variables";
+@import "../../styles/extensions";
+
+$translateLen: 50px;
+$transitionTime: 1000ms;
+
+.components-sync {
+  @extend %route-main;
+
+  .components-sync-header {
+    margin-top: -10px;
+    color: $app-color;
+    font-weight: bolder;
+    position: relative;
+    padding-bottom: 10px;
+    padding-left: 10px;
+  }
+
+  .icon.sync {
+    padding: 0 25px 30px 60px;
+    position: absolute;
+    right: 0;
+  }
+
+  .main {
+    @extend %app-main;
+  }
+
+  .all-unsaveds {
+    position: relative;
+  }
+
+  .tab {
+    padding: 0 10px;
+    position: absolute;
+    left: 0;
+    right: 0;
+  }
+
+  .pane-animation-left-enter,
+  .pane-animation-right-enter {
+    opacity: 0.01;
+  }
+
+  .pane-animation-left-enter {
+    transform: translate(-$translateLen, 0);
+  }
+
+  .pane-animation-right-enter {
+    transform: translate($translateLen, 0);
+  }
+
+  .pane-animation-left-enter-active,
+  .pane-animation-right-enter-active {
+    opacity: 1;
+    transform: translate(0, 0);
+    transition: all $transitionTime ease-in;
+  }
+
+  .pane-animation-left-exit,
+  .pane-animation-right-exit {
+    opacity: 1;
+    transform: translate(0, 0);
+  }
+
+  .pane-animation-left-exit-active,
+  .pane-animation-right-exit-active {
+    opacity: 0.01;
+    transition: all $transitionTime ease-in;
+  }
+
+  .pane-animation-left-exit-active {
+    transform: translate($translateLen, 0);
+  }
+
+  .pane-animation-right-exit-active {
+    transform: translate(-$translateLen, 0);
+  }
+}
