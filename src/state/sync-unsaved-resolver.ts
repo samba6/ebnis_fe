@@ -5,8 +5,8 @@ import {
 } from "../components/ExperienceDefinition/resolver-utils";
 import { graphql, DataValue } from "react-apollo";
 import {
-  GET_UNSAVED_ENTRIES_SAVED_EXPERIENCES_QUERY,
-  UnsavedEntriesSavedExperiencesQueryReturned
+  GET_SAVED_EXPERIENCES_UNSAVED_ENTRIES_QUERY,
+  SavedExperiencesUnsavedEntriesQueryReturned
 } from "../components/NewEntry/resolver-utils";
 import {
   ExperienceFragment,
@@ -14,11 +14,10 @@ import {
   ExperienceFragment_entries_edges_node
 } from "../graphql/apollo-types/ExperienceFragment";
 import { isUnsavedId } from "../constants";
-import gql from "graphql-tag";
 
 export async function getUnsavedCount(cache: InMemoryCache) {
   return (
-    getUnsavedEntriesSavedExperiences(cache).reduce((acc, experience) => {
+    getSavedExperiencesUnsavedEntries(cache).reduce((acc, experience) => {
       entryNodesFromExperience(experience).forEach(({ id }) => {
         if (isUnsavedId(id)) {
           ++acc;
@@ -42,38 +41,38 @@ function getUnsavedExperiences(cache: InMemoryCache) {
     : [];
 }
 
-function getUnsavedEntriesSavedExperiences(cache: InMemoryCache) {
-  const unsavedEntriesSavedExperiencesData = cache.readQuery<
-    UnsavedEntriesSavedExperiencesQueryReturned
+function getSavedExperiencesUnsavedEntries(cache: InMemoryCache) {
+  const savedExperiencesUnsavedEntriesData = cache.readQuery<
+    SavedExperiencesUnsavedEntriesQueryReturned
   >({
-    query: GET_UNSAVED_ENTRIES_SAVED_EXPERIENCES_QUERY
+    query: GET_SAVED_EXPERIENCES_UNSAVED_ENTRIES_QUERY
   });
 
-  const unsavedEntriesSavedExperiences = unsavedEntriesSavedExperiencesData
-    ? unsavedEntriesSavedExperiencesData.unsavedEntriesSavedExperiences
+  const savedExperiencesUnsavedEntries = savedExperiencesUnsavedEntriesData
+    ? savedExperiencesUnsavedEntriesData.savedExperiencesUnsavedEntries
     : [];
 
-  return unsavedEntriesSavedExperiences;
+  return savedExperiencesUnsavedEntries;
 }
 
-export type UnsavedEntriesSavedExperiencesData = DataValue<
-  UnsavedEntriesSavedExperiencesQueryReturned
+export type SavedExperiencesUnsavedEntriesData = DataValue<
+  SavedExperiencesUnsavedEntriesQueryReturned
 >;
 
-export interface UnsavedEntriesSavedExperiencesProps {
-  unSavedEntriesSavedExperiencesProps?: UnsavedEntriesSavedExperiencesData;
+export interface SavedExperiencesUnsavedEntriesProps {
+  savedExperiencesUnSavedEntriesProps?: SavedExperiencesUnsavedEntriesData;
 }
 
 // istanbul ignore next:
-export const unSavedEntriesSavedExperiencesGql = graphql<
+export const savedExperiencesUnSavedEntriesGql = graphql<
   {},
-  UnsavedEntriesSavedExperiencesQueryReturned,
+  SavedExperiencesUnsavedEntriesQueryReturned,
   {},
-  UnsavedEntriesSavedExperiencesProps | undefined
->(GET_UNSAVED_ENTRIES_SAVED_EXPERIENCES_QUERY, {
+  SavedExperiencesUnsavedEntriesProps | undefined
+>(GET_SAVED_EXPERIENCES_UNSAVED_ENTRIES_QUERY, {
   props: ({ data }) =>
     data && {
-      unSavedEntriesSavedExperiencesProps: data
+      savedExperiencesUnSavedEntriesProps: data
     }
 });
 
@@ -104,13 +103,7 @@ export function entryNodesFromExperience({ entries }: ExperienceFragment) {
   );
 }
 
-export const UPLOAD_UNSAVED_MUTATION = gql`
-  mutation UploadUnsavedMutation($input: UploadUnsavedInput!) {
-    uploadUnsaved(input: $input)
-  }
-`;
-
 export const DEFAULT_UNSAVED_STATES = {
   unsavedExperiences: [],
-  unsavedEntriesSavedExperiences: []
+  savedExperiencesUnsavedEntries: []
 };

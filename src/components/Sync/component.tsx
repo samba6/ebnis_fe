@@ -1,15 +1,16 @@
-import React, { useState } from "react";
-import { Props } from "./utils";
+import React, { useReducer } from "react";
+import { Props, reducer, ActionType } from "./utils";
 import { Loading } from "../Loading";
 import {
   UnsavedExperiencesData,
-  UnsavedEntriesSavedExperiencesData,
+  SavedExperiencesUnsavedEntriesData,
   entryNodesFromExperience
 } from "../../state/sync-unsaved-resolver";
 import { SidebarHeader } from "../SidebarHeader";
 import {
   ExperienceFragment,
-  ExperienceFragment_fieldDefs
+  ExperienceFragment_fieldDefs,
+  ExperienceFragment_entries_edges_node
 } from "../../graphql/apollo-types/ExperienceFragment";
 import { isUnsavedId } from "../../constants";
 import { Entry } from "../Experience/entry";
@@ -18,6 +19,7 @@ import { UnsavedExperience } from "../ExperienceNewEntryParent/resolvers";
 import { CSSTransition, TransitionGroup } from "react-transition-group";
 import setClassNames from "classnames";
 import Icon from "semantic-ui-react/dist/commonjs/elements/Icon";
+import { CreateEntry } from "../../graphql/apollo-types/globalTypes";
 
 export function Sync(props: Props) {
   const {
@@ -26,27 +28,35 @@ export function Sync(props: Props) {
       unsavedExperiences = []
     } = {} as UnsavedExperiencesData,
 
-    unSavedEntriesSavedExperiencesProps: {
-      loading: loadingUnSavedEntriesSavedExperiences,
-      unsavedEntriesSavedExperiences = []
-    } = {} as UnsavedEntriesSavedExperiencesData
+    savedExperiencesUnSavedEntriesProps: {
+      loading: loadingSavedExperiencesUnsavedEntries,
+      savedExperiencesUnsavedEntries = []
+    } = {} as SavedExperiencesUnsavedEntriesData,
+
+    uploadUnsavedExperiences,
+
+    createEntries
   } = props;
 
-  const unsavedEntriesSavedExperiencesLen =
-    unsavedEntriesSavedExperiences.length;
+  const savedExperiencesUnsavedEntriesLen =
+    savedExperiencesUnsavedEntries.length;
 
   const unsavedExperiencesLen = unsavedExperiences.length;
 
-  const [tabs, toggleTabs] = useState<{ [k: number]: boolean }>({
-    1: unsavedEntriesSavedExperiencesLen !== 0,
-    2: unsavedEntriesSavedExperiencesLen === 0 && unsavedExperiencesLen !== 0
+  const [state, dispatch] = useReducer(reducer, {
+    tabs: {
+      1: savedExperiencesUnsavedEntriesLen !== 0,
+      2: savedExperiencesUnsavedEntriesLen === 0 && unsavedExperiencesLen !== 0
+    }
   });
 
+  const { tabs, uploading } = state;
+
   const unSavedCount =
-    unsavedEntriesSavedExperiencesLen + unsavedExperiencesLen;
+    savedExperiencesUnsavedEntriesLen + unsavedExperiencesLen;
 
   const loading =
-    loadingUnsavedExperiences || loadingUnSavedEntriesSavedExperiences;
+    loadingUnsavedExperiences || loadingSavedExperiencesUnsavedEntries;
 
   if (loading && unSavedCount === 0) {
     return <Loading />;
@@ -56,23 +66,92 @@ export function Sync(props: Props) {
     return <div data-testid="no-unsaved">There are no unsaved data</div>;
   }
 
+  async function onUploadAllClicked() {
+    dispatch({
+      type: ActionType.setUploading,
+      payload: true
+    });
+
+    const promises = [];
+
+    if (unsavedExperiencesLen !== 0) {
+      promises.push(
+        uploadUnsavedExperiences({
+          variables: {
+            input: unsavedExperiences.map(experience => {
+              const entries = entryNodesFromExperience(
+                (experience as unknown) as ExperienceFragment
+              ).map(toUploadableEntry);
+
+              return {
+                entries,
+                title: experience.title,
+                clientId: experience.clientId,
+                fieldDefs: experience.fieldDefs,
+                insertedAt: experience.insertedAt,
+                updatedAt: experience.updatedAt,
+                description: experience.description
+              };
+            })
+          }
+        })
+      );
+    }
+
+    if (savedExperiencesUnsavedEntriesLen !== 0) {
+      promises.push(
+        createEntries({
+          variables: {
+            createEntries: savedExperiencesUnsavedEntries.reduce(
+              (acc, experience) => {
+                const entries = entryNodesFromExperience(experience).map(
+                  toUploadableEntry
+                );
+
+                return acc.concat(entries);
+              },
+              [] as CreateEntry[]
+            )
+          }
+        })
+      );
+    }
+
+    const [] = await Promise.all(promises);
+
+    // dispatch({
+    //   type: ActionType.setUploading,
+    //   payload: false
+    // })
+  }
+
   return (
     <div className="components-sync">
+      {uploading && <div data-testid="uploading-data" />}
+
       <SidebarHeader sidebar={true}>
         <div className="components-sync-header">
           <span>Unsaved Preview</span>
-          <Icon name="sync" />
+
+          <Icon
+            name="sync"
+            data-testid="upload-all"
+            onClick={onUploadAllClicked}
+          />
         </div>
       </SidebarHeader>
 
       <div className="main">
         <div className="ui two item menu">
-          {unsavedEntriesSavedExperiencesLen !== 0 && (
+          {savedExperiencesUnsavedEntriesLen !== 0 && (
             <a
               className={setClassNames({ item: true, active: tabs["1"] })}
               data-testid="saved-experiences-menu"
               onClick={() => {
-                toggleTabs({ 1: true, 2: false });
+                dispatch({
+                  type: ActionType.toggleTab,
+                  payload: 1
+                });
               }}
             >
               Entries
@@ -84,7 +163,10 @@ export function Sync(props: Props) {
               className={setClassNames({ item: true, active: tabs["2"] })}
               data-testid="unsaved-experiences-menu"
               onClick={() => {
-                toggleTabs({ 1: false, 2: true });
+                dispatch({
+                  type: ActionType.toggleTab,
+                  payload: 2
+                });
               }}
             >
               Experiences
@@ -93,7 +175,7 @@ export function Sync(props: Props) {
         </div>
 
         <TransitionGroup className="all-unsaveds">
-          {unsavedEntriesSavedExperiencesLen !== 0 && tabs["1"] && (
+          {savedExperiencesUnsavedEntriesLen !== 0 && tabs["1"] && (
             <CSSTransition
               timeout={1000}
               key="saved-experiences"
@@ -103,7 +185,7 @@ export function Sync(props: Props) {
                 className={setClassNames({ tab: true, active: tabs["1"] })}
                 data-testid="saved-experiences"
               >
-                {unsavedEntriesSavedExperiences.map(experience => {
+                {savedExperiencesUnsavedEntries.map(experience => {
                   return (
                     <SavedExperience
                       key={experience.id}
@@ -190,4 +272,14 @@ function UnSavedExperience({ experience }: { experience: UnsavedExperience }) {
       })}
     </div>
   );
+}
+
+function toUploadableEntry(entry: ExperienceFragment_entries_edges_node) {
+  return {
+    expId: entry.expId,
+    clientId: entry.clientId,
+    fields: entry.fields,
+    insertedAt: entry.insertedAt,
+    updatedAt: entry.updatedAt
+  };
 }

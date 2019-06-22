@@ -480,7 +480,7 @@ describe("resolvers", () => {
       const {
         entry,
         experience: updatedExperience,
-        unsavedEntriesSavedExperiences
+        savedExperiencesUnsavedEntries
       } = await createUnsavedEntry(
         {},
         { experience, fields: [field] },
@@ -493,7 +493,7 @@ describe("resolvers", () => {
         (updatedExperience.entries.edges as any)[0].node
       );
 
-      expect(unsavedEntriesSavedExperiences).toBeNull();
+      expect(savedExperiencesUnsavedEntries).toBeNull();
 
       done();
     });
@@ -508,14 +508,14 @@ describe("resolvers", () => {
       mockUpdateSavedExperience.mockResolvedValue(experience);
       mockReadQuery.mockReturnValue(null);
 
-      const { unsavedEntriesSavedExperiences } = await createUnsavedEntry(
+      const { savedExperiencesUnsavedEntries } = await createUnsavedEntry(
         {},
         { experience, fields: [] },
         mockContext
       );
 
       expect(mockUpdateSavedExperience).toHaveBeenCalled();
-      expect((unsavedEntriesSavedExperiences as any)[0]).toEqual(experience);
+      expect((savedExperiencesUnsavedEntries as any)[0]).toEqual(experience);
 
       done();
     });
@@ -539,17 +539,17 @@ describe("resolvers", () => {
 
       mockUpdateSavedExperience.mockResolvedValue(experience2Updated);
       mockReadQuery.mockReturnValue({
-        unsavedEntriesSavedExperiences: [experience1, experience2, experience3]
+        savedExperiencesUnsavedEntries: [experience1, experience2, experience3]
       });
 
-      const { unsavedEntriesSavedExperiences } = await createUnsavedEntry(
+      const { savedExperiencesUnsavedEntries } = await createUnsavedEntry(
         {},
         { experience: experience2, fields: [] },
         mockContext
       );
 
       expect(mockUpdateSavedExperience).toHaveBeenCalled();
-      expect((unsavedEntriesSavedExperiences as any)[1]).toEqual(
+      expect((savedExperiencesUnsavedEntries as any)[1]).toEqual(
         experience2Updated
       );
 
