@@ -1,4 +1,4 @@
-import React, { useReducer } from "react";
+import React, { useReducer, useMemo } from "react";
 import { Props, reducer, ActionType } from "./utils";
 import { Loading } from "../Loading";
 import {
@@ -58,6 +58,45 @@ export function Sync(props: Props) {
   const loading =
     loadingUnsavedExperiences || loadingSavedExperiencesUnsavedEntries;
 
+  const savedExperiencesUnsavedEntriesOnly = useMemo(() => {
+    let unsavedEntries = {} as {
+      [k: string]: ExperienceFragment_entries_edges_node[];
+    };
+
+    if (savedExperiencesUnsavedEntriesLen !== 0) {
+      unsavedEntries = savedExperiencesUnsavedEntries.reduce(
+        (acc, experience) => {
+          acc[experience.id] = entryNodesFromExperience(experience).filter(
+            entry => isUnsavedId(entry.id)
+          );
+
+          return acc;
+        },
+        unsavedEntries
+      );
+    }
+
+    return unsavedEntries;
+  }, [savedExperiencesUnsavedEntries]);
+
+  const unsavedExperiencesEntriesOnly = useMemo(() => {
+    let unsavedEntries = {} as {
+      [k: string]: ExperienceFragment_entries_edges_node[];
+    };
+
+    if (unsavedExperiencesLen !== 0) {
+      unsavedEntries = unsavedExperiences.reduce((acc, experience) => {
+        acc[experience.id] = entryNodesFromExperience(
+          (experience as unknown) as ExperienceFragment
+        );
+
+        return acc;
+      }, unsavedEntries);
+    }
+
+    return unsavedEntries;
+  }, [unsavedExperiences]);
+
   if (loading && unSavedCount === 0) {
     return <Loading />;
   }
@@ -79,9 +118,9 @@ export function Sync(props: Props) {
         uploadUnsavedExperiences({
           variables: {
             input: unsavedExperiences.map(experience => {
-              const entries = entryNodesFromExperience(
-                (experience as unknown) as ExperienceFragment
-              ).map(toUploadableEntry);
+              const entries = unsavedExperiencesEntriesOnly[experience.id].map(
+                toUploadableEntry
+              );
 
               return {
                 entries,
@@ -104,9 +143,9 @@ export function Sync(props: Props) {
           variables: {
             createEntries: savedExperiencesUnsavedEntries.reduce(
               (acc, experience) => {
-                const entries = entryNodesFromExperience(experience).map(
-                  toUploadableEntry
-                );
+                const entries = savedExperiencesUnsavedEntriesOnly[
+                  experience.id
+                ].map(toUploadableEntry);
 
                 return acc.concat(entries);
               },
@@ -190,6 +229,9 @@ export function Sync(props: Props) {
                     <SavedExperience
                       key={experience.id}
                       experience={experience}
+                      entries={
+                        savedExperiencesUnsavedEntriesOnly[experience.id]
+                      }
                     />
                   );
                 })}
@@ -212,6 +254,7 @@ export function Sync(props: Props) {
                     <UnSavedExperience
                       key={experience.id}
                       experience={experience}
+                      entries={unsavedExperiencesEntriesOnly[experience.id]}
                     />
                   );
                 })}
@@ -224,18 +267,20 @@ export function Sync(props: Props) {
   );
 }
 
-function SavedExperience({ experience }: { experience: ExperienceFragment }) {
+function SavedExperience({
+  experience,
+  entries
+}: {
+  experience: ExperienceFragment;
+  entries: ExperienceFragment_entries_edges_node[];
+}) {
   const experienceId = experience.id;
-
-  const entries = entryNodesFromExperience(experience);
-
-  const unSavedEntries = entries.filter(entry => isUnsavedId(entry.id));
 
   return (
     <div data-testid="saved-experience">
       <div>{experience.title}</div>
 
-      {unSavedEntries.map(entry => {
+      {entries.map(entry => {
         return (
           <Entry
             data-testid={`experience-${experienceId}-unsaved-entry-${entry.id}`}
@@ -249,12 +294,14 @@ function SavedExperience({ experience }: { experience: ExperienceFragment }) {
   );
 }
 
-function UnSavedExperience({ experience }: { experience: UnsavedExperience }) {
+function UnSavedExperience({
+  experience,
+  entries
+}: {
+  experience: UnsavedExperience;
+  entries: ExperienceFragment_entries_edges_node[];
+}) {
   const experienceId = experience.id;
-
-  const entries = entryNodesFromExperience(
-    (experience as unknown) as ExperienceFragment
-  );
 
   return (
     <div data-testid="unsaved-experience">
