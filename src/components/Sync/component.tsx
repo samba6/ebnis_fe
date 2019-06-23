@@ -25,6 +25,8 @@ import { UploadAllUnsavedsMutationFnResult } from "../../graphql/upload-unsaveds
 import { getConnStatus } from "../../state/get-conn-status";
 import { NavigateFn } from "@reach/router";
 import Modal from "semantic-ui-react/dist/commonjs/modules/Modal";
+import Icon from "semantic-ui-react/dist/commonjs/elements/Icon";
+import { UploadAllUnsavedsMutation } from "../../graphql/apollo-types/UploadAllUnsavedsMutation";
 
 const timeout = 500;
 
@@ -219,7 +221,7 @@ export function Sync(props: Props) {
         <div className="ui two item menu">
           {savedExperiencesUnsavedEntriesLen !== 0 && (
             <a
-              className={setClassNames({ item: true, active: tabs["1"] })}
+              className={setTabMenuClassNames("1", tabs)}
               data-testid="saved-experiences-menu"
               onClick={() => {
                 dispatch({
@@ -229,12 +231,27 @@ export function Sync(props: Props) {
               }}
             >
               Entries
+              {uploadResult &&
+                (uploadResult.createEntries &&
+                uploadResult.createEntries.failures ? (
+                  <Icon
+                    name="ban"
+                    data-testid="unsaved-entries-upload-error-icon"
+                    className="upload-error-icon upload-result-icon"
+                  />
+                ) : (
+                  <Icon
+                    name="check"
+                    data-testid="unsaved-entries-upload-success-icon"
+                    className="upload-success-icon upload-result-icon"
+                  />
+                ))}
             </a>
           )}
 
           {unsavedExperiencesLen !== 0 && (
             <a
-              className={setClassNames({ item: true, active: tabs["2"] })}
+              className={setTabMenuClassNames("2", tabs)}
               data-testid="unsaved-experiences-menu"
               onClick={() => {
                 dispatch({
@@ -244,6 +261,20 @@ export function Sync(props: Props) {
               }}
             >
               Experiences
+              {uploadResult &&
+                (didAllUploadUnsavedExperiencesSucceed(uploadResult) ? (
+                  <Icon
+                    name="check"
+                    data-testid="unsaved-experiences-upload-success-icon"
+                    className="upload-success-icon upload-result-icon"
+                  />
+                ) : (
+                  <Icon
+                    name="ban"
+                    data-testid="unsaved-experiences-upload-error-icon"
+                    className="upload-error-icon upload-result-icon"
+                  />
+                ))}
             </a>
           )}
         </div>
@@ -426,4 +457,31 @@ function ModalComponent({ open }: { open?: boolean }) {
       </Modal.Content>
     </Modal>
   );
+}
+
+function setTabMenuClassNames(
+  tabNumber: string | number,
+  tabs: { [k: number]: boolean }
+) {
+  return setClassNames({
+    item: true,
+    active: tabs[tabNumber],
+    "tab-menu": true
+  });
+}
+
+function didAllUploadUnsavedExperiencesSucceed(
+  uploadResult: UploadAllUnsavedsMutation
+) {
+  const result =
+    uploadResult.syncOfflineExperiences &&
+    uploadResult.syncOfflineExperiences.reduce((acc, elm) => {
+      if (!elm || !elm.experience || elm.entriesErrors) {
+        return false;
+      }
+
+      return acc;
+    }, true);
+
+  return result;
 }

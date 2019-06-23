@@ -146,6 +146,10 @@ it("shows only saved experiences, does not show saved entries and uploads unsave
 
   expect(queryByTestId("uploading-data")).not.toBeInTheDocument();
 
+  expect(
+    queryByTestId("unsaved-entries-upload-success-icon")
+  ).not.toBeInTheDocument();
+
   fireEvent.click(queryByTestId("upload-all") as any);
 
   await wait(() => {
@@ -160,10 +164,14 @@ it("shows only saved experiences, does not show saved entries and uploads unsave
   expect(mockUploadUnsavedExperiences).not.toHaveBeenCalled();
   expect(mockUploadAllUnsaveds).not.toHaveBeenCalled();
 
+  expect(
+    queryByTestId("unsaved-entries-upload-success-icon")
+  ).toBeInTheDocument();
+
   done();
 });
 
-it("shows only 'unsaved experiences' data and uploads same succeeds", async done => {
+it("shows only 'unsaved experiences' data and uploading same succeeds", async done => {
   const experience = {
     title: "a",
     clientId: "1",
@@ -225,6 +233,10 @@ it("shows only 'unsaved experiences' data and uploads same succeeds", async done
 
   expect(queryByTestId("uploading-data")).not.toBeInTheDocument();
 
+  expect(
+    queryByTestId("unsaved-experiences-upload-success-icon")
+  ).not.toBeInTheDocument();
+
   fireEvent.click(queryByTestId("upload-all") as any);
 
   await wait(() => {
@@ -248,10 +260,14 @@ it("shows only 'unsaved experiences' data and uploads same succeeds", async done
 
   expect(queryByTestId("upload-all")).not.toBeInTheDocument();
 
+  expect(
+    queryByTestId("unsaved-experiences-upload-success-icon")
+  ).toBeInTheDocument();
+
   done();
 });
 
-it("toggles saved and 'unsaved experiences' data", async done => {
+it("toggles saved and 'unsaved experiences' and uploads data", async done => {
   jest.useFakeTimers();
 
   const {
@@ -303,8 +319,10 @@ it("toggles saved and 'unsaved experiences' data", async done => {
 
   mockUploadAllUnsaveds.mockResolvedValue({
     data: {
-      createEntries: {},
-      syncOfflineExperiences: []
+      createEntries: {
+        failures: []
+      },
+      syncOfflineExperiences: [{}]
     }
   });
 
@@ -329,6 +347,14 @@ it("toggles saved and 'unsaved experiences' data", async done => {
   expect(queryByTestId("saved-experiences")).toBeInTheDocument();
   expect(queryByTestId("unsaved-experiences")).not.toBeInTheDocument();
 
+  expect(
+    queryByTestId("unsaved-experiences-upload-error-icon")
+  ).not.toBeInTheDocument();
+
+  expect(
+    queryByTestId("unsaved-entries-upload-error-icon")
+  ).not.toBeInTheDocument();
+
   fireEvent.click(queryByTestId("upload-all") as any);
 
   await wait(() => {
@@ -337,6 +363,14 @@ it("toggles saved and 'unsaved experiences' data", async done => {
 
   expect(mockUploadUnsavedExperiences).not.toHaveBeenCalled();
   expect(mockUploadSavedExperiencesEntries).not.toHaveBeenCalled();
+
+  expect(
+    queryByTestId("unsaved-experiences-upload-error-icon")
+  ).toBeInTheDocument();
+
+  expect(
+    queryByTestId("unsaved-entries-upload-error-icon")
+  ).toBeInTheDocument();
 
   done();
 });

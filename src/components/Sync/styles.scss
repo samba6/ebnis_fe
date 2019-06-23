@@ -41,6 +41,16 @@ $transitionTime: 500ms;
     position: relative;
   }
 
+  .tab-menu {
+    background-color: $app-color !important;
+    color: #fff !important;
+    font-weight: 900 !important;
+
+    &.active {
+      background-color: darken($color: $app-color, $amount: 10%) !important;
+    }
+  }
+
   .tab {
     padding: 0 10px;
     position: absolute;
@@ -86,5 +96,17 @@ $transitionTime: 500ms;
 
   .pane-animation-right-exit-active {
     transform: translate(-$translateLen, 0);
+  }
+
+  .upload-result-icon {
+    margin-left: 5px !important;
+  }
+
+  .upload-error-icon {
+    color: red;
+  }
+
+  .upload-success-icon {
+    color: green;
   }
 }
