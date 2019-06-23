@@ -2,15 +2,15 @@ import { RouteComponentProps } from "@reach/router";
 import { Reducer, Dispatch } from "react";
 import { WithApolloClient } from "react-apollo";
 
-import { GetExpGqlProps } from "../../graphql/exps.query";
-import { UnsavedExperiencesQueryReturned } from "../ExperienceDefinition/resolver-utils";
+import { GetExperiencesProps } from "../../graphql/exps.query";
+import { UnsavedExperiencesQueryProps } from "../ExperienceDefinition/resolver-utils";
 
 export interface OwnProps
   extends RouteComponentProps<{}>,
     WithApolloClient<{}>,
-    UnsavedExperiencesQueryReturned {}
+    UnsavedExperiencesQueryProps {}
 
-export interface Props extends OwnProps, GetExpGqlProps {}
+export interface Props extends OwnProps, GetExperiencesProps {}
 
 export interface State {
   readonly toggleDescriptionStates: {

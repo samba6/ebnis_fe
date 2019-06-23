@@ -21,13 +21,29 @@ import { SidebarHeader } from "../SidebarHeader";
 import { setDocumentTitle, makeSiteTitle } from "../../constants";
 import { MY_EXPERIENCES_TITLE } from "../../constants/my-experiences-title";
 import { Link } from "gatsby";
-import { UnsavedExperience } from "../ExperienceDefinition/resolver-utils";
+import {
+  UnsavedExperience,
+  UnsavedExperiencesQueryData
+} from "../ExperienceDefinition/resolver-utils";
 import { preloadEntries } from "./preload-entries";
+import { GetExperiencesData } from "../../graphql/exps.query";
 
 export const MyExperiences = (props: Props) => {
-  const { getExpDefsResult, unsavedExperiences, client } = props;
+  const {
+    getExpDefsResult: {
+      loading: loadingExperiences,
+      exps
+    } = {} as GetExperiencesData,
 
-  const { loading, exps } = getExpDefsResult;
+    unsavedExperiencesProps: {
+      loading: loadingUnsavedExperiences,
+      unsavedExperiences
+    } = {} as UnsavedExperiencesQueryData,
+
+    client
+  } = props;
+
+  const loading = loadingExperiences || loadingUnsavedExperiences;
 
   const [state, dispatch] = useReducer(reducer, initialState);
 
@@ -110,7 +126,7 @@ export const MyExperiences = (props: Props) => {
   }
 
   function renderMain() {
-    if (loading && !unsavedExperiences) {
+    if (loading) {
       return <Loading loading={loading} />;
     }
 

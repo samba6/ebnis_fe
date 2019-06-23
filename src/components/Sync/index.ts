@@ -1,13 +1,15 @@
 import { Sync as Comp } from "./component";
-import { compose, graphql } from "react-apollo";
+import { compose, graphql, withApollo } from "react-apollo";
 import {
   savedExperiencesUnSavedEntriesGql,
   unSavedExperiencesGql
 } from "../../state/sync-unsaved-resolver";
 import {
   UPLOAD_UNSAVED_EXPERIENCES_MUTATION,
-  UploadUnsavedExperiencesMutationProps
-} from "../../graphql/upload-offline-experiences.mutation";
+  UploadUnsavedExperiencesMutationProps,
+  UPLOAD_ALL_UNSAVEDS_MUTATION,
+  UploadAllUnsavedsMutationProps
+} from "../../graphql/upload-unsaveds.mutation";
 import {
   UploadUnsavedExperiencesMutation,
   UploadUnsavedExperiencesMutationVariables
@@ -20,6 +22,10 @@ import {
   CreateEntriesMutation,
   CreateEntriesMutationVariables
 } from "../../graphql/apollo-types/CreateEntriesMutation";
+import {
+  UploadAllUnsavedsMutation,
+  UploadAllUnsavedsMutationVariables
+} from "../../graphql/apollo-types/UploadAllUnsavedsMutation";
 
 const uploadUnsavedExperiencesGql = graphql<
   {},
@@ -45,11 +51,25 @@ const uploadSavedExperiencesUnsavedEntriesGql = graphql<
     }
 });
 
+const uploadAllUnsavedsGql = graphql<
+  {},
+  UploadAllUnsavedsMutation,
+  UploadAllUnsavedsMutationVariables,
+  UploadAllUnsavedsMutationProps | undefined
+>(UPLOAD_ALL_UNSAVEDS_MUTATION, {
+  props: ({ mutate }) =>
+    mutate && {
+      uploadAllUnsaveds: mutate
+    }
+});
+
 export const Sync = compose(
   savedExperiencesUnSavedEntriesGql,
   unSavedExperiencesGql,
   uploadUnsavedExperiencesGql,
-  uploadSavedExperiencesUnsavedEntriesGql
+  uploadSavedExperiencesUnsavedEntriesGql,
+  uploadAllUnsavedsGql,
+  withApollo
 )(Comp);
 
 export default Sync;

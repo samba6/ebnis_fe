@@ -3,6 +3,7 @@ import gql from "graphql-tag";
 import { FIELD_DEF_FRAGMENT } from "../../graphql/field-def.fragment";
 import { ENTRY_CONNECTION_FRAGMENT } from "../../graphql/entry-connection.fragment";
 import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragment";
+import { DataValue } from "react-apollo";
 
 type UnsavedExperienceTypename = "UnsavedExperience";
 
@@ -23,6 +24,9 @@ export const UNSAVED_EXPERIENCE_FRAGMENT = gql`
     title
     description
     clientId
+    insertedAt
+    updatedAt
+
     fieldDefs {
       ...FieldDefFragment
     }
@@ -48,4 +52,12 @@ export const UNSAVED_EXPERIENCES_QUERY = gql`
 
 export interface UnsavedExperiencesQueryReturned {
   unsavedExperiences: UnsavedExperience[];
+}
+
+export type UnsavedExperiencesQueryData = DataValue<
+  UnsavedExperiencesQueryReturned
+>;
+
+export interface UnsavedExperiencesQueryProps {
+  unsavedExperiencesProps: UnsavedExperiencesQueryData;
 }

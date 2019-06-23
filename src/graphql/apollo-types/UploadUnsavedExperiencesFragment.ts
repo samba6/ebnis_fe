@@ -5,22 +5,10 @@
 import { FieldType } from "./globalTypes";
 
 // ====================================================
-// GraphQL fragment: ExperienceConnectionFragment
+// GraphQL fragment: UploadUnsavedExperiencesFragment
 // ====================================================
 
-export interface ExperienceConnectionFragment_pageInfo {
-  __typename: "PageInfo";
-  /**
-   * When paginating forwards, are there more items?
-   */
-  hasNextPage: boolean;
-  /**
-   * When paginating backwards, are there more items?
-   */
-  hasPreviousPage: boolean;
-}
-
-export interface ExperienceConnectionFragment_edges_node_fieldDefs {
+export interface UploadUnsavedExperiencesFragment_experience_fieldDefs {
   __typename: "FieldDef";
   id: string;
   /**
@@ -40,7 +28,7 @@ export interface ExperienceConnectionFragment_edges_node_fieldDefs {
   clientId: string | null;
 }
 
-export interface ExperienceConnectionFragment_edges_node_entries_pageInfo {
+export interface UploadUnsavedExperiencesFragment_experience_entries_pageInfo {
   __typename: "PageInfo";
   /**
    * When paginating forwards, are there more items?
@@ -52,13 +40,13 @@ export interface ExperienceConnectionFragment_edges_node_entries_pageInfo {
   hasPreviousPage: boolean;
 }
 
-export interface ExperienceConnectionFragment_edges_node_entries_edges_node_fields {
+export interface UploadUnsavedExperiencesFragment_experience_entries_edges_node_fields {
   __typename: "Field";
   defId: string;
   data: any;
 }
 
-export interface ExperienceConnectionFragment_edges_node_entries_edges_node {
+export interface UploadUnsavedExperiencesFragment_experience_entries_edges_node {
   __typename: "Entry";
   /**
    * The ID of an object
@@ -79,10 +67,10 @@ export interface ExperienceConnectionFragment_edges_node_entries_edges_node {
   /**
    * The data fields belonging to this entry
    */
-  fields: (ExperienceConnectionFragment_edges_node_entries_edges_node_fields | null)[];
+  fields: (UploadUnsavedExperiencesFragment_experience_entries_edges_node_fields | null)[];
 }
 
-export interface ExperienceConnectionFragment_edges_node_entries_edges {
+export interface UploadUnsavedExperiencesFragment_experience_entries_edges {
   __typename: "EntryEdge";
   /**
    * A cursor for use in pagination
@@ -91,16 +79,16 @@ export interface ExperienceConnectionFragment_edges_node_entries_edges {
   /**
    * The item at the end of the edge
    */
-  node: ExperienceConnectionFragment_edges_node_entries_edges_node | null;
+  node: UploadUnsavedExperiencesFragment_experience_entries_edges_node | null;
 }
 
-export interface ExperienceConnectionFragment_edges_node_entries {
+export interface UploadUnsavedExperiencesFragment_experience_entries {
   __typename: "EntryConnection";
-  pageInfo: ExperienceConnectionFragment_edges_node_entries_pageInfo;
-  edges: (ExperienceConnectionFragment_edges_node_entries_edges | null)[] | null;
+  pageInfo: UploadUnsavedExperiencesFragment_experience_entries_pageInfo;
+  edges: (UploadUnsavedExperiencesFragment_experience_entries_edges | null)[] | null;
 }
 
-export interface ExperienceConnectionFragment_edges_node {
+export interface UploadUnsavedExperiencesFragment_experience {
   __typename: "Experience";
   /**
    * The ID of an object
@@ -126,27 +114,38 @@ export interface ExperienceConnectionFragment_edges_node {
   /**
    * The field definitions used for the experience entries
    */
-  fieldDefs: (ExperienceConnectionFragment_edges_node_fieldDefs | null)[];
+  fieldDefs: (UploadUnsavedExperiencesFragment_experience_fieldDefs | null)[];
   /**
    * The entries of the experience - can be paginated
    */
-  entries: ExperienceConnectionFragment_edges_node_entries;
+  entries: UploadUnsavedExperiencesFragment_experience_entries;
 }
 
-export interface ExperienceConnectionFragment_edges {
-  __typename: "ExperienceEdge";
+export interface UploadUnsavedExperiencesFragment_experienceError {
+  __typename: "OfflineExperienceSyncExperienceError";
   /**
-   * A cursor for use in pagination
+   * The index of the failing experience in the list of experiences input
    */
-  cursor: string;
+  index: number;
   /**
-   * The item at the end of the edge
+   * The client ID of the failing experience. As user may not have provided a
+   *   client ID, this field is nullable and in that case, the index field will
+   *   be used to identify this error
    */
-  node: ExperienceConnectionFragment_edges_node | null;
+  clientId: string | null;
+  error: string;
 }
 
-export interface ExperienceConnectionFragment {
-  __typename: "ExperienceConnection";
-  pageInfo: ExperienceConnectionFragment_pageInfo;
-  edges: (ExperienceConnectionFragment_edges | null)[] | null;
+export interface UploadUnsavedExperiencesFragment_entriesErrors {
+  __typename: "OfflineExperienceSyncEntryError";
+  experienceId: string;
+  clientId: string;
+  error: string;
+}
+
+export interface UploadUnsavedExperiencesFragment {
+  __typename: "OfflineExperienceSync";
+  experience: UploadUnsavedExperiencesFragment_experience | null;
+  experienceError: UploadUnsavedExperiencesFragment_experienceError | null;
+  entriesErrors: (UploadUnsavedExperiencesFragment_entriesErrors | null)[] | null;
 }

@@ -140,7 +140,7 @@ it("renders unsaved and saved experiences", () => {
   } as GetExps_exps;
 
   const { Ui } = makeComp({
-    unsavedExperiences: unsavedExperiences as any,
+    unsavedExperiencesProps: { unsavedExperiences } as any,
     getExpDefsResult: { exps } as any
   });
 

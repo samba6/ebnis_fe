@@ -2,9 +2,9 @@
 import React, { ComponentType } from "react";
 import "jest-dom/extend-expect";
 import "react-testing-library/cleanup-after-each";
-import { render, fireEvent, waitForElement } from "react-testing-library";
+import { render, fireEvent, wait } from "react-testing-library";
 import { Sync } from "../components/Sync/component";
-import { Props } from "../components/Sync/utils";
+import { Props, fieldDefToUnsavedData } from "../components/Sync/utils";
 import { ExperienceFragment } from "../graphql/apollo-types/ExperienceFragment";
 import { makeUnsavedId } from "../constants";
 import { renderWithRouter } from "./test_utils";
@@ -19,8 +19,30 @@ jest.mock("../components/SidebarHeader", () => ({
   }
 }));
 
+jest.mock("../state/get-conn-status");
+
+import { getConnStatus } from "../state/get-conn-status";
+
+const mockGetConnectionStatus = getConnStatus as jest.Mock;
+
 const SyncP = Sync as ComponentType<Partial<Props>>;
 const timeStamps = { insertedAt: "a", updatedAt: "a" };
+
+it("redirects to 404 when not connected", async done => {
+  const { ui, mockNavigate } = makeComp({
+    isConnected: false
+  });
+
+  const { queryByTestId } = render(ui);
+
+  await wait(() => {
+    expect(mockNavigate).toHaveBeenCalledWith("/404");
+  });
+
+  expect(queryByTestId("loading")).not.toBeInTheDocument();
+
+  done();
+});
 
 it("renders loading indicator while unsaved experiences loading", () => {
   const { ui } = makeComp({
@@ -96,12 +118,19 @@ it("shows only saved experiences, does not show saved entries and uploads unsave
   const {
     ui,
     mockUploadUnsavedExperiences,
-    mockUploadSavedExperiencesEntries
+    mockUploadSavedExperiencesEntries,
+    mockUploadAllUnsaveds
   } = makeComp({
     props: {
       savedExperiencesUnSavedEntriesProps: {
         savedExperiencesUnsavedEntries: experiences
       } as any
+    }
+  });
+
+  mockUploadSavedExperiencesEntries.mockResolvedValue({
+    data: {
+      createEntries: {}
     }
   });
 
@@ -119,11 +148,9 @@ it("shows only saved experiences, does not show saved entries and uploads unsave
 
   fireEvent.click(queryByTestId("upload-all") as any);
 
-  const $uploadIndicatorUi = await waitForElement(() =>
-    queryByTestId("uploading-data")
-  );
-
-  expect($uploadIndicatorUi).toBeInTheDocument();
+  await wait(() => {
+    expect(mockUploadSavedExperiencesEntries).toHaveBeenCalled();
+  });
 
   const uploadedEntry = (mockUploadSavedExperiencesEntries.mock
     .calls[0][0] as any).variables.createEntries[0];
@@ -131,11 +158,12 @@ it("shows only saved experiences, does not show saved entries and uploads unsave
   expect(uploadedEntry).toEqual(entry);
 
   expect(mockUploadUnsavedExperiences).not.toHaveBeenCalled();
+  expect(mockUploadAllUnsaveds).not.toHaveBeenCalled();
 
   done();
 });
 
-it("shows only 'unsaved experiences' data and uploads same", async done => {
+it("shows only 'unsaved experiences' data and uploads same succeeds", async done => {
   const experience = {
     title: "a",
     clientId: "1",
@@ -151,28 +179,39 @@ it("shows only 'unsaved experiences' data and uploads same", async done => {
     ...timeStamps
   };
 
+  const unsavedExperience = {
+    id: "1",
+    ...experience,
+
+    entries: {
+      edges: [
+        {
+          node: { ...entry, id: entryId }
+        }
+      ]
+    }
+  };
+
   const {
     ui,
     mockUploadUnsavedExperiences,
-    mockUploadSavedExperiencesEntries
+    mockUploadSavedExperiencesEntries,
+    mockUploadAllUnsaveds
   } = makeComp({
     props: {
       unSavedExperiencesProps: {
-        unsavedExperiences: [
-          {
-            id: "1",
-            ...experience,
-
-            entries: {
-              edges: [
-                {
-                  node: { ...entry, id: entryId }
-                }
-              ]
-            }
-          }
-        ]
+        unsavedExperiences: [unsavedExperience]
       } as any
+    }
+  });
+
+  mockUploadUnsavedExperiences.mockResolvedValue({
+    data: {
+      syncOfflineExperiences: [
+        {
+          experience: unsavedExperience
+        }
+      ]
     }
   });
 
@@ -188,11 +227,9 @@ it("shows only 'unsaved experiences' data and uploads same", async done => {
 
   fireEvent.click(queryByTestId("upload-all") as any);
 
-  const $uploadIndicatorUi = await waitForElement(() =>
-    queryByTestId("uploading-data")
-  );
-
-  expect($uploadIndicatorUi).toBeInTheDocument();
+  await wait(() => {
+    expect(mockUploadUnsavedExperiences).toHaveBeenCalled();
+  });
 
   const {
     entries: uploadedEntries,
@@ -200,19 +237,29 @@ it("shows only 'unsaved experiences' data and uploads same", async done => {
     ...otherExperienceFields
   } = (mockUploadUnsavedExperiences.mock.calls[0][0] as any).variables.input[0];
 
+  experience.fieldDefs = experience.fieldDefs.map(fieldDefToUnsavedData as any);
+
   expect(otherExperienceFields).toEqual(experience);
 
   expect(uploadedEntries[0]).toEqual(entry);
 
   expect(mockUploadSavedExperiencesEntries).not.toHaveBeenCalled();
+  expect(mockUploadAllUnsaveds).not.toHaveBeenCalled();
+
+  expect(queryByTestId("upload-all")).not.toBeInTheDocument();
 
   done();
 });
 
-it("toggles saved and 'unsaved experiences' data", () => {
+it("toggles saved and 'unsaved experiences' data", async done => {
   jest.useFakeTimers();
 
-  const { ui } = makeComp({
+  const {
+    ui,
+    mockUploadUnsavedExperiences,
+    mockUploadSavedExperiencesEntries,
+    mockUploadAllUnsaveds
+  } = makeComp({
     props: {
       unSavedExperiencesProps: {
         unsavedExperiences: [
@@ -254,6 +301,13 @@ it("toggles saved and 'unsaved experiences' data", () => {
     }
   });
 
+  mockUploadAllUnsaveds.mockResolvedValue({
+    data: {
+      createEntries: {},
+      syncOfflineExperiences: []
+    }
+  });
+
   const { queryByTestId } = render(ui);
 
   expect(queryByTestId("saved-experiences")).toBeInTheDocument();
@@ -274,13 +328,31 @@ it("toggles saved and 'unsaved experiences' data", () => {
 
   expect(queryByTestId("saved-experiences")).toBeInTheDocument();
   expect(queryByTestId("unsaved-experiences")).not.toBeInTheDocument();
+
+  fireEvent.click(queryByTestId("upload-all") as any);
+
+  await wait(() => {
+    expect(mockUploadAllUnsaveds).toHaveBeenCalled();
+  });
+
+  expect(mockUploadUnsavedExperiences).not.toHaveBeenCalled();
+  expect(mockUploadSavedExperiencesEntries).not.toHaveBeenCalled();
+
+  done();
 });
 
 ////////////////////////// HELPER FUNCTIONS ///////////////////////////////////
 
-function makeComp({ props = {} }: { props?: Partial<Props> } = {}) {
+function makeComp({
+  props = {},
+  isConnected = true
+}: { props?: Partial<Props>; isConnected?: boolean } = {}) {
+  mockGetConnectionStatus.mockReset();
+  mockGetConnectionStatus.mockResolvedValue(isConnected);
+
   const mockUploadUnsavedExperiences = jest.fn();
   const mockUploadSavedExperiencesEntries = jest.fn();
+  const mockUploadAllUnsaveds = jest.fn();
 
   const { Ui, ...routerProps } = renderWithRouter(SyncP);
 
@@ -289,12 +361,14 @@ function makeComp({ props = {} }: { props?: Partial<Props> } = {}) {
       <Ui
         uploadUnsavedExperiences={mockUploadUnsavedExperiences}
         createEntries={mockUploadSavedExperiencesEntries}
+        uploadAllUnsaveds={mockUploadAllUnsaveds}
         {...props}
       />
     ),
 
     mockUploadUnsavedExperiences,
     mockUploadSavedExperiencesEntries,
+    mockUploadAllUnsaveds,
     ...routerProps
   };
 }

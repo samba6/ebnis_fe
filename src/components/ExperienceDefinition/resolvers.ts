@@ -23,15 +23,19 @@ const createUnsavedExperienceResolver: LocalResolverFn<
   { cache }
 ) => {
   const today = new Date();
+  const timestamp = today.toJSON();
   const experienceId = makeUnsavedId(today.getTime());
 
   const fieldDefs: ExperienceFragment_fieldDefs[] = (createFieldDefs as CreateFieldDef[]).map(
     ({ name, type }, index) => {
+      const fieldDefId = experienceId + "--" + index;
+
       return {
         __typename: "FieldDef",
         name,
         type,
-        id: experienceId + "--" + index
+        id: fieldDefId,
+        clientId: fieldDefId
       };
     }
   );
@@ -40,8 +44,8 @@ const createUnsavedExperienceResolver: LocalResolverFn<
     __typename: UNSAVED_EXPERIENCE_TYPENAME,
     id: experienceId,
     clientId: experienceId,
-    insertedAt: today.toJSON(),
-    updatedAt: today.toJSON(),
+    insertedAt: timestamp,
+    updatedAt: timestamp,
     description,
     title,
     fieldDefs,

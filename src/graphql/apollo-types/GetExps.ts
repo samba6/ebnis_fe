@@ -2,7 +2,7 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
-import { PaginationInput, FieldType } from "./globalTypes";
+import { PaginationInput } from "./globalTypes";
 
 // ====================================================
 // GraphQL query operation: GetExps
@@ -18,79 +18,6 @@ export interface GetExps_exps_pageInfo {
    * When paginating backwards, are there more items?
    */
   hasPreviousPage: boolean;
-}
-
-export interface GetExps_exps_edges_node_fieldDefs {
-  __typename: "FieldDef";
-  id: string;
-  /**
-   * Name of field e.g start, end, meal
-   */
-  name: string;
-  /**
-   * The data type of the field
-   */
-  type: FieldType;
-}
-
-export interface GetExps_exps_edges_node_entries_pageInfo {
-  __typename: "PageInfo";
-  /**
-   * When paginating forwards, are there more items?
-   */
-  hasNextPage: boolean;
-  /**
-   * When paginating backwards, are there more items?
-   */
-  hasPreviousPage: boolean;
-}
-
-export interface GetExps_exps_edges_node_entries_edges_node_fields {
-  __typename: "Field";
-  defId: string;
-  data: any;
-}
-
-export interface GetExps_exps_edges_node_entries_edges_node {
-  __typename: "Entry";
-  /**
-   * The ID of an object
-   */
-  id: string;
-  /**
-   * The ID of experience to which this entry belongs.
-   */
-  expId: string;
-  /**
-   * The client ID which indicates that an entry has been created offline
-   *   and is to be synced with the server, the client ID uniquely identifies
-   *   this entry and will be used prevent sync conflict.
-   */
-  clientId: string | null;
-  insertedAt: any;
-  updatedAt: any;
-  /**
-   * The data fields belonging to this entry
-   */
-  fields: (GetExps_exps_edges_node_entries_edges_node_fields | null)[];
-}
-
-export interface GetExps_exps_edges_node_entries_edges {
-  __typename: "EntryEdge";
-  /**
-   * A cursor for use in pagination
-   */
-  cursor: string;
-  /**
-   * The item at the end of the edge
-   */
-  node: GetExps_exps_edges_node_entries_edges_node | null;
-}
-
-export interface GetExps_exps_edges_node_entries {
-  __typename: "EntryConnection";
-  pageInfo: GetExps_exps_edges_node_entries_pageInfo;
-  edges: (GetExps_exps_edges_node_entries_edges | null)[] | null;
 }
 
 export interface GetExps_exps_edges_node {
@@ -116,14 +43,6 @@ export interface GetExps_exps_edges_node {
   clientId: string | null;
   insertedAt: any;
   updatedAt: any;
-  /**
-   * The field definitions used for the experience entries
-   */
-  fieldDefs: (GetExps_exps_edges_node_fieldDefs | null)[];
-  /**
-   * The entries of the experience - can be paginated
-   */
-  entries: GetExps_exps_edges_node_entries;
 }
 
 export interface GetExps_exps_edges {

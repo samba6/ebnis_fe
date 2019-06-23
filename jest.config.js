@@ -58,7 +58,8 @@ module.exports = {
     "<rootDir>/\\.cache/",
     "<rootDir>/public/",
     "<rootDir>/src/graphql/.+?types",
-    "<rootDir>/jest\\.config\\.js"
+    "<rootDir>/jest\\.config\\.js",
+    "<rootDir>/coverage/"
   ],
   globals: {
     __PATH_PREFIX__: ""

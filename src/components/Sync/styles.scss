@@ -2,7 +2,7 @@
 @import "../../styles/extensions";
 
 $translateLen: 50px;
-$transitionTime: 1000ms;
+$transitionTime: 500ms;
 
 .components-sync {
   @extend %route-main;
@@ -12,14 +12,25 @@ $transitionTime: 1000ms;
     color: $app-color;
     font-weight: bolder;
     position: relative;
-    padding-bottom: 10px;
+    padding-bottom: 5px;
     padding-left: 10px;
   }
 
-  .icon.sync {
-    padding: 0 25px 30px 60px;
+  .upload-button {
+    padding-right: 10px;
     position: absolute;
     right: 0;
+    bottom: -4px;
+    color: darken($color: $app-color, $amount: 5%);
+    font-weight: bolder;
+    font-size: 1.1rem;
+    background: none;
+
+    &:active,
+    &:hover {
+      background: none;
+      color: darken($color: $app-color, $amount: 5%);
+    }
   }
 
   .main {

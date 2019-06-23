@@ -2,18 +2,32 @@ import gql from "graphql-tag";
 import { DataValue } from "react-apollo";
 
 import { GetExps, GetExpsVariables } from "./apollo-types/GetExps";
-import { EXPERIENCE_CONNECTION_FRAGMENT } from "./experience-connection.fragment";
 
 export const GET_EXP_DEFS_QUERY = gql`
   query GetExps($pagination: PaginationInput!) {
     exps(pagination: $pagination) {
-      ...ExperienceConnectionFragment
+      pageInfo {
+        hasNextPage
+        hasPreviousPage
+      }
+
+      edges {
+        cursor
+        node {
+          id
+          title
+          description
+          clientId
+          insertedAt
+          updatedAt
+        }
+      }
     }
   }
-
-  ${EXPERIENCE_CONNECTION_FRAGMENT}
 `;
 
-export interface GetExpGqlProps {
-  getExpDefsResult: DataValue<GetExps, GetExpsVariables>;
+export type GetExperiencesData = DataValue<GetExps, GetExpsVariables>;
+
+export interface GetExperiencesProps {
+  getExpDefsResult: GetExperiencesData;
 }

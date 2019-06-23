@@ -5,5 +5,6 @@ export const FIELD_DEF_FRAGMENT = gql`
     id
     name
     type
+    clientId
   }
 `;

@@ -19,6 +19,13 @@ export interface ExperienceFragment_fieldDefs {
    * The data type of the field
    */
   type: FieldType;
+  /**
+   * String that uniquely identifies this field definition has been
+   *   created offline. If an associated entry is also created
+   *   offline, then `createField.defId` **MUST BE** the same as this
+   *   field and will be validated as such.
+   */
+  clientId: string | null;
 }
 
 export interface ExperienceFragment_entries_pageInfo {

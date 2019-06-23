@@ -73,7 +73,7 @@ const createUnsavedEntryResolver: LocalResolverFn<
 
   let experience = variables.experience;
 
-  const { id: experienceId, clientId: experienceClientId } = experience;
+  const { id: experienceId } = experience;
   const today = new Date();
 
   const id = makeUnsavedId(today.getTime());
@@ -89,7 +89,7 @@ const createUnsavedEntryResolver: LocalResolverFn<
     __typename: "Entry",
     id,
     clientId: id,
-    expId: experienceClientId as string,
+    expId: experienceId,
     fields,
     insertedAt: today.toJSON(),
     updatedAt: today.toJSON()
