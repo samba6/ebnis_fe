@@ -1,5 +1,11 @@
 import React, { useReducer, useMemo, useEffect } from "react";
-import { Props, reducer, ActionType, fieldDefToUnsavedData } from "./utils";
+import {
+  Props,
+  reducer,
+  ActionType,
+  fieldDefToUnsavedData,
+  ExperiencesIdsToUnsavedEntriesMap
+} from "./utils";
 import { Loading } from "../Loading";
 import {
   UnsavedExperiencesData,
@@ -18,7 +24,7 @@ import { Entry } from "../Experience/entry";
 import "./styles.scss";
 import { UnsavedExperience } from "../ExperienceNewEntryParent/resolvers";
 import { CSSTransition, TransitionGroup } from "react-transition-group";
-import setClassNames from "classnames";
+import makeClassNames from "classnames";
 import Button from "semantic-ui-react/dist/commonjs/elements/Button";
 import { CreateEntry } from "../../graphql/apollo-types/globalTypes";
 import { UploadAllUnsavedsMutationFnResult } from "../../graphql/upload-unsaveds.mutation";
@@ -29,10 +35,6 @@ import Icon from "semantic-ui-react/dist/commonjs/elements/Icon";
 import { UploadAllUnsavedsMutation } from "../../graphql/apollo-types/UploadAllUnsavedsMutation";
 
 const timeout = 500;
-
-interface ExperienceIdToUnsavedEntriesMap {
-  [k: string]: ExperienceFragment_entries_edges_node[];
-}
 
 export function Sync(props: Props) {
   const {
@@ -83,13 +85,21 @@ export function Sync(props: Props) {
   const loading =
     loadingUnsavedExperiences || loadingSavedExperiencesUnsavedEntries;
 
-  const savedExperiencesUnsavedEntriesOnly = useMemo(() => {
-    let experienceIdToUnsavedEntriesMap = {} as ExperienceIdToUnsavedEntriesMap;
+  if (loading && unSavedCount === 0) {
+    return <Loading />;
+  }
+
+  if (unSavedCount === 0) {
+    return <div data-testid="no-unsaved">There are no unsaved data</div>;
+  }
+
+  const savedExperiencesIdToUnsavedEntriesMap = useMemo(() => {
+    let experienceIdToUnsavedEntriesMap = {} as ExperiencesIdsToUnsavedEntriesMap;
 
     if (savedExperiencesUnsavedEntriesLen !== 0) {
       experienceIdToUnsavedEntriesMap = savedExperiencesUnsavedEntries.reduce(
         (acc, experience) => {
-          acc[experience.id] = entryNodesFromExperience(experience).reduce(
+          const unsavedEntries = entryNodesFromExperience(experience).reduce(
             (entriesAcc, entry) => {
               if (isUnsavedId(entry.id)) {
                 entriesAcc.push(entry);
@@ -100,6 +110,11 @@ export function Sync(props: Props) {
 
             [] as ExperienceFragment_entries_edges_node[]
           );
+
+          acc[experience.id] = {
+            unsavedEntries,
+            experience
+          };
 
           return acc;
         },
@@ -130,13 +145,25 @@ export function Sync(props: Props) {
     return unsavedEntries;
   }, [unsavedExperiences]);
 
-  if (loading && unSavedCount === 0) {
-    return <Loading />;
-  }
+  const uploadResultSummary = useMemo(() => {
+    let things = {} as UploadResultSummary;
 
-  if (unSavedCount === 0) {
-    return <div data-testid="no-unsaved">There are no unsaved data</div>;
-  }
+    if (!uploadResult) {
+      return things;
+    }
+
+    things = {
+      unsavedExperiencesSucceeded: didAllUploadUnsavedExperiencesSucceed(
+        uploadResult
+      ),
+
+      unsavedEntriesSucceeded: didAllUploadSavedExperiencesEntriesSucceed(
+        uploadResult
+      )
+    };
+
+    return things;
+  }, [uploadResult]);
 
   async function onUploadAllClicked() {
     dispatch({
@@ -159,7 +186,7 @@ export function Sync(props: Props) {
             ),
             unsavedEntries: savedExperiencesUnsavedEntriesToUploadData(
               savedExperiencesUnsavedEntries,
-              savedExperiencesUnsavedEntriesOnly
+              savedExperiencesIdToUnsavedEntriesMap
             )
           }
         })) as UploadAllUnsavedsMutationFnResult;
@@ -177,7 +204,7 @@ export function Sync(props: Props) {
           variables: {
             createEntries: savedExperiencesUnsavedEntriesToUploadData(
               savedExperiencesUnsavedEntries,
-              savedExperiencesUnsavedEntriesOnly
+              savedExperiencesIdToUnsavedEntriesMap
             )
           }
         })) as UploadAllUnsavedsMutationFnResult;
@@ -232,18 +259,17 @@ export function Sync(props: Props) {
             >
               Entries
               {uploadResult &&
-                (uploadResult.createEntries &&
-                uploadResult.createEntries.failures ? (
-                  <Icon
-                    name="ban"
-                    data-testid="unsaved-entries-upload-error-icon"
-                    className="upload-error-icon upload-result-icon"
-                  />
-                ) : (
+                (uploadResultSummary.unsavedEntriesSucceeded ? (
                   <Icon
                     name="check"
                     data-testid="unsaved-entries-upload-success-icon"
                     className="upload-success-icon upload-result-icon"
+                  />
+                ) : (
+                  <Icon
+                    name="ban"
+                    data-testid="unsaved-entries-upload-error-icon"
+                    className="upload-error-icon upload-result-icon"
                   />
                 ))}
             </a>
@@ -262,7 +288,7 @@ export function Sync(props: Props) {
             >
               Experiences
               {uploadResult &&
-                (didAllUploadUnsavedExperiencesSucceed(uploadResult) ? (
+                (uploadResultSummary.unsavedExperiencesSucceeded ? (
                   <Icon
                     name="check"
                     data-testid="unsaved-experiences-upload-success-icon"
@@ -287,17 +313,20 @@ export function Sync(props: Props) {
               classNames="pane-animation-left"
             >
               <div
-                className={setClassNames({ tab: true, active: tabs["1"] })}
+                className={makeClassNames({ tab: true, active: tabs["1"] })}
                 data-testid="saved-experiences"
               >
                 {savedExperiencesUnsavedEntries.map(experience => {
                   return (
-                    <SavedExperienceComponent
+                    <ExperienceComponent
                       key={experience.id}
                       experience={experience}
                       entries={
-                        savedExperiencesUnsavedEntriesOnly[experience.id]
+                        savedExperiencesIdToUnsavedEntriesMap[experience.id]
+                          .unsavedEntries
                       }
+                      type="saved"
+                      uploadResultSummary={uploadResultSummary}
                     />
                   );
                 })}
@@ -312,15 +341,17 @@ export function Sync(props: Props) {
               classNames="pane-animation-right"
             >
               <div
-                className={setClassNames({ tab: true, active: tabs["2"] })}
+                className={makeClassNames({ tab: true, active: tabs["2"] })}
                 data-testid="unsaved-experiences"
               >
                 {unsavedExperiences.map(experience => {
                   return (
-                    <UnSavedExperienceComponent
+                    <ExperienceComponent
                       key={experience.id}
-                      experience={experience}
+                      experience={(experience as unknown) as ExperienceFragment}
                       entries={unsavedExperiencesEntriesOnly[experience.id]}
+                      type="unsaved"
+                      uploadResultSummary={uploadResultSummary}
                     />
                   );
                 })}
@@ -333,53 +364,70 @@ export function Sync(props: Props) {
   );
 }
 
-function SavedExperienceComponent({
+function ExperienceComponent({
   experience,
-  entries
+  entries,
+  type,
+  uploadResultSummary
 }: {
   experience: ExperienceFragment;
   entries: ExperienceFragment_entries_edges_node[];
+  type: "unsaved" | "saved";
+  uploadResultSummary: UploadResultSummary;
 }) {
   const experienceId = experience.id;
+  const entriesLen = entries.length;
+
+  const success =
+    uploadResultSummary.unsavedEntriesSucceeded === true ||
+    uploadResultSummary.unsavedExperiencesSucceeded === true;
+
+  let titleClassSuffix = "";
+
+  if (
+    uploadResultSummary.unsavedEntriesSucceeded === false ||
+    uploadResultSummary.unsavedExperiencesSucceeded === false
+  ) {
+    titleClassSuffix = "--error";
+  }
+
+  if (success) {
+    titleClassSuffix = "--success";
+  }
 
   return (
-    <div data-testid="saved-experience">
-      <div>{experience.title}</div>
+    <div data-testid={type + "-experience"} className="experience">
+      <div
+        className={`experience-title${titleClassSuffix}`}
+        data-testid="experience-title"
+      >
+        {success && (
+          <Button
+            className="experience-title__remove-btn"
+            data-testid="experience-success-remove-btn"
+            type="button"
+            basic={true}
+          >
+            Remove
+          </Button>
+        )}
 
-      {entries.map(entry => {
+        <div className="experience-title__title">{experience.title}</div>
+      </div>
+
+      {entries.map((entry, index) => {
         return (
           <Entry
-            data-testid={`experience-${experienceId}-unsaved-entry-${entry.id}`}
+            data-testid={`${type}-experience-${experienceId}-entry-${entry.id}`}
             key={entry.id}
             entry={entry}
             fieldDefs={experience.fieldDefs as ExperienceFragment_fieldDefs[]}
-          />
-        );
-      })}
-    </div>
-  );
-}
-
-function UnSavedExperienceComponent({
-  experience,
-  entries
-}: {
-  experience: UnsavedExperience;
-  entries: ExperienceFragment_entries_edges_node[];
-}) {
-  const experienceId = experience.id;
-
-  return (
-    <div data-testid="unsaved-experience">
-      <div>{experience.title}</div>
-
-      {entries.map(entry => {
-        return (
-          <Entry
-            data-testid={`unsaved-experience-${experienceId}-entry-${entry.id}`}
-            key={entry.id}
-            entry={entry}
-            fieldDefs={experience.fieldDefs as ExperienceFragment_fieldDefs[]}
+            entriesLen={entriesLen}
+            index={index}
+            className={makeClassNames({
+              "unsaved-entry-first": index === 0,
+              "unsaved-entry": true
+            })}
           />
         );
       })}
@@ -408,7 +456,9 @@ function toUploadableEntry(entry: ExperienceFragment_entries_edges_node) {
 
 function unsavedExperiencesToUploadData(
   unsavedExperiences: UnsavedExperience[],
-  unsavedExperiencesEntriesOnly: ExperienceIdToUnsavedEntriesMap
+  unsavedExperiencesEntriesOnly: {
+    [k: string]: ExperienceFragment_entries_edges_node[];
+  }
 ) {
   return unsavedExperiences.map(experience => {
     const entries = unsavedExperiencesEntriesOnly[experience.id].map(
@@ -429,13 +479,13 @@ function unsavedExperiencesToUploadData(
 
 function savedExperiencesUnsavedEntriesToUploadData(
   savedExperiencesUnsavedEntries: ExperienceFragment[],
-  savedExperiencesUnsavedEntriesOnly: ExperienceIdToUnsavedEntriesMap
+  savedExperiencesUnsavedEntriesOnly: ExperiencesIdsToUnsavedEntriesMap
 ) {
   return savedExperiencesUnsavedEntries.reduce(
     (acc, experience) => {
-      const entries = savedExperiencesUnsavedEntriesOnly[experience.id].map(
-        toUploadableEntry
-      );
+      const entries = savedExperiencesUnsavedEntriesOnly[
+        experience.id
+      ].unsavedEntries.map(toUploadableEntry);
 
       return acc.concat(entries);
     },
@@ -463,7 +513,7 @@ function setTabMenuClassNames(
   tabNumber: string | number,
   tabs: { [k: number]: boolean }
 ) {
-  return setClassNames({
+  return makeClassNames({
     item: true,
     active: tabs[tabNumber],
     "tab-menu": true
@@ -473,15 +523,42 @@ function setTabMenuClassNames(
 function didAllUploadUnsavedExperiencesSucceed(
   uploadResult: UploadAllUnsavedsMutation
 ) {
-  const result =
-    uploadResult.syncOfflineExperiences &&
-    uploadResult.syncOfflineExperiences.reduce((acc, elm) => {
-      if (!elm || !elm.experience || elm.entriesErrors) {
-        return false;
-      }
+  if (!uploadResult.syncOfflineExperiences) {
+    return false;
+  }
 
-      return acc;
-    }, true);
+  const result = uploadResult.syncOfflineExperiences.reduce((acc, elm) => {
+    if (!elm || !elm.experience || elm.entriesErrors) {
+      return false;
+    }
+
+    return acc;
+  }, true);
 
   return result;
+}
+
+function didAllUploadSavedExperiencesEntriesSucceed(
+  uploadResult: UploadAllUnsavedsMutation
+) {
+  const { createEntries } = uploadResult;
+
+  if (!createEntries) {
+    return true;
+  }
+
+  const result = createEntries.reduce((acc, elm) => {
+    if (!elm || elm.errors) {
+      return false;
+    }
+
+    return acc;
+  }, true);
+
+  return result;
+}
+
+interface UploadResultSummary {
+  unsavedExperiencesSucceeded?: boolean;
+  unsavedEntriesSucceeded?: boolean;
 }

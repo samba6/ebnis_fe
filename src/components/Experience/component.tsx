@@ -32,8 +32,9 @@ export function Experience(props: Props) {
   function renderEntries() {
     const entries = experience.entries as GetAnExp_exp_entries;
     const edges = entries.edges as GetAnExp_exp_entries_edges[];
+    const edgesLen = edges.length;
 
-    if (edges.length === 0) {
+    if (edgesLen === 0) {
       return (
         <Link
           className="no-entries"
@@ -47,7 +48,7 @@ export function Experience(props: Props) {
 
     return (
       <>
-        {edges.map((edge: GetAnExp_exp_entries_edges) => {
+        {edges.map((edge: GetAnExp_exp_entries_edges, index) => {
           const entry = edge.node as GetAnExp_exp_entries_edges_node;
 
           return (
@@ -55,6 +56,8 @@ export function Experience(props: Props) {
               key={entry.id}
               entry={entry}
               fieldDefs={experience.fieldDefs as GetAnExp_exp_fieldDefs[]}
+              entriesLen={edgesLen}
+              index={index}
             />
           );
         })}

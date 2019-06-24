@@ -1,3 +1,4 @@
+// tslint:disable: no-any
 import React, { ComponentType } from "react";
 import { fireEvent } from "react-testing-library";
 import { RouteComponentProps, WindowLocation } from "@reach/router";
@@ -54,4 +55,21 @@ export function makeTestCache() {
     cache,
     mockReadQuery
   };
+}
+
+export function makeEntryNode(id: string = "1") {
+  return {
+    id,
+
+    fields: [
+      {
+        defId: "f1",
+        data: `{"decimal":1}`
+      }
+    ]
+  };
+}
+
+export function makeFieldDefs() {
+  return [{ id: "f1", type: "DECIMAL" as any, name: "f1" }];
 }

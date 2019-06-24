@@ -213,16 +213,16 @@ it("renders entries", () => {
   /**
    * And we should see the entries' field names and associated data
    */
-  expect(getByText(/field name 1/)).toBeInTheDocument();
-  expect(getByText(/cat man 1/)).toBeInTheDocument();
+  expect(getByText(/field name 1/i)).toBeInTheDocument();
+  expect(getByText(/cat man 1/i)).toBeInTheDocument();
 
-  expect(getByText(/field name 2/)).toBeInTheDocument();
-  expect(getByText(/cat man 2/)).toBeInTheDocument();
+  expect(getByText(/field name 2/i)).toBeInTheDocument();
+  expect(getByText(/cat man 2/i)).toBeInTheDocument();
 
-  expect(getByText(/field name 3/)).toBeInTheDocument();
-  expect(getByText(/field name 4/)).toBeInTheDocument();
-  expect(getByText(/field name 5/)).toBeInTheDocument();
-  expect(getByText(/field name 6/)).toBeInTheDocument();
+  expect(getByText(/field name 3/i)).toBeInTheDocument();
+  expect(getByText(/field name 4/i)).toBeInTheDocument();
+  expect(getByText(/field name 5/i)).toBeInTheDocument();
+  expect(getByText(/field name 6/i)).toBeInTheDocument();
 });
 
 function makeComp(props: Partial<Props> = {}) {

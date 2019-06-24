@@ -10,7 +10,11 @@ import { CreateEntriesMutationGqlProps } from "../../graphql/create-entries.muta
 import immer from "immer";
 import { Reducer } from "react";
 import { RouteComponentProps } from "@reach/router";
-import { ExperienceFragment_fieldDefs } from "../../graphql/apollo-types/ExperienceFragment";
+import {
+  ExperienceFragment_fieldDefs,
+  ExperienceFragment_entries_edges_node,
+  ExperienceFragment
+} from "../../graphql/apollo-types/ExperienceFragment";
 import { UploadAllUnsavedsMutation } from "../../graphql/apollo-types/UploadAllUnsavedsMutation";
 import { WithApolloClient } from "react-apollo";
 
@@ -71,4 +75,11 @@ export function fieldDefToUnsavedData(
   const { clientId, name, type } = value as ExperienceFragment_fieldDefs;
 
   return { clientId, name, type };
+}
+
+export interface ExperiencesIdsToUnsavedEntriesMap {
+  [k: string]: {
+    unsavedEntries: ExperienceFragment_entries_edges_node[];
+    experience: ExperienceFragment;
+  };
 }

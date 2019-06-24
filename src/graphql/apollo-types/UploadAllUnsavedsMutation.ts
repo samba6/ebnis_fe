@@ -150,13 +150,13 @@ export interface UploadAllUnsavedsMutation_syncOfflineExperiences {
   entriesErrors: (UploadAllUnsavedsMutation_syncOfflineExperiences_entriesErrors | null)[] | null;
 }
 
-export interface UploadAllUnsavedsMutation_createEntries_successes_entries_fields {
+export interface UploadAllUnsavedsMutation_createEntries_entries_fields {
   __typename: "Field";
   defId: string;
   data: any;
 }
 
-export interface UploadAllUnsavedsMutation_createEntries_successes_entries {
+export interface UploadAllUnsavedsMutation_createEntries_entries {
   __typename: "Entry";
   /**
    * The ID of an object
@@ -177,25 +177,20 @@ export interface UploadAllUnsavedsMutation_createEntries_successes_entries {
   /**
    * The data fields belonging to this entry
    */
-  fields: (UploadAllUnsavedsMutation_createEntries_successes_entries_fields | null)[];
+  fields: (UploadAllUnsavedsMutation_createEntries_entries_fields | null)[];
 }
 
-export interface UploadAllUnsavedsMutation_createEntries_successes {
-  __typename: "CreateEntriesResponseEntry";
-  expId: string;
-  entries: (UploadAllUnsavedsMutation_createEntries_successes_entries | null)[];
-}
-
-export interface UploadAllUnsavedsMutation_createEntries_failures {
-  __typename: "CreateEntriesResponseError";
+export interface UploadAllUnsavedsMutation_createEntries_errors {
+  __typename: "CreateEntriesError";
   clientId: string;
   error: string;
 }
 
 export interface UploadAllUnsavedsMutation_createEntries {
   __typename: "CreateEntriesResponse";
-  successes: (UploadAllUnsavedsMutation_createEntries_successes | null)[] | null;
-  failures: (UploadAllUnsavedsMutation_createEntries_failures | null)[] | null;
+  expId: string;
+  entries: (UploadAllUnsavedsMutation_createEntries_entries | null)[];
+  errors: (UploadAllUnsavedsMutation_createEntries_errors | null)[] | null;
 }
 
 export interface UploadAllUnsavedsMutation {
@@ -206,7 +201,7 @@ export interface UploadAllUnsavedsMutation {
   /**
    * Create several entries, for several experiences
    */
-  createEntries: UploadAllUnsavedsMutation_createEntries | null;
+  createEntries: (UploadAllUnsavedsMutation_createEntries | null)[] | null;
 }
 
 export interface UploadAllUnsavedsMutationVariables {

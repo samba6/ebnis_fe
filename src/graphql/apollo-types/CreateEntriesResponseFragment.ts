@@ -6,13 +6,13 @@
 // GraphQL fragment: CreateEntriesResponseFragment
 // ====================================================
 
-export interface CreateEntriesResponseFragment_successes_entries_fields {
+export interface CreateEntriesResponseFragment_entries_fields {
   __typename: "Field";
   defId: string;
   data: any;
 }
 
-export interface CreateEntriesResponseFragment_successes_entries {
+export interface CreateEntriesResponseFragment_entries {
   __typename: "Entry";
   /**
    * The ID of an object
@@ -33,23 +33,18 @@ export interface CreateEntriesResponseFragment_successes_entries {
   /**
    * The data fields belonging to this entry
    */
-  fields: (CreateEntriesResponseFragment_successes_entries_fields | null)[];
+  fields: (CreateEntriesResponseFragment_entries_fields | null)[];
 }
 
-export interface CreateEntriesResponseFragment_successes {
-  __typename: "CreateEntriesResponseEntry";
-  expId: string;
-  entries: (CreateEntriesResponseFragment_successes_entries | null)[];
-}
-
-export interface CreateEntriesResponseFragment_failures {
-  __typename: "CreateEntriesResponseError";
+export interface CreateEntriesResponseFragment_errors {
+  __typename: "CreateEntriesError";
   clientId: string;
   error: string;
 }
 
 export interface CreateEntriesResponseFragment {
   __typename: "CreateEntriesResponse";
-  successes: (CreateEntriesResponseFragment_successes | null)[] | null;
-  failures: (CreateEntriesResponseFragment_failures | null)[] | null;
+  expId: string;
+  entries: (CreateEntriesResponseFragment_entries | null)[];
+  errors: (CreateEntriesResponseFragment_errors | null)[] | null;
 }

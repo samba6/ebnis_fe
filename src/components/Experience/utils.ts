@@ -31,13 +31,13 @@ export const displayFieldType = {
   [FieldType.DATE](text: string) {
     const date = dateFnParse(text);
 
-    return dateFnFormat(date, "Do MMM, YYYY");
+    return dateFnFormat(date, "DD/MM/YYYY");
   },
 
   [FieldType.DATETIME](text: string) {
     const date = dateFnParse(text);
 
-    return dateFnFormat(date, "Do MMM, YYYY hh:mm A");
+    return formatDatetime(date);
   },
 
   [FieldType.DECIMAL](text: string) {
@@ -48,3 +48,7 @@ export const displayFieldType = {
     return Number(text);
   }
 };
+
+export function formatDatetime(date: string | Date) {
+  return dateFnFormat(date, "DD/MM/YYYY HH:mm:ss");
+}

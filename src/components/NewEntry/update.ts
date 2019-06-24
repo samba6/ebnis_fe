@@ -45,9 +45,10 @@ export const updateExperienceWithNewEntry: (
 
     const exp = data.exp as GetAnExp_exp;
 
-    const updatedExperience = immer(exp, draft => {
-      const entries = draft.entries as GetAnExp_exp_entries;
+    const updatedExperience = immer(exp, proxy => {
+      const entries = proxy.entries as GetAnExp_exp_entries;
       const edges = entries.edges || [];
+
       edges.push({
         node: entry,
         cursor: "",
@@ -55,7 +56,7 @@ export const updateExperienceWithNewEntry: (
       });
 
       entries.edges = edges;
-      draft.entries = entries;
+      proxy.entries = entries;
     });
 
     await dataProxy.writeQuery({

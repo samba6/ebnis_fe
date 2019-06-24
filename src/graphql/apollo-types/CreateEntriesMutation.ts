@@ -8,13 +8,13 @@ import { CreateEntry } from "./globalTypes";
 // GraphQL mutation operation: CreateEntriesMutation
 // ====================================================
 
-export interface CreateEntriesMutation_createEntries_successes_entries_fields {
+export interface CreateEntriesMutation_createEntries_entries_fields {
   __typename: "Field";
   defId: string;
   data: any;
 }
 
-export interface CreateEntriesMutation_createEntries_successes_entries {
+export interface CreateEntriesMutation_createEntries_entries {
   __typename: "Entry";
   /**
    * The ID of an object
@@ -35,32 +35,27 @@ export interface CreateEntriesMutation_createEntries_successes_entries {
   /**
    * The data fields belonging to this entry
    */
-  fields: (CreateEntriesMutation_createEntries_successes_entries_fields | null)[];
+  fields: (CreateEntriesMutation_createEntries_entries_fields | null)[];
 }
 
-export interface CreateEntriesMutation_createEntries_successes {
-  __typename: "CreateEntriesResponseEntry";
-  expId: string;
-  entries: (CreateEntriesMutation_createEntries_successes_entries | null)[];
-}
-
-export interface CreateEntriesMutation_createEntries_failures {
-  __typename: "CreateEntriesResponseError";
+export interface CreateEntriesMutation_createEntries_errors {
+  __typename: "CreateEntriesError";
   clientId: string;
   error: string;
 }
 
 export interface CreateEntriesMutation_createEntries {
   __typename: "CreateEntriesResponse";
-  successes: (CreateEntriesMutation_createEntries_successes | null)[] | null;
-  failures: (CreateEntriesMutation_createEntries_failures | null)[] | null;
+  expId: string;
+  entries: (CreateEntriesMutation_createEntries_entries | null)[];
+  errors: (CreateEntriesMutation_createEntries_errors | null)[] | null;
 }
 
 export interface CreateEntriesMutation {
   /**
    * Create several entries, for several experiences
    */
-  createEntries: CreateEntriesMutation_createEntries | null;
+  createEntries: (CreateEntriesMutation_createEntries | null)[] | null;
 }
 
 export interface CreateEntriesMutationVariables {
