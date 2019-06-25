@@ -83,7 +83,7 @@ export function Sync(props: Props) {
     }
   });
 
-  const { tabs, uploading, uploadResult } = state;
+  const { tabs, uploading, uploadResult, serverError } = state;
 
   const unSavedCount =
     savedExperiencesWithUnsavedEntriesLen + unsavedExperiencesLen;
@@ -229,12 +229,10 @@ export function Sync(props: Props) {
         payload: result && result.data
       });
     } catch (error) {
-      // tslint:disable-next-line:no-console
-      console.log(
-        "\n\t\tLogging start\n\n\n\n Object.entries(error.networkError)\n",
-        Object.entries(error.networkError),
-        "\n\n\n\n\t\tLogging ends\n"
-      );
+      dispatch({
+        type: ActionType.setServerError,
+        payload: error
+      });
     }
   }
 
@@ -259,6 +257,8 @@ export function Sync(props: Props) {
       </SidebarHeader>
 
       <div className="main">
+        {serverError && <div data-testid="server-error">{serverError}</div>}
+
         <div className="ui two item menu">
           {savedExperiencesWithUnsavedEntriesLen !== 0 && (
             <a

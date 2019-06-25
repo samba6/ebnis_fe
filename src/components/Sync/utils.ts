@@ -17,6 +17,7 @@ import {
 } from "../../graphql/apollo-types/ExperienceFragment";
 import { UploadAllUnsavedsMutation } from "../../graphql/apollo-types/UploadAllUnsavedsMutation";
 import { WithApolloClient } from "react-apollo";
+import { ApolloError } from "apollo-client";
 
 interface OwnProps
   extends UnsavedExperiencesProps,
@@ -34,17 +35,25 @@ interface State {
   readonly tabs: { [k: number]: boolean };
   readonly uploading?: boolean;
   readonly uploadResult?: UploadAllUnsavedsMutation;
+  readonly serverError?: string;
 }
 
 export enum ActionType {
   toggleTab = "@components/sync/toggle-tab",
   setUploading = "@components/sync/set-uploading",
-  uploadResult = "@components/sync/upload-result"
+  uploadResult = "@components/sync/upload-result",
+  setServerError = "@components/sync/set-server-error"
 }
 
 interface Action {
   type: ActionType;
-  payload?: number | boolean | UploadAllUnsavedsMutation | undefined | void;
+  payload?:
+    | number
+    | boolean
+    | UploadAllUnsavedsMutation
+    | undefined
+    | void
+    | ApolloError;
 }
 
 export const reducer: Reducer<State, Action> = (
@@ -63,6 +72,11 @@ export const reducer: Reducer<State, Action> = (
 
       case ActionType.uploadResult:
         proxy.uploadResult = payload as UploadAllUnsavedsMutation;
+        proxy.uploading = false;
+        break;
+
+      case ActionType.setServerError:
+        proxy.serverError = (payload as ApolloError).message;
         proxy.uploading = false;
         break;
     }

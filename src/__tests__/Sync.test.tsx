@@ -2,7 +2,7 @@
 import React, { ComponentType } from "react";
 import "jest-dom/extend-expect";
 import "react-testing-library/cleanup-after-each";
-import { render, fireEvent, wait } from "react-testing-library";
+import { render, fireEvent, wait, waitForElement } from "react-testing-library";
 import { Sync } from "../components/Sync/component";
 import { Props, fieldDefToUnsavedData } from "../components/Sync/utils";
 import { ExperienceFragment } from "../graphql/apollo-types/ExperienceFragment";
@@ -21,6 +21,9 @@ jest.mock("../components/SidebarHeader", () => ({
 
 jest.mock("../state/get-conn-status");
 jest.mock("../components/Sync/mutation-update");
+jest.mock("../components/Experience/entry", () => ({
+  Entry: () => null
+}));
 
 import { getConnStatus } from "../state/get-conn-status";
 import { onUploadSuccessUpdate } from "../components/Sync/mutation-update";
@@ -113,9 +116,7 @@ describe("component", () => {
               }
             }
           ]
-        },
-
-        fieldDefs: makeFieldDefs()
+        }
       }
     ] as ExperienceFragment[];
 
@@ -430,6 +431,47 @@ describe("component", () => {
     expect((queryByTestId("experience-title") as any).classList).toContain(
       "experience-title--error"
     );
+
+    done();
+  });
+
+  it("shows apollo errors", async done => {
+    const experiences = [
+      {
+        id: "1",
+        title: "a",
+
+        entries: {
+          edges: [
+            {
+              node: makeEntryNode(makeUnsavedId("1"))
+            }
+          ]
+        }
+      }
+    ] as ExperienceFragment[];
+
+    const { ui, mockUploadSavedExperiencesEntries } = makeComp({
+      props: {
+        savedExperiencesWithUnsavedEntriesProps: {
+          savedExperiencesWithUnsavedEntries: experiences
+        } as any
+      }
+    });
+
+    mockUploadSavedExperiencesEntries.mockRejectedValue(new Error("a"));
+
+    const { queryByTestId } = render(ui);
+
+    expect(queryByTestId("server-error")).not.toBeInTheDocument();
+
+    fireEvent.click(queryByTestId("upload-all") as any);
+
+    const $errorUi = await waitForElement(() => queryByTestId("server-error"));
+
+    expect($errorUi).toBeInTheDocument();
+
+    expect(mockUploadSavedExperiencesEntries).toHaveBeenCalled();
 
     done();
   });
