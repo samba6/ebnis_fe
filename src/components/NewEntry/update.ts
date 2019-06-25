@@ -27,9 +27,12 @@ export const updateExperienceWithNewEntry: (
       return;
     }
 
-    const variables = {
-      exp: { id: expId },
-      pagination: {
+    const variables: GetAnExpVariables = {
+      exp: {
+        id: expId
+      },
+
+      entriesPagination: {
         first: 20
       }
     };

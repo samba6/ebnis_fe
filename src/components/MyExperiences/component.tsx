@@ -27,6 +27,7 @@ import {
 } from "../ExperienceDefinition/resolver-utils";
 import { preloadEntries } from "./preload-entries";
 import { GetExperiencesData } from "../../graphql/exps.query";
+import { ExperienceMiniFragment } from "../../graphql/apollo-types/ExperienceMiniFragment";
 
 export const MyExperiences = (props: Props) => {
   const {
@@ -59,15 +60,19 @@ export const MyExperiences = (props: Props) => {
 
   useEffect(() => {
     if (exps && entriesLoadedRef.current === false) {
-      const experiencesIds = getIdsFromExperienceConnection(
+      const { idToExperienceMap, ids } = mapExperiencesToIds(
         exps as GetExps_exps
       );
 
-      if (experiencesIds.length === 0) {
+      if (ids.length === 0) {
         return;
       }
 
-      preloadEntries(experiencesIds, client);
+      preloadEntries({
+        ids,
+        client,
+        idToExperienceMap
+      });
 
       entriesLoadedRef.current = true;
     }
@@ -236,10 +241,21 @@ const ShowDescriptionToggle = React.memo(
   }
 );
 
-function getIdsFromExperienceConnection(experienceConnection: GetExps_exps) {
+function mapExperiencesToIds(experienceConnection: GetExps_exps) {
   const edges = experienceConnection.edges as GetExps_exps_edges[];
+  const ids: string[] = [];
 
-  return edges.map((edge: GetExps_exps_edges) => {
-    return (edge.node as GetExps_exps_edges_node).id;
-  });
+  const idToExperienceMap = edges.reduce(
+    (acc, edge: GetExps_exps_edges) => {
+      const node = edge.node as GetExps_exps_edges_node;
+
+      const { id } = node;
+      acc[id] = node;
+      ids.push(id);
+      return acc;
+    },
+    {} as { [k: string]: ExperienceMiniFragment }
+  );
+
+  return { idToExperienceMap, ids };
 }

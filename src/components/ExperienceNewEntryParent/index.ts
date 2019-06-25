@@ -63,7 +63,7 @@ const experienceGql = graphql<
           id: experienceId as string
         },
 
-        pagination: {
+        entriesPagination: {
           first: 20
         }
       }

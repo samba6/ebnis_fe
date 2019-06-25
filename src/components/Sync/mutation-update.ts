@@ -10,7 +10,9 @@ import { ExperiencesIdsToUnsavedEntriesMap } from "./utils";
 import {
   GetAnExp_exp_entries,
   GetAnExp_exp_entries_edges,
-  GetAnExp_exp_entries_edges_node
+  GetAnExp_exp_entries_edges_node,
+  GetAnExp,
+  GetAnExpVariables
 } from "../../graphql/apollo-types/GetAnExp";
 import { GET_EXP_QUERY } from "../../graphql/get-exp.query";
 import { DataProxy } from "apollo-cache";
@@ -188,14 +190,14 @@ function updateSavedExperiences(
       updateExperienceWithSavedEntries(proxy, savedEntries);
     });
 
-    const variables = {
+    const variables: GetAnExpVariables = {
       exp: { id: expId },
-      pagination: {
+      entriesPagination: {
         first: 20
       }
     };
 
-    dataProxy.writeQuery({
+    dataProxy.writeQuery<GetAnExp, GetAnExpVariables>({
       query: GET_EXP_QUERY,
       variables,
       data: {

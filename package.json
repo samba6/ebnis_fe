@@ -20,7 +20,8 @@
     "cy-open": "env-cmd -e local-staging cypress open",
     "cy-run-task": "env-cmd -e local-staging cypress run",
     "cy-run": "start-server-and-test build-serve-local-staging :3022 cy-run-task",
-    "type-check": "yarn tsc --noEmit --project ."
+    "type-check": "yarn tsc --noEmit --project .",
+    "type-check-cypress": "yarn tsc --noEmit --project ./cypress"
   },
   "dependencies": {
     "@absinthe/socket": "0.2.1",

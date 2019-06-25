@@ -24,8 +24,10 @@ const expDefsGql = graphql<
   options: ({ client }) => {
     return {
       variables: {
-        pagination: {
-          first: 20
+        input: {
+          pagination: {
+            first: 20
+          }
         }
       }
     };

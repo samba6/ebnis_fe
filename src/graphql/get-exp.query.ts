@@ -4,7 +4,7 @@ import { EXPERIENCE_FRAGMENT } from "./experience.fragment";
 import { GetAnExp, GetAnExpVariables } from "./apollo-types/GetAnExp";
 
 export const GET_EXP_QUERY = gql`
-  query GetAnExp($exp: GetExp!, $pagination: PaginationInput!) {
+  query GetAnExp($exp: GetExp!, $entriesPagination: PaginationInput) {
     exp(exp: $exp) {
       ...ExperienceFragment
     }

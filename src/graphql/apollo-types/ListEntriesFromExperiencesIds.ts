@@ -2,13 +2,13 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
-import { ListExperiencesEntriesInput } from "./globalTypes";
+import { ListEntriesFromExperiencesIdsInput } from "./globalTypes";
 
 // ====================================================
-// GraphQL query operation: ListExperiencesEntries
+// GraphQL query operation: ListEntriesFromExperiencesIds
 // ====================================================
 
-export interface ListExperiencesEntries_listExperiencesEntries_pageInfo {
+export interface ListEntriesFromExperiencesIds_listEntriesFromExperiencesIds_entryConnection_pageInfo {
   __typename: "PageInfo";
   /**
    * When paginating forwards, are there more items?
@@ -20,13 +20,13 @@ export interface ListExperiencesEntries_listExperiencesEntries_pageInfo {
   hasPreviousPage: boolean;
 }
 
-export interface ListExperiencesEntries_listExperiencesEntries_edges_node_fields {
+export interface ListEntriesFromExperiencesIds_listEntriesFromExperiencesIds_entryConnection_edges_node_fields {
   __typename: "Field";
   defId: string;
   data: any;
 }
 
-export interface ListExperiencesEntries_listExperiencesEntries_edges_node {
+export interface ListEntriesFromExperiencesIds_listEntriesFromExperiencesIds_entryConnection_edges_node {
   __typename: "Entry";
   /**
    * The ID of an object
@@ -47,10 +47,10 @@ export interface ListExperiencesEntries_listExperiencesEntries_edges_node {
   /**
    * The data fields belonging to this entry
    */
-  fields: (ListExperiencesEntries_listExperiencesEntries_edges_node_fields | null)[];
+  fields: (ListEntriesFromExperiencesIds_listEntriesFromExperiencesIds_entryConnection_edges_node_fields | null)[];
 }
 
-export interface ListExperiencesEntries_listExperiencesEntries_edges {
+export interface ListEntriesFromExperiencesIds_listEntriesFromExperiencesIds_entryConnection_edges {
   __typename: "EntryEdge";
   /**
    * A cursor for use in pagination
@@ -59,21 +59,27 @@ export interface ListExperiencesEntries_listExperiencesEntries_edges {
   /**
    * The item at the end of the edge
    */
-  node: ListExperiencesEntries_listExperiencesEntries_edges_node | null;
+  node: ListEntriesFromExperiencesIds_listEntriesFromExperiencesIds_entryConnection_edges_node | null;
 }
 
-export interface ListExperiencesEntries_listExperiencesEntries {
+export interface ListEntriesFromExperiencesIds_listEntriesFromExperiencesIds_entryConnection {
   __typename: "EntryConnection";
-  pageInfo: ListExperiencesEntries_listExperiencesEntries_pageInfo;
-  edges: (ListExperiencesEntries_listExperiencesEntries_edges | null)[] | null;
+  pageInfo: ListEntriesFromExperiencesIds_listEntriesFromExperiencesIds_entryConnection_pageInfo;
+  edges: (ListEntriesFromExperiencesIds_listEntriesFromExperiencesIds_entryConnection_edges | null)[] | null;
 }
 
-export interface ListExperiencesEntries {
+export interface ListEntriesFromExperiencesIds_listEntriesFromExperiencesIds {
+  __typename: "ExperienceIdToEntryConnection";
+  expId: string;
+  entryConnection: ListEntriesFromExperiencesIds_listEntriesFromExperiencesIds_entryConnection;
+}
+
+export interface ListEntriesFromExperiencesIds {
   /**
    * Get entries for many experiences simultaneously. Use like so:
    * 
-   *   query ListExperiencesEntries($input: ListExperiencesEntriesInput!) {
-   *     listExperiencesEntries(input: $input) {
+   *   query listEntriesFromExperiencesIds($input: listEntriesFromExperiencesIdsInput!) {
+   *     listEntriesFromExperiencesIds(input: $input) {
    *       pageInfo {
    *         hasNextPage
    *         hasPreviousPage
@@ -91,7 +97,7 @@ export interface ListExperiencesEntries {
    *   You get:
    *   ```typescript
    *   {
-   *     listExperiencesEntries: [
+   *     listEntriesFromExperiencesIds: [
    *       {
    *         edges: [
    *           {
@@ -112,9 +118,9 @@ export interface ListExperiencesEntries {
    *   }
    *   ```
    */
-  listExperiencesEntries: (ListExperiencesEntries_listExperiencesEntries | null)[] | null;
+  listEntriesFromExperiencesIds: (ListEntriesFromExperiencesIds_listEntriesFromExperiencesIds | null)[] | null;
 }
 
-export interface ListExperiencesEntriesVariables {
-  input: ListExperiencesEntriesInput;
+export interface ListEntriesFromExperiencesIdsVariables {
+  input: ListEntriesFromExperiencesIdsInput;
 }

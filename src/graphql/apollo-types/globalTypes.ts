@@ -84,7 +84,12 @@ export interface GetExp {
   id: string;
 }
 
-export interface ListExperiencesEntriesInput {
+export interface GetExperiencesInput {
+  ids?: (string | null)[] | null;
+  pagination?: PaginationInput | null;
+}
+
+export interface ListEntriesFromExperiencesIdsInput {
   experiencesIds: (string | null)[];
   pagination?: PaginationInput | null;
 }

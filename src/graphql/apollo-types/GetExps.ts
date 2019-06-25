@@ -2,7 +2,7 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
-import { PaginationInput } from "./globalTypes";
+import { GetExperiencesInput } from "./globalTypes";
 
 // ====================================================
 // GraphQL query operation: GetExps
@@ -65,11 +65,12 @@ export interface GetExps_exps {
 
 export interface GetExps {
   /**
-   * Get all experiences belonging to a user
+   * Get all experiences belonging to a user. The experiences returned may be
+   *   paginated
    */
   exps: GetExps_exps | null;
 }
 
 export interface GetExpsVariables {
-  pagination: PaginationInput;
+  input?: GetExperiencesInput | null;
 }

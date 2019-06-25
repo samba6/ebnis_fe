@@ -25,8 +25,10 @@ export const ExperienceDefinitionUpdate: CreateExpUpdateFn = async (
   // what we are trying to read does not exist on apollo ROOT_QUERY
   try {
     const variables = {
-      pagination: {
-        first: 20
+      input: {
+        pagination: {
+          first: 20
+        }
       }
     };
 

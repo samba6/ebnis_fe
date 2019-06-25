@@ -49,8 +49,7 @@ import { FetchResult } from "react-apollo";
 import {
   CreateEntriesMutation,
   CreateEntriesMutationVariables,
-  CreateEntriesMutation_createEntries,
-  CreateEntriesMutation_createEntries_successes_entries
+  CreateEntriesMutation_createEntries_entries
 } from "../../src/graphql/apollo-types/CreateEntriesMutation";
 import { CREATE_ENTRIES_MUTATION } from "../../src/graphql/create-entries.mutation";
 import {
@@ -187,13 +186,14 @@ function createExperienceEntries(
       createEntries
     }
   }).then(result => {
-    const { successes } = (result &&
-      result.data &&
-      result.data.createEntries) as CreateEntriesMutation_createEntries;
+    const data = result && result.data && result.data.createEntries;
 
-    const entries = successes.reduce((acc, obj) => {
-      return acc.concat(obj.entries);
-    }, []);
+    const entries = data.reduce(
+      (acc, obj) => {
+        return acc.concat(obj.entries);
+      },
+      [] as CreateEntriesMutation_createEntries_entries[]
+    );
 
     return entries;
   });
@@ -319,7 +319,7 @@ declare global {
       createExperienceEntries: (
         experienceId: string,
         createEntries: CreateEntry[]
-      ) => Promise<CreateEntriesMutation_createEntries_successes_entries[]>;
+      ) => Promise<CreateEntriesMutation_createEntries_entries[]>;
 
       /**
        *

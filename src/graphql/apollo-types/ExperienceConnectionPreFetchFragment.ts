@@ -2,13 +2,13 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
-import { GetExp, PaginationInput, FieldType } from "./globalTypes";
+import { FieldType } from "./globalTypes";
 
 // ====================================================
-// GraphQL query operation: GetAnExp
+// GraphQL fragment: ExperienceConnectionPreFetchFragment
 // ====================================================
 
-export interface GetAnExp_exp_fieldDefs {
+export interface ExperienceConnectionPreFetchFragment_edges_node_fieldDefs {
   __typename: "FieldDef";
   id: string;
   /**
@@ -28,7 +28,7 @@ export interface GetAnExp_exp_fieldDefs {
   clientId: string | null;
 }
 
-export interface GetAnExp_exp_entries_pageInfo {
+export interface ExperienceConnectionPreFetchFragment_edges_node_entries_pageInfo {
   __typename: "PageInfo";
   /**
    * When paginating forwards, are there more items?
@@ -40,13 +40,13 @@ export interface GetAnExp_exp_entries_pageInfo {
   hasPreviousPage: boolean;
 }
 
-export interface GetAnExp_exp_entries_edges_node_fields {
+export interface ExperienceConnectionPreFetchFragment_edges_node_entries_edges_node_fields {
   __typename: "Field";
   defId: string;
   data: any;
 }
 
-export interface GetAnExp_exp_entries_edges_node {
+export interface ExperienceConnectionPreFetchFragment_edges_node_entries_edges_node {
   __typename: "Entry";
   /**
    * The ID of an object
@@ -67,10 +67,10 @@ export interface GetAnExp_exp_entries_edges_node {
   /**
    * The data fields belonging to this entry
    */
-  fields: (GetAnExp_exp_entries_edges_node_fields | null)[];
+  fields: (ExperienceConnectionPreFetchFragment_edges_node_entries_edges_node_fields | null)[];
 }
 
-export interface GetAnExp_exp_entries_edges {
+export interface ExperienceConnectionPreFetchFragment_edges_node_entries_edges {
   __typename: "EntryEdge";
   /**
    * A cursor for use in pagination
@@ -79,56 +79,44 @@ export interface GetAnExp_exp_entries_edges {
   /**
    * The item at the end of the edge
    */
-  node: GetAnExp_exp_entries_edges_node | null;
+  node: ExperienceConnectionPreFetchFragment_edges_node_entries_edges_node | null;
 }
 
-export interface GetAnExp_exp_entries {
+export interface ExperienceConnectionPreFetchFragment_edges_node_entries {
   __typename: "EntryConnection";
-  pageInfo: GetAnExp_exp_entries_pageInfo;
-  edges: (GetAnExp_exp_entries_edges | null)[] | null;
+  pageInfo: ExperienceConnectionPreFetchFragment_edges_node_entries_pageInfo;
+  edges: (ExperienceConnectionPreFetchFragment_edges_node_entries_edges | null)[] | null;
 }
 
-export interface GetAnExp_exp {
+export interface ExperienceConnectionPreFetchFragment_edges_node {
   __typename: "Experience";
   /**
    * The ID of an object
    */
   id: string;
   /**
-   * The title of the experience
-   */
-  title: string;
-  /**
-   * The description of the experience
-   */
-  description: string | null;
-  /**
-   * The client ID. For experiences created on the client and to be synced
-   *   with the server, the client ID uniquely identifies such and can be used
-   *   to enforce uniqueness at the DB level. Not providing client_id assumes
-   *   a fresh experience.
-   */
-  clientId: string | null;
-  insertedAt: any;
-  updatedAt: any;
-  /**
    * The field definitions used for the experience entries
    */
-  fieldDefs: (GetAnExp_exp_fieldDefs | null)[];
+  fieldDefs: (ExperienceConnectionPreFetchFragment_edges_node_fieldDefs | null)[];
   /**
    * The entries of the experience - can be paginated
    */
-  entries: GetAnExp_exp_entries;
+  entries: ExperienceConnectionPreFetchFragment_edges_node_entries;
 }
 
-export interface GetAnExp {
+export interface ExperienceConnectionPreFetchFragment_edges {
+  __typename: "ExperienceEdge";
   /**
-   * get an experience
+   * A cursor for use in pagination
    */
-  exp: GetAnExp_exp | null;
+  cursor: string;
+  /**
+   * The item at the end of the edge
+   */
+  node: ExperienceConnectionPreFetchFragment_edges_node | null;
 }
 
-export interface GetAnExpVariables {
-  exp: GetExp;
-  entriesPagination?: PaginationInput | null;
+export interface ExperienceConnectionPreFetchFragment {
+  __typename: "ExperienceConnection";
+  edges: (ExperienceConnectionPreFetchFragment_edges | null)[] | null;
 }
