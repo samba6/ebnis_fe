@@ -27,12 +27,16 @@ import { CSSTransition, TransitionGroup } from "react-transition-group";
 import makeClassNames from "classnames";
 import Button from "semantic-ui-react/dist/commonjs/elements/Button";
 import { CreateEntry } from "../../graphql/apollo-types/globalTypes";
-import { UploadAllUnsavedsMutationFnResult } from "../../graphql/upload-unsaveds.mutation";
+import { UploadAllUnsavedsMutationFn } from "../../graphql/upload-unsaveds.mutation";
 import { getConnStatus } from "../../state/get-conn-status";
 import { NavigateFn } from "@reach/router";
 import Modal from "semantic-ui-react/dist/commonjs/modules/Modal";
 import Icon from "semantic-ui-react/dist/commonjs/elements/Icon";
-import { UploadAllUnsavedsMutation } from "../../graphql/apollo-types/UploadAllUnsavedsMutation";
+import {
+  UploadAllUnsavedsMutation,
+  UploadAllUnsavedsMutationVariables
+} from "../../graphql/apollo-types/UploadAllUnsavedsMutation";
+import { onUploadSuccessUpdate } from "./mutation-update";
 
 const timeout = 500;
 
@@ -174,47 +178,55 @@ export function Sync(props: Props) {
     });
 
     try {
-      let result = {} as UploadAllUnsavedsMutationFnResult;
+      // let result = {} as UploadAllUnsavedsMutationFnResult;
+      let uploadFunction;
+      let uploadFunctionVariables;
 
       if (
         unsavedExperiencesLen !== 0 &&
         savedExperiencesWithUnsavedEntriesLen !== 0
       ) {
-        result = (await uploadAllUnsaveds({
-          variables: {
-            unsavedExperiences: unsavedExperiencesToUploadData(
-              unsavedExperiences,
-              unsavedExperiencesEntriesOnly
-            ),
-            unsavedEntries: savedExperiencesWithUnsavedEntriesToUploadData(
-              savedExperiencesWithUnsavedEntries,
-              savedExperiencesIdToUnsavedEntriesMap
-            )
-          }
-        })) as UploadAllUnsavedsMutationFnResult;
+        uploadFunction = uploadAllUnsaveds;
+
+        uploadFunctionVariables = {
+          unsavedExperiences: unsavedExperiencesToUploadData(
+            unsavedExperiences,
+            unsavedExperiencesEntriesOnly
+          ),
+
+          unsavedEntries: savedExperiencesWithUnsavedEntriesToUploadData(
+            savedExperiencesWithUnsavedEntries,
+            savedExperiencesIdToUnsavedEntriesMap
+          )
+        };
       } else if (unsavedExperiencesLen !== 0) {
-        result = (await uploadUnsavedExperiences({
-          variables: {
-            input: unsavedExperiencesToUploadData(
-              unsavedExperiences,
-              unsavedExperiencesEntriesOnly
-            )
-          }
-        })) as UploadAllUnsavedsMutationFnResult;
-      } else if (savedExperiencesWithUnsavedEntriesLen !== 0) {
-        result = (await createEntries({
-          variables: {
-            createEntries: savedExperiencesWithUnsavedEntriesToUploadData(
-              savedExperiencesWithUnsavedEntries,
-              savedExperiencesIdToUnsavedEntriesMap
-            )
-          }
-        })) as UploadAllUnsavedsMutationFnResult;
+        uploadFunction = uploadUnsavedExperiences;
+
+        uploadFunctionVariables = ({
+          input: unsavedExperiencesToUploadData(
+            unsavedExperiences,
+            unsavedExperiencesEntriesOnly
+          )
+        } as unknown) as UploadAllUnsavedsMutationVariables;
+      } else {
+        uploadFunction = createEntries;
+
+        uploadFunctionVariables = ({
+          createEntries: savedExperiencesWithUnsavedEntriesToUploadData(
+            savedExperiencesWithUnsavedEntries,
+            savedExperiencesIdToUnsavedEntriesMap
+          )
+        } as unknown) as UploadAllUnsavedsMutationVariables;
       }
+
+      const result = await (uploadFunction as UploadAllUnsavedsMutationFn)({
+        variables: uploadFunctionVariables,
+        update: onUploadSuccessUpdate(savedExperiencesIdToUnsavedEntriesMap)
+      });
 
       dispatch({
         type: ActionType.uploadResult,
-        payload: result.data
+        payload: result && result.data
       });
     } catch (error) {
       // tslint:disable-next-line:no-console

@@ -1,11 +1,11 @@
 // tslint:disable: no-any
 import { onUploadSuccessUpdate } from "../components/Sync/mutation-update";
-// import { CreateEntriesResponseFragment } from "../graphql/apollo-types/CreateEntriesResponseFragment";
 
 jest.mock("../state/resolvers-utils");
 
 import {
   writeSavedExperiencesWithUnsavedEntriesToCache,
+  writeUnsavedExperiencesToCache,
   getSavedExperiencesWithUnsavedEntriesFromCache,
   getUnsavedExperiencesFromCache
 } from "../state/resolvers-utils";
@@ -15,6 +15,8 @@ const mockGetSavedExperiencesWithUnsavedEntries = getSavedExperiencesWithUnsaved
 const mockGetUnsavedExperiencesFromCache = getUnsavedExperiencesFromCache as jest.Mock;
 
 const mockWriteSavedExperiencesWithUnsavedEntriesToCache = writeSavedExperiencesWithUnsavedEntriesToCache as jest.Mock;
+
+const mockWriteUnsavedExperiencesToCache = writeUnsavedExperiencesToCache as jest.Mock;
 
 const mockDataProxy = {
   writeQuery: jest.fn()
@@ -28,6 +30,7 @@ beforeEach(() => {
   mockGetUnsavedExperiencesFromCache.mockReturnValue([]);
 
   mockWriteSavedExperiencesWithUnsavedEntriesToCache.mockReset();
+  mockWriteUnsavedExperiencesToCache.mockReset();
 });
 
 it("does not update if no 'createEntries' and 'syncOfflineExperiences' operations", () => {
@@ -39,7 +42,7 @@ it("does not update if no 'createEntries' and 'syncOfflineExperiences' operation
   });
 
   expect(result.updatedSavedExperiences).not.toBeDefined();
-  expect(result.updatedUnsavedExperiences).not.toBeDefined();
+  expect(result.didUnsavedExperiencesUpdate).toBe(false);
 });
 
 it("returns empty updated experiences list if result of 'createEntries' operation is empty", () => {
@@ -52,8 +55,6 @@ it("returns empty updated experiences list if result of 'createEntries' operatio
   });
 
   expect(result.updatedSavedExperiences).toEqual([]);
-
-  expect(mockGetSavedExperiencesWithUnsavedEntries).not.toHaveBeenCalled();
 });
 
 it("does not update if result of 'syncOfflineExperiences' operation is empty", () => {
@@ -65,7 +66,7 @@ it("does not update if result of 'syncOfflineExperiences' operation is empty", (
     } as any
   });
 
-  expect(result.updatedUnsavedExperiences).toEqual([]);
+  expect(result.didUnsavedExperiencesUpdate).toBe(false);
 });
 
 it("returns empty updated experiences list if 'createEntries' operation's entries list is empty", () => {
@@ -223,18 +224,53 @@ it("removes saved experience from cache only if 'createEntries' operation return
   done();
 });
 
-it.skip("removes unsaved experience from cache only if 'syncOfflineExperiences' operation returns no error for that experience", () => {
+it("removes unsaved experience from cache only if 'syncOfflineExperiences' operation returns no error for that experience", () => {
   // No 'syncOfflineExperiences' operation errors
   const experience1 = {
     id: "1",
     clientId: "1"
   } as any;
 
+  const entry21 = {
+    id: "unsaved-entry-1",
+    clientId: "a"
+  } as any;
+
+  const entry22 = {
+    id: "unsaved-entry-2",
+    clientId: "b"
+  } as any;
+
   // has 'syncOfflineExperiences' operation 'entriesErrors'
   const experience2 = {
-    id: "2",
-    clientId: "2"
+    id: "unsaved-id-2",
+    clientId: "2",
+    entries: {
+      edges: [
+        {
+          node: entry21
+        },
+
+        {
+          node: entry22
+        }
+      ]
+    }
   } as any;
+
+  const operationResultEntry21 = { ...entry21, id: "saved-entry-1" };
+
+  const operationResultExperience2 = {
+    ...experience2,
+    id: "2",
+    entries: {
+      edges: [
+        {
+          node: operationResultEntry21
+        }
+      ]
+    }
+  };
 
   // has 'syncOfflineExperiences' operation 'experienceError' error
   const experience3 = {
@@ -243,7 +279,7 @@ it.skip("removes unsaved experience from cache only if 'syncOfflineExperiences' 
   } as any;
 
   // not part of 'syncOfflineExperiences' operation result, but exists in cache
-  const experience4 = { id: "4" };
+  const experience4 = {};
 
   mockGetUnsavedExperiencesFromCache.mockReturnValue([
     experience1,
@@ -258,8 +294,13 @@ it.skip("removes unsaved experience from cache only if 'syncOfflineExperiences' 
     },
 
     {
-      experience: experience2,
-      entriesErrors: {}
+      experience: operationResultExperience2,
+
+      entriesErrors: [
+        {
+          clientId: entry22.clientId
+        }
+      ]
     },
 
     {
@@ -269,15 +310,39 @@ it.skip("removes unsaved experience from cache only if 'syncOfflineExperiences' 
     }
   ];
 
-  onUploadSuccessUpdate({})(mockDataProxy, {
-    data: {
-      syncOfflineExperiences: operationResults as any
-    } as any
-  });
+  const { didUnsavedExperiencesUpdate } = onUploadSuccessUpdate({})(
+    mockDataProxy,
+    {
+      data: {
+        syncOfflineExperiences: operationResults as any
+      } as any
+    }
+  );
 
-  // const [, updatedExperience2] = result.updatedSavedExperiences as any;
+  expect(didUnsavedExperiencesUpdate).toBe(true);
+
+  expect(mockWriteUnsavedExperiencesToCache.mock.calls[0][1]).toEqual([
+    experience3,
+    experience4
+  ]);
+
+  const updatedExperience2 = {
+    ...experience2,
+    id: "2",
+    entries: {
+      edges: [
+        {
+          node: operationResultEntry21
+        },
+
+        {
+          node: entry22
+        }
+      ]
+    }
+  };
 
   expect(
     mockWriteSavedExperiencesWithUnsavedEntriesToCache.mock.calls[0][1]
-  ).toEqual([experience2]);
+  ).toEqual([updatedExperience2]);
 });

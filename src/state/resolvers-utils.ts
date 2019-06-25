@@ -21,7 +21,7 @@ export function writeSavedExperiencesWithUnsavedEntriesToCache(
   });
 }
 
-export function writeUnsavedExperiencesFromCache(
+export function writeUnsavedExperiencesToCache(
   cache: InMemoryCache | DataProxy,
   unsavedExperiences: UnsavedExperience[]
 ) {

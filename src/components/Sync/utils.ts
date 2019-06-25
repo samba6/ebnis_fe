@@ -44,7 +44,7 @@ export enum ActionType {
 
 interface Action {
   type: ActionType;
-  payload?: number | boolean | UploadAllUnsavedsMutation | undefined;
+  payload?: number | boolean | UploadAllUnsavedsMutation | undefined | void;
 }
 
 export const reducer: Reducer<State, Action> = (

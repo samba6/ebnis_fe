@@ -20,10 +20,13 @@ jest.mock("../components/SidebarHeader", () => ({
 }));
 
 jest.mock("../state/get-conn-status");
+jest.mock("../components/Sync/mutation-update");
 
 import { getConnStatus } from "../state/get-conn-status";
+import { onUploadSuccessUpdate } from "../components/Sync/mutation-update";
 
 const mockGetConnectionStatus = getConnStatus as jest.Mock;
+const mockOnUploadSuccessUpdate = onUploadSuccessUpdate as jest.Mock;
 
 const SyncP = Sync as ComponentType<Partial<Props>>;
 const timeStamps = { insertedAt: "a", updatedAt: "a" };
@@ -172,6 +175,7 @@ describe("component", () => {
 
     expect(mockUploadUnsavedExperiences).not.toHaveBeenCalled();
     expect(mockUploadAllUnsaveds).not.toHaveBeenCalled();
+    expect(mockOnUploadSuccessUpdate).toHaveBeenCalledTimes(1);
 
     expect(
       queryByTestId("unsaved-entries-upload-success-icon")
@@ -283,6 +287,7 @@ describe("component", () => {
 
     expect(mockUploadSavedExperiencesEntries).not.toHaveBeenCalled();
     expect(mockUploadAllUnsaveds).not.toHaveBeenCalled();
+    expect(mockOnUploadSuccessUpdate).toHaveBeenCalledTimes(1);
 
     expect(queryByTestId("upload-all")).not.toBeInTheDocument();
 
@@ -401,6 +406,7 @@ describe("component", () => {
 
     expect(mockUploadUnsavedExperiences).not.toHaveBeenCalled();
     expect(mockUploadSavedExperiencesEntries).not.toHaveBeenCalled();
+    expect(mockOnUploadSuccessUpdate).toHaveBeenCalledTimes(1);
 
     expect(
       queryByTestId("unsaved-experiences-upload-error-icon")
@@ -443,6 +449,7 @@ function makeComp({
 }: { props?: Partial<Props>; isConnected?: boolean } = {}) {
   mockGetConnectionStatus.mockReset();
   mockGetConnectionStatus.mockResolvedValue(isConnected);
+  mockOnUploadSuccessUpdate.mockReset();
 
   const mockUploadUnsavedExperiences = jest.fn();
   const mockUploadSavedExperiencesEntries = jest.fn();

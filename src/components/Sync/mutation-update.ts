@@ -18,18 +18,25 @@ import {
   CreateEntriesResponseFragment,
   CreateEntriesResponseFragment_entries
 } from "../../graphql/apollo-types/CreateEntriesResponseFragment";
-import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragment";
+import {
+  ExperienceFragment,
+  ExperienceFragment_entries_edges_node
+} from "../../graphql/apollo-types/ExperienceFragment";
 import {
   writeSavedExperiencesWithUnsavedEntriesToCache,
-  getSavedExperiencesWithUnsavedEntriesFromCache
+  getSavedExperiencesWithUnsavedEntriesFromCache,
+  getUnsavedExperiencesFromCache,
+  writeUnsavedExperiencesToCache
 } from "../../state/resolvers-utils";
+import { UnsavedExperience } from "../ExperienceDefinition/resolver-utils";
+import { entryNodesFromExperience } from "../../state/unsaved-resolvers";
 
 type UpdaterFn = (
   proxy: DataProxy,
   mutationResult: FetchResult<UploadAllUnsavedsMutation>
 ) => {
   updatedSavedExperiences?: ExperienceFragment[];
-  updatedUnsavedExperiences?: ExperienceFragment[];
+  didUnsavedExperiencesUpdate?: boolean;
 };
 
 // istanbul ignore next: trust apollo to do the right thing -
@@ -51,14 +58,14 @@ export const onUploadSuccessUpdate: (
     savedExperiencesIdsToUnsavedEntriesMap
   );
 
-  const updatedUnsavedExperiences = updateUnsavedExperiences(
+  const didUnsavedExperiencesUpdate = updateUnsavedExperiences(
     dataProxy,
     syncOfflineExperiences
   );
 
   return {
     updatedSavedExperiences,
-    updatedUnsavedExperiences
+    didUnsavedExperiencesUpdate
   };
 };
 
@@ -67,28 +74,84 @@ function updateUnsavedExperiences(
   syncOfflineExperiences: Array<UploadAllUnsavedsMutation_syncOfflineExperiences | null> | null
 ) {
   if (!syncOfflineExperiences) {
-    return;
+    return false;
   }
 
-  const updatedExperiencesMap = {} as UpdatedExperiencesMap;
+  const experiencesToBeRemovedMap = {} as UpdatedExperiencesMap;
+  let toBeRemovedCount = 0;
 
   syncOfflineExperiences.forEach(experienceResult => {
     const {
       experience,
-      experienceError,
       entriesErrors
     } = experienceResult as UploadAllUnsavedsMutation_syncOfflineExperiences;
 
-    if (experienceError) {
+    if (!experience) {
       return;
     }
+
+    const clientId = experience.clientId as string;
+
+    experiencesToBeRemovedMap[clientId] = {
+      experience,
+      hasError: !!entriesErrors
+    };
+
+    ++toBeRemovedCount;
   });
 
-  const updatedExperiences = Object.values(updatedExperiencesMap).map(
-    v => v.experience
+  if (toBeRemovedCount === 0) {
+    return false;
+  }
+
+  const savedExperiencesWithUnsavedEntries = [] as ExperienceFragment[];
+
+  const outstandingUnsavedExperiences = getUnsavedExperiencesFromCache(
+    dataProxy
+  ).reduce(
+    (acc, experience) => {
+      const toBeRemoved = experiencesToBeRemovedMap[experience.clientId || ""];
+
+      if (toBeRemoved) {
+        if (toBeRemoved.hasError) {
+          const experienceToBeUpdated = toBeRemoved.experience;
+
+          const savedEntries = entryNodesFromExperience(experienceToBeUpdated);
+
+          const updatedExperience = immer(
+            (experience as unknown) as ExperienceFragment,
+            proxy => {
+              Object.entries(experienceToBeUpdated).forEach(([k, v]) => {
+                if (k !== "entries") {
+                  proxy[k] = v;
+                }
+              });
+
+              updateExperienceWithSavedEntries(proxy, savedEntries);
+            }
+          );
+
+          savedExperiencesWithUnsavedEntries.push(updatedExperience);
+        }
+
+        return acc;
+      }
+
+      acc.push(experience);
+
+      return acc;
+    },
+    [] as UnsavedExperience[]
   );
 
-  return updatedExperiences;
+  writeUnsavedExperiencesToCache(dataProxy, outstandingUnsavedExperiences);
+
+  writeSavedExperiencesWithUnsavedEntriesToCache(
+    dataProxy,
+    savedExperiencesWithUnsavedEntries
+  );
+
+  return true;
 }
 
 function updateSavedExperiences(
@@ -103,15 +166,15 @@ function updateSavedExperiences(
   const updatedExperiencesMap = {} as UpdatedExperiencesMap;
 
   createEntries.forEach(value => {
-    const success = value as CreateEntriesResponseFragment;
+    const operationResponse = value as CreateEntriesResponseFragment;
 
-    const successEntries = success.entries as CreateEntriesResponseFragment_entries[];
+    const savedEntries = operationResponse.entries as CreateEntriesResponseFragment_entries[];
 
-    if (successEntries.length === 0) {
+    if (savedEntries.length === 0) {
       return;
     }
 
-    const { expId, errors } = success;
+    const { expId, errors } = operationResponse;
 
     const savedExperience = savedExperiencesIdsToUnsavedEntriesMap[expId];
 
@@ -121,29 +184,8 @@ function updateSavedExperiences(
 
     const { experience } = savedExperience;
 
-    const updatedExperience = immer(experience, proxy => {
-      const entries = proxy.entries as GetAnExp_exp_entries;
-
-      const edges = (entries.edges as GetAnExp_exp_entries_edges[]).reduce(
-        (acc, edge) => {
-          const entry = edge.node as GetAnExp_exp_entries_edges_node;
-
-          const successEntry = successEntries.find(
-            ({ clientId }) => clientId === entry.clientId
-          );
-
-          if (successEntry) {
-            edge.node = successEntry;
-          }
-
-          acc.push(edge);
-          return acc;
-        },
-        [] as GetAnExp_exp_entries_edges[]
-      );
-
-      entries.edges = edges;
-      proxy.entries = entries;
+    const experienceUpdatedWithSavedEntries = immer(experience, proxy => {
+      updateExperienceWithSavedEntries(proxy, savedEntries);
     });
 
     const variables = {
@@ -157,12 +199,12 @@ function updateSavedExperiences(
       query: GET_EXP_QUERY,
       variables,
       data: {
-        exp: updatedExperience
+        exp: experienceUpdatedWithSavedEntries
       }
     });
 
     updatedExperiencesMap[expId] = {
-      experience: updatedExperience,
+      experience: experienceUpdatedWithSavedEntries,
       hasError: !!errors
     };
   });
@@ -202,6 +244,34 @@ function updateSavedExperiences(
   );
 
   return updatedExperiences;
+}
+
+function updateExperienceWithSavedEntries(
+  experience: ExperienceFragment,
+  savedEntries: ExperienceFragment_entries_edges_node[]
+) {
+  const entries = experience.entries as GetAnExp_exp_entries;
+
+  const edges = (entries.edges as GetAnExp_exp_entries_edges[]).reduce(
+    (acc, edge) => {
+      const entry = edge.node as GetAnExp_exp_entries_edges_node;
+
+      const savedEntry = savedEntries.find(
+        ({ clientId }) => clientId === entry.clientId
+      );
+
+      if (savedEntry) {
+        edge.node = savedEntry;
+      }
+
+      acc.push(edge);
+      return acc;
+    },
+    [] as GetAnExp_exp_entries_edges[]
+  );
+
+  entries.edges = edges;
+  experience.entries = entries;
 }
 
 interface UpdatedExperiencesMap {

@@ -13,7 +13,7 @@ import {
 import { ExperienceFragment_fieldDefs } from "../../graphql/apollo-types/ExperienceFragment";
 import {
   getUnsavedExperiencesFromCache,
-  writeUnsavedExperiencesFromCache
+  writeUnsavedExperiencesToCache
 } from "../../state/resolvers-utils";
 
 const createUnsavedExperienceResolver: LocalResolverFn<
@@ -67,7 +67,7 @@ const createUnsavedExperienceResolver: LocalResolverFn<
     experience
   ];
 
-  writeUnsavedExperiencesFromCache(cache, unsavedExperiences);
+  writeUnsavedExperiencesToCache(cache, unsavedExperiences);
 
   return experience;
 };
