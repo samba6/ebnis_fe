@@ -53,7 +53,7 @@ it("adds field from top", async () => {
 
   mockCreateExperience.mockResolvedValue({
     data: {
-      exp: {
+      createExperience: {
         id: "expId1"
       }
     }
@@ -193,7 +193,7 @@ it("adds field from top", async () => {
     () =>
       expect(mockCreateExperience).toBeCalledWith({
         variables: {
-          exp: {
+          input: {
             title,
             fieldDefs,
             description: ""
@@ -232,7 +232,7 @@ it("adds field in middle", async () => {
 
   mockCreateExperience.mockResolvedValue({
     data: {
-      exp: {
+      createExperience: {
         id: "expId1"
       }
     }
@@ -288,7 +288,7 @@ it("adds field in middle", async () => {
     () =>
       expect(mockCreateExperience).toBeCalledWith({
         variables: {
-          exp: {
+          input: {
             title,
             fieldDefs: [fieldDefs[0], fieldDefs[1], newField, fieldDefs[2]],
             description: ""
@@ -322,7 +322,7 @@ it("adds field at bottom", async () => {
 
   mockCreateExperience.mockResolvedValue({
     data: {
-      exp: {
+      createExperience: {
         id: "expId1"
       }
     }
@@ -373,7 +373,7 @@ it("adds field at bottom", async () => {
     () =>
       expect(mockCreateExperience).toBeCalledWith({
         variables: {
-          exp: {
+          input: {
             title,
             fieldDefs: [fieldDefs[0], fieldDefs[1], newField],
             description: ""
@@ -407,7 +407,7 @@ it("removes field from top", async () => {
 
   mockCreateExperience.mockResolvedValue({
     data: {
-      exp: {
+      createExperience: {
         id: "expId1"
       }
     }
@@ -474,7 +474,7 @@ it("removes field from top", async () => {
     () =>
       expect(mockCreateExperience).toBeCalledWith({
         variables: {
-          exp: {
+          input: {
             title,
             fieldDefs: [fieldDefs[1]],
             description: ""
@@ -508,7 +508,7 @@ it("removes field from bottom", async () => {
 
   mockCreateExperience.mockResolvedValue({
     data: {
-      exp: {
+      createExperience: {
         id: "expId1"
       }
     }
@@ -575,7 +575,7 @@ it("removes field from bottom", async () => {
     () =>
       expect(mockCreateExperience).toBeCalledWith({
         variables: {
-          exp: {
+          input: {
             title,
             fieldDefs: [fieldDefs[0]],
             description: ""
@@ -614,7 +614,7 @@ it("removes field from middle", async () => {
 
   mockCreateExperience.mockResolvedValue({
     data: {
-      exp: {
+      createExperience: {
         id: "expId1"
       }
     }
@@ -659,7 +659,7 @@ it("removes field from middle", async () => {
     () =>
       expect(mockCreateExperience).toBeCalledWith({
         variables: {
-          exp: {
+          input: {
             title,
             fieldDefs: [fieldDefs[0], fieldDefs[2]],
             description: ""
@@ -693,7 +693,7 @@ it("moves field up from bottom", async () => {
 
   mockCreateExperience.mockResolvedValue({
     data: {
-      exp: {
+      createExperience: {
         id: "expId1"
       }
     }
@@ -746,7 +746,7 @@ it("moves field up from bottom", async () => {
     () =>
       expect(mockCreateExperience).toBeCalledWith({
         variables: {
-          exp: {
+          input: {
             title,
             fieldDefs: [fieldDefs[1], fieldDefs[0]],
             description: ""
@@ -780,7 +780,7 @@ it("moves field up from middle", async () => {
 
   mockCreateExperience.mockResolvedValue({
     data: {
-      exp: {
+      createExperience: {
         id: "expId1"
       }
     }
@@ -833,7 +833,7 @@ it("moves field up from middle", async () => {
     () =>
       expect(mockCreateExperience).toBeCalledWith({
         variables: {
-          exp: {
+          input: {
             title,
             fieldDefs: [fieldDefs[1], fieldDefs[0], fieldDefs[2]],
             description: ""
@@ -862,7 +862,7 @@ it("moves field down from top", async () => {
 
   mockCreateExperience.mockResolvedValue({
     data: {
-      exp: {
+      createExperience: {
         id: "expId1"
       }
     }
@@ -915,7 +915,7 @@ it("moves field down from top", async () => {
     () =>
       expect(mockCreateExperience).toBeCalledWith({
         variables: {
-          exp: {
+          input: {
             title,
             fieldDefs: [fieldDefs[1], fieldDefs[0]],
             description: ""
@@ -949,7 +949,7 @@ it("moves field down from middle", async () => {
 
   mockCreateExperience.mockResolvedValue({
     data: {
-      exp: {
+      createExperience: {
         id: "expId1"
       }
     }
@@ -1002,7 +1002,7 @@ it("moves field down from middle", async () => {
     () =>
       expect(mockCreateExperience).toBeCalledWith({
         variables: {
-          exp: {
+          input: {
             title,
             fieldDefs: [fieldDefs[0], fieldDefs[2], fieldDefs[1]],
             description: ""
@@ -1320,7 +1320,7 @@ it("saves experience when we are not connected", async () => {
     () =>
       expect(mockCreateUnsavedExperience).toBeCalledWith({
         variables: {
-          exp: {
+          input: {
             title,
             fieldDefs,
             description: ""

@@ -2,7 +2,7 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
-import { CreateExp, FieldType } from "./globalTypes";
+import { CreateExperienceInput, FieldType } from "./globalTypes";
 
 // ====================================================
 // GraphQL mutation operation: UploadUnsavedExperiencesMutation
@@ -158,5 +158,5 @@ export interface UploadUnsavedExperiencesMutation {
 }
 
 export interface UploadUnsavedExperiencesMutationVariables {
-  input: CreateExp[];
+  input: CreateExperienceInput[];
 }

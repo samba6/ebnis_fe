@@ -7,7 +7,7 @@ import { FormikErrors } from "formik";
 
 import { CreateExperienceMutationProps } from "../../graphql/create-experience.mutation";
 import {
-  CreateExp as FormValues,
+  CreateExperienceInput as FormValues,
   CreateFieldDef,
   FieldType
 } from "../../graphql/apollo-types/globalTypes";

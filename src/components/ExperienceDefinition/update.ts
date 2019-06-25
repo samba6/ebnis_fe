@@ -16,7 +16,7 @@ export const ExperienceDefinitionUpdate: CreateExpUpdateFn = async (
     return;
   }
 
-  const { exp: experience } = newExperience;
+  const { createExperience: experience } = newExperience;
 
   if (!experience) {
     return;

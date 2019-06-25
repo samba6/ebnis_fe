@@ -34,9 +34,9 @@ import {
   GraphQlErrorState,
   GraphQlError
 } from "./utils";
-import { CreateExperienceMutation_exp } from "../../graphql/apollo-types/CreateExperienceMutation";
+import { CreateExperienceMutation_createExperience } from "../../graphql/apollo-types/CreateExperienceMutation";
 import {
-  CreateExp as FormValues,
+  CreateExperienceInput as FormValues,
   CreateFieldDef
 } from "../../graphql/apollo-types/globalTypes";
 import { makeExperienceRoute } from "../../constants/experience-route";
@@ -151,7 +151,7 @@ export function ExperienceDefinition(props: Props) {
         if (await getConnStatus(client)) {
           result = await (createExperience as CreateExperienceMutationFn)({
             variables: {
-              exp: values
+              input: values
             },
 
             update: ExperienceDefinitionUpdate
@@ -159,11 +159,13 @@ export function ExperienceDefinition(props: Props) {
 
           expId = ((result &&
             result.data &&
-            result.data.exp) as CreateExperienceMutation_exp).id;
+            result.data
+              .createExperience) as CreateExperienceMutation_createExperience)
+            .id;
         } else {
           result = await createUnsavedExperience({
             variables: {
-              exp: values
+              input: values
             }
           });
 

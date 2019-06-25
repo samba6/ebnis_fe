@@ -21,7 +21,7 @@ const createUnsavedExperienceResolver: LocalResolverFn<
   UnsavedExperience
 > = (
   root,
-  { exp: { description = null, title, fieldDefs: createFieldDefs } },
+  { input: { description = null, title, fieldDefs: createFieldDefs } },
   { cache }
 ) => {
   const today = new Date();

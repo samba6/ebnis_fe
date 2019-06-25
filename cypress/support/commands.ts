@@ -32,8 +32,8 @@ import {
 } from "../../src/state/apollo-setup";
 import {
   Registration,
-  CreateExp,
-  CreateEntry
+  CreateEntry,
+  CreateExperienceInput
 } from "../../src/graphql/apollo-types/globalTypes";
 import {
   UserRegMutation,
@@ -73,7 +73,7 @@ import { allResolvers } from "../../src/state/all-resolvers";
 import {
   CreateExperienceMutation,
   CreateExperienceMutationVariables,
-  CreateExperienceMutation_exp
+  CreateExperienceMutation_createExperience
 } from "../../src/graphql/apollo-types/CreateExperienceMutation";
 import { CREATE_EXPERIENCE_MUTATION } from "../../src/graphql/create-experience.mutation";
 
@@ -139,17 +139,20 @@ function registerUser(userData: Registration) {
     });
 }
 
-function defineOnlineExperience(experienceDefinitionArgs: CreateExp) {
+function defineOnlineExperience(
+  experienceDefinitionArgs: CreateExperienceInput
+) {
   return mutate<CreateExperienceMutation, CreateExperienceMutationVariables>({
     mutation: CREATE_EXPERIENCE_MUTATION,
     variables: {
-      exp: experienceDefinitionArgs
+      input: experienceDefinitionArgs
     }
   }).then(result => {
     const exp =
       result &&
       result.data &&
-      (result.data.exp as CreateExperienceMutation_exp);
+      (result.data
+        .createExperience as CreateExperienceMutation_createExperience);
 
     expect(exp.id).to.be.a("string");
 
@@ -157,14 +160,16 @@ function defineOnlineExperience(experienceDefinitionArgs: CreateExp) {
   });
 }
 
-function defineUnsavedExperience(experienceDefinitionArgs: CreateExp) {
+function defineUnsavedExperience(
+  experienceDefinitionArgs: CreateExperienceInput
+) {
   return mutate<
     CreateUnsavedExperienceMutationData,
     CreateExperienceMutationVariables
   >({
     mutation: CREATE_UNSAVED_EXPERIENCE_MUTATION,
     variables: {
-      exp: experienceDefinitionArgs
+      input: experienceDefinitionArgs
     }
   }).then(result => {
     const exp =
@@ -308,11 +313,11 @@ declare global {
        *
        */
       defineOnlineExperience: (
-        experienceDefinitionArgs: CreateExp
-      ) => Promise<CreateExperienceMutation_exp>;
+        experienceDefinitionArgs: CreateExperienceInput
+      ) => Promise<CreateExperienceMutation_createExperience>;
 
       defineUnsavedExperience: (
-        experienceDefinitionArgs: CreateExp
+        experienceDefinitionArgs: CreateExperienceInput
       ) => Promise<UnsavedExperience>;
 
       /**

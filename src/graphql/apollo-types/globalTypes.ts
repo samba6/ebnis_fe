@@ -32,7 +32,7 @@ export interface CreateEntry {
 /**
  * Variables for defining a new Experience
  */
-export interface CreateExp {
+export interface CreateExperienceInput {
   clientId?: string | null;
   description?: string | null;
   entries?: (CreateEntry | null)[] | null;
