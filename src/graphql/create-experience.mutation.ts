@@ -8,8 +8,8 @@ import {
 import { CREATE_EXPERIENCE_FRAGMENT } from "./create-experience.fragment";
 
 export const CREATE_EXPERIENCE_MUTATION = gql`
-  mutation CreateExperienceMutation($exp: CreateExp!) {
-    exp(exp: $exp) {
+  mutation CreateExperienceMutation($input: CreateExperienceInput!) {
+    createExperience(input: $input) {
       ...CreateExperienceFragment
     }
   }
@@ -23,5 +23,5 @@ export type CreateExperienceMutationFn = MutationFn<
 >;
 
 export interface CreateExperienceMutationProps {
-  createExp?: CreateExperienceMutationFn;
+  createExperience?: CreateExperienceMutationFn;
 }

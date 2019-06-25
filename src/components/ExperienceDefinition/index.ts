@@ -27,7 +27,7 @@ const expMutationGql = graphql<
   props: props => {
     const mutate = props.mutate as CreateExperienceMutationFn;
     return {
-      createExp: mutate
+      createExperience: mutate
     };
   },
 

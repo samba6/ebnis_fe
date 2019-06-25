@@ -49,9 +49,9 @@ it("adds field from top", async () => {
     }
   ];
 
-  const { Ui, mockNavigate, mockCreateExp } = makeComp();
+  const { Ui, mockNavigate, mockCreateExperience } = makeComp();
 
-  mockCreateExp.mockResolvedValue({
+  mockCreateExperience.mockResolvedValue({
     data: {
       exp: {
         id: "expId1"
@@ -191,7 +191,7 @@ it("adds field from top", async () => {
    */
   await wait(
     () =>
-      expect(mockCreateExp).toBeCalledWith({
+      expect(mockCreateExperience).toBeCalledWith({
         variables: {
           exp: {
             title,
@@ -228,9 +228,9 @@ it("adds field in middle", async () => {
     }
   ];
 
-  const { Ui, mockNavigate, mockCreateExp } = makeComp();
+  const { Ui, mockNavigate, mockCreateExperience } = makeComp();
 
-  mockCreateExp.mockResolvedValue({
+  mockCreateExperience.mockResolvedValue({
     data: {
       exp: {
         id: "expId1"
@@ -286,7 +286,7 @@ it("adds field in middle", async () => {
    */
   await wait(
     () =>
-      expect(mockCreateExp).toBeCalledWith({
+      expect(mockCreateExperience).toBeCalledWith({
         variables: {
           exp: {
             title,
@@ -318,9 +318,9 @@ it("adds field at bottom", async () => {
     }
   ];
 
-  const { Ui, mockNavigate, mockCreateExp } = makeComp();
+  const { Ui, mockNavigate, mockCreateExperience } = makeComp();
 
-  mockCreateExp.mockResolvedValue({
+  mockCreateExperience.mockResolvedValue({
     data: {
       exp: {
         id: "expId1"
@@ -371,7 +371,7 @@ it("adds field at bottom", async () => {
    */
   await wait(
     () =>
-      expect(mockCreateExp).toBeCalledWith({
+      expect(mockCreateExperience).toBeCalledWith({
         variables: {
           exp: {
             title,
@@ -403,9 +403,9 @@ it("removes field from top", async () => {
     }
   ];
 
-  const { Ui, mockNavigate, mockCreateExp } = makeComp();
+  const { Ui, mockNavigate, mockCreateExperience } = makeComp();
 
-  mockCreateExp.mockResolvedValue({
+  mockCreateExperience.mockResolvedValue({
     data: {
       exp: {
         id: "expId1"
@@ -472,7 +472,7 @@ it("removes field from top", async () => {
    */
   await wait(
     () =>
-      expect(mockCreateExp).toBeCalledWith({
+      expect(mockCreateExperience).toBeCalledWith({
         variables: {
           exp: {
             title,
@@ -504,9 +504,9 @@ it("removes field from bottom", async () => {
     }
   ];
 
-  const { Ui, mockNavigate, mockCreateExp } = makeComp();
+  const { Ui, mockNavigate, mockCreateExperience } = makeComp();
 
-  mockCreateExp.mockResolvedValue({
+  mockCreateExperience.mockResolvedValue({
     data: {
       exp: {
         id: "expId1"
@@ -573,7 +573,7 @@ it("removes field from bottom", async () => {
    */
   await wait(
     () =>
-      expect(mockCreateExp).toBeCalledWith({
+      expect(mockCreateExperience).toBeCalledWith({
         variables: {
           exp: {
             title,
@@ -610,9 +610,9 @@ it("removes field from middle", async () => {
     }
   ];
 
-  const { Ui, mockNavigate, mockCreateExp } = makeComp();
+  const { Ui, mockNavigate, mockCreateExperience } = makeComp();
 
-  mockCreateExp.mockResolvedValue({
+  mockCreateExperience.mockResolvedValue({
     data: {
       exp: {
         id: "expId1"
@@ -657,7 +657,7 @@ it("removes field from middle", async () => {
    */
   await wait(
     () =>
-      expect(mockCreateExp).toBeCalledWith({
+      expect(mockCreateExperience).toBeCalledWith({
         variables: {
           exp: {
             title,
@@ -689,9 +689,9 @@ it("moves field up from bottom", async () => {
     }
   ];
 
-  const { Ui, mockCreateExp } = makeComp();
+  const { Ui, mockCreateExperience } = makeComp();
 
-  mockCreateExp.mockResolvedValue({
+  mockCreateExperience.mockResolvedValue({
     data: {
       exp: {
         id: "expId1"
@@ -744,7 +744,7 @@ it("moves field up from bottom", async () => {
    */
   await wait(
     () =>
-      expect(mockCreateExp).toBeCalledWith({
+      expect(mockCreateExperience).toBeCalledWith({
         variables: {
           exp: {
             title,
@@ -776,9 +776,9 @@ it("moves field up from middle", async () => {
     }
   ];
 
-  const { Ui, mockCreateExp } = makeComp();
+  const { Ui, mockCreateExperience } = makeComp();
 
-  mockCreateExp.mockResolvedValue({
+  mockCreateExperience.mockResolvedValue({
     data: {
       exp: {
         id: "expId1"
@@ -831,7 +831,7 @@ it("moves field up from middle", async () => {
    */
   await wait(
     () =>
-      expect(mockCreateExp).toBeCalledWith({
+      expect(mockCreateExperience).toBeCalledWith({
         variables: {
           exp: {
             title,
@@ -858,9 +858,9 @@ it("moves field down from top", async () => {
     }
   ];
 
-  const { Ui, mockCreateExp } = makeComp();
+  const { Ui, mockCreateExperience } = makeComp();
 
-  mockCreateExp.mockResolvedValue({
+  mockCreateExperience.mockResolvedValue({
     data: {
       exp: {
         id: "expId1"
@@ -913,7 +913,7 @@ it("moves field down from top", async () => {
    */
   await wait(
     () =>
-      expect(mockCreateExp).toBeCalledWith({
+      expect(mockCreateExperience).toBeCalledWith({
         variables: {
           exp: {
             title,
@@ -945,9 +945,9 @@ it("moves field down from middle", async () => {
     }
   ];
 
-  const { Ui, mockCreateExp } = makeComp();
+  const { Ui, mockCreateExperience } = makeComp();
 
-  mockCreateExp.mockResolvedValue({
+  mockCreateExperience.mockResolvedValue({
     data: {
       exp: {
         id: "expId1"
@@ -1000,7 +1000,7 @@ it("moves field down from middle", async () => {
    */
   await wait(
     () =>
-      expect(mockCreateExp).toBeCalledWith({
+      expect(mockCreateExperience).toBeCalledWith({
         variables: {
           exp: {
             title,
@@ -1080,9 +1080,9 @@ it("renders errors if server returns field defs errors", async () => {
     }
   ];
 
-  const { Ui, mockCreateExp } = makeComp();
+  const { Ui, mockCreateExperience } = makeComp();
 
-  mockCreateExp.mockRejectedValue({
+  mockCreateExperience.mockRejectedValue({
     graphQLErrors: [
       {
         // it's a JSON string
@@ -1162,9 +1162,9 @@ it("renders errors if server returns title errors", async () => {
     }
   ];
 
-  const { Ui, mockCreateExp } = makeComp();
+  const { Ui, mockCreateExperience } = makeComp();
 
-  mockCreateExp.mockRejectedValue({
+  mockCreateExperience.mockRejectedValue({
     graphQLErrors: [
       {
         // it's a JSON string
@@ -1400,7 +1400,7 @@ function makeComp(
   props: Partial<Props> = {},
   { isConnected = true }: { isConnected?: boolean } = {}
 ) {
-  const mockCreateExp = jest.fn();
+  const mockCreateExperience = jest.fn();
   mockGetConnStatus.mockReset();
   mockGetConnStatus.mockResolvedValue(isConnected);
   const mockCreateUnsavedExperience = jest.fn();
@@ -1409,7 +1409,7 @@ function makeComp(
     ExperienceDefinitionP,
     {},
     {
-      createExp: mockCreateExp,
+      createExperience: mockCreateExperience,
       createUnsavedExperience: mockCreateUnsavedExperience,
       ...props
     }
@@ -1417,7 +1417,7 @@ function makeComp(
 
   return {
     Ui,
-    mockCreateExp,
+    mockCreateExperience,
     mockCreateUnsavedExperience,
     ...rest
   };

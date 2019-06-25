@@ -50,7 +50,7 @@ import { getConnStatus } from "../../state/get-conn-status";
 import { UnsavedExperience } from "./resolver-utils";
 
 export function ExperienceDefinition(props: Props) {
-  const { createExp, navigate, client, createUnsavedExperience } = props;
+  const { createExperience, navigate, client, createUnsavedExperience } = props;
   const [state, dispatch] = useReducer(reducer, {
     showDescriptionInput: true
   } as State);
@@ -149,7 +149,7 @@ export function ExperienceDefinition(props: Props) {
         let expId;
 
         if (await getConnStatus(client)) {
-          result = await (createExp as CreateExperienceMutationFn)({
+          result = await (createExperience as CreateExperienceMutationFn)({
             variables: {
               exp: values
             },

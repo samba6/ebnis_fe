@@ -188,7 +188,7 @@ it("loads entries in the background when experiences are loaded", () => {
    * Then we should load entries for the experiences in the background
    */
 
-  expect(mockPreloadEntries.mock.calls[0][0] as any).toEqual(["1", "2"]);
+  expect((mockPreloadEntries.mock.calls[0][0] as any).ids).toEqual(["1", "2"]);
 });
 
 it("does not load entries in background when experiences are loaded but empty", () => {
