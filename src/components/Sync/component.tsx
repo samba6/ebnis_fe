@@ -9,9 +9,9 @@ import {
 import { Loading } from "../Loading";
 import {
   UnsavedExperiencesData,
-  SavedExperiencesUnsavedEntriesData,
+  SavedExperiencesWithUnsavedEntriesData,
   entryNodesFromExperience
-} from "../../state/sync-unsaved-resolver";
+} from "../../state/unsaved-resolvers";
 import { SidebarHeader } from "../SidebarHeader";
 import {
   ExperienceFragment,
@@ -43,10 +43,10 @@ export function Sync(props: Props) {
       unsavedExperiences = []
     } = {} as UnsavedExperiencesData,
 
-    savedExperiencesUnSavedEntriesProps: {
-      loading: loadingSavedExperiencesUnsavedEntries,
-      savedExperiencesUnsavedEntries = []
-    } = {} as SavedExperiencesUnsavedEntriesData,
+    savedExperiencesWithUnsavedEntriesProps: {
+      loading: loadingSavedExperiencesWithUnsavedEntries,
+      savedExperiencesWithUnsavedEntries = []
+    } = {} as SavedExperiencesWithUnsavedEntriesData,
 
     uploadUnsavedExperiences,
 
@@ -65,25 +65,27 @@ export function Sync(props: Props) {
     });
   }, []);
 
-  const savedExperiencesUnsavedEntriesLen =
-    savedExperiencesUnsavedEntries.length;
+  const savedExperiencesWithUnsavedEntriesLen =
+    savedExperiencesWithUnsavedEntries.length;
 
   const unsavedExperiencesLen = unsavedExperiences.length;
 
   const [state, dispatch] = useReducer(reducer, {
     tabs: {
-      1: savedExperiencesUnsavedEntriesLen !== 0,
-      2: savedExperiencesUnsavedEntriesLen === 0 && unsavedExperiencesLen !== 0
+      1: savedExperiencesWithUnsavedEntriesLen !== 0,
+      2:
+        savedExperiencesWithUnsavedEntriesLen === 0 &&
+        unsavedExperiencesLen !== 0
     }
   });
 
   const { tabs, uploading, uploadResult } = state;
 
   const unSavedCount =
-    savedExperiencesUnsavedEntriesLen + unsavedExperiencesLen;
+    savedExperiencesWithUnsavedEntriesLen + unsavedExperiencesLen;
 
   const loading =
-    loadingUnsavedExperiences || loadingSavedExperiencesUnsavedEntries;
+    loadingUnsavedExperiences || loadingSavedExperiencesWithUnsavedEntries;
 
   if (loading && unSavedCount === 0) {
     return <Loading />;
@@ -96,8 +98,8 @@ export function Sync(props: Props) {
   const savedExperiencesIdToUnsavedEntriesMap = useMemo(() => {
     let experienceIdToUnsavedEntriesMap = {} as ExperiencesIdsToUnsavedEntriesMap;
 
-    if (savedExperiencesUnsavedEntriesLen !== 0) {
-      experienceIdToUnsavedEntriesMap = savedExperiencesUnsavedEntries.reduce(
+    if (savedExperiencesWithUnsavedEntriesLen !== 0) {
+      experienceIdToUnsavedEntriesMap = savedExperiencesWithUnsavedEntries.reduce(
         (acc, experience) => {
           const unsavedEntries = entryNodesFromExperience(experience).reduce(
             (entriesAcc, entry) => {
@@ -123,7 +125,7 @@ export function Sync(props: Props) {
     }
 
     return experienceIdToUnsavedEntriesMap;
-  }, [savedExperiencesUnsavedEntries]);
+  }, [savedExperiencesWithUnsavedEntries]);
 
   const unsavedExperiencesEntriesOnly = useMemo(() => {
     let unsavedEntries = {} as {
@@ -176,7 +178,7 @@ export function Sync(props: Props) {
 
       if (
         unsavedExperiencesLen !== 0 &&
-        savedExperiencesUnsavedEntriesLen !== 0
+        savedExperiencesWithUnsavedEntriesLen !== 0
       ) {
         result = (await uploadAllUnsaveds({
           variables: {
@@ -184,8 +186,8 @@ export function Sync(props: Props) {
               unsavedExperiences,
               unsavedExperiencesEntriesOnly
             ),
-            unsavedEntries: savedExperiencesUnsavedEntriesToUploadData(
-              savedExperiencesUnsavedEntries,
+            unsavedEntries: savedExperiencesWithUnsavedEntriesToUploadData(
+              savedExperiencesWithUnsavedEntries,
               savedExperiencesIdToUnsavedEntriesMap
             )
           }
@@ -199,11 +201,11 @@ export function Sync(props: Props) {
             )
           }
         })) as UploadAllUnsavedsMutationFnResult;
-      } else if (savedExperiencesUnsavedEntriesLen !== 0) {
+      } else if (savedExperiencesWithUnsavedEntriesLen !== 0) {
         result = (await createEntries({
           variables: {
-            createEntries: savedExperiencesUnsavedEntriesToUploadData(
-              savedExperiencesUnsavedEntries,
+            createEntries: savedExperiencesWithUnsavedEntriesToUploadData(
+              savedExperiencesWithUnsavedEntries,
               savedExperiencesIdToUnsavedEntriesMap
             )
           }
@@ -246,7 +248,7 @@ export function Sync(props: Props) {
 
       <div className="main">
         <div className="ui two item menu">
-          {savedExperiencesUnsavedEntriesLen !== 0 && (
+          {savedExperiencesWithUnsavedEntriesLen !== 0 && (
             <a
               className={setTabMenuClassNames("1", tabs)}
               data-testid="saved-experiences-menu"
@@ -306,7 +308,7 @@ export function Sync(props: Props) {
         </div>
 
         <TransitionGroup className="all-unsaveds">
-          {savedExperiencesUnsavedEntriesLen !== 0 && tabs["1"] && (
+          {savedExperiencesWithUnsavedEntriesLen !== 0 && tabs["1"] && (
             <CSSTransition
               timeout={timeout}
               key="saved-experiences"
@@ -316,7 +318,7 @@ export function Sync(props: Props) {
                 className={makeClassNames({ tab: true, active: tabs["1"] })}
                 data-testid="saved-experiences"
               >
-                {savedExperiencesUnsavedEntries.map(experience => {
+                {savedExperiencesWithUnsavedEntries.map(experience => {
                   return (
                     <ExperienceComponent
                       key={experience.id}
@@ -477,13 +479,13 @@ function unsavedExperiencesToUploadData(
   });
 }
 
-function savedExperiencesUnsavedEntriesToUploadData(
-  savedExperiencesUnsavedEntries: ExperienceFragment[],
-  savedExperiencesUnsavedEntriesOnly: ExperiencesIdsToUnsavedEntriesMap
+function savedExperiencesWithUnsavedEntriesToUploadData(
+  savedExperiencesWithUnsavedEntries: ExperienceFragment[],
+  savedExperiencesWithUnsavedEntriesOnly: ExperiencesIdsToUnsavedEntriesMap
 ) {
-  return savedExperiencesUnsavedEntries.reduce(
+  return savedExperiencesWithUnsavedEntries.reduce(
     (acc, experience) => {
-      const entries = savedExperiencesUnsavedEntriesOnly[
+      const entries = savedExperiencesWithUnsavedEntriesOnly[
         experience.id
       ].unsavedEntries.map(toUploadableEntry);
 

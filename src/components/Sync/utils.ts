@@ -1,7 +1,7 @@
 import {
   UnsavedExperiencesProps,
-  SavedExperiencesUnsavedEntriesProps
-} from "../../state/sync-unsaved-resolver";
+  SavedExperiencesWithUnsavedEntriesProps
+} from "../../state/unsaved-resolvers";
 import {
   UploadUnsavedExperiencesMutationProps,
   UploadAllUnsavedsMutationProps
@@ -20,7 +20,7 @@ import { WithApolloClient } from "react-apollo";
 
 interface OwnProps
   extends UnsavedExperiencesProps,
-    SavedExperiencesUnsavedEntriesProps,
+    SavedExperiencesWithUnsavedEntriesProps,
     RouteComponentProps,
     WithApolloClient<{}> {}
 

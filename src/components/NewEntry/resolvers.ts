@@ -5,7 +5,7 @@ import { makeUnsavedId, isUnsavedId } from "../../constants";
 import { CreateField } from "../../graphql/apollo-types/globalTypes";
 import gql from "graphql-tag";
 import { graphql, MutationFn } from "react-apollo";
-import { updateExperienceWithNewEntry as updateSavedExperienceWithNewEntry } from "./update";
+import { updateExperienceWithNewEntry as updateSavedExperienceWithNewUnsavedEntry } from "./update";
 import {
   UnsavedExperience,
   UNSAVED_EXPERIENCE_TYPENAME,
@@ -15,10 +15,11 @@ import {
 import immer from "immer";
 import { ENTRY_FRAGMENT } from "../../graphql/entry.fragment";
 import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragment";
+import { writeSavedExperiencesWithUnsavedEntriesToCache } from "../../state/resolvers-utils";
 import {
   GET_SAVED_EXPERIENCES_UNSAVED_ENTRIES_QUERY,
-  SavedExperiencesUnsavedEntriesQueryReturned
-} from "./resolver-utils";
+  SavedExperiencesWithUnsavedEntriesQueryReturned
+} from "../../state/unsaved-resolvers";
 
 const CREATE_UNSAVED_ENTRY_MUTATION = gql`
   mutation CreateUnsavedEntry($experience: Experience!, $fields: [Fields!]!) {
@@ -60,7 +61,7 @@ interface CreateUnsavedEntryMutationReturned {
   createUnsavedEntry: {
     entry: CreateAnEntry_entry;
     experience: UnsavedExperience;
-    savedExperiencesUnsavedEntries: ExperienceFragment[] | null;
+    savedExperiencesWithUnsavedEntries: ExperienceFragment[] | null;
     __typename: CreateUnsavedEntryTypename;
   };
 }
@@ -95,19 +96,19 @@ const createUnsavedEntryResolver: LocalResolverFn<
     updatedAt: today.toJSON()
   };
 
-  let savedExperiencesUnsavedEntries = null;
+  let savedExperiencesWithUnsavedEntries = null;
 
   if (isUnsavedId(experienceId)) {
     experience = updateUnsavedExperienceEntry(context, experience, entry);
   } else {
-    experience = ((await updateSavedExperienceWithNewEntry(experienceId)(
+    experience = ((await updateSavedExperienceWithNewUnsavedEntry(experienceId)(
       cache,
       {
         data: { entry }
       }
     )) as unknown) as UnsavedExperience;
 
-    savedExperiencesUnsavedEntries = updateSavedExperiencesUnsavedEntries(
+    savedExperiencesWithUnsavedEntries = updateSavedExperiencesWithUnsavedEntries(
       context,
       (experience as unknown) as ExperienceFragment
     );
@@ -116,7 +117,7 @@ const createUnsavedEntryResolver: LocalResolverFn<
   return {
     entry,
     experience,
-    savedExperiencesUnsavedEntries,
+    savedExperiencesWithUnsavedEntries,
     __typename: CREATE_UNSAVED_ENTRY_TYPENAME
   };
 };
@@ -156,18 +157,20 @@ function updateUnsavedExperienceEntry(
   return newExperience;
 }
 
-function updateSavedExperiencesUnsavedEntries(
+function updateSavedExperiencesWithUnsavedEntries(
   { cache }: CacheContext,
   experience: ExperienceFragment
 ) {
-  const data = cache.readQuery<SavedExperiencesUnsavedEntriesQueryReturned>({
-    query: GET_SAVED_EXPERIENCES_UNSAVED_ENTRIES_QUERY
-  });
+  const data = cache.readQuery<SavedExperiencesWithUnsavedEntriesQueryReturned>(
+    {
+      query: GET_SAVED_EXPERIENCES_UNSAVED_ENTRIES_QUERY
+    }
+  );
 
   const experienceId = experience.id;
 
-  const savedExperiencesUnsavedEntries = immer(
-    data ? data.savedExperiencesUnsavedEntries : [],
+  const savedExperiencesWithUnsavedEntries = immer(
+    data ? data.savedExperiencesWithUnsavedEntries : [],
     proxy => {
       const index = proxy.findIndex(e => e.id === experienceId);
 
@@ -179,12 +182,12 @@ function updateSavedExperiencesUnsavedEntries(
     }
   );
 
-  cache.writeQuery<SavedExperiencesUnsavedEntriesQueryReturned>({
-    query: GET_SAVED_EXPERIENCES_UNSAVED_ENTRIES_QUERY,
-    data: { savedExperiencesUnsavedEntries }
-  });
+  writeSavedExperiencesWithUnsavedEntriesToCache(
+    cache,
+    savedExperiencesWithUnsavedEntries
+  );
 
-  return savedExperiencesUnsavedEntries;
+  return savedExperiencesWithUnsavedEntries;
 }
 
 interface CreateUnsavedEntryVariables {

@@ -60,7 +60,7 @@ describe("component", () => {
   it("renders loading indicator while unsaved entries for saved experiences loading", () => {
     const { ui } = makeComp({
       props: {
-        savedExperiencesUnSavedEntriesProps: { loading: true } as any
+        savedExperiencesWithUnsavedEntriesProps: { loading: true } as any
       }
     });
 
@@ -73,8 +73,8 @@ describe("component", () => {
     const { ui } = makeComp({
       props: {
         unSavedExperiencesProps: { unsavedExperiences: [] } as any,
-        savedExperiencesUnSavedEntriesProps: {
-          savedExperiencesUnsavedEntries: []
+        savedExperiencesWithUnsavedEntriesProps: {
+          savedExperiencesWithUnsavedEntries: []
         } as any
       }
     });
@@ -123,8 +123,8 @@ describe("component", () => {
       mockUploadAllUnsaveds
     } = makeComp({
       props: {
-        savedExperiencesUnSavedEntriesProps: {
-          savedExperiencesUnsavedEntries: experiences
+        savedExperiencesWithUnsavedEntriesProps: {
+          savedExperiencesWithUnsavedEntries: experiences
         } as any
       }
     });
@@ -328,8 +328,8 @@ describe("component", () => {
           ]
         } as any,
 
-        savedExperiencesUnSavedEntriesProps: {
-          savedExperiencesUnsavedEntries: [
+        savedExperiencesWithUnsavedEntriesProps: {
+          savedExperiencesWithUnsavedEntries: [
             {
               id: "1",
               title: "a",

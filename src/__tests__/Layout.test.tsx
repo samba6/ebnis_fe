@@ -7,7 +7,7 @@ import { Layout } from "../components/Layout/component";
 import { EbnisAppProvider } from "../context";
 
 jest.mock("../state/tokens");
-jest.mock("../state/sync-unsaved-resolver");
+jest.mock("../state/unsaved-resolvers");
 jest.mock("../state/get-conn-status");
 jest.mock("../components/Loading", () => ({
   Loading: jest.fn(() => <div data-testid="loading" />)
@@ -24,7 +24,7 @@ jest.mock("../components/Layout/utils", () => ({
 }));
 
 import { getUser } from "../state/tokens";
-import { getUnsavedCount } from "../state/sync-unsaved-resolver";
+import { getUnsavedCount } from "../state/unsaved-resolvers";
 import { getConnStatus } from "../state/get-conn-status";
 import { emitData, EmitAction } from "../setup-observable";
 import { ILayoutContextContext } from "../components/Layout/utils";

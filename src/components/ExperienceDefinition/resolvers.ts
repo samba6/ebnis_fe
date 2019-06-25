@@ -8,11 +8,13 @@ import gql from "graphql-tag";
 import {
   UNSAVED_EXPERIENCE_FRAGMENT,
   UnsavedExperience,
-  UNSAVED_EXPERIENCE_TYPENAME,
-  UNSAVED_EXPERIENCES_QUERY,
-  UnsavedExperiencesQueryReturned
+  UNSAVED_EXPERIENCE_TYPENAME
 } from "./resolver-utils";
 import { ExperienceFragment_fieldDefs } from "../../graphql/apollo-types/ExperienceFragment";
+import {
+  getUnsavedExperiencesFromCache,
+  writeUnsavedExperiencesFromCache
+} from "../../state/resolvers-utils";
 
 const createUnsavedExperienceResolver: LocalResolverFn<
   CreateExpMutationVariables,
@@ -60,19 +62,12 @@ const createUnsavedExperienceResolver: LocalResolverFn<
     }
   };
 
-  const data = cache.readQuery<UnsavedExperiencesQueryReturned>({
-    query: UNSAVED_EXPERIENCES_QUERY
-  });
-
   const unsavedExperiences = [
-    ...(data ? data.unsavedExperiences : []),
+    ...getUnsavedExperiencesFromCache(cache),
     experience
   ];
 
-  cache.writeQuery<UnsavedExperiencesQueryReturned>({
-    query: UNSAVED_EXPERIENCES_QUERY,
-    data: { unsavedExperiences }
-  });
+  writeUnsavedExperiencesFromCache(cache, unsavedExperiences);
 
   return experience;
 };

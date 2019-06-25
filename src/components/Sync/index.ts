@@ -1,9 +1,9 @@
 import { Sync as Comp } from "./component";
 import { compose, graphql, withApollo } from "react-apollo";
 import {
-  savedExperiencesUnSavedEntriesGql,
+  savedExperiencesWithUnSavedEntriesGql,
   unSavedExperiencesGql
-} from "../../state/sync-unsaved-resolver";
+} from "../../state/unsaved-resolvers";
 import {
   UPLOAD_UNSAVED_EXPERIENCES_MUTATION,
   UploadUnsavedExperiencesMutationProps,
@@ -39,7 +39,7 @@ const uploadUnsavedExperiencesGql = graphql<
     }
 });
 
-const uploadSavedExperiencesUnsavedEntriesGql = graphql<
+const uploadSavedExperiencesWithUnsavedEntriesGql = graphql<
   {},
   CreateEntriesMutation,
   CreateEntriesMutationVariables,
@@ -64,10 +64,10 @@ const uploadAllUnsavedsGql = graphql<
 });
 
 export const Sync = compose(
-  savedExperiencesUnSavedEntriesGql,
+  savedExperiencesWithUnSavedEntriesGql,
   unSavedExperiencesGql,
   uploadUnsavedExperiencesGql,
-  uploadSavedExperiencesUnsavedEntriesGql,
+  uploadSavedExperiencesWithUnsavedEntriesGql,
   uploadAllUnsavedsGql,
   withApollo
 )(Comp);
