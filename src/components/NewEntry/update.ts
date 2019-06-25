@@ -2,7 +2,7 @@ import { MutationUpdaterFn } from "react-apollo";
 import immer from "immer";
 
 // istanbul ignore next: why flag import?
-import { CreateAnEntry } from "../../graphql/apollo-types/CreateAnEntry";
+import { CreateEntryMutation } from "../../graphql/apollo-types/CreateEntryMutation";
 import {
   GetExperienceFull,
   GetExperienceFullVariables,
@@ -14,7 +14,7 @@ import { GET_EXP_QUERY } from "../../graphql/get-experience-full.query";
 // istanbul ignore next: trust apollo to do the right thing -
 export const updateExperienceWithNewEntry: (
   expId: string
-) => MutationUpdaterFn<CreateAnEntry> = function updateFn(expId: string) {
+) => MutationUpdaterFn<CreateEntryMutation> = function updateFn(expId: string) {
   return async function updateFnInner(dataProxy, { data: newEntryEntry }) {
     if (!newEntryEntry) {
       return;
@@ -36,7 +36,10 @@ export const updateExperienceWithNewEntry: (
       }
     };
 
-    const data = dataProxy.readQuery<GetExperienceFull, GetExperienceFullVariables>({
+    const data = dataProxy.readQuery<
+      GetExperienceFull,
+      GetExperienceFullVariables
+    >({
       query: GET_EXP_QUERY,
       variables
     });

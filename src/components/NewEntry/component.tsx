@@ -16,7 +16,7 @@ import {
 } from "./utils";
 import { makeExperienceRoute } from "../../constants/experience-route";
 import { GetExperienceFull_exp_fieldDefs } from "../../graphql/apollo-types/GetExperienceFull";
-import { CreateEntryFn } from "../../graphql/create-entry.mutation";
+import { CreateEntryMutationFn } from "../../graphql/create-entry.mutation";
 import { updateExperienceWithNewEntry } from "./update";
 import { fieldTypeUtils } from "./field-types-utils";
 import { SidebarHeader } from "../SidebarHeader";
@@ -82,7 +82,7 @@ export function NewEntry(props: Props) {
     }
 
     if (await getConnStatus(client)) {
-      await (createEntry as CreateEntryFn)({
+      await (createEntry as CreateEntryMutationFn)({
         variables: {
           entry: {
             expId,

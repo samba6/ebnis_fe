@@ -2,13 +2,13 @@ import gql from "graphql-tag";
 import { MutationFn } from "react-apollo";
 
 import {
-  CreateAnEntry,
-  CreateAnEntryVariables
-} from "./apollo-types/CreateAnEntry";
+  CreateEntryMutation,
+  CreateEntryMutationVariables
+} from "./apollo-types/CreateEntryMutation";
 import { ENTRY_FRAGMENT } from "./entry.fragment";
 
 export const CREATE_ENTRY_MUTATION = gql`
-  mutation CreateAnEntry($entry: CreateEntry!) {
+  mutation CreateEntryMutation($entry: CreateEntry!) {
     entry(entry: $entry) {
       ...EntryFragment
     }
@@ -17,8 +17,11 @@ export const CREATE_ENTRY_MUTATION = gql`
   ${ENTRY_FRAGMENT}
 `;
 
-export type CreateEntryFn = MutationFn<CreateAnEntry, CreateAnEntryVariables>;
+export type CreateEntryMutationFn = MutationFn<
+  CreateEntryMutation,
+  CreateEntryMutationVariables
+>;
 
-export interface CreateEntryGqlProps {
-  createEntry?: CreateEntryFn;
+export interface CreateEntryMutationProps {
+  createEntry?: CreateEntryMutationFn;
 }

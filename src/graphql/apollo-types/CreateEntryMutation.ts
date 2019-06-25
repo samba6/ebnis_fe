@@ -5,16 +5,16 @@
 import { CreateEntry } from "./globalTypes";
 
 // ====================================================
-// GraphQL mutation operation: CreateAnEntry
+// GraphQL mutation operation: CreateEntryMutation
 // ====================================================
 
-export interface CreateAnEntry_entry_fields {
+export interface CreateEntryMutation_entry_fields {
   __typename: "Field";
   defId: string;
   data: any;
 }
 
-export interface CreateAnEntry_entry {
+export interface CreateEntryMutation_entry {
   __typename: "Entry";
   /**
    * The ID of an object
@@ -35,10 +35,10 @@ export interface CreateAnEntry_entry {
   /**
    * The data fields belonging to this entry
    */
-  fields: (CreateAnEntry_entry_fields | null)[];
+  fields: (CreateEntryMutation_entry_fields | null)[];
 }
 
-export interface CreateAnEntry {
+export interface CreateEntryMutation {
   /**
    * Create an experience
    * 
@@ -58,9 +58,9 @@ export interface CreateAnEntry {
    *     ]
    *   }
    */
-  entry: CreateAnEntry_entry | null;
+  entry: CreateEntryMutation_entry | null;
 }
 
-export interface CreateAnEntryVariables {
+export interface CreateEntryMutationVariables {
   entry: CreateEntry;
 }

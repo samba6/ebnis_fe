@@ -1,5 +1,5 @@
 import { LocalResolverFn, CacheContext } from "../../state/resolvers";
-import { CreateAnEntry_entry } from "../../graphql/apollo-types/CreateAnEntry";
+import { CreateEntryMutation_entry } from "../../graphql/apollo-types/CreateEntryMutation";
 import { GetExperienceFull_exp_entries } from "../../graphql/apollo-types/GetExperienceFull";
 import { makeUnsavedId, isUnsavedId } from "../../constants";
 import { CreateField } from "../../graphql/apollo-types/globalTypes";
@@ -59,7 +59,7 @@ const CREATE_UNSAVED_ENTRY_TYPENAME = "CreateUnsavedEntry" as CreateUnsavedEntry
 
 interface CreateUnsavedEntryMutationReturned {
   createUnsavedEntry: {
-    entry: CreateAnEntry_entry;
+    entry: CreateEntryMutation_entry;
     experience: UnsavedExperience;
     savedExperiencesWithUnsavedEntries: ExperienceFragment[] | null;
     __typename: CreateUnsavedEntryTypename;
@@ -86,7 +86,7 @@ const createUnsavedEntryResolver: LocalResolverFn<
     };
   });
 
-  const entry: CreateAnEntry_entry = {
+  const entry: CreateEntryMutation_entry = {
     __typename: "Entry",
     id,
     clientId: id,
@@ -125,7 +125,7 @@ const createUnsavedEntryResolver: LocalResolverFn<
 function updateUnsavedExperienceEntry(
   { cache, getCacheKey }: CacheContext,
   experience: UnsavedExperience,
-  entry: CreateAnEntry_entry
+  entry: CreateEntryMutation_entry
 ) {
   const id = experience.id;
 

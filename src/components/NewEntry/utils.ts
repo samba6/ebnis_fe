@@ -2,7 +2,7 @@ import { RouteComponentProps } from "@reach/router";
 import { Reducer, Dispatch } from "react";
 
 import { NewEntryRouteParams } from "../../routes";
-import { CreateEntryGqlProps } from "../../graphql/create-entry.mutation";
+import { CreateEntryMutationProps } from "../../graphql/create-entry.mutation";
 import {
   GetExperienceFull_exp,
   GetExperienceFull_exp_fieldDefs
@@ -19,7 +19,7 @@ export interface OwnProps
 
 export interface Props
   extends OwnProps,
-    CreateEntryGqlProps,
+    CreateEntryMutationProps,
     CreateUnsavedEntryMutationProps {}
 
 export type FormObjVal = Date | string | number;

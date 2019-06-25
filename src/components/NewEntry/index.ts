@@ -3,12 +3,12 @@ import { graphql, compose } from "react-apollo";
 import { NewEntry as Comp } from "./component";
 import { OwnProps } from "./utils";
 import {
-  CreateAnEntry,
-  CreateAnEntryVariables
-} from "../../graphql/apollo-types/CreateAnEntry";
+  CreateEntryMutation,
+  CreateEntryMutationVariables
+} from "../../graphql/apollo-types/CreateEntryMutation";
 import {
   CREATE_ENTRY_MUTATION,
-  CreateEntryGqlProps
+  CreateEntryMutationProps
 } from "../../graphql/create-entry.mutation";
 import { createUnsavedEntryGql, newEntryResolvers } from "./resolvers";
 
@@ -17,9 +17,9 @@ let resolverAdded = false;
 
 const createEntryGql = graphql<
   OwnProps,
-  CreateAnEntry,
-  CreateAnEntryVariables,
-  CreateEntryGqlProps | undefined
+  CreateEntryMutation,
+  CreateEntryMutationVariables,
+  CreateEntryMutationProps | undefined
 >(CREATE_ENTRY_MUTATION, {
   props: ({ mutate, ownProps: { client } }) => {
     if (!resolverAdded) {
