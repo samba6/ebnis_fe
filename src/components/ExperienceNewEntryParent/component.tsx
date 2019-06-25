@@ -12,7 +12,7 @@ export const ExperienceNewEntryParent = function(props: Props) {
     getExperienceGql: {
       loading: loadingExperience,
       error: getExperienceGqlError,
-      exp
+      getExperience
     } = {} as GetExperienceFullData,
 
     unsavedExperienceGql: {
@@ -25,7 +25,7 @@ export const ExperienceNewEntryParent = function(props: Props) {
     navigate
   } = props;
 
-  const experience = exp || unsavedExperience;
+  const experience = getExperience || unsavedExperience;
 
   const loading = loadingExperience || loadingUnsavedExperience;
 

@@ -8,13 +8,10 @@ import {
 } from "../../graphql/apollo-types/UploadAllUnsavedsMutation";
 import { ExperiencesIdsToUnsavedEntriesMap } from "./utils";
 import {
-  GetExperienceFull_exp_entries,
-  GetExperienceFull_exp_entries_edges,
-  GetExperienceFull_exp_entries_edges_node,
   GetExperienceFull,
   GetExperienceFullVariables
 } from "../../graphql/apollo-types/GetExperienceFull";
-import { GET_EXP_QUERY } from "../../graphql/get-experience-full.query";
+import { GET_EXPERIENCE_FULL_QUERY } from "../../graphql/get-experience-full.query";
 import { DataProxy } from "apollo-cache";
 import {
   CreateEntriesResponseFragment,
@@ -22,7 +19,9 @@ import {
 } from "../../graphql/apollo-types/CreateEntriesResponseFragment";
 import {
   ExperienceFragment,
-  ExperienceFragment_entries_edges_node
+  ExperienceFragment_entries_edges_node,
+  ExperienceFragment_entries,
+  ExperienceFragment_entries_edges
 } from "../../graphql/apollo-types/ExperienceFragment";
 import {
   writeSavedExperiencesWithUnsavedEntriesToCache,
@@ -192,17 +191,17 @@ function updateSavedExperiences(
     });
 
     const variables: GetExperienceFullVariables = {
-      exp: { id: expId },
+      id: expId,
       entriesPagination: {
         first: 20
       }
     };
 
     dataProxy.writeQuery<GetExperienceFull, GetExperienceFullVariables>({
-      query: GET_EXP_QUERY,
+      query: GET_EXPERIENCE_FULL_QUERY,
       variables,
       data: {
-        exp: experienceUpdatedWithSavedEntries
+        getExperience: experienceUpdatedWithSavedEntries
       }
     });
 
@@ -253,11 +252,11 @@ function updateExperienceWithSavedEntries(
   experience: ExperienceFragment,
   savedEntries: ExperienceFragment_entries_edges_node[]
 ) {
-  const entries = experience.entries as GetExperienceFull_exp_entries;
+  const entries = experience.entries as ExperienceFragment_entries;
 
-  const edges = (entries.edges as GetExperienceFull_exp_entries_edges[]).reduce(
+  const edges = (entries.edges as ExperienceFragment_entries_edges[]).reduce(
     (acc, edge) => {
-      const entry = edge.node as GetExperienceFull_exp_entries_edges_node;
+      const entry = edge.node as ExperienceFragment_entries_edges_node;
 
       const savedEntry = savedEntries.find(
         ({ clientId }) => clientId === entry.clientId
@@ -270,7 +269,7 @@ function updateExperienceWithSavedEntries(
       acc.push(edge);
       return acc;
     },
-    [] as GetExperienceFull_exp_entries_edges[]
+    [] as ExperienceFragment_entries_edges[]
   );
 
   entries.edges = edges;

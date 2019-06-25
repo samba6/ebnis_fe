@@ -1,6 +1,5 @@
 import { LocalResolverFn, CacheContext } from "../../state/resolvers";
 import { CreateEntryMutation_entry } from "../../graphql/apollo-types/CreateEntryMutation";
-import { GetExperienceFull_exp_entries } from "../../graphql/apollo-types/GetExperienceFull";
 import { makeUnsavedId, isUnsavedId } from "../../constants";
 import { CreateField } from "../../graphql/apollo-types/globalTypes";
 import gql from "graphql-tag";
@@ -14,7 +13,10 @@ import {
 } from "../ExperienceDefinition/resolver-utils";
 import immer from "immer";
 import { ENTRY_FRAGMENT } from "../../graphql/entry.fragment";
-import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragment";
+import {
+  ExperienceFragment,
+  ExperienceFragment_entries
+} from "../../graphql/apollo-types/ExperienceFragment";
 import { writeSavedExperiencesWithUnsavedEntriesToCache } from "../../state/resolvers-utils";
 import {
   GET_SAVED_EXPERIENCES_UNSAVED_ENTRIES_QUERY,
@@ -135,7 +137,7 @@ function updateUnsavedExperienceEntry(
   });
 
   const newExperience = immer(experience, proxy => {
-    const entries = proxy.entries as GetExperienceFull_exp_entries;
+    const entries = proxy.entries as ExperienceFragment_entries;
     const edges = entries.edges || [];
     edges.push({
       node: entry,

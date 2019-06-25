@@ -8,7 +8,7 @@ import {
   GetExperienceFull,
   GetExperienceFullVariables
 } from "../../graphql/apollo-types/GetExperienceFull";
-import { GET_EXP_QUERY } from "../../graphql/get-experience-full.query";
+import { GET_EXPERIENCE_FULL_QUERY } from "../../graphql/get-experience-full.query";
 import { ExperienceMiniFragment } from "../../graphql/apollo-types/ExperienceMiniFragment";
 
 export function preloadEntries({
@@ -59,18 +59,16 @@ export function preloadEntries({
         }
 
         client.writeQuery<GetExperienceFull, GetExperienceFullVariables>({
-          query: GET_EXP_QUERY,
+          query: GET_EXPERIENCE_FULL_QUERY,
 
           variables: {
-            exp: {
-              id
-            },
+            id,
 
             entriesPagination
           },
 
           data: {
-            exp: { ...experience, ...node }
+            getExperience: { ...experience, ...node }
           }
         });
       });

@@ -5,11 +5,13 @@ import immer from "immer";
 import { CreateEntryMutation } from "../../graphql/apollo-types/CreateEntryMutation";
 import {
   GetExperienceFull,
-  GetExperienceFullVariables,
-  GetExperienceFull_exp,
-  GetExperienceFull_exp_entries
+  GetExperienceFullVariables
 } from "../../graphql/apollo-types/GetExperienceFull";
-import { GET_EXP_QUERY } from "../../graphql/get-experience-full.query";
+import { GET_EXPERIENCE_FULL_QUERY } from "../../graphql/get-experience-full.query";
+import {
+  ExperienceFragment,
+  ExperienceFragment_entries
+} from "../../graphql/apollo-types/ExperienceFragment";
 
 // istanbul ignore next: trust apollo to do the right thing -
 export const updateExperienceWithNewEntry: (
@@ -27,10 +29,7 @@ export const updateExperienceWithNewEntry: (
     }
 
     const variables: GetExperienceFullVariables = {
-      exp: {
-        id: expId
-      },
-
+      id: expId,
       entriesPagination: {
         first: 20
       }
@@ -40,7 +39,7 @@ export const updateExperienceWithNewEntry: (
       GetExperienceFull,
       GetExperienceFullVariables
     >({
-      query: GET_EXP_QUERY,
+      query: GET_EXPERIENCE_FULL_QUERY,
       variables
     });
 
@@ -48,10 +47,10 @@ export const updateExperienceWithNewEntry: (
       return;
     }
 
-    const exp = data.exp as GetExperienceFull_exp;
+    const exp = data.getExperience as ExperienceFragment;
 
     const updatedExperience = immer(exp, proxy => {
-      const entries = proxy.entries as GetExperienceFull_exp_entries;
+      const entries = proxy.entries as ExperienceFragment_entries;
       const edges = entries.edges || [];
 
       edges.push({
@@ -65,7 +64,7 @@ export const updateExperienceWithNewEntry: (
     });
 
     await dataProxy.writeQuery({
-      query: GET_EXP_QUERY,
+      query: GET_EXPERIENCE_FULL_QUERY,
       variables,
       data: {
         exp: updatedExperience

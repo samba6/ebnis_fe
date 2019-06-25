@@ -19,10 +19,6 @@ import differenceInHours from "date-fns/difference_in_hours";
 import { NewEntry } from "../components/NewEntry/component";
 import { Props } from "../components/NewEntry/utils";
 import { renderWithRouter, fillField, makeTestCache } from "./test_utils";
-import {
-  GetExperienceFull_exp,
-  GetExperienceFull_exp_entries
-} from "../graphql/apollo-types/GetExperienceFull";
 import { FieldType } from "../graphql/apollo-types/globalTypes";
 
 jest.mock("../components/NewEntry/update");
@@ -37,6 +33,10 @@ import { newEntryResolvers } from "../components/NewEntry/resolvers";
 import { CacheContext } from "../state/resolvers";
 import { UnsavedExperience } from "../components/ExperienceDefinition/resolver-utils";
 import { makeUnsavedId, UNSAVED_ID_PREFIX } from "../constants";
+import {
+  ExperienceFragment_entries,
+  ExperienceFragment
+} from "../graphql/apollo-types/ExperienceFragment";
 
 describe("component", () => {
   const mockGetConnStatus = getConnStatus as jest.Mock;
@@ -109,8 +109,8 @@ describe("component", () => {
 
       __typename: "Experience",
 
-      entries: {} as GetExperienceFull_exp_entries
-    } as GetExperienceFull_exp;
+      entries: {} as ExperienceFragment_entries
+    } as ExperienceFragment;
 
     const { ui, mockCreateEntry } = makeComp({
       experience: exp
@@ -227,7 +227,7 @@ describe("component", () => {
           __typename: "FieldDef"
         }
       ]
-    } as GetExperienceFull_exp;
+    } as ExperienceFragment;
 
     const { ui, mockCreateEntry } = makeComp({
       experience: exp
@@ -287,8 +287,8 @@ describe("component", () => {
 
       __typename: "Experience",
 
-      entries: {} as GetExperienceFull_exp_entries
-    } as GetExperienceFull_exp;
+      entries: {} as ExperienceFragment_entries
+    } as ExperienceFragment;
 
     const { ui, mockCreateEntry } = makeComp({
       experience: exp
@@ -515,7 +515,9 @@ describe("resolvers", () => {
       );
 
       expect(mockUpdateSavedExperience).toHaveBeenCalled();
-      expect((savedExperiencesWithUnsavedEntries as any)[0]).toEqual(experience);
+      expect((savedExperiencesWithUnsavedEntries as any)[0]).toEqual(
+        experience
+      );
 
       done();
     });
@@ -539,7 +541,11 @@ describe("resolvers", () => {
 
       mockUpdateSavedExperience.mockResolvedValue(experience2Updated);
       mockReadQuery.mockReturnValue({
-        savedExperiencesWithUnsavedEntries: [experience1, experience2, experience3]
+        savedExperiencesWithUnsavedEntries: [
+          experience1,
+          experience2,
+          experience3
+        ]
       });
 
       const { savedExperiencesWithUnsavedEntries } = await createUnsavedEntry(

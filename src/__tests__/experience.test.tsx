@@ -7,11 +7,12 @@ import { render } from "react-testing-library";
 import { Experience } from "../components/Experience/component";
 import { Props } from "../components/Experience/utils";
 import { FieldType } from "../graphql/apollo-types/globalTypes";
-import {
-  GetExperienceFull_exp_fieldDefs,
-  GetExperienceFull_exp_entries_edges
-} from "../graphql/apollo-types/GetExperienceFull";
+import {} from "../graphql/apollo-types/GetExperienceFull";
 import { renderWithRouter } from "./test_utils";
+import {
+  ExperienceFragment_entries_edges,
+  ExperienceFragment_fieldDefs
+} from "../graphql/apollo-types/ExperienceFragment";
 
 jest.mock("../components/SidebarHeader", () => ({
   SidebarHeader: jest.fn(() => null)
@@ -149,7 +150,7 @@ it("renders entries", () => {
         ]
       }
     }
-  ] as GetExperienceFull_exp_entries_edges[];
+  ] as ExperienceFragment_entries_edges[];
 
   const fieldDefs = [
     {
@@ -187,7 +188,7 @@ it("renders entries", () => {
       name: "field name 6",
       type: FieldType.INTEGER
     }
-  ] as GetExperienceFull_exp_fieldDefs[];
+  ] as ExperienceFragment_fieldDefs[];
 
   const { ui } = makeComp({
     experience: {

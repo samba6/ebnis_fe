@@ -9,7 +9,7 @@ import {
 import { isUnsavedId } from "../../constants";
 import { ExperienceNewEntryParent as Comp } from "./component";
 import {
-  GET_EXP_QUERY,
+  GET_EXPERIENCE_FULL_QUERY,
   GetExperienceFullProps
 } from "../../graphql/get-experience-full.query";
 import {
@@ -53,16 +53,13 @@ const experienceGql = graphql<
   GetExperienceFull,
   GetExperienceFullVariables,
   GetExperienceFullProps | undefined
->(GET_EXP_QUERY, {
+>(GET_EXPERIENCE_FULL_QUERY, {
   props: ({ data }) => data && { getExperienceGql: data },
 
   options: ({ experienceId }) => {
     return {
       variables: {
-        exp: {
-          id: experienceId as string
-        },
-
+        id: experienceId as string,
         entriesPagination: {
           first: 20
         }

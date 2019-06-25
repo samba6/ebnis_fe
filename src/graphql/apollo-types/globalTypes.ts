@@ -77,13 +77,6 @@ export interface CreateFieldDef {
   type: FieldType;
 }
 
-/**
- * Variables for getting an experience
- */
-export interface GetExp {
-  id: string;
-}
-
 export interface GetExperiencesInput {
   ids?: (string | null)[] | null;
   pagination?: PaginationInput | null;

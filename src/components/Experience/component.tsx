@@ -4,16 +4,16 @@ import { Link } from "gatsby";
 
 import "./styles.scss";
 import { Props } from "./utils";
-import {
-  GetExperienceFull_exp_fieldDefs,
-  GetExperienceFull_exp_entries,
-  GetExperienceFull_exp_entries_edges,
-  GetExperienceFull_exp_entries_edges_node
-} from "../../graphql/apollo-types/GetExperienceFull";
 import { SidebarHeader } from "../SidebarHeader";
 import { setDocumentTitle, makeSiteTitle } from "../../constants";
 import { makeNewEntryRoute } from "../../constants/new-entry-route";
 import { Entry } from "./entry";
+import {
+  ExperienceFragment_entries,
+  ExperienceFragment_entries_edges,
+  ExperienceFragment_entries_edges_node,
+  ExperienceFragment_fieldDefs
+} from "../../graphql/apollo-types/ExperienceFragment";
 
 export function Experience(props: Props) {
   const { experience } = props;
@@ -30,8 +30,8 @@ export function Experience(props: Props) {
   );
 
   function renderEntries() {
-    const entries = experience.entries as GetExperienceFull_exp_entries;
-    const edges = entries.edges as GetExperienceFull_exp_entries_edges[];
+    const entries = experience.entries as ExperienceFragment_entries;
+    const edges = entries.edges as ExperienceFragment_entries_edges[];
     const edgesLen = edges.length;
 
     if (edgesLen === 0) {
@@ -48,14 +48,14 @@ export function Experience(props: Props) {
 
     return (
       <>
-        {edges.map((edge: GetExperienceFull_exp_entries_edges, index) => {
-          const entry = edge.node as GetExperienceFull_exp_entries_edges_node;
+        {edges.map((edge: ExperienceFragment_entries_edges, index) => {
+          const entry = edge.node as ExperienceFragment_entries_edges_node;
 
           return (
             <Entry
               key={entry.id}
               entry={entry}
-              fieldDefs={experience.fieldDefs as GetExperienceFull_exp_fieldDefs[]}
+              fieldDefs={experience.fieldDefs as ExperienceFragment_fieldDefs[]}
               entriesLen={edgesLen}
               index={index}
             />

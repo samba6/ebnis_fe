@@ -2,13 +2,13 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
-import { GetExp, PaginationInput, FieldType } from "./globalTypes";
+import { PaginationInput, FieldType } from "./globalTypes";
 
 // ====================================================
 // GraphQL query operation: GetExperienceFull
 // ====================================================
 
-export interface GetExperienceFull_exp_fieldDefs {
+export interface GetExperienceFull_getExperience_fieldDefs {
   __typename: "FieldDef";
   id: string;
   /**
@@ -28,7 +28,7 @@ export interface GetExperienceFull_exp_fieldDefs {
   clientId: string | null;
 }
 
-export interface GetExperienceFull_exp_entries_pageInfo {
+export interface GetExperienceFull_getExperience_entries_pageInfo {
   __typename: "PageInfo";
   /**
    * When paginating forwards, are there more items?
@@ -40,13 +40,13 @@ export interface GetExperienceFull_exp_entries_pageInfo {
   hasPreviousPage: boolean;
 }
 
-export interface GetExperienceFull_exp_entries_edges_node_fields {
+export interface GetExperienceFull_getExperience_entries_edges_node_fields {
   __typename: "Field";
   defId: string;
   data: any;
 }
 
-export interface GetExperienceFull_exp_entries_edges_node {
+export interface GetExperienceFull_getExperience_entries_edges_node {
   __typename: "Entry";
   /**
    * The ID of an object
@@ -67,10 +67,10 @@ export interface GetExperienceFull_exp_entries_edges_node {
   /**
    * The data fields belonging to this entry
    */
-  fields: (GetExperienceFull_exp_entries_edges_node_fields | null)[];
+  fields: (GetExperienceFull_getExperience_entries_edges_node_fields | null)[];
 }
 
-export interface GetExperienceFull_exp_entries_edges {
+export interface GetExperienceFull_getExperience_entries_edges {
   __typename: "EntryEdge";
   /**
    * A cursor for use in pagination
@@ -79,16 +79,16 @@ export interface GetExperienceFull_exp_entries_edges {
   /**
    * The item at the end of the edge
    */
-  node: GetExperienceFull_exp_entries_edges_node | null;
+  node: GetExperienceFull_getExperience_entries_edges_node | null;
 }
 
-export interface GetExperienceFull_exp_entries {
+export interface GetExperienceFull_getExperience_entries {
   __typename: "EntryConnection";
-  pageInfo: GetExperienceFull_exp_entries_pageInfo;
-  edges: (GetExperienceFull_exp_entries_edges | null)[] | null;
+  pageInfo: GetExperienceFull_getExperience_entries_pageInfo;
+  edges: (GetExperienceFull_getExperience_entries_edges | null)[] | null;
 }
 
-export interface GetExperienceFull_exp {
+export interface GetExperienceFull_getExperience {
   __typename: "Experience";
   /**
    * The ID of an object
@@ -114,21 +114,21 @@ export interface GetExperienceFull_exp {
   /**
    * The field definitions used for the experience entries
    */
-  fieldDefs: (GetExperienceFull_exp_fieldDefs | null)[];
+  fieldDefs: (GetExperienceFull_getExperience_fieldDefs | null)[];
   /**
    * The entries of the experience - can be paginated
    */
-  entries: GetExperienceFull_exp_entries;
+  entries: GetExperienceFull_getExperience_entries;
 }
 
 export interface GetExperienceFull {
   /**
    * get an experience
    */
-  exp: GetExperienceFull_exp | null;
+  getExperience: GetExperienceFull_getExperience | null;
 }
 
 export interface GetExperienceFullVariables {
-  exp: GetExp;
+  id: string;
   entriesPagination?: PaginationInput | null;
 }
