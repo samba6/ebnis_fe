@@ -61,14 +61,6 @@ export function Sync(props: Props) {
     client
   } = props;
 
-  useEffect(() => {
-    getConnStatus(client).then(isConnected => {
-      if (!isConnected) {
-        (navigate as NavigateFn)("/404");
-      }
-    });
-  }, []);
-
   const savedExperiencesWithUnsavedEntriesLen =
     savedExperiencesWithUnsavedEntries.length;
 
@@ -91,13 +83,19 @@ export function Sync(props: Props) {
   const loading =
     loadingUnsavedExperiences || loadingSavedExperiencesWithUnsavedEntries;
 
-  if (loading && unSavedCount === 0) {
-    return <Loading />;
-  }
+  useEffect(() => {
+    if (unSavedCount === 0) {
+      (navigate as NavigateFn)("/404");
+      return;
+    }
 
-  if (unSavedCount === 0) {
-    return <div data-testid="no-unsaved">There are no unsaved data</div>;
-  }
+    getConnStatus(client).then(isConnected => {
+      if (!isConnected) {
+        (navigate as NavigateFn)("/404");
+        return;
+      }
+    });
+  }, [unSavedCount]);
 
   const savedExperiencesIdToUnsavedEntriesMap = useMemo(() => {
     let experienceIdToUnsavedEntriesMap = {} as ExperiencesIdsToUnsavedEntriesMap;
@@ -234,6 +232,10 @@ export function Sync(props: Props) {
         payload: error
       });
     }
+  }
+
+  if (loading && unSavedCount === 0) {
+    return <Loading />;
   }
 
   return (

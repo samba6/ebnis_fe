@@ -75,8 +75,8 @@ describe("component", () => {
     expect(queryByTestId("loading")).toBeInTheDocument();
   });
 
-  it("shows there are no unsaved data", () => {
-    const { ui } = makeComp({
+  it("redirects to 404 when there are no unsaved data", async done => {
+    const { ui, mockNavigate } = makeComp({
       props: {
         unSavedExperiencesProps: { unsavedExperiences: [] } as any,
         savedExperiencesWithUnsavedEntriesProps: {
@@ -87,8 +87,13 @@ describe("component", () => {
 
     const { queryByTestId } = render(ui);
 
+    await wait(() => {
+      expect(mockNavigate).toHaveBeenCalledWith("/404");
+    });
+
     expect(queryByTestId("loading")).not.toBeInTheDocument();
-    expect(queryByTestId("no-unsaved")).toBeInTheDocument();
+
+    done();
   });
 
   it("shows only saved experiences, does not show saved entries and uploads unsaved entries", async done => {

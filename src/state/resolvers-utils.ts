@@ -5,7 +5,7 @@ import {
   UNSAVED_EXPERIENCES_QUERY,
   UnsavedExperience
 } from "../components/ExperienceDefinition/resolver-utils";
-import { InMemoryCache } from "apollo-cache-inmemory";
+import { InMemoryCache, NormalizedCache } from "apollo-cache-inmemory";
 import {
   SavedExperiencesWithUnsavedEntriesQueryReturned,
   GET_SAVED_EXPERIENCES_UNSAVED_ENTRIES_QUERY
@@ -59,4 +59,19 @@ export function getSavedExperiencesWithUnsavedEntriesFromCache(
     : [];
 
   return savedExperiencesWithUnsavedEntries;
+}
+
+export function deleteEntity(cache: DataProxy, entry: string) {
+  // tslint:disable-next-line: no-any
+  const dataClass = (cache as any).data as NormalizedCache;
+
+  // tslint:disable-next-line: no-any
+  (cache as any).broadcastWatches();
+
+  // tslint:disable-next-line:no-console
+  console.log(
+    "\n\t\tLogging start\n\n\n\n dataClass\n",
+    dataClass,
+    "\n\n\n\n\t\tLogging ends\n"
+  );
 }
