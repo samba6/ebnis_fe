@@ -5,10 +5,10 @@
 import { CreateExp, FieldType } from "./globalTypes";
 
 // ====================================================
-// GraphQL mutation operation: CreateExpMutation
+// GraphQL mutation operation: CreateExperienceMutation
 // ====================================================
 
-export interface CreateExpMutation_exp_fieldDefs {
+export interface CreateExperienceMutation_exp_fieldDefs {
   __typename: "FieldDef";
   id: string;
   /**
@@ -28,7 +28,7 @@ export interface CreateExpMutation_exp_fieldDefs {
   clientId: string | null;
 }
 
-export interface CreateExpMutation_exp_entries_pageInfo {
+export interface CreateExperienceMutation_exp_entries_pageInfo {
   __typename: "PageInfo";
   /**
    * When paginating forwards, are there more items?
@@ -40,13 +40,13 @@ export interface CreateExpMutation_exp_entries_pageInfo {
   hasPreviousPage: boolean;
 }
 
-export interface CreateExpMutation_exp_entries_edges_node_fields {
+export interface CreateExperienceMutation_exp_entries_edges_node_fields {
   __typename: "Field";
   defId: string;
   data: any;
 }
 
-export interface CreateExpMutation_exp_entries_edges_node {
+export interface CreateExperienceMutation_exp_entries_edges_node {
   __typename: "Entry";
   /**
    * The ID of an object
@@ -67,10 +67,10 @@ export interface CreateExpMutation_exp_entries_edges_node {
   /**
    * The data fields belonging to this entry
    */
-  fields: (CreateExpMutation_exp_entries_edges_node_fields | null)[];
+  fields: (CreateExperienceMutation_exp_entries_edges_node_fields | null)[];
 }
 
-export interface CreateExpMutation_exp_entries_edges {
+export interface CreateExperienceMutation_exp_entries_edges {
   __typename: "EntryEdge";
   /**
    * A cursor for use in pagination
@@ -79,16 +79,16 @@ export interface CreateExpMutation_exp_entries_edges {
   /**
    * The item at the end of the edge
    */
-  node: CreateExpMutation_exp_entries_edges_node | null;
+  node: CreateExperienceMutation_exp_entries_edges_node | null;
 }
 
-export interface CreateExpMutation_exp_entries {
+export interface CreateExperienceMutation_exp_entries {
   __typename: "EntryConnection";
-  pageInfo: CreateExpMutation_exp_entries_pageInfo;
-  edges: (CreateExpMutation_exp_entries_edges | null)[] | null;
+  pageInfo: CreateExperienceMutation_exp_entries_pageInfo;
+  edges: (CreateExperienceMutation_exp_entries_edges | null)[] | null;
 }
 
-export interface CreateExpMutation_exp {
+export interface CreateExperienceMutation_exp {
   __typename: "Experience";
   /**
    * The ID of an object
@@ -114,20 +114,20 @@ export interface CreateExpMutation_exp {
   /**
    * The field definitions used for the experience entries
    */
-  fieldDefs: (CreateExpMutation_exp_fieldDefs | null)[];
+  fieldDefs: (CreateExperienceMutation_exp_fieldDefs | null)[];
   /**
    * The entries of the experience - can be paginated
    */
-  entries: CreateExpMutation_exp_entries;
+  entries: CreateExperienceMutation_exp_entries;
 }
 
-export interface CreateExpMutation {
+export interface CreateExperienceMutation {
   /**
    * Create an experience
    */
-  exp: CreateExpMutation_exp | null;
+  exp: CreateExperienceMutation_exp | null;
 }
 
-export interface CreateExpMutationVariables {
+export interface CreateExperienceMutationVariables {
   exp: CreateExp;
 }

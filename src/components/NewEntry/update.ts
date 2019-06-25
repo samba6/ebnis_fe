@@ -4,14 +4,13 @@ import immer from "immer";
 // istanbul ignore next: why flag import?
 import { CreateAnEntry } from "../../graphql/apollo-types/CreateAnEntry";
 import {
-  GetAnExp,
-  GetAnExpVariables,
-  GetAnExp_exp,
-  GetAnExp_exp_entries
-} from "../../graphql/apollo-types/GetAnExp";
-import { GET_EXP_QUERY } from "../../graphql/get-exp.query";
+  GetExperienceFull,
+  GetExperienceFullVariables,
+  GetExperienceFull_exp,
+  GetExperienceFull_exp_entries
+} from "../../graphql/apollo-types/GetExperienceFull";
+import { GET_EXP_QUERY } from "../../graphql/get-experience-full.query";
 
-// TODO: will be tested in e2e
 // istanbul ignore next: trust apollo to do the right thing -
 export const updateExperienceWithNewEntry: (
   expId: string
@@ -27,7 +26,7 @@ export const updateExperienceWithNewEntry: (
       return;
     }
 
-    const variables: GetAnExpVariables = {
+    const variables: GetExperienceFullVariables = {
       exp: {
         id: expId
       },
@@ -37,7 +36,7 @@ export const updateExperienceWithNewEntry: (
       }
     };
 
-    const data = dataProxy.readQuery<GetAnExp, GetAnExpVariables>({
+    const data = dataProxy.readQuery<GetExperienceFull, GetExperienceFullVariables>({
       query: GET_EXP_QUERY,
       variables
     });
@@ -46,10 +45,10 @@ export const updateExperienceWithNewEntry: (
       return;
     }
 
-    const exp = data.exp as GetAnExp_exp;
+    const exp = data.exp as GetExperienceFull_exp;
 
     const updatedExperience = immer(exp, proxy => {
-      const entries = proxy.entries as GetAnExp_exp_entries;
+      const entries = proxy.entries as GetExperienceFull_exp_entries;
       const edges = entries.edges || [];
 
       edges.push({

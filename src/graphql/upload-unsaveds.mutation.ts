@@ -1,5 +1,4 @@
 import gql from "graphql-tag";
-import { EXPERIENCE_NO_ENTRY_FRAGMENT } from "./experience-no-entry.fragment";
 import { ENTRY_CONNECTION_FRAGMENT } from "./entry-connection.fragment";
 import {
   UploadUnsavedExperiencesMutation,
@@ -11,6 +10,7 @@ import {
   UploadAllUnsavedsMutation,
   UploadAllUnsavedsMutationVariables
 } from "./apollo-types/UploadAllUnsavedsMutation";
+import { EXPERIENCE_NO_ENTRY_FRAGMENT } from "./experience.fragment";
 
 const UPLOAD_UNSAVED_EXPERIENCES_FRAGMENT = gql`
   fragment UploadUnsavedExperiencesFragment on OfflineExperienceSync {

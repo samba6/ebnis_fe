@@ -10,12 +10,12 @@ import { isUnsavedId } from "../../constants";
 import { ExperienceNewEntryParent as Comp } from "./component";
 import {
   GET_EXP_QUERY,
-  GetExperienceGqlProps
-} from "../../graphql/get-exp.query";
+  GetExperienceFullProps
+} from "../../graphql/get-experience-full.query";
 import {
-  GetAnExpVariables,
-  GetAnExp
-} from "../../graphql/apollo-types/GetAnExp";
+  GetExperienceFullVariables,
+  GetExperienceFull
+} from "../../graphql/apollo-types/GetExperienceFull";
 
 let resolverAdded = false;
 
@@ -50,9 +50,9 @@ const unsavedExperienceGql = graphql<
 
 const experienceGql = graphql<
   OwnProps,
-  GetAnExp,
-  GetAnExpVariables,
-  GetExperienceGqlProps | undefined
+  GetExperienceFull,
+  GetExperienceFullVariables,
+  GetExperienceFullProps | undefined
 >(GET_EXP_QUERY, {
   props: ({ data }) => data && { getExperienceGql: data },
 

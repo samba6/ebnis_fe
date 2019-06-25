@@ -38,7 +38,7 @@ import {
 } from "../../graphql/apollo-types/UploadAllUnsavedsMutation";
 import { onUploadSuccessUpdate } from "./mutation-update";
 
-const timeout = 500;
+const timeoutMs = 500;
 
 export function Sync(props: Props) {
   const {
@@ -324,7 +324,7 @@ export function Sync(props: Props) {
         <TransitionGroup className="all-unsaveds">
           {savedExperiencesWithUnsavedEntriesLen !== 0 && tabs["1"] && (
             <CSSTransition
-              timeout={timeout}
+              timeout={timeoutMs}
               key="saved-experiences"
               classNames="pane-animation-left"
             >
@@ -352,7 +352,7 @@ export function Sync(props: Props) {
 
           {unsavedExperiencesLen !== 0 && tabs["2"] && (
             <CSSTransition
-              timeout={timeout}
+              timeout={timeoutMs}
               key="unsaved-experiences"
               classNames="pane-animation-right"
             >

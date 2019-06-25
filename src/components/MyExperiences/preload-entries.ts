@@ -3,12 +3,12 @@ import {
   PreFetchExperiences,
   PreFetchExperiencesVariables
 } from "../../graphql/apollo-types/PreFetchExperiences";
-import { PRE_FETCH_EXPERIENCES_QUERY } from "../../graphql/exps.query";
+import { PRE_FETCH_EXPERIENCES_QUERY } from "../../graphql/get-experience-connection-mini.query";
 import {
-  GetAnExp,
-  GetAnExpVariables
-} from "../../graphql/apollo-types/GetAnExp";
-import { GET_EXP_QUERY } from "../../graphql/get-exp.query";
+  GetExperienceFull,
+  GetExperienceFullVariables
+} from "../../graphql/apollo-types/GetExperienceFull";
+import { GET_EXP_QUERY } from "../../graphql/get-experience-full.query";
 import { ExperienceMiniFragment } from "../../graphql/apollo-types/ExperienceMiniFragment";
 
 export function preloadEntries({
@@ -58,7 +58,7 @@ export function preloadEntries({
           return;
         }
 
-        client.writeQuery<GetAnExp, GetAnExpVariables>({
+        client.writeQuery<GetExperienceFull, GetExperienceFullVariables>({
           query: GET_EXP_QUERY,
 
           variables: {

@@ -10,6 +10,12 @@ import {
   SavedExperiencesWithUnsavedEntriesQueryReturned,
   GET_SAVED_EXPERIENCES_UNSAVED_ENTRIES_QUERY
 } from "./unsaved-resolvers";
+import {
+  GetExperienceConnectionMini,
+  GetExperienceConnectionMiniVariables
+} from "../graphql/apollo-types/GetExperienceConnectionMini";
+import { GET_EXPERIENCES_MINI_QUERY } from "../graphql/get-experience-connection-mini.query";
+import immer from "immer";
 
 export function writeSavedExperiencesWithUnsavedEntriesToCache(
   cache: DataProxy,
@@ -59,6 +65,60 @@ export function getSavedExperiencesWithUnsavedEntriesFromCache(
     : [];
 
   return savedExperiencesWithUnsavedEntries;
+}
+
+export function updateGetExperiencesQuery(
+  dataProxy: DataProxy,
+  experiences: ExperienceFragment[]
+) {
+  const variables: GetExperienceConnectionMiniVariables = {
+    input: {
+      pagination: {
+        first: 20
+      }
+    }
+  };
+
+  const experiencesMiniQuery = dataProxy.readQuery<
+    GetExperienceConnectionMini,
+    GetExperienceConnectionMiniVariables
+  >({
+    query: GET_EXPERIENCES_MINI_QUERY,
+    variables
+  });
+
+  const exps = (experiencesMiniQuery && experiencesMiniQuery.exps) || {
+    pageInfo: {
+      hasNextPage: false,
+      hasPreviousPage: false,
+      __typename: "PageInfo"
+    },
+
+    edges: [],
+
+    __typename: "ExperienceConnection"
+  };
+
+  const updatedExperienceConnection = immer(exps, proxy => {
+    const edges = (exps.edges || []).concat(
+      experiences.map(e => ({
+        node: e,
+        cursor: "",
+        __typename: "ExperienceEdge"
+      }))
+    );
+
+    proxy.edges = edges;
+  });
+
+  dataProxy.writeQuery<
+    GetExperienceConnectionMini,
+    GetExperienceConnectionMiniVariables
+  >({
+    query: GET_EXPERIENCES_MINI_QUERY,
+    variables,
+    data: { exps: updatedExperienceConnection }
+  });
 }
 
 export function deleteEntity(cache: DataProxy, entry: string) {

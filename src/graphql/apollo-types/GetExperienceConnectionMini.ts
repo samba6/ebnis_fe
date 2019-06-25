@@ -5,10 +5,10 @@
 import { GetExperiencesInput } from "./globalTypes";
 
 // ====================================================
-// GraphQL query operation: GetExps
+// GraphQL query operation: GetExperienceConnectionMini
 // ====================================================
 
-export interface GetExps_exps_pageInfo {
+export interface GetExperienceConnectionMini_exps_pageInfo {
   __typename: "PageInfo";
   /**
    * When paginating forwards, are there more items?
@@ -20,7 +20,7 @@ export interface GetExps_exps_pageInfo {
   hasPreviousPage: boolean;
 }
 
-export interface GetExps_exps_edges_node {
+export interface GetExperienceConnectionMini_exps_edges_node {
   __typename: "Experience";
   /**
    * The ID of an object
@@ -45,7 +45,7 @@ export interface GetExps_exps_edges_node {
   updatedAt: any;
 }
 
-export interface GetExps_exps_edges {
+export interface GetExperienceConnectionMini_exps_edges {
   __typename: "ExperienceEdge";
   /**
    * A cursor for use in pagination
@@ -54,23 +54,23 @@ export interface GetExps_exps_edges {
   /**
    * The item at the end of the edge
    */
-  node: GetExps_exps_edges_node | null;
+  node: GetExperienceConnectionMini_exps_edges_node | null;
 }
 
-export interface GetExps_exps {
+export interface GetExperienceConnectionMini_exps {
   __typename: "ExperienceConnection";
-  pageInfo: GetExps_exps_pageInfo;
-  edges: (GetExps_exps_edges | null)[] | null;
+  pageInfo: GetExperienceConnectionMini_exps_pageInfo;
+  edges: (GetExperienceConnectionMini_exps_edges | null)[] | null;
 }
 
-export interface GetExps {
+export interface GetExperienceConnectionMini {
   /**
    * Get all experiences belonging to a user. The experiences returned may be
    *   paginated
    */
-  exps: GetExps_exps | null;
+  exps: GetExperienceConnectionMini_exps | null;
 }
 
-export interface GetExpsVariables {
+export interface GetExperienceConnectionMiniVariables {
   input?: GetExperiencesInput | null;
 }

@@ -2,7 +2,7 @@ import { RouteComponentProps } from "@reach/router";
 import { NewEntryRouteParams } from "../../routes";
 import { WithApolloClient } from "react-apollo";
 import { UnsavedExperienceGqlProps } from "./resolvers";
-import { GetExperienceGqlProps } from "../../graphql/get-exp.query";
+import { GetExperienceFullProps } from "../../graphql/get-experience-full.query";
 
 export interface OwnProps
   extends RouteComponentProps<NewEntryRouteParams>,
@@ -11,4 +11,4 @@ export interface OwnProps
 export interface Props
   extends OwnProps,
     UnsavedExperienceGqlProps,
-    GetExperienceGqlProps {}
+    GetExperienceFullProps {}

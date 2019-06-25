@@ -2,7 +2,7 @@ import { RouteComponentProps } from "@reach/router";
 import { Reducer, Dispatch } from "react";
 import { WithApolloClient } from "react-apollo";
 
-import { GetExperiencesProps } from "../../graphql/exps.query";
+import { GetExperienceConnectionMiniProps } from "../../graphql/get-experience-connection-mini.query";
 import { UnsavedExperiencesQueryProps } from "../ExperienceDefinition/resolver-utils";
 
 export interface OwnProps
@@ -10,7 +10,7 @@ export interface OwnProps
     WithApolloClient<{}>,
     UnsavedExperiencesQueryProps {}
 
-export interface Props extends OwnProps, GetExperiencesProps {}
+export interface Props extends OwnProps, GetExperienceConnectionMiniProps {}
 
 export interface State {
   readonly toggleDescriptionStates: {

@@ -1,11 +1,14 @@
 import { graphql, compose, withApollo } from "react-apollo";
 
 import { MyExperiences as Comp } from "./component";
-import { GetExps, GetExpsVariables } from "../../graphql/apollo-types/GetExps";
 import {
-  GetExperiencesProps,
-  GET_EXP_DEFS_QUERY
-} from "../../graphql/exps.query";
+  GetExperienceConnectionMini,
+  GetExperienceConnectionMiniVariables
+} from "../../graphql/apollo-types/GetExperienceConnectionMini";
+import {
+  GetExperienceConnectionMiniProps,
+  GET_EXPERIENCES_MINI_QUERY
+} from "../../graphql/get-experience-connection-mini.query";
 import { OwnProps } from "./utils";
 import {
   UNSAVED_EXPERIENCES_QUERY,
@@ -15,10 +18,10 @@ import {
 
 const expDefsGql = graphql<
   OwnProps,
-  GetExps,
-  GetExpsVariables,
-  undefined | GetExperiencesProps
->(GET_EXP_DEFS_QUERY, {
+  GetExperienceConnectionMini,
+  GetExperienceConnectionMiniVariables,
+  undefined | GetExperienceConnectionMiniProps
+>(GET_EXPERIENCES_MINI_QUERY, {
   props: ({ data }) => data && { getExpDefsResult: data },
 
   options: ({ client }) => {

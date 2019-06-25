@@ -1,5 +1,8 @@
-import { GET_EXP_DEFS_QUERY } from "../../graphql/exps.query";
-import { GetExps, GetExpsVariables } from "../../graphql/apollo-types/GetExps";
+import { GET_EXPERIENCES_MINI_QUERY } from "../../graphql/get-experience-connection-mini.query";
+import {
+  GetExperienceConnectionMini,
+  GetExperienceConnectionMiniVariables
+} from "../../graphql/apollo-types/GetExperienceConnectionMini";
 import { CreateExpUpdateFn } from "./utils";
 import immer from "immer";
 
@@ -32,8 +35,11 @@ export const ExperienceDefinitionUpdate: CreateExpUpdateFn = async (
       }
     };
 
-    const data = client.readQuery<GetExps, GetExpsVariables>({
-      query: GET_EXP_DEFS_QUERY,
+    const data = client.readQuery<
+      GetExperienceConnectionMini,
+      GetExperienceConnectionMiniVariables
+    >({
+      query: GET_EXPERIENCES_MINI_QUERY,
       variables
     });
 
@@ -47,8 +53,8 @@ export const ExperienceDefinitionUpdate: CreateExpUpdateFn = async (
       return;
     }
 
-    const newExperienceConnection = immer(exps, draft => {
-      const edges = draft.edges || [];
+    const updatedExperienceConnection = immer(exps, proxy => {
+      const edges = proxy.edges || [];
 
       edges.push({
         node: experience,
@@ -56,13 +62,13 @@ export const ExperienceDefinitionUpdate: CreateExpUpdateFn = async (
         __typename: "ExperienceEdge"
       });
 
-      exps.edges = edges;
+      proxy.edges = edges;
     });
 
     await client.writeQuery({
-      query: GET_EXP_DEFS_QUERY,
+      query: GET_EXPERIENCES_MINI_QUERY,
       variables,
-      data: { exps: newExperienceConnection }
+      data: { exps: updatedExperienceConnection }
     });
   } catch (error) {
     if (!(error.message as string).startsWith("Can't find field exps")) {

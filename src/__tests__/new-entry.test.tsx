@@ -20,9 +20,9 @@ import { NewEntry } from "../components/NewEntry/component";
 import { Props } from "../components/NewEntry/utils";
 import { renderWithRouter, fillField, makeTestCache } from "./test_utils";
 import {
-  GetAnExp_exp,
-  GetAnExp_exp_entries
-} from "../graphql/apollo-types/GetAnExp";
+  GetExperienceFull_exp,
+  GetExperienceFull_exp_entries
+} from "../graphql/apollo-types/GetExperienceFull";
 import { FieldType } from "../graphql/apollo-types/globalTypes";
 
 jest.mock("../components/NewEntry/update");
@@ -109,8 +109,8 @@ describe("component", () => {
 
       __typename: "Experience",
 
-      entries: {} as GetAnExp_exp_entries
-    } as GetAnExp_exp;
+      entries: {} as GetExperienceFull_exp_entries
+    } as GetExperienceFull_exp;
 
     const { ui, mockCreateEntry } = makeComp({
       experience: exp
@@ -227,7 +227,7 @@ describe("component", () => {
           __typename: "FieldDef"
         }
       ]
-    } as GetAnExp_exp;
+    } as GetExperienceFull_exp;
 
     const { ui, mockCreateEntry } = makeComp({
       experience: exp
@@ -287,8 +287,8 @@ describe("component", () => {
 
       __typename: "Experience",
 
-      entries: {} as GetAnExp_exp_entries
-    } as GetAnExp_exp;
+      entries: {} as GetExperienceFull_exp_entries
+    } as GetExperienceFull_exp;
 
     const { ui, mockCreateEntry } = makeComp({
       experience: exp

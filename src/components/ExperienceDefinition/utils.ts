@@ -5,17 +5,17 @@ import { MutationUpdaterFn } from "react-apollo";
 import { Reducer } from "react";
 import { FormikErrors } from "formik";
 
-import { CreateExpMutationProps } from "../../graphql/create-exp.mutation";
+import { CreateExperienceMutationProps } from "../../graphql/create-experience.mutation";
 import {
   CreateExp as FormValues,
   CreateFieldDef,
   FieldType
 } from "../../graphql/apollo-types/globalTypes";
-import { CreateExpMutation } from "../../graphql/apollo-types/CreateExpMutation";
+import { CreateExperienceMutation } from "../../graphql/apollo-types/CreateExperienceMutation";
 import { CreateUnsavedExperienceMutationProps } from "./resolvers";
 import { WithApolloClient } from "react-apollo";
 
-export type CreateExpUpdateFn = MutationUpdaterFn<CreateExpMutation>;
+export type CreateExpUpdateFn = MutationUpdaterFn<CreateExperienceMutation>;
 
 export interface OwnProps
   extends RouteComponentProps<{}>,
@@ -23,7 +23,7 @@ export interface OwnProps
 
 export interface Props
   extends OwnProps,
-    CreateExpMutationProps,
+    CreateExperienceMutationProps,
     CreateUnsavedExperienceMutationProps {}
 
 const fieldTypeKeys = Object.values(FieldType);

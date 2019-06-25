@@ -8,9 +8,9 @@ import { Experience } from "../components/Experience/component";
 import { Props } from "../components/Experience/utils";
 import { FieldType } from "../graphql/apollo-types/globalTypes";
 import {
-  GetAnExp_exp_fieldDefs,
-  GetAnExp_exp_entries_edges
-} from "../graphql/apollo-types/GetAnExp";
+  GetExperienceFull_exp_fieldDefs,
+  GetExperienceFull_exp_entries_edges
+} from "../graphql/apollo-types/GetExperienceFull";
 import { renderWithRouter } from "./test_utils";
 
 jest.mock("../components/SidebarHeader", () => ({
@@ -149,7 +149,7 @@ it("renders entries", () => {
         ]
       }
     }
-  ] as GetAnExp_exp_entries_edges[];
+  ] as GetExperienceFull_exp_entries_edges[];
 
   const fieldDefs = [
     {
@@ -187,7 +187,7 @@ it("renders entries", () => {
       name: "field name 6",
       type: FieldType.INTEGER
     }
-  ] as GetAnExp_exp_fieldDefs[];
+  ] as GetExperienceFull_exp_fieldDefs[];
 
   const { ui } = makeComp({
     experience: {

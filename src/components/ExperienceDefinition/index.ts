@@ -3,14 +3,14 @@ import { graphql, compose, withApollo } from "react-apollo";
 import { ExperienceDefinition as Comp } from "./component";
 import { OwnProps } from "./utils";
 import {
-  EXP_MUTATION,
-  CreateExpMutationProps,
-  CreateExpMutationFn
-} from "../../graphql/create-exp.mutation";
+  CREATE_EXPERIENCE_MUTATION,
+  CreateExperienceMutationProps,
+  CreateExperienceMutationFn
+} from "../../graphql/create-experience.mutation";
 import {
-  CreateExpMutation,
-  CreateExpMutationVariables
-} from "../../graphql/apollo-types/CreateExpMutation";
+  CreateExperienceMutation,
+  CreateExperienceMutationVariables
+} from "../../graphql/apollo-types/CreateExperienceMutation";
 import {
   experienceDefinitionResolvers,
   createUnsavedExperienceGql
@@ -20,12 +20,12 @@ let resolverAdded = false;
 
 const expMutationGql = graphql<
   OwnProps,
-  CreateExpMutation,
-  CreateExpMutationVariables,
-  CreateExpMutationProps | void
->(EXP_MUTATION, {
+  CreateExperienceMutation,
+  CreateExperienceMutationVariables,
+  CreateExperienceMutationProps | void
+>(CREATE_EXPERIENCE_MUTATION, {
   props: props => {
-    const mutate = props.mutate as CreateExpMutationFn;
+    const mutate = props.mutate as CreateExperienceMutationFn;
     return {
       createExp: mutate
     };

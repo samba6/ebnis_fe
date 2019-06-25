@@ -4,9 +4,9 @@ import { Reducer, Dispatch } from "react";
 import { NewEntryRouteParams } from "../../routes";
 import { CreateEntryGqlProps } from "../../graphql/create-entry.mutation";
 import {
-  GetAnExp_exp,
-  GetAnExp_exp_fieldDefs
-} from "../../graphql/apollo-types/GetAnExp";
+  GetExperienceFull_exp,
+  GetExperienceFull_exp_fieldDefs
+} from "../../graphql/apollo-types/GetExperienceFull";
 import { fieldTypeUtils } from "./field-types-utils";
 import { WithApolloClient } from "react-apollo";
 import { CreateUnsavedEntryMutationProps } from "./resolvers";
@@ -14,7 +14,7 @@ import { CreateUnsavedEntryMutationProps } from "./resolvers";
 export interface OwnProps
   extends WithApolloClient<{}>,
     RouteComponentProps<NewEntryRouteParams> {
-  experience: GetAnExp_exp;
+  experience: GetExperienceFull_exp;
 }
 
 export interface Props
@@ -39,13 +39,13 @@ export interface FieldComponentProps {
 
 export type ToString = (val: FormObjVal) => string;
 
-function initialFormValuesFromExperience(exp: GetAnExp_exp) {
-  const fieldDefs = exp.fieldDefs as GetAnExp_exp_fieldDefs[];
+function initialFormValuesFromExperience(exp: GetExperienceFull_exp) {
+  const fieldDefs = exp.fieldDefs as GetExperienceFull_exp_fieldDefs[];
 
   return fieldDefs.reduce(
     function fieldDefReducer(acc, field, index) {
       acc[index] = fieldTypeUtils[
-        (field as GetAnExp_exp_fieldDefs).type
+        (field as GetExperienceFull_exp_fieldDefs).type
       ].default();
       return acc;
     },
@@ -53,7 +53,7 @@ function initialFormValuesFromExperience(exp: GetAnExp_exp) {
   );
 }
 
-export function makePageTitle(exp: GetAnExp_exp | null | undefined) {
+export function makePageTitle(exp: GetExperienceFull_exp | null | undefined) {
   return "[New Entry] " + ((exp && exp.title) || "entry");
 }
 
@@ -78,7 +78,7 @@ interface SetFormObjFieldPayload {
 }
 
 interface ExperienceToFormValuesPayload {
-  experience: GetAnExp_exp;
+  experience: GetExperienceFull_exp;
 }
 
 export interface Action {

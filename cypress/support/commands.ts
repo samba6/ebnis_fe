@@ -71,11 +71,11 @@ import { NormalizedCacheObject } from "apollo-cache-inmemory";
 import { CachePersistor } from "apollo-cache-persist";
 import { allResolvers } from "../../src/state/all-resolvers";
 import {
-  CreateExpMutation,
-  CreateExpMutationVariables,
-  CreateExpMutation_exp
-} from "../../src/graphql/apollo-types/CreateExpMutation";
-import { EXP_MUTATION } from "../../src/graphql/create-exp.mutation";
+  CreateExperienceMutation,
+  CreateExperienceMutationVariables,
+  CreateExperienceMutation_exp
+} from "../../src/graphql/apollo-types/CreateExperienceMutation";
+import { CREATE_EXPERIENCE_MUTATION } from "../../src/graphql/create-experience.mutation";
 
 const serverUrl = Cypress.env("API_URL") as string;
 // let cache: InMemoryCache;
@@ -140,14 +140,16 @@ function registerUser(userData: Registration) {
 }
 
 function defineOnlineExperience(experienceDefinitionArgs: CreateExp) {
-  return mutate<CreateExpMutation, CreateExpMutationVariables>({
-    mutation: EXP_MUTATION,
+  return mutate<CreateExperienceMutation, CreateExperienceMutationVariables>({
+    mutation: CREATE_EXPERIENCE_MUTATION,
     variables: {
       exp: experienceDefinitionArgs
     }
   }).then(result => {
     const exp =
-      result && result.data && (result.data.exp as CreateExpMutation_exp);
+      result &&
+      result.data &&
+      (result.data.exp as CreateExperienceMutation_exp);
 
     expect(exp.id).to.be.a("string");
 
@@ -158,7 +160,7 @@ function defineOnlineExperience(experienceDefinitionArgs: CreateExp) {
 function defineUnsavedExperience(experienceDefinitionArgs: CreateExp) {
   return mutate<
     CreateUnsavedExperienceMutationData,
-    CreateExpMutationVariables
+    CreateExperienceMutationVariables
   >({
     mutation: CREATE_UNSAVED_EXPERIENCE_MUTATION,
     variables: {
@@ -307,7 +309,7 @@ declare global {
        */
       defineOnlineExperience: (
         experienceDefinitionArgs: CreateExp
-      ) => Promise<CreateExpMutation_exp>;
+      ) => Promise<CreateExperienceMutation_exp>;
 
       defineUnsavedExperience: (
         experienceDefinitionArgs: CreateExp

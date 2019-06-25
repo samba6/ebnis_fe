@@ -8,13 +8,13 @@ import {
 } from "../../graphql/apollo-types/UploadAllUnsavedsMutation";
 import { ExperiencesIdsToUnsavedEntriesMap } from "./utils";
 import {
-  GetAnExp_exp_entries,
-  GetAnExp_exp_entries_edges,
-  GetAnExp_exp_entries_edges_node,
-  GetAnExp,
-  GetAnExpVariables
-} from "../../graphql/apollo-types/GetAnExp";
-import { GET_EXP_QUERY } from "../../graphql/get-exp.query";
+  GetExperienceFull_exp_entries,
+  GetExperienceFull_exp_entries_edges,
+  GetExperienceFull_exp_entries_edges_node,
+  GetExperienceFull,
+  GetExperienceFullVariables
+} from "../../graphql/apollo-types/GetExperienceFull";
+import { GET_EXP_QUERY } from "../../graphql/get-experience-full.query";
 import { DataProxy } from "apollo-cache";
 import {
   CreateEntriesResponseFragment,
@@ -80,7 +80,6 @@ function updateUnsavedExperiences(
   }
 
   const experiencesToBeRemovedMap = {} as UpdatedExperiencesMap;
-  let toBeRemovedCount = 0;
 
   syncOfflineExperiences.forEach(experienceResult => {
     const {
@@ -98,11 +97,13 @@ function updateUnsavedExperiences(
       experience,
       hasError: !!entriesErrors
     };
-
-    ++toBeRemovedCount;
   });
 
-  if (toBeRemovedCount === 0) {
+  const experiencesToBeRemoved = Object.values(experiencesToBeRemovedMap).map(
+    e => e.experience
+  );
+
+  if (experiencesToBeRemoved.length === 0) {
     return false;
   }
 
@@ -190,14 +191,14 @@ function updateSavedExperiences(
       updateExperienceWithSavedEntries(proxy, savedEntries);
     });
 
-    const variables: GetAnExpVariables = {
+    const variables: GetExperienceFullVariables = {
       exp: { id: expId },
       entriesPagination: {
         first: 20
       }
     };
 
-    dataProxy.writeQuery<GetAnExp, GetAnExpVariables>({
+    dataProxy.writeQuery<GetExperienceFull, GetExperienceFullVariables>({
       query: GET_EXP_QUERY,
       variables,
       data: {
@@ -252,11 +253,11 @@ function updateExperienceWithSavedEntries(
   experience: ExperienceFragment,
   savedEntries: ExperienceFragment_entries_edges_node[]
 ) {
-  const entries = experience.entries as GetAnExp_exp_entries;
+  const entries = experience.entries as GetExperienceFull_exp_entries;
 
-  const edges = (entries.edges as GetAnExp_exp_entries_edges[]).reduce(
+  const edges = (entries.edges as GetExperienceFull_exp_entries_edges[]).reduce(
     (acc, edge) => {
-      const entry = edge.node as GetAnExp_exp_entries_edges_node;
+      const entry = edge.node as GetExperienceFull_exp_entries_edges_node;
 
       const savedEntry = savedEntries.find(
         ({ clientId }) => clientId === entry.clientId
@@ -269,7 +270,7 @@ function updateExperienceWithSavedEntries(
       acc.push(edge);
       return acc;
     },
-    [] as GetAnExp_exp_entries_edges[]
+    [] as GetExperienceFull_exp_entries_edges[]
   );
 
   entries.edges = edges;

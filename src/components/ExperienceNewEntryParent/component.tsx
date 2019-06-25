@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { Props } from "./utils";
 import { Loading } from "../Loading";
 import { NEW_ENTRY_URL } from "../../constants/new-entry-route";
-import { GetExperienceGqlValues } from "../../graphql/get-exp.query";
+import { GetExperienceFullData } from "../../graphql/get-experience-full.query";
 import { UnsavedExperienceDataValue } from "./resolvers";
 import { NavigateFn } from "@reach/router";
 import { NewEntry, Experience } from "./loadables";
@@ -13,7 +13,7 @@ export const ExperienceNewEntryParent = function(props: Props) {
       loading: loadingExperience,
       error: getExperienceGqlError,
       exp
-    } = {} as GetExperienceGqlValues,
+    } = {} as GetExperienceFullData,
 
     unsavedExperienceGql: {
       loading: loadingUnsavedExperience,

@@ -80,3 +80,16 @@ export const EXPERIENCE_CONNECTION_PRE_FETCH_FRAGMENT = gql`
 
   ${EXPERIENCE_REST_FRAGMENT}
 `;
+
+export const EXPERIENCE_NO_ENTRY_FRAGMENT = gql`
+  fragment ExperienceNoEntryFragment on Experience {
+    ...ExperienceMiniFragment
+
+    fieldDefs {
+      ...FieldDefFragment
+    }
+  }
+
+  ${EXPERIENCE_MINI_FRAGMENT}
+  ${FIELD_DEF_FRAGMENT}
+`;

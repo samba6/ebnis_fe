@@ -1,9 +1,9 @@
 import React from "react";
 import {
-  GetAnExp_exp_entries_edges_node,
-  GetAnExp_exp_fieldDefs,
-  GetAnExp_exp_entries_edges_node_fields
-} from "../../graphql/apollo-types/GetAnExp";
+  GetExperienceFull_exp_entries_edges_node,
+  GetExperienceFull_exp_fieldDefs,
+  GetExperienceFull_exp_entries_edges_node_fields
+} from "../../graphql/apollo-types/GetExperienceFull";
 import { displayFieldType, formatDatetime } from "./utils";
 import "./entry-styles.scss";
 import makeClassNames from "classnames";
@@ -15,13 +15,13 @@ export function Entry({
   index,
   className = ""
 }: {
-  entry: GetAnExp_exp_entries_edges_node;
-  fieldDefs: GetAnExp_exp_fieldDefs[];
+  entry: GetExperienceFull_exp_entries_edges_node;
+  fieldDefs: GetExperienceFull_exp_fieldDefs[];
   entriesLen: number;
   index: number;
   className?: string;
 }) {
-  const fields = entry.fields as GetAnExp_exp_entries_edges_node_fields[];
+  const fields = entry.fields as GetExperienceFull_exp_entries_edges_node_fields[];
   const fieldsLen = fields.length;
 
   return (
@@ -62,15 +62,15 @@ function FieldComponent({
   index,
   fieldsLen
 }: {
-  field: GetAnExp_exp_entries_edges_node_fields;
-  fieldDefs: GetAnExp_exp_fieldDefs[];
+  field: GetExperienceFull_exp_entries_edges_node_fields;
+  fieldDefs: GetExperienceFull_exp_fieldDefs[];
   index: number;
   fieldsLen: number;
 }) {
   const { defId, data } = field;
 
   const fieldDef = fieldDefs.find(
-    (aFieldDef: GetAnExp_exp_fieldDefs) => aFieldDef.id === defId
+    (aFieldDef: GetExperienceFull_exp_fieldDefs) => aFieldDef.id === defId
   );
 
   // istanbul ignore next: impossible state?

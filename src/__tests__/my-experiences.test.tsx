@@ -8,9 +8,9 @@ import { MyExperiences } from "../components/MyExperiences/component";
 import { Props } from "../components/MyExperiences/utils";
 import { renderWithRouter } from "./test_utils";
 import {
-  GetExps_exps,
-  GetExps_exps_edges_node
-} from "../graphql/apollo-types/GetExps";
+  GetExperienceConnectionMini_exps,
+  GetExperienceConnectionMini_exps_edges_node
+} from "../graphql/apollo-types/GetExperienceConnectionMini";
 
 jest.mock("../components/SidebarHeader", () => ({
   SidebarHeader: jest.fn(() => null)
@@ -82,7 +82,7 @@ it("renders experiences from server", () => {
         }
       }
     ]
-  } as GetExps_exps;
+  } as GetExperienceConnectionMini_exps;
 
   const { Ui } = makeComp({ getExpDefsResult: { exps } as any });
 
@@ -126,7 +126,7 @@ it("renders unsaved and saved experiences", () => {
       id: "2",
       title: "2"
     }
-  ] as GetExps_exps_edges_node[];
+  ] as GetExperienceConnectionMini_exps_edges_node[];
 
   const exps = {
     edges: [
@@ -137,7 +137,7 @@ it("renders unsaved and saved experiences", () => {
         }
       }
     ]
-  } as GetExps_exps;
+  } as GetExperienceConnectionMini_exps;
 
   const { Ui } = makeComp({
     unsavedExperiencesProps: { unsavedExperiences } as any,
@@ -175,7 +175,7 @@ it("loads entries in the background when experiences are loaded", () => {
         }
       }
     ]
-  } as GetExps_exps;
+  } as GetExperienceConnectionMini_exps;
 
   const { Ui } = makeComp({ getExpDefsResult: { exps } as any });
 

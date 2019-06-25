@@ -15,7 +15,7 @@ import {
   Action_Types
 } from "./utils";
 import { makeExperienceRoute } from "../../constants/experience-route";
-import { GetAnExp_exp_fieldDefs } from "../../graphql/apollo-types/GetAnExp";
+import { GetExperienceFull_exp_fieldDefs } from "../../graphql/apollo-types/GetExperienceFull";
 import { CreateEntryFn } from "../../graphql/create-entry.mutation";
 import { updateExperienceWithNewEntry } from "./update";
 import { fieldTypeUtils } from "./field-types-utils";
@@ -70,7 +70,7 @@ export function NewEntry(props: Props) {
 
     for (const [stringIndex, val] of Object.entries(state.formObj)) {
       const index = Number(stringIndex);
-      const field = fieldDefs[index] as GetAnExp_exp_fieldDefs;
+      const field = fieldDefs[index] as GetExperienceFull_exp_fieldDefs;
 
       const { type, id } = field;
       const toString = fieldTypeUtils[type].toString as ToString;
@@ -114,7 +114,7 @@ export function NewEntry(props: Props) {
         </Button>
         <Form onSubmit={onSubmit}>
           {fieldDefs.map((obj, index) => {
-            const field = obj as GetAnExp_exp_fieldDefs;
+            const field = obj as GetExperienceFull_exp_fieldDefs;
             return (
               <FieldComponent
                 key={field.id}
@@ -150,7 +150,7 @@ export function NewEntry(props: Props) {
 }
 
 interface FieldComponentProps {
-  field: GetAnExp_exp_fieldDefs;
+  field: GetExperienceFull_exp_fieldDefs;
   index: number;
   formValues: FormObj;
   dispatch: DispatchType;
