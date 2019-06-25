@@ -22,7 +22,7 @@ const expDefsGql = graphql<
   GetExperienceConnectionMiniVariables,
   undefined | GetExperienceConnectionMiniProps
 >(GET_EXPERIENCES_MINI_QUERY, {
-  props: ({ data }) => data && { getExpDefsResult: data },
+  props: ({ data }) => data && { getExperiencesMiniProps: data },
 
   options: ({ client }) => {
     return {

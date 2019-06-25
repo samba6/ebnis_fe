@@ -47,13 +47,13 @@ export const ExperienceDefinitionUpdate: CreateExpUpdateFn = async (
       return;
     }
 
-    const { exps } = data;
+    const { getExperiences } = data;
 
-    if (!exps) {
+    if (!getExperiences) {
       return;
     }
 
-    const updatedExperienceConnection = immer(exps, proxy => {
+    const updatedExperienceConnection = immer(getExperiences, proxy => {
       const edges = proxy.edges || [];
 
       edges.push({
@@ -65,10 +65,13 @@ export const ExperienceDefinitionUpdate: CreateExpUpdateFn = async (
       proxy.edges = edges;
     });
 
-    await client.writeQuery({
+    await client.writeQuery<
+      GetExperienceConnectionMini,
+      GetExperienceConnectionMiniVariables
+    >({
       query: GET_EXPERIENCES_MINI_QUERY,
       variables,
-      data: { exps: updatedExperienceConnection }
+      data: { getExperiences: updatedExperienceConnection }
     });
   } catch (error) {
     if (!(error.message as string).startsWith("Can't find field exps")) {

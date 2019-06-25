@@ -87,7 +87,8 @@ export function updateGetExperiencesQuery(
     variables
   });
 
-  const exps = (experiencesMiniQuery && experiencesMiniQuery.exps) || {
+  const getExperiences = (experiencesMiniQuery &&
+    experiencesMiniQuery.getExperiences) || {
     pageInfo: {
       hasNextPage: false,
       hasPreviousPage: false,
@@ -99,8 +100,8 @@ export function updateGetExperiencesQuery(
     __typename: "ExperienceConnection"
   };
 
-  const updatedExperienceConnection = immer(exps, proxy => {
-    const edges = (exps.edges || []).concat(
+  const updatedExperienceConnection = immer(getExperiences, proxy => {
+    const edges = (getExperiences.edges || []).concat(
       experiences.map(e => ({
         node: e,
         cursor: "",
@@ -117,7 +118,7 @@ export function updateGetExperiencesQuery(
   >({
     query: GET_EXPERIENCES_MINI_QUERY,
     variables,
-    data: { exps: updatedExperienceConnection }
+    data: { getExperiences: updatedExperienceConnection }
   });
 }
 

@@ -38,7 +38,10 @@ export function preloadEntries({
     })
     .then(result => {
       const edges =
-        result && result.data && result.data.exps && result.data.exps.edges;
+        result &&
+        result.data &&
+        result.data.getExperiences &&
+        result.data.getExperiences.edges;
 
       if (!edges) {
         return;

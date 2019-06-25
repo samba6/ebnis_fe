@@ -8,7 +8,7 @@ import { GetExperiencesInput, PaginationInput, FieldType } from "./globalTypes";
 // GraphQL query operation: PreFetchExperiences
 // ====================================================
 
-export interface PreFetchExperiences_exps_edges_node_fieldDefs {
+export interface PreFetchExperiences_getExperiences_edges_node_fieldDefs {
   __typename: "FieldDef";
   id: string;
   /**
@@ -28,7 +28,7 @@ export interface PreFetchExperiences_exps_edges_node_fieldDefs {
   clientId: string | null;
 }
 
-export interface PreFetchExperiences_exps_edges_node_entries_pageInfo {
+export interface PreFetchExperiences_getExperiences_edges_node_entries_pageInfo {
   __typename: "PageInfo";
   /**
    * When paginating forwards, are there more items?
@@ -40,13 +40,13 @@ export interface PreFetchExperiences_exps_edges_node_entries_pageInfo {
   hasPreviousPage: boolean;
 }
 
-export interface PreFetchExperiences_exps_edges_node_entries_edges_node_fields {
+export interface PreFetchExperiences_getExperiences_edges_node_entries_edges_node_fields {
   __typename: "Field";
   defId: string;
   data: any;
 }
 
-export interface PreFetchExperiences_exps_edges_node_entries_edges_node {
+export interface PreFetchExperiences_getExperiences_edges_node_entries_edges_node {
   __typename: "Entry";
   /**
    * The ID of an object
@@ -67,10 +67,10 @@ export interface PreFetchExperiences_exps_edges_node_entries_edges_node {
   /**
    * The data fields belonging to this entry
    */
-  fields: (PreFetchExperiences_exps_edges_node_entries_edges_node_fields | null)[];
+  fields: (PreFetchExperiences_getExperiences_edges_node_entries_edges_node_fields | null)[];
 }
 
-export interface PreFetchExperiences_exps_edges_node_entries_edges {
+export interface PreFetchExperiences_getExperiences_edges_node_entries_edges {
   __typename: "EntryEdge";
   /**
    * A cursor for use in pagination
@@ -79,16 +79,16 @@ export interface PreFetchExperiences_exps_edges_node_entries_edges {
   /**
    * The item at the end of the edge
    */
-  node: PreFetchExperiences_exps_edges_node_entries_edges_node | null;
+  node: PreFetchExperiences_getExperiences_edges_node_entries_edges_node | null;
 }
 
-export interface PreFetchExperiences_exps_edges_node_entries {
+export interface PreFetchExperiences_getExperiences_edges_node_entries {
   __typename: "EntryConnection";
-  pageInfo: PreFetchExperiences_exps_edges_node_entries_pageInfo;
-  edges: (PreFetchExperiences_exps_edges_node_entries_edges | null)[] | null;
+  pageInfo: PreFetchExperiences_getExperiences_edges_node_entries_pageInfo;
+  edges: (PreFetchExperiences_getExperiences_edges_node_entries_edges | null)[] | null;
 }
 
-export interface PreFetchExperiences_exps_edges_node {
+export interface PreFetchExperiences_getExperiences_edges_node {
   __typename: "Experience";
   /**
    * The ID of an object
@@ -97,14 +97,14 @@ export interface PreFetchExperiences_exps_edges_node {
   /**
    * The field definitions used for the experience entries
    */
-  fieldDefs: (PreFetchExperiences_exps_edges_node_fieldDefs | null)[];
+  fieldDefs: (PreFetchExperiences_getExperiences_edges_node_fieldDefs | null)[];
   /**
    * The entries of the experience - can be paginated
    */
-  entries: PreFetchExperiences_exps_edges_node_entries;
+  entries: PreFetchExperiences_getExperiences_edges_node_entries;
 }
 
-export interface PreFetchExperiences_exps_edges {
+export interface PreFetchExperiences_getExperiences_edges {
   __typename: "ExperienceEdge";
   /**
    * A cursor for use in pagination
@@ -113,12 +113,12 @@ export interface PreFetchExperiences_exps_edges {
   /**
    * The item at the end of the edge
    */
-  node: PreFetchExperiences_exps_edges_node | null;
+  node: PreFetchExperiences_getExperiences_edges_node | null;
 }
 
-export interface PreFetchExperiences_exps {
+export interface PreFetchExperiences_getExperiences {
   __typename: "ExperienceConnection";
-  edges: (PreFetchExperiences_exps_edges | null)[] | null;
+  edges: (PreFetchExperiences_getExperiences_edges | null)[] | null;
 }
 
 export interface PreFetchExperiences {
@@ -126,7 +126,7 @@ export interface PreFetchExperiences {
    * Get all experiences belonging to a user. The experiences returned may be
    *   paginated
    */
-  exps: PreFetchExperiences_exps | null;
+  getExperiences: PreFetchExperiences_getExperiences | null;
 }
 
 export interface PreFetchExperiencesVariables {

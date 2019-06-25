@@ -7,10 +7,6 @@ import { render, fireEvent } from "react-testing-library";
 import { MyExperiences } from "../components/MyExperiences/component";
 import { Props } from "../components/MyExperiences/utils";
 import { renderWithRouter } from "./test_utils";
-import {
-  GetExperienceConnectionMini_exps,
-  GetExperienceConnectionMini_exps_edges_node
-} from "../graphql/apollo-types/GetExperienceConnectionMini";
 
 jest.mock("../components/SidebarHeader", () => ({
   SidebarHeader: jest.fn(() => null)
@@ -19,6 +15,10 @@ jest.mock("../components/SidebarHeader", () => ({
 jest.mock("../components/MyExperiences/preload-entries");
 
 import { preloadEntries } from "../components/MyExperiences/preload-entries";
+import {
+  ExperienceConnectionFragment,
+  ExperienceConnectionFragment_edges_node
+} from "../graphql/apollo-types/ExperienceConnectionFragment";
 
 const mockPreloadEntries = preloadEntries as jest.Mock;
 
@@ -34,7 +34,7 @@ afterEach(() => {
 
 it("renders loading state and not main", () => {
   const { Ui } = makeComp({
-    getExpDefsResult: { loading: true } as any
+    getExperiencesMiniProps: { loading: true } as any
   });
 
   const { getByTestId, queryByTestId } = render(<Ui />);
@@ -47,7 +47,9 @@ it("renders loading state and not main", () => {
 });
 
 it("does not render empty experiences", () => {
-  const { Ui } = makeComp({ getExpDefsResult: { exps: { edges: [] } } as any });
+  const { Ui } = makeComp({
+    getExperiencesMiniProps: { getExperiences: { edges: [] } } as any
+  });
 
   const { getByText, queryByTestId } = render(<Ui />);
 
@@ -64,7 +66,7 @@ it("renders experiences from server", () => {
     (d.getTime() + index).toString()
   );
 
-  const exps = {
+  const getExperiences = {
     edges: [
       {
         node: {
@@ -82,9 +84,11 @@ it("renders experiences from server", () => {
         }
       }
     ]
-  } as GetExperienceConnectionMini_exps;
+  } as ExperienceConnectionFragment;
 
-  const { Ui } = makeComp({ getExpDefsResult: { exps } as any });
+  const { Ui } = makeComp({
+    getExperiencesMiniProps: { getExperiences } as any
+  });
 
   const { queryByText, getByText, queryByTestId, getByTestId } = render(<Ui />);
 
@@ -126,9 +130,9 @@ it("renders unsaved and saved experiences", () => {
       id: "2",
       title: "2"
     }
-  ] as GetExperienceConnectionMini_exps_edges_node[];
+  ] as ExperienceConnectionFragment_edges_node[];
 
-  const exps = {
+  const getExperiences = {
     edges: [
       {
         node: {
@@ -137,11 +141,11 @@ it("renders unsaved and saved experiences", () => {
         }
       }
     ]
-  } as GetExperienceConnectionMini_exps;
+  } as ExperienceConnectionFragment;
 
   const { Ui } = makeComp({
     unsavedExperiencesProps: { unsavedExperiences } as any,
-    getExpDefsResult: { exps } as any
+    getExperiencesMiniProps: { getExperiences } as any
   });
 
   /**
@@ -159,7 +163,7 @@ it("loads entries in the background when experiences are loaded", () => {
   /**
    * Given there are experiences in the system
    */
-  const exps = {
+  const getExperiences = {
     edges: [
       {
         node: {
@@ -175,9 +179,11 @@ it("loads entries in the background when experiences are loaded", () => {
         }
       }
     ]
-  } as GetExperienceConnectionMini_exps;
+  } as ExperienceConnectionFragment;
 
-  const { Ui } = makeComp({ getExpDefsResult: { exps } as any });
+  const { Ui } = makeComp({
+    getExperiencesMiniProps: { getExperiences } as any
+  });
 
   /**
    * When we use the component
@@ -195,11 +201,13 @@ it("does not load entries in background when experiences are loaded but empty", 
   /**
    * Given there are experiences in the system
    */
-  const exps = {
+  const getExperiences = {
     edges: []
   } as any;
 
-  const { Ui } = makeComp({ getExpDefsResult: { exps } as any });
+  const { Ui } = makeComp({
+    getExperiencesMiniProps: { getExperiences } as any
+  });
 
   /**
    * When we use the component
@@ -214,7 +222,7 @@ it("does not load entries in background when experiences are loaded but empty", 
 });
 
 function makeComp({
-  getExpDefsResult = {} as any,
+  getExperiencesMiniProps = {} as any,
   ...props
 }: Partial<Props> = {}) {
   mockPreloadEntries.mockReset();
@@ -228,7 +236,7 @@ function makeComp({
     MyExperiencesP,
     {},
     {
-      getExpDefsResult,
+      getExperiencesMiniProps,
       client,
       ...props
     }

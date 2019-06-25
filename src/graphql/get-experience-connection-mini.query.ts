@@ -12,7 +12,7 @@ import {
 
 export const GET_EXPERIENCES_MINI_QUERY = gql`
   query GetExperienceConnectionMini($input: GetExperiencesInput) {
-    exps(input: $input) {
+    getExperiences(input: $input) {
       pageInfo {
         hasNextPage
         hasPreviousPage
@@ -36,7 +36,7 @@ export type GetExperienceConnectionMiniData = DataValue<
 >;
 
 export interface GetExperienceConnectionMiniProps {
-  getExpDefsResult: GetExperienceConnectionMiniData;
+  getExperiencesMiniProps: GetExperienceConnectionMiniData;
 }
 
 export const PRE_FETCH_EXPERIENCES_QUERY = gql`
@@ -44,7 +44,7 @@ export const PRE_FETCH_EXPERIENCES_QUERY = gql`
     $experiencesArgs: GetExperiencesInput
     $entriesPagination: PaginationInput
   ) {
-    exps(input: $experiencesArgs) {
+    getExperiences(input: $experiencesArgs) {
       ...ExperienceConnectionPreFetchFragment
     }
   }

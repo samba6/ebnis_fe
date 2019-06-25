@@ -82,11 +82,6 @@ export interface GetExperiencesInput {
   pagination?: PaginationInput | null;
 }
 
-export interface ListEntriesFromExperiencesIdsInput {
-  experiencesIds: (string | null)[];
-  pagination?: PaginationInput | null;
-}
-
 /**
  * Variables for login in User
  */

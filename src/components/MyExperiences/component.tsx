@@ -12,11 +12,6 @@ import {
 import { EXPERIENCE_DEFINITION_URL } from "../../routes";
 import { makeExperienceRoute } from "../../constants/experience-route";
 import { Loading } from "../Loading";
-import {
-  GetExperienceConnectionMini_exps,
-  GetExperienceConnectionMini_exps_edges,
-  GetExperienceConnectionMini_exps_edges_node
-} from "../../graphql/apollo-types/GetExperienceConnectionMini";
 import { SidebarHeader } from "../SidebarHeader";
 import { setDocumentTitle, makeSiteTitle } from "../../constants";
 import { MY_EXPERIENCES_TITLE } from "../../constants/my-experiences-title";
@@ -28,12 +23,17 @@ import {
 import { preloadEntries } from "./preload-entries";
 import { GetExperienceConnectionMiniData } from "../../graphql/get-experience-connection-mini.query";
 import { ExperienceMiniFragment } from "../../graphql/apollo-types/ExperienceMiniFragment";
+import {
+  ExperienceConnectionFragment,
+  ExperienceConnectionFragment_edges,
+  ExperienceConnectionFragment_edges_node
+} from "../../graphql/apollo-types/ExperienceConnectionFragment";
 
 export const MyExperiences = (props: Props) => {
   const {
-    getExpDefsResult: {
+    getExperiencesMiniProps: {
       loading: loadingExperiences,
-      exps
+      getExperiences
     } = {} as GetExperienceConnectionMiniData,
 
     unsavedExperiencesProps: {
@@ -59,9 +59,9 @@ export const MyExperiences = (props: Props) => {
   }, []);
 
   useEffect(() => {
-    if (exps && entriesLoadedRef.current === false) {
+    if (getExperiences && entriesLoadedRef.current === false) {
       const { idToExperienceMap, ids } = mapExperiencesToIds(
-        exps as GetExperienceConnectionMini_exps
+        getExperiences as ExperienceConnectionFragment
       );
 
       if (ids.length === 0) {
@@ -76,7 +76,7 @@ export const MyExperiences = (props: Props) => {
 
       entriesLoadedRef.current = true;
     }
-  }, [exps]);
+  }, [getExperiences]);
 
   const unsavedExperiencesAsEdges = useMemo(() => {
     if (!unsavedExperiences) {
@@ -86,23 +86,25 @@ export const MyExperiences = (props: Props) => {
     return unsavedExperiences.map((unsavedExperience: UnsavedExperience) => {
       return ({
         node: unsavedExperience
-      } as unknown) as GetExperienceConnectionMini_exps_edges;
+      } as unknown) as ExperienceConnectionFragment_edges;
     });
   }, [unsavedExperiences]);
 
   const experiencesForDisplay = useMemo(() => {
-    if (!exps) {
+    if (!getExperiences) {
       return unsavedExperiencesAsEdges;
     }
 
-    const edges = (exps.edges || []).concat(unsavedExperiencesAsEdges || []);
+    const edges = (getExperiences.edges || []).concat(
+      unsavedExperiencesAsEdges || []
+    );
     return edges;
-  }, [exps, unsavedExperiences]);
+  }, [getExperiences, unsavedExperiences]);
 
   function renderExperiences() {
     if (
-      (experiencesForDisplay as GetExperienceConnectionMini_exps_edges[])
-        .length === 0
+      (experiencesForDisplay as ExperienceConnectionFragment_edges[]).length ===
+      0
     ) {
       return (
         <Link to={EXPERIENCE_DEFINITION_URL} className="no-exp-info">
@@ -113,10 +115,10 @@ export const MyExperiences = (props: Props) => {
 
     return (
       <div data-testid="exps-container" className="exps-container">
-        {(experiencesForDisplay as GetExperienceConnectionMini_exps_edges[]).map(
+        {(experiencesForDisplay as ExperienceConnectionFragment_edges[]).map(
           edge => {
-            const experience = (edge as GetExperienceConnectionMini_exps_edges)
-              .node as GetExperienceConnectionMini_exps_edges_node;
+            const experience = (edge as ExperienceConnectionFragment_edges)
+              .node as ExperienceConnectionFragment_edges_node;
 
             const { id, ...rest } = experience;
 
@@ -164,7 +166,7 @@ export const MyExperiences = (props: Props) => {
   );
 };
 
-interface ExperienceProps extends GetExperienceConnectionMini_exps_edges_node {
+interface ExperienceProps extends ExperienceConnectionFragment_edges_node {
   showingDescription: boolean;
   dispatch: DispatchType;
 }
@@ -247,14 +249,14 @@ const ShowDescriptionToggle = React.memo(
 );
 
 function mapExperiencesToIds(
-  experienceConnection: GetExperienceConnectionMini_exps
+  experienceConnection: ExperienceConnectionFragment
 ) {
-  const edges = experienceConnection.edges as GetExperienceConnectionMini_exps_edges[];
+  const edges = experienceConnection.edges as ExperienceConnectionFragment_edges[];
   const ids: string[] = [];
 
   const idToExperienceMap = edges.reduce(
-    (acc, edge: GetExperienceConnectionMini_exps_edges) => {
-      const node = edge.node as GetExperienceConnectionMini_exps_edges_node;
+    (acc, edge: ExperienceConnectionFragment_edges) => {
+      const node = edge.node as ExperienceConnectionFragment_edges_node;
 
       const { id } = node;
       acc[id] = node;
