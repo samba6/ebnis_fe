@@ -1,7 +1,6 @@
 import { FetchResult } from "react-apollo";
 import immer from "immer";
 
-// istanbul ignore next: why flag import?
 import {
   UploadAllUnsavedsMutation,
   UploadAllUnsavedsMutation_saveOfflineExperiences
@@ -40,7 +39,6 @@ type UpdaterFn = (
   didUnsavedExperiencesUpdate?: boolean;
 };
 
-// istanbul ignore next: trust apollo to do the right thing -
 export const onUploadSuccessUpdate: (
   savedExperiencesIdsToUnsavedEntries: ExperiencesIdsToUnsavedEntriesMap
 ) => UpdaterFn = savedExperiencesIdsToUnsavedEntriesMap => (
@@ -114,32 +112,34 @@ function updateUnsavedExperiences(
     (acc, experience) => {
       const toBeRemoved = experiencesToBeRemovedMap[experience.clientId || ""];
 
-      if (toBeRemoved) {
-        if (toBeRemoved.hasError) {
-          const experienceToBeUpdated = toBeRemoved.experience;
-
-          const savedEntries = entryNodesFromExperience(experienceToBeUpdated);
-
-          const updatedExperience = immer(
-            (experience as unknown) as ExperienceFragment,
-            proxy => {
-              Object.entries(experienceToBeUpdated).forEach(([k, v]) => {
-                if (k !== "entries") {
-                  proxy[k] = v;
-                }
-              });
-
-              updateExperienceWithSavedEntries(proxy, savedEntries);
-            }
-          );
-
-          savedExperiencesWithUnsavedEntries.push(updatedExperience);
-        }
+      if (!toBeRemoved) {
+        acc.push(experience);
 
         return acc;
       }
 
-      acc.push(experience);
+      if (!toBeRemoved.hasError) {
+        return acc;
+      }
+
+      const experienceToBeUpdated = toBeRemoved.experience;
+
+      const savedEntries = entryNodesFromExperience(experienceToBeUpdated);
+
+      const updatedExperience = immer(
+        (experience as unknown) as ExperienceFragment,
+        proxy => {
+          Object.entries(experienceToBeUpdated).forEach(([k, v]) => {
+            if (k !== "entries") {
+              proxy[k] = v;
+            }
+          });
+
+          updateExperienceWithSavedEntries(proxy, savedEntries);
+        }
+      );
+
+      savedExperiencesWithUnsavedEntries.push(updatedExperience);
 
       return acc;
     },
@@ -158,40 +158,46 @@ function updateUnsavedExperiences(
 
 function updateSavedExperiences(
   dataProxy: DataProxy,
-  createEntries: Array<CreateEntriesResponseFragment | null> | null,
+  createEntriesResults: Array<CreateEntriesResponseFragment | null> | null,
   savedExperiencesIdsToUnsavedEntriesMap: ExperiencesIdsToUnsavedEntriesMap
 ) {
-  if (!createEntries) {
+  if (!createEntriesResults) {
     return;
   }
 
   const updatedExperiencesMap = {} as UpdatedExperiencesMap;
 
-  createEntries.forEach(value => {
-    const operationResponse = value as CreateEntriesResponseFragment;
+  createEntriesResults.forEach(value => {
+    const createEntriesResult = value as CreateEntriesResponseFragment;
 
-    const savedEntries = operationResponse.entries as CreateEntriesResponseFragment_entries[];
+    const savedEntries = createEntriesResult.entries as CreateEntriesResponseFragment_entries[];
 
     if (savedEntries.length === 0) {
       return;
     }
 
-    const { expId, errors } = operationResponse;
+    const { expId: experienceId, errors } = createEntriesResult;
 
-    const savedExperience = savedExperiencesIdsToUnsavedEntriesMap[expId];
+    const experienceWithUnsavedEntriesProps =
+      savedExperiencesIdsToUnsavedEntriesMap[experienceId];
 
-    if (!savedExperience) {
+    if (!experienceWithUnsavedEntriesProps) {
       return;
     }
 
-    const { experience } = savedExperience;
+    const {
+      experience: experienceWithUnsavedEntries
+    } = experienceWithUnsavedEntriesProps;
 
-    const experienceUpdatedWithSavedEntries = immer(experience, proxy => {
-      updateExperienceWithSavedEntries(proxy, savedEntries);
-    });
+    const experienceUpdatedWithSavedEntries = immer(
+      experienceWithUnsavedEntries,
+      proxy => {
+        updateExperienceWithSavedEntries(proxy, savedEntries);
+      }
+    );
 
     const variables: GetExperienceFullVariables = {
-      id: expId,
+      id: experienceId,
       entriesPagination: {
         first: 20
       }
@@ -205,7 +211,7 @@ function updateSavedExperiences(
       }
     });
 
-    updatedExperiencesMap[expId] = {
+    updatedExperiencesMap[experienceId] = {
       experience: experienceUpdatedWithSavedEntries,
       hasError: !!errors
     };
