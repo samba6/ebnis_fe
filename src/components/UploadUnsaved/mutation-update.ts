@@ -4,7 +4,7 @@ import immer from "immer";
 // istanbul ignore next: why flag import?
 import {
   UploadAllUnsavedsMutation,
-  UploadAllUnsavedsMutation_syncOfflineExperiences
+  UploadAllUnsavedsMutation_saveOfflineExperiences
 } from "../../graphql/apollo-types/UploadAllUnsavedsMutation";
 import { ExperiencesIdsToUnsavedEntriesMap } from "./utils";
 import {
@@ -51,7 +51,7 @@ export const onUploadSuccessUpdate: (
     return {};
   }
 
-  const { createEntries, syncOfflineExperiences } = uploadResult;
+  const { createEntries, saveOfflineExperiences } = uploadResult;
 
   const updatedSavedExperiences = updateSavedExperiences(
     dataProxy,
@@ -61,7 +61,7 @@ export const onUploadSuccessUpdate: (
 
   const didUnsavedExperiencesUpdate = updateUnsavedExperiences(
     dataProxy,
-    syncOfflineExperiences
+    saveOfflineExperiences
   );
 
   return {
@@ -72,19 +72,19 @@ export const onUploadSuccessUpdate: (
 
 function updateUnsavedExperiences(
   dataProxy: DataProxy,
-  syncOfflineExperiences: Array<UploadAllUnsavedsMutation_syncOfflineExperiences | null> | null
+  saveOfflineExperiences: Array<UploadAllUnsavedsMutation_saveOfflineExperiences | null> | null
 ) {
-  if (!syncOfflineExperiences) {
+  if (!saveOfflineExperiences) {
     return false;
   }
 
   const experiencesToBeRemovedMap = {} as UpdatedExperiencesMap;
 
-  syncOfflineExperiences.forEach(experienceResult => {
+  saveOfflineExperiences.forEach(experienceResult => {
     const {
       experience,
       entriesErrors
-    } = experienceResult as UploadAllUnsavedsMutation_syncOfflineExperiences;
+    } = experienceResult as UploadAllUnsavedsMutation_saveOfflineExperiences;
 
     if (!experience) {
       return;

@@ -539,11 +539,11 @@ function setTabMenuClassNames(
 function didAllUploadUnsavedExperiencesSucceed(
   uploadResult: UploadAllUnsavedsMutation
 ) {
-  if (!uploadResult.syncOfflineExperiences) {
+  if (!uploadResult.saveOfflineExperiences) {
     return false;
   }
 
-  const result = uploadResult.syncOfflineExperiences.reduce((acc, elm) => {
+  const result = uploadResult.saveOfflineExperiences.reduce((acc, elm) => {
     if (!elm || !elm.experience || elm.entriesErrors) {
       return false;
     }

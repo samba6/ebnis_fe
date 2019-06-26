@@ -8,7 +8,7 @@ import { CreateExperienceInput, CreateEntryInput, FieldType } from "./globalType
 // GraphQL mutation operation: UploadAllUnsavedsMutation
 // ====================================================
 
-export interface UploadAllUnsavedsMutation_syncOfflineExperiences_experience_fieldDefs {
+export interface UploadAllUnsavedsMutation_saveOfflineExperiences_experience_fieldDefs {
   __typename: "FieldDef";
   id: string;
   /**
@@ -28,7 +28,7 @@ export interface UploadAllUnsavedsMutation_syncOfflineExperiences_experience_fie
   clientId: string | null;
 }
 
-export interface UploadAllUnsavedsMutation_syncOfflineExperiences_experience_entries_pageInfo {
+export interface UploadAllUnsavedsMutation_saveOfflineExperiences_experience_entries_pageInfo {
   __typename: "PageInfo";
   /**
    * When paginating forwards, are there more items?
@@ -40,13 +40,13 @@ export interface UploadAllUnsavedsMutation_syncOfflineExperiences_experience_ent
   hasPreviousPage: boolean;
 }
 
-export interface UploadAllUnsavedsMutation_syncOfflineExperiences_experience_entries_edges_node_fields {
+export interface UploadAllUnsavedsMutation_saveOfflineExperiences_experience_entries_edges_node_fields {
   __typename: "Field";
   defId: string;
   data: any;
 }
 
-export interface UploadAllUnsavedsMutation_syncOfflineExperiences_experience_entries_edges_node {
+export interface UploadAllUnsavedsMutation_saveOfflineExperiences_experience_entries_edges_node {
   __typename: "Entry";
   /**
    * The ID of an object
@@ -57,9 +57,10 @@ export interface UploadAllUnsavedsMutation_syncOfflineExperiences_experience_ent
    */
   expId: string;
   /**
-   * The client ID which indicates that an entry has been created offline
-   *   and is to be synced with the server, the client ID uniquely identifies
-   *   this entry and will be used prevent sync conflict.
+   * The client ID which indicates that an entry has been created while server
+   *   is offline and is to be saved with the server, the client ID uniquely
+   *   identifies this entry and will be used prevent conflict while saving entry
+   *   created while server offline.
    */
   clientId: string | null;
   insertedAt: any;
@@ -67,10 +68,10 @@ export interface UploadAllUnsavedsMutation_syncOfflineExperiences_experience_ent
   /**
    * The data fields belonging to this entry
    */
-  fields: (UploadAllUnsavedsMutation_syncOfflineExperiences_experience_entries_edges_node_fields | null)[];
+  fields: (UploadAllUnsavedsMutation_saveOfflineExperiences_experience_entries_edges_node_fields | null)[];
 }
 
-export interface UploadAllUnsavedsMutation_syncOfflineExperiences_experience_entries_edges {
+export interface UploadAllUnsavedsMutation_saveOfflineExperiences_experience_entries_edges {
   __typename: "EntryEdge";
   /**
    * A cursor for use in pagination
@@ -79,16 +80,16 @@ export interface UploadAllUnsavedsMutation_syncOfflineExperiences_experience_ent
   /**
    * The item at the end of the edge
    */
-  node: UploadAllUnsavedsMutation_syncOfflineExperiences_experience_entries_edges_node | null;
+  node: UploadAllUnsavedsMutation_saveOfflineExperiences_experience_entries_edges_node | null;
 }
 
-export interface UploadAllUnsavedsMutation_syncOfflineExperiences_experience_entries {
+export interface UploadAllUnsavedsMutation_saveOfflineExperiences_experience_entries {
   __typename: "EntryConnection";
-  pageInfo: UploadAllUnsavedsMutation_syncOfflineExperiences_experience_entries_pageInfo;
-  edges: (UploadAllUnsavedsMutation_syncOfflineExperiences_experience_entries_edges | null)[] | null;
+  pageInfo: UploadAllUnsavedsMutation_saveOfflineExperiences_experience_entries_pageInfo;
+  edges: (UploadAllUnsavedsMutation_saveOfflineExperiences_experience_entries_edges | null)[] | null;
 }
 
-export interface UploadAllUnsavedsMutation_syncOfflineExperiences_experience {
+export interface UploadAllUnsavedsMutation_saveOfflineExperiences_experience {
   __typename: "Experience";
   /**
    * The ID of an object
@@ -103,10 +104,10 @@ export interface UploadAllUnsavedsMutation_syncOfflineExperiences_experience {
    */
   description: string | null;
   /**
-   * The client ID. For experiences created on the client and to be synced
-   *   with the server, the client ID uniquely identifies such and can be used
-   *   to enforce uniqueness at the DB level. Not providing client_id assumes
-   *   a fresh experience.
+   * The client ID. For experiences created on the client while server is
+   *   offline and to be saved , the client ID uniquely identifies such and can
+   *   be used to enforce uniqueness at the DB level. Not providing client_id
+   *   assumes a fresh experience.
    */
   clientId: string | null;
   insertedAt: any;
@@ -114,15 +115,15 @@ export interface UploadAllUnsavedsMutation_syncOfflineExperiences_experience {
   /**
    * The field definitions used for the experience entries
    */
-  fieldDefs: (UploadAllUnsavedsMutation_syncOfflineExperiences_experience_fieldDefs | null)[];
+  fieldDefs: (UploadAllUnsavedsMutation_saveOfflineExperiences_experience_fieldDefs | null)[];
   /**
    * The entries of the experience - can be paginated
    */
-  entries: UploadAllUnsavedsMutation_syncOfflineExperiences_experience_entries;
+  entries: UploadAllUnsavedsMutation_saveOfflineExperiences_experience_entries;
 }
 
-export interface UploadAllUnsavedsMutation_syncOfflineExperiences_experienceError {
-  __typename: "OfflineExperienceSyncExperienceError";
+export interface UploadAllUnsavedsMutation_saveOfflineExperiences_experienceError {
+  __typename: "OfflineExperienceExperienceError";
   /**
    * The index of the failing experience in the list of experiences input
    */
@@ -136,18 +137,18 @@ export interface UploadAllUnsavedsMutation_syncOfflineExperiences_experienceErro
   error: string;
 }
 
-export interface UploadAllUnsavedsMutation_syncOfflineExperiences_entriesErrors {
-  __typename: "OfflineExperienceSyncEntryError";
+export interface UploadAllUnsavedsMutation_saveOfflineExperiences_entriesErrors {
+  __typename: "OfflineExperienceEntryError";
   experienceId: string;
   clientId: string;
   error: string;
 }
 
-export interface UploadAllUnsavedsMutation_syncOfflineExperiences {
-  __typename: "OfflineExperienceSync";
-  experience: UploadAllUnsavedsMutation_syncOfflineExperiences_experience | null;
-  experienceError: UploadAllUnsavedsMutation_syncOfflineExperiences_experienceError | null;
-  entriesErrors: (UploadAllUnsavedsMutation_syncOfflineExperiences_entriesErrors | null)[] | null;
+export interface UploadAllUnsavedsMutation_saveOfflineExperiences {
+  __typename: "OfflineExperience";
+  experience: UploadAllUnsavedsMutation_saveOfflineExperiences_experience | null;
+  experienceError: UploadAllUnsavedsMutation_saveOfflineExperiences_experienceError | null;
+  entriesErrors: (UploadAllUnsavedsMutation_saveOfflineExperiences_entriesErrors | null)[] | null;
 }
 
 export interface UploadAllUnsavedsMutation_createEntries_entries_fields {
@@ -167,9 +168,10 @@ export interface UploadAllUnsavedsMutation_createEntries_entries {
    */
   expId: string;
   /**
-   * The client ID which indicates that an entry has been created offline
-   *   and is to be synced with the server, the client ID uniquely identifies
-   *   this entry and will be used prevent sync conflict.
+   * The client ID which indicates that an entry has been created while server
+   *   is offline and is to be saved with the server, the client ID uniquely
+   *   identifies this entry and will be used prevent conflict while saving entry
+   *   created while server offline.
    */
   clientId: string | null;
   insertedAt: any;
@@ -195,9 +197,9 @@ export interface UploadAllUnsavedsMutation_createEntries {
 
 export interface UploadAllUnsavedsMutation {
   /**
-   * Sync many experiences created offline
+   * Save many experiences created offline
    */
-  syncOfflineExperiences: (UploadAllUnsavedsMutation_syncOfflineExperiences | null)[] | null;
+  saveOfflineExperiences: (UploadAllUnsavedsMutation_saveOfflineExperiences | null)[] | null;
   /**
    * Create several entries, for several experiences
    */

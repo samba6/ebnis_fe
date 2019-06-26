@@ -13,7 +13,7 @@ import {
 import { EXPERIENCE_NO_ENTRY_FRAGMENT } from "./experience.fragment";
 
 const UPLOAD_UNSAVED_EXPERIENCES_FRAGMENT = gql`
-  fragment UploadUnsavedExperiencesFragment on OfflineExperienceSync {
+  fragment UploadUnsavedExperiencesFragment on OfflineExperience {
     experience {
       ...ExperienceNoEntryFragment
 
@@ -41,7 +41,7 @@ const UPLOAD_UNSAVED_EXPERIENCES_FRAGMENT = gql`
 
 export const UPLOAD_UNSAVED_EXPERIENCES_MUTATION = gql`
   mutation UploadUnsavedExperiencesMutation($input: [CreateExperienceInput!]!) {
-    syncOfflineExperiences(input: $input) {
+    saveOfflineExperiences(input: $input) {
       ...UploadUnsavedExperiencesFragment
     }
   }
@@ -54,7 +54,7 @@ export const UPLOAD_ALL_UNSAVEDS_MUTATION = gql`
     $unsavedExperiences: [CreateExperienceInput!]!
     $unsavedEntries: [CreateEntryInput!]!
   ) {
-    syncOfflineExperiences(input: $unsavedExperiences) {
+    saveOfflineExperiences(input: $unsavedExperiences) {
       ...UploadUnsavedExperiencesFragment
     }
 

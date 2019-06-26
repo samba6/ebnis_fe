@@ -243,7 +243,7 @@ describe("component", () => {
 
     mockUploadUnsavedExperiences.mockResolvedValue({
       data: {
-        syncOfflineExperiences: [
+        saveOfflineExperiences: [
           {
             experience: unsavedExperience
           }
@@ -370,7 +370,7 @@ describe("component", () => {
             errors: {}
           }
         ],
-        syncOfflineExperiences: [{}]
+        saveOfflineExperiences: [{}]
       }
     });
 

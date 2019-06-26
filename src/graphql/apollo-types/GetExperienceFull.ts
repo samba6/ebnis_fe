@@ -57,9 +57,10 @@ export interface GetExperienceFull_getExperience_entries_edges_node {
    */
   expId: string;
   /**
-   * The client ID which indicates that an entry has been created offline
-   *   and is to be synced with the server, the client ID uniquely identifies
-   *   this entry and will be used prevent sync conflict.
+   * The client ID which indicates that an entry has been created while server
+   *   is offline and is to be saved with the server, the client ID uniquely
+   *   identifies this entry and will be used prevent conflict while saving entry
+   *   created while server offline.
    */
   clientId: string | null;
   insertedAt: any;
@@ -103,10 +104,10 @@ export interface GetExperienceFull_getExperience {
    */
   description: string | null;
   /**
-   * The client ID. For experiences created on the client and to be synced
-   *   with the server, the client ID uniquely identifies such and can be used
-   *   to enforce uniqueness at the DB level. Not providing client_id assumes
-   *   a fresh experience.
+   * The client ID. For experiences created on the client while server is
+   *   offline and to be saved , the client ID uniquely identifies such and can
+   *   be used to enforce uniqueness at the DB level. Not providing client_id
+   *   assumes a fresh experience.
    */
   clientId: string | null;
   insertedAt: any;

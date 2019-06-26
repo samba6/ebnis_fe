@@ -57,9 +57,10 @@ export interface ExperienceRestFragment_entries_edges_node {
    */
   expId: string;
   /**
-   * The client ID which indicates that an entry has been created offline
-   *   and is to be synced with the server, the client ID uniquely identifies
-   *   this entry and will be used prevent sync conflict.
+   * The client ID which indicates that an entry has been created while server
+   *   is offline and is to be saved with the server, the client ID uniquely
+   *   identifies this entry and will be used prevent conflict while saving entry
+   *   created while server offline.
    */
   clientId: string | null;
   insertedAt: any;

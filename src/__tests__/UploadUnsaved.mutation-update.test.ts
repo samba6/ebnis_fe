@@ -33,12 +33,12 @@ beforeEach(() => {
   mockWriteUnsavedExperiencesToCache.mockReset();
 });
 
-it("does not update if no 'createEntries' and 'syncOfflineExperiences' operations", () => {
+it("does not update if no 'createEntries' and 'saveOfflineExperiences' operations", () => {
   const createEntries = null;
-  const syncOfflineExperiences = null;
+  const saveOfflineExperiences = null;
 
   const result = onUploadSuccessUpdate({})(mockDataProxy, {
-    data: { createEntries, syncOfflineExperiences } as any
+    data: { createEntries, saveOfflineExperiences } as any
   });
 
   expect(result.updatedSavedExperiences).not.toBeDefined();
@@ -57,12 +57,12 @@ it("returns empty updated experiences list if result of 'createEntries' operatio
   expect(result.updatedSavedExperiences).toEqual([]);
 });
 
-it("does not update if result of 'syncOfflineExperiences' operation is empty", () => {
-  const syncOfflineExperiencesResult = [] as any;
+it("does not update if result of 'saveOfflineExperiences' operation is empty", () => {
+  const saveOfflineExperiencesResult = [] as any;
 
   const result = onUploadSuccessUpdate({})(mockDataProxy, {
     data: {
-      syncOfflineExperiences: syncOfflineExperiencesResult
+      saveOfflineExperiences: saveOfflineExperiencesResult
     } as any
   });
 
@@ -224,8 +224,8 @@ it("removes saved experience from cache only if 'createEntries' operation return
   done();
 });
 
-it("removes unsaved experience from cache only if 'syncOfflineExperiences' operation returns no error for that experience", () => {
-  // No 'syncOfflineExperiences' operation errors
+it("removes unsaved experience from cache only if 'saveOfflineExperiences' operation returns no error for that experience", () => {
+  // No 'saveOfflineExperiences' operation errors
   const experience1 = {
     id: "1",
     clientId: "1"
@@ -241,7 +241,7 @@ it("removes unsaved experience from cache only if 'syncOfflineExperiences' opera
     clientId: "b"
   } as any;
 
-  // has 'syncOfflineExperiences' operation 'entriesErrors'
+  // has 'saveOfflineExperiences' operation 'entriesErrors'
   const experience2 = {
     id: "unsaved-id-2",
     clientId: "2",
@@ -272,13 +272,13 @@ it("removes unsaved experience from cache only if 'syncOfflineExperiences' opera
     }
   };
 
-  // has 'syncOfflineExperiences' operation 'experienceError' error
+  // has 'saveOfflineExperiences' operation 'experienceError' error
   const experience3 = {
     id: "3",
     clientId: "3"
   } as any;
 
-  // not part of 'syncOfflineExperiences' operation result, but exists in cache
+  // not part of 'saveOfflineExperiences' operation result, but exists in cache
   const experience4 = {};
 
   mockGetUnsavedExperiencesFromCache.mockReturnValue([
@@ -314,7 +314,7 @@ it("removes unsaved experience from cache only if 'syncOfflineExperiences' opera
     mockDataProxy,
     {
       data: {
-        syncOfflineExperiences: operationResults as any
+        saveOfflineExperiences: operationResults as any
       } as any
     }
   );
