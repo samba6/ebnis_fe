@@ -20,7 +20,7 @@ import {
   ExperienceFragment_entries_edges_node_fields
 } from "../../graphql/apollo-types/ExperienceFragment";
 import { isUnsavedId } from "../../constants";
-import { Entry } from "../Experience/entry";
+import { Entry } from "../Entry/component";
 import "./styles.scss";
 import { UnsavedExperience } from "../ExperienceNewEntryParent/resolvers";
 import { CSSTransition, TransitionGroup } from "react-transition-group";

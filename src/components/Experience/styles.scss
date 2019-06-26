@@ -6,20 +6,47 @@
 
   .main {
     @extend %app-main;
-    padding: 10px;
+    margin: 10px;
+    width: initial;
+    flex: initial;
+
+    &.ui.card:last-child {
+      margin-bottom: 10px;
+    }
+  }
+
+  .experience__header {
+    flex-grow: 0 !important;
+  }
+
+  .experience__header,
+  .experience__main {
+    padding: 5px !important;
   }
 
   .title {
     font-weight: 900;
   }
 
-  .new-experience-entry-button {
-    margin-top: 10px;
-    text-align: center;
-    margin-bottom: 10px;
-  }
-
   .no-entries {
     cursor: pointer;
+  }
+
+  .options-menu-container {
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 10px;
+  }
+
+  .options-menu__trigger {
+    &.ui.icon {
+      padding-right: 5px !important;
+    }
+
+    .text {
+      position: relative;
+      left: -10px;
+    }
   }
 }

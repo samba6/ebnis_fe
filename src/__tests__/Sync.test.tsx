@@ -21,7 +21,7 @@ jest.mock("../components/SidebarHeader", () => ({
 
 jest.mock("../state/get-conn-status");
 jest.mock("../components/Sync/mutation-update");
-jest.mock("../components/Experience/entry", () => ({
+jest.mock("../components/Entry/component", () => ({
   Entry: () => null
 }));
 

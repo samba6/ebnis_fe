@@ -101,9 +101,10 @@ context("experience page", () => {
         });
 
         /**
-         * When we click on the button
+         * When we click new experience button in the menu
          */
-        cy.getByTestId("new-exp-entry-button").click();
+        cy.getByTestId("experience-options-menu").click();
+        cy.getByTestId("new-experience-entry-button").click();
 
         /**
          * Then we should be redirected to new entry page
