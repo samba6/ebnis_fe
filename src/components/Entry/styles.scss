@@ -39,14 +39,24 @@
     padding: 5px;
   }
 
+  .field__header {
+    display: flex;
+  }
+
   .field__name {
     font-weight: 700;
+    flex: 1;
   }
 
   .field__options {
-    float: right;
     color: $app-color;
     cursor: pointer;
+    padding-left: 30px;
+    min-height: 40px;
+
+    & > .menu {
+      margin-top: -15px;
+    }
   }
 
   .field__text {
