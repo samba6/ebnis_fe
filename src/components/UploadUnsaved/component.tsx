@@ -40,7 +40,7 @@ import { onUploadSuccessUpdate } from "./mutation-update";
 
 const timeoutMs = 500;
 
-export function Sync(props: Props) {
+export function UploadUnsaved(props: Props) {
   const {
     unSavedExperiencesProps: {
       loading: loadingUnsavedExperiences,
@@ -239,11 +239,11 @@ export function Sync(props: Props) {
   }
 
   return (
-    <div className="components-sync">
+    <div className="components-upload-unsaved">
       <ModalComponent open={uploading} />
 
       <SidebarHeader sidebar={true}>
-        <div className="components-sync-header">
+        <div className="components-upload-unsaved-header">
           <span>Unsaved Preview</span>
 
           {!uploadResult && (

@@ -39,10 +39,10 @@ interface State {
 }
 
 export enum ActionType {
-  toggleTab = "@components/sync/toggle-tab",
-  setUploading = "@components/sync/set-uploading",
-  uploadResult = "@components/sync/upload-result",
-  setServerError = "@components/sync/set-server-error"
+  toggleTab = "@components/upload-unsaved/toggle-tab",
+  setUploading = "@components/upload-unsaved/set-uploading",
+  uploadResult = "@components/upload-unsaved/result",
+  setServerError = "@components/upload-unsaved/set-server-error"
 }
 
 interface Action {

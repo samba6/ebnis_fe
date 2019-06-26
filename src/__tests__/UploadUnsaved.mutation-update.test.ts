@@ -1,5 +1,5 @@
 // tslint:disable: no-any
-import { onUploadSuccessUpdate } from "../components/Sync/mutation-update";
+import { onUploadSuccessUpdate } from "../components/UploadUnsaved/mutation-update";
 
 jest.mock("../state/resolvers-utils");
 

@@ -1,4 +1,4 @@
-import { Sync as Comp } from "./component";
+import { UploadUnsaved as Comp } from "./component";
 import { compose, graphql, withApollo } from "react-apollo";
 import {
   savedExperiencesWithUnSavedEntriesGql,
@@ -63,7 +63,7 @@ const uploadAllUnsavedsGql = graphql<
     }
 });
 
-export const Sync = compose(
+export const UploadUnsaved = compose(
   savedExperiencesWithUnSavedEntriesGql,
   unSavedExperiencesGql,
   uploadUnsavedExperiencesGql,
@@ -72,4 +72,4 @@ export const Sync = compose(
   withApollo
 )(Comp);
 
-export default Sync;
+export default UploadUnsaved;

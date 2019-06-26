@@ -11,7 +11,7 @@ import {
   LayoutProvider,
   ILayoutContextContext
 } from "../components/Layout/utils";
-import { SYNC_PREVIEW_URL } from "../constants/sync-routes";
+import { UPLOAD_UNSAVED_PREVIEW_URL } from "../constants/upload-unsaved-routes";
 
 type P = ComponentType<Partial<Props>>;
 const HeaderP = Header as P;
@@ -274,7 +274,7 @@ it("renders show sidebar icon but not close icon", () => {
   expect(queryByTestId("unsaved-count-label")).not.toBeInTheDocument();
 });
 
-it("renders unsaved count when not in sync route", () => {
+it("renders unsaved count when not in 'upload unsaved' route", () => {
   const { ui } = setup({
     context: {
       unsavedCount: 1
@@ -286,14 +286,14 @@ it("renders unsaved count when not in sync route", () => {
   expect(queryByTestId("unsaved-count-label")).toBeInTheDocument();
 });
 
-it("does not render unsaved count in sync route", () => {
+it("does not render unsaved count in 'upload unsaved' route", () => {
   const { ui } = setup({
     context: {
       unsavedCount: 1
     },
 
     props: {
-      location: { pathname: SYNC_PREVIEW_URL } as any
+      location: { pathname: UPLOAD_UNSAVED_PREVIEW_URL } as any
     }
   });
 

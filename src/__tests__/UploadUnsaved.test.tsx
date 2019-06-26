@@ -3,8 +3,11 @@ import React, { ComponentType } from "react";
 import "jest-dom/extend-expect";
 import "react-testing-library/cleanup-after-each";
 import { render, fireEvent, wait, waitForElement } from "react-testing-library";
-import { Sync } from "../components/Sync/component";
-import { Props, fieldDefToUnsavedData } from "../components/Sync/utils";
+import { UploadUnsaved } from "../components/UploadUnsaved/component";
+import {
+  Props,
+  fieldDefToUnsavedData
+} from "../components/UploadUnsaved/utils";
 import { ExperienceFragment } from "../graphql/apollo-types/ExperienceFragment";
 import { makeUnsavedId } from "../constants";
 import { renderWithRouter, makeFieldDefs, makeEntryNode } from "./test_utils";
@@ -20,18 +23,18 @@ jest.mock("../components/SidebarHeader", () => ({
 }));
 
 jest.mock("../state/get-conn-status");
-jest.mock("../components/Sync/mutation-update");
+jest.mock("../components/UploadUnsaved/mutation-update");
 jest.mock("../components/Entry/component", () => ({
   Entry: () => null
 }));
 
 import { getConnStatus } from "../state/get-conn-status";
-import { onUploadSuccessUpdate } from "../components/Sync/mutation-update";
+import { onUploadSuccessUpdate } from "../components/UploadUnsaved/mutation-update";
 
 const mockGetConnectionStatus = getConnStatus as jest.Mock;
 const mockOnUploadSuccessUpdate = onUploadSuccessUpdate as jest.Mock;
 
-const SyncP = Sync as ComponentType<Partial<Props>>;
+const UploadUnsavedP = UploadUnsaved as ComponentType<Partial<Props>>;
 const timeStamps = { insertedAt: "a", updatedAt: "a" };
 
 describe("component", () => {
@@ -502,7 +505,7 @@ function makeComp({
   const mockUploadSavedExperiencesEntries = jest.fn();
   const mockUploadAllUnsaveds = jest.fn();
 
-  const { Ui, ...routerProps } = renderWithRouter(SyncP);
+  const { Ui, ...routerProps } = renderWithRouter(UploadUnsavedP);
 
   return {
     ui: (

@@ -9,7 +9,7 @@ import { EXPERIENCE_URL } from "../../constants/experience-route";
 import { NEW_ENTRY_URL } from "../../constants/new-entry-route";
 import Loadable from "react-loadable";
 import { LoadableLoading } from "../../components/Loading";
-import { SYNC_PREVIEW_URL } from "../../constants/sync-routes";
+import { UPLOAD_UNSAVED_PREVIEW_URL } from "../../constants/upload-unsaved-routes";
 
 const ExperienceDefinition = Loadable({
   loader: () => import("../../components/ExperienceDefinition"),
@@ -26,8 +26,8 @@ const MyExperiences = Loadable({
   loading: LoadableLoading
 });
 
-const Sync = Loadable({
-  loader: () => import("../../components/Sync"),
+const UploadUnsaved = Loadable({
+  loader: () => import("../../components/UploadUnsaved"),
   loading: LoadableLoading
 });
 
@@ -52,7 +52,10 @@ export function App(props: RouteComponentProps) {
 
         <AuthRequired path={EXPERIENCES_URL} component={MyExperiences} />
 
-        <AuthRequired path={SYNC_PREVIEW_URL} component={Sync} />
+        <AuthRequired
+          path={UPLOAD_UNSAVED_PREVIEW_URL}
+          component={UploadUnsaved}
+        />
 
         <NotFound default={true} />
       </Router>

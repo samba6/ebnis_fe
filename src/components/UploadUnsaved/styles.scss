@@ -4,10 +4,10 @@
 $translateLen: 50px;
 $transitionTime: 500ms;
 
-.components-sync {
+.components-upload-unsaved {
   @extend %route-main;
 
-  .components-sync-header {
+  .components-upload-unsaved-header {
     margin-top: -10px;
     color: $app-color;
     font-weight: bolder;

@@ -8,7 +8,10 @@ import "./styles.scss";
 import { Props } from "./utils";
 import { EXPERIENCES_URL, ROOT_URL } from "../../routes";
 import { LayoutContext } from "../Layout/utils";
-import { SYNC_PREVIEW_URL, SYNC_URL_START } from "../../constants/sync-routes";
+import {
+  UPLOAD_UNSAVED_PREVIEW_URL,
+  UPLOAD_UNSAVED_URL_START
+} from "../../constants/upload-unsaved-routes";
 
 export const Header = (props: Props) => {
   const {
@@ -81,9 +84,9 @@ export const Header = (props: Props) => {
         )}
       </Menu>
 
-      {unsavedCount > 0 && !pathname.includes(SYNC_URL_START) && (
+      {unsavedCount > 0 && !pathname.includes(UPLOAD_UNSAVED_URL_START) && (
         <Link
-          to={SYNC_PREVIEW_URL}
+          to={UPLOAD_UNSAVED_PREVIEW_URL}
           data-testid="unsaved-count-label"
           className="unsaved-count-label"
         >
