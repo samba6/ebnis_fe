@@ -52,7 +52,7 @@ export const UPLOAD_UNSAVED_EXPERIENCES_MUTATION = gql`
 export const UPLOAD_ALL_UNSAVEDS_MUTATION = gql`
   mutation UploadAllUnsavedsMutation(
     $unsavedExperiences: [CreateExperienceInput!]!
-    $unsavedEntries: [CreateEntry!]!
+    $unsavedEntries: [CreateEntryInput!]!
   ) {
     syncOfflineExperiences(input: $unsavedExperiences) {
       ...UploadUnsavedExperiencesFragment

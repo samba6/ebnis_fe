@@ -15,21 +15,23 @@ import {
 
 // istanbul ignore next: trust apollo to do the right thing -
 export const updateExperienceWithNewEntry: (
-  expId: string
-) => MutationUpdaterFn<CreateEntryMutation> = function updateFn(expId: string) {
+  experienceId: string
+) => MutationUpdaterFn<CreateEntryMutation> = function updateFn(
+  experienceId: string
+) {
   return async function updateFnInner(dataProxy, { data: newEntryEntry }) {
     if (!newEntryEntry) {
       return;
     }
 
-    const { entry } = newEntryEntry;
+    const { createEntry: entry } = newEntryEntry;
 
     if (!entry) {
       return;
     }
 
     const variables: GetExperienceFullVariables = {
-      id: expId,
+      id: experienceId,
       entriesPagination: {
         first: 20
       }
@@ -63,11 +65,11 @@ export const updateExperienceWithNewEntry: (
       proxy.entries = entries;
     });
 
-    await dataProxy.writeQuery({
+    await dataProxy.writeQuery<GetExperienceFull, GetExperienceFullVariables>({
       query: GET_EXPERIENCE_FULL_QUERY,
       variables,
       data: {
-        exp: updatedExperience
+        getExperience: updatedExperience
       }
     });
 

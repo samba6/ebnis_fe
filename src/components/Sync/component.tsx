@@ -26,7 +26,7 @@ import { UnsavedExperience } from "../ExperienceNewEntryParent/resolvers";
 import { CSSTransition, TransitionGroup } from "react-transition-group";
 import makeClassNames from "classnames";
 import Button from "semantic-ui-react/dist/commonjs/elements/Button";
-import { CreateEntry } from "../../graphql/apollo-types/globalTypes";
+import { CreateEntryInput } from "../../graphql/apollo-types/globalTypes";
 import { UploadAllUnsavedsMutationFn } from "../../graphql/upload-unsaveds.mutation";
 import { getConnStatus } from "../../state/get-conn-status";
 import { NavigateFn } from "@reach/router";
@@ -505,7 +505,7 @@ function savedExperiencesWithUnsavedEntriesToUploadData(
 
       return acc.concat(entries);
     },
-    [] as CreateEntry[]
+    [] as CreateEntryInput[]
   );
 }
 

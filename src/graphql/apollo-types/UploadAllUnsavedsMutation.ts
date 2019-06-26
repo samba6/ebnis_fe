@@ -2,7 +2,7 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
-import { CreateExperienceInput, CreateEntry, FieldType } from "./globalTypes";
+import { CreateExperienceInput, CreateEntryInput, FieldType } from "./globalTypes";
 
 // ====================================================
 // GraphQL mutation operation: UploadAllUnsavedsMutation
@@ -206,5 +206,5 @@ export interface UploadAllUnsavedsMutation {
 
 export interface UploadAllUnsavedsMutationVariables {
   unsavedExperiences: CreateExperienceInput[];
-  unsavedEntries: CreateEntry[];
+  unsavedEntries: CreateEntryInput[];
 }

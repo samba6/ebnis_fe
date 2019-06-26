@@ -18,7 +18,7 @@ import {
 
 let resolverAdded = false;
 
-const expMutationGql = graphql<
+const createExperienceMutationGql = graphql<
   OwnProps,
   CreateExperienceMutation,
   CreateExperienceMutationVariables,
@@ -43,7 +43,7 @@ const expMutationGql = graphql<
 
 export const ExperienceDefinition = compose(
   withApollo,
-  expMutationGql,
+  createExperienceMutationGql,
   createUnsavedExperienceGql
 )(Comp);
 

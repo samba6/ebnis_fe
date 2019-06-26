@@ -8,8 +8,8 @@ import {
 import { ENTRY_FRAGMENT } from "./entry.fragment";
 
 export const CREATE_ENTRY_MUTATION = gql`
-  mutation CreateEntryMutation($entry: CreateEntry!) {
-    entry(entry: $entry) {
+  mutation CreateEntryMutation($input: CreateEntryInput!) {
+    createEntry(input: $input) {
       ...EntryFragment
     }
   }

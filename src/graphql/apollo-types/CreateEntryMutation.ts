@@ -2,19 +2,19 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
-import { CreateEntry } from "./globalTypes";
+import { CreateEntryInput } from "./globalTypes";
 
 // ====================================================
 // GraphQL mutation operation: CreateEntryMutation
 // ====================================================
 
-export interface CreateEntryMutation_entry_fields {
+export interface CreateEntryMutation_createEntry_fields {
   __typename: "Field";
   defId: string;
   data: any;
 }
 
-export interface CreateEntryMutation_entry {
+export interface CreateEntryMutation_createEntry {
   __typename: "Entry";
   /**
    * The ID of an object
@@ -35,7 +35,7 @@ export interface CreateEntryMutation_entry {
   /**
    * The data fields belonging to this entry
    */
-  fields: (CreateEntryMutation_entry_fields | null)[];
+  fields: (CreateEntryMutation_createEntry_fields | null)[];
 }
 
 export interface CreateEntryMutation {
@@ -58,9 +58,9 @@ export interface CreateEntryMutation {
    *     ]
    *   }
    */
-  entry: CreateEntryMutation_entry | null;
+  createEntry: CreateEntryMutation_createEntry | null;
 }
 
 export interface CreateEntryMutationVariables {
-  entry: CreateEntry;
+  input: CreateEntryInput;
 }

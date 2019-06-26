@@ -1,5 +1,4 @@
 import { LocalResolverFn, CacheContext } from "../../state/resolvers";
-import { CreateEntryMutation_entry } from "../../graphql/apollo-types/CreateEntryMutation";
 import { makeUnsavedId, isUnsavedId } from "../../constants";
 import { CreateField } from "../../graphql/apollo-types/globalTypes";
 import gql from "graphql-tag";
@@ -22,6 +21,7 @@ import {
   GET_SAVED_EXPERIENCES_UNSAVED_ENTRIES_QUERY,
   SavedExperiencesWithUnsavedEntriesQueryReturned
 } from "../../state/unsaved-resolvers";
+import { EntryFragment } from "../../graphql/apollo-types/EntryFragment";
 
 const CREATE_UNSAVED_ENTRY_MUTATION = gql`
   mutation CreateUnsavedEntry($experience: Experience!, $fields: [Fields!]!) {
@@ -61,7 +61,7 @@ const CREATE_UNSAVED_ENTRY_TYPENAME = "CreateUnsavedEntry" as CreateUnsavedEntry
 
 interface CreateUnsavedEntryMutationReturned {
   createUnsavedEntry: {
-    entry: CreateEntryMutation_entry;
+    entry: EntryFragment;
     experience: UnsavedExperience;
     savedExperiencesWithUnsavedEntries: ExperienceFragment[] | null;
     __typename: CreateUnsavedEntryTypename;
@@ -88,7 +88,7 @@ const createUnsavedEntryResolver: LocalResolverFn<
     };
   });
 
-  const entry: CreateEntryMutation_entry = {
+  const entry: EntryFragment = {
     __typename: "Entry",
     id,
     clientId: id,
@@ -106,7 +106,7 @@ const createUnsavedEntryResolver: LocalResolverFn<
     experience = ((await updateSavedExperienceWithNewUnsavedEntry(experienceId)(
       cache,
       {
-        data: { entry }
+        data: { createEntry: entry }
       }
     )) as unknown) as UnsavedExperience;
 
@@ -127,7 +127,7 @@ const createUnsavedEntryResolver: LocalResolverFn<
 function updateUnsavedExperienceEntry(
   { cache, getCacheKey }: CacheContext,
   experience: UnsavedExperience,
-  entry: CreateEntryMutation_entry
+  entry: EntryFragment
 ) {
   const id = experience.id;
 

@@ -84,7 +84,7 @@ export function NewEntry(props: Props) {
     if (await getConnStatus(client)) {
       await (createEntry as CreateEntryMutationFn)({
         variables: {
-          entry: {
+          input: {
             expId,
             fields
           }

@@ -2,7 +2,7 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
-import { CreateEntry } from "./globalTypes";
+import { CreateEntryInput } from "./globalTypes";
 
 // ====================================================
 // GraphQL mutation operation: CreateEntriesMutation
@@ -59,5 +59,5 @@ export interface CreateEntriesMutation {
 }
 
 export interface CreateEntriesMutationVariables {
-  createEntries: CreateEntry[];
+  createEntries: CreateEntryInput[];
 }

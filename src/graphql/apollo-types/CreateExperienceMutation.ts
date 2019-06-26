@@ -2,7 +2,7 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
-import { CreateExperienceInput, FieldType } from "./globalTypes";
+import { CreateExperienceInput, PaginationInput, FieldType } from "./globalTypes";
 
 // ====================================================
 // GraphQL mutation operation: CreateExperienceMutation
@@ -129,5 +129,6 @@ export interface CreateExperienceMutation {
 }
 
 export interface CreateExperienceMutationVariables {
-  input: CreateExperienceInput;
+  createExperienceInput: CreateExperienceInput;
+  entriesPagination?: PaginationInput | null;
 }

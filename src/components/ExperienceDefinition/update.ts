@@ -74,7 +74,9 @@ export const ExperienceDefinitionUpdate: CreateExpUpdateFn = async (
       data: { getExperiences: updatedExperienceConnection }
     });
   } catch (error) {
-    if (!(error.message as string).startsWith("Can't find field exps")) {
+    if (
+      !(error.message as string).startsWith("Can't find field getExperiences")
+    ) {
       throw error;
     }
   }

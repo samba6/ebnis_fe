@@ -21,7 +21,7 @@ export enum FieldType {
 /**
  * Variables for creating an experience entry
  */
-export interface CreateEntry {
+export interface CreateEntryInput {
   clientId?: string | null;
   expId: string;
   fields: (CreateField | null)[];
@@ -35,7 +35,7 @@ export interface CreateEntry {
 export interface CreateExperienceInput {
   clientId?: string | null;
   description?: string | null;
-  entries?: (CreateEntry | null)[] | null;
+  entries?: (CreateEntryInput | null)[] | null;
   fieldDefs: (CreateFieldDef | null)[];
   insertedAt?: any | null;
   title: string;

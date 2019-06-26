@@ -21,7 +21,13 @@ const createUnsavedExperienceResolver: LocalResolverFn<
   UnsavedExperience
 > = (
   root,
-  { input: { description = null, title, fieldDefs: createFieldDefs } },
+  {
+    createExperienceInput: {
+      description = null,
+      title,
+      fieldDefs: createFieldDefs
+    }
+  },
   { cache }
 ) => {
   const today = new Date();
@@ -73,8 +79,11 @@ const createUnsavedExperienceResolver: LocalResolverFn<
 };
 
 export const CREATE_UNSAVED_EXPERIENCE_MUTATION = gql`
-  mutation CreateUnsavedExperienceMutation($exp: CreateExperience!) {
-    createUnsavedExperience(exp: $exp) @client {
+  mutation CreateUnsavedExperienceMutation(
+    $createExperienceInput: CreateExperienceInput!
+  ) {
+    createUnsavedExperience(createExperienceInput: $createExperienceInput)
+      @client {
       ...UnsavedExperienceFragment
     }
   }

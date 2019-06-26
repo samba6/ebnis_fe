@@ -191,9 +191,9 @@ it("adds field from top", async () => {
    */
   await wait(
     () =>
-      expect(mockCreateExperience).toBeCalledWith({
+      expect(mockCreateExperience.mock.calls[0][0]).toMatchObject({
         variables: {
-          input: {
+          createExperienceInput: {
             title,
             fieldDefs,
             description: ""
@@ -286,9 +286,9 @@ it("adds field in middle", async () => {
    */
   await wait(
     () =>
-      expect(mockCreateExperience).toBeCalledWith({
+      expect(mockCreateExperience.mock.calls[0][0]).toMatchObject({
         variables: {
-          input: {
+          createExperienceInput: {
             title,
             fieldDefs: [fieldDefs[0], fieldDefs[1], newField, fieldDefs[2]],
             description: ""
@@ -371,9 +371,9 @@ it("adds field at bottom", async () => {
    */
   await wait(
     () =>
-      expect(mockCreateExperience).toBeCalledWith({
+      expect(mockCreateExperience.mock.calls[0][0]).toMatchObject({
         variables: {
-          input: {
+          createExperienceInput: {
             title,
             fieldDefs: [fieldDefs[0], fieldDefs[1], newField],
             description: ""
@@ -472,9 +472,9 @@ it("removes field from top", async () => {
    */
   await wait(
     () =>
-      expect(mockCreateExperience).toBeCalledWith({
+      expect(mockCreateExperience.mock.calls[0][0]).toMatchObject({
         variables: {
-          input: {
+          createExperienceInput: {
             title,
             fieldDefs: [fieldDefs[1]],
             description: ""
@@ -573,9 +573,9 @@ it("removes field from bottom", async () => {
    */
   await wait(
     () =>
-      expect(mockCreateExperience).toBeCalledWith({
+      expect(mockCreateExperience.mock.calls[0][0]).toMatchObject({
         variables: {
-          input: {
+          createExperienceInput: {
             title,
             fieldDefs: [fieldDefs[0]],
             description: ""
@@ -657,9 +657,9 @@ it("removes field from middle", async () => {
    */
   await wait(
     () =>
-      expect(mockCreateExperience).toBeCalledWith({
+      expect(mockCreateExperience.mock.calls[0][0]).toMatchObject({
         variables: {
-          input: {
+          createExperienceInput: {
             title,
             fieldDefs: [fieldDefs[0], fieldDefs[2]],
             description: ""
@@ -744,9 +744,9 @@ it("moves field up from bottom", async () => {
    */
   await wait(
     () =>
-      expect(mockCreateExperience).toBeCalledWith({
+      expect(mockCreateExperience.mock.calls[0][0]).toMatchObject({
         variables: {
-          input: {
+          createExperienceInput: {
             title,
             fieldDefs: [fieldDefs[1], fieldDefs[0]],
             description: ""
@@ -831,9 +831,9 @@ it("moves field up from middle", async () => {
    */
   await wait(
     () =>
-      expect(mockCreateExperience).toBeCalledWith({
+      expect(mockCreateExperience.mock.calls[0][0]).toMatchObject({
         variables: {
-          input: {
+          createExperienceInput: {
             title,
             fieldDefs: [fieldDefs[1], fieldDefs[0], fieldDefs[2]],
             description: ""
@@ -913,9 +913,9 @@ it("moves field down from top", async () => {
    */
   await wait(
     () =>
-      expect(mockCreateExperience).toBeCalledWith({
+      expect(mockCreateExperience.mock.calls[0][0]).toMatchObject({
         variables: {
-          input: {
+          createExperienceInput: {
             title,
             fieldDefs: [fieldDefs[1], fieldDefs[0]],
             description: ""
@@ -1000,9 +1000,9 @@ it("moves field down from middle", async () => {
    */
   await wait(
     () =>
-      expect(mockCreateExperience).toBeCalledWith({
+      expect(mockCreateExperience.mock.calls[0][0]).toMatchObject({
         variables: {
-          input: {
+          createExperienceInput: {
             title,
             fieldDefs: [fieldDefs[0], fieldDefs[2], fieldDefs[1]],
             description: ""
@@ -1320,7 +1320,7 @@ it("saves experience when we are not connected", async () => {
     () =>
       expect(mockCreateUnsavedExperience).toBeCalledWith({
         variables: {
-          input: {
+          createExperienceInput: {
             title,
             fieldDefs,
             description: ""

@@ -151,7 +151,10 @@ export function ExperienceDefinition(props: Props) {
         if (await getConnStatus(client)) {
           result = await (createExperience as CreateExperienceMutationFn)({
             variables: {
-              input: values
+              createExperienceInput: values,
+              entriesPagination: {
+                first: 20
+              }
             },
 
             update: ExperienceDefinitionUpdate
@@ -165,7 +168,7 @@ export function ExperienceDefinition(props: Props) {
         } else {
           result = await createUnsavedExperience({
             variables: {
-              input: values
+              createExperienceInput: values
             }
           });
 

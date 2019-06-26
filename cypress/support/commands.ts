@@ -1,28 +1,3 @@
-// ***********************************************
-// This example commands.js shows you how to
-// create various custom commands and overwrite
-// existing commands.
-//
-// For more comprehensive examples of custom
-// commands please read more here:
-// https://on.cypress.io/custom-commands
-// ***********************************************
-//
-//
-// -- This is a parent command --
-// Cypress.Commands.add("login", (email, password) => { ... })
-//
-//
-// -- This is a child command --
-// Cypress.Commands.add("drag", { prevSubject: 'element'}, (subject, options) => { ... })
-//
-//
-// -- This is a dual command --
-// Cypress.Commands.add("dismiss", { prevSubject: 'optional'}, (subject, options) => { ... })
-//
-//
-// -- This is will overwrite an existing command --
-// Cypress.Commands.overwrite("visit", (originalFn, url, options) => { ... })
 import "cypress-testing-library/add-commands";
 import { MutationOptions } from "apollo-client/core/watchQueryOptions";
 import { UserCreationObject } from "./user-creation-object";
@@ -32,7 +7,7 @@ import {
 } from "../../src/state/apollo-setup";
 import {
   Registration,
-  CreateEntry,
+  CreateEntryInput,
   CreateExperienceInput
 } from "../../src/graphql/apollo-types/globalTypes";
 import {
@@ -145,7 +120,7 @@ function defineOnlineExperience(
   return mutate<CreateExperienceMutation, CreateExperienceMutationVariables>({
     mutation: CREATE_EXPERIENCE_MUTATION,
     variables: {
-      input: experienceDefinitionArgs
+      createExperienceInput: experienceDefinitionArgs
     }
   }).then(result => {
     const exp =
@@ -169,7 +144,7 @@ function defineUnsavedExperience(
   >({
     mutation: CREATE_UNSAVED_EXPERIENCE_MUTATION,
     variables: {
-      input: experienceDefinitionArgs
+      createExperienceInput: experienceDefinitionArgs
     }
   }).then(result => {
     const exp =
@@ -185,7 +160,7 @@ function defineUnsavedExperience(
 
 function createExperienceEntries(
   experienceId: string,
-  createEntries: CreateEntry[]
+  createEntries: CreateEntryInput[]
 ) {
   return mutate<CreateEntriesMutation, CreateEntriesMutationVariables>({
     mutation: CREATE_ENTRIES_MUTATION,
@@ -325,7 +300,7 @@ declare global {
        */
       createExperienceEntries: (
         experienceId: string,
-        createEntries: CreateEntry[]
+        createEntries: CreateEntryInput[]
       ) => Promise<CreateEntriesMutation_createEntries_entries[]>;
 
       /**

@@ -174,7 +174,7 @@ describe("component", () => {
     await wait(() => {
       const {
         variables: {
-          entry: { expId, fields }
+          input: { expId, fields }
         }
       } = mockCreateEntry.mock.calls[0][0] as any;
 
@@ -249,7 +249,7 @@ describe("component", () => {
     await wait(() => {
       const {
         variables: {
-          entry: { fields }
+          input: { fields }
         }
       } = mockCreateEntry.mock.calls[0][0] as any;
 
@@ -345,7 +345,7 @@ describe("component", () => {
     await wait(() => {
       const {
         variables: {
-          entry: { fields }
+          input: { fields }
         }
       } = mockCreateEntry.mock.calls[0][0] as any;
 
