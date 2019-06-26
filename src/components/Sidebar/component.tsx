@@ -83,9 +83,22 @@ export function Sidebar(props: Props) {
         </ul>
 
         <ul className="sidebar__content down">
+          <li
+            className="sidebar__item sidebar__item--down-first-child"
+            onClick={() => {
+              // istanbul ignore next:
+              if (typeof window !== "undefined") {
+                // istanbul ignore next:
+                window.location.reload();
+              }
+            }}
+          >
+            Refresh
+          </li>
+
           {user && (
             <li
-              className="sidebar__item sidebar__item--down-first-child"
+              className="sidebar__item"
               onClick={async () => {
                 await updateLocalUser({
                   variables: { user: null }
