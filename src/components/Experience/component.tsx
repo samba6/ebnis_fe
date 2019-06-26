@@ -109,6 +109,7 @@ function OptionsMenuComponent({
       button={true}
       className="icon options-menu__trigger"
       data-testid="experience-options-menu"
+      direction="left"
     >
       <Dropdown.Menu>
         <Dropdown.Header data-testid="new-experience-entry-button">
