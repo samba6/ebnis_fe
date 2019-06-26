@@ -20,7 +20,7 @@ import {
   UnsavedExperience,
   UnsavedExperiencesQueryData
 } from "../ExperienceDefinition/resolver-utils";
-import { preloadEntries } from "./preload-entries";
+import { preFetchExperiences } from "./pre-fetch-experiences";
 import { GetExperienceConnectionMiniData } from "../../graphql/get-experience-connection-mini.query";
 import { ExperienceMiniFragment } from "../../graphql/apollo-types/ExperienceMiniFragment";
 import {
@@ -50,7 +50,7 @@ export const MyExperiences = (props: Props) => {
 
   // make sure we are only loading entries in the background once and not on
   // every render
-  const entriesLoadedRef = useRef(false);
+  const preFetchExperiencesRef = useRef(false);
 
   useEffect(() => {
     setDocumentTitle(makeSiteTitle(MY_EXPERIENCES_TITLE));
@@ -59,23 +59,31 @@ export const MyExperiences = (props: Props) => {
   }, []);
 
   useEffect(() => {
-    if (getExperiences && entriesLoadedRef.current === false) {
-      const { idToExperienceMap, ids } = mapExperiencesToIds(
-        getExperiences as ExperienceConnectionFragment
-      );
+    if (preFetchExperiencesRef.current === true) {
+      return;
+    }
 
-      if (ids.length === 0) {
-        return;
-      }
+    if (!getExperiences) {
+      return;
+    }
 
-      preloadEntries({
+    const { idToExperienceMap, ids } = mapExperiencesToIds(
+      getExperiences as ExperienceConnectionFragment
+    );
+
+    if (ids.length === 0) {
+      return;
+    }
+
+    setTimeout(() => {
+      preFetchExperiences({
         ids,
         client,
         idToExperienceMap
       });
+    }, 1000);
 
-      entriesLoadedRef.current = true;
-    }
+    preFetchExperiencesRef.current = true;
   }, [getExperiences]);
 
   const unsavedExperiencesAsEdges = useMemo(() => {

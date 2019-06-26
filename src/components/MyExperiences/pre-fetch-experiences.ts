@@ -11,7 +11,7 @@ import {
 import { GET_EXPERIENCE_FULL_QUERY } from "../../graphql/get-experience-full.query";
 import { ExperienceMiniFragment } from "../../graphql/apollo-types/ExperienceMiniFragment";
 
-export function preloadEntries({
+export function preFetchExperiences({
   ids,
   client,
   idToExperienceMap

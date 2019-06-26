@@ -12,15 +12,15 @@ jest.mock("../components/SidebarHeader", () => ({
   SidebarHeader: jest.fn(() => null)
 }));
 
-jest.mock("../components/MyExperiences/preload-entries");
+jest.mock("../components/MyExperiences/pre-fetch-experiences");
 
-import { preloadEntries } from "../components/MyExperiences/preload-entries";
+import { preFetchExperiences } from "../components/MyExperiences/pre-fetch-experiences";
 import {
   ExperienceConnectionFragment,
   ExperienceConnectionFragment_edges_node
 } from "../graphql/apollo-types/ExperienceConnectionFragment";
 
-const mockPreloadEntries = preloadEntries as jest.Mock;
+const mockPreFetchExperiences = preFetchExperiences as jest.Mock;
 
 const MyExperiencesP = MyExperiences as ComponentType<Partial<Props>>;
 
@@ -160,6 +160,7 @@ it("renders unsaved and saved experiences", () => {
 });
 
 it("loads entries in the background when experiences are loaded", () => {
+  jest.useFakeTimers();
   /**
    * Given there are experiences in the system
    */
@@ -190,11 +191,16 @@ it("loads entries in the background when experiences are loaded", () => {
    */
   render(<Ui />);
 
+  jest.runAllTimers();
+
   /**
    * Then we should load entries for the experiences in the background
    */
 
-  expect((mockPreloadEntries.mock.calls[0][0] as any).ids).toEqual(["1", "2"]);
+  expect((mockPreFetchExperiences.mock.calls[0][0] as any).ids).toEqual([
+    "1",
+    "2"
+  ]);
 });
 
 it("does not load entries in background when experiences are loaded but empty", () => {
@@ -218,14 +224,14 @@ it("does not load entries in background when experiences are loaded but empty", 
    * Then we should load entries for the experiences in the background
    */
 
-  expect(mockPreloadEntries).not.toHaveBeenCalled();
+  expect(mockPreFetchExperiences).not.toHaveBeenCalled();
 });
 
 function makeComp({
   getExperiencesMiniProps = {} as any,
   ...props
 }: Partial<Props> = {}) {
-  mockPreloadEntries.mockReset();
+  mockPreFetchExperiences.mockReset();
 
   const mockQuery = jest.fn();
   const client = {
