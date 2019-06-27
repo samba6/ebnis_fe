@@ -5,7 +5,7 @@ import {
   UploadAllUnsavedsMutation,
   UploadAllUnsavedsMutation_saveOfflineExperiences
 } from "../../graphql/apollo-types/UploadAllUnsavedsMutation";
-import { ExperiencesIdsToUnsavedEntriesMap } from "./utils";
+import { ExperiencesIdsToObjectMap } from "./utils";
 import {
   GetExperienceFull,
   GetExperienceFullVariables
@@ -25,13 +25,18 @@ import {
 import {
   writeSavedExperiencesWithUnsavedEntriesToCache,
   getSavedExperiencesWithUnsavedEntriesFromCache,
-  getUnsavedExperiencesFromCache,
-  writeUnsavedExperiencesToCache
+  writeUnsavedExperiencesToCache,
+  removeAllReferencesToEntityFromCache,
+  updateGetExperiencesQuery,
+  RemoveReferencesToEntityFromCache
 } from "../../state/resolvers-utils";
 import { UnsavedExperience } from "../ExperienceDefinition/resolver-utils";
 import { entryNodesFromExperience } from "../../state/unsaved-resolvers";
 
-type UpdaterFn = (
+type OnUploadSuccessUpdate = (args: {
+  savedExperiencesIdsToUnsavedEntriesMap: ExperiencesIdsToObjectMap;
+  unsavedExperiences: UnsavedExperience[];
+}) => (
   proxy: DataProxy,
   mutationResult: FetchResult<UploadAllUnsavedsMutation>
 ) => {
@@ -39,12 +44,10 @@ type UpdaterFn = (
   didUnsavedExperiencesUpdate?: boolean;
 };
 
-export const onUploadSuccessUpdate: (
-  savedExperiencesIdsToUnsavedEntries: ExperiencesIdsToUnsavedEntriesMap
-) => UpdaterFn = savedExperiencesIdsToUnsavedEntriesMap => (
-  dataProxy,
-  { data: uploadResult }
-) => {
+export const onUploadSuccessUpdate: OnUploadSuccessUpdate = ({
+  savedExperiencesIdsToUnsavedEntriesMap,
+  unsavedExperiences
+}) => (dataProxy, { data: uploadResult }) => {
   if (!uploadResult) {
     return {};
   }
@@ -59,7 +62,8 @@ export const onUploadSuccessUpdate: (
 
   const didUnsavedExperiencesUpdate = updateUnsavedExperiences(
     dataProxy,
-    saveOfflineExperiences
+    saveOfflineExperiences,
+    unsavedExperiences
   );
 
   return {
@@ -70,15 +74,16 @@ export const onUploadSuccessUpdate: (
 
 function updateUnsavedExperiences(
   dataProxy: DataProxy,
-  saveOfflineExperiences: Array<UploadAllUnsavedsMutation_saveOfflineExperiences | null> | null
+  saveOfflineExperiencesResult: Array<UploadAllUnsavedsMutation_saveOfflineExperiences | null> | null,
+  unsavedExperiences: UnsavedExperience[]
 ) {
-  if (!saveOfflineExperiences) {
+  if (!saveOfflineExperiencesResult) {
     return false;
   }
 
-  const experiencesToBeRemovedMap = {} as UpdatedExperiencesMap;
+  const unsavedExperiencesNowSavedMap = {} as UpdatedExperiencesMap;
 
-  saveOfflineExperiences.forEach(experienceResult => {
+  saveOfflineExperiencesResult.forEach(experienceResult => {
     const {
       experience,
       entriesErrors
@@ -90,27 +95,28 @@ function updateUnsavedExperiences(
 
     const clientId = experience.clientId as string;
 
-    experiencesToBeRemovedMap[clientId] = {
+    unsavedExperiencesNowSavedMap[clientId] = {
       experience,
       hasError: !!entriesErrors
     };
   });
 
-  const experiencesToBeRemoved = Object.values(experiencesToBeRemovedMap).map(
-    e => e.experience
-  );
+  const unsavedExperiencesNowSaved = Object.values(
+    unsavedExperiencesNowSavedMap
+  ).map(e => e.experience);
 
-  if (experiencesToBeRemoved.length === 0) {
+  if (unsavedExperiencesNowSaved.length === 0) {
     return false;
   }
 
   const savedExperiencesWithUnsavedEntries = [] as ExperienceFragment[];
 
-  const outstandingUnsavedExperiences = getUnsavedExperiencesFromCache(
-    dataProxy
-  ).reduce(
+  const unsavedExperiencesToBeRemovedFromCache: RemoveReferencesToEntityFromCache = [];
+
+  const outstandingUnsavedExperiences = unsavedExperiences.reduce(
     (acc, experience) => {
-      const toBeRemoved = experiencesToBeRemovedMap[experience.clientId || ""];
+      const toBeRemoved =
+        unsavedExperiencesNowSavedMap[experience.clientId || ""];
 
       if (!toBeRemoved) {
         acc.push(experience);
@@ -118,18 +124,23 @@ function updateUnsavedExperiences(
         return acc;
       }
 
+      const savedExperience = toBeRemoved.experience;
+
+      const savedEntries = entryNodesFromExperience(savedExperience);
+
+      unsavedExperiencesToBeRemovedFromCache.push({
+        id: experience.id,
+        typename: experience.__typename
+      });
+
       if (!toBeRemoved.hasError) {
         return acc;
       }
 
-      const experienceToBeUpdated = toBeRemoved.experience;
-
-      const savedEntries = entryNodesFromExperience(experienceToBeUpdated);
-
       const updatedExperience = immer(
         (experience as unknown) as ExperienceFragment,
         proxy => {
-          Object.entries(experienceToBeUpdated).forEach(([k, v]) => {
+          Object.entries(savedExperience).forEach(([k, v]) => {
             if (k !== "entries") {
               proxy[k] = v;
             }
@@ -153,13 +164,27 @@ function updateUnsavedExperiences(
     savedExperiencesWithUnsavedEntries
   );
 
+  updateGetExperiencesQuery(dataProxy, unsavedExperiencesNowSaved);
+
+  const count = removeAllReferencesToEntityFromCache(
+    dataProxy,
+    unsavedExperiencesToBeRemovedFromCache
+  );
+
+  // tslint:disable-next-line:no-console
+  console.log(
+    "\n\t\tLogging start\n\n\n\n count\n",
+    count,
+    "\n\n\n\n\t\tLogging ends\n"
+  );
+
   return true;
 }
 
 function updateSavedExperiences(
   dataProxy: DataProxy,
   createEntriesResults: Array<CreateEntriesResponseFragment | null> | null,
-  savedExperiencesIdsToUnsavedEntriesMap: ExperiencesIdsToUnsavedEntriesMap
+  savedExperiencesIdsToUnsavedEntriesMap: ExperiencesIdsToObjectMap
 ) {
   if (!createEntriesResults) {
     return;

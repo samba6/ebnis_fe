@@ -1,0 +1,11 @@
+@import "../../styles/variables";
+@import "../../styles/extensions";
+
+.components-experience-route {
+  @extend %route-main;
+
+  .main {
+    @extend %app-main;
+    margin-top: 10px;
+  }
+}

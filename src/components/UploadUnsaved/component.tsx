@@ -1,28 +1,27 @@
-import React, { useReducer, useMemo, useEffect } from "react";
+import React, { useReducer, useEffect } from "react";
 import {
   Props,
   reducer,
   ActionType,
   fieldDefToUnsavedData,
-  ExperiencesIdsToUnsavedEntriesMap
+  ExperiencesIdsToObjectMap,
+  DispatchType,
+  State,
+  DidUploadSucceed,
+  stateInitializerFn
 } from "./utils";
 import { Loading } from "../Loading";
 import {
   UnsavedExperiencesData,
-  SavedExperiencesWithUnsavedEntriesData,
-  entryNodesFromExperience
+  SavedExperiencesWithUnsavedEntriesData
 } from "../../state/unsaved-resolvers";
 import { SidebarHeader } from "../SidebarHeader";
 import {
   ExperienceFragment,
-  ExperienceFragment_fieldDefs,
   ExperienceFragment_entries_edges_node,
   ExperienceFragment_entries_edges_node_fields
 } from "../../graphql/apollo-types/ExperienceFragment";
-import { isUnsavedId } from "../../constants";
-import { Entry } from "../Entry/component";
 import "./styles.scss";
-import { UnsavedExperience } from "../ExperienceNewEntryParent/resolvers";
 import { CSSTransition, TransitionGroup } from "react-transition-group";
 import makeClassNames from "classnames";
 import Button from "semantic-ui-react/dist/commonjs/elements/Button";
@@ -37,19 +36,19 @@ import {
   UploadAllUnsavedsMutationVariables
 } from "../../graphql/apollo-types/UploadAllUnsavedsMutation";
 import { onUploadSuccessUpdate } from "./mutation-update";
+import { Experience } from "../Experience/component";
+import { UnsavedExperience } from "../ExperienceDefinition/resolver-utils";
 
 const timeoutMs = 500;
 
 export function UploadUnsaved(props: Props) {
   const {
     unSavedExperiencesProps: {
-      loading: loadingUnsavedExperiences,
-      unsavedExperiences = []
+      loading: loadingUnsavedExperiences
     } = {} as UnsavedExperiencesData,
 
     savedExperiencesWithUnsavedEntriesProps: {
-      loading: loadingSavedExperiencesWithUnsavedEntries,
-      savedExperiencesWithUnsavedEntries = []
+      loading: loadingSavedExperiencesWithUnsavedEntries
     } = {} as SavedExperiencesWithUnsavedEntriesData,
 
     uploadUnsavedExperiences,
@@ -61,24 +60,25 @@ export function UploadUnsaved(props: Props) {
     client
   } = props;
 
-  const savedExperiencesWithUnsavedEntriesLen =
-    savedExperiencesWithUnsavedEntries.length;
+  const [state, dispatch] = useReducer(reducer, props, stateInitializerFn);
 
-  const unsavedExperiencesLen = unsavedExperiences.length;
-
-  const [state, dispatch] = useReducer(reducer, {
-    tabs: {
-      1: savedExperiencesWithUnsavedEntriesLen !== 0,
-      2:
-        savedExperiencesWithUnsavedEntriesLen === 0 &&
-        unsavedExperiencesLen !== 0
-    }
-  });
-
-  const { tabs, uploading, uploadResult, serverError } = state;
-
-  const unSavedCount =
-    savedExperiencesWithUnsavedEntriesLen + unsavedExperiencesLen;
+  const {
+    tabs,
+    uploading,
+    uploadResult,
+    serverError,
+    isUploadTriggered,
+    allUploadSucceeded,
+    hasUnsavedExperiencesUploadError,
+    hasSavedExperiencesUploadError,
+    unSavedCount,
+    unsavedExperiencesLen,
+    savedExperiencesLen,
+    unsavedExperiences,
+    savedExperiences,
+    savedExperiencesIdsToObjectMap,
+    unsavedExperiencesIdsToObjectMap
+  } = state;
 
   const loading =
     loadingUnsavedExperiences || loadingSavedExperiencesWithUnsavedEntries;
@@ -95,79 +95,7 @@ export function UploadUnsaved(props: Props) {
         return;
       }
     });
-  }, [unSavedCount]);
-
-  const savedExperiencesIdToUnsavedEntriesMap = useMemo(() => {
-    let experienceIdToUnsavedEntriesMap = {} as ExperiencesIdsToUnsavedEntriesMap;
-
-    if (savedExperiencesWithUnsavedEntriesLen !== 0) {
-      experienceIdToUnsavedEntriesMap = savedExperiencesWithUnsavedEntries.reduce(
-        (acc, experience) => {
-          const unsavedEntries = entryNodesFromExperience(experience).reduce(
-            (entriesAcc, entry) => {
-              if (isUnsavedId(entry.id)) {
-                entriesAcc.push(entry);
-              }
-
-              return entriesAcc;
-            },
-
-            [] as ExperienceFragment_entries_edges_node[]
-          );
-
-          acc[experience.id] = {
-            unsavedEntries,
-            experience
-          };
-
-          return acc;
-        },
-        experienceIdToUnsavedEntriesMap
-      );
-    }
-
-    return experienceIdToUnsavedEntriesMap;
-  }, [savedExperiencesWithUnsavedEntries]);
-
-  const unsavedExperiencesEntriesOnly = useMemo(() => {
-    let unsavedEntries = {} as {
-      [k: string]: ExperienceFragment_entries_edges_node[];
-    };
-
-    if (unsavedExperiencesLen !== 0) {
-      unsavedEntries = unsavedExperiences.reduce((acc, experience) => {
-        const entries = entryNodesFromExperience(
-          (experience as unknown) as ExperienceFragment
-        );
-
-        acc[experience.id] = entries;
-
-        return acc;
-      }, unsavedEntries);
-    }
-
-    return unsavedEntries;
-  }, [unsavedExperiences]);
-
-  const uploadResultSummary = useMemo(() => {
-    let things = {} as UploadResultSummary;
-
-    if (!uploadResult) {
-      return things;
-    }
-
-    things = {
-      unsavedExperiencesSucceeded: didAllUploadUnsavedExperiencesSucceed(
-        uploadResult
-      ),
-
-      unsavedEntriesSucceeded: didAllUploadSavedExperiencesEntriesSucceed(
-        uploadResult
-      )
-    };
-
-    return things;
-  }, [uploadResult]);
+  }, []);
 
   async function onUploadAllClicked() {
     dispatch({
@@ -176,25 +104,19 @@ export function UploadUnsaved(props: Props) {
     });
 
     try {
-      // let result = {} as UploadAllUnsavedsMutationFnResult;
       let uploadFunction;
       let uploadFunctionVariables;
 
-      if (
-        unsavedExperiencesLen !== 0 &&
-        savedExperiencesWithUnsavedEntriesLen !== 0
-      ) {
+      if (unsavedExperiencesLen !== 0 && savedExperiencesLen !== 0) {
         uploadFunction = uploadAllUnsaveds;
 
         uploadFunctionVariables = {
           unsavedExperiences: unsavedExperiencesToUploadData(
-            unsavedExperiences,
-            unsavedExperiencesEntriesOnly
+            unsavedExperiencesIdsToObjectMap
           ),
 
           unsavedEntries: savedExperiencesWithUnsavedEntriesToUploadData(
-            savedExperiencesWithUnsavedEntries,
-            savedExperiencesIdToUnsavedEntriesMap
+            savedExperiencesIdsToObjectMap
           )
         };
       } else if (unsavedExperiencesLen !== 0) {
@@ -202,8 +124,7 @@ export function UploadUnsaved(props: Props) {
 
         uploadFunctionVariables = ({
           input: unsavedExperiencesToUploadData(
-            unsavedExperiences,
-            unsavedExperiencesEntriesOnly
+            unsavedExperiencesIdsToObjectMap
           )
         } as unknown) as UploadAllUnsavedsMutationVariables;
       } else {
@@ -211,15 +132,17 @@ export function UploadUnsaved(props: Props) {
 
         uploadFunctionVariables = ({
           createEntries: savedExperiencesWithUnsavedEntriesToUploadData(
-            savedExperiencesWithUnsavedEntries,
-            savedExperiencesIdToUnsavedEntriesMap
+            savedExperiencesIdsToObjectMap
           )
         } as unknown) as UploadAllUnsavedsMutationVariables;
       }
 
       const result = await (uploadFunction as UploadAllUnsavedsMutationFn)({
         variables: uploadFunctionVariables,
-        update: onUploadSuccessUpdate(savedExperiencesIdToUnsavedEntriesMap)
+        update: onUploadSuccessUpdate({
+          savedExperiencesIdsToUnsavedEntriesMap: savedExperiencesIdsToObjectMap,
+          unsavedExperiences: (unsavedExperiences as unknown) as UnsavedExperience[]
+        })
       });
 
       dispatch({
@@ -246,83 +169,29 @@ export function UploadUnsaved(props: Props) {
         <div className="components-upload-unsaved-header">
           <span>Unsaved Preview</span>
 
-          {!uploadResult && (
-            <Button
-              className="upload-button"
-              data-testid="upload-all"
-              onClick={onUploadAllClicked}
-            >
-              UPLOAD
-            </Button>
-          )}
+          <UploadAllButtonComponent
+            onUploadAllClicked={onUploadAllClicked}
+            allUploadSucceeded={allUploadSucceeded}
+          />
         </div>
       </SidebarHeader>
 
       <div className="main">
         {serverError && <div data-testid="server-error">{serverError}</div>}
 
-        <div className="ui two item menu">
-          {savedExperiencesWithUnsavedEntriesLen !== 0 && (
-            <a
-              className={setTabMenuClassNames("1", tabs)}
-              data-testid="saved-experiences-menu"
-              onClick={() => {
-                dispatch({
-                  type: ActionType.toggleTab,
-                  payload: 1
-                });
-              }}
-            >
-              Entries
-              {uploadResult &&
-                (uploadResultSummary.unsavedEntriesSucceeded ? (
-                  <Icon
-                    name="check"
-                    data-testid="unsaved-entries-upload-success-icon"
-                    className="upload-success-icon upload-result-icon"
-                  />
-                ) : (
-                  <Icon
-                    name="ban"
-                    data-testid="unsaved-entries-upload-error-icon"
-                    className="upload-error-icon upload-result-icon"
-                  />
-                ))}
-            </a>
-          )}
-
-          {unsavedExperiencesLen !== 0 && (
-            <a
-              className={setTabMenuClassNames("2", tabs)}
-              data-testid="unsaved-experiences-menu"
-              onClick={() => {
-                dispatch({
-                  type: ActionType.toggleTab,
-                  payload: 2
-                });
-              }}
-            >
-              Experiences
-              {uploadResult &&
-                (uploadResultSummary.unsavedExperiencesSucceeded ? (
-                  <Icon
-                    name="check"
-                    data-testid="unsaved-experiences-upload-success-icon"
-                    className="upload-success-icon upload-result-icon"
-                  />
-                ) : (
-                  <Icon
-                    name="ban"
-                    data-testid="unsaved-experiences-upload-error-icon"
-                    className="upload-error-icon upload-result-icon"
-                  />
-                ))}
-            </a>
-          )}
-        </div>
+        <TabsMenuComponent
+          savedExperiencesLen={savedExperiencesLen}
+          unsavedExperiencesLen={unsavedExperiencesLen}
+          uploadResult={uploadResult}
+          tabs={tabs}
+          dispatch={dispatch}
+          isUploadTriggered={isUploadTriggered}
+          hasUnsavedExperiencesUploadError={hasUnsavedExperiencesUploadError}
+          hasSavedExperiencesUploadError={hasSavedExperiencesUploadError}
+        />
 
         <TransitionGroup className="all-unsaveds">
-          {savedExperiencesWithUnsavedEntriesLen !== 0 && tabs["1"] && (
+          {tabs["1"] && (
             <CSSTransition
               timeout={timeoutMs}
               key="saved-experiences"
@@ -332,17 +201,13 @@ export function UploadUnsaved(props: Props) {
                 className={makeClassNames({ tab: true, active: tabs["1"] })}
                 data-testid="saved-experiences"
               >
-                {savedExperiencesWithUnsavedEntries.map(experience => {
+                {savedExperiences.map(experience => {
                   return (
                     <ExperienceComponent
                       key={experience.id}
                       experience={experience}
-                      entries={
-                        savedExperiencesIdToUnsavedEntriesMap[experience.id]
-                          .unsavedEntries
-                      }
                       type="saved"
-                      uploadResultSummary={uploadResultSummary}
+                      state={state}
                     />
                   );
                 })}
@@ -350,7 +215,7 @@ export function UploadUnsaved(props: Props) {
             </CSSTransition>
           )}
 
-          {unsavedExperiencesLen !== 0 && tabs["2"] && (
+          {tabs["2"] && (
             <CSSTransition
               timeout={timeoutMs}
               key="unsaved-experiences"
@@ -361,13 +226,14 @@ export function UploadUnsaved(props: Props) {
                 data-testid="unsaved-experiences"
               >
                 {unsavedExperiences.map(experience => {
+                  const { id } = experience;
+
                   return (
                     <ExperienceComponent
-                      key={experience.id}
-                      experience={(experience as unknown) as ExperienceFragment}
-                      entries={unsavedExperiencesEntriesOnly[experience.id]}
+                      key={id}
+                      experience={experience}
                       type="unsaved"
-                      uploadResultSummary={uploadResultSummary}
+                      state={state}
                     />
                   );
                 })}
@@ -380,76 +246,213 @@ export function UploadUnsaved(props: Props) {
   );
 }
 
+////////////////////////// COMPONENTS ///////////////////////////////////
+
 function ExperienceComponent({
   experience,
-  entries,
   type,
-  uploadResultSummary
+  state
 }: {
   experience: ExperienceFragment;
-  entries: ExperienceFragment_entries_edges_node[];
   type: "unsaved" | "saved";
-  uploadResultSummary: UploadResultSummary;
+  state: State;
 }) {
-  const experienceId = experience.id;
-  const entriesLen = entries.length;
+  const {
+    savedExperiencesIdsToObjectMap,
+    unsavedExperiencesIdsToObjectMap,
+    allUploadSucceeded,
+    hasSavedExperiencesUploadError,
+    hasUnsavedExperiencesUploadError
+  } = state;
 
-  const success =
-    uploadResultSummary.unsavedEntriesSucceeded === true ||
-    uploadResultSummary.unsavedExperiencesSucceeded === true;
+  const experienceId = experience.id;
 
   let titleClassSuffix = "";
 
-  if (
-    uploadResultSummary.unsavedEntriesSucceeded === false ||
-    uploadResultSummary.unsavedExperiencesSucceeded === false
-  ) {
+  if (hasSavedExperiencesUploadError || hasUnsavedExperiencesUploadError) {
     titleClassSuffix = "--error";
   }
 
-  if (success) {
+  if (allUploadSucceeded) {
     titleClassSuffix = "--success";
   }
 
+  const map =
+    type === "unsaved"
+      ? unsavedExperiencesIdsToObjectMap
+      : savedExperiencesIdsToObjectMap;
+
+  const mapObject = map[experienceId];
+
+  let check = null;
+
+  if (mapObject.didUploadSucceed) {
+    check = (
+      <Icon
+        name="check"
+        data-testid={"upload-triggered-icon-success-" + experienceId}
+        className="experience-title__success-icon upload-success-icon upload-result-icon"
+      />
+    );
+  } else if (mapObject.hasUploadError) {
+    check = (
+      <Icon
+        name="check"
+        data-testid={"upload-triggered-icon-error-" + experienceId}
+        className="experience-title__error-icon upload-error-icon upload-result-icon"
+      />
+    );
+  }
+
   return (
-    <div data-testid={type + "-experience"} className="experience">
-      <div
-        className={`experience-title${titleClassSuffix}`}
-        data-testid="experience-title"
-      >
-        {success && (
-          <Button
-            className="experience-title__remove-btn"
-            data-testid="experience-success-remove-btn"
-            type="button"
-            basic={true}
-          >
-            Remove
-          </Button>
-        )}
+    <Experience
+      experience={experience}
+      data-testid={type + "-experience"}
+      headerProps={{
+        "data-testid": "experience-title",
+        className: `experience-title--uploads experience-title${titleClassSuffix}`,
 
-        <div className="experience-title__title">{experience.title}</div>
-      </div>
+        children: check
+      }}
+      entryProps={{
+        "data-testid": `${type}-experience-${experienceId}-entry-`
+      }}
+      entryNodes={mapObject.unsavedEntries}
+      menuOptions={{
+        newEntry: false
+      }}
+    />
+  );
+}
 
-      {entries.map((entry, index) => {
-        return (
-          <Entry
-            data-testid={`${type}-experience-${experienceId}-entry-${entry.id}`}
-            key={entry.id}
-            entry={entry}
-            fieldDefs={experience.fieldDefs as ExperienceFragment_fieldDefs[]}
-            entriesLen={entriesLen}
-            index={index}
-            className={makeClassNames({
-              "unsaved-entry-first": index === 0,
-              "unsaved-entry": true
-            })}
-          />
-        );
+function ModalComponent({ open }: { open?: boolean }) {
+  return (
+    <Modal
+      data-testid="uploading-data"
+      basic={true}
+      size="small"
+      open={open}
+      dimmer="inverted"
+    >
+      <Modal.Content>
+        <Loading />
+      </Modal.Content>
+    </Modal>
+  );
+}
+
+function TabsMenuComponent({
+  savedExperiencesLen: savedExperiencesWithUnsavedEntriesLen,
+  unsavedExperiencesLen,
+  uploadResult,
+  tabs,
+  dispatch,
+  isUploadTriggered,
+  hasUnsavedExperiencesUploadError,
+  hasSavedExperiencesUploadError
+}: DidUploadSucceed & {
+  savedExperiencesLen: number;
+  unsavedExperiencesLen: number;
+  uploadResult?: UploadAllUnsavedsMutation;
+  tabs: State["tabs"];
+  dispatch: DispatchType;
+  isUploadTriggered?: boolean;
+}) {
+  return (
+    <div
+      className={makeClassNames({
+        "ui item menu": true,
+        one: !tabs["1"] || !tabs["2"],
+        two: tabs["1"] && tabs["2"]
       })}
+    >
+      {(savedExperiencesWithUnsavedEntriesLen !== 0 ||
+        (uploadResult && uploadResult.createEntries)) && (
+        <a
+          className={setTabMenuClassNames("1", tabs)}
+          data-testid="saved-experiences-menu"
+          onClick={() => {
+            dispatch({
+              type: ActionType.toggleTab,
+              payload: 1
+            });
+          }}
+        >
+          Entries
+          {isUploadTriggered &&
+            (hasSavedExperiencesUploadError ? (
+              <Icon
+                name="ban"
+                data-testid="upload-triggered-icon-error-saved-experiences"
+                className="upload-error-icon upload-result-icon"
+              />
+            ) : (
+              <Icon
+                name="check"
+                data-testid="upload-triggered-icon-success-saved-experiences"
+                className="upload-error-icon upload-result-icon"
+              />
+            ))}
+        </a>
+      )}
+
+      {(unsavedExperiencesLen !== 0 ||
+        (uploadResult && uploadResult.saveOfflineExperiences)) && (
+        <a
+          className={setTabMenuClassNames("2", tabs)}
+          data-testid="unsaved-experiences-menu"
+          onClick={() => {
+            dispatch({
+              type: ActionType.toggleTab,
+              payload: 2
+            });
+          }}
+        >
+          Experiences
+          {isUploadTriggered &&
+            (hasUnsavedExperiencesUploadError ? (
+              <Icon
+                name="ban"
+                data-testid="upload-triggered-icon-error-unsaved-experiences"
+                className="upload-error-icon upload-result-icon"
+              />
+            ) : (
+              <Icon
+                name="check"
+                data-testid="upload-triggered-icon-success-unsaved-experiences"
+                className="upload-success-icon upload-result-icon"
+              />
+            ))}
+        </a>
+      )}
     </div>
   );
 }
+
+function UploadAllButtonComponent({
+  onUploadAllClicked,
+  allUploadSucceeded
+}: DidUploadSucceed & {
+  onUploadAllClicked: () => Promise<void>;
+}) {
+  if (allUploadSucceeded) {
+    return null;
+  }
+
+  return (
+    <Button
+      className="upload-button"
+      data-testid="upload-all"
+      onClick={onUploadAllClicked}
+    >
+      UPLOAD
+    </Button>
+  );
+}
+
+////////////////////////// END COMPONENTS ///////////////////////////////////
+
+////////////////////////// HELPER FUNCTIONS ///////////////////////////////////
 
 function toUploadableEntry(entry: ExperienceFragment_entries_edges_node) {
   const fields = entry.fields.map(value => {
@@ -471,64 +474,35 @@ function toUploadableEntry(entry: ExperienceFragment_entries_edges_node) {
 }
 
 function unsavedExperiencesToUploadData(
-  unsavedExperiences: UnsavedExperience[],
-  unsavedExperiencesEntriesOnly: {
-    [k: string]: ExperienceFragment_entries_edges_node[];
-  }
+  experiencesIdsToObjectMap: ExperiencesIdsToObjectMap
 ) {
-  return unsavedExperiences.map(experience => {
-    const entries = unsavedExperiencesEntriesOnly[experience.id].map(
-      toUploadableEntry
-    );
-
-    return {
-      entries,
-      title: experience.title,
-      clientId: experience.clientId,
-      fieldDefs: experience.fieldDefs.map(fieldDefToUnsavedData),
-      insertedAt: experience.insertedAt,
-      updatedAt: experience.updatedAt,
-      description: experience.description
-    };
-  });
+  return Object.values(experiencesIdsToObjectMap).map(
+    ({ experience, unsavedEntries }) => {
+      return {
+        entries: unsavedEntries.map(toUploadableEntry),
+        title: experience.title,
+        clientId: experience.clientId,
+        fieldDefs: experience.fieldDefs.map(fieldDefToUnsavedData),
+        insertedAt: experience.insertedAt,
+        updatedAt: experience.updatedAt,
+        description: experience.description
+      };
+    }
+  );
 }
 
 function savedExperiencesWithUnsavedEntriesToUploadData(
-  savedExperiencesWithUnsavedEntries: ExperienceFragment[],
-  savedExperiencesWithUnsavedEntriesOnly: ExperiencesIdsToUnsavedEntriesMap
+  experiencesIdsToObjectMap: ExperiencesIdsToObjectMap
 ) {
-  return savedExperiencesWithUnsavedEntries.reduce(
-    (acc, experience) => {
-      const entries = savedExperiencesWithUnsavedEntriesOnly[
-        experience.id
-      ].unsavedEntries.map(toUploadableEntry);
-
-      return acc.concat(entries);
+  return Object.entries(experiencesIdsToObjectMap).reduce(
+    (acc, [id, { unsavedEntries }]) => {
+      return acc.concat(unsavedEntries.map(toUploadableEntry));
     },
     [] as CreateEntryInput[]
   );
 }
 
-function ModalComponent({ open }: { open?: boolean }) {
-  return (
-    <Modal
-      data-testid="uploading-data"
-      basic={true}
-      size="small"
-      open={open}
-      dimmer="inverted"
-    >
-      <Modal.Content>
-        <Loading />
-      </Modal.Content>
-    </Modal>
-  );
-}
-
-function setTabMenuClassNames(
-  tabNumber: string | number,
-  tabs: { [k: number]: boolean }
-) {
+function setTabMenuClassNames(tabNumber: string | number, tabs: State["tabs"]) {
   return makeClassNames({
     item: true,
     active: tabs[tabNumber],
@@ -536,45 +510,6 @@ function setTabMenuClassNames(
   });
 }
 
-function didAllUploadUnsavedExperiencesSucceed(
-  uploadResult: UploadAllUnsavedsMutation
-) {
-  if (!uploadResult.saveOfflineExperiences) {
-    return false;
-  }
+////////////////////////// END HELPER FUNCTIONS //////////////////////////////
 
-  const result = uploadResult.saveOfflineExperiences.reduce((acc, elm) => {
-    if (!elm || !elm.experience || elm.entriesErrors) {
-      return false;
-    }
-
-    return acc;
-  }, true);
-
-  return result;
-}
-
-function didAllUploadSavedExperiencesEntriesSucceed(
-  uploadResult: UploadAllUnsavedsMutation
-) {
-  const { createEntries } = uploadResult;
-
-  if (!createEntries) {
-    return true;
-  }
-
-  const result = createEntries.reduce((acc, elm) => {
-    if (!elm || elm.errors) {
-      return false;
-    }
-
-    return acc;
-  }, true);
-
-  return result;
-}
-
-interface UploadResultSummary {
-  unsavedExperiencesSucceeded?: boolean;
-  unsavedEntriesSucceeded?: boolean;
-}
+////////////////////////// TYPES ///////////////////////////////////

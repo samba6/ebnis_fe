@@ -1,18 +1,16 @@
 @import "../../styles/variables";
 @import "../../styles/extensions";
 
+.components-experience + .components-experience {
+  margin-top: 20px;
+}
+
 .components-experience {
-  @extend %route-main;
+  margin: 10px !important;
+  width: initial !important;
 
-  .main {
-    @extend %app-main;
-    margin: 10px;
-    width: initial;
-    flex: initial;
-
-    &.ui.card:last-child {
-      margin-bottom: 10px;
-    }
+  &.ui.card:last-child {
+    margin-bottom: 10px;
   }
 
   .experience__header {

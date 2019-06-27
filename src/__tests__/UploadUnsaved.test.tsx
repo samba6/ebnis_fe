@@ -143,7 +143,11 @@ describe("component", () => {
 
     mockUploadSavedExperiencesEntries.mockResolvedValue({
       data: {
-        createEntries: [{}]
+        createEntries: [
+          {
+            expId: "1"
+          }
+        ]
       }
     });
 
@@ -168,7 +172,11 @@ describe("component", () => {
     );
 
     expect(
-      queryByTestId("experience-success-remove-btn")
+      queryByTestId("upload-triggered-icon-success-1")
+    ).not.toBeInTheDocument();
+
+    expect(
+      queryByTestId("upload-triggered-icon-success-saved-experiences")
     ).not.toBeInTheDocument();
 
     fireEvent.click(queryByTestId("upload-all") as any);
@@ -186,15 +194,19 @@ describe("component", () => {
     expect(mockUploadAllUnsaveds).not.toHaveBeenCalled();
     expect(mockOnUploadSuccessUpdate).toHaveBeenCalledTimes(1);
 
-    expect(
-      queryByTestId("unsaved-entries-upload-success-icon")
-    ).toBeInTheDocument();
-
     expect((queryByTestId("experience-title") as any).classList).toContain(
       "experience-title--success"
     );
 
-    expect(queryByTestId("experience-success-remove-btn")).toBeInTheDocument();
+    expect(queryByTestId("upload-all")).not.toBeInTheDocument();
+
+    expect(
+      queryByTestId("upload-triggered-icon-success-1")
+    ).toBeInTheDocument();
+
+    expect(
+      queryByTestId("upload-triggered-icon-success-saved-experiences")
+    ).toBeInTheDocument();
 
     done();
   });
@@ -262,7 +274,7 @@ describe("component", () => {
     expect(queryByTestId("uploading-data")).not.toBeInTheDocument();
 
     expect(
-      queryByTestId("unsaved-experiences-upload-success-icon")
+      queryByTestId("upload-triggered-icon-success-unsaved-experiences")
     ).not.toBeInTheDocument();
 
     expect((queryByTestId("experience-title") as any).classList).not.toContain(
@@ -270,7 +282,11 @@ describe("component", () => {
     );
 
     expect(
-      queryByTestId("experience-success-remove-btn")
+      queryByTestId("upload-triggered-icon-error-1")
+    ).not.toBeInTheDocument();
+
+    expect(
+      queryByTestId("upload-triggered-icon-success-1")
     ).not.toBeInTheDocument();
 
     fireEvent.click(queryByTestId("upload-all") as any);
@@ -301,14 +317,16 @@ describe("component", () => {
     expect(queryByTestId("upload-all")).not.toBeInTheDocument();
 
     expect(
-      queryByTestId("unsaved-experiences-upload-success-icon")
+      queryByTestId("upload-triggered-icon-success-unsaved-experiences")
     ).toBeInTheDocument();
 
     expect((queryByTestId("experience-title") as any).classList).toContain(
       "experience-title--success"
     );
 
-    expect(queryByTestId("experience-success-remove-btn")).toBeInTheDocument();
+    expect(
+      queryByTestId("upload-triggered-icon-success-1")
+    ).toBeInTheDocument();
 
     done();
   });
@@ -328,6 +346,7 @@ describe("component", () => {
             {
               id: "1",
               title: "a",
+              clientId: "1",
 
               entries: {
                 edges: [
@@ -345,7 +364,7 @@ describe("component", () => {
         savedExperiencesWithUnsavedEntriesProps: {
           savedExperiencesWithUnsavedEntries: [
             {
-              id: "1",
+              id: "2",
               title: "a",
 
               entries: {
@@ -367,10 +386,18 @@ describe("component", () => {
       data: {
         createEntries: [
           {
-            errors: {}
+            errors: {},
+            expId: "2"
           }
         ],
-        saveOfflineExperiences: [{}]
+
+        saveOfflineExperiences: [
+          {
+            experienceError: {
+              clientId: "1"
+            }
+          }
+        ]
       }
     });
 
@@ -407,6 +434,22 @@ describe("component", () => {
       "experience-title--error"
     );
 
+    expect(
+      queryByTestId("upload-triggered-icon-error-1")
+    ).not.toBeInTheDocument();
+
+    expect(
+      queryByTestId("upload-triggered-icon-error-2")
+    ).not.toBeInTheDocument();
+
+    expect(
+      queryByTestId("upload-triggered-icon-error-saved-experiences")
+    ).not.toBeInTheDocument();
+
+    expect(
+      queryByTestId("upload-triggered-icon-error-unsaved-experiences")
+    ).not.toBeInTheDocument();
+
     fireEvent.click(queryByTestId("upload-all") as any);
 
     await wait(() => {
@@ -417,12 +460,10 @@ describe("component", () => {
     expect(mockUploadSavedExperiencesEntries).not.toHaveBeenCalled();
     expect(mockOnUploadSuccessUpdate).toHaveBeenCalledTimes(1);
 
-    expect(
-      queryByTestId("unsaved-experiences-upload-error-icon")
-    ).toBeInTheDocument();
+    expect(queryByTestId("upload-triggered-icon-error-2")).toBeInTheDocument();
 
     expect(
-      queryByTestId("unsaved-entries-upload-error-icon")
+      queryByTestId("upload-triggered-icon-error-saved-experiences")
     ).toBeInTheDocument();
 
     // we are currently showing saved experiences - we confirm it has error class
@@ -435,10 +476,20 @@ describe("component", () => {
     // class
     fireEvent.click($unsavedMenu);
     jest.runAllTimers();
+
     expect(queryByTestId("unsaved-experiences")).toBeInTheDocument();
+
     expect((queryByTestId("experience-title") as any).classList).toContain(
       "experience-title--error"
     );
+
+    expect(queryByTestId("upload-triggered-icon-error-1")).toBeInTheDocument();
+
+    expect(
+      queryByTestId("upload-triggered-icon-error-unsaved-experiences")
+    ).toBeInTheDocument();
+
+    expect(queryByTestId("upload-all")).toBeInTheDocument();
 
     done();
   });

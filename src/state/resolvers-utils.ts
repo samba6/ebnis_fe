@@ -5,7 +5,7 @@ import {
   UNSAVED_EXPERIENCES_QUERY,
   UnsavedExperience
 } from "../components/ExperienceDefinition/resolver-utils";
-import { InMemoryCache, NormalizedCache } from "apollo-cache-inmemory";
+import { InMemoryCache } from "apollo-cache-inmemory";
 import {
   SavedExperiencesWithUnsavedEntriesQueryReturned,
   GET_SAVED_EXPERIENCES_UNSAVED_ENTRIES_QUERY
@@ -16,6 +16,7 @@ import {
 } from "../graphql/apollo-types/GetExperienceConnectionMini";
 import { GET_EXPERIENCES_MINI_QUERY } from "../graphql/get-experience-connection-mini.query";
 import immer from "immer";
+import { ExperienceConnectionFragment } from "../graphql/apollo-types/ExperienceConnectionFragment";
 
 export function writeSavedExperiencesWithUnsavedEntriesToCache(
   cache: DataProxy,
@@ -67,6 +68,20 @@ export function getSavedExperiencesWithUnsavedEntriesFromCache(
   return savedExperiencesWithUnsavedEntries;
 }
 
+// in case we are updating with unsaved experiences now saved and we did not
+// previously have GET_EXPERIENCES query
+const DEFAULT_EXPERIENCE_CONNECTION: ExperienceConnectionFragment = {
+  pageInfo: {
+    hasNextPage: false,
+    hasPreviousPage: false,
+    __typename: "PageInfo"
+  },
+
+  edges: [],
+
+  __typename: "ExperienceConnection"
+};
+
 export function updateGetExperiencesQuery(
   dataProxy: DataProxy,
   experiences: ExperienceFragment[]
@@ -87,18 +102,9 @@ export function updateGetExperiencesQuery(
     variables
   });
 
-  const getExperiences = (experiencesMiniQuery &&
-    experiencesMiniQuery.getExperiences) || {
-    pageInfo: {
-      hasNextPage: false,
-      hasPreviousPage: false,
-      __typename: "PageInfo"
-    },
-
-    edges: [],
-
-    __typename: "ExperienceConnection"
-  };
+  const getExperiences =
+    (experiencesMiniQuery && experiencesMiniQuery.getExperiences) ||
+    DEFAULT_EXPERIENCE_CONNECTION;
 
   const updatedExperienceConnection = immer(getExperiences, proxy => {
     const edges = (getExperiences.edges || []).concat(
@@ -122,17 +128,76 @@ export function updateGetExperiencesQuery(
   });
 }
 
-export function deleteEntity(cache: DataProxy, entry: string) {
+export function removeAllReferencesToEntityFromCache(
+  dataProxy: DataProxy,
+  entitiesToRemove: RemoveReferencesToEntityFromCache
+) {
   // tslint:disable-next-line: no-any
-  const dataClass = (cache as any).data as NormalizedCache;
+  const cache = dataProxy as any;
+  const dataClass = cache.data;
+  const data = dataClass.data;
+  let count = 0;
+  const ids: string[] = [];
 
-  // tslint:disable-next-line: no-any
-  (cache as any).broadcastWatches();
+  entitiesToRemove.forEach(({ id, typename }) => {
+    const cacheKey = typename ? `${typename}:${id}` : id;
+    const cacheKeyRegex = new RegExp(cacheKey);
+    const idRegex = new RegExp(id);
+    ids.push(id);
 
-  // tslint:disable-next-line:no-console
-  console.log(
-    "\n\t\tLogging start\n\n\n\n dataClass\n",
-    dataClass,
-    "\n\n\n\n\t\tLogging ends\n"
-  );
+    Object.keys(data).forEach(k => {
+      if (cacheKeyRegex.test(k)) {
+        delete data[k];
+        ++count;
+        return;
+      }
+
+      if (k === "ROOT_QUERY") {
+        const rootQuery = data.ROOT_QUERY;
+
+        Object.keys(rootQuery).forEach(rk => {
+          if (idRegex.test(rk)) {
+            const value = rootQuery[rk];
+
+            if (value && value.id && value.id === cacheKey) {
+              ++count;
+              delete rootQuery[rk];
+            }
+          }
+        });
+
+        return;
+      }
+
+      if (k.startsWith("ROOT_MUTATION")) {
+        if (idRegex.test(k)) {
+          delete data[k];
+          ++count;
+          return;
+        }
+
+        const rootMutation = data.ROOT_MUTATION;
+
+        Object.keys(rootMutation).forEach(rk => {
+          if (idRegex.test(rk)) {
+            ++count;
+            delete rootMutation[rk];
+          }
+        });
+
+        return;
+      }
+    });
+  });
+
+  ids.forEach(id => dataClass.delete(id));
+
+  cache.broadcastWatches();
+
+  return count;
 }
+
+export type RemoveReferencesToEntityFromCache = Array<{
+  id: string;
+  typename?: string;
+}>;

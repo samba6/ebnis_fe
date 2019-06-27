@@ -5,7 +5,7 @@ import { NEW_ENTRY_URL } from "../../constants/new-entry-route";
 import { GetExperienceFullData } from "../../graphql/get-experience-full.query";
 import { UnsavedExperienceDataValue } from "./resolvers";
 import { NavigateFn } from "@reach/router";
-import { NewEntry, Experience } from "./loadables";
+import { NewEntry, ExperienceRoute } from "./loadables";
 
 export const ExperienceNewEntryParent = function(props: Props) {
   const {
@@ -46,6 +46,6 @@ export const ExperienceNewEntryParent = function(props: Props) {
   return path === NEW_ENTRY_URL ? (
     <NewEntry {...props} experience={experience} />
   ) : (
-    <Experience {...props} experience={experience} />
+    <ExperienceRoute {...props} experience={experience} />
   );
 };

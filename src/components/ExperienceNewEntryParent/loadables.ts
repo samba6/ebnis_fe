@@ -7,8 +7,8 @@ export const NewEntry = Loadable({
   // tslint:disable-next-line: no-any
 }) as any;
 
-export const Experience = Loadable({
-  loader: () => import("../Experience"),
+export const ExperienceRoute = Loadable({
+  loader: () => import("../ExperienceRoute"),
   loading: LoadableLoading
   // tslint:disable-next-line: no-any
 }) as any;

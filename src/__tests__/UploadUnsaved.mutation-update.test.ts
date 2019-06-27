@@ -7,16 +7,19 @@ import {
   writeSavedExperiencesWithUnsavedEntriesToCache,
   writeUnsavedExperiencesToCache,
   getSavedExperiencesWithUnsavedEntriesFromCache,
-  getUnsavedExperiencesFromCache
+  updateGetExperiencesQuery,
+  removeAllReferencesToEntityFromCache
 } from "../state/resolvers-utils";
 
 const mockGetSavedExperiencesWithUnsavedEntries = getSavedExperiencesWithUnsavedEntriesFromCache as jest.Mock;
 
-const mockGetUnsavedExperiencesFromCache = getUnsavedExperiencesFromCache as jest.Mock;
-
 const mockWriteSavedExperiencesWithUnsavedEntriesToCache = writeSavedExperiencesWithUnsavedEntriesToCache as jest.Mock;
 
 const mockWriteUnsavedExperiencesToCache = writeUnsavedExperiencesToCache as jest.Mock;
+
+const mockUpdateGetExperiencesQuery = updateGetExperiencesQuery as jest.Mock;
+
+const mockRemoveAllReferencesToEntityFromCache = removeAllReferencesToEntityFromCache as jest.Mock;
 
 const mockDataProxy = {
   writeQuery: jest.fn()
@@ -26,18 +29,19 @@ beforeEach(() => {
   mockGetSavedExperiencesWithUnsavedEntries.mockReset();
   mockGetSavedExperiencesWithUnsavedEntries.mockReturnValue([]);
 
-  mockGetUnsavedExperiencesFromCache.mockReset();
-  mockGetUnsavedExperiencesFromCache.mockReturnValue([]);
-
   mockWriteSavedExperiencesWithUnsavedEntriesToCache.mockReset();
   mockWriteUnsavedExperiencesToCache.mockReset();
+
+  mockUpdateGetExperiencesQuery.mockReset();
+
+  mockRemoveAllReferencesToEntityFromCache.mockReset();
 });
 
 it("does not update if no 'createEntries' and 'saveOfflineExperiences' operations", () => {
   const createEntries = null;
   const saveOfflineExperiences = null;
 
-  const result = onUploadSuccessUpdate({})(mockDataProxy, {
+  const result = onUploadSuccessUpdate({} as any)(mockDataProxy, {
     data: { createEntries, saveOfflineExperiences } as any
   });
 
@@ -48,7 +52,7 @@ it("does not update if no 'createEntries' and 'saveOfflineExperiences' operation
 it("returns empty updated experiences list if result of 'createEntries' operation is empty", () => {
   const createEntriesOperationResult = [] as any;
 
-  const result = onUploadSuccessUpdate({})(mockDataProxy, {
+  const result = onUploadSuccessUpdate({} as any)(mockDataProxy, {
     data: {
       createEntries: createEntriesOperationResult
     } as any
@@ -60,7 +64,7 @@ it("returns empty updated experiences list if result of 'createEntries' operatio
 it("does not update if result of 'saveOfflineExperiences' operation is empty", () => {
   const saveOfflineExperiencesResult = [] as any;
 
-  const result = onUploadSuccessUpdate({})(mockDataProxy, {
+  const result = onUploadSuccessUpdate({} as any)(mockDataProxy, {
     data: {
       saveOfflineExperiences: saveOfflineExperiencesResult
     } as any
@@ -76,7 +80,7 @@ it("returns empty updated experiences list if 'createEntries' operation's entrie
     }
   ];
 
-  const result = onUploadSuccessUpdate({})(mockDataProxy, {
+  const result = onUploadSuccessUpdate({} as any)(mockDataProxy, {
     data: {
       createEntries: createEntriesOperationResult
     } as any
@@ -88,7 +92,7 @@ it("returns empty updated experiences list if 'createEntries' operation's entrie
 });
 
 it("returns empty updated experiences list if 'createEntries' operation's experience ID not in saved experiences map", () => {
-  const savedExperiencesMap = {};
+  const savedExperiencesIdsToUnsavedEntriesMap = {};
   const createEntriesOperationEntry = {};
 
   const createEntriesOperationResult = [
@@ -98,7 +102,9 @@ it("returns empty updated experiences list if 'createEntries' operation's experi
     }
   ];
 
-  const result = onUploadSuccessUpdate(savedExperiencesMap)(mockDataProxy, {
+  const result = onUploadSuccessUpdate({
+    savedExperiencesIdsToUnsavedEntriesMap
+  } as any)(mockDataProxy, {
     data: {
       createEntries: createEntriesOperationResult
     } as any
@@ -164,7 +170,7 @@ it("removes saved experience from cache only if 'createEntries' operation return
     savedExperience3
   ]);
 
-  const savedExperiencesMap = {
+  const savedExperiencesIdsToUnsavedEntriesMap = {
     "1": {
       experience: savedExperience1,
       unsavedEntries: [unsavedEntry1]
@@ -199,7 +205,9 @@ it("removes saved experience from cache only if 'createEntries' operation return
     }
   ];
 
-  const result = onUploadSuccessUpdate(savedExperiencesMap)(mockDataProxy, {
+  const result = onUploadSuccessUpdate({
+    savedExperiencesIdsToUnsavedEntriesMap
+  } as any)(mockDataProxy, {
     data: {
       createEntries: createEntriesOperationResult as any
     } as any
@@ -226,11 +234,20 @@ it("removes saved experience from cache only if 'createEntries' operation return
 
 it("removes unsaved experience from cache only if 'saveOfflineExperiences' operation returns no error for that experience", () => {
   // No 'saveOfflineExperiences' operation errors
+  // saving it succeeded, so we remove all references to it from cache
   const experience1 = {
-    id: "1",
-    clientId: "1"
+    id: "unsaved-id-1",
+    clientId: "1",
+
+    entries: {
+      edges: []
+    }
   } as any;
 
+  const operationResultExperience1 = { ...experience1, id: "1" };
+
+  // saving this will succeed so we need to remove all references to it from
+  // cache
   const entry21 = {
     id: "unsaved-entry-1",
     clientId: "a"
@@ -242,6 +259,8 @@ it("removes unsaved experience from cache only if 'saveOfflineExperiences' opera
   } as any;
 
   // has 'saveOfflineExperiences' operation 'entriesErrors'
+  // saving it partially succeeds, so we remove all references to it from
+  // cache
   const experience2 = {
     id: "unsaved-id-2",
     clientId: "2",
@@ -281,16 +300,9 @@ it("removes unsaved experience from cache only if 'saveOfflineExperiences' opera
   // not part of 'saveOfflineExperiences' operation result, but exists in cache
   const experience4 = {};
 
-  mockGetUnsavedExperiencesFromCache.mockReturnValue([
-    experience1,
-    experience2,
-    experience3,
-    experience4
-  ]);
-
   const operationResults = [
     {
-      experience: experience1
+      experience: operationResultExperience1
     },
 
     {
@@ -310,14 +322,13 @@ it("removes unsaved experience from cache only if 'saveOfflineExperiences' opera
     }
   ];
 
-  const { didUnsavedExperiencesUpdate } = onUploadSuccessUpdate({})(
-    mockDataProxy,
-    {
-      data: {
-        saveOfflineExperiences: operationResults as any
-      } as any
-    }
-  );
+  const { didUnsavedExperiencesUpdate } = onUploadSuccessUpdate({
+    unsavedExperiences: [experience1, experience2, experience3, experience4]
+  } as any)(mockDataProxy, {
+    data: {
+      saveOfflineExperiences: operationResults as any
+    } as any
+  });
 
   expect(didUnsavedExperiencesUpdate).toBe(true);
 
@@ -345,4 +356,29 @@ it("removes unsaved experience from cache only if 'saveOfflineExperiences' opera
   expect(
     mockWriteSavedExperiencesWithUnsavedEntriesToCache.mock.calls[0][1]
   ).toEqual([updatedExperience2]);
+
+  expect(mockUpdateGetExperiencesQuery).toHaveBeenCalled();
+
+  const referencesToRemove = mockRemoveAllReferencesToEntityFromCache.mock
+    .calls[0][1] as any;
+
+  expect(
+    referencesToRemove.sort((a: any, b: any) => {
+      const aid = a.id.toUpperCase();
+      const bid = b.id.toUpperCase();
+
+      if (aid < bid) {
+        return -1;
+      }
+
+      if (aid > bid) {
+        return 1;
+      }
+
+      return 0;
+    })
+  ).toEqual([
+    { id: "unsaved-id-1", typename: undefined },
+    { id: "unsaved-id-2", typename: undefined }
+  ]);
 });

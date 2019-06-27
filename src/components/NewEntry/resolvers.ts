@@ -61,6 +61,7 @@ const CREATE_UNSAVED_ENTRY_TYPENAME = "CreateUnsavedEntry" as CreateUnsavedEntry
 
 interface CreateUnsavedEntryMutationReturned {
   createUnsavedEntry: {
+    id: string;
     entry: EntryFragment;
     experience: UnsavedExperience;
     savedExperiencesWithUnsavedEntries: ExperienceFragment[] | null;
@@ -116,7 +117,9 @@ const createUnsavedEntryResolver: LocalResolverFn<
     );
   }
 
+  // why am I not returning entry alone?
   return {
+    id,
     entry,
     experience,
     savedExperiencesWithUnsavedEntries,
@@ -136,8 +139,8 @@ function updateUnsavedExperienceEntry(
     id
   });
 
-  const newExperience = immer(experience, proxy => {
-    const entries = proxy.entries as ExperienceFragment_entries;
+  const updatedExperience = immer(experience, proxy => {
+    const entries = (proxy.entries || {}) as ExperienceFragment_entries;
     const edges = entries.edges || [];
     edges.push({
       node: entry,
@@ -153,10 +156,10 @@ function updateUnsavedExperienceEntry(
     fragment: UNSAVED_EXPERIENCE_FRAGMENT,
     id: cacheId,
     fragmentName: UNSAVED_EXPERIENCE_FRAGMENT_NAME,
-    data: newExperience
+    data: updatedExperience
   });
 
-  return newExperience;
+  return updatedExperience;
 }
 
 function updateSavedExperiencesWithUnsavedEntries(

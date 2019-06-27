@@ -110,58 +110,34 @@ $transitionTime: 500ms;
     color: green;
   }
 
-  .experience + .experience {
-    margin-top: 50px;
-  }
-
-  .experience-title {
-    font-weight: bold;
-    font-size: 1.2rem;
-    padding: 10px 5px 5px 5px;
-    border-top-left-radius: 5px;
-    border-top-right-radius: 5px;
-    border: 2px solid $app-color;
-    background-color: lighten($color: $app-color, $amount: 5%);
-    color: #fff;
-
-    &::after {
-      content: " ";
-      display: block;
-      clear: both;
-    }
+  .experience-title--uploads {
+    position: relative;
   }
 
   .experience-title--error {
-    border-color: $error-color;
+    border: 2px solid $error-color;
     background-color: $error-bg-color;
     color: $error-color;
-  }
 
-  .experience-title--success {
-    border-color: $success-color;
-    background-color: $success-bg-color;
-    color: $success-color;
-    font-size: 1rem;
-  }
-
-  .experience-title__remove-btn.button {
-    float: left;
-    margin-right: 10px;
-    color: $success-color !important;
-    box-shadow: 0px 0px 0px 2px $success-color inset;
-
-    &.active,
-    &:hover,
-    &:focus {
-      background: $success-color !important;
-      box-shadow: 0px 0px 0px 2px $success-color inset,
-        0px 1px 4px 0px rgba(34, 36, 38, 0.15) inset;
+    &.content {
+      border-top: 2px solid $error-color !important;
     }
   }
 
-  .unsaved-entry-first {
-    border-top-left-radius: 0;
-    border-top-right-radius: 0;
-    border-top: none;
+  .experience-title--success {
+    border: 2px solid $success-color !important;
+
+    background-color: $success-bg-color !important;
+    color: $success-color;
+
+    &.content {
+      border-top: 2px solid $success-color !important;
+    }
+  }
+
+  .experience-title__success-icon {
+    position: absolute;
+    top: 0;
+    right: 0;
   }
 }

@@ -10,20 +10,20 @@ import {
 import Icon from "semantic-ui-react/dist/commonjs/elements/Icon";
 import Dropdown from "semantic-ui-react/dist/commonjs/modules/Dropdown";
 import { Link } from "gatsby";
+import { EbnisComponentProps } from "../../types";
 
-export function Entry({
-  entry,
-  fieldDefs,
-  entriesLen,
-  index,
-  className = ""
-}: {
+interface Props extends EbnisComponentProps {
   entry: ExperienceFragment_entries_edges_node;
   fieldDefs: ExperienceFragment_fieldDefs[];
   entriesLen: number;
   index: number;
   className?: string;
-}) {
+}
+
+export function Entry(props: Props) {
+  const { entry, fieldDefs, className = "" } = props;
+  const dataTestId = props["data-testid"];
+
   const fields = entry.fields as ExperienceFragment_entries_edges_node_fields[];
   const fieldsLen = fields.length;
 
@@ -33,7 +33,7 @@ export function Entry({
         "component-experience-entry": true,
         [className]: !!className
       })}
-      data-testid="entry-container"
+      data-testid={dataTestId ? `${dataTestId}-${entry.id}` : `entry-container`}
     >
       {fields.map((field, fieldIndex) => {
         return (

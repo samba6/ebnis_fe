@@ -3,10 +3,22 @@ import dateFnParse from "date-fns/parse";
 import dateFnFormat from "date-fns/format";
 import { FieldType } from "../../graphql/apollo-types/globalTypes";
 import { NewEntryRouteParams } from "../../routes";
-import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragment";
+import {
+  ExperienceFragment,
+  ExperienceFragment_entries_edges_node
+} from "../../graphql/apollo-types/ExperienceFragment";
+import { EbnisComponentProps } from "../../types";
 
-export interface Props extends RouteComponentProps<NewEntryRouteParams> {
+export interface Props
+  extends EbnisComponentProps,
+    RouteComponentProps<NewEntryRouteParams> {
   experience: ExperienceFragment;
+  entryProps?: EbnisComponentProps;
+  headerProps?: EbnisComponentProps;
+  entryNodes?: ExperienceFragment_entries_edges_node[];
+  menuOptions?: {
+    newEntry?: boolean;
+  };
 }
 
 export type FormObjVal = Date | string;

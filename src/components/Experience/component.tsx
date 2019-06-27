@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import Card from "semantic-ui-react/dist/commonjs/views/Card";
 import Icon from "semantic-ui-react/dist/commonjs/elements/Icon";
 import Dropdown from "semantic-ui-react/dist/commonjs/modules/Dropdown";
@@ -6,7 +6,6 @@ import { Link } from "gatsby";
 
 import "./styles.scss";
 import { Props } from "./utils";
-import { SidebarHeader } from "../SidebarHeader";
 import { setDocumentTitle, makeSiteTitle } from "../../constants";
 import { makeNewEntryRoute } from "../../constants/new-entry-route";
 import { Entry } from "../Entry/component";
@@ -17,9 +16,18 @@ import {
   ExperienceFragment_fieldDefs,
   ExperienceFragment
 } from "../../graphql/apollo-types/ExperienceFragment";
+import makeClassNames from "classnames";
 
 export function Experience(props: Props) {
-  const { experience } = props;
+  const {
+    experience,
+    className = "",
+    entryProps = {},
+    headerProps = {},
+    menuOptions = {},
+    entryNodes: defaultEntryNodes,
+    ...otherProps
+  } = props;
 
   const title = getTitle(experience);
 
@@ -32,12 +40,24 @@ export function Experience(props: Props) {
     [title]
   );
 
-  function renderEntries() {
+  const entryNodes = useMemo(() => {
+    if (defaultEntryNodes) {
+      return defaultEntryNodes;
+    }
+
     const entries = experience.entries as ExperienceFragment_entries;
     const edges = entries.edges as ExperienceFragment_entries_edges[];
-    const edgesLen = edges.length;
 
-    if (edgesLen === 0) {
+    return edges.map(
+      (edge: ExperienceFragment_entries_edges, index) =>
+        edge.node as ExperienceFragment_entries_edges_node
+    );
+  }, [experience, defaultEntryNodes]);
+
+  function renderEntries() {
+    const nodesLen = entryNodes.length;
+
+    if (nodesLen === 0) {
       return (
         <Link
           className="no-entries"
@@ -51,16 +71,15 @@ export function Experience(props: Props) {
 
     return (
       <>
-        {edges.map((edge: ExperienceFragment_entries_edges, index) => {
-          const entry = edge.node as ExperienceFragment_entries_edges_node;
-
+        {entryNodes.map((entryNode, index) => {
           return (
             <Entry
-              key={entry.id}
-              entry={entry}
+              key={entryNode.id}
+              entry={entryNode}
               fieldDefs={experience.fieldDefs as ExperienceFragment_fieldDefs[]}
-              entriesLen={edgesLen}
+              entriesLen={nodesLen}
               index={index}
+              {...entryProps}
             />
           );
         })}
@@ -69,37 +88,38 @@ export function Experience(props: Props) {
   }
 
   return (
-    <div className="components-experience">
-      <SidebarHeader title={title} sidebar={true} />
+    <Card
+      className={makeClassNames({
+        "components-experience": true,
+        [className]: !!className
+      })}
+      {...otherProps}
+    >
+      <Card.Content className="experience__header" {...headerProps}>
+        <Card.Header>
+          <span>{title}</span>
 
-      <Card className="main">
-        <Card.Content className="experience__header">
-          <Card.Header>
-            <span>{title}</span>
+          <div className="options-menu-container">
+            <OptionsMenuComponent experience={experience} {...menuOptions} />
+          </div>
+        </Card.Header>
 
-            <div className="options-menu-container">
-              <OptionsMenuComponent experience={experience} />
-            </div>
-          </Card.Header>
-        </Card.Content>
+        <>{headerProps.children}</>
+      </Card.Content>
 
-        <Card.Content className="experience__main">
-          {renderEntries()}
-        </Card.Content>
-      </Card>
-    </div>
+      <Card.Content className="experience__main">
+        {renderEntries()}
+      </Card.Content>
+    </Card>
   );
 }
 
-function getTitle(arg?: { title: string }) {
-  return arg ? arg.title : "Experience";
-}
-
 function OptionsMenuComponent({
-  experience
+  experience,
+  newEntry = true
 }: {
   experience: ExperienceFragment;
-}) {
+} & Props["menuOptions"]) {
   return (
     <Dropdown
       text="OPTIONS"
@@ -112,10 +132,12 @@ function OptionsMenuComponent({
       direction="left"
     >
       <Dropdown.Menu>
-        <Dropdown.Header data-testid="new-experience-entry-button">
-          <Icon name="external alternate" />
-          <Link to={makeNewEntryRoute(experience.id)}>New Entry</Link>
-        </Dropdown.Header>
+        {newEntry && (
+          <Dropdown.Header data-testid="new-experience-entry-button">
+            <Icon name="external alternate" />
+            <Link to={makeNewEntryRoute(experience.id)}>New Entry</Link>
+          </Dropdown.Header>
+        )}
 
         <Dropdown.Menu scrolling={true}>
           <Dropdown.Item
@@ -133,4 +155,8 @@ function OptionsMenuComponent({
       </Dropdown.Menu>
     </Dropdown>
   );
+}
+
+export function getTitle(arg?: { title: string }) {
+  return arg ? arg.title : "Experience";
 }
