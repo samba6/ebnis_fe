@@ -48,6 +48,7 @@ import { scrollTop } from "./scrollTop";
 import { SidebarHeader } from "../SidebarHeader";
 import { getConnStatus } from "../../state/get-conn-status";
 import { UnsavedExperience } from "./resolver-utils";
+import { FormCtrlError } from "../FormCtrlError/component";
 
 export function ExperienceDefinition(props: Props) {
   const { createExperience, navigate, client, createUnsavedExperience } = props;
@@ -285,7 +286,7 @@ function FieldNameComponent({
 
       <Input {...rest} value={value} autoComplete="off" name={name} id={name} />
 
-      <FormCtrlError error={error} index1={index + 1} />
+      <FormCtrlError error={error} id={index + 1} />
     </Form.Field>
   );
 }
@@ -319,7 +320,7 @@ function FieldDataTypeComponent({
         }}
       />
 
-      <FormCtrlError error={error} index1={index + 1} />
+      <FormCtrlError error={error} id={index + 1} />
     </Form.Field>
   );
 }
@@ -474,7 +475,7 @@ function TitleInputComponent({
 
       <Input {...field} autoComplete="off" id={field.name} />
 
-      <FormCtrlError error={error} index1={0} />
+      <FormCtrlError error={error} id={0} />
     </Form.Field>
   );
 }
@@ -681,21 +682,4 @@ function getFieldError(
   }
 
   return null;
-}
-
-function FormCtrlError({
-  error,
-  index1
-}: {
-  error: null | string;
-  index1: number;
-}) {
-  return error ? (
-    <div
-      className="form-control-error"
-      data-testid={`form-control-error-${index1}`}
-    >
-      {error}
-    </div>
-  ) : null;
 }
