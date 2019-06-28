@@ -153,7 +153,11 @@ export function NewEntry(props: Props) {
 
         {networkError && (
           <Message
-            className="network-error"
+            style={{
+              minHeight: "auto",
+              position: "relative",
+              marginTop: 0
+            }}
             data-testid="network-error"
             error={true}
             onDismiss={function onDismiss() {
