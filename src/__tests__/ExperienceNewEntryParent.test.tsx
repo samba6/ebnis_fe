@@ -11,12 +11,8 @@ import { NEW_ENTRY_URL } from "../constants/new-entry-route";
 jest.mock("../components/ExperienceNewEntryParent/loadables", () => ({
   NewEntry: jest.fn(() => <div data-testid="new-entry-page" />),
 
-  Experience: jest.fn(() => <div data-testid="experience-page" />)
+  ExperienceRoute: jest.fn(() => <div data-testid="experience-page" />)
 }));
-
-const ExperienceNewEntryParentP = ExperienceNewEntryParent as ComponentType<
-  Partial<Props>
->;
 
 beforeEach(() => {
   jest.useFakeTimers();
@@ -133,6 +129,10 @@ it("loads Experience page", () => {
 });
 
 ////////////////////////// HELPER FUNCTIONS ///////////////////////////////////
+
+const ExperienceNewEntryParentP = ExperienceNewEntryParent as ComponentType<
+  Partial<Props>
+>;
 
 function makeComp({ props = {} }: { props?: Partial<Props> } = {}) {
   const { Ui, ...rest } = renderWithRouter(ExperienceNewEntryParentP);
