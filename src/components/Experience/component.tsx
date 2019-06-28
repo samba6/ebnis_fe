@@ -26,6 +26,7 @@ export function Experience(props: Props) {
     headerProps = {},
     menuOptions = {},
     entryNodes: defaultEntryNodes,
+    doNotShowNoEntriesLink,
     ...otherProps
   } = props;
 
@@ -38,12 +39,16 @@ export function Experience(props: Props) {
     const edges = entries.edges as ExperienceFragment_entries_edges[];
 
     return edges.map(
-      (edge: ExperienceFragment_entries_edges, index) =>
+      (edge: ExperienceFragment_entries_edges) =>
         edge.node as ExperienceFragment_entries_edges_node
     );
   }, [experience, defaultEntryNodes]);
 
   function renderEntries() {
+    if (doNotShowNoEntriesLink) {
+      return null;
+    }
+    
     const nodesLen = entryNodes.length;
 
     if (nodesLen === 0) {

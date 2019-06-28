@@ -18,7 +18,6 @@ jest.mock("../components/SidebarHeader", () => ({
   SidebarHeader: jest.fn(() => null)
 }));
 
-type P = ComponentType<Partial<Props>>;
 const ExperienceP = Experience as P;
 
 beforeEach(() => {
@@ -44,7 +43,7 @@ it("renders ui to show empty entries", () => {
   /**
    * When we use the component
    */
-  const { queryByTestId, getByText } = render(ui);
+  const { queryByTestId } = render(ui);
 
   /**
    * Then we should not see loading spinner
@@ -52,9 +51,9 @@ it("renders ui to show empty entries", () => {
   expect(queryByTestId("loading-spinner")).not.toBeInTheDocument();
 
   /**
-   * And we should see texts informing us that there are not entries
+   * And we should see texts informing us that there are no entries
    */
-  expect(getByText("No entries. Click here to add one")).toBeInTheDocument();
+  expect(queryByTestId("no-entries")).toBeInTheDocument();
 
   /**
    * And we should not see any UI for an entry
@@ -201,15 +200,13 @@ it("renders entries", () => {
   /**
    * When we start using the component
    */
-  const { queryByText, getByText } = render(ui);
+  const { queryByTestId, getByText } = render(ui);
 
   /**
    * Then we should not see text informing us there are not entries (of course
    * we have several)
    */
-  expect(
-    queryByText("No entries. Click here to add one")
-  ).not.toBeInTheDocument();
+  expect(queryByTestId("no-entries")).not.toBeInTheDocument();
 
   /**
    * And we should see the entries' field names and associated data
@@ -225,6 +222,27 @@ it("renders entries", () => {
   expect(getByText(/field name 5/i)).toBeInTheDocument();
   expect(getByText(/field name 6/i)).toBeInTheDocument();
 });
+
+it("does not show 'no entries' link if contained in props", () => {
+  /**
+   * Given that there is experience with no entry in the system
+   */
+  const { ui } = makeComp({
+    experience: {
+      entries: {
+        edges: []
+      }
+    } as any,
+
+    doNotShowNoEntriesLink: true
+  });
+
+  const { queryByTestId } = render(ui);
+
+  expect(queryByTestId("no-entries")).not.toBeInTheDocument();
+});
+
+type P = ComponentType<Partial<Props>>;
 
 function makeComp(props: Partial<Props> = {}) {
   const { Ui, mockNavigate } = renderWithRouter(ExperienceP, {});
