@@ -53,4 +53,19 @@
     display: flex;
     width: 50%;
   }
+
+  .form-field {
+    position: relative;
+  }
+
+  .js-scroll-into-view {
+    position: absolute;
+    top: -35px;
+  }
+
+  .network-error {
+    min-height: auto;
+    margin-top: 0;
+    position: relative;
+  }
 }

@@ -7,7 +7,7 @@ import DateField from "../DateField";
 import DateTimeField from "../DateTimeField";
 import {
   FieldComponentProps,
-  Action_Types,
+  ActionTypes,
   DispatchType,
   FormObjVal
 } from "./utils";
@@ -23,7 +23,7 @@ export const fieldTypeUtils = {
           fluid={true}
           onChange={(e, { value: inputVal }) => {
             dispatch({
-              type: Action_Types.setFormObjField,
+              type: ActionTypes.setFormObjField,
               payload: { formFieldName: name, value: inputVal }
             });
           }}
@@ -47,7 +47,7 @@ export const fieldTypeUtils = {
           value={value as string}
           onChange={(e, { value: inputVal }) => {
             dispatch({
-              type: Action_Types.setFormObjField,
+              type: ActionTypes.setFormObjField,
               payload: { formFieldName: name, value: inputVal as string }
             });
           }}
@@ -123,7 +123,7 @@ export const fieldTypeUtils = {
           fluid={true}
           onChange={(e, { value: inputVal }) => {
             dispatch({
-              type: Action_Types.setFormObjField,
+              type: ActionTypes.setFormObjField,
               payload: { formFieldName: name, value: Number(inputVal) }
             });
           }}
@@ -149,7 +149,7 @@ export const fieldTypeUtils = {
           fluid={true}
           onChange={(e, { value: inputVal }) => {
             dispatch({
-              type: Action_Types.setFormObjField,
+              type: ActionTypes.setFormObjField,
               payload: { formFieldName: name, value: Number(inputVal) }
             });
           }}
@@ -168,7 +168,7 @@ export const fieldTypeUtils = {
 function makeSetValueFunc(dispatch: DispatchType) {
   return function SetValue(fieldName: string, value: FormObjVal) {
     dispatch({
-      type: Action_Types.setFormObjField,
+      type: ActionTypes.setFormObjField,
       payload: { formFieldName: fieldName, value }
     });
   };

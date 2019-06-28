@@ -10,6 +10,8 @@ import {
   ExperienceFragment,
   ExperienceFragment_fieldDefs
 } from "../../graphql/apollo-types/ExperienceFragment";
+import immer from "immer";
+import { ApolloError } from "apollo-client";
 
 export interface OwnProps
   extends WithApolloClient<{}>,
@@ -67,9 +69,11 @@ function formFieldNameToIndex(formFieldName: string) {
   return index;
 }
 
-export enum Action_Types {
+export enum ActionTypes {
   setFormObjField = "@components/new-entry/set-form-obj-field",
-  experienceToFormValues = "@components/new-entry/experience-to-form-values"
+  experienceToFormValues = "@components/new-entry/experience-to-form-values",
+  setServerErrors = "@components/new-entry/set-server-errors",
+  removeServerErrors = "@components/new-entry/unset-server-errors"
 }
 
 interface SetFormObjFieldPayload {
@@ -82,46 +86,114 @@ interface ExperienceToFormValuesPayload {
 }
 
 export interface Action {
-  type: Action_Types;
+  type: ActionTypes;
   payload:
     | null
     | undefined
     | SetFormObjFieldPayload
-    | ExperienceToFormValuesPayload;
+    | ExperienceToFormValuesPayload
+    | ServerErrors;
+}
+
+interface FieldErrors {
+  [k: string]: string;
+}
+
+interface ServerErrors {
+  networkError?: string;
+  fieldErrors?: FieldErrors;
 }
 
 export interface State {
   readonly formObj: FormObj;
+  readonly fieldErrors: FieldErrors;
+  readonly networkError?: string | null;
 }
 
 export const reducer: Reducer<State, Action> = function reducerFn(
   prevState,
   { type, payload }
 ) {
-  switch (type) {
-    case Action_Types.setFormObjField:
-      const { formFieldName, value } = payload as SetFormObjFieldPayload;
+  return immer(prevState, proxy => {
+    switch (type) {
+      case ActionTypes.setFormObjField:
+        {
+          const { formFieldName, value } = payload as SetFormObjFieldPayload;
 
-      return {
-        ...prevState,
-        formObj: {
-          ...prevState.formObj,
-          [formFieldNameToIndex(formFieldName)]: value
+          proxy.formObj[formFieldNameToIndex(formFieldName)] = value;
         }
-      };
 
-    case Action_Types.experienceToFormValues:
-      return {
-        ...prevState,
-        formObj: initialFormValuesFromExperience(
-          (payload as ExperienceToFormValuesPayload).experience
-        )
-      };
+        break;
 
-    // istanbul ignore next: redux magic
-    default:
-      return prevState;
-  }
+      case ActionTypes.experienceToFormValues:
+        {
+          proxy.formObj = initialFormValuesFromExperience(
+            (payload as ExperienceToFormValuesPayload).experience
+          );
+        }
+
+        break;
+
+      case ActionTypes.setServerErrors:
+        {
+          const { fieldErrors, networkError } = payload as ServerErrors;
+
+          if (fieldErrors) {
+            proxy.fieldErrors = fieldErrors;
+          } else if (networkError) {
+            proxy.networkError = networkError;
+          }
+        }
+
+        break;
+
+      case ActionTypes.removeServerErrors:
+        {
+          proxy.networkError = null;
+          proxy.fieldErrors = {};
+        }
+
+        break;
+    }
+  });
 };
 
+export function parseApolloErrors(payload: ApolloError) {
+  const { graphQLErrors, networkError } = payload as ApolloError;
+
+  if (networkError) {
+    return { networkError: "Network error!" };
+  }
+
+  try {
+    const { fields } = JSON.parse(
+      graphQLErrors[0].message
+    ) as CreateEntryFieldErrors;
+
+    const fieldErrors = fields.reduce((acc, field) => {
+      const [[k, v]] = Object.entries(field.errors);
+
+      acc[field.meta.def_id] = `${k}: ${v}`;
+      return acc;
+    }, {});
+
+    return { fieldErrors };
+  } catch (error) {
+    return { networkError: "Network error!" };
+  }
+}
+
 export type DispatchType = Dispatch<Action>;
+
+export interface CreateEntryFieldErrors {
+  fields: Array<{
+    errors: {
+      data: string;
+    };
+
+    meta: {
+      def_id: string;
+      index: number;
+    };
+  }>;
+}

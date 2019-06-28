@@ -7,7 +7,8 @@ import {
   fireEvent,
   wait,
   getByText as getDescendantByText,
-  getByTestId as getDescendantByTestId
+  getByTestId as getDescendantByTestId,
+  waitForElement
 } from "react-testing-library";
 import isDateWithinRange from "date-fns/is_within_range";
 import addHours from "date-fns/add_hours";
@@ -17,26 +18,30 @@ import differenceInDays from "date-fns/difference_in_days";
 import differenceInHours from "date-fns/difference_in_hours";
 
 import { NewEntry } from "../components/NewEntry/component";
-import { Props } from "../components/NewEntry/utils";
+import { Props, CreateEntryFieldErrors } from "../components/NewEntry/utils";
 import { renderWithRouter, fillField } from "./test_utils";
 import { FieldType } from "../graphql/apollo-types/globalTypes";
+import {
+  ExperienceFragment_entries,
+  ExperienceFragment
+} from "../graphql/apollo-types/ExperienceFragment";
+import { ApolloError } from "apollo-client";
+import { GraphQLError } from "graphql";
 
 jest.mock("../components/NewEntry/update");
 jest.mock("../components/SidebarHeader", () => ({
   SidebarHeader: jest.fn(() => null)
 }));
 jest.mock("../state/get-conn-status");
+jest.mock("../components/scroll-into-view");
 
 import { updateExperienceWithNewEntry } from "../components/NewEntry/update";
 import { getConnStatus } from "../state/get-conn-status";
-
-import {
-  ExperienceFragment_entries,
-  ExperienceFragment
-} from "../graphql/apollo-types/ExperienceFragment";
+import { scrollIntoView } from "../components/scroll-into-view";
 
 const mockGetConnStatus = getConnStatus as jest.Mock;
 const mockUpdate = updateExperienceWithNewEntry as jest.Mock;
+const mockScrollIntoView = scrollIntoView as jest.Mock;
 
 const title = "what lovely experience";
 
@@ -419,9 +424,162 @@ it("creates new experience entry when offline", async () => {
   expect(mockCreateEntry).not.toBeCalled();
 });
 
+it("renders error when entry creation fails", async done => {
+  const experience = {
+    id: "1000",
+
+    title,
+
+    fieldDefs: [
+      {
+        id: "f1",
+        name: "f1",
+        type: FieldType.SINGLE_LINE_TEXT
+      }
+    ],
+
+    entries: {}
+  } as ExperienceFragment;
+
+  const { ui, mockCreateEntry, mockNavigate } = makeComp({
+    experience
+  });
+
+  const graphQLErrorMessage = JSON.stringify({
+    fields: [
+      {
+        errors: { data: "is invalid" },
+
+        meta: { def_id: "f1", index: 0 }
+      }
+    ]
+  } as CreateEntryFieldErrors);
+
+  mockCreateEntry.mockRejectedValue(
+    new ApolloError({
+      graphQLErrors: [new GraphQLError(graphQLErrorMessage)]
+    })
+  );
+
+  const { getByLabelText, getByText, getByTestId } = render(ui);
+
+  fillField(getByLabelText("f1 [SINGLE_LINE_TEXT]") as any, "s");
+
+  fireEvent.click(getByText(/submit/i));
+
+  const $error = await waitForElement(() => getByTestId("field-error-f1"));
+
+  expect($error).toBeInTheDocument();
+
+  expect(mockNavigate).not.toHaveBeenCalled();
+
+  expect(mockScrollIntoView).toHaveBeenCalled();
+
+  done();
+});
+
+it("renders network error", async done => {
+  const experience = {
+    id: "1000",
+
+    title,
+
+    fieldDefs: [
+      {
+        id: "f1",
+        name: "f1",
+        type: FieldType.SINGLE_LINE_TEXT
+      }
+    ],
+
+    entries: {}
+  } as ExperienceFragment;
+
+  const { ui, mockCreateEntry, mockNavigate } = makeComp({
+    experience
+  });
+
+  mockCreateEntry.mockRejectedValue(
+    new ApolloError({
+      networkError: new Error()
+    })
+  );
+
+  const { getByLabelText, getByText, getByTestId, queryByTestId } = render(ui);
+
+  fillField(getByLabelText("f1 [SINGLE_LINE_TEXT]") as any, "s");
+
+  expect(queryByTestId("network-error")).not.toBeInTheDocument();
+
+  fireEvent.click(getByText(/submit/i));
+
+  const $error = await waitForElement(() => getByTestId("network-error"));
+
+  expect($error).toBeInTheDocument();
+  expect(mockNavigate).not.toHaveBeenCalled();
+  expect(mockScrollIntoView).toHaveBeenCalled();
+
+  fireEvent.click($error.querySelector(`.close.icon`) as any);
+
+  expect(queryByTestId("network-error")).not.toBeInTheDocument();
+
+  done();
+});
+
+it("treats non field graphql errors as network error", async done => {
+  const experience = {
+    id: "1000",
+
+    title,
+
+    fieldDefs: [
+      {
+        id: "f1",
+        name: "f1",
+        type: FieldType.SINGLE_LINE_TEXT
+      }
+    ],
+
+    entries: {}
+  } as ExperienceFragment;
+
+  const { ui, mockCreateEntry, mockNavigate } = makeComp({
+    experience
+  });
+
+  mockCreateEntry.mockRejectedValue(
+    new ApolloError({
+      graphQLErrors: []
+    })
+  );
+
+  const { getByLabelText, getByText, getByTestId, queryByTestId } = render(ui);
+
+  fillField(getByLabelText("f1 [SINGLE_LINE_TEXT]") as any, "s");
+
+  expect(queryByTestId("network-error")).not.toBeInTheDocument();
+
+  fireEvent.click(getByText(/submit/i));
+
+  const $error = await waitForElement(() => getByTestId("network-error"));
+
+  expect($error).toBeInTheDocument();
+  expect(mockNavigate).not.toHaveBeenCalled();
+  expect(mockScrollIntoView).toHaveBeenCalled();
+
+  fireEvent.click($error.querySelector(`.close.icon`) as any);
+
+  expect(queryByTestId("network-error")).not.toBeInTheDocument();
+
+  done();
+});
+
+////////////////////////// HELPER FUNCTIONS ///////////////////////////////////
+
 const NewEntryP = NewEntry as ComponentType<Partial<Props>>;
 
 function makeComp(props: Partial<Props>, connectionStatus: boolean = true) {
+  mockScrollIntoView.mockReset();
   mockGetConnStatus.mockReset();
   mockGetConnStatus.mockResolvedValue(connectionStatus);
   mockUpdate.mockReset();

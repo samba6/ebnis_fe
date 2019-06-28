@@ -1,5 +1,7 @@
 import React, { useEffect, useReducer } from "react";
-import { Form, Button } from "semantic-ui-react";
+import Form from "semantic-ui-react/dist/commonjs/collections/Form";
+import Message from "semantic-ui-react/dist/commonjs/collections/Message";
+import Button from "semantic-ui-react/dist/commonjs/elements/Button";
 import { NavigateFn } from "@reach/router";
 
 import "./styles.scss";
@@ -12,7 +14,8 @@ import {
   formFieldNameFromIndex,
   reducer,
   DispatchType,
-  Action_Types
+  ActionTypes,
+  parseApolloErrors
 } from "./utils";
 import { makeExperienceRoute } from "../../constants/experience-route";
 import { CreateEntryMutationFn } from "../../graphql/create-entry.mutation";
@@ -23,6 +26,9 @@ import { setDocumentTitle, makeSiteTitle } from "../../constants";
 import { getConnStatus } from "../../state/get-conn-status";
 import { UnsavedExperience } from "../ExperienceDefinition/resolver-utils";
 import { ExperienceFragment_fieldDefs } from "../../graphql/apollo-types/ExperienceFragment";
+import makeClassNames from "classnames";
+import { FormCtrlError } from "../FormCtrlError/component";
+import { makeScrollIntoViewId, scrollIntoView } from "../scroll-into-view";
 
 export function NewEntry(props: Props) {
   const {
@@ -33,7 +39,12 @@ export function NewEntry(props: Props) {
     experience
   } = props;
 
-  const [state, dispatch] = useReducer(reducer, { formObj: {} });
+  const [state, dispatch] = useReducer(reducer, {
+    formObj: {},
+    fieldErrors: {}
+  });
+
+  const { fieldErrors, networkError } = state;
 
   const pageTitle = makePageTitle(experience);
 
@@ -50,7 +61,7 @@ export function NewEntry(props: Props) {
     function setInitialFormValues() {
       if (experience) {
         dispatch({
-          type: Action_Types.experienceToFormValues,
+          type: ActionTypes.experienceToFormValues,
           payload: {
             experience
           }
@@ -59,6 +70,20 @@ export function NewEntry(props: Props) {
     },
     [experience]
   );
+
+  useEffect(() => {
+    const [keyVal] = Object.entries(fieldErrors);
+
+    if (!keyVal) {
+      return;
+    }
+
+    const [id] = keyVal;
+
+    scrollIntoView(makeScrollIntoViewId(id), {
+      behavior: "smooth"
+    });
+  }, [fieldErrors]);
 
   function goToExp() {
     (navigate as NavigateFn)(makeExperienceRoute(experience.id));
@@ -81,30 +106,43 @@ export function NewEntry(props: Props) {
       });
     }
 
-    if (await getConnStatus(client)) {
-      await (createEntry as CreateEntryMutationFn)({
-        variables: {
-          input: {
-            expId,
+    try {
+      if (await getConnStatus(client)) {
+        await (createEntry as CreateEntryMutationFn)({
+          variables: {
+            input: {
+              expId,
+              fields
+            }
+          },
+
+          update: updateExperienceWithNewEntry(expId)
+        });
+      } else {
+        await createUnsavedEntry({
+          variables: {
+            experience: (experience as unknown) as UnsavedExperience,
             fields
           }
-        },
+        });
+      }
 
-        update: updateExperienceWithNewEntry(expId)
+      goToExp();
+    } catch (errors) {
+      const parsedErrors = parseApolloErrors(errors);
+
+      dispatch({
+        type: ActionTypes.setServerErrors,
+        payload: parsedErrors
       });
-    } else {
-      await createUnsavedEntry({
-        variables: {
-          experience: (experience as unknown) as UnsavedExperience,
-          fields
-        }
-      });
+
+      if (parsedErrors.networkError) {
+        scrollIntoView("js-scroll-into-view-network-error");
+      }
     }
-
-    goToExp();
   }
 
-  function renderMainOr() {
+  function renderMain() {
     const { fieldDefs, title } = experience;
 
     return (
@@ -112,16 +150,42 @@ export function NewEntry(props: Props) {
         <Button type="button" onClick={goToExp} className="title" basic={true}>
           {title}
         </Button>
+
+        {networkError && (
+          <Message
+            className="network-error"
+            data-testid="network-error"
+            error={true}
+            onDismiss={function onDismiss() {
+              dispatch({
+                type: ActionTypes.removeServerErrors,
+                payload: null
+              });
+            }}
+          >
+            <Message.Content>
+              <span
+                className="js-scroll-into-view"
+                id="js-scroll-into-view-network-error"
+              />
+
+              {networkError}
+            </Message.Content>
+          </Message>
+        )}
+
         <Form onSubmit={onSubmit}>
           {fieldDefs.map((obj, index) => {
-            const field = obj as ExperienceFragment_fieldDefs;
+            const fieldDefinition = obj as ExperienceFragment_fieldDefs;
+
             return (
               <FieldComponent
-                key={field.id}
-                field={field}
+                key={fieldDefinition.id}
+                field={fieldDefinition}
                 index={index}
                 formValues={state.formObj}
                 dispatch={dispatch}
+                error={fieldErrors[fieldDefinition.id]}
               />
             );
           })}
@@ -144,7 +208,7 @@ export function NewEntry(props: Props) {
     <div className="component-new-entry">
       <SidebarHeader title={pageTitle} sidebar={true} />
 
-      {renderMainOr()}
+      {renderMain()}
     </div>
   );
 }
@@ -154,22 +218,29 @@ interface FieldComponentProps {
   index: number;
   formValues: FormObj;
   dispatch: DispatchType;
+  error?: string;
 }
 
 const FieldComponent = React.memo(
-  function FieldComponentFn({
-    field,
-    index,
-    dispatch,
-    formValues
-  }: FieldComponentProps) {
-    const { name: fieldTitle, type } = field;
+  function FieldComponentFn(props: FieldComponentProps) {
+    const { field, index, dispatch, formValues, error } = props;
+
+    const { name: fieldTitle, type, id } = field;
     const formFieldName = formFieldNameFromIndex(index);
     const utils = fieldTypeUtils[type];
     const value = formValues[index] || (utils.default() as FormObjVal);
 
     return (
-      <Form.Field key={index}>
+      <Form.Field
+        key={id}
+        className={makeClassNames({ error: !!error, "form-field": true })}
+      >
+        <span
+          id={makeScrollIntoViewId(id)}
+          data-testid="js-scroll-into-view"
+          className="js-scroll-into-view"
+        />
+
         <label htmlFor={formFieldName}>{fieldTitle + " [" + type + "]"}</label>
 
         {utils.component({
@@ -177,6 +248,10 @@ const FieldComponent = React.memo(
           dispatch,
           value
         })}
+
+        {error && (
+          <FormCtrlError error={error} data-testid={`field-error-${id}`} />
+        )}
       </Form.Field>
     );
   },
@@ -184,11 +259,13 @@ const FieldComponent = React.memo(
   function FieldComponentDiff(prevProps, nextProps) {
     const {
       field: { type: prevType },
-      formValues: prevFormValues
+      formValues: prevFormValues,
+      error: currentError
     } = prevProps;
     const {
       field: { type: nextType },
-      formValues: nextFormValues
+      formValues: nextFormValues,
+      error: nextError
     } = nextProps;
 
     const prevVal =
@@ -197,6 +274,6 @@ const FieldComponent = React.memo(
     const nextVal =
       nextFormValues[nextProps.index] || fieldTypeUtils[nextType].default;
 
-    return prevVal === nextVal;
+    return prevVal === nextVal && currentError === nextError;
   }
 );
