@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useMemo } from "react";
 import Card from "semantic-ui-react/dist/commonjs/views/Card";
 import Icon from "semantic-ui-react/dist/commonjs/elements/Icon";
 import Dropdown from "semantic-ui-react/dist/commonjs/modules/Dropdown";
@@ -6,7 +6,6 @@ import { Link } from "gatsby";
 
 import "./styles.scss";
 import { Props } from "./utils";
-import { setDocumentTitle, makeSiteTitle } from "../../constants";
 import { makeNewEntryRoute } from "../../constants/new-entry-route";
 import { Entry } from "../Entry/component";
 import {
@@ -20,6 +19,7 @@ import makeClassNames from "classnames";
 
 export function Experience(props: Props) {
   const {
+    navigate,
     experience,
     className = "",
     entryProps = {},
@@ -28,17 +28,6 @@ export function Experience(props: Props) {
     entryNodes: defaultEntryNodes,
     ...otherProps
   } = props;
-
-  const title = getTitle(experience);
-
-  useEffect(
-    function setRouteTitle() {
-      setDocumentTitle(makeSiteTitle(title));
-
-      return setDocumentTitle;
-    },
-    [title]
-  );
 
   const entryNodes = useMemo(() => {
     if (defaultEntryNodes) {
@@ -97,7 +86,7 @@ export function Experience(props: Props) {
     >
       <Card.Content className="experience__header" {...headerProps}>
         <Card.Header>
-          <span>{title}</span>
+          <span>{getTitle(experience)}</span>
 
           <div className="options-menu-container">
             <OptionsMenuComponent experience={experience} {...menuOptions} />
