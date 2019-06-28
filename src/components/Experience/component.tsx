@@ -45,10 +45,6 @@ export function Experience(props: Props) {
   }, [experience, defaultEntryNodes]);
 
   function renderEntries() {
-    if (doNotShowNoEntriesLink) {
-      return null;
-    }
-    
     const nodesLen = entryNodes.length;
 
     if (nodesLen === 0) {
@@ -101,9 +97,11 @@ export function Experience(props: Props) {
         <>{headerProps.children}</>
       </Card.Content>
 
-      <Card.Content className="experience__main">
-        {renderEntries()}
-      </Card.Content>
+      {!doNotShowNoEntriesLink && (
+        <Card.Content className="experience__main">
+          {renderEntries()}
+        </Card.Content>
+      )}
     </Card>
   );
 }
