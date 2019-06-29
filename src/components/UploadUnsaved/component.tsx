@@ -1,4 +1,4 @@
-import React, { useReducer, useEffect } from "react";
+import React, { useReducer, useEffect, useCallback } from "react";
 import {
   Props,
   reducer,
@@ -95,68 +95,81 @@ export function UploadUnsaved(props: Props) {
     });
   }, []);
 
-  async function onUploadAllClicked() {
-    dispatch({
-      type: ActionType.setUploading,
-      payload: true
-    });
+  const onUploadAllClicked = useCallback(
+    async function onUploadAllClickedFn() {
+      dispatch({
+        type: ActionType.setUploading,
+        payload: true
+      });
 
-    try {
-      let uploadFunction;
-      let variables;
+      try {
+        let uploadFunction;
+        let variables;
 
-      if (unsavedExperiencesLen !== 0 && savedExperiencesLen !== 0) {
-        uploadFunction = uploadAllUnsaveds;
+        if (unsavedExperiencesLen !== 0 && savedExperiencesLen !== 0) {
+          uploadFunction = uploadAllUnsaveds;
 
-        variables = {
-          unsavedExperiences: unsavedExperiencesToUploadData(
-            unsavedExperiencesIdsToObjectMap
-          ),
+          variables = {
+            unsavedExperiences: unsavedExperiencesToUploadData(
+              unsavedExperiencesIdsToObjectMap
+            ),
 
-          unsavedEntries: savedExperiencesToUploadData(
-            savedExperiencesIdsToObjectMap
-          )
-        };
-      } else if (unsavedExperiencesLen !== 0) {
-        uploadFunction = uploadUnsavedExperiences;
+            unsavedEntries: savedExperiencesToUploadData(
+              savedExperiencesIdsToObjectMap
+            )
+          };
+        } else if (unsavedExperiencesLen !== 0) {
+          uploadFunction = uploadUnsavedExperiences;
 
-        variables = ({
-          input: unsavedExperiencesToUploadData(
-            unsavedExperiencesIdsToObjectMap
-          )
-        } as unknown) as UploadAllUnsavedsMutationVariables;
-      } else {
-        uploadFunction = createEntries;
+          variables = ({
+            input: unsavedExperiencesToUploadData(
+              unsavedExperiencesIdsToObjectMap
+            )
+          } as unknown) as UploadAllUnsavedsMutationVariables;
+        } else {
+          uploadFunction = createEntries;
 
-        variables = ({
-          createEntries: savedExperiencesToUploadData(
-            savedExperiencesIdsToObjectMap
-          )
-        } as unknown) as UploadAllUnsavedsMutationVariables;
+          variables = ({
+            createEntries: savedExperiencesToUploadData(
+              savedExperiencesIdsToObjectMap
+            )
+          } as unknown) as UploadAllUnsavedsMutationVariables;
+        }
+
+        const result = await (uploadFunction as UploadAllUnsavedsMutationFn)({
+          variables,
+
+          update: onUploadSuccessUpdate({
+            savedExperiencesIdsToUnsavedEntriesMap: savedExperiencesIdsToObjectMap,
+            unsavedExperiences: (unsavedExperiences as unknown) as UnsavedExperience[]
+          })
+        });
+
+        dispatch({
+          type: ActionType.uploadResult,
+          payload: result && result.data
+        });
+      } catch (error) {
+        dispatch({
+          type: ActionType.setServerError,
+          payload: error
+        });
+
+        scrollIntoView("js-scroll-into-view-server-error");
       }
-
-      const result = await (uploadFunction as UploadAllUnsavedsMutationFn)({
-        variables,
-
-        update: onUploadSuccessUpdate({
-          savedExperiencesIdsToUnsavedEntriesMap: savedExperiencesIdsToObjectMap,
-          unsavedExperiences: (unsavedExperiences as unknown) as UnsavedExperience[]
-        })
-      });
-
-      dispatch({
-        type: ActionType.uploadResult,
-        payload: result && result.data
-      });
-    } catch (error) {
-      dispatch({
-        type: ActionType.setServerError,
-        payload: error
-      });
-
-      scrollIntoView("js-scroll-into-view-server-error");
-    }
-  }
+    },
+    [
+      dispatch,
+      unsavedExperiencesLen,
+      savedExperiencesLen,
+      uploadAllUnsaveds,
+      unsavedExperiencesIdsToObjectMap,
+      savedExperiencesIdsToObjectMap,
+      uploadUnsavedExperiences,
+      createEntries,
+      unsavedExperiences
+    ]
+  );
 
   if (loading && unSavedCount === 0) {
     return <Loading />;
@@ -358,6 +371,20 @@ function TabsMenuComponent({
     savedExperiencesLen
   } = state;
 
+  const toggleTab1 = useCallback(function toggleTab1Fn() {
+    dispatch({
+      type: ActionType.toggleTab,
+      payload: 1
+    });
+  }, []);
+
+  const toggleTab2 = useCallback(function toggleTab2Fn() {
+    dispatch({
+      type: ActionType.toggleTab,
+      payload: 2
+    });
+  }, []);
+
   let unsavedIcon = null;
   let savedIcon = null;
 
@@ -407,12 +434,7 @@ function TabsMenuComponent({
         <a
           className={setTabMenuClassNames("1", tabs)}
           data-testid="saved-experiences-menu"
-          onClick={() => {
-            dispatch({
-              type: ActionType.toggleTab,
-              payload: 1
-            });
-          }}
+          onClick={toggleTab1}
         >
           Entries
           {savedIcon}
@@ -424,12 +446,7 @@ function TabsMenuComponent({
         <a
           className={setTabMenuClassNames("2", tabs)}
           data-testid="unsaved-experiences-menu"
-          onClick={() => {
-            dispatch({
-              type: ActionType.toggleTab,
-              payload: 2
-            });
-          }}
+          onClick={toggleTab2}
         >
           Experiences
           {unsavedIcon}
