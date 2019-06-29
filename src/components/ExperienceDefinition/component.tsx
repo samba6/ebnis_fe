@@ -9,15 +9,13 @@ import {
   FormikErrors,
   Field
 } from "formik";
-import {
-  Form,
-  Button,
-  Icon,
-  Input,
-  Message,
-  TextArea,
-  Dropdown
-} from "semantic-ui-react";
+import Dropdown from "semantic-ui-react/dist/commonjs/modules/Dropdown";
+import Form from "semantic-ui-react/dist/commonjs/collections/Form";
+import Button from "semantic-ui-react/dist/commonjs/elements/Button";
+import Icon from "semantic-ui-react/dist/commonjs/elements/Icon";
+import Input from "semantic-ui-react/dist/commonjs/elements/Input";
+import Message from "semantic-ui-react/dist/commonjs/collections/Message";
+import TextArea from "semantic-ui-react/dist/commonjs/addons/TextArea";
 import { ApolloError } from "apollo-client";
 import { NavigateFn } from "@reach/router";
 

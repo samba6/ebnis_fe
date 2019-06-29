@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useRef } from "react";
-import { Form, Dropdown } from "semantic-ui-react";
-
+import Dropdown from "semantic-ui-react/dist/commonjs/modules/Dropdown";
+import Form from "semantic-ui-react/dist/commonjs/collections/Form";
 import {
   MONTHS,
   getToday,

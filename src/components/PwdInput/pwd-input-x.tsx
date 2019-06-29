@@ -1,7 +1,8 @@
 import React from "react";
-
 import { Props, PwdInputActionTypes } from "./pwd-input";
-import { Form, Input, Icon } from "semantic-ui-react";
+import Icon from "semantic-ui-react/dist/commonjs/elements/Icon";
+import Input from "semantic-ui-react/dist/commonjs/elements/Input";
+import Form from "semantic-ui-react/dist/commonjs/collections/Form";
 
 export const PwdInput = React.memo(
   function PwdInputComponent<TFormValues>(props: Props<TFormValues>) {

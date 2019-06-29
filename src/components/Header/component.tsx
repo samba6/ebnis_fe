@@ -1,5 +1,6 @@
 import React, { useContext } from "react";
-import { Icon, Menu } from "semantic-ui-react";
+import Menu from "semantic-ui-react/dist/commonjs/collections/Menu";
+import Icon from "semantic-ui-react/dist/commonjs/elements/Icon";
 import makeClassnames from "classnames";
 import { WindowLocation, NavigateFn } from "@reach/router";
 import { Link } from "gatsby";

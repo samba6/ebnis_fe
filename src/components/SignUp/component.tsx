@@ -1,5 +1,10 @@
 import React, { useRef, useReducer, useContext } from "react";
-import { Button, Card, Input, Message, Icon, Form } from "semantic-ui-react";
+import Card from "semantic-ui-react/dist/commonjs/views/Card";
+import Icon from "semantic-ui-react/dist/commonjs/elements/Icon";
+import Input from "semantic-ui-react/dist/commonjs/elements/Input";
+import Form from "semantic-ui-react/dist/commonjs/collections/Form";
+import Button from "semantic-ui-react/dist/commonjs/elements/Button";
+import Message from "semantic-ui-react/dist/commonjs/collections/Message";
 import { Formik, Field, FieldProps, FormikProps } from "formik";
 import loIsEmpty from "lodash/isEmpty";
 import { WindowLocation } from "@reach/router";

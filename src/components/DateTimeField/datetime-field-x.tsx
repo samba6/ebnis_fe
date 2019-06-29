@@ -1,6 +1,6 @@
 import React, { useState, useRef } from "react";
-import { Form, Dropdown } from "semantic-ui-react";
-
+import Dropdown from "semantic-ui-react/dist/commonjs/modules/Dropdown";
+import Form from "semantic-ui-react/dist/commonjs/collections/Form";
 import DateField from "../DateField";
 import { FormObjVal } from "../Experience/utils";
 import {

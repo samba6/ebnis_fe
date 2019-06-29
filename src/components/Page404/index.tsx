@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "gatsby";
-import { Button } from "semantic-ui-react";
+import Button from "semantic-ui-react/dist/commonjs/elements/Button";
 
 import { SidebarHeader } from "../SidebarHeader";
 import { ROOT_URL } from "../../routes";

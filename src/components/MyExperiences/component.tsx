@@ -1,5 +1,5 @@
 import React, { useEffect, useReducer, useRef, useMemo } from "react";
-import { Icon } from "semantic-ui-react";
+import Icon from "semantic-ui-react/dist/commonjs/elements/Icon";
 
 import "./styles.scss";
 import {
