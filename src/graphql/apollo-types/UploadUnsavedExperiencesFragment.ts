@@ -123,30 +123,49 @@ export interface UploadUnsavedExperiencesFragment_experience {
 }
 
 export interface UploadUnsavedExperiencesFragment_experienceError {
-  __typename: "OfflineExperienceExperienceError";
-  /**
-   * The index of the failing experience in the list of experiences input
-   */
-  index: number;
+  __typename: "OfflineExperienceError";
   /**
    * The client ID of the failing experience. As user may not have provided a
    *   client ID, this field is nullable and in that case, the index field will
    *   be used to identify this error
    */
   clientId: string | null;
+  /**
+   * The error string explaining why experience fails to insert.
+   */
   error: string;
 }
 
 export interface UploadUnsavedExperiencesFragment_entriesErrors {
-  __typename: "OfflineExperienceEntryError";
+  __typename: "CreateEntriesError";
+  /**
+   * The experience ID of the entry which fails to save
+   */
   experienceId: string;
+  /**
+   * The client ID of the entry which fails to save
+   */
   clientId: string;
+  /**
+   * The failure error
+   */
   error: string;
 }
 
 export interface UploadUnsavedExperiencesFragment {
   __typename: "OfflineExperience";
+  /**
+   * The experience which was successfully inserted - will be null if
+   *   experience fails to insert
+   */
   experience: UploadUnsavedExperiencesFragment_experience | null;
+  /**
+   * If the experience fails to insert, then this is the error object
+   *   returned
+   */
   experienceError: UploadUnsavedExperiencesFragment_experienceError | null;
+  /**
+   * A list of error objects denoting entries which fail to insert
+   */
   entriesErrors: (UploadUnsavedExperiencesFragment_entriesErrors | null)[] | null;
 }

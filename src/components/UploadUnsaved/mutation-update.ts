@@ -201,7 +201,7 @@ function updateSavedExperiences(
       return;
     }
 
-    const { expId: experienceId, errors } = createEntriesResult;
+    const { experienceId, errors } = createEntriesResult;
 
     const experienceWithUnsavedEntriesProps =
       savedExperiencesIdsToUnsavedEntriesMap[experienceId];

@@ -41,14 +41,30 @@ export interface CreateEntriesMutation_createEntries_entries {
 
 export interface CreateEntriesMutation_createEntries_errors {
   __typename: "CreateEntriesError";
+  /**
+   * The experience ID of the entry which fails to save
+   */
+  experienceId: string;
+  /**
+   * The client ID of the entry which fails to save
+   */
   clientId: string;
+  /**
+   * The failure error
+   */
   error: string;
 }
 
 export interface CreateEntriesMutation_createEntries {
   __typename: "CreateEntriesResponse";
-  expId: string;
+  experienceId: string;
+  /**
+   * The entries that were successfully inserted
+   */
   entries: (CreateEntriesMutation_createEntries_entries | null)[];
+  /**
+   * List of error objects denoting entries that fail to insert
+   */
   errors: (CreateEntriesMutation_createEntries_errors | null)[] | null;
 }
 

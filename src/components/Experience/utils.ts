@@ -8,10 +8,12 @@ import {
   ExperienceFragment_entries_edges_node
 } from "../../graphql/apollo-types/ExperienceFragment";
 import { EbnisComponentProps } from "../../types";
+import { PropsWithChildren } from "react";
 
 export interface Props
   extends EbnisComponentProps,
-    RouteComponentProps<NewEntryRouteParams> {
+    RouteComponentProps<NewEntryRouteParams>,
+    PropsWithChildren<{}> {
   experience: ExperienceFragment;
   entryProps?: EbnisComponentProps;
   headerProps?: EbnisComponentProps;

@@ -123,31 +123,50 @@ export interface UploadAllUnsavedsMutation_saveOfflineExperiences_experience {
 }
 
 export interface UploadAllUnsavedsMutation_saveOfflineExperiences_experienceError {
-  __typename: "OfflineExperienceExperienceError";
-  /**
-   * The index of the failing experience in the list of experiences input
-   */
-  index: number;
+  __typename: "OfflineExperienceError";
   /**
    * The client ID of the failing experience. As user may not have provided a
    *   client ID, this field is nullable and in that case, the index field will
    *   be used to identify this error
    */
   clientId: string | null;
+  /**
+   * The error string explaining why experience fails to insert.
+   */
   error: string;
 }
 
 export interface UploadAllUnsavedsMutation_saveOfflineExperiences_entriesErrors {
-  __typename: "OfflineExperienceEntryError";
+  __typename: "CreateEntriesError";
+  /**
+   * The experience ID of the entry which fails to save
+   */
   experienceId: string;
+  /**
+   * The client ID of the entry which fails to save
+   */
   clientId: string;
+  /**
+   * The failure error
+   */
   error: string;
 }
 
 export interface UploadAllUnsavedsMutation_saveOfflineExperiences {
   __typename: "OfflineExperience";
+  /**
+   * The experience which was successfully inserted - will be null if
+   *   experience fails to insert
+   */
   experience: UploadAllUnsavedsMutation_saveOfflineExperiences_experience | null;
+  /**
+   * If the experience fails to insert, then this is the error object
+   *   returned
+   */
   experienceError: UploadAllUnsavedsMutation_saveOfflineExperiences_experienceError | null;
+  /**
+   * A list of error objects denoting entries which fail to insert
+   */
   entriesErrors: (UploadAllUnsavedsMutation_saveOfflineExperiences_entriesErrors | null)[] | null;
 }
 
@@ -184,14 +203,30 @@ export interface UploadAllUnsavedsMutation_createEntries_entries {
 
 export interface UploadAllUnsavedsMutation_createEntries_errors {
   __typename: "CreateEntriesError";
+  /**
+   * The experience ID of the entry which fails to save
+   */
+  experienceId: string;
+  /**
+   * The client ID of the entry which fails to save
+   */
   clientId: string;
+  /**
+   * The failure error
+   */
   error: string;
 }
 
 export interface UploadAllUnsavedsMutation_createEntries {
   __typename: "CreateEntriesResponse";
-  expId: string;
+  experienceId: string;
+  /**
+   * The entries that were successfully inserted
+   */
   entries: (UploadAllUnsavedsMutation_createEntries_entries | null)[];
+  /**
+   * List of error objects denoting entries that fail to insert
+   */
   errors: (UploadAllUnsavedsMutation_createEntries_errors | null)[] | null;
 }
 

@@ -194,12 +194,12 @@ it("removes saved experience from cache only if 'createEntries' operation return
 
   const createEntriesOperationResult = [
     {
-      expId: "1",
+      experienceId: "1",
       entries: [createEntriesOperationEntry1]
     },
 
     {
-      expId: "2",
+      experienceId: "2",
       entries: [createEntriesOperationEntry2],
       errors: {}
     }

@@ -103,7 +103,7 @@ $transitionTime: 500ms;
   }
 
   .upload-error-icon {
-    color: red;
+    color: $error-color;
   }
 
   .upload-success-icon {
@@ -115,8 +115,8 @@ $transitionTime: 500ms;
   }
 
   .experience-title--error {
-    border: 2px solid $error-color;
-    background-color: $error-bg-color;
+    border: 2px solid $error-color !important;
+    background-color: $error-bg-color !important;
     color: $error-color;
 
     &.content {
@@ -126,7 +126,6 @@ $transitionTime: 500ms;
 
   .experience-title--success {
     border: 2px solid $success-color !important;
-
     background-color: $success-bg-color !important;
     color: $success-color;
 
@@ -135,9 +134,15 @@ $transitionTime: 500ms;
     }
   }
 
-  .experience-title__success-icon {
+  .experience-title__success-icon,
+  .experience-title__error-icon {
     position: absolute;
     top: 0;
     right: 0;
+  }
+
+  .experience-error {
+    padding: 10px 5px;
+    font-weight: 600;
   }
 }

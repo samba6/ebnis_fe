@@ -27,6 +27,7 @@ export function Experience(props: Props) {
     menuOptions = {},
     entryNodes: defaultEntryNodes,
     doNotShowNoEntriesLink,
+    children,
     ...otherProps
   } = props;
 
@@ -96,6 +97,8 @@ export function Experience(props: Props) {
 
         <>{headerProps.children}</>
       </Card.Content>
+
+      {children}
 
       {!doNotShowNoEntriesLink && (
         <Card.Content className="experience__main">

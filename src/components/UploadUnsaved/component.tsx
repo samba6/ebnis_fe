@@ -8,7 +8,8 @@ import {
   DispatchType,
   State,
   DidUploadSucceed,
-  stateInitializerFn
+  stateInitializerFn,
+  ExperienceObjectMap
 } from "./utils";
 import { Loading } from "../Loading";
 import {
@@ -17,7 +18,6 @@ import {
 } from "../../state/unsaved-resolvers";
 import { SidebarHeader } from "../SidebarHeader";
 import {
-  ExperienceFragment,
   ExperienceFragment_entries_edges_node,
   ExperienceFragment_entries_edges_node_fields
 } from "../../graphql/apollo-types/ExperienceFragment";
@@ -31,13 +31,13 @@ import { getConnStatus } from "../../state/get-conn-status";
 import { NavigateFn } from "@reach/router";
 import Modal from "semantic-ui-react/dist/commonjs/modules/Modal";
 import Icon from "semantic-ui-react/dist/commonjs/elements/Icon";
-import {
-  UploadAllUnsavedsMutation,
-  UploadAllUnsavedsMutationVariables
-} from "../../graphql/apollo-types/UploadAllUnsavedsMutation";
+import Message from "semantic-ui-react/dist/commonjs/collections/Message";
+import { UploadAllUnsavedsMutationVariables } from "../../graphql/apollo-types/UploadAllUnsavedsMutation";
 import { onUploadSuccessUpdate } from "./mutation-update";
 import { Experience } from "../Experience/component";
 import { UnsavedExperience } from "../ExperienceDefinition/resolver-utils";
+import { scrollIntoView } from "../scroll-into-view";
+import { FormCtrlError } from "../FormCtrlError/component";
 
 const timeoutMs = 500;
 
@@ -65,19 +65,17 @@ export function UploadUnsaved(props: Props) {
   const {
     tabs,
     uploading,
-    uploadResult,
     serverError,
-    isUploadTriggered,
     allUploadSucceeded,
-    hasUnsavedExperiencesUploadError,
-    hasSavedExperiencesUploadError,
     unSavedCount,
     unsavedExperiencesLen,
     savedExperiencesLen,
     unsavedExperiences,
     savedExperiences,
     savedExperiencesIdsToObjectMap,
-    unsavedExperiencesIdsToObjectMap
+    unsavedExperiencesIdsToObjectMap,
+    allUnsavedEntriesSucceeded,
+    allUnsavedExperiencesSucceeded
   } = state;
 
   const loading =
@@ -105,24 +103,24 @@ export function UploadUnsaved(props: Props) {
 
     try {
       let uploadFunction;
-      let uploadFunctionVariables;
+      let variables;
 
       if (unsavedExperiencesLen !== 0 && savedExperiencesLen !== 0) {
         uploadFunction = uploadAllUnsaveds;
 
-        uploadFunctionVariables = {
+        variables = {
           unsavedExperiences: unsavedExperiencesToUploadData(
             unsavedExperiencesIdsToObjectMap
           ),
 
-          unsavedEntries: savedExperiencesWithUnsavedEntriesToUploadData(
+          unsavedEntries: savedExperiencesToUploadData(
             savedExperiencesIdsToObjectMap
           )
         };
       } else if (unsavedExperiencesLen !== 0) {
         uploadFunction = uploadUnsavedExperiences;
 
-        uploadFunctionVariables = ({
+        variables = ({
           input: unsavedExperiencesToUploadData(
             unsavedExperiencesIdsToObjectMap
           )
@@ -130,15 +128,16 @@ export function UploadUnsaved(props: Props) {
       } else {
         uploadFunction = createEntries;
 
-        uploadFunctionVariables = ({
-          createEntries: savedExperiencesWithUnsavedEntriesToUploadData(
+        variables = ({
+          createEntries: savedExperiencesToUploadData(
             savedExperiencesIdsToObjectMap
           )
         } as unknown) as UploadAllUnsavedsMutationVariables;
       }
 
       const result = await (uploadFunction as UploadAllUnsavedsMutationFn)({
-        variables: uploadFunctionVariables,
+        variables,
+
         update: onUploadSuccessUpdate({
           savedExperiencesIdsToUnsavedEntriesMap: savedExperiencesIdsToObjectMap,
           unsavedExperiences: (unsavedExperiences as unknown) as UnsavedExperience[]
@@ -154,6 +153,8 @@ export function UploadUnsaved(props: Props) {
         type: ActionType.setServerError,
         payload: error
       });
+
+      scrollIntoView("js-scroll-into-view-server-error");
     }
   }
 
@@ -177,18 +178,9 @@ export function UploadUnsaved(props: Props) {
       </SidebarHeader>
 
       <div className="main">
-        {serverError && <div data-testid="server-error">{serverError}</div>}
+        <TabsMenuComponent state={state} dispatch={dispatch} />
 
-        <TabsMenuComponent
-          savedExperiencesLen={savedExperiencesLen}
-          unsavedExperiencesLen={unsavedExperiencesLen}
-          uploadResult={uploadResult}
-          tabs={tabs}
-          dispatch={dispatch}
-          isUploadTriggered={isUploadTriggered}
-          hasUnsavedExperiencesUploadError={hasUnsavedExperiencesUploadError}
-          hasSavedExperiencesUploadError={hasSavedExperiencesUploadError}
-        />
+        <ServerError dispatch={dispatch} serverError={serverError} />
 
         <TransitionGroup className="all-unsaveds">
           {tabs["1"] && (
@@ -205,9 +197,11 @@ export function UploadUnsaved(props: Props) {
                   return (
                     <ExperienceComponent
                       key={experience.id}
-                      experience={experience}
                       type="saved"
-                      state={state}
+                      experienceObjectMap={
+                        savedExperiencesIdsToObjectMap[experience.id]
+                      }
+                      allUploadSucceeded={allUnsavedEntriesSucceeded}
                     />
                   );
                 })}
@@ -226,14 +220,14 @@ export function UploadUnsaved(props: Props) {
                 data-testid="unsaved-experiences"
               >
                 {unsavedExperiences.map(experience => {
-                  const { id } = experience;
-
                   return (
                     <ExperienceComponent
-                      key={id}
-                      experience={experience}
+                      key={experience.id}
                       type="unsaved"
-                      state={state}
+                      experienceObjectMap={
+                        unsavedExperiencesIdsToObjectMap[experience.id]
+                      }
+                      allUploadSucceeded={allUnsavedExperiencesSucceeded}
                     />
                   );
                 })}
@@ -249,55 +243,50 @@ export function UploadUnsaved(props: Props) {
 ////////////////////////// COMPONENTS ///////////////////////////////////
 
 function ExperienceComponent({
-  experience,
   type,
-  state
+  allUploadSucceeded,
+  experienceObjectMap
 }: {
-  experience: ExperienceFragment;
+  experienceObjectMap: ExperienceObjectMap;
   type: "unsaved" | "saved";
-  state: State;
+  allUploadSucceeded?: boolean;
 }) {
   const {
-    savedExperiencesIdsToObjectMap,
-    unsavedExperiencesIdsToObjectMap,
-    allUploadSucceeded,
-    hasSavedExperiencesUploadError,
-    hasUnsavedExperiencesUploadError
-  } = state;
+    experience,
+    didUploadSucceed,
+    unsavedEntries,
+    entriesErrors,
+    experienceError
+  } = experienceObjectMap;
+
+  const hasError = entriesErrors || experienceError;
 
   const experienceId = experience.id;
 
   let titleClassSuffix = "";
 
-  if (hasSavedExperiencesUploadError || hasUnsavedExperiencesUploadError) {
-    titleClassSuffix = "--error";
-  }
-
   if (allUploadSucceeded) {
     titleClassSuffix = "--success";
   }
 
-  const map =
-    type === "unsaved"
-      ? unsavedExperiencesIdsToObjectMap
-      : savedExperiencesIdsToObjectMap;
+  if (hasError) {
+    titleClassSuffix = "--error";
+  }
 
-  const mapObject = map[experienceId];
+  let errorIcon = null;
 
-  let check = null;
-
-  if (mapObject.didUploadSucceed) {
-    check = (
+  if (didUploadSucceed) {
+    errorIcon = (
       <Icon
         name="check"
         data-testid={"upload-triggered-icon-success-" + experienceId}
         className="experience-title__success-icon upload-success-icon upload-result-icon"
       />
     );
-  } else if (mapObject.hasUploadError) {
-    check = (
+  } else if (hasError) {
+    errorIcon = (
       <Icon
-        name="check"
+        name="ban"
         data-testid={"upload-triggered-icon-error-" + experienceId}
         className="experience-title__error-icon upload-error-icon upload-result-icon"
       />
@@ -309,19 +298,30 @@ function ExperienceComponent({
       experience={experience}
       data-testid={type + "-experience"}
       headerProps={{
-        "data-testid": "experience-title",
+        "data-testid": type + "-experience-title-" + experienceId,
         className: `experience-title--uploads experience-title${titleClassSuffix}`,
 
-        children: check
+        children: errorIcon
       }}
       entryProps={{
         "data-testid": `${type}-experience-${experienceId}-entry-`
       }}
-      entryNodes={mapObject.unsavedEntries}
+      entryNodes={unsavedEntries}
       menuOptions={{
         newEntry: false
       }}
-    />
+      doNotShowNoEntriesLink={unsavedEntries.length === 0}
+    >
+      {experienceError && (
+        <FormCtrlError
+          className="experience-error"
+          data-testid={`unsaved-experience-errors-${experienceId}`}
+        >
+          <div>Error while saving experience ::</div>
+          <div>{experienceError}</div>
+        </FormCtrlError>
+      )}
+    </Experience>
   );
 }
 
@@ -342,31 +342,67 @@ function ModalComponent({ open }: { open?: boolean }) {
 }
 
 function TabsMenuComponent({
-  savedExperiencesLen: savedExperiencesWithUnsavedEntriesLen,
-  unsavedExperiencesLen,
-  uploadResult,
-  tabs,
   dispatch,
-  isUploadTriggered,
-  hasUnsavedExperiencesUploadError,
-  hasSavedExperiencesUploadError
-}: DidUploadSucceed & {
-  savedExperiencesLen: number;
-  unsavedExperiencesLen: number;
-  uploadResult?: UploadAllUnsavedsMutation;
-  tabs: State["tabs"];
+  state
+}: {
   dispatch: DispatchType;
-  isUploadTriggered?: boolean;
+  state: State;
 }) {
+  const {
+    isUploadTriggered,
+    hasUnsavedExperiencesUploadError,
+    hasSavedExperiencesUploadError,
+    tabs,
+    unsavedExperiencesLen,
+    uploadResult,
+    savedExperiencesLen
+  } = state;
+
+  let unsavedIcon = null;
+  let savedIcon = null;
+
+  if (isUploadTriggered) {
+    savedIcon =
+      savedExperiencesLen === 0 ? null : hasSavedExperiencesUploadError ? (
+        <Icon
+          name="ban"
+          data-testid="upload-triggered-icon-error-saved-experiences"
+          className="upload-error-icon upload-result-icon"
+        />
+      ) : (
+        <Icon
+          name="check"
+          data-testid="upload-triggered-icon-success-saved-experiences"
+          className="upload-success-icon upload-result-icon"
+        />
+      );
+
+    unsavedIcon =
+      unsavedExperiencesLen === 0 ? null : hasUnsavedExperiencesUploadError ? (
+        <Icon
+          name="ban"
+          data-testid="upload-triggered-icon-error-unsaved-experiences"
+          className="upload-error-icon upload-result-icon"
+        />
+      ) : (
+        <Icon
+          name="check"
+          data-testid="upload-triggered-icon-success-unsaved-experiences"
+          className="upload-success-icon upload-result-icon"
+        />
+      );
+  }
+
   return (
     <div
       className={makeClassNames({
         "ui item menu": true,
-        one: !tabs["1"] || !tabs["2"],
-        two: tabs["1"] && tabs["2"]
+        one: savedExperiencesLen === 0 || unsavedExperiencesLen === 0,
+        two: savedExperiencesLen !== 0 && unsavedExperiencesLen !== 0
       })}
+      data-testid="tabs-menu"
     >
-      {(savedExperiencesWithUnsavedEntriesLen !== 0 ||
+      {(savedExperiencesLen !== 0 ||
         (uploadResult && uploadResult.createEntries)) && (
         <a
           className={setTabMenuClassNames("1", tabs)}
@@ -379,20 +415,7 @@ function TabsMenuComponent({
           }}
         >
           Entries
-          {isUploadTriggered &&
-            (hasSavedExperiencesUploadError ? (
-              <Icon
-                name="ban"
-                data-testid="upload-triggered-icon-error-saved-experiences"
-                className="upload-error-icon upload-result-icon"
-              />
-            ) : (
-              <Icon
-                name="check"
-                data-testid="upload-triggered-icon-success-saved-experiences"
-                className="upload-error-icon upload-result-icon"
-              />
-            ))}
+          {savedIcon}
         </a>
       )}
 
@@ -409,20 +432,7 @@ function TabsMenuComponent({
           }}
         >
           Experiences
-          {isUploadTriggered &&
-            (hasUnsavedExperiencesUploadError ? (
-              <Icon
-                name="ban"
-                data-testid="upload-triggered-icon-error-unsaved-experiences"
-                className="upload-error-icon upload-result-icon"
-              />
-            ) : (
-              <Icon
-                name="check"
-                data-testid="upload-triggered-icon-success-unsaved-experiences"
-                className="upload-success-icon upload-result-icon"
-              />
-            ))}
+          {unsavedIcon}
         </a>
       )}
     </div>
@@ -447,6 +457,49 @@ function UploadAllButtonComponent({
     >
       UPLOAD
     </Button>
+  );
+}
+
+function ServerError(props: {
+  dispatch: DispatchType;
+  serverError: State["serverError"];
+}) {
+  const { serverError, dispatch } = props;
+
+  if (!serverError) {
+    return null;
+  }
+
+  return (
+    <Message
+      style={{
+        minHeight: "auto",
+        position: "relative",
+        marginTop: 0,
+        marginLeft: "20px",
+        marginRight: "20px"
+      }}
+      data-testid="server-error"
+      error={true}
+      onDismiss={function onDismiss() {
+        dispatch({
+          type: ActionType.removeServerErrors,
+          payload: null
+        });
+      }}
+    >
+      <Message.Content>
+        <span
+          style={{
+            position: "absolute",
+            top: "-60px"
+          }}
+          id="js-scroll-into-view-server-error"
+        />
+
+        {serverError}
+      </Message.Content>
+    </Message>
   );
 }
 
@@ -491,7 +544,7 @@ function unsavedExperiencesToUploadData(
   );
 }
 
-function savedExperiencesWithUnsavedEntriesToUploadData(
+function savedExperiencesToUploadData(
   experiencesIdsToObjectMap: ExperiencesIdsToObjectMap
 ) {
   return Object.entries(experiencesIdsToObjectMap).reduce(

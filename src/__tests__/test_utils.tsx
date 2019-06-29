@@ -73,3 +73,14 @@ export function makeEntryNode(id: string = "1") {
 export function makeFieldDefs() {
   return [{ id: "f1", type: "DECIMAL" as any, name: "f1" }];
 }
+
+export function closeMessage($error: any) {
+  const $icon =
+    $error && $error.querySelector && $error.querySelector(`.close.icon`);
+
+  if (!$icon) {
+    return;
+  }
+
+  fireEvent.click($icon);
+}

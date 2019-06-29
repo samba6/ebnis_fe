@@ -23,6 +23,8 @@ import { WithApolloClient } from "react-apollo";
 import { ApolloError } from "apollo-client";
 import { Dispatch } from "react";
 import { isUnsavedId } from "../../constants";
+import { UploadUnsavedExperiencesExperienceErrorFragment } from "../../graphql/apollo-types/UploadUnsavedExperiencesExperienceErrorFragment";
+import { CreateEntriesErrorFragment } from "../../graphql/apollo-types/CreateEntriesErrorFragment";
 
 interface OwnProps
   extends UnsavedExperiencesProps,
@@ -47,7 +49,7 @@ export interface State extends DidUploadSucceed {
   readonly tabs: { [k: number]: boolean };
   readonly uploading?: boolean;
   readonly uploadResult?: UploadAllUnsavedsMutation;
-  readonly serverError?: string;
+  readonly serverError?: string | null;
   readonly isUploadTriggered?: boolean;
   readonly savedExperiences: ExperienceFragment[];
   readonly unsavedExperiences: ExperienceFragment[];
@@ -155,7 +157,8 @@ export enum ActionType {
   toggleTab = "@components/upload-unsaved/toggle-tab",
   setUploading = "@components/upload-unsaved/set-uploading",
   uploadResult = "@components/upload-unsaved/result",
-  setServerError = "@components/upload-unsaved/set-server-error"
+  setServerError = "@components/upload-unsaved/set-server-error",
+  removeServerErrors = "@components/upload-unsaved/remove-server-error"
 }
 
 interface Action {
@@ -166,7 +169,8 @@ interface Action {
     | UploadAllUnsavedsMutation
     | undefined
     | void
-    | ApolloError;
+    | ApolloError
+    | null;
 }
 
 export type DispatchType = Dispatch<Action>;
@@ -178,117 +182,142 @@ export const reducer: Reducer<State, Action> = (
   return immer(prevState, proxy => {
     switch (type) {
       case ActionType.toggleTab:
-        proxy.tabs = { [payload as number]: true };
+        {
+          proxy.tabs = { [payload as number]: true };
+        }
         break;
 
       case ActionType.setUploading:
-        proxy.uploading = payload as boolean;
+        {
+          proxy.uploading = payload as boolean;
 
-        if (payload === true) {
-          proxy.isUploadTriggered = true;
+          if (payload === true) {
+            proxy.isUploadTriggered = true;
+          }
         }
         break;
 
       case ActionType.uploadResult:
-        const uploadResult = payload as UploadAllUnsavedsMutation;
-        const {
-          savedExperiencesIdsToObjectMap,
-          unsavedExperiencesIdsToObjectMap
-        } = proxy;
+        {
+          const uploadResult = payload as UploadAllUnsavedsMutation;
+          proxy.uploadResult = uploadResult;
+          proxy.uploading = false;
 
-        let allUnsavedExperiencesSucceeded = true;
-        let allUnsavedEntriesSucceeded = true;
+          const {
+            savedExperiencesIdsToObjectMap,
+            unsavedExperiencesIdsToObjectMap
+          } = proxy;
 
-        let hasUnsavedExperiencesUploadError = false;
-        let hasSavedExperiencesUploadError = false;
+          let allUnsavedExperiencesSucceeded = true;
+          let allUnsavedEntriesSucceeded = true;
 
-        const { saveOfflineExperiences, createEntries } = uploadResult;
+          let hasUnsavedExperiencesUploadError = false;
+          let hasSavedExperiencesUploadError = false;
 
-        if (saveOfflineExperiences) {
-          saveOfflineExperiences.forEach(elm => {
-            if (!elm) {
-              hasUnsavedExperiencesUploadError = true;
-              allUnsavedExperiencesSucceeded = false;
-              return;
-            }
+          const { saveOfflineExperiences, createEntries } = uploadResult;
 
-            const { experience, entriesErrors, experienceError } = elm;
-
-            let map = {} as ExperiencesIdsToObjectMap["k"];
-            let didUploadSucceed = map.didUploadSucceed;
-
-            if (experienceError) {
-              const { clientId } = experienceError;
-              map = unsavedExperiencesIdsToObjectMap[clientId as string];
-              map.hasUploadError = true;
-              didUploadSucceed = map.didUploadSucceed;
-            } else if (experience) {
-              const { clientId } = experience;
-              map = unsavedExperiencesIdsToObjectMap[clientId as string];
-              didUploadSucceed = map.didUploadSucceed;
-
-              if (entriesErrors) {
-                map.hasUploadError = true;
+          if (saveOfflineExperiences) {
+            saveOfflineExperiences.forEach(elm => {
+              // istanbul ignore next: make typescript happy
+              if (!elm) {
+                hasUnsavedExperiencesUploadError = true;
+                allUnsavedExperiencesSucceeded = false;
+                return;
               }
-            }
 
-            if (map.hasUploadError) {
-              map.didUploadSucceed = false;
-              hasUnsavedExperiencesUploadError = true;
-              allUnsavedExperiencesSucceeded = false;
-            } else if (
-              typeof didUploadSucceed === "undefined" ||
-              didUploadSucceed !== false
-            ) {
-              map.didUploadSucceed = true;
-            }
-          });
+              const { experience, entriesErrors, experienceError } = elm;
+
+              let map = {} as ExperiencesIdsToObjectMap["k"];
+
+              if (experienceError) {
+                const { clientId } = experienceError;
+                map = unsavedExperiencesIdsToObjectMap[clientId as string];
+
+                try {
+                  const [[k, v]] = Object.entries(
+                    JSON.parse(experienceError.error)
+                  );
+
+                  map.experienceError = k + ": " + v;
+                } catch (error) {
+                  map.experienceError = experienceError.error;
+                }
+              } else if (experience) {
+                const { clientId } = experience;
+                map = unsavedExperiencesIdsToObjectMap[clientId as string];
+
+                if (entriesErrors) {
+                  map.entriesErrors = entriesErrorsToMap(
+                    entriesErrors as CreateEntriesErrorFragment[]
+                  );
+                }
+              }
+
+              if (experienceError || entriesErrors) {
+                map.didUploadSucceed = false;
+                hasUnsavedExperiencesUploadError = true;
+                allUnsavedExperiencesSucceeded = false;
+              } else if (map.didUploadSucceed !== false) {
+                map.didUploadSucceed = true;
+              }
+            });
+          }
+
+          if (createEntries) {
+            createEntries.forEach(elm => {
+              // istanbul ignore next: make typescript happy
+              if (!elm) {
+                hasSavedExperiencesUploadError = true;
+                allUnsavedEntriesSucceeded = false;
+                return;
+              }
+
+              const { errors, experienceId } = elm;
+              const map = savedExperiencesIdsToObjectMap[experienceId];
+
+              if (errors) {
+                hasSavedExperiencesUploadError = true;
+                allUnsavedEntriesSucceeded = false;
+                map.didUploadSucceed = false;
+
+                map.entriesErrors = entriesErrorsToMap(
+                  errors as CreateEntriesErrorFragment[]
+                );
+              } else if (map.didUploadSucceed !== false) {
+                map.didUploadSucceed = true;
+              }
+            });
+          }
+
+          proxy.allUnsavedExperiencesSucceeded = allUnsavedExperiencesSucceeded;
+          proxy.hasUnsavedExperiencesUploadError = hasUnsavedExperiencesUploadError;
+
+          proxy.allUnsavedEntriesSucceeded = allUnsavedEntriesSucceeded;
+          proxy.hasSavedExperiencesUploadError = hasSavedExperiencesUploadError;
+
+          proxy.allUploadSucceeded =
+            allUnsavedExperiencesSucceeded && allUnsavedEntriesSucceeded;
         }
-
-        if (createEntries) {
-          createEntries.forEach(elm => {
-            if (!elm) {
-              hasSavedExperiencesUploadError = true;
-              allUnsavedEntriesSucceeded = false;
-              return;
-            }
-
-            const { errors, expId } = elm;
-            const map = savedExperiencesIdsToObjectMap[expId];
-
-            const { didUploadSucceed } = map;
-
-            if (errors) {
-              hasSavedExperiencesUploadError = true;
-              allUnsavedEntriesSucceeded = false;
-              map.hasUploadError = true;
-              map.didUploadSucceed = false;
-            } else if (
-              typeof didUploadSucceed === "undefined" ||
-              didUploadSucceed !== false
-            ) {
-              map.didUploadSucceed = true;
-            }
-          });
-        }
-
-        proxy.uploadResult = uploadResult;
-        proxy.uploading = false;
-
-        proxy.allUnsavedExperiencesSucceeded = allUnsavedExperiencesSucceeded;
-        proxy.hasUnsavedExperiencesUploadError = hasUnsavedExperiencesUploadError;
-
-        proxy.allUnsavedEntriesSucceeded = allUnsavedEntriesSucceeded;
-        proxy.hasSavedExperiencesUploadError = hasSavedExperiencesUploadError;
-
-        proxy.allUploadSucceeded =
-          allUnsavedExperiencesSucceeded && allUnsavedEntriesSucceeded;
-
         break;
 
       case ActionType.setServerError:
-        proxy.serverError = (payload as ApolloError).message;
-        proxy.uploading = false;
+        {
+          proxy.uploading = false;
+          proxy.hasUnsavedExperiencesUploadError = true;
+          proxy.hasSavedExperiencesUploadError = true;
+
+          const message = (payload as ApolloError).message;
+
+          try {
+            proxy.serverError = message;
+          } catch (error) {
+            proxy.serverError = message;
+          }
+        }
+        break;
+
+      case ActionType.removeServerErrors:
+        proxy.serverError = null;
         break;
     }
   });
@@ -302,11 +331,21 @@ export function fieldDefToUnsavedData(
   return { clientId, name, type };
 }
 
+function entriesErrorsToMap(errors: CreateEntriesErrorFragment[]) {
+  return errors.reduce((acc, { error, clientId }) => {
+    acc[clientId] = error;
+    return acc;
+  }, {});
+}
+
 export interface ExperiencesIdsToObjectMap {
-  [k: string]: {
-    unsavedEntries: ExperienceFragment_entries_edges_node[];
-    experience: ExperienceFragment;
-    hasUploadError?: boolean;
-    didUploadSucceed?: boolean;
-  };
+  [k: string]: ExperienceObjectMap;
+}
+
+export interface ExperienceObjectMap {
+  unsavedEntries: ExperienceFragment_entries_edges_node[];
+  experience: ExperienceFragment;
+  didUploadSucceed?: boolean;
+  experienceError?: UploadUnsavedExperiencesExperienceErrorFragment["error"];
+  entriesErrors?: { [k: string]: string };
 }

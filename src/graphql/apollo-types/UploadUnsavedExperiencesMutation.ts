@@ -123,31 +123,50 @@ export interface UploadUnsavedExperiencesMutation_saveOfflineExperiences_experie
 }
 
 export interface UploadUnsavedExperiencesMutation_saveOfflineExperiences_experienceError {
-  __typename: "OfflineExperienceExperienceError";
-  /**
-   * The index of the failing experience in the list of experiences input
-   */
-  index: number;
+  __typename: "OfflineExperienceError";
   /**
    * The client ID of the failing experience. As user may not have provided a
    *   client ID, this field is nullable and in that case, the index field will
    *   be used to identify this error
    */
   clientId: string | null;
+  /**
+   * The error string explaining why experience fails to insert.
+   */
   error: string;
 }
 
 export interface UploadUnsavedExperiencesMutation_saveOfflineExperiences_entriesErrors {
-  __typename: "OfflineExperienceEntryError";
+  __typename: "CreateEntriesError";
+  /**
+   * The experience ID of the entry which fails to save
+   */
   experienceId: string;
+  /**
+   * The client ID of the entry which fails to save
+   */
   clientId: string;
+  /**
+   * The failure error
+   */
   error: string;
 }
 
 export interface UploadUnsavedExperiencesMutation_saveOfflineExperiences {
   __typename: "OfflineExperience";
+  /**
+   * The experience which was successfully inserted - will be null if
+   *   experience fails to insert
+   */
   experience: UploadUnsavedExperiencesMutation_saveOfflineExperiences_experience | null;
+  /**
+   * If the experience fails to insert, then this is the error object
+   *   returned
+   */
   experienceError: UploadUnsavedExperiencesMutation_saveOfflineExperiences_experienceError | null;
+  /**
+   * A list of error objects denoting entries which fail to insert
+   */
   entriesErrors: (UploadUnsavedExperiencesMutation_saveOfflineExperiences_entriesErrors | null)[] | null;
 }
 

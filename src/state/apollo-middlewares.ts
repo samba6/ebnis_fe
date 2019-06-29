@@ -99,7 +99,7 @@ export function middlewareErrorLink(
   let errorLink = onError(
     ({ graphQLErrors, networkError, response, operation }) => {
       const logError = (errorName: string, obj: object) => {
-        const operationName = `[${errorName} error] from Apollo operation: ${
+        const operationName = `Response [${errorName} error] from Apollo operation: ${
           operation.operationName
         }`;
 
@@ -109,20 +109,20 @@ export function middlewareErrorLink(
           getNow(),
           `\n=${operationName}=\n\n`,
           obj,
-          `\n\n=End ${operationName}=`
+          `\n\n=End Response ${operationName}=`
         );
       };
 
       if (graphQLErrors) {
-        logError("Response graphQLErrors", graphQLErrors);
+        logError("graphQLErrors", graphQLErrors);
       }
 
       if (response) {
-        logError("Response", response);
+        logError("", response);
       }
 
       if (networkError) {
-        logError("Response Network Error", networkError);
+        logError("Network Error", networkError);
       }
     }
   ).concat(link) as ApolloLink | null;
