@@ -1,4 +1,5 @@
-// tslint:disable: no-any
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import React, { ComponentType } from "react";
 import "jest-dom/extend-expect";
 import "react-testing-library/cleanup-after-each";
@@ -11,11 +12,11 @@ import {} from "../graphql/apollo-types/GetExperienceFull";
 import { renderWithRouter } from "./test_utils";
 import {
   ExperienceFragment_entries_edges,
-  ExperienceFragment_fieldDefs
+  ExperienceFragment_fieldDefs,
 } from "../graphql/apollo-types/ExperienceFragment";
 
 jest.mock("../components/SidebarHeader", () => ({
-  SidebarHeader: jest.fn(() => null)
+  SidebarHeader: jest.fn(() => null),
 }));
 
 const ExperienceP = Experience as P;
@@ -35,9 +36,9 @@ it("renders ui to show empty entries", () => {
   const { ui } = makeComp({
     experience: {
       entries: {
-        edges: []
-      }
-    } as any
+        edges: [],
+      },
+    } as any,
   });
 
   /**
@@ -73,11 +74,11 @@ it("renders entries", () => {
           {
             defId: "1",
             data: JSON.stringify({
-              [FieldType.SINGLE_LINE_TEXT]: "cat man 1"
-            })
-          }
-        ]
-      }
+              [FieldType.SINGLE_LINE_TEXT]: "cat man 1",
+            }),
+          },
+        ],
+      },
     },
 
     {
@@ -87,11 +88,11 @@ it("renders entries", () => {
           {
             defId: "2",
             data: JSON.stringify({
-              [FieldType.MULTI_LINE_TEXT]: "cat man 2"
-            })
-          }
-        ]
-      }
+              [FieldType.MULTI_LINE_TEXT]: "cat man 2",
+            }),
+          },
+        ],
+      },
     },
 
     {
@@ -101,11 +102,11 @@ it("renders entries", () => {
           {
             defId: "3",
             data: JSON.stringify({
-              [FieldType.DATE]: "2019-05-01"
-            })
-          }
-        ]
-      }
+              [FieldType.DATE]: "2019-05-01",
+            }),
+          },
+        ],
+      },
     },
 
     {
@@ -115,11 +116,11 @@ it("renders entries", () => {
           {
             defId: "4",
             data: JSON.stringify({
-              [FieldType.DATETIME]: "2019-05-01"
-            })
-          }
-        ]
-      }
+              [FieldType.DATETIME]: "2019-05-01",
+            }),
+          },
+        ],
+      },
     },
 
     {
@@ -129,11 +130,11 @@ it("renders entries", () => {
           {
             defId: "5",
             data: JSON.stringify({
-              [FieldType.DECIMAL]: "500.689"
-            })
-          }
-        ]
-      }
+              [FieldType.DECIMAL]: "500.689",
+            }),
+          },
+        ],
+      },
     },
 
     {
@@ -143,58 +144,58 @@ it("renders entries", () => {
           {
             defId: "6",
             data: JSON.stringify({
-              [FieldType.INTEGER]: "567012"
-            })
-          }
-        ]
-      }
-    }
+              [FieldType.INTEGER]: "567012",
+            }),
+          },
+        ],
+      },
+    },
   ] as ExperienceFragment_entries_edges[];
 
   const fieldDefs = [
     {
       id: "1",
       name: "field name 1",
-      type: FieldType.SINGLE_LINE_TEXT
+      type: FieldType.SINGLE_LINE_TEXT,
     },
 
     {
       id: "2",
       name: "field name 2",
-      type: FieldType.MULTI_LINE_TEXT
+      type: FieldType.MULTI_LINE_TEXT,
     },
 
     {
       id: "3",
       name: "field name 3",
-      type: FieldType.DATE
+      type: FieldType.DATE,
     },
 
     {
       id: "4",
       name: "field name 4",
-      type: FieldType.DATETIME
+      type: FieldType.DATETIME,
     },
 
     {
       id: "5",
       name: "field name 5",
-      type: FieldType.DECIMAL
+      type: FieldType.DECIMAL,
     },
 
     {
       id: "6",
       name: "field name 6",
-      type: FieldType.INTEGER
-    }
+      type: FieldType.INTEGER,
+    },
   ] as ExperienceFragment_fieldDefs[];
 
   const { ui } = makeComp({
     experience: {
       fieldDefs,
 
-      entries: { edges }
-    } as any
+      entries: { edges },
+    } as any,
   });
 
   /**
@@ -230,11 +231,11 @@ it("does not show 'no entries' link if contained in props", () => {
   const { ui } = makeComp({
     experience: {
       entries: {
-        edges: []
-      }
+        edges: [],
+      },
     } as any,
 
-    doNotShowNoEntriesLink: true
+    doNotShowNoEntriesLink: true,
   });
 
   const { queryByTestId } = render(ui);
@@ -249,6 +250,6 @@ function makeComp(props: Partial<Props> = {}) {
 
   return {
     ui: <Ui {...props} />,
-    mockNavigate
+    mockNavigate,
   };
 }

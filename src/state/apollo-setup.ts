@@ -8,14 +8,14 @@ import { HttpLink } from "apollo-link-http";
 import {
   SCHEMA_KEY,
   SCHEMA_VERSION,
-  SCHEMA_VERSION_KEY
+  SCHEMA_VERSION_KEY,
 } from "../constants/apollo-schema";
 import { getSocket, OnConnectionChanged } from "../socket";
 import { initState } from "./resolvers";
 import {
   CONNECTION_MUTATION,
   ConnectionStatus,
-  ConnectionMutationVariables
+  ConnectionMutationVariables,
 } from "./connection.resolver";
 import { PersistentStorage, PersistedData } from "apollo-cache-persist/types";
 import {
@@ -23,7 +23,7 @@ import {
   MakeSocketLink,
   middlewareErrorLink,
   middlewareLoggerLink,
-  middlewareAuthLink
+  middlewareAuthLink,
 } from "./apollo-middlewares";
 
 let cache: InMemoryCache;
@@ -46,7 +46,7 @@ interface BuildClientCache extends E2eOptions {
 const onConnChange: OnConnectionChanged = args => {
   client.mutate<ConnectionStatus, ConnectionMutationVariables>({
     mutation: CONNECTION_MUTATION,
-    variables: args
+    variables: args,
   });
 };
 
@@ -57,11 +57,11 @@ export function buildClientCache(
     isNodeJs,
     fetch,
     ...e2eOptions
-  }: BuildClientCache = {} as BuildClientCache
+  }: BuildClientCache = {} as BuildClientCache,
 ) {
   if (!cache) {
     cache = new InMemoryCache({
-      addTypename: true
+      addTypename: true,
     });
   }
 
@@ -75,7 +75,7 @@ export function buildClientCache(
 
       link = new HttpLink({
         uri,
-        fetch
+        fetch,
       });
     } else {
       const makeSocketLink: MakeSocketLink = (token, forceReconnect) => {
@@ -84,8 +84,8 @@ export function buildClientCache(
             onConnChange,
             uri,
             token,
-            forceReconnect
-          })
+            forceReconnect,
+          }),
         );
 
         return createAbsintheSocketLink(absintheSocket);
@@ -98,14 +98,14 @@ export function buildClientCache(
 
     client = new ApolloClient({
       cache,
-      link
+      link,
     });
 
     if (!isNodeJs) {
       const state = initState();
 
       cache.writeData({
-        data: state.defaults
+        data: state.defaults,
       });
 
       client.addResolvers(state.resolvers);
@@ -119,7 +119,7 @@ export function buildClientCache(
 }
 
 export type PersistCacheFn = (
-  appCache: InMemoryCache
+  appCache: InMemoryCache,
 ) => Promise<CachePersistor<NormalizedCacheObject>>;
 
 function makePersistor(appCache: InMemoryCache) {
@@ -129,7 +129,7 @@ function makePersistor(appCache: InMemoryCache) {
       PersistedData<NormalizedCacheObject>
     >,
     key: SCHEMA_KEY,
-    maxSize: false
+    maxSize: false,
   });
 
   return persistor;
@@ -166,7 +166,7 @@ export async function persistCache(appCache: InMemoryCache) {
 
 export const resetClientAndPersistor = async (
   appClient: ApolloClient<{}>,
-  appPersistor: CachePersistor<NormalizedCacheObject>
+  appPersistor: CachePersistor<NormalizedCacheObject>,
 ) => {
   await appPersistor.pause(); // Pause automatic persistence.
   await appPersistor.purge(); // Delete everything in the storage provider.
@@ -193,7 +193,7 @@ function setupE2e() {
     window.___e2e = {
       cache,
       client,
-      persistor
+      persistor,
     };
   }
 }

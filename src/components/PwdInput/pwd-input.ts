@@ -7,7 +7,7 @@ export interface Props<TFormValues> extends FieldProps<TFormValues> {
 }
 
 export enum PwdInputActionTypes {
-  SET_PWD_TYPE = "@pwd-input/SET_PWD_TYPE"
+  SET_PWD_TYPE = "@pwd-input/SET_PWD_TYPE",
 }
 
 interface Action {

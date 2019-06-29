@@ -5,5 +5,5 @@ import { newEntryResolvers } from "../components/NewEntry/resolvers";
 export const allResolvers = [
   experienceDefinitionResolvers,
   experienceNewEntryParentResolvers,
-  newEntryResolvers
+  newEntryResolvers,
 ];

@@ -11,7 +11,7 @@ import { EXPERIENCES_URL, ROOT_URL } from "../../routes";
 import { LayoutContext } from "../Layout/utils";
 import {
   UPLOAD_UNSAVED_PREVIEW_URL,
-  UPLOAD_UNSAVED_URL_START
+  UPLOAD_UNSAVED_URL_START,
 } from "../../constants/upload-unsaved-routes";
 
 export const Header = (props: Props) => {
@@ -25,7 +25,7 @@ export const Header = (props: Props) => {
     navigate,
     logoAttrs: { src, height, width },
     children,
-    className = ""
+    className = "",
   } = props;
 
   const pathname = (location as WindowLocation).pathname;
@@ -37,14 +37,14 @@ export const Header = (props: Props) => {
     ? {}
     : {
         onClick: () =>
-          (navigate as NavigateFn)(user ? EXPERIENCES_URL : ROOT_URL)
+          (navigate as NavigateFn)(user ? EXPERIENCES_URL : ROOT_URL),
       };
 
   return (
     <header
       className={makeClassnames({
         "components-header": true,
-        [className]: true
+        [className]: true,
       })}
       data-testid="app-header"
     >
@@ -58,7 +58,7 @@ export const Header = (props: Props) => {
           className={makeClassnames({
             "logo-container": true,
             "with-pointer": !isHome,
-            "center-children": !sidebar
+            "center-children": !sidebar,
           })}
           {...asUrlProps}
         >
@@ -101,7 +101,7 @@ export const Header = (props: Props) => {
             data-testid="app-header-title"
             className={makeClassnames({
               "app-header-title": true,
-              "no-sidebar": !sidebar
+              "no-sidebar": !sidebar,
             })}
           >
             {title}

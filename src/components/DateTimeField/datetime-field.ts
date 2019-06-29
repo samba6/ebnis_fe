@@ -12,7 +12,7 @@ for (let hrIndex = 0; hrIndex < 24; hrIndex++) {
   HOUR_OPTIONS.push({
     key: hrIndex,
     text: ("" + hrIndex).padStart(2, "0"),
-    value: hrIndex
+    value: hrIndex,
   });
 }
 
@@ -22,7 +22,7 @@ for (let minIndex = 0; minIndex < 60; minIndex++) {
   MINUTE_OPTIONS.push({
     key: minIndex,
     text: ("" + minIndex).padStart(2, "0"),
-    value: minIndex
+    value: minIndex,
   });
 }
 

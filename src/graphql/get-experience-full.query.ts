@@ -3,7 +3,7 @@ import { DataValue } from "react-apollo";
 import { EXPERIENCE_FRAGMENT } from "./experience.fragment";
 import {
   GetExperienceFull,
-  GetExperienceFullVariables
+  GetExperienceFullVariables,
 } from "./apollo-types/GetExperienceFull";
 
 export const GET_EXPERIENCE_FULL_QUERY = gql`

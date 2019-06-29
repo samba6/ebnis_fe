@@ -1,4 +1,5 @@
-// tslint:disable: no-any
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import React, { ComponentType } from "react";
 import "jest-dom/extend-expect";
 import { render, fireEvent } from "react-testing-library";
@@ -9,7 +10,7 @@ import { renderWithRouter } from "./test_utils";
 import { EXPERIENCES_URL, ROOT_URL } from "../routes";
 import {
   LayoutProvider,
-  ILayoutContextContext
+  ILayoutContextContext,
 } from "../components/Layout/utils";
 import { UPLOAD_UNSAVED_PREVIEW_URL } from "../constants/upload-unsaved-routes";
 
@@ -35,7 +36,7 @@ it("renders sidebar", () => {
    * And the logo should not be centered
    */
   expect(getByTestId("logo-container").classList).not.toContain(
-    "center-children"
+    "center-children",
   );
 
   /**
@@ -70,8 +71,8 @@ it("should not navigate when in experiences route", () => {
     props: {
       title,
       sidebar: true,
-      location: { pathname: EXPERIENCES_URL } as any
-    }
+      location: { pathname: EXPERIENCES_URL } as any,
+    },
   });
 
   /**
@@ -104,8 +105,8 @@ it("should not navigate when in root route", () => {
     props: {
       title,
       sidebar: true,
-      location: { pathname: ROOT_URL } as any
-    }
+      location: { pathname: ROOT_URL } as any,
+    },
   });
 
   /**
@@ -139,8 +140,8 @@ it("should navigate to experiences route when on any url except root and experie
       title,
       sidebar: true,
       location: { pathname: ROOT_URL + 5 } as any,
-      user: {} as any
-    }
+      user: {} as any,
+    },
   });
 
   /**
@@ -174,8 +175,8 @@ it("should navigate to root route when on any url except root and experiences ro
       title,
       sidebar: true,
       location: { pathname: ROOT_URL + 5 } as any,
-      user: undefined
-    }
+      user: undefined,
+    },
   });
 
   /**
@@ -204,8 +205,8 @@ it("renders close sidebar icon but not show icon", () => {
       title,
       sidebar: true,
       toggleShowSidebar: mockToggleShowSidebar,
-      show: true
-    }
+      show: true,
+    },
   });
 
   const { getByTestId, queryByTestId } = render(ui);
@@ -243,8 +244,8 @@ it("renders show sidebar icon but not close icon", () => {
       title,
       sidebar: true,
       toggleShowSidebar: mockToggleShowSidebar,
-      show: false
-    }
+      show: false,
+    },
   });
 
   const { getByTestId, queryByTestId } = render(ui);
@@ -277,8 +278,8 @@ it("renders show sidebar icon but not close icon", () => {
 it("renders unsaved count when not in 'upload unsaved' route", () => {
   const { ui } = setup({
     context: {
-      unsavedCount: 1
-    }
+      unsavedCount: 1,
+    },
   });
 
   const { queryByTestId } = render(ui);
@@ -289,12 +290,12 @@ it("renders unsaved count when not in 'upload unsaved' route", () => {
 it("does not render unsaved count in 'upload unsaved' route", () => {
   const { ui } = setup({
     context: {
-      unsavedCount: 1
+      unsavedCount: 1,
     },
 
     props: {
-      location: { pathname: UPLOAD_UNSAVED_PREVIEW_URL } as any
-    }
+      location: { pathname: UPLOAD_UNSAVED_PREVIEW_URL } as any,
+    },
   });
 
   const { queryByTestId } = render(ui);
@@ -305,8 +306,8 @@ it("does not render unsaved count in 'upload unsaved' route", () => {
 it("does not render title when there is none to render", () => {
   const { ui } = setup({
     props: {
-      title: ""
-    }
+      title: "",
+    },
   });
 
   const { queryByTestId } = render(ui);
@@ -318,8 +319,8 @@ it("renders children", () => {
   const { ui } = setup({
     props: {
       title: "",
-      children: <div data-testid="child" />
-    }
+      children: <div data-testid="child" />,
+    },
   });
 
   const { queryByTestId } = render(ui);
@@ -332,8 +333,8 @@ it("renders only title if there are title and children", () => {
   const { ui } = setup({
     props: {
       title: "cool title",
-      children: <div data-testid="child" />
-    }
+      children: <div data-testid="child" />,
+    },
   });
 
   const { queryByTestId } = render(ui);
@@ -345,12 +346,12 @@ it("renders only title if there are title and children", () => {
 it("sets class name", () => {
   const { ui } = setup({
     props: {
-      className: "yahoo"
-    }
+      className: "yahoo",
+    },
   });
 
   const {
-    container: { firstChild }
+    container: { firstChild },
   } = render(ui);
 
   expect((firstChild as any).classList).toContain("yahoo");
@@ -358,13 +359,13 @@ it("sets class name", () => {
 
 function setup({
   props = {},
-  context = {}
+  context = {},
 }: { props?: Partial<Props>; context?: Partial<ILayoutContextContext> } = {}) {
   const { Ui, ...rest } = renderWithRouter(
     HeaderP,
     {},
 
-    { logoAttrs: {} as any, ...props }
+    { logoAttrs: {} as any, ...props },
   );
 
   return {
@@ -373,6 +374,6 @@ function setup({
         <Ui />
       </LayoutProvider>
     ),
-    ...rest
+    ...rest,
   };
 }

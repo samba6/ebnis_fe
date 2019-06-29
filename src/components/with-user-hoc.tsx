@@ -8,7 +8,7 @@ export interface WithUser {
 }
 
 export function withUserHOC<TProps extends WithUser>(
-  Component: ComponentType<TProps>
+  Component: ComponentType<TProps>,
 ) {
   return function HOC(props: TProps) {
     return <Component user={getUser()} {...props} />;

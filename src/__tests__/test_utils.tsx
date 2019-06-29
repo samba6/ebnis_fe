@@ -1,4 +1,6 @@
-// tslint:disable: no-any
+/* eslint-disable react/display-name */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import React, { ComponentType } from "react";
 import { fireEvent } from "react-testing-library";
 import { RouteComponentProps, WindowLocation } from "@reach/router";
@@ -6,7 +8,7 @@ import { RouteComponentProps, WindowLocation } from "@reach/router";
 export function renderWithRouter<TProps extends RouteComponentProps>(
   Ui: ComponentType<TProps>,
   routerProps: Partial<RouteComponentProps> = {},
-  componentProps: Partial<TProps> = {}
+  componentProps: Partial<TProps> = {},
 ) {
   const {
     navigate = jest.fn(),
@@ -30,13 +32,13 @@ export function renderWithRouter<TProps extends RouteComponentProps>(
           {...props}
         />
       );
-    }
+    },
   };
 }
 
 export function fillField(element: Element, value: string) {
   fireEvent.change(element, {
-    target: { value }
+    target: { value },
   });
 }
 
@@ -48,12 +50,12 @@ export function makeTestCache() {
   const cache = {
     writeFragment: mockWriteFragment,
     readQuery: mockReadQuery,
-    writeQuery: mockWriteQuery
+    writeQuery: mockWriteQuery,
   };
 
   return {
     cache,
-    mockReadQuery
+    mockReadQuery,
   };
 }
 
@@ -64,9 +66,9 @@ export function makeEntryNode(id: string = "1") {
     fields: [
       {
         defId: "f1",
-        data: `{"decimal":1}`
-      }
-    ]
+        data: `{"decimal":1}`,
+      },
+    ],
   };
 }
 

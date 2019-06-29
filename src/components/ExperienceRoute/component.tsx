@@ -17,7 +17,7 @@ export function ExperienceRoute(props: Props) {
 
       return setDocumentTitle;
     },
-    [title]
+    [title],
   );
 
   return (

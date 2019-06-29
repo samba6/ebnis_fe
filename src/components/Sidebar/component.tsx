@@ -6,7 +6,7 @@ import "./styles.scss";
 import {
   EXPERIENCE_DEFINITION_URL,
   EXPERIENCES_URL,
-  LOGIN_URL
+  LOGIN_URL,
 } from "../../routes";
 import { WithUser } from "../with-user-hoc";
 import { UserLocalMutationProps } from "../../state/user.resolver";
@@ -29,7 +29,7 @@ export function Sidebar(props: Props) {
     toggleShowSidebar,
     navigate,
     updateLocalUser,
-    user
+    user,
   } = props;
 
   const pathname = (location as WindowLocation).pathname;
@@ -101,7 +101,7 @@ export function Sidebar(props: Props) {
               className="sidebar__item"
               onClick={async () => {
                 await updateLocalUser({
-                  variables: { user: null }
+                  variables: { user: null },
                 });
 
                 (navigate as NavigateFn)(LOGIN_URL);

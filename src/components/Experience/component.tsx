@@ -13,7 +13,7 @@ import {
   ExperienceFragment_entries_edges,
   ExperienceFragment_entries_edges_node,
   ExperienceFragment_fieldDefs,
-  ExperienceFragment
+  ExperienceFragment,
 } from "../../graphql/apollo-types/ExperienceFragment";
 import makeClassNames from "classnames";
 
@@ -41,7 +41,7 @@ export function Experience(props: Props) {
 
     return edges.map(
       (edge: ExperienceFragment_entries_edges) =>
-        edge.node as ExperienceFragment_entries_edges_node
+        edge.node as ExperienceFragment_entries_edges_node,
     );
   }, [experience, defaultEntryNodes]);
 
@@ -82,7 +82,7 @@ export function Experience(props: Props) {
     <Card
       className={makeClassNames({
         "components-experience": true,
-        [className]: !!className
+        [className]: !!className,
       })}
       {...otherProps}
     >
@@ -111,7 +111,7 @@ export function Experience(props: Props) {
 
 function OptionsMenuComponent({
   experience,
-  newEntry = true
+  newEntry = true,
 }: {
   experience: ExperienceFragment;
 } & Props["menuOptions"]) {

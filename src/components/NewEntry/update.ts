@@ -5,19 +5,19 @@ import immer from "immer";
 import { CreateEntryMutation } from "../../graphql/apollo-types/CreateEntryMutation";
 import {
   GetExperienceFull,
-  GetExperienceFullVariables
+  GetExperienceFullVariables,
 } from "../../graphql/apollo-types/GetExperienceFull";
 import { GET_EXPERIENCE_FULL_QUERY } from "../../graphql/get-experience-full.query";
 import {
   ExperienceFragment,
-  ExperienceFragment_entries
+  ExperienceFragment_entries,
 } from "../../graphql/apollo-types/ExperienceFragment";
 
 // istanbul ignore next: trust apollo to do the right thing -
 export const updateExperienceWithNewEntry: (
-  experienceId: string
+  experienceId: string,
 ) => MutationUpdaterFn<CreateEntryMutation> = function updateFn(
-  experienceId: string
+  experienceId: string,
 ) {
   return async function updateFnInner(dataProxy, { data: newEntryEntry }) {
     if (!newEntryEntry) {
@@ -33,8 +33,8 @@ export const updateExperienceWithNewEntry: (
     const variables: GetExperienceFullVariables = {
       id: experienceId,
       entriesPagination: {
-        first: 20
-      }
+        first: 20,
+      },
     };
 
     const data = dataProxy.readQuery<
@@ -42,7 +42,7 @@ export const updateExperienceWithNewEntry: (
       GetExperienceFullVariables
     >({
       query: GET_EXPERIENCE_FULL_QUERY,
-      variables
+      variables,
     });
 
     if (!data) {
@@ -58,7 +58,7 @@ export const updateExperienceWithNewEntry: (
       edges.push({
         node: entry,
         cursor: "",
-        __typename: "EntryEdge"
+        __typename: "EntryEdge",
       });
 
       entries.edges = edges;
@@ -69,8 +69,8 @@ export const updateExperienceWithNewEntry: (
       query: GET_EXPERIENCE_FULL_QUERY,
       variables,
       data: {
-        getExperience: updatedExperience
-      }
+        getExperience: updatedExperience,
+      },
     });
 
     return updatedExperience;

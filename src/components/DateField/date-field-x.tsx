@@ -7,7 +7,7 @@ import {
   getDisplayedDays,
   LABELS,
   makeFieldNames,
-  Props
+  Props,
 } from "./date-field";
 
 export function DateField(props: Props) {
@@ -17,7 +17,7 @@ export function DateField(props: Props) {
     function() {
       return getToday(value);
     },
-    [value]
+    [value],
   );
 
   const [selectedYear, setSelectedYear] = useState(currYr);
@@ -30,7 +30,7 @@ export function DateField(props: Props) {
     function computeDays() {
       return getDisplayedDays(selectedYear, selectedMonth);
     },
-    [selectedYear, selectedMonth]
+    [selectedYear, selectedMonth],
   );
 
   function setDate({ y = selectedYear, m = selectedMonth, d = selectedDay }) {

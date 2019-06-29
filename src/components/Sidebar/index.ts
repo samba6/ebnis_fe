@@ -8,5 +8,5 @@ import { userLocalMutationGql } from "../../state/user.resolver";
 export const Sidebar = compose(
   userLocalMutationGql,
   withLocationHOC,
-  withUserHOC
+  withUserHOC,
 )(Comp);

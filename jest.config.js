@@ -22,7 +22,7 @@ module.exports = {
     "!src/test-utils/**",
     "!src/components/ExperienceNewEntryParent/loadables.ts",
     "!src/components/MyExperiences/preload-entries.ts",
-    "!src/constants/apollo-schema.ts"
+    "!src/constants/apollo-schema.ts",
   ],
   setupFiles: ["<rootDir>/loadershim.js", "react-app-polyfill/jsdom"],
   setupFilesAfterEnv: ["<rootDir>/config/jest/setupTests.js"],
@@ -33,21 +33,21 @@ module.exports = {
     "^.+\\.jsx?$": "<rootDir>/config/jest/gatsby-preprocess.js",
     "^.+\\.css$": "<rootDir>/config/jest/cssTransform.js",
     "^(?!.*\\.(js|jsx|ts|tsx|css|json)$)":
-      "<rootDir>/config/jest/fileTransform.js"
+      "<rootDir>/config/jest/fileTransform.js",
   },
   transformIgnorePatterns: [
     "[/\\\\]node_modules[/\\\\].+\\.(js|jsx|ts|tsx)$",
-    "^.+\\.module\\.(css|sass|scss)$"
+    "^.+\\.module\\.(css|sass|scss)$",
   ],
   modulePaths: [],
   moduleNameMapper: {
     "^react-native$": "react-native-web",
-    "^.+\\.module\\.(css|sass|scss)$": "identity-obj-proxy"
+    "^.+\\.module\\.(css|sass|scss)$": "identity-obj-proxy",
   },
   moduleFileExtensions: ["js", "ts", "tsx", "json", "jsx", "node"],
   watchPlugins: [
     "jest-watch-typeahead/filename",
-    "jest-watch-typeahead/testname"
+    "jest-watch-typeahead/testname",
   ],
   watchPathIgnorePatterns: [
     "<rootDir>/node_modules/",
@@ -59,11 +59,11 @@ module.exports = {
     "<rootDir>/public/",
     "<rootDir>/src/graphql/.+?types",
     "<rootDir>/jest\\.config\\.js",
-    "<rootDir>/coverage/"
+    "<rootDir>/coverage/",
   ],
   globals: {
-    __PATH_PREFIX__: ""
+    __PATH_PREFIX__: "",
   },
   testURL: "http://localhost",
-  extraGlobals: ["Date"]
+  extraGlobals: ["Date"],
 };

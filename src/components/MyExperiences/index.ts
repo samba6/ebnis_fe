@@ -3,17 +3,17 @@ import { graphql, compose, withApollo } from "react-apollo";
 import { MyExperiences as Comp } from "./component";
 import {
   GetExperienceConnectionMini,
-  GetExperienceConnectionMiniVariables
+  GetExperienceConnectionMiniVariables,
 } from "../../graphql/apollo-types/GetExperienceConnectionMini";
 import {
   GetExperienceConnectionMiniProps,
-  GET_EXPERIENCES_MINI_QUERY
+  GET_EXPERIENCES_MINI_QUERY,
 } from "../../graphql/get-experience-connection-mini.query";
 import { OwnProps } from "./utils";
 import {
   UNSAVED_EXPERIENCES_QUERY,
   UnsavedExperiencesQueryReturned,
-  UnsavedExperiencesQueryProps
+  UnsavedExperiencesQueryProps,
 } from "../ExperienceDefinition/resolver-utils";
 
 const expDefsGql = graphql<
@@ -29,12 +29,12 @@ const expDefsGql = graphql<
       variables: {
         input: {
           pagination: {
-            first: 20
-          }
-        }
-      }
+            first: 20,
+          },
+        },
+      },
     };
-  }
+  },
 });
 
 const unsavedExperiencesGql = graphql<
@@ -45,14 +45,14 @@ const unsavedExperiencesGql = graphql<
 >(UNSAVED_EXPERIENCES_QUERY, {
   props: ({ data }) =>
     data && {
-      unsavedExperiencesProps: data
-    }
+      unsavedExperiencesProps: data,
+    },
 });
 
 export const MyExperiences = compose(
   withApollo,
   expDefsGql,
-  unsavedExperiencesGql
+  unsavedExperiencesGql,
 )(Comp);
 
 export default MyExperiences;

@@ -23,7 +23,7 @@ import {
   ActionTypes,
   ErrorSummary,
   FormFieldErrors,
-  FormErrors
+  FormErrors,
 } from "./utils";
 import { Registration } from "../../graphql/apollo-types/globalTypes";
 import { refreshToHome } from "../../refresh-to-app";
@@ -45,7 +45,7 @@ export function SignUp(props: Props) {
     showingErrorSummary,
     formErrors,
     networkError,
-    serverFieldsErrors
+    serverFieldsErrors,
   } = state;
 
   const { persistor } = useContext(LayoutContext);
@@ -64,7 +64,7 @@ export function SignUp(props: Props) {
             showingErrorSummary,
             formErrors,
             networkError,
-            serverFieldsErrors
+            serverFieldsErrors,
           }}
           dispatch={dispatch}
         />
@@ -74,14 +74,14 @@ export function SignUp(props: Props) {
             onSubmit={async function onSubmit() {
               dispatch({
                 type: ActionTypes.clear_all_errors,
-                payload: null
+                payload: null,
               });
 
               if (!(await getConnStatus(client))) {
                 formikBag.setSubmitting(false);
                 dispatch({
                   type: ActionTypes.set_other_errors,
-                  payload: "You are not connected"
+                  payload: "You are not connected",
                 });
                 scrollToTop(mainRef);
                 return;
@@ -94,7 +94,7 @@ export function SignUp(props: Props) {
                 formikBag.setSubmitting(false);
                 dispatch({
                   type: ActionTypes.set_form_errors,
-                  payload: errors
+                  payload: errors,
                 });
                 scrollToTop(mainRef);
 
@@ -103,7 +103,7 @@ export function SignUp(props: Props) {
 
               try {
                 const result = await (regUser as UserRegMutationFn)({
-                  variables: { registration: values }
+                  variables: { registration: values },
                 });
 
                 const user = (result &&
@@ -116,7 +116,7 @@ export function SignUp(props: Props) {
                 formikBag.setSubmitting(false);
                 dispatch({
                   type: ActionTypes.set_server_errors,
-                  payload: error
+                  payload: error,
                 });
                 scrollToTop(mainRef);
               }
@@ -134,7 +134,7 @@ export function SignUp(props: Props) {
                       formProps={formProps}
                       errors={{
                         formErrors,
-                        serverFieldsErrors
+                        serverFieldsErrors,
                       }}
                     />
                   )}
@@ -196,7 +196,7 @@ function ErrorsSummary(props: FormErrorsProps) {
     otherErrors,
     showingErrorSummary,
     formErrors,
-    serverFieldsErrors
+    serverFieldsErrors,
   } = errors;
 
   if (!showingErrorSummary) {
@@ -224,7 +224,7 @@ function ErrorsSummary(props: FormErrorsProps) {
                 <div className="error-text">{err}</div>
               </div>
             );
-          }
+          },
         )}
       </>
     );
@@ -236,7 +236,7 @@ function ErrorsSummary(props: FormErrorsProps) {
         error={true}
         onDismiss={function onDismissed() {
           dispatch({
-            type: ActionTypes.clear_error_summary
+            type: ActionTypes.clear_error_summary,
           });
         }}
       >
@@ -250,7 +250,7 @@ function InputComponent({
   label,
   type,
   formProps,
-  errors
+  errors,
 }: {
   label: string;
   type: string;
@@ -268,7 +268,7 @@ function InputComponent({
       className={makeClassNames({
         "form-field": true,
         disabled: isSourceField,
-        error: fieldError
+        error: fieldError,
       })}
     >
       <label htmlFor={name}>{label}</label>

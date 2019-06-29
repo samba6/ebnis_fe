@@ -4,7 +4,7 @@ import { MutationFn } from "react-apollo";
 import userFragment from "./user.fragment";
 import {
   UserRegMutation,
-  UserRegMutationVariables
+  UserRegMutationVariables,
 } from "./apollo-types/UserRegMutation";
 
 export const REG_USER_MUTATION = gql`

@@ -13,7 +13,7 @@ export interface ToOtherAuthLinkProps {
 
 const linkTexts = {
   [SIGN_UP_URL]: "Don't have an account? Sign Up",
-  [LOGIN_URL]: " Already have an account? Login"
+  [LOGIN_URL]: " Already have an account? Login",
 };
 
 export function ToOtherAuthLink(props: ToOtherAuthLinkProps) {
@@ -24,7 +24,7 @@ export function ToOtherAuthLink(props: ToOtherAuthLinkProps) {
     <Button
       className={makeClassNames({
         "to-other-auth-button": true,
-        [className]: className
+        [className]: className,
       })}
       type="button"
       fluid={true}

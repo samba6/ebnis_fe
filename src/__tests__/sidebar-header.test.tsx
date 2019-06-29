@@ -1,4 +1,5 @@
-// tslint:disable: no-any
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import React, { ComponentType } from "react";
 import "jest-dom/extend-expect";
 import { render } from "react-testing-library";
@@ -6,11 +7,11 @@ import { render } from "react-testing-library";
 import { SidebarHeader, Props } from "../components/SidebarHeader/component";
 
 jest.mock("../components/Header", () => ({
-  Header: jest.fn(() => null)
+  Header: jest.fn(() => null),
 }));
 
 jest.mock("../components/Sidebar", () => ({
-  Sidebar: jest.fn(() => <div>side bar side</div>)
+  Sidebar: jest.fn(() => <div>side bar side</div>),
 }));
 
 const SidebarHeaderP = SidebarHeader as ComponentType<Partial<Props>>;

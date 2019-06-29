@@ -4,7 +4,7 @@ import { getToken } from "./tokens";
 
 export type MakeSocketLink = (
   token: string | null,
-  forceReconnect?: boolean
+  forceReconnect?: boolean,
 ) => ApolloLink;
 
 export interface E2eOptions {
@@ -13,7 +13,7 @@ export interface E2eOptions {
 
 export function middlewareAuthLink(
   makeSocketLink: MakeSocketLink,
-  headers: { [k: string]: string } = {}
+  headers: { [k: string]: string } = {},
 ) {
   let previousToken = getToken();
   let socketLink = makeSocketLink(previousToken);
@@ -31,7 +31,7 @@ export function middlewareAuthLink(
     }
 
     operation.setContext({
-      headers
+      headers,
     });
 
     return socketLink.request(operation, forward);
@@ -40,7 +40,7 @@ export function middlewareAuthLink(
 
 export function middlewareLoggerLink(
   link: ApolloLink,
-  { isE2e }: E2eOptions = {}
+  { isE2e }: E2eOptions = {},
 ) {
   let loggerLink = new ApolloLink((operation, forward) => {
     const operationName = `Apollo operation: ${operation.operationName}`;
@@ -52,9 +52,9 @@ export function middlewareLoggerLink(
       `\n====${operationName}===\n\n`,
       {
         query: operation.query.loc ? operation.query.loc.source.body : "",
-        variables: operation.variables
+        variables: operation.variables,
       },
-      `\n\n===End ${operationName}====`
+      `\n\n===End ${operationName}====`,
     );
 
     if (!forward) {
@@ -71,7 +71,7 @@ export function middlewareLoggerLink(
           getNow(),
           `\n=Received response from ${operationName}=\n\n`,
           response,
-          `\n\n=End Received response from ${operationName}=`
+          `\n\n=End Received response from ${operationName}=`,
         );
         return response;
       });
@@ -94,14 +94,12 @@ export function middlewareLoggerLink(
 
 export function middlewareErrorLink(
   link: ApolloLink,
-  { isE2e }: E2eOptions = {}
+  { isE2e }: E2eOptions = {},
 ) {
   let errorLink = onError(
     ({ graphQLErrors, networkError, response, operation }) => {
       const logError = (errorName: string, obj: object) => {
-        const operationName = `Response [${errorName} error] from Apollo operation: ${
-          operation.operationName
-        }`;
+        const operationName = `Response [${errorName} error] from Apollo operation: ${operation.operationName}`;
 
         // tslint:disable-next-line:no-console
         console.error(
@@ -109,7 +107,7 @@ export function middlewareErrorLink(
           getNow(),
           `\n=${operationName}=\n\n`,
           obj,
-          `\n\n=End Response ${operationName}=`
+          `\n\n=End Response ${operationName}=`,
         );
       };
 
@@ -124,7 +122,7 @@ export function middlewareErrorLink(
       if (networkError) {
         logError("Network Error", networkError);
       }
-    }
+    },
   ).concat(link) as ApolloLink | null;
 
   if (isE2e) {

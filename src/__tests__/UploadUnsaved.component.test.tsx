@@ -1,4 +1,6 @@
-// tslint:disable: no-any
+/* eslint-disable react/display-name */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import React, { ComponentType } from "react";
 import "jest-dom/extend-expect";
 import "react-testing-library/cleanup-after-each";
@@ -6,7 +8,7 @@ import { render, fireEvent, wait, waitForElement } from "react-testing-library";
 import { UploadUnsaved } from "../components/UploadUnsaved/component";
 import {
   Props,
-  fieldDefToUnsavedData
+  fieldDefToUnsavedData,
 } from "../components/UploadUnsaved/utils";
 import { ExperienceFragment } from "../graphql/apollo-types/ExperienceFragment";
 import { makeUnsavedId } from "../constants";
@@ -14,23 +16,23 @@ import {
   renderWithRouter,
   makeFieldDefs,
   makeEntryNode,
-  closeMessage
+  closeMessage,
 } from "./test_utils";
 
 jest.mock("../components/Loading", () => ({
-  Loading: () => <div data-testid="loading" />
+  Loading: () => <div data-testid="loading" />,
 }));
 
 jest.mock("../components/SidebarHeader", () => ({
   SidebarHeader: ({ children }: any) => {
     return <> {children} </>;
-  }
+  },
 }));
 
 jest.mock("../state/get-conn-status");
 jest.mock("../components/UploadUnsaved/mutation-update");
 jest.mock("../components/Entry/component", () => ({
-  Entry: () => null
+  Entry: () => null,
 }));
 jest.mock("../components/scroll-into-view");
 
@@ -49,9 +51,9 @@ it("redirects to 404 when not connected", async done => {
     isConnected: false,
     props: {
       unSavedExperiencesProps: {
-        unsavedExperiences: [{ id: "1", entries: {} }]
-      } as any
-    }
+        unsavedExperiences: [{ id: "1", entries: {} }],
+      } as any,
+    },
   });
 
   const { queryByTestId } = render(ui);
@@ -68,8 +70,8 @@ it("redirects to 404 when not connected", async done => {
 it("renders loading indicator while unsaved experiences loading", () => {
   const { ui } = makeComp({
     props: {
-      unSavedExperiencesProps: { loading: true } as any
-    }
+      unSavedExperiencesProps: { loading: true } as any,
+    },
   });
 
   const { queryByTestId } = render(ui);
@@ -80,8 +82,8 @@ it("renders loading indicator while unsaved experiences loading", () => {
 it("renders loading indicator while unsaved entries for saved experiences loading", () => {
   const { ui } = makeComp({
     props: {
-      savedExperiencesWithUnsavedEntriesProps: { loading: true } as any
-    }
+      savedExperiencesWithUnsavedEntriesProps: { loading: true } as any,
+    },
   });
 
   const { queryByTestId } = render(ui);
@@ -94,9 +96,9 @@ it("redirects to 404 when there are no unsaved data", async done => {
     props: {
       unSavedExperiencesProps: { unsavedExperiences: [] } as any,
       savedExperiencesWithUnsavedEntriesProps: {
-        savedExperiencesWithUnsavedEntries: []
-      } as any
-    }
+        savedExperiencesWithUnsavedEntries: [],
+      } as any,
+    },
   });
 
   const { queryByTestId } = render(ui);
@@ -115,7 +117,7 @@ it("shows only saved experiences, does not show saved entries and uploads unsave
     ...makeEntryNode(makeUnsavedId("1")),
     clientId: "a",
     expId: "1",
-    ...timeStamps
+    ...timeStamps,
   };
 
   const experiences = [
@@ -126,40 +128,40 @@ it("shows only saved experiences, does not show saved entries and uploads unsave
       entries: {
         edges: [
           {
-            node: { ...entry, id: entryId }
+            node: { ...entry, id: entryId },
           },
 
           {
             node: {
-              id: "2"
-            }
-          }
-        ]
-      }
-    }
+              id: "2",
+            },
+          },
+        ],
+      },
+    },
   ] as ExperienceFragment[];
 
   const {
     ui,
     mockUploadUnsavedExperiences,
     mockUploadSavedExperiencesEntries,
-    mockUploadAllUnsaveds
+    mockUploadAllUnsaveds,
   } = makeComp({
     props: {
       savedExperiencesWithUnsavedEntriesProps: {
-        savedExperiencesWithUnsavedEntries: experiences
-      } as any
-    }
+        savedExperiencesWithUnsavedEntries: experiences,
+      } as any,
+    },
   });
 
   mockUploadSavedExperiencesEntries.mockResolvedValue({
     data: {
       createEntries: [
         {
-          experienceId: "1"
-        }
-      ]
-    }
+          experienceId: "1",
+        },
+      ],
+    },
   });
 
   const { queryByTestId, getAllByTestId } = render(ui);
@@ -175,19 +177,19 @@ it("shows only saved experiences, does not show saved entries and uploads unsave
   expect(queryByTestId("uploading-data")).not.toBeInTheDocument();
 
   expect(
-    queryByTestId("unsaved-entries-upload-success-icon")
+    queryByTestId("unsaved-entries-upload-success-icon"),
   ).not.toBeInTheDocument();
 
   expect(
-    (queryByTestId("saved-experience-title-1") as any).classList
+    (queryByTestId("saved-experience-title-1") as any).classList,
   ).not.toContain("experience-title--success");
 
   expect(
-    queryByTestId("upload-triggered-icon-success-1")
+    queryByTestId("upload-triggered-icon-success-1"),
   ).not.toBeInTheDocument();
 
   expect(
-    queryByTestId("upload-triggered-icon-success-saved-experiences")
+    queryByTestId("upload-triggered-icon-success-saved-experiences"),
   ).not.toBeInTheDocument();
 
   const tabsMenuClassList = (queryByTestId("tabs-menu") as any).classList;
@@ -211,7 +213,7 @@ it("shows only saved experiences, does not show saved entries and uploads unsave
   expect(mockOnUploadSuccessUpdate).toHaveBeenCalledTimes(1);
 
   expect(
-    (queryByTestId("saved-experience-title-1") as any).classList
+    (queryByTestId("saved-experience-title-1") as any).classList,
   ).toContain("experience-title--success");
 
   expect(queryByTestId("upload-all")).not.toBeInTheDocument();
@@ -219,7 +221,7 @@ it("shows only saved experiences, does not show saved entries and uploads unsave
   expect(queryByTestId("upload-triggered-icon-success-1")).toBeInTheDocument();
 
   expect(
-    queryByTestId("upload-triggered-icon-success-saved-experiences")
+    queryByTestId("upload-triggered-icon-success-saved-experiences"),
   ).toBeInTheDocument();
 
   done();
@@ -231,14 +233,14 @@ it("shows only 'unsaved experiences' data and uploading same succeeds", async do
     clientId: "1",
     description: "x",
     fieldDefs: makeFieldDefs(),
-    ...timeStamps
+    ...timeStamps,
   };
 
   const { id: entryId, ...entry } = {
     ...makeEntryNode(),
     clientId: "b",
     expId: "1",
-    ...timeStamps
+    ...timeStamps,
   };
 
   const unsavedExperience = {
@@ -248,33 +250,33 @@ it("shows only 'unsaved experiences' data and uploading same succeeds", async do
     entries: {
       edges: [
         {
-          node: { ...entry, id: entryId }
-        }
-      ]
-    }
+          node: { ...entry, id: entryId },
+        },
+      ],
+    },
   };
 
   const {
     ui,
     mockUploadUnsavedExperiences,
     mockUploadSavedExperiencesEntries,
-    mockUploadAllUnsaveds
+    mockUploadAllUnsaveds,
   } = makeComp({
     props: {
       unSavedExperiencesProps: {
-        unsavedExperiences: [unsavedExperience]
-      } as any
-    }
+        unsavedExperiences: [unsavedExperience],
+      } as any,
+    },
   });
 
   mockUploadUnsavedExperiences.mockResolvedValue({
     data: {
       saveOfflineExperiences: [
         {
-          experience: unsavedExperience
-        }
-      ]
-    }
+          experience: unsavedExperience,
+        },
+      ],
+    },
   });
 
   const { queryByTestId } = render(ui);
@@ -288,19 +290,19 @@ it("shows only 'unsaved experiences' data and uploading same succeeds", async do
   expect(queryByTestId("uploading-data")).not.toBeInTheDocument();
 
   expect(
-    queryByTestId("upload-triggered-icon-success-unsaved-experiences")
+    queryByTestId("upload-triggered-icon-success-unsaved-experiences"),
   ).not.toBeInTheDocument();
 
   expect(
-    (queryByTestId("unsaved-experience-title-1") as any).classList
+    (queryByTestId("unsaved-experience-title-1") as any).classList,
   ).not.toContain("experience-title--success");
 
   expect(
-    queryByTestId("upload-triggered-icon-error-1")
+    queryByTestId("upload-triggered-icon-error-1"),
   ).not.toBeInTheDocument();
 
   expect(
-    queryByTestId("upload-triggered-icon-success-1")
+    queryByTestId("upload-triggered-icon-success-1"),
   ).not.toBeInTheDocument();
 
   const tabsMenuClassList = (queryByTestId("tabs-menu") as any).classList;
@@ -333,11 +335,11 @@ it("shows only 'unsaved experiences' data and uploading same succeeds", async do
   expect(queryByTestId("upload-all")).not.toBeInTheDocument();
 
   expect(
-    queryByTestId("upload-triggered-icon-success-unsaved-experiences")
+    queryByTestId("upload-triggered-icon-success-unsaved-experiences"),
   ).toBeInTheDocument();
 
   expect(
-    (queryByTestId("unsaved-experience-title-1") as any).classList
+    (queryByTestId("unsaved-experience-title-1") as any).classList,
   ).toContain("experience-title--success");
 
   expect(queryByTestId("upload-triggered-icon-success-1")).toBeInTheDocument();
@@ -352,7 +354,7 @@ it("toggles saved and 'unsaved experiences' and uploads data", async done => {
     ui,
     mockUploadUnsavedExperiences,
     mockUploadSavedExperiencesEntries,
-    mockUploadAllUnsaveds
+    mockUploadAllUnsaveds,
   } = makeComp({
     props: {
       unSavedExperiencesProps: {
@@ -367,13 +369,13 @@ it("toggles saved and 'unsaved experiences' and uploads data", async done => {
                 {
                   node: {
                     id: "1",
-                    clientId: "1"
-                  }
-                }
-              ]
-            }
-          }
-        ]
+                    clientId: "1",
+                  },
+                },
+              ],
+            },
+          },
+        ],
       } as any,
 
       savedExperiencesWithUnsavedEntriesProps: {
@@ -387,15 +389,15 @@ it("toggles saved and 'unsaved experiences' and uploads data", async done => {
                 {
                   node: {
                     id: makeUnsavedId("1"),
-                    clientId: makeUnsavedId("1")
-                  }
-                }
-              ]
-            }
-          }
-        ]
-      } as any
-    }
+                    clientId: makeUnsavedId("1"),
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      } as any,
+    },
   });
 
   mockUploadAllUnsaveds.mockResolvedValue({
@@ -403,19 +405,19 @@ it("toggles saved and 'unsaved experiences' and uploads data", async done => {
       createEntries: [
         {
           errors: [],
-          experienceId: "2"
-        }
+          experienceId: "2",
+        },
       ],
 
       saveOfflineExperiences: [
         {
           experienceError: {
             clientId: "1",
-            error: "experience error"
-          }
-        }
-      ]
-    }
+            error: "experience error",
+          },
+        },
+      ],
+    },
   });
 
   const { queryByTestId } = render(ui);
@@ -437,7 +439,7 @@ it("toggles saved and 'unsaved experiences' and uploads data", async done => {
   expect(queryByTestId("unsaved-experiences")).toBeInTheDocument();
 
   expect(
-    (queryByTestId("unsaved-experience-title-1") as any).classList
+    (queryByTestId("unsaved-experience-title-1") as any).classList,
   ).not.toContain("experience-title--error");
 
   const $savedMenu = queryByTestId("saved-experiences-menu") as any;
@@ -449,31 +451,31 @@ it("toggles saved and 'unsaved experiences' and uploads data", async done => {
   expect(queryByTestId("unsaved-experiences")).not.toBeInTheDocument();
 
   expect(
-    queryByTestId("unsaved-experiences-upload-error-icon")
+    queryByTestId("unsaved-experiences-upload-error-icon"),
   ).not.toBeInTheDocument();
 
   expect(
-    queryByTestId("unsaved-entries-upload-error-icon")
+    queryByTestId("unsaved-entries-upload-error-icon"),
   ).not.toBeInTheDocument();
 
   expect(
-    (queryByTestId("saved-experience-title-2") as any).classList
+    (queryByTestId("saved-experience-title-2") as any).classList,
   ).not.toContain("experience-title--error");
 
   expect(
-    queryByTestId("upload-triggered-icon-error-1")
+    queryByTestId("upload-triggered-icon-error-1"),
   ).not.toBeInTheDocument();
 
   expect(
-    queryByTestId("upload-triggered-icon-error-2")
+    queryByTestId("upload-triggered-icon-error-2"),
   ).not.toBeInTheDocument();
 
   expect(
-    queryByTestId("upload-triggered-icon-error-saved-experiences")
+    queryByTestId("upload-triggered-icon-error-saved-experiences"),
   ).not.toBeInTheDocument();
 
   expect(
-    queryByTestId("upload-triggered-icon-error-unsaved-experiences")
+    queryByTestId("upload-triggered-icon-error-unsaved-experiences"),
   ).not.toBeInTheDocument();
 
   expect(queryByTestId("unsaved-experience-errors-1")).not.toBeInTheDocument();
@@ -491,13 +493,13 @@ it("toggles saved and 'unsaved experiences' and uploads data", async done => {
   expect(queryByTestId("upload-triggered-icon-error-2")).toBeInTheDocument();
 
   expect(
-    queryByTestId("upload-triggered-icon-error-saved-experiences")
+    queryByTestId("upload-triggered-icon-error-saved-experiences"),
   ).toBeInTheDocument();
 
   // we are currently showing saved experiences - we confirm it has error class
   expect(queryByTestId("saved-experiences")).toBeInTheDocument();
   expect(
-    (queryByTestId("saved-experience-title-2") as any).classList
+    (queryByTestId("saved-experience-title-2") as any).classList,
   ).toContain("experience-title--error");
 
   // we toggle to show unsaved experiences and confirm they also have error
@@ -508,13 +510,13 @@ it("toggles saved and 'unsaved experiences' and uploads data", async done => {
   expect(queryByTestId("unsaved-experiences")).toBeInTheDocument();
 
   expect(
-    (queryByTestId("unsaved-experience-title-1") as any).classList
+    (queryByTestId("unsaved-experience-title-1") as any).classList,
   ).toContain("experience-title--error");
 
   expect(queryByTestId("upload-triggered-icon-error-1")).toBeInTheDocument();
 
   expect(
-    queryByTestId("upload-triggered-icon-error-unsaved-experiences")
+    queryByTestId("upload-triggered-icon-error-unsaved-experiences"),
   ).toBeInTheDocument();
 
   expect(queryByTestId("upload-all")).toBeInTheDocument();
@@ -524,7 +526,7 @@ it("toggles saved and 'unsaved experiences' and uploads data", async done => {
   done();
 });
 
-it.only("shows apollo errors", async done => {
+it("shows apollo errors", async done => {
   const { ui, mockUploadAllUnsaveds } = makeComp({
     props: {
       unSavedExperiencesProps: {
@@ -539,13 +541,13 @@ it.only("shows apollo errors", async done => {
                 {
                   node: {
                     id: "1",
-                    clientId: "1"
-                  }
-                }
-              ]
-            }
-          }
-        ]
+                    clientId: "1",
+                  },
+                },
+              ],
+            },
+          },
+        ],
       } as any,
 
       savedExperiencesWithUnsavedEntriesProps: {
@@ -559,15 +561,15 @@ it.only("shows apollo errors", async done => {
                 {
                   node: {
                     id: makeUnsavedId("1"),
-                    clientId: makeUnsavedId("1")
-                  }
-                }
-              ]
-            }
-          }
-        ]
-      } as any
-    }
+                    clientId: makeUnsavedId("1"),
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      } as any,
+    },
   });
 
   mockUploadAllUnsaveds.mockRejectedValue(new Error("a"));
@@ -583,23 +585,23 @@ it.only("shows apollo errors", async done => {
   expect($errorUi).toBeInTheDocument();
 
   expect(mockScrollIntoView).toHaveBeenCalledWith(
-    "js-scroll-into-view-server-error"
+    "js-scroll-into-view-server-error",
   );
 
   expect(
-    queryByTestId("upload-triggered-icon-success-unsaved-experiences")
+    queryByTestId("upload-triggered-icon-success-unsaved-experiences"),
   ).not.toBeInTheDocument();
 
   expect(
-    queryByTestId("upload-triggered-icon-error-unsaved-experiences")
+    queryByTestId("upload-triggered-icon-error-unsaved-experiences"),
   ).toBeInTheDocument();
 
   expect(
-    queryByTestId("upload-triggered-icon-success-saved-experiences")
+    queryByTestId("upload-triggered-icon-success-saved-experiences"),
   ).not.toBeInTheDocument();
 
   expect(
-    queryByTestId("upload-triggered-icon-error-saved-experiences")
+    queryByTestId("upload-triggered-icon-error-saved-experiences"),
   ).toBeInTheDocument();
 
   closeMessage($errorUi);
@@ -607,11 +609,11 @@ it.only("shows apollo errors", async done => {
   expect(queryByTestId("server-error")).not.toBeInTheDocument();
 
   expect(
-    queryByTestId("upload-triggered-icon-error-unsaved-experiences")
+    queryByTestId("upload-triggered-icon-error-unsaved-experiences"),
   ).toBeInTheDocument();
 
   expect(
-    queryByTestId("upload-triggered-icon-error-saved-experiences")
+    queryByTestId("upload-triggered-icon-error-saved-experiences"),
   ).toBeInTheDocument();
 
   done();
@@ -623,7 +625,7 @@ const UploadUnsavedP = UploadUnsaved as ComponentType<Partial<Props>>;
 
 function makeComp({
   props = {},
-  isConnected = true
+  isConnected = true,
 }: { props?: Partial<Props>; isConnected?: boolean } = {}) {
   mockScrollIntoView.mockReset();
   mockGetConnectionStatus.mockReset();
@@ -649,6 +651,6 @@ function makeComp({
     mockUploadUnsavedExperiences,
     mockUploadSavedExperiencesEntries,
     mockUploadAllUnsaveds,
-    ...routerProps
+    ...routerProps,
   };
 }

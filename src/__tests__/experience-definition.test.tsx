@@ -1,4 +1,5 @@
-// tslint:disable:no-any
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import React, { ComponentType } from "react";
 import "jest-dom/extend-expect";
 import "react-testing-library/cleanup-after-each";
@@ -7,7 +8,7 @@ import {
   getByText as domGetByText,
   Matcher,
   SelectorMatcherOptions,
-  waitForElement
+  waitForElement,
 } from "dom-testing-library";
 
 import { ExperienceDefinition } from "../components/ExperienceDefinition/component";
@@ -19,7 +20,7 @@ import { makeExperienceRoute } from "../constants/experience-route";
 jest.mock("../components/ExperienceDefinition/update");
 jest.mock("../components/ExperienceDefinition/scrollTop");
 jest.mock("../components/SidebarHeader", () => ({
-  SidebarHeader: jest.fn(() => null)
+  SidebarHeader: jest.fn(() => null),
 }));
 jest.mock("../state/get-conn-status");
 
@@ -40,13 +41,13 @@ it("adds field from top", async () => {
   const fieldDefs: CreateFieldDef[] = [
     {
       name: "Nice field 1",
-      type: FieldType.SINGLE_LINE_TEXT
+      type: FieldType.SINGLE_LINE_TEXT,
     },
 
     {
       name: "Nice field 2",
-      type: FieldType.DATETIME
-    }
+      type: FieldType.DATETIME,
+    },
   ];
 
   const { Ui, mockNavigate, mockCreateExperience } = makeComp();
@@ -54,16 +55,16 @@ it("adds field from top", async () => {
   mockCreateExperience.mockResolvedValue({
     data: {
       createExperience: {
-        id: "expId1"
-      }
-    }
+        id: "expId1",
+      },
+    },
   });
 
   /**
    * Given we are using new experience component
    */
   const { getByText, getByLabelText, getByTestId, queryByTestId } = render(
-    <Ui />
+    <Ui />,
   );
 
   /**
@@ -90,7 +91,7 @@ it("adds field from top", async () => {
    * When we complete data type field of field 1
    */
   fireEvent.click(
-    selectDataType(getByText, "Field 1 Data Type", fieldDefs[0].type)
+    selectDataType(getByText, "Field 1 Data Type", fieldDefs[0].type),
   );
 
   /**
@@ -173,7 +174,7 @@ it("adds field from top", async () => {
    * When we complete data type field of field 2
    */
   fireEvent.click(
-    selectDataType(getByText, "Field 2 Data Type", fieldDefs[1].type)
+    selectDataType(getByText, "Field 2 Data Type", fieldDefs[1].type),
   );
 
   /**
@@ -196,12 +197,12 @@ it("adds field from top", async () => {
           createExperienceInput: {
             title,
             fieldDefs,
-            description: ""
-          }
+            description: "",
+          },
         },
-        update: ExperienceDefinitionUpdate
+        update: ExperienceDefinitionUpdate,
       }),
-    { interval: 1 }
+    { interval: 1 },
   );
 
   /**
@@ -214,18 +215,18 @@ it("adds field in middle", async () => {
   const fieldDefs: CreateFieldDef[] = [
     {
       name: "Nice field 1",
-      type: FieldType.SINGLE_LINE_TEXT
+      type: FieldType.SINGLE_LINE_TEXT,
     },
 
     {
       name: "Nice field 2",
-      type: FieldType.DATETIME
+      type: FieldType.DATETIME,
     },
 
     {
       name: "Nice field 3",
-      type: FieldType.INTEGER
-    }
+      type: FieldType.INTEGER,
+    },
   ];
 
   const { Ui, mockNavigate, mockCreateExperience } = makeComp();
@@ -233,16 +234,16 @@ it("adds field in middle", async () => {
   mockCreateExperience.mockResolvedValue({
     data: {
       createExperience: {
-        id: "expId1"
-      }
-    }
+        id: "expId1",
+      },
+    },
   });
 
   /**
    * Given we are using new experience component
    */
   const { getByText, getByLabelText, getByTestId, queryByLabelText } = render(
-    <Ui />
+    <Ui />,
   );
 
   /**
@@ -291,12 +292,12 @@ it("adds field in middle", async () => {
           createExperienceInput: {
             title,
             fieldDefs: [fieldDefs[0], fieldDefs[1], newField, fieldDefs[2]],
-            description: ""
-          }
+            description: "",
+          },
         },
-        update: ExperienceDefinitionUpdate
+        update: ExperienceDefinitionUpdate,
       }),
-    { interval: 1 }
+    { interval: 1 },
   );
 
   /**
@@ -309,13 +310,13 @@ it("adds field at bottom", async () => {
   const fieldDefs: CreateFieldDef[] = [
     {
       name: "Nice field 1",
-      type: FieldType.SINGLE_LINE_TEXT
+      type: FieldType.SINGLE_LINE_TEXT,
     },
 
     {
       name: "Nice field 2",
-      type: FieldType.DATETIME
-    }
+      type: FieldType.DATETIME,
+    },
   ];
 
   const { Ui, mockNavigate, mockCreateExperience } = makeComp();
@@ -323,16 +324,16 @@ it("adds field at bottom", async () => {
   mockCreateExperience.mockResolvedValue({
     data: {
       createExperience: {
-        id: "expId1"
-      }
-    }
+        id: "expId1",
+      },
+    },
   });
 
   /**
    * Given we are using new experience component
    */
   const { getByText, getByLabelText, getByTestId, queryByLabelText } = render(
-    <Ui />
+    <Ui />,
   );
 
   /**
@@ -376,12 +377,12 @@ it("adds field at bottom", async () => {
           createExperienceInput: {
             title,
             fieldDefs: [fieldDefs[0], fieldDefs[1], newField],
-            description: ""
-          }
+            description: "",
+          },
         },
-        update: ExperienceDefinitionUpdate
+        update: ExperienceDefinitionUpdate,
       }),
-    { interval: 1 }
+    { interval: 1 },
   );
 
   /**
@@ -394,13 +395,13 @@ it("removes field from top", async () => {
   const fieldDefs: CreateFieldDef[] = [
     {
       name: "Nice field 1",
-      type: FieldType.SINGLE_LINE_TEXT
+      type: FieldType.SINGLE_LINE_TEXT,
     },
 
     {
       name: "Nice field 2",
-      type: FieldType.DATETIME
-    }
+      type: FieldType.DATETIME,
+    },
   ];
 
   const { Ui, mockNavigate, mockCreateExperience } = makeComp();
@@ -408,16 +409,16 @@ it("removes field from top", async () => {
   mockCreateExperience.mockResolvedValue({
     data: {
       createExperience: {
-        id: "expId1"
-      }
-    }
+        id: "expId1",
+      },
+    },
   });
 
   /**
    * Given we are using new experience component
    */
   const { getByText, getByLabelText, getByTestId, queryByTestId } = render(
-    <Ui />
+    <Ui />,
   );
 
   /**
@@ -477,12 +478,12 @@ it("removes field from top", async () => {
           createExperienceInput: {
             title,
             fieldDefs: [fieldDefs[1]],
-            description: ""
-          }
+            description: "",
+          },
         },
-        update: ExperienceDefinitionUpdate
+        update: ExperienceDefinitionUpdate,
       }),
-    { interval: 1 }
+    { interval: 1 },
   );
 
   /**
@@ -495,13 +496,13 @@ it("removes field from bottom", async () => {
   const fieldDefs: CreateFieldDef[] = [
     {
       name: "Nice field 1",
-      type: FieldType.SINGLE_LINE_TEXT
+      type: FieldType.SINGLE_LINE_TEXT,
     },
 
     {
       name: "Nice field 2",
-      type: FieldType.DATETIME
-    }
+      type: FieldType.DATETIME,
+    },
   ];
 
   const { Ui, mockNavigate, mockCreateExperience } = makeComp();
@@ -509,9 +510,9 @@ it("removes field from bottom", async () => {
   mockCreateExperience.mockResolvedValue({
     data: {
       createExperience: {
-        id: "expId1"
-      }
-    }
+        id: "expId1",
+      },
+    },
   });
 
   /**
@@ -522,7 +523,7 @@ it("removes field from bottom", async () => {
     getByLabelText,
     getByTestId,
     queryByTestId,
-    queryByLabelText
+    queryByLabelText,
   } = render(<Ui />);
 
   /**
@@ -578,12 +579,12 @@ it("removes field from bottom", async () => {
           createExperienceInput: {
             title,
             fieldDefs: [fieldDefs[0]],
-            description: ""
-          }
+            description: "",
+          },
         },
-        update: ExperienceDefinitionUpdate
+        update: ExperienceDefinitionUpdate,
       }),
-    { interval: 1 }
+    { interval: 1 },
   );
 
   /**
@@ -596,18 +597,18 @@ it("removes field from middle", async () => {
   const fieldDefs: CreateFieldDef[] = [
     {
       name: "Nice field 1",
-      type: FieldType.SINGLE_LINE_TEXT
+      type: FieldType.SINGLE_LINE_TEXT,
     },
 
     {
       name: "Nice field 2",
-      type: FieldType.DATETIME
+      type: FieldType.DATETIME,
     },
 
     {
       name: "Nice field 3",
-      type: FieldType.DECIMAL
-    }
+      type: FieldType.DECIMAL,
+    },
   ];
 
   const { Ui, mockNavigate, mockCreateExperience } = makeComp();
@@ -615,9 +616,9 @@ it("removes field from middle", async () => {
   mockCreateExperience.mockResolvedValue({
     data: {
       createExperience: {
-        id: "expId1"
-      }
-    }
+        id: "expId1",
+      },
+    },
   });
 
   /**
@@ -662,12 +663,12 @@ it("removes field from middle", async () => {
           createExperienceInput: {
             title,
             fieldDefs: [fieldDefs[0], fieldDefs[2]],
-            description: ""
-          }
+            description: "",
+          },
         },
-        update: ExperienceDefinitionUpdate
+        update: ExperienceDefinitionUpdate,
       }),
-    { interval: 1 }
+    { interval: 1 },
   );
 
   /**
@@ -680,13 +681,13 @@ it("moves field up from bottom", async () => {
   const fieldDefs: CreateFieldDef[] = [
     {
       name: "Nice field 1",
-      type: FieldType.SINGLE_LINE_TEXT
+      type: FieldType.SINGLE_LINE_TEXT,
     },
 
     {
       name: "Nice field 2",
-      type: FieldType.DATETIME
-    }
+      type: FieldType.DATETIME,
+    },
   ];
 
   const { Ui, mockCreateExperience } = makeComp();
@@ -694,9 +695,9 @@ it("moves field up from bottom", async () => {
   mockCreateExperience.mockResolvedValue({
     data: {
       createExperience: {
-        id: "expId1"
-      }
-    }
+        id: "expId1",
+      },
+    },
   });
 
   /**
@@ -749,12 +750,12 @@ it("moves field up from bottom", async () => {
           createExperienceInput: {
             title,
             fieldDefs: [fieldDefs[1], fieldDefs[0]],
-            description: ""
-          }
+            description: "",
+          },
         },
-        update: ExperienceDefinitionUpdate
+        update: ExperienceDefinitionUpdate,
       }),
-    { interval: 1 }
+    { interval: 1 },
   );
 });
 
@@ -762,18 +763,18 @@ it("moves field up from middle", async () => {
   const fieldDefs: CreateFieldDef[] = [
     {
       name: "Nice field 1",
-      type: FieldType.SINGLE_LINE_TEXT
+      type: FieldType.SINGLE_LINE_TEXT,
     },
 
     {
       name: "Nice field 2",
-      type: FieldType.DATETIME
+      type: FieldType.DATETIME,
     },
 
     {
       name: "Nice field 3",
-      type: FieldType.DATETIME
-    }
+      type: FieldType.DATETIME,
+    },
   ];
 
   const { Ui, mockCreateExperience } = makeComp();
@@ -781,9 +782,9 @@ it("moves field up from middle", async () => {
   mockCreateExperience.mockResolvedValue({
     data: {
       createExperience: {
-        id: "expId1"
-      }
-    }
+        id: "expId1",
+      },
+    },
   });
 
   /**
@@ -836,12 +837,12 @@ it("moves field up from middle", async () => {
           createExperienceInput: {
             title,
             fieldDefs: [fieldDefs[1], fieldDefs[0], fieldDefs[2]],
-            description: ""
-          }
+            description: "",
+          },
         },
-        update: ExperienceDefinitionUpdate
+        update: ExperienceDefinitionUpdate,
       }),
-    { interval: 1 }
+    { interval: 1 },
   );
 });
 
@@ -849,13 +850,13 @@ it("moves field down from top", async () => {
   const fieldDefs: CreateFieldDef[] = [
     {
       name: "Nice field 1",
-      type: FieldType.SINGLE_LINE_TEXT
+      type: FieldType.SINGLE_LINE_TEXT,
     },
 
     {
       name: "Nice field 2",
-      type: FieldType.DATETIME
-    }
+      type: FieldType.DATETIME,
+    },
   ];
 
   const { Ui, mockCreateExperience } = makeComp();
@@ -863,9 +864,9 @@ it("moves field down from top", async () => {
   mockCreateExperience.mockResolvedValue({
     data: {
       createExperience: {
-        id: "expId1"
-      }
-    }
+        id: "expId1",
+      },
+    },
   });
 
   /**
@@ -918,12 +919,12 @@ it("moves field down from top", async () => {
           createExperienceInput: {
             title,
             fieldDefs: [fieldDefs[1], fieldDefs[0]],
-            description: ""
-          }
+            description: "",
+          },
         },
-        update: ExperienceDefinitionUpdate
+        update: ExperienceDefinitionUpdate,
       }),
-    { interval: 1 }
+    { interval: 1 },
   );
 });
 
@@ -931,18 +932,18 @@ it("moves field down from middle", async () => {
   const fieldDefs: CreateFieldDef[] = [
     {
       name: "Nice field 1",
-      type: FieldType.SINGLE_LINE_TEXT
+      type: FieldType.SINGLE_LINE_TEXT,
     },
 
     {
       name: "Nice field 2",
-      type: FieldType.DATETIME
+      type: FieldType.DATETIME,
     },
 
     {
       name: "Nice field 3",
-      type: FieldType.DATETIME
-    }
+      type: FieldType.DATETIME,
+    },
   ];
 
   const { Ui, mockCreateExperience } = makeComp();
@@ -950,9 +951,9 @@ it("moves field down from middle", async () => {
   mockCreateExperience.mockResolvedValue({
     data: {
       createExperience: {
-        id: "expId1"
-      }
-    }
+        id: "expId1",
+      },
+    },
   });
 
   /**
@@ -1005,12 +1006,12 @@ it("moves field down from middle", async () => {
           createExperienceInput: {
             title,
             fieldDefs: [fieldDefs[0], fieldDefs[2], fieldDefs[1]],
-            description: ""
-          }
+            description: "",
+          },
         },
-        update: ExperienceDefinitionUpdate
+        update: ExperienceDefinitionUpdate,
       }),
-    { interval: 1 }
+    { interval: 1 },
   );
 });
 
@@ -1024,7 +1025,7 @@ it("toggles description field", () => {
     queryByLabelText,
     getByLabelText,
     getByTestId,
-    queryByTestId
+    queryByTestId,
   } = render(<Ui />);
 
   /**
@@ -1071,13 +1072,13 @@ it("renders errors if server returns field defs errors", async () => {
   const fieldDefs: CreateFieldDef[] = [
     {
       name: "Nice field",
-      type: FieldType.SINGLE_LINE_TEXT
+      type: FieldType.SINGLE_LINE_TEXT,
     },
 
     {
       name: "Nice field",
-      type: FieldType.DATETIME
-    }
+      type: FieldType.DATETIME,
+    },
   ];
 
   const { Ui, mockCreateExperience } = makeComp();
@@ -1091,16 +1092,16 @@ it("renders errors if server returns field defs errors", async () => {
             {"name":"${fieldDefs[1].name}---1 has already been taken"}
           ],
           "title":"has already been taken"
-        }`
-      }
-    ]
+        }`,
+      },
+    ],
   });
 
   /**
    * Given we are using new exp component
    */
   const { getByText, getByLabelText, getByTestId, queryByTestId } = render(
-    <Ui />
+    <Ui />,
   );
 
   /**
@@ -1158,8 +1159,8 @@ it("renders errors if server returns title errors", async () => {
   const fieldDefs: CreateFieldDef[] = [
     {
       name: "Nice field",
-      type: FieldType.SINGLE_LINE_TEXT
-    }
+      type: FieldType.SINGLE_LINE_TEXT,
+    },
   ];
 
   const { Ui, mockCreateExperience } = makeComp();
@@ -1170,9 +1171,9 @@ it("renders errors if server returns title errors", async () => {
         // it's a JSON string
         message: `{
           "title":"awesome errors"
-        }`
-      }
-    ]
+        }`,
+      },
+    ],
   });
 
   /**
@@ -1183,7 +1184,7 @@ it("renders errors if server returns title errors", async () => {
     getByLabelText,
     getByTestId,
     queryByTestId,
-    queryByText
+    queryByText,
   } = render(<Ui />);
 
   /**
@@ -1207,7 +1208,7 @@ it("renders errors if server returns title errors", async () => {
    * Then error UIs should be visible
    */
   await wait(() =>
-    expect(getByText(/title awesome errors/i)).toBeInTheDocument()
+    expect(getByText(/title awesome errors/i)).toBeInTheDocument(),
   );
 
   expect(getByTestId("form-control-error-0")).toBeInTheDocument();
@@ -1222,13 +1223,13 @@ it("renders error if all fields not completely filled on submission", async () =
   const fieldDefs: CreateFieldDef[] = [
     {
       name: "Nice field",
-      type: FieldType.SINGLE_LINE_TEXT
+      type: FieldType.SINGLE_LINE_TEXT,
     },
 
     {
       name: "",
-      type: FieldType.DATETIME
-    }
+      type: FieldType.DATETIME,
+    },
   ];
 
   const { Ui } = makeComp();
@@ -1237,7 +1238,7 @@ it("renders error if all fields not completely filled on submission", async () =
    * Given we are using new exp component
    */
   const { getByText, getByLabelText, getByTestId, queryByText } = render(
-    <Ui />
+    <Ui />,
   );
 
   /**
@@ -1275,13 +1276,13 @@ it("saves experience when we are not connected", async () => {
   const fieldDefs: CreateFieldDef[] = [
     {
       name: "f1",
-      type: FieldType.SINGLE_LINE_TEXT
+      type: FieldType.SINGLE_LINE_TEXT,
     },
 
     {
       name: "f2",
-      type: FieldType.DATETIME
-    }
+      type: FieldType.DATETIME,
+    },
   ];
 
   /**
@@ -1290,16 +1291,16 @@ it("saves experience when we are not connected", async () => {
   const { Ui, mockNavigate, mockCreateUnsavedExperience } = makeComp(
     {},
     {
-      isConnected: false
-    }
+      isConnected: false,
+    },
   );
 
   mockCreateUnsavedExperience.mockResolvedValue({
     data: {
       createUnsavedExperience: {
-        id: "expId1"
-      }
-    }
+        id: "expId1",
+      },
+    },
   });
 
   /**
@@ -1323,11 +1324,11 @@ it("saves experience when we are not connected", async () => {
           createExperienceInput: {
             title,
             fieldDefs,
-            description: ""
-          }
-        }
+            description: "",
+          },
+        },
       }),
-    { interval: 1 }
+    { interval: 1 },
   );
 
   /**
@@ -1340,8 +1341,8 @@ it("renders error even if there are no fields error", async done => {
   const fieldDefs: CreateFieldDef[] = [
     {
       name: "12",
-      type: FieldType.SINGLE_LINE_TEXT
-    }
+      type: FieldType.SINGLE_LINE_TEXT,
+    },
   ];
 
   const { Ui } = makeComp();
@@ -1350,7 +1351,7 @@ it("renders error even if there are no fields error", async done => {
    * Given we are using new exp component
    */
   const { getByText, getByLabelText, getByTestId, queryByTestId } = render(
-    <Ui />
+    <Ui />,
   );
 
   /**
@@ -1374,7 +1375,7 @@ it("renders error even if there are no fields error", async done => {
    * Then error UIs should be visible
    */
   $titleError = await waitForElement(() =>
-    queryByTestId("form-control-error-0")
+    queryByTestId("form-control-error-0"),
   );
 
   expect($titleError).toBeInTheDocument();
@@ -1385,20 +1386,20 @@ it("renders error even if there are no fields error", async done => {
 function selectDataType(
   getByText: (
     text: Matcher,
-    options?: SelectorMatcherOptions | undefined
+    options?: SelectorMatcherOptions | undefined,
   ) => HTMLElement,
   labelText: string,
-  dataType: string
+  dataType: string,
 ) {
   return domGetByText(
     getByText(labelText).parentElement as HTMLDivElement,
-    dataType
+    dataType,
   );
 }
 
 function makeComp(
   props: Partial<Props> = {},
-  { isConnected = true }: { isConnected?: boolean } = {}
+  { isConnected = true }: { isConnected?: boolean } = {},
 ) {
   const mockCreateExperience = jest.fn();
   mockGetConnStatus.mockReset();
@@ -1411,15 +1412,15 @@ function makeComp(
     {
       createExperience: mockCreateExperience,
       createUnsavedExperience: mockCreateUnsavedExperience,
-      ...props
-    }
+      ...props,
+    },
   );
 
   return {
     Ui,
     mockCreateExperience,
     mockCreateUnsavedExperience,
-    ...rest
+    ...rest,
   };
 }
 
@@ -1428,7 +1429,7 @@ function fillFields(
   getByText: any,
   getByTestId: any,
   fieldDefs: CreateFieldDef[],
-  fieldData: { title?: string } = {}
+  fieldData: { title?: string } = {},
 ) {
   fillField(getByLabelText("Title"), fieldData.title || title);
   const len = fieldDefs.length;
@@ -1447,7 +1448,7 @@ function fillFieldDefinition(
   getByLabelText: any,
   getByText: any,
   { name, type }: CreateFieldDef,
-  index1: number
+  index1: number,
 ) {
   fillField(getByLabelText(`Field ${index1} Name`), name);
 

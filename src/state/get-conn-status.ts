@@ -14,7 +14,7 @@ export async function getConnStatus(client: ApolloClient<{}>) {
   }
 
   const { data } = await client.query<ConnectionQueryData>({
-    query: CONNECTION_QUERY
+    query: CONNECTION_QUERY,
   });
 
   if (!data) {

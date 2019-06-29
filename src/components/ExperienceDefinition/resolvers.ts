@@ -8,12 +8,12 @@ import gql from "graphql-tag";
 import {
   UNSAVED_EXPERIENCE_FRAGMENT,
   UnsavedExperience,
-  UNSAVED_EXPERIENCE_TYPENAME
+  UNSAVED_EXPERIENCE_TYPENAME,
 } from "./resolver-utils";
 import { ExperienceFragment_fieldDefs } from "../../graphql/apollo-types/ExperienceFragment";
 import {
   getUnsavedExperiencesFromCache,
-  writeUnsavedExperiencesToCache
+  writeUnsavedExperiencesToCache,
 } from "../../state/resolvers-utils";
 
 const createUnsavedExperienceResolver: LocalResolverFn<
@@ -25,10 +25,10 @@ const createUnsavedExperienceResolver: LocalResolverFn<
     createExperienceInput: {
       description = null,
       title,
-      fieldDefs: createFieldDefs
-    }
+      fieldDefs: createFieldDefs,
+    },
   },
-  { cache }
+  { cache },
 ) => {
   const today = new Date();
   const timestamp = today.toJSON();
@@ -43,9 +43,9 @@ const createUnsavedExperienceResolver: LocalResolverFn<
         name,
         type,
         id: fieldDefId,
-        clientId: fieldDefId
+        clientId: fieldDefId,
       };
-    }
+    },
   );
 
   const experience: UnsavedExperience = {
@@ -63,14 +63,14 @@ const createUnsavedExperienceResolver: LocalResolverFn<
       pageInfo: {
         __typename: "PageInfo",
         hasNextPage: false,
-        hasPreviousPage: false
-      }
-    }
+        hasPreviousPage: false,
+      },
+    },
   };
 
   const unsavedExperiences = [
     ...getUnsavedExperiencesFromCache(cache),
-    experience
+    experience,
   ];
 
   writeUnsavedExperiencesToCache(cache, unsavedExperiences);
@@ -112,8 +112,8 @@ export const createUnsavedExperienceGql = graphql<
 >(CREATE_UNSAVED_EXPERIENCE_MUTATION, {
   props: ({ mutate }) =>
     mutate && {
-      createUnsavedExperience: mutate
-    }
+      createUnsavedExperience: mutate,
+    },
 });
 //////////////////////////// QUERIES /////////////////////////////////
 
@@ -121,8 +121,8 @@ export const createUnsavedExperienceGql = graphql<
 
 export const experienceDefinitionResolvers = {
   Mutation: {
-    createUnsavedExperience: createUnsavedExperienceResolver
+    createUnsavedExperience: createUnsavedExperienceResolver,
   },
 
-  Query: {}
+  Query: {},
 };

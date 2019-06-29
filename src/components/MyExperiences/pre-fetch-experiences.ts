@@ -1,12 +1,12 @@
 import ApolloClient from "apollo-client";
 import {
   PreFetchExperiences,
-  PreFetchExperiencesVariables
+  PreFetchExperiencesVariables,
 } from "../../graphql/apollo-types/PreFetchExperiences";
 import { PRE_FETCH_EXPERIENCES_QUERY } from "../../graphql/get-experience-connection-mini.query";
 import {
   GetExperienceFull,
-  GetExperienceFullVariables
+  GetExperienceFullVariables,
 } from "../../graphql/apollo-types/GetExperienceFull";
 import { GET_EXPERIENCE_FULL_QUERY } from "../../graphql/get-experience-full.query";
 import { ExperienceMiniFragment } from "../../graphql/apollo-types/ExperienceMiniFragment";
@@ -14,14 +14,14 @@ import { ExperienceMiniFragment } from "../../graphql/apollo-types/ExperienceMin
 export function preFetchExperiences({
   ids,
   client,
-  idToExperienceMap
+  idToExperienceMap,
 }: {
   ids: string[];
   client: ApolloClient<{}>;
   idToExperienceMap: { [k: string]: ExperienceMiniFragment };
 }) {
   const entriesPagination = {
-    first: 20
+    first: 20,
   };
 
   client
@@ -30,11 +30,11 @@ export function preFetchExperiences({
       variables: {
         experiencesArgs: {
           ids,
-          pagination: entriesPagination
+          pagination: entriesPagination,
         },
 
-        entriesPagination
-      }
+        entriesPagination,
+      },
     })
     .then(result => {
       const edges =
@@ -67,12 +67,12 @@ export function preFetchExperiences({
           variables: {
             id,
 
-            entriesPagination
+            entriesPagination,
           },
 
           data: {
-            getExperience: { ...experience, ...node }
-          }
+            getExperience: { ...experience, ...node },
+          },
         });
       });
     });

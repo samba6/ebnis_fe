@@ -19,11 +19,11 @@ export interface State {
 }
 
 export const initialState: State = {
-  toggleDescriptionStates: {}
+  toggleDescriptionStates: {},
 };
 
 export enum ActionTypes {
-  setToggleDescription = "@components/MyExpriences/setToggleDescription"
+  setToggleDescription = "@components/MyExpriences/setToggleDescription",
 }
 
 type ActionPayload = null | string;
@@ -34,7 +34,7 @@ interface Action {
 }
 
 const reducerObject: {
-  [k in ActionTypes]: (prevState: State, payload: ActionPayload) => State
+  [k in ActionTypes]: (prevState: State, payload: ActionPayload) => State;
 } = {
   [ActionTypes.setToggleDescription]: (prevState, payload) => {
     const { toggleDescriptionStates } = prevState;
@@ -43,14 +43,14 @@ const reducerObject: {
 
     return {
       ...prevState,
-      toggleDescriptionStates
+      toggleDescriptionStates,
     };
-  }
+  },
 };
 
 export const reducer: Reducer<State, Action> = (
   prevState,
-  { type, payload }
+  { type, payload },
 ) => {
   const reducerFn = reducerObject[type];
 

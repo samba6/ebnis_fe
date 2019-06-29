@@ -5,7 +5,7 @@ import { Page404 } from "../Page404";
 import {
   setDocumentTitle,
   makeSiteTitle,
-  PAGE_NOT_FOUND_TITLE
+  PAGE_NOT_FOUND_TITLE,
 } from "../../constants";
 
 export function NotFound({

@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 import React from "react";
 import { ApolloProvider } from "react-apollo";
 import { HelmetProvider } from "react-helmet-async";
@@ -19,7 +20,7 @@ export const wrapRootElement = ({ element }) => {
           client,
           cache,
           persistCache,
-          persistor
+          persistor,
         }}
       >
         <HelmetProvider>
@@ -44,7 +45,7 @@ function showRefreshUI(wb) {
   promptUi.classList.add("ui", "inverted", "menu");
 
   const textNode = document.createTextNode(
-    "New content is available. Please click to refresh."
+    "New content is available. Please click to refresh.",
   );
 
   promptUi.appendChild(textNode);
@@ -75,7 +76,7 @@ function showRefreshUI(wb) {
   document.body.appendChild(parent);
 
   function promptUiHandler() {
-    wb.addEventListener("controlling", event => {
+    wb.addEventListener("controlling", () => {
       window.location.reload();
     });
 

@@ -5,7 +5,7 @@ import { FieldType } from "../../graphql/apollo-types/globalTypes";
 import { NewEntryRouteParams } from "../../routes";
 import {
   ExperienceFragment,
-  ExperienceFragment_entries_edges_node
+  ExperienceFragment_entries_edges_node,
 } from "../../graphql/apollo-types/ExperienceFragment";
 import { EbnisComponentProps } from "../../types";
 import { PropsWithChildren } from "react";
@@ -61,7 +61,7 @@ export const displayFieldType = {
 
   [FieldType.INTEGER](text: string) {
     return Number(text);
-  }
+  },
 };
 
 export function formatDatetime(date: string | Date) {

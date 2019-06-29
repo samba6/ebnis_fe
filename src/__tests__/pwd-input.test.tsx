@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import React, { useReducer } from "react";
 import "jest-dom/extend-expect";
 import "react-testing-library/cleanup-after-each";
@@ -37,7 +39,7 @@ it("renders correctly", () => {
     getByText,
     queryByTestId,
     getByLabelText,
-    getByTestId
+    getByTestId,
   } = render(<App />);
   const $comp = container.firstChild as HTMLDivElement;
   expect(getByText(/Password/).getAttribute("for")).toBe(id);
@@ -48,19 +50,19 @@ it("renders correctly", () => {
   const pwd = "awesome pass";
 
   fireEvent.change($pwd, {
-    target: { value: pwd }
+    target: { value: pwd },
   });
 
   expect($comp).toContainElement(getByTestId("password-unmask"));
 
   fireEvent.change($pwd, {
-    target: { value: "" }
+    target: { value: "" },
   });
 
   expect($comp).not.toContainElement(queryByTestId("password-unmask"));
 
   fireEvent.change($pwd, {
-    target: { value: pwd }
+    target: { value: pwd },
   });
 
   fireEvent.click(getByTestId("password-unmask"));

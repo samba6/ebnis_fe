@@ -3,7 +3,7 @@ import React, {
   PropsWithChildren,
   useState,
   useEffect,
-  useRef
+  useRef,
 } from "react";
 import { EbnisAppContext } from "../../context";
 import { Loading } from "../Loading";
@@ -62,7 +62,7 @@ export function Layout({ children }: PropsWithChildren<{}>) {
                 setUnsavedCount(0);
               }
             }
-          }
+          },
         });
       }
     }
@@ -93,7 +93,7 @@ export function Layout({ children }: PropsWithChildren<{}>) {
     <LayoutProvider
       value={{
         persistor: persistorRef.current,
-        unsavedCount
+        unsavedCount,
       }}
     >
       {children}

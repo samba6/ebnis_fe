@@ -1,4 +1,5 @@
-// tslint:disable: no-any
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import React, { ComponentType } from "react";
 import "jest-dom/extend-expect";
 import "react-testing-library/cleanup-after-each";
@@ -8,7 +9,7 @@ import {
   wait,
   getByText as getDescendantByText,
   getByTestId as getDescendantByTestId,
-  waitForElement
+  waitForElement,
 } from "react-testing-library";
 import isDateWithinRange from "date-fns/is_within_range";
 import addHours from "date-fns/add_hours";
@@ -23,14 +24,14 @@ import { renderWithRouter, fillField } from "./test_utils";
 import { FieldType } from "../graphql/apollo-types/globalTypes";
 import {
   ExperienceFragment_entries,
-  ExperienceFragment
+  ExperienceFragment,
 } from "../graphql/apollo-types/ExperienceFragment";
 import { ApolloError } from "apollo-client";
 import { GraphQLError } from "graphql";
 
 jest.mock("../components/NewEntry/update");
 jest.mock("../components/SidebarHeader", () => ({
-  SidebarHeader: jest.fn(() => null)
+  SidebarHeader: jest.fn(() => null),
 }));
 jest.mock("../state/get-conn-status");
 jest.mock("../components/scroll-into-view");
@@ -72,47 +73,47 @@ it("creates new experience entry when online", async () => {
         id: "f2",
         name: "f2",
         type: FieldType.DATETIME,
-        __typename: "FieldDef"
+        __typename: "FieldDef",
       },
 
       {
         id: "f3",
         name: "f3",
         type: FieldType.DECIMAL,
-        __typename: "FieldDef"
+        __typename: "FieldDef",
       },
 
       {
         id: "f4",
         name: "f4",
         type: FieldType.INTEGER,
-        __typename: "FieldDef"
+        __typename: "FieldDef",
       },
 
       {
         id: "f5",
         name: "f5",
         type: FieldType.SINGLE_LINE_TEXT,
-        __typename: "FieldDef"
+        __typename: "FieldDef",
       },
 
       {
         id: "f6",
         name: "f6",
         type: FieldType.MULTI_LINE_TEXT,
-        __typename: "FieldDef"
-      }
+        __typename: "FieldDef",
+      },
     ],
 
     description: "lovely",
 
     __typename: "Experience",
 
-    entries: {} as ExperienceFragment_entries
+    entries: {} as ExperienceFragment_entries,
   } as ExperienceFragment;
 
   const { ui, mockCreateEntry } = makeComp({
-    experience: exp
+    experience: exp,
   });
 
   /**
@@ -129,7 +130,7 @@ it("creates new experience entry when online", async () => {
    * And SINGLE_LINE_TEXT field should be empty
    */
   const $singleText = getByLabelText(
-    "f5 [SINGLE_LINE_TEXT]"
+    "f5 [SINGLE_LINE_TEXT]",
   ) as HTMLInputElement;
 
   expect($singleText.value).toBe("");
@@ -171,8 +172,8 @@ it("creates new experience entry when online", async () => {
   await wait(() => {
     const {
       variables: {
-        input: { expId, fields }
-      }
+        input: { expId, fields },
+      },
     } = mockCreateEntry.mock.calls[0][0] as any;
 
     expect(expId).toBe("1000");
@@ -182,12 +183,12 @@ it("creates new experience entry when online", async () => {
 
     expect(f1.defId).toBe("f1");
     expect(
-      isDateWithinRange(JSON.parse(f1.data).date, startDate, endDate)
+      isDateWithinRange(JSON.parse(f1.data).date, startDate, endDate),
     ).toBe(true);
 
     expect(f2.defId).toBe("f2");
     expect(
-      isDateWithinRange(JSON.parse(f2.data).datetime, now, endDatetime)
+      isDateWithinRange(JSON.parse(f2.data).datetime, now, endDatetime),
     ).toBe(true);
 
     expect(f3.defId).toBe("f3");
@@ -214,20 +215,20 @@ it("sets decimal and integer fields to default to 0", async () => {
         id: "f1",
         name: "f3",
         type: FieldType.DECIMAL,
-        __typename: "FieldDef"
+        __typename: "FieldDef",
       },
 
       {
         id: "f2",
         name: "f4",
         type: FieldType.INTEGER,
-        __typename: "FieldDef"
-      }
-    ]
+        __typename: "FieldDef",
+      },
+    ],
   } as ExperienceFragment;
 
   const { ui, mockCreateEntry } = makeComp({
-    experience: exp
+    experience: exp,
   });
 
   /**
@@ -246,8 +247,8 @@ it("sets decimal and integer fields to default to 0", async () => {
   await wait(() => {
     const {
       variables: {
-        input: { fields }
-      }
+        input: { fields },
+      },
     } = mockCreateEntry.mock.calls[0][0] as any;
 
     const [f1, f2] = fields;
@@ -276,19 +277,19 @@ it("sets values of date and datetime fields", async () => {
         id: "f2",
         name: "f2",
         type: FieldType.DATETIME,
-        __typename: "FieldDef"
-      }
+        __typename: "FieldDef",
+      },
     ],
 
     description: "lovely",
 
     __typename: "Experience",
 
-    entries: {} as ExperienceFragment_entries
+    entries: {} as ExperienceFragment_entries,
   } as ExperienceFragment;
 
   const { ui, mockCreateEntry } = makeComp({
-    experience: exp
+    experience: exp,
   });
 
   /**
@@ -309,14 +310,14 @@ it("sets values of date and datetime fields", async () => {
   fireEvent.click(
     getDescendantByText(
       getDescendantByTestId($datetimeField, "fields[1].hr"),
-      h
-    )
+      h,
+    ),
   );
   fireEvent.click(
     getDescendantByText(
       getDescendantByTestId($datetimeField, "fields[1].min"),
-      mi
-    )
+      mi,
+    ),
   );
 
   /**
@@ -340,15 +341,15 @@ it("sets values of date and datetime fields", async () => {
   await wait(() => {
     const {
       variables: {
-        input: { fields }
-      }
+        input: { fields },
+      },
     } = mockCreateEntry.mock.calls[0][0] as any;
 
     const [f1, f2] = fields;
 
     expect(differenceInDays(now, JSON.parse(f1.data).date)).toBe(2);
     expect(
-      differenceInHours(now, JSON.parse(f2.data).datetime)
+      differenceInHours(now, JSON.parse(f2.data).datetime),
     ).toBeGreaterThanOrEqual(1);
   });
 });
@@ -367,18 +368,18 @@ it("creates new experience entry when offline", async () => {
         id: "f1",
         name: "f1",
         type: FieldType.SINGLE_LINE_TEXT,
-        __typename: "FieldDef"
-      }
+        __typename: "FieldDef",
+      },
     ],
 
-    entries: {}
+    entries: {},
   };
 
   const { ui, mockCreateUnsavedEntry, mockCreateEntry } = makeComp(
     {
-      experience: exp as any
+      experience: exp as any,
     },
-    false
+    false,
   );
 
   /**
@@ -395,7 +396,7 @@ it("creates new experience entry when offline", async () => {
    * When we complete and submit the form
    */
   const $singleText = getByLabelText(
-    "f1 [SINGLE_LINE_TEXT]"
+    "f1 [SINGLE_LINE_TEXT]",
   ) as HTMLInputElement;
 
   fillField($singleText, "s");
@@ -407,7 +408,7 @@ it("creates new experience entry when offline", async () => {
    */
   await wait(() => {
     const {
-      variables: { experience, fields }
+      variables: { experience, fields },
     } = mockCreateUnsavedEntry.mock.calls[0][0] as any;
 
     expect(experience.id).toBe("1000");
@@ -434,15 +435,15 @@ it("renders error when entry creation fails", async done => {
       {
         id: "f1",
         name: "f1",
-        type: FieldType.SINGLE_LINE_TEXT
-      }
+        type: FieldType.SINGLE_LINE_TEXT,
+      },
     ],
 
-    entries: {}
+    entries: {},
   } as ExperienceFragment;
 
   const { ui, mockCreateEntry, mockNavigate } = makeComp({
-    experience
+    experience,
   });
 
   const graphQLErrorMessage = JSON.stringify({
@@ -450,15 +451,15 @@ it("renders error when entry creation fails", async done => {
       {
         errors: { data: "is invalid" },
 
-        meta: { def_id: "f1", index: 0 }
-      }
-    ]
+        meta: { def_id: "f1", index: 0 },
+      },
+    ],
   } as CreateEntryFieldErrors);
 
   mockCreateEntry.mockRejectedValue(
     new ApolloError({
-      graphQLErrors: [new GraphQLError(graphQLErrorMessage)]
-    })
+      graphQLErrors: [new GraphQLError(graphQLErrorMessage)],
+    }),
   );
 
   const { getByLabelText, getByText, getByTestId } = render(ui);
@@ -488,21 +489,21 @@ it("renders network error", async done => {
       {
         id: "f1",
         name: "f1",
-        type: FieldType.SINGLE_LINE_TEXT
-      }
+        type: FieldType.SINGLE_LINE_TEXT,
+      },
     ],
 
-    entries: {}
+    entries: {},
   } as ExperienceFragment;
 
   const { ui, mockCreateEntry, mockNavigate } = makeComp({
-    experience
+    experience,
   });
 
   mockCreateEntry.mockRejectedValue(
     new ApolloError({
-      networkError: new Error()
-    })
+      networkError: new Error(),
+    }),
   );
 
   const { getByLabelText, getByText, getByTestId, queryByTestId } = render(ui);
@@ -536,21 +537,21 @@ it("treats non field graphql errors as network error", async done => {
       {
         id: "f1",
         name: "f1",
-        type: FieldType.SINGLE_LINE_TEXT
-      }
+        type: FieldType.SINGLE_LINE_TEXT,
+      },
     ],
 
-    entries: {}
+    entries: {},
   } as ExperienceFragment;
 
   const { ui, mockCreateEntry, mockNavigate } = makeComp({
-    experience
+    experience,
   });
 
   mockCreateEntry.mockRejectedValue(
     new ApolloError({
-      graphQLErrors: []
-    })
+      graphQLErrors: [],
+    }),
   );
 
   const { getByLabelText, getByText, getByTestId, queryByTestId } = render(ui);
@@ -598,6 +599,6 @@ function makeComp(props: Partial<Props>, connectionStatus: boolean = true) {
     ),
     mockCreateEntry,
     mockCreateUnsavedEntry,
-    ...rest
+    ...rest,
   };
 }

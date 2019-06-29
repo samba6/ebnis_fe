@@ -8,7 +8,7 @@ import {
   MINUTE_OPTIONS,
   getFieldName,
   LABELS,
-  Props
+  Props,
 } from "./datetime-field";
 
 export function DateTimeField(props: Props) {
@@ -22,7 +22,7 @@ export function DateTimeField(props: Props) {
 
   function setDateTimeVal(
     { h = datetime.getHours(), m = datetime.getMinutes() },
-    date = datetime
+    date = datetime,
   ) {
     date.setHours(h);
     date.setMinutes(m);
@@ -37,9 +37,9 @@ export function DateTimeField(props: Props) {
           acc[l] = getFieldName(compName, l);
           return acc;
         },
-        { date: "", hr: "", min: "" }
+        { date: "", hr: "", min: "" },
       );
-    })()
+    })(),
   ).current;
 
   return (

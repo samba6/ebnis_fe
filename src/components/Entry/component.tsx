@@ -5,7 +5,7 @@ import makeClassNames from "classnames";
 import {
   ExperienceFragment_entries_edges_node,
   ExperienceFragment_fieldDefs,
-  ExperienceFragment_entries_edges_node_fields
+  ExperienceFragment_entries_edges_node_fields,
 } from "../../graphql/apollo-types/ExperienceFragment";
 import Icon from "semantic-ui-react/dist/commonjs/elements/Icon";
 import Dropdown from "semantic-ui-react/dist/commonjs/modules/Dropdown";
@@ -31,7 +31,7 @@ export function Entry(props: Props) {
     <div
       className={makeClassNames({
         "component-experience-entry": true,
-        [className]: !!className
+        [className]: !!className,
       })}
       data-testid={dataTestId ? `${dataTestId}-${entry.id}` : `entry-container`}
     >
@@ -62,7 +62,7 @@ function FieldComponent({
   field,
   fieldDefs,
   index,
-  fieldsLen
+  fieldsLen,
 }: {
   field: ExperienceFragment_entries_edges_node_fields;
   fieldDefs: ExperienceFragment_fieldDefs[];
@@ -72,7 +72,7 @@ function FieldComponent({
   const { defId, data } = field;
 
   const fieldDef = fieldDefs.find(
-    (aFieldDef: ExperienceFragment_fieldDefs) => aFieldDef.id === defId
+    (aFieldDef: ExperienceFragment_fieldDefs) => aFieldDef.id === defId,
   );
 
   // istanbul ignore next: impossible state?
@@ -90,7 +90,7 @@ function FieldComponent({
       key={defId}
       className={makeClassNames({
         field: true,
-        "field--last": index === fieldsLen - 1
+        "field--last": index === fieldsLen - 1,
       })}
     >
       <div className="field__content">

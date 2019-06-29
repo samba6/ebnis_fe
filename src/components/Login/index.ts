@@ -3,11 +3,11 @@ import { graphql, compose, withApollo } from "react-apollo";
 import { Login as Comp } from "./component";
 import {
   LoginMutation,
-  LoginMutationVariables
+  LoginMutationVariables,
 } from "../../graphql/apollo-types/LoginMutation";
 import {
   LoginMutationProps,
-  LOGIN_MUTATION
+  LOGIN_MUTATION,
 } from "../../graphql/login.mutation";
 import { userLocalMutationGql, userLocalGql } from "../../state/user.resolver";
 
@@ -21,9 +21,9 @@ const loginGql = graphql<
     const mutate = props.mutate;
 
     return {
-      login: mutate
+      login: mutate,
     };
-  }
+  },
 });
 
 export const Login = compose(
@@ -31,5 +31,5 @@ export const Login = compose(
   withApollo,
   userLocalGql,
   userLocalMutationGql,
-  loginGql
+  loginGql,
 )(Comp);

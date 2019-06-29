@@ -1,4 +1,5 @@
-// tslint:disable: no-any
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import React, { ComponentType } from "react";
 import "jest-dom/extend-expect";
 import "react-testing-library/cleanup-after-each";
@@ -11,7 +12,7 @@ import { NEW_ENTRY_URL } from "../constants/new-entry-route";
 jest.mock("../components/ExperienceNewEntryParent/loadables", () => ({
   NewEntry: jest.fn(() => <div data-testid="new-entry-page" />),
 
-  ExperienceRoute: jest.fn(() => <div data-testid="experience-page" />)
+  ExperienceRoute: jest.fn(() => <div data-testid="experience-page" />),
 }));
 
 beforeEach(() => {
@@ -25,8 +26,8 @@ afterEach(() => {
 it("renders loading indicator if we have not returned from server", () => {
   const { ui } = makeComp({
     props: {
-      getExperienceGql: { loading: true } as any
-    }
+      getExperienceGql: { loading: true } as any,
+    },
   });
 
   /**
@@ -50,8 +51,8 @@ it("redirects to 404 page when no experience to render", () => {
 it("redirects to 404 page when getting experience from server errors", () => {
   const { mockNavigate, ui } = makeComp({
     props: {
-      getExperienceGql: { error: {} } as any
-    }
+      getExperienceGql: { error: {} } as any,
+    },
   });
 
   render(ui);
@@ -62,8 +63,8 @@ it("redirects to 404 page when getting experience from server errors", () => {
 it("redirects to 404 page when getting unsaved experience errors", () => {
   const { mockNavigate, ui } = makeComp({
     props: {
-      unsavedExperienceGql: { error: {} } as any
-    }
+      unsavedExperienceGql: { error: {} } as any,
+    },
   });
 
   render(ui);
@@ -79,8 +80,8 @@ it("loads NewEntry page", () => {
   const { ui } = makeComp({
     props: {
       unsavedExperienceGql: { unsavedExperience: {} } as any,
-      path: NEW_ENTRY_URL
-    }
+      path: NEW_ENTRY_URL,
+    },
   });
 
   /**
@@ -107,8 +108,8 @@ it("loads Experience page", () => {
    */
   const { ui } = makeComp({
     props: {
-      getExperienceGql: { exp: {} } as any
-    }
+      getExperienceGql: { exp: {} } as any,
+    },
   });
 
   /**
@@ -139,6 +140,6 @@ function makeComp({ props = {} }: { props?: Partial<Props> } = {}) {
 
   return {
     ui: <Ui {...props} />,
-    ...rest
+    ...rest,
   };
 }

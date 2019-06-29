@@ -46,7 +46,7 @@ export function Loading({
       <div
         className={makeClassNames({
           "components-loading__spinner": true,
-          [className || ""]: !!className
+          [className || ""]: !!className,
         })}
         {...props}
       >

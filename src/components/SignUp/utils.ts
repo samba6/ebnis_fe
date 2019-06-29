@@ -23,7 +23,7 @@ export const initialFormValues: Registration = {
   email: "",
   password: "",
   passwordConfirmation: "",
-  source: "password"
+  source: "password",
 };
 
 export const ValidationSchema = Yup.object<Registration>().shape({
@@ -43,11 +43,11 @@ export const ValidationSchema = Yup.object<Registration>().shape({
     .test("passwords-match", "passwords do not match", function(val) {
       return this.parent.password === val;
     }),
-  source: Yup.string().default("password")
+  source: Yup.string().default("password"),
 });
 
 export const RouterThings = {
-  documentTitle: "Sign up"
+  documentTitle: "Sign up",
 };
 
 export const FORM_RENDER_PROPS = {
@@ -55,7 +55,7 @@ export const FORM_RENDER_PROPS = {
   email: ["Email", "email"],
   password: ["Password", "password"],
   passwordConfirmation: ["Password Confirm", "password"],
-  source: ["Source", "text"]
+  source: ["Source", "text"],
 };
 
 export enum ActionTypes {
@@ -63,7 +63,7 @@ export enum ActionTypes {
   set_form_errors = "@components/signup/set_form_errors",
   set_server_errors = "@components/signup/set_server_errors",
   clear_all_errors = "@components/signup/clear_all_errors",
-  clear_error_summary = "@components/signup/clear_error_summary"
+  clear_error_summary = "@components/signup/clear_error_summary",
 }
 
 export type FormErrors = FormikErrors<Registration>;
@@ -111,7 +111,7 @@ export interface Action {
  */
 
 const reducerObject: {
-  [k in ActionTypes]: (prevState: State, payload: ActionPayload) => State
+  [k in ActionTypes]: (prevState: State, payload: ActionPayload) => State;
 } = {
   [ActionTypes.clear_all_errors]: prevState => ({
     ...prevState,
@@ -119,20 +119,20 @@ const reducerObject: {
     formErrors: null,
     networkError: null,
     otherErrors: null,
-    showingErrorSummary: false
+    showingErrorSummary: false,
   }),
 
   [ActionTypes.set_form_errors]: (prevState, payload) => ({
     ...prevState,
     formErrors: payload as FormErrors,
-    showingErrorSummary: true
+    showingErrorSummary: true,
   }),
 
   [ActionTypes.clear_error_summary]: prevState => ({
     ...prevState,
     networkError: null,
     otherErrors: null,
-    showingErrorSummary: false
+    showingErrorSummary: false,
   }),
 
   [ActionTypes.set_server_errors]: (prevState, payload) => {
@@ -147,20 +147,20 @@ const reducerObject: {
       ...prevState,
       networkError: networkError && networkError.message,
       serverFieldsErrors: errors,
-      showingErrorSummary: true
+      showingErrorSummary: true,
     };
   },
 
   [ActionTypes.set_other_errors]: (prevState, payload) => ({
     ...prevState,
     otherErrors: payload as string,
-    showingErrorSummary: true
-  })
+    showingErrorSummary: true,
+  }),
 };
 
 export const reducer: Reducer<State, Action> = (
   prevState,
-  { type, payload }
+  { type, payload },
 ) => {
   const fn = reducerObject[type];
 

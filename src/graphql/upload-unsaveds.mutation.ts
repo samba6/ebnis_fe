@@ -2,16 +2,16 @@ import gql from "graphql-tag";
 import { ENTRY_CONNECTION_FRAGMENT } from "./entry-connection.fragment";
 import {
   UploadUnsavedExperiencesMutation,
-  UploadUnsavedExperiencesMutationVariables
+  UploadUnsavedExperiencesMutationVariables,
 } from "./apollo-types/UploadUnsavedExperiencesMutation";
 import { MutationFn, FetchResult } from "react-apollo";
 import {
   CREATE_ENTRIES_RESPONSE_FRAGMENT,
-  CREATE_ENTRIES_ERROR_FRAGMENT
+  CREATE_ENTRIES_ERROR_FRAGMENT,
 } from "./create-entries-response.fragment";
 import {
   UploadAllUnsavedsMutation,
-  UploadAllUnsavedsMutationVariables
+  UploadAllUnsavedsMutationVariables,
 } from "./apollo-types/UploadAllUnsavedsMutation";
 import { EXPERIENCE_NO_ENTRY_FRAGMENT } from "./experience.fragment";
 

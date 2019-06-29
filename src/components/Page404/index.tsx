@@ -14,7 +14,7 @@ export function Page404(props: RouteComponentProps) {
       <div
         style={{
           padding: "20px",
-          textAlign: "center"
+          textAlign: "center",
         }}
       >
         <h1>You are here at #404!</h1>
@@ -24,7 +24,7 @@ export function Page404(props: RouteComponentProps) {
           <span
             style={{
               fontWeight: 900,
-              fontSize: "2rem"
+              fontSize: "2rem",
             }}
           >
             &larr;

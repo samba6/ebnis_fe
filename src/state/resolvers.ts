@@ -1,7 +1,7 @@
 import {
   connectionResolvers,
   ConnectionQueryData,
-  DEFAULT_CONNECTION_STATUS
+  DEFAULT_CONNECTION_STATUS,
 } from "./connection.resolver";
 import { userLocalResolvers } from "./user.resolver";
 import { DEFAULT_UNSAVED_STATES } from "./unsaved-resolvers";
@@ -16,7 +16,7 @@ export interface CacheContext {
 export type LocalResolverFn<TVariables, TReturnedValue = void> = (
   root: object,
   variables: TVariables,
-  context: CacheContext
+  context: CacheContext,
 ) => TReturnedValue;
 
 export type LocalState = ConnectionQueryData & {
@@ -31,7 +31,7 @@ export function initState() {
       connected: DEFAULT_CONNECTION_STATUS,
       staleToken: null,
       loggedOutUser: null,
-      ...DEFAULT_UNSAVED_STATES
-    }
+      ...DEFAULT_UNSAVED_STATES,
+    },
   };
 }

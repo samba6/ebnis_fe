@@ -9,7 +9,7 @@ import { CreateExperienceMutationProps } from "../../graphql/create-experience.m
 import {
   CreateExperienceInput as FormValues,
   CreateFieldDef,
-  FieldType
+  FieldType,
 } from "../../graphql/apollo-types/globalTypes";
 import { CreateExperienceMutation } from "../../graphql/apollo-types/CreateExperienceMutation";
 import { CreateUnsavedExperienceMutationProps } from "./resolvers";
@@ -41,13 +41,13 @@ export const ValidationSchema = Yup.object<FormValues>().shape({
         type: Yup.mixed().oneOf(
           fieldTypeKeys,
           // eslint-disable-next-line
-          "${path} please select from dropdown"
-        )
-      })
+          "${path} please select from dropdown",
+        ),
+      }),
     )
     .required()
     .min(1)
-    .ensure()
+    .ensure(),
 });
 
 export const FIELD_TYPES: DropdownItemProps[] = [];
@@ -56,7 +56,7 @@ for (const k of fieldTypeKeys) {
   FIELD_TYPES.push({
     value: k,
     text: k,
-    key: k
+    key: k,
   });
 }
 
@@ -79,13 +79,13 @@ export const reducer: Reducer<State, Action> = (state, action) => {
         ...state,
         otherErrors: undefined,
         submittedFormErrors: undefined,
-        graphQlError: undefined
+        graphQlError: undefined,
       };
 
     case Action_Types.SET_FORM_ERROR:
       return {
         ...state,
-        submittedFormErrors: action.payload as FormikErrors<FormValues>
+        submittedFormErrors: action.payload as FormikErrors<FormValues>,
       };
 
     case Action_Types.SET_GRAPHQL_ERROR:
@@ -111,7 +111,7 @@ export enum Action_Types {
 
   SELECT_VALUES = "@components/new-experience/SELECT_VALUES",
 
-  CLEAR_ALL_ERRORS = "@components/new-experience/CLEAR_ALL_ERRORS"
+  CLEAR_ALL_ERRORS = "@components/new-experience/CLEAR_ALL_ERRORS",
 }
 
 export interface GraphQlError {

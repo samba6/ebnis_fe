@@ -15,7 +15,7 @@ import {
   reducer,
   DispatchType,
   ActionTypes,
-  parseApolloErrors
+  parseApolloErrors,
 } from "./utils";
 import { makeExperienceRoute } from "../../constants/experience-route";
 import { CreateEntryMutationFn } from "../../graphql/create-entry.mutation";
@@ -36,12 +36,12 @@ export function NewEntry(props: Props) {
     createEntry,
     createUnsavedEntry,
     client,
-    experience
+    experience,
   } = props;
 
   const [state, dispatch] = useReducer(reducer, {
     formObj: {},
-    fieldErrors: {}
+    fieldErrors: {},
   });
 
   const { fieldErrors, networkError } = state;
@@ -54,7 +54,7 @@ export function NewEntry(props: Props) {
 
       return setDocumentTitle;
     },
-    [pageTitle]
+    [pageTitle],
   );
 
   useEffect(
@@ -63,12 +63,12 @@ export function NewEntry(props: Props) {
         dispatch({
           type: ActionTypes.experienceToFormValues,
           payload: {
-            experience
-          }
+            experience,
+          },
         });
       }
     },
-    [experience]
+    [experience],
   );
 
   useEffect(() => {
@@ -81,7 +81,7 @@ export function NewEntry(props: Props) {
     const [id] = keyVal;
 
     scrollIntoView(makeScrollIntoViewId(id), {
-      behavior: "smooth"
+      behavior: "smooth",
     });
   }, [fieldErrors]);
 
@@ -102,7 +102,7 @@ export function NewEntry(props: Props) {
 
       fields.push({
         defId: id,
-        data: JSON.stringify({ [type.toLowerCase()]: toString(val) })
+        data: JSON.stringify({ [type.toLowerCase()]: toString(val) }),
       });
     }
 
@@ -112,18 +112,18 @@ export function NewEntry(props: Props) {
           variables: {
             input: {
               expId,
-              fields
-            }
+              fields,
+            },
           },
 
-          update: updateExperienceWithNewEntry(expId)
+          update: updateExperienceWithNewEntry(expId),
         });
       } else {
         await createUnsavedEntry({
           variables: {
             experience: (experience as unknown) as UnsavedExperience,
-            fields
-          }
+            fields,
+          },
         });
       }
 
@@ -133,7 +133,7 @@ export function NewEntry(props: Props) {
 
       dispatch({
         type: ActionTypes.setServerErrors,
-        payload: parsedErrors
+        payload: parsedErrors,
       });
 
       if (parsedErrors.networkError) {
@@ -156,14 +156,14 @@ export function NewEntry(props: Props) {
             style={{
               minHeight: "auto",
               position: "relative",
-              marginTop: 0
+              marginTop: 0,
             }}
             data-testid="network-error"
             error={true}
             onDismiss={function onDismiss() {
               dispatch({
                 type: ActionTypes.removeServerErrors,
-                payload: null
+                payload: null,
               });
             }}
           >
@@ -250,7 +250,7 @@ const FieldComponent = React.memo(
         {utils.component({
           formFieldName,
           dispatch,
-          value
+          value,
         })}
 
         {error && (
@@ -264,12 +264,12 @@ const FieldComponent = React.memo(
     const {
       field: { type: prevType },
       formValues: prevFormValues,
-      error: currentError
+      error: currentError,
     } = prevProps;
     const {
       field: { type: nextType },
       formValues: nextFormValues,
-      error: nextError
+      error: nextError,
     } = nextProps;
 
     const prevVal =
@@ -279,5 +279,5 @@ const FieldComponent = React.memo(
       nextFormValues[nextProps.index] || fieldTypeUtils[nextType].default;
 
     return prevVal === nextVal && currentError === nextError;
-  }
+  },
 );

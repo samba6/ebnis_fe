@@ -9,17 +9,17 @@ import {
   State,
   DidUploadSucceed,
   stateInitializerFn,
-  ExperienceObjectMap
+  ExperienceObjectMap,
 } from "./utils";
 import { Loading } from "../Loading";
 import {
   UnsavedExperiencesData,
-  SavedExperiencesWithUnsavedEntriesData
+  SavedExperiencesWithUnsavedEntriesData,
 } from "../../state/unsaved-resolvers";
 import { SidebarHeader } from "../SidebarHeader";
 import {
   ExperienceFragment_entries_edges_node,
-  ExperienceFragment_entries_edges_node_fields
+  ExperienceFragment_entries_edges_node_fields,
 } from "../../graphql/apollo-types/ExperienceFragment";
 import "./styles.scss";
 import { CSSTransition, TransitionGroup } from "react-transition-group";
@@ -44,11 +44,11 @@ const timeoutMs = 500;
 export function UploadUnsaved(props: Props) {
   const {
     unSavedExperiencesProps: {
-      loading: loadingUnsavedExperiences
+      loading: loadingUnsavedExperiences,
     } = {} as UnsavedExperiencesData,
 
     savedExperiencesWithUnsavedEntriesProps: {
-      loading: loadingSavedExperiencesWithUnsavedEntries
+      loading: loadingSavedExperiencesWithUnsavedEntries,
     } = {} as SavedExperiencesWithUnsavedEntriesData,
 
     uploadUnsavedExperiences,
@@ -57,7 +57,7 @@ export function UploadUnsaved(props: Props) {
 
     uploadAllUnsaveds,
     navigate,
-    client
+    client,
   } = props;
 
   const [state, dispatch] = useReducer(reducer, props, stateInitializerFn);
@@ -75,7 +75,7 @@ export function UploadUnsaved(props: Props) {
     savedExperiencesIdsToObjectMap,
     unsavedExperiencesIdsToObjectMap,
     allUnsavedEntriesSucceeded,
-    allUnsavedExperiencesSucceeded
+    allUnsavedExperiencesSucceeded,
   } = state;
 
   const loading =
@@ -93,13 +93,13 @@ export function UploadUnsaved(props: Props) {
         return;
       }
     });
-  }, []);
+  }, [unSavedCount, navigate, client]);
 
   const onUploadAllClicked = useCallback(
     async function onUploadAllClickedFn() {
       dispatch({
         type: ActionType.setUploading,
-        payload: true
+        payload: true,
       });
 
       try {
@@ -111,28 +111,28 @@ export function UploadUnsaved(props: Props) {
 
           variables = {
             unsavedExperiences: unsavedExperiencesToUploadData(
-              unsavedExperiencesIdsToObjectMap
+              unsavedExperiencesIdsToObjectMap,
             ),
 
             unsavedEntries: savedExperiencesToUploadData(
-              savedExperiencesIdsToObjectMap
-            )
+              savedExperiencesIdsToObjectMap,
+            ),
           };
         } else if (unsavedExperiencesLen !== 0) {
           uploadFunction = uploadUnsavedExperiences;
 
           variables = ({
             input: unsavedExperiencesToUploadData(
-              unsavedExperiencesIdsToObjectMap
-            )
+              unsavedExperiencesIdsToObjectMap,
+            ),
           } as unknown) as UploadAllUnsavedsMutationVariables;
         } else {
           uploadFunction = createEntries;
 
           variables = ({
             createEntries: savedExperiencesToUploadData(
-              savedExperiencesIdsToObjectMap
-            )
+              savedExperiencesIdsToObjectMap,
+            ),
           } as unknown) as UploadAllUnsavedsMutationVariables;
         }
 
@@ -141,18 +141,18 @@ export function UploadUnsaved(props: Props) {
 
           update: onUploadSuccessUpdate({
             savedExperiencesIdsToUnsavedEntriesMap: savedExperiencesIdsToObjectMap,
-            unsavedExperiences: (unsavedExperiences as unknown) as UnsavedExperience[]
-          })
+            unsavedExperiences: (unsavedExperiences as unknown) as UnsavedExperience[],
+          }),
         });
 
         dispatch({
           type: ActionType.uploadResult,
-          payload: result && result.data
+          payload: result && result.data,
         });
       } catch (error) {
         dispatch({
           type: ActionType.setServerError,
-          payload: error
+          payload: error,
         });
 
         scrollIntoView("js-scroll-into-view-server-error");
@@ -167,8 +167,8 @@ export function UploadUnsaved(props: Props) {
       savedExperiencesIdsToObjectMap,
       uploadUnsavedExperiences,
       createEntries,
-      unsavedExperiences
-    ]
+      unsavedExperiences,
+    ],
   );
 
   if (loading && unSavedCount === 0) {
@@ -258,7 +258,7 @@ export function UploadUnsaved(props: Props) {
 function ExperienceComponent({
   type,
   allUploadSucceeded,
-  experienceObjectMap
+  experienceObjectMap,
 }: {
   experienceObjectMap: ExperienceObjectMap;
   type: "unsaved" | "saved";
@@ -269,7 +269,7 @@ function ExperienceComponent({
     didUploadSucceed,
     unsavedEntries,
     entriesErrors,
-    experienceError
+    experienceError,
   } = experienceObjectMap;
 
   const hasError = entriesErrors || experienceError;
@@ -314,14 +314,14 @@ function ExperienceComponent({
         "data-testid": type + "-experience-title-" + experienceId,
         className: `experience-title--uploads experience-title${titleClassSuffix}`,
 
-        children: errorIcon
+        children: errorIcon,
       }}
       entryProps={{
-        "data-testid": `${type}-experience-${experienceId}-entry-`
+        "data-testid": `${type}-experience-${experienceId}-entry-`,
       }}
       entryNodes={unsavedEntries}
       menuOptions={{
-        newEntry: false
+        newEntry: false,
       }}
       doNotShowNoEntriesLink={unsavedEntries.length === 0}
     >
@@ -356,7 +356,7 @@ function ModalComponent({ open }: { open?: boolean }) {
 
 function TabsMenuComponent({
   dispatch,
-  state
+  state,
 }: {
   dispatch: DispatchType;
   state: State;
@@ -368,22 +368,28 @@ function TabsMenuComponent({
     tabs,
     unsavedExperiencesLen,
     uploadResult,
-    savedExperiencesLen
+    savedExperiencesLen,
   } = state;
 
-  const toggleTab1 = useCallback(function toggleTab1Fn() {
-    dispatch({
-      type: ActionType.toggleTab,
-      payload: 1
-    });
-  }, []);
+  const toggleTab1 = useCallback(
+    function toggleTab1Fn() {
+      dispatch({
+        type: ActionType.toggleTab,
+        payload: 1,
+      });
+    },
+    [dispatch],
+  );
 
-  const toggleTab2 = useCallback(function toggleTab2Fn() {
-    dispatch({
-      type: ActionType.toggleTab,
-      payload: 2
-    });
-  }, []);
+  const toggleTab2 = useCallback(
+    function toggleTab2Fn() {
+      dispatch({
+        type: ActionType.toggleTab,
+        payload: 2,
+      });
+    },
+    [dispatch],
+  );
 
   let unsavedIcon = null;
   let savedIcon = null;
@@ -425,7 +431,7 @@ function TabsMenuComponent({
       className={makeClassNames({
         "ui item menu": true,
         one: savedExperiencesLen === 0 || unsavedExperiencesLen === 0,
-        two: savedExperiencesLen !== 0 && unsavedExperiencesLen !== 0
+        two: savedExperiencesLen !== 0 && unsavedExperiencesLen !== 0,
       })}
       data-testid="tabs-menu"
     >
@@ -458,7 +464,7 @@ function TabsMenuComponent({
 
 function UploadAllButtonComponent({
   onUploadAllClicked,
-  allUploadSucceeded
+  allUploadSucceeded,
 }: DidUploadSucceed & {
   onUploadAllClicked: () => Promise<void>;
 }) {
@@ -494,14 +500,14 @@ function ServerError(props: {
         position: "relative",
         marginTop: 0,
         marginLeft: "20px",
-        marginRight: "20px"
+        marginRight: "20px",
       }}
       data-testid="server-error"
       error={true}
       onDismiss={function onDismiss() {
         dispatch({
           type: ActionType.removeServerErrors,
-          payload: null
+          payload: null,
         });
       }}
     >
@@ -509,7 +515,7 @@ function ServerError(props: {
         <span
           style={{
             position: "absolute",
-            top: "-60px"
+            top: "-60px",
           }}
           id="js-scroll-into-view-server-error"
         />
@@ -530,7 +536,7 @@ function toUploadableEntry(entry: ExperienceFragment_entries_edges_node) {
 
     return {
       data: field.data,
-      defId: field.defId
+      defId: field.defId,
     };
   });
 
@@ -539,12 +545,12 @@ function toUploadableEntry(entry: ExperienceFragment_entries_edges_node) {
     clientId: entry.clientId,
     fields,
     insertedAt: entry.insertedAt,
-    updatedAt: entry.updatedAt
+    updatedAt: entry.updatedAt,
   };
 }
 
 function unsavedExperiencesToUploadData(
-  experiencesIdsToObjectMap: ExperiencesIdsToObjectMap
+  experiencesIdsToObjectMap: ExperiencesIdsToObjectMap,
 ) {
   return Object.values(experiencesIdsToObjectMap).map(
     ({ experience, unsavedEntries }) => {
@@ -555,20 +561,20 @@ function unsavedExperiencesToUploadData(
         fieldDefs: experience.fieldDefs.map(fieldDefToUnsavedData),
         insertedAt: experience.insertedAt,
         updatedAt: experience.updatedAt,
-        description: experience.description
+        description: experience.description,
       };
-    }
+    },
   );
 }
 
 function savedExperiencesToUploadData(
-  experiencesIdsToObjectMap: ExperiencesIdsToObjectMap
+  experiencesIdsToObjectMap: ExperiencesIdsToObjectMap,
 ) {
   return Object.entries(experiencesIdsToObjectMap).reduce(
-    (acc, [id, { unsavedEntries }]) => {
+    (acc, [, { unsavedEntries }]) => {
       return acc.concat(unsavedEntries.map(toUploadableEntry));
     },
-    [] as CreateEntryInput[]
+    [] as CreateEntryInput[],
   );
 }
 
@@ -576,7 +582,7 @@ function setTabMenuClassNames(tabNumber: string | number, tabs: State["tabs"]) {
   return makeClassNames({
     item: true,
     active: tabs[tabNumber],
-    "tab-menu": true
+    "tab-menu": true,
   });
 }
 

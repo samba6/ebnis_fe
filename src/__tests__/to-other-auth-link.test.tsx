@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import React, { ComponentType } from "react";
 import "jest-dom/extend-expect";
 import "react-testing-library/cleanup-after-each";
@@ -5,7 +7,7 @@ import { render } from "react-testing-library";
 
 import {
   ToOtherAuthLink,
-  ToOtherAuthLinkProps
+  ToOtherAuthLinkProps,
 } from "../components/ToOtherAuthLink";
 import { LOGIN_URL, SIGN_UP_URL } from "../routes";
 
@@ -17,7 +19,7 @@ it("renders sign up link when in login route", () => {
    * Given we using the component while on login route
    */
   const { getByText, queryByText } = render(
-    <ToOtherAuthLinkP pathname={LOGIN_URL} />
+    <ToOtherAuthLinkP pathname={LOGIN_URL} />,
   );
 
   /**
@@ -36,7 +38,7 @@ it("renders login link when in sign up route", () => {
    * Given we using the component while on sign up route
    */
   const { getByText, queryByText } = render(
-    <ToOtherAuthLinkP pathname={SIGN_UP_URL} />
+    <ToOtherAuthLinkP pathname={SIGN_UP_URL} />,
   );
 
   /**
@@ -55,7 +57,7 @@ it("disables the component", () => {
    * Given we are using the component and wish to disable the component
    */
   const { getByText } = render(
-    <ToOtherAuthLinkP pathname={LOGIN_URL} isSubmitting={true} />
+    <ToOtherAuthLinkP pathname={LOGIN_URL} isSubmitting={true} />,
   );
 
   /**
@@ -69,7 +71,7 @@ it("does not disable the component", () => {
    * Given we are using the component and wish to not disable the component
    */
   const { getByText } = render(
-    <ToOtherAuthLinkP pathname={LOGIN_URL} isSubmitting={false} />
+    <ToOtherAuthLinkP pathname={LOGIN_URL} isSubmitting={false} />,
   );
 
   /**

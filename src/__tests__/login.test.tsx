@@ -1,4 +1,5 @@
-// tslint:disable:no-any
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import React, { ComponentType } from "react";
 import "jest-dom/extend-expect";
 import "react-testing-library/cleanup-after-each";
@@ -13,7 +14,7 @@ import { GraphQLError } from "graphql";
 jest.mock("../state/get-conn-status");
 jest.mock("../refresh-to-app");
 jest.mock("../components/SidebarHeader", () => ({
-  SidebarHeader: jest.fn(() => null)
+  SidebarHeader: jest.fn(() => null),
 }));
 jest.mock("../components/Login/scroll-to-top");
 
@@ -34,8 +35,8 @@ it("renders correctly and submits", async () => {
 
   mockLogin.mockResolvedValue({
     data: {
-      login: user
-    }
+      login: user,
+    },
   });
 
   /**
@@ -80,11 +81,11 @@ it("renders correctly and submits", async () => {
         variables: {
           login: {
             email: "me@me.com",
-            password: "awesome pass"
-          }
-        }
+            password: "awesome pass",
+          },
+        },
       }),
-    { interval: 1 }
+    { interval: 1 },
   );
 
   /**
@@ -134,7 +135,7 @@ it("renders error if socket not connected", async () => {
    * And page should be scrolled to top
    */
   expect(
-    (mockScrollToTop.mock.calls[0][0] as HTMLElement).dataset.testid
+    (mockScrollToTop.mock.calls[0][0] as HTMLElement).dataset.testid,
   ).toEqual("components-login-main");
 });
 
@@ -200,8 +201,8 @@ it("renders error if server returns field errors", async () => {
 
   mockLogin.mockRejectedValue(
     new ApolloError({
-      graphQLErrors: [new GraphQLError(`{"error":"Invalid email/password"}`)]
-    })
+      graphQLErrors: [new GraphQLError(`{"error":"Invalid email/password"}`)],
+    }),
   );
 
   /**
@@ -249,8 +250,8 @@ it("renders error if server returns network errors", async () => {
    */
   mockLogin.mockRejectedValue(
     new ApolloError({
-      networkError: new Error("network error")
-    })
+      networkError: new Error("network error"),
+    }),
   );
 
   /**
@@ -289,10 +290,10 @@ it("pre-fills form with user data", async () => {
     props: {
       localUser: {
         loggedOutUser: {
-          email: "me@me.com"
-        }
-      } as any
-    }
+          email: "me@me.com",
+        },
+      } as any,
+    },
   });
 
   /**
@@ -314,7 +315,7 @@ function fillForm(getByLabelText: any, getByText: any) {
 
 function makeComp({
   isConnected = true,
-  props = {}
+  props = {},
 }: { isConnected?: boolean; props?: Partial<Props> } = {}) {
   mockScrollToTop.mockReset();
 
@@ -332,6 +333,6 @@ function makeComp({
     ),
     ...rest,
     mockLogin,
-    mockUpdateLocalUser
+    mockUpdateLocalUser,
   };
 }

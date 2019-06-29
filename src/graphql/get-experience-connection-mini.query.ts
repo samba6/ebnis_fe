@@ -3,11 +3,11 @@ import { DataValue } from "react-apollo";
 
 import {
   GetExperienceConnectionMini,
-  GetExperienceConnectionMiniVariables
+  GetExperienceConnectionMiniVariables,
 } from "./apollo-types/GetExperienceConnectionMini";
 import {
   EXPERIENCE_MINI_FRAGMENT,
-  EXPERIENCE_CONNECTION_PRE_FETCH_FRAGMENT
+  EXPERIENCE_CONNECTION_PRE_FETCH_FRAGMENT,
 } from "./experience.fragment";
 
 export const GET_EXPERIENCES_MINI_QUERY = gql`

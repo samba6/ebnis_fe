@@ -3,7 +3,7 @@ import { MutationFn } from "react-apollo";
 
 import {
   CreateExperienceMutation,
-  CreateExperienceMutationVariables
+  CreateExperienceMutationVariables,
 } from "./apollo-types/CreateExperienceMutation";
 import { EXPERIENCE_FRAGMENT } from "./experience.fragment";
 

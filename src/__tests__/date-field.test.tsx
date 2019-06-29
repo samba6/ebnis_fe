@@ -4,7 +4,7 @@ import "react-testing-library/cleanup-after-each";
 import {
   render,
   getByText as getDescendantByText,
-  fireEvent
+  fireEvent,
 } from "react-testing-library";
 import formatDate from "date-fns/format";
 import addDays from "date-fns/add_days";
@@ -29,7 +29,7 @@ it("renders ", () => {
    * Given that we want the component to render today's date
    */
   const { getByTestId } = render(
-    <DateFieldP value={currentDate} setValue={mockSetValue} name="f" />
+    <DateFieldP value={currentDate} setValue={mockSetValue} name="f" />,
   );
 
   /**
@@ -39,17 +39,17 @@ it("renders ", () => {
   const $day = getByTestId("f.day");
 
   expect(($day.querySelector(".active") as HTMLDivElement).innerHTML).toMatch(
-    d
+    d,
   );
 
   const $month = getByTestId("f.month");
   expect(($month.querySelector(".active") as HTMLDivElement).innerHTML).toMatch(
-    m
+    m,
   );
 
   const $year = getByTestId("f.year");
   expect(($year.querySelector(".active") as HTMLDivElement).innerHTML).toMatch(
-    y
+    y,
   );
 
   /**
@@ -65,21 +65,21 @@ it("renders ", () => {
    * Then the new date should have been set
    */
   expect(($year.querySelector(".active") as HTMLDivElement).innerHTML).toMatch(
-    y1
+    y1,
   );
   const [c01, c02] = mockSetValue.mock.calls[0];
   expect(c01).toEqual("f");
   expect(c02.getFullYear()).toBe(currentDate.getFullYear() - 2); // 2 years ago
 
   expect(($month.querySelector(".active") as HTMLDivElement).innerHTML).toMatch(
-    m1
+    m1,
   );
   const [c11, c12] = mockSetValue.mock.calls[1];
   expect(c11).toEqual("f");
   expect(c12.getMonth()).toBe(currentDate.getMonth() - 3); // 3 months ago
 
   expect(($day.querySelector(".active") as HTMLDivElement).innerHTML).toMatch(
-    d1
+    d1,
   );
   const [c21, c22] = mockSetValue.mock.calls[2];
   expect(c21).toEqual("f");

@@ -1,4 +1,5 @@
-// tslint:disable: no-any
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import React, { ComponentType } from "react";
 import "jest-dom/extend-expect";
 import "react-testing-library/cleanup-after-each";
@@ -10,7 +11,7 @@ import { RouteComponentProps } from "@reach/router";
 import {
   EXPERIENCES_URL,
   EXPERIENCE_DEFINITION_URL,
-  LOGIN_URL
+  LOGIN_URL,
 } from "../routes";
 
 const SidebarP = Sidebar as ComponentType<Partial<Props>>;
@@ -99,8 +100,8 @@ it("renders my experiences link when not in my experiences route", () => {
    */
   const { ui, mockNavigate, mockToggleShowSidebar } = setup({
     routeProps: {
-      path: EXPERIENCES_URL + "some string"
-    }
+      path: EXPERIENCES_URL + "some string",
+    },
   });
 
   const { getByText } = render(ui);
@@ -133,8 +134,8 @@ it("renders 'New Experience Definition' link when not in 'New Experience Definit
    */
   const { ui, mockNavigate, mockToggleShowSidebar } = setup({
     routeProps: {
-      path: EXPERIENCE_DEFINITION_URL + "some string"
-    }
+      path: EXPERIENCE_DEFINITION_URL + "some string",
+    },
   });
 
   const { getByText } = render(ui);
@@ -167,7 +168,7 @@ it("logs out user", async () => {
    */
 
   const { ui, mockUpdateLocalUser, mockNavigate } = setup({
-    props: { user: {} as any }
+    props: { user: {} as any },
   });
   /**
    * When we are interacting with the component
@@ -186,7 +187,7 @@ it("logs out user", async () => {
 
   await wait(() => {
     expect((mockUpdateLocalUser.mock.calls[0][0] as any).variables.user).toBe(
-      null
+      null,
     );
   });
 
@@ -202,7 +203,7 @@ it("does not render logout button if we are not logged in", () => {
    */
 
   const { ui } = setup({
-    props: { user: null as any }
+    props: { user: null as any },
   });
   /**
    * When we are interacting with the component
@@ -218,7 +219,7 @@ it("does not render logout button if we are not logged in", () => {
 
 function setup({
   props = {},
-  routeProps = {}
+  routeProps = {},
 }: {
   props?: Partial<Props>;
   routeProps?: Partial<RouteComponentProps>;
@@ -229,13 +230,13 @@ function setup({
   const { Ui, ...rest } = renderWithRouter(SidebarP, routeProps, {
     toggleShowSidebar: mockToggleShowSidebar,
     updateLocalUser: mockUpdateLocalUser,
-    ...props
+    ...props,
   });
 
   return {
     ui: <Ui />,
     ...rest,
     mockToggleShowSidebar,
-    mockUpdateLocalUser
+    mockUpdateLocalUser,
   };
 }

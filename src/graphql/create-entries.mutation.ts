@@ -4,7 +4,7 @@ import { MutationFn } from "react-apollo";
 import { CREATE_ENTRIES_RESPONSE_FRAGMENT } from "./create-entries-response.fragment";
 import {
   CreateEntriesMutation,
-  CreateEntriesMutationVariables
+  CreateEntriesMutationVariables,
 } from "./apollo-types/CreateEntriesMutation";
 
 export const CREATE_ENTRIES_MUTATION = gql`

@@ -7,7 +7,7 @@ import {
   reducer,
   initialState,
   DispatchType,
-  ActionTypes
+  ActionTypes,
 } from "./utils";
 import { EXPERIENCE_DEFINITION_URL } from "../../routes";
 import { makeExperienceRoute } from "../../constants/experience-route";
@@ -18,7 +18,7 @@ import { MY_EXPERIENCES_TITLE } from "../../constants/my-experiences-title";
 import { Link } from "gatsby";
 import {
   UnsavedExperience,
-  UnsavedExperiencesQueryData
+  UnsavedExperiencesQueryData,
 } from "../ExperienceDefinition/resolver-utils";
 import { preFetchExperiences } from "./pre-fetch-experiences";
 import { GetExperienceConnectionMiniData } from "../../graphql/get-experience-connection-mini.query";
@@ -26,22 +26,22 @@ import { ExperienceMiniFragment } from "../../graphql/apollo-types/ExperienceMin
 import {
   ExperienceConnectionFragment,
   ExperienceConnectionFragment_edges,
-  ExperienceConnectionFragment_edges_node
+  ExperienceConnectionFragment_edges_node,
 } from "../../graphql/apollo-types/ExperienceConnectionFragment";
 
 export const MyExperiences = (props: Props) => {
   const {
     getExperiencesMiniProps: {
       loading: loadingExperiences,
-      getExperiences
+      getExperiences,
     } = {} as GetExperienceConnectionMiniData,
 
     unsavedExperiencesProps: {
       loading: loadingUnsavedExperiences,
-      unsavedExperiences
+      unsavedExperiences,
     } = {} as UnsavedExperiencesQueryData,
 
-    client
+    client,
   } = props;
 
   const loading = loadingExperiences || loadingUnsavedExperiences;
@@ -68,7 +68,7 @@ export const MyExperiences = (props: Props) => {
     }
 
     const { idToExperienceMap, ids } = mapExperiencesToIds(
-      getExperiences as ExperienceConnectionFragment
+      getExperiences as ExperienceConnectionFragment,
     );
 
     if (ids.length === 0) {
@@ -79,7 +79,7 @@ export const MyExperiences = (props: Props) => {
       preFetchExperiences({
         ids,
         client,
-        idToExperienceMap
+        idToExperienceMap,
       });
     }, 1000);
 
@@ -93,7 +93,7 @@ export const MyExperiences = (props: Props) => {
 
     return unsavedExperiences.map((unsavedExperience: UnsavedExperience) => {
       return ({
-        node: unsavedExperience
+        node: unsavedExperience,
       } as unknown) as ExperienceConnectionFragment_edges;
     });
   }, [unsavedExperiences]);
@@ -104,7 +104,7 @@ export const MyExperiences = (props: Props) => {
     }
 
     const edges = (getExperiences.edges || []).concat(
-      unsavedExperiencesAsEdges || []
+      unsavedExperiencesAsEdges || [],
     );
     return edges;
   }, [getExperiences, unsavedExperiences]);
@@ -139,7 +139,7 @@ export const MyExperiences = (props: Props) => {
                 {...rest}
               />
             );
-          }
+          },
         )}
       </div>
     );
@@ -185,7 +185,7 @@ const Experience = React.memo(
     dispatch,
     title,
     description,
-    id
+    id,
   }: ExperienceProps) {
     return (
       <div className="exp-container">
@@ -213,7 +213,7 @@ const Experience = React.memo(
 
   function ExperienceDiff(prevProps, currProps) {
     return prevProps.showingDescription === currProps.showingDescription;
-  }
+  },
 );
 
 const ShowDescriptionToggle = React.memo(
@@ -221,7 +221,7 @@ const ShowDescriptionToggle = React.memo(
     description,
     showingDescription,
     id,
-    dispatch
+    dispatch,
   }: {
     description: string | null;
     showingDescription: boolean;
@@ -240,8 +240,8 @@ const ShowDescriptionToggle = React.memo(
       onClick: () =>
         dispatch({
           type: ActionTypes.setToggleDescription,
-          payload: id
-        })
+          payload: id,
+        }),
     };
 
     return showingDescription ? (
@@ -253,11 +253,11 @@ const ShowDescriptionToggle = React.memo(
 
   function ShowDescriptionToggleDiff(oldProps, newProps) {
     return oldProps.showingDescription === newProps.showingDescription;
-  }
+  },
 );
 
 function mapExperiencesToIds(
-  experienceConnection: ExperienceConnectionFragment
+  experienceConnection: ExperienceConnectionFragment,
 ) {
   const edges = experienceConnection.edges as ExperienceConnectionFragment_edges[];
   const ids: string[] = [];
@@ -271,7 +271,7 @@ function mapExperiencesToIds(
       ids.push(id);
       return acc;
     },
-    {} as { [k: string]: ExperienceMiniFragment }
+    {} as { [k: string]: ExperienceMiniFragment },
   );
 
   return { idToExperienceMap, ids };

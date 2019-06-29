@@ -1,4 +1,5 @@
-// tslint:disable: no-any
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import React, { ComponentType } from "react";
 import "jest-dom/extend-expect";
 import "react-testing-library/cleanup-after-each";
@@ -10,7 +11,7 @@ jest.mock("../state/tokens");
 jest.mock("../state/unsaved-resolvers");
 jest.mock("../state/get-conn-status");
 jest.mock("../components/Loading", () => ({
-  Loading: jest.fn(() => <div data-testid="loading" />)
+  Loading: jest.fn(() => <div data-testid="loading" />),
 }));
 
 let layoutContextValue = (null as unknown) as ILayoutContextContext;
@@ -20,7 +21,7 @@ jest.mock("../components/Layout/utils", () => ({
     layoutContextValue = props.value;
 
     return <>{children}</>;
-  })
+  }),
 }));
 
 import { getUser } from "../state/tokens";
@@ -160,7 +161,7 @@ it("queries unsaved when connection returns and we are reconnecting", async done
    */
   emitData({
     type: EmitAction.connectionChanged,
-    data: { isConnected: true, reconnected: "true" } as any
+    data: { isConnected: true, reconnected: "true" } as any,
   });
 
   /**
@@ -193,7 +194,7 @@ it("does not query unsaved when connection returns and we are not reconnecting",
    */
   emitData({
     type: EmitAction.connectionChanged,
-    data: { isConnected: true, reconnected: "false" } as any
+    data: { isConnected: true, reconnected: "false" } as any,
   });
 
   /**
@@ -220,7 +221,7 @@ it("resets unsaved count when we lose connection", async done => {
 
   emitData({
     type: EmitAction.connectionChanged,
-    data: { isConnected: false } as any
+    data: { isConnected: false } as any,
   });
 
   expect(layoutContextValue.unsavedCount).toBe(0);
@@ -232,7 +233,7 @@ it("resets unsaved count when we lose connection", async done => {
 
 function makeComp({
   context,
-  testId = browserRenderedTestId
+  testId = browserRenderedTestId,
 }: { context?: {}; testId?: string } = {}) {
   layoutContextValue = (null as unknown) as ILayoutContextContext;
   mockGetUnsavedCount.mockReset();
@@ -257,6 +258,6 @@ function makeComp({
         </LayoutP>
       </EbnisAppProvider>
     ),
-    mockPersistCache
+    mockPersistCache,
   };
 }

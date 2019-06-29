@@ -9,7 +9,7 @@ export const DEFAULT_CONNECTION_STATUS: ConnectionStatus = {
   id: CONNECTION_STATUS_ID,
   __typename: "ConnectionStatus" as "ConnectionStatus",
   isConnected: false,
-  reconnected: "false"
+  reconnected: "false",
 };
 
 export interface ConnectionStatus {
@@ -67,7 +67,7 @@ export const connectionGql = graphql<
     }
 
     return data.connected;
-  }
+  },
 });
 
 export const CONNECTION_SUBSCRIPTION = gql`
@@ -85,24 +85,24 @@ const connectionMutationResolver: LocalResolverFn<
 > = (_, variables, { cache, getCacheKey }) => {
   const id = getCacheKey({
     __typename: "ConnectionStatus",
-    id: CONNECTION_STATUS_ID
+    id: CONNECTION_STATUS_ID,
   });
 
   const data = cache.readFragment<ConnectionStatus>({
     fragment: CONNECTION_FRAGMENT,
-    id
+    id,
   }) as ConnectionStatus;
 
   const connected = { ...data, ...variables };
 
   cache.writeData({
     id,
-    data: connected
+    data: connected,
   });
 
   emitData({
     type: EmitAction.connectionChanged,
-    data: connected
+    data: connected,
   });
 
   return connected;
@@ -110,8 +110,8 @@ const connectionMutationResolver: LocalResolverFn<
 
 export const connectionResolvers = {
   Mutation: {
-    connected: connectionMutationResolver
+    connected: connectionMutationResolver,
   },
 
-  Query: {}
+  Query: {},
 };

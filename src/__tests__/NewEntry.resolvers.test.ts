@@ -1,4 +1,5 @@
-// tslint:disable: no-any
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { newEntryResolvers } from "../components/NewEntry/resolvers";
 import { CacheContext } from "../state/resolvers";
 import { UnsavedExperience } from "../components/ExperienceDefinition/resolver-utils";
@@ -23,22 +24,22 @@ it("updates unsaved experience successfully", async done => {
   const experience = {
     id: experienceId,
     clientId: "exp-1",
-    entries: {}
+    entries: {},
   } as UnsavedExperience;
 
   const field = {
     data: "2",
-    defId: "3"
+    defId: "3",
   };
 
   const {
     entry,
     experience: updatedExperience,
-    savedExperiencesWithUnsavedEntries
+    savedExperiencesWithUnsavedEntries,
   } = await createUnsavedEntry(
     {},
     { experience, fields: [field] },
-    mockContext
+    mockContext,
   );
 
   expect(entry.id).toContain(UNSAVED_ID_PREFIX);
@@ -54,7 +55,7 @@ it("inserts updated saved experience into the cache", async done => {
   const { mockContext, mockUpdateSavedExperience, mockReadQuery } = setUp();
 
   const experience = {
-    id: "1"
+    id: "1",
   } as UnsavedExperience;
 
   mockUpdateSavedExperience.mockResolvedValue(experience);
@@ -63,7 +64,7 @@ it("inserts updated saved experience into the cache", async done => {
   const { savedExperiencesWithUnsavedEntries } = await createUnsavedEntry(
     {},
     { experience, fields: [] },
-    mockContext
+    mockContext,
   );
 
   expect(mockUpdateSavedExperience).toHaveBeenCalled();
@@ -76,33 +77,33 @@ it("updates updated saved experience into the cache", async done => {
   const { mockContext, mockUpdateSavedExperience, mockReadQuery } = setUp();
 
   const experience1 = {
-    id: "1"
+    id: "1",
   } as UnsavedExperience;
 
   const experience2 = {
-    id: "2"
+    id: "2",
   } as UnsavedExperience;
 
   const experience3 = {
-    id: "3"
+    id: "3",
   } as UnsavedExperience;
 
   const experience2Updated = { ...experience2, entries: {} };
 
   mockUpdateSavedExperience.mockResolvedValue(experience2Updated);
   mockReadQuery.mockReturnValue({
-    savedExperiencesWithUnsavedEntries: [experience1, experience2, experience3]
+    savedExperiencesWithUnsavedEntries: [experience1, experience2, experience3],
   });
 
   const { savedExperiencesWithUnsavedEntries } = await createUnsavedEntry(
     {},
     { experience: experience2, fields: [] },
-    mockContext
+    mockContext,
   );
 
   expect(mockUpdateSavedExperience).toHaveBeenCalled();
   expect((savedExperiencesWithUnsavedEntries as any)[1]).toEqual(
-    experience2Updated
+    experience2Updated,
   );
 
   done();
@@ -121,13 +122,13 @@ function setUp() {
 
   const mockContext = {
     cache: cache as any,
-    getCacheKey: mockGetCacheKey as any
+    getCacheKey: mockGetCacheKey as any,
   } as CacheContext;
 
   return {
     mockContext,
     mockGetCacheKey,
     mockUpdateSavedExperience,
-    ...cacheProps
+    ...cacheProps,
   };
 }

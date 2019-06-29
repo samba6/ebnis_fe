@@ -9,7 +9,7 @@ import {
   FieldComponentProps,
   ActionTypes,
   DispatchType,
-  FormObjVal
+  FormObjVal,
 } from "./utils";
 
 export const fieldTypeUtils = {
@@ -24,7 +24,7 @@ export const fieldTypeUtils = {
           onChange={(e, { value: inputVal }) => {
             dispatch({
               type: ActionTypes.setFormObjField,
-              payload: { formFieldName: name, value: inputVal }
+              payload: { formFieldName: name, value: inputVal },
             });
           }}
         />
@@ -35,7 +35,7 @@ export const fieldTypeUtils = {
 
     toString(text: string) {
       return text;
-    }
+    },
   },
 
   [FieldType.MULTI_LINE_TEXT]: {
@@ -48,7 +48,7 @@ export const fieldTypeUtils = {
           onChange={(e, { value: inputVal }) => {
             dispatch({
               type: ActionTypes.setFormObjField,
-              payload: { formFieldName: name, value: inputVal as string }
+              payload: { formFieldName: name, value: inputVal as string },
             });
           }}
         />
@@ -59,7 +59,7 @@ export const fieldTypeUtils = {
 
     toString(text: string) {
       return text;
-    }
+    },
   },
 
   [FieldType.DATE]: {
@@ -84,7 +84,7 @@ export const fieldTypeUtils = {
 
     toString(date: Date) {
       return dateFnFormat(date, "YYYY-MM-DD");
-    }
+    },
   },
 
   [FieldType.DATETIME]: {
@@ -109,7 +109,7 @@ export const fieldTypeUtils = {
 
     toString(date: Date) {
       return date.toJSON();
-    }
+    },
   },
 
   [FieldType.DECIMAL]: {
@@ -124,7 +124,7 @@ export const fieldTypeUtils = {
           onChange={(e, { value: inputVal }) => {
             dispatch({
               type: ActionTypes.setFormObjField,
-              payload: { formFieldName: name, value: Number(inputVal) }
+              payload: { formFieldName: name, value: Number(inputVal) },
             });
           }}
         />
@@ -135,7 +135,7 @@ export const fieldTypeUtils = {
 
     toString(val: number) {
       return (val || 0) + "";
-    }
+    },
   },
 
   [FieldType.INTEGER]: {
@@ -150,7 +150,7 @@ export const fieldTypeUtils = {
           onChange={(e, { value: inputVal }) => {
             dispatch({
               type: ActionTypes.setFormObjField,
-              payload: { formFieldName: name, value: Number(inputVal) }
+              payload: { formFieldName: name, value: Number(inputVal) },
             });
           }}
         />
@@ -161,15 +161,15 @@ export const fieldTypeUtils = {
 
     toString(val: number) {
       return (val || 0) + "";
-    }
-  }
+    },
+  },
 };
 
 function makeSetValueFunc(dispatch: DispatchType) {
   return function SetValue(fieldName: string, value: FormObjVal) {
     dispatch({
       type: ActionTypes.setFormObjField,
-      payload: { formFieldName: fieldName, value }
+      payload: { formFieldName: fieldName, value },
     });
   };
 }

@@ -16,7 +16,7 @@ export function FormCtrlError(props: Props) {
     <div
       className={makeClassName({
         "components-form-control-error": true,
-        [className]: !!className
+        [className]: !!className,
       })}
       data-testid={props["data-testid"] || `form-control-error-${id}`}
     >

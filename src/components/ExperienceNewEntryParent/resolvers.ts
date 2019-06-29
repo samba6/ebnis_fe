@@ -3,7 +3,7 @@ import gql from "graphql-tag";
 import {
   UNSAVED_EXPERIENCE_FRAGMENT,
   UNSAVED_EXPERIENCE_TYPENAME,
-  UNSAVED_EXPERIENCE_FRAGMENT_NAME
+  UNSAVED_EXPERIENCE_FRAGMENT_NAME,
 } from "../ExperienceDefinition/resolver-utils";
 import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragment";
 import { DataValue } from "react-apollo";
@@ -16,13 +16,13 @@ export const unsavedExperienceResolver: LocalResolverFn<
 > = (root, { id }, { cache, getCacheKey }) => {
   const cacheId = getCacheKey({
     __typename: UNSAVED_EXPERIENCE_TYPENAME,
-    id
+    id,
   });
 
   const experience = cache.readFragment<UnsavedExperience>({
     fragment: UNSAVED_EXPERIENCE_FRAGMENT,
     id: cacheId,
-    fragmentName: UNSAVED_EXPERIENCE_FRAGMENT_NAME
+    fragmentName: UNSAVED_EXPERIENCE_FRAGMENT_NAME,
   });
 
   if (experience) {
@@ -30,7 +30,7 @@ export const unsavedExperienceResolver: LocalResolverFn<
   }
 
   throw new ApolloError({
-    graphQLErrors: [new GraphQLError(`Unknown unsaved experience ID: ${id}`)]
+    graphQLErrors: [new GraphQLError(`Unknown unsaved experience ID: ${id}`)],
   });
 };
 
@@ -77,6 +77,6 @@ export const experienceNewEntryParentResolvers = {
   Mutation: {},
 
   Query: {
-    unsavedExperience: unsavedExperienceResolver
-  }
+    unsavedExperience: unsavedExperienceResolver,
+  },
 };

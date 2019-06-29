@@ -8,6 +8,6 @@ export interface ILayoutContextContext {
 }
 
 export const LayoutContext = createContext<ILayoutContextContext>({
-  unsavedCount: 0
+  unsavedCount: 0,
 });
 export const LayoutProvider = LayoutContext.Provider;

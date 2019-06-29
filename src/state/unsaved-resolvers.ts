@@ -1,18 +1,18 @@
 import { InMemoryCache } from "apollo-cache-inmemory";
 import {
   UNSAVED_EXPERIENCES_QUERY,
-  UnsavedExperiencesQueryReturned
+  UnsavedExperiencesQueryReturned,
 } from "../components/ExperienceDefinition/resolver-utils";
 import { graphql, DataValue } from "react-apollo";
 import {
   ExperienceFragment,
   ExperienceFragment_entries_edges,
-  ExperienceFragment_entries_edges_node
+  ExperienceFragment_entries_edges_node,
 } from "../graphql/apollo-types/ExperienceFragment";
 import { isUnsavedId } from "../constants";
 import {
   getUnsavedExperiencesFromCache,
-  getSavedExperiencesWithUnsavedEntriesFromCache
+  getSavedExperiencesWithUnsavedEntriesFromCache,
 } from "./resolvers-utils";
 import { EXPERIENCE_FRAGMENT } from "../graphql/experience.fragment";
 import gql from "graphql-tag";
@@ -33,7 +33,7 @@ export interface SavedExperiencesWithUnsavedEntriesQueryReturned {
 
 export async function getUnsavedCount(cache: InMemoryCache) {
   const unsavedEntriesFromSavedExperiencesCount = getSavedExperiencesWithUnsavedEntriesFromCache(
-    cache
+    cache,
   ).reduce((acc, experience) => {
     entryNodesFromExperience(experience).forEach(({ id }) => {
       if (isUnsavedId(id)) {
@@ -67,8 +67,8 @@ export const savedExperiencesWithUnSavedEntriesGql = graphql<
 >(GET_SAVED_EXPERIENCES_UNSAVED_ENTRIES_QUERY, {
   props: ({ data }) =>
     data && {
-      savedExperiencesWithUnsavedEntriesProps: data
-    }
+      savedExperiencesWithUnsavedEntriesProps: data,
+    },
 });
 
 export type UnsavedExperiencesData = DataValue<UnsavedExperiencesQueryReturned>;
@@ -86,19 +86,19 @@ export const unSavedExperiencesGql = graphql<
 >(UNSAVED_EXPERIENCES_QUERY, {
   props: ({ data }) =>
     data && {
-      unSavedExperiencesProps: data
-    }
+      unSavedExperiencesProps: data,
+    },
 });
 
 export function entryNodesFromExperience({ entries }: ExperienceFragment) {
   return ((entries.edges as ExperienceFragment_entries_edges[]) || []).map(
     (edge: ExperienceFragment_entries_edges) => {
       return edge.node as ExperienceFragment_entries_edges_node;
-    }
+    },
   );
 }
 
 export const DEFAULT_UNSAVED_STATES = {
   unsavedExperiences: [],
-  savedExperiencesWithUnsavedEntries: []
+  savedExperiencesWithUnsavedEntries: [],
 };

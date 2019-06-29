@@ -2,29 +2,29 @@ import { UploadUnsaved as Comp } from "./component";
 import { compose, graphql, withApollo } from "react-apollo";
 import {
   savedExperiencesWithUnSavedEntriesGql,
-  unSavedExperiencesGql
+  unSavedExperiencesGql,
 } from "../../state/unsaved-resolvers";
 import {
   UPLOAD_UNSAVED_EXPERIENCES_MUTATION,
   UploadUnsavedExperiencesMutationProps,
   UPLOAD_ALL_UNSAVEDS_MUTATION,
-  UploadAllUnsavedsMutationProps
+  UploadAllUnsavedsMutationProps,
 } from "../../graphql/upload-unsaveds.mutation";
 import {
   UploadUnsavedExperiencesMutation,
-  UploadUnsavedExperiencesMutationVariables
+  UploadUnsavedExperiencesMutationVariables,
 } from "../../graphql/apollo-types/UploadUnsavedExperiencesMutation";
 import {
   CREATE_ENTRIES_MUTATION,
-  CreateEntriesMutationGqlProps
+  CreateEntriesMutationGqlProps,
 } from "../../graphql/create-entries.mutation";
 import {
   CreateEntriesMutation,
-  CreateEntriesMutationVariables
+  CreateEntriesMutationVariables,
 } from "../../graphql/apollo-types/CreateEntriesMutation";
 import {
   UploadAllUnsavedsMutation,
-  UploadAllUnsavedsMutationVariables
+  UploadAllUnsavedsMutationVariables,
 } from "../../graphql/apollo-types/UploadAllUnsavedsMutation";
 
 const uploadUnsavedExperiencesGql = graphql<
@@ -35,8 +35,8 @@ const uploadUnsavedExperiencesGql = graphql<
 >(UPLOAD_UNSAVED_EXPERIENCES_MUTATION, {
   props: ({ mutate }) =>
     mutate && {
-      uploadUnsavedExperiences: mutate
-    }
+      uploadUnsavedExperiences: mutate,
+    },
 });
 
 const uploadSavedExperiencesWithUnsavedEntriesGql = graphql<
@@ -47,8 +47,8 @@ const uploadSavedExperiencesWithUnsavedEntriesGql = graphql<
 >(CREATE_ENTRIES_MUTATION, {
   props: ({ mutate }) =>
     mutate && {
-      createEntries: mutate
-    }
+      createEntries: mutate,
+    },
 });
 
 const uploadAllUnsavedsGql = graphql<
@@ -59,8 +59,8 @@ const uploadAllUnsavedsGql = graphql<
 >(UPLOAD_ALL_UNSAVEDS_MUTATION, {
   props: ({ mutate }) =>
     mutate && {
-      uploadAllUnsaveds: mutate
-    }
+      uploadAllUnsaveds: mutate,
+    },
 });
 
 export const UploadUnsaved = compose(
@@ -69,7 +69,7 @@ export const UploadUnsaved = compose(
   uploadUnsavedExperiencesGql,
   uploadSavedExperiencesWithUnsavedEntriesGql,
   uploadAllUnsavedsGql,
-  withApollo
+  withApollo,
 )(Comp);
 
 export default UploadUnsaved;

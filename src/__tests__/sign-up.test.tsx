@@ -1,4 +1,5 @@
-// tslint:disable:no-any
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import React, { ComponentType } from "react";
 import "jest-dom/extend-expect";
 import "react-testing-library/cleanup-after-each";
@@ -12,7 +13,7 @@ jest.mock("../state/get-conn-status");
 jest.mock("../refresh-to-app");
 jest.mock("../components/SignUp/scrollToTop");
 jest.mock("../components/SidebarHeader", () => ({
-  SidebarHeader: jest.fn(() => null)
+  SidebarHeader: jest.fn(() => null),
 }));
 
 import { getConnStatus } from "../state/get-conn-status";
@@ -34,8 +35,8 @@ it("renders correctly and submits", async () => {
 
   mockRegUser.mockResolvedValue({
     data: {
-      registration: user
-    }
+      registration: user,
+    },
   });
 
   /**
@@ -87,11 +88,11 @@ it("renders correctly and submits", async () => {
             email: "me@me.com",
             password: "awesome pass",
             passwordConfirmation: "awesome pass",
-            source: "password"
-          }
-        }
+            source: "password",
+          },
+        },
       }),
-    { interval: 1 }
+    { interval: 1 },
   );
 
   /**
@@ -136,7 +137,7 @@ it("renders error if socket not connected", async () => {
    * And page should be automatically scrolled to the top of page
    */
   expect((mockScrollToTop.mock.calls[0][0] as any).current.dataset.testid).toBe(
-    "components-signup-main"
+    "components-signup-main",
   );
 });
 
@@ -154,7 +155,7 @@ it("renders error if password and password confirm are not same", async () => {
   const passwordConfirmErrorRegexp = /Passwords do not match/i;
   expect(queryByText(passwordConfirmErrorRegexp)).not.toBeInTheDocument();
   const $passwordConfirmParent = getByLabelText("Password Confirm").closest(
-    ".form-field"
+    ".form-field",
   ) as HTMLElement;
   expect($passwordConfirmParent.classList).not.toContain("error");
 
@@ -176,7 +177,7 @@ it("renders error if password and password confirm are not same", async () => {
    * Then we should see error UI
    */
   const $error = await waitForElement(() =>
-    getByText(passwordConfirmErrorRegexp)
+    getByText(passwordConfirmErrorRegexp),
   );
   expect($error).toBeInTheDocument();
   expect($passwordConfirmParent.classList).toContain("error");
@@ -195,8 +196,8 @@ it("renders errors if server returns network errors", async () => {
    */
   mockRegUser.mockRejectedValue(
     new ApolloError({
-      networkError: new Error("network error")
-    })
+      networkError: new Error("network error"),
+    }),
   );
 
   /**
@@ -235,9 +236,9 @@ it("renders errors if server returns field errors", async () => {
   mockRegUser.mockRejectedValue(
     new ApolloError({
       graphQLErrors: [
-        new GraphQLError(`{"errors":{"email":"has already been taken"}}`)
-      ]
-    })
+        new GraphQLError(`{"errors":{"email":"has already been taken"}}`),
+      ],
+    }),
   );
 
   /**
@@ -248,7 +249,7 @@ it("renders errors if server returns field errors", async () => {
     getByLabelText,
     getByTestId,
     queryByTestId,
-    queryByText
+    queryByText,
   } = render(ui);
 
   /**
@@ -261,7 +262,7 @@ it("renders errors if server returns field errors", async () => {
    */
   expect(queryByText("has already been taken")).not.toBeInTheDocument();
   const $emailParent = getByLabelText(/email/i).closest(
-    ".form-field"
+    ".form-field",
   ) as HTMLElement;
   expect($emailParent.classList).not.toContain("error");
 
@@ -327,6 +328,6 @@ function makeComp(isServerConnected: boolean = true) {
     ui: <Ui regUser={mockRegUser} updateLocalUser={mockUpdateLocalUser} />,
     mockRegUser,
     mockUpdateLocalUser,
-    ...rest
+    ...rest,
   };
 }

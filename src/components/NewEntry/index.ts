@@ -4,11 +4,11 @@ import { NewEntry as Comp } from "./component";
 import { OwnProps } from "./utils";
 import {
   CreateEntryMutation,
-  CreateEntryMutationVariables
+  CreateEntryMutationVariables,
 } from "../../graphql/apollo-types/CreateEntryMutation";
 import {
   CREATE_ENTRY_MUTATION,
-  CreateEntryMutationProps
+  CreateEntryMutationProps,
 } from "../../graphql/create-entry.mutation";
 import { createUnsavedEntryGql, newEntryResolvers } from "./resolvers";
 
@@ -29,15 +29,15 @@ const createEntryGql = graphql<
 
     return (
       mutate && {
-        createEntry: mutate
+        createEntry: mutate,
       }
     );
-  }
+  },
 });
 
 export const NewEntry = compose(
   createEntryGql,
-  createUnsavedEntryGql
+  createUnsavedEntryGql,
 )(Comp);
 
 export default NewEntry;

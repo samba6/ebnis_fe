@@ -24,7 +24,7 @@ export const PwdInput = React.memo(
               onClick={() =>
                 dispatch({
                   payload: "text",
-                  type: PwdInputActionTypes.SET_PWD_TYPE
+                  type: PwdInputActionTypes.SET_PWD_TYPE,
                 })
               }
             />
@@ -38,7 +38,7 @@ export const PwdInput = React.memo(
               onClick={() =>
                 dispatch({
                   payload: "password",
-                  type: PwdInputActionTypes.SET_PWD_TYPE
+                  type: PwdInputActionTypes.SET_PWD_TYPE,
                 })
               }
             />
@@ -58,7 +58,7 @@ export const PwdInput = React.memo(
     }
 
     return true;
-  }
+  },
 );
 
 export default PwdInput;

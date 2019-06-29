@@ -5,7 +5,7 @@ import {
   storeToken,
   storeUser,
   clearUser,
-  getUser
+  getUser,
 } from "./tokens";
 import gql from "graphql-tag";
 import { DataValue } from "react-apollo";
@@ -33,8 +33,8 @@ export const userLocalGql = graphql<
 >(USER_LOCAL_QUERY, {
   props: ({ data }) =>
     data && {
-      localUser: data
-    }
+      localUser: data,
+    },
 });
 
 interface UserLocalQueryReturned {
@@ -79,8 +79,8 @@ export const userLocalMutationGql = graphql<
 >(USER_LOCAL_MUTATION, {
   props: ({ mutate }) =>
     mutate && {
-      updateLocalUser: mutate
-    }
+      updateLocalUser: mutate,
+    },
 });
 
 export const userMutationResolver: LocalResolverFn<
@@ -91,7 +91,7 @@ export const userMutationResolver: LocalResolverFn<
     storeUser(user);
 
     cache.writeData({
-      data: { staleToken: user.jwt, loggedOutUser: null }
+      data: { staleToken: user.jwt, loggedOutUser: null },
     });
 
     storeToken(user.jwt);
@@ -106,7 +106,7 @@ export const userMutationResolver: LocalResolverFn<
   clearUser();
 
   cache.writeData({
-    data: { loggedOutUser, staleToken: null }
+    data: { loggedOutUser, staleToken: null },
   });
 
   clearToken();
@@ -116,8 +116,8 @@ export const userMutationResolver: LocalResolverFn<
 
 export const userLocalResolvers = {
   Mutation: {
-    localUser: userMutationResolver
+    localUser: userMutationResolver,
   },
 
-  Query: {}
+  Query: {},
 };

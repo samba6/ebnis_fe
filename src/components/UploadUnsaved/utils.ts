@@ -3,11 +3,11 @@ import {
   SavedExperiencesWithUnsavedEntriesProps,
   SavedExperiencesWithUnsavedEntriesData,
   UnsavedExperiencesData,
-  entryNodesFromExperience
+  entryNodesFromExperience,
 } from "../../state/unsaved-resolvers";
 import {
   UploadUnsavedExperiencesMutationProps,
-  UploadAllUnsavedsMutationProps
+  UploadAllUnsavedsMutationProps,
 } from "../../graphql/upload-unsaveds.mutation";
 import { CreateEntriesMutationGqlProps } from "../../graphql/create-entries.mutation";
 import immer from "immer";
@@ -16,7 +16,7 @@ import { RouteComponentProps } from "@reach/router";
 import {
   ExperienceFragment_fieldDefs,
   ExperienceFragment_entries_edges_node,
-  ExperienceFragment
+  ExperienceFragment,
 } from "../../graphql/apollo-types/ExperienceFragment";
 import { UploadAllUnsavedsMutation } from "../../graphql/apollo-types/UploadAllUnsavedsMutation";
 import { WithApolloClient } from "react-apollo";
@@ -61,7 +61,7 @@ export interface State extends DidUploadSucceed {
 }
 
 function computeStatePropertiesFromProps(
-  props: Pick<State, "unsavedExperiences" | "savedExperiences">
+  props: Pick<State, "unsavedExperiences" | "savedExperiences">,
 ) {
   const { unsavedExperiences, savedExperiences } = props;
 
@@ -80,17 +80,17 @@ function computeStatePropertiesFromProps(
           return entriesAcc;
         },
 
-        [] as ExperienceFragment_entries_edges_node[]
+        [] as ExperienceFragment_entries_edges_node[],
       );
 
       acc[experience.id] = {
         unsavedEntries,
-        experience
+        experience,
       };
 
       return acc;
     },
-    {} as ExperiencesIdsToObjectMap
+    {} as ExperiencesIdsToObjectMap,
   );
 
   const unsavedExperiencesIdsToObjectMap = unsavedExperiences.reduce(
@@ -100,12 +100,12 @@ function computeStatePropertiesFromProps(
       acc[experience.id] = {
         unsavedEntries: entryNodesFromExperience(experience),
 
-        experience
+        experience,
       };
 
       return acc;
     },
-    {} as ExperiencesIdsToObjectMap
+    {} as ExperiencesIdsToObjectMap,
   );
 
   return {
@@ -115,26 +115,26 @@ function computeStatePropertiesFromProps(
     unsavedExperiencesLen,
     savedExperiencesIdsToObjectMap,
     unsavedExperiencesIdsToObjectMap,
-    unSavedCount: savedExperiencesLen + unsavedExperiencesLen
+    unSavedCount: savedExperiencesLen + unsavedExperiencesLen,
   };
 }
 
 export function stateInitializerFn(props: Props) {
   const {
     unSavedExperiencesProps: {
-      unsavedExperiences: propsUnsavedExperiences = []
+      unsavedExperiences: propsUnsavedExperiences = [],
     } = {} as UnsavedExperiencesData,
 
     savedExperiencesWithUnsavedEntriesProps: {
-      savedExperiencesWithUnsavedEntries: savedExperiences = []
-    } = {} as SavedExperiencesWithUnsavedEntriesData
+      savedExperiencesWithUnsavedEntries: savedExperiences = [],
+    } = {} as SavedExperiencesWithUnsavedEntriesData,
   } = props;
 
   const unsavedExperiences = (propsUnsavedExperiences as unknown) as ExperienceFragment[];
 
   const cache = computeStatePropertiesFromProps({
     unsavedExperiences,
-    savedExperiences
+    savedExperiences,
   });
 
   // we will cache `unsavedExperiences` and `savedExperiencesWithUnsavedEntries`
@@ -148,8 +148,8 @@ export function stateInitializerFn(props: Props) {
 
     tabs: {
       1: cache.savedExperiencesLen !== 0,
-      2: cache.savedExperiencesLen === 0 && cache.unsavedExperiencesLen !== 0
-    }
+      2: cache.savedExperiencesLen === 0 && cache.unsavedExperiencesLen !== 0,
+    },
   };
 }
 
@@ -158,7 +158,7 @@ export enum ActionType {
   setUploading = "@components/upload-unsaved/set-uploading",
   uploadResult = "@components/upload-unsaved/result",
   setServerError = "@components/upload-unsaved/set-server-error",
-  removeServerErrors = "@components/upload-unsaved/remove-server-error"
+  removeServerErrors = "@components/upload-unsaved/remove-server-error",
 }
 
 interface Action {
@@ -177,7 +177,7 @@ export type DispatchType = Dispatch<Action>;
 
 export const reducer: Reducer<State, Action> = (
   prevState,
-  { type, payload }
+  { type, payload },
 ) => {
   return immer(prevState, proxy => {
     switch (type) {
@@ -205,7 +205,7 @@ export const reducer: Reducer<State, Action> = (
 
           const {
             savedExperiencesIdsToObjectMap,
-            unsavedExperiencesIdsToObjectMap
+            unsavedExperiencesIdsToObjectMap,
           } = proxy;
 
           let allUnsavedExperiencesSucceeded = true;
@@ -235,7 +235,7 @@ export const reducer: Reducer<State, Action> = (
 
                 try {
                   const [[k, v]] = Object.entries(
-                    JSON.parse(experienceError.error)
+                    JSON.parse(experienceError.error),
                   );
 
                   map.experienceError = k + ": " + v;
@@ -248,7 +248,7 @@ export const reducer: Reducer<State, Action> = (
 
                 if (entriesErrors) {
                   map.entriesErrors = entriesErrorsToMap(
-                    entriesErrors as CreateEntriesErrorFragment[]
+                    entriesErrors as CreateEntriesErrorFragment[],
                   );
                 }
               }
@@ -281,7 +281,7 @@ export const reducer: Reducer<State, Action> = (
                 map.didUploadSucceed = false;
 
                 map.entriesErrors = entriesErrorsToMap(
-                  errors as CreateEntriesErrorFragment[]
+                  errors as CreateEntriesErrorFragment[],
                 );
               } else if (map.didUploadSucceed !== false) {
                 map.didUploadSucceed = true;
@@ -324,7 +324,7 @@ export const reducer: Reducer<State, Action> = (
 };
 
 export function fieldDefToUnsavedData(
-  value: ExperienceFragment_fieldDefs | null
+  value: ExperienceFragment_fieldDefs | null,
 ) {
   const { clientId, name, type } = value as ExperienceFragment_fieldDefs;
 

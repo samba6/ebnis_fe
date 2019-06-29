@@ -5,15 +5,15 @@ import { OwnProps } from "./utils";
 import {
   CREATE_EXPERIENCE_MUTATION,
   CreateExperienceMutationProps,
-  CreateExperienceMutationFn
+  CreateExperienceMutationFn,
 } from "../../graphql/create-experience.mutation";
 import {
   CreateExperienceMutation,
-  CreateExperienceMutationVariables
+  CreateExperienceMutationVariables,
 } from "../../graphql/apollo-types/CreateExperienceMutation";
 import {
   experienceDefinitionResolvers,
-  createUnsavedExperienceGql
+  createUnsavedExperienceGql,
 } from "./resolvers";
 
 let resolverAdded = false;
@@ -27,7 +27,7 @@ const createExperienceMutationGql = graphql<
   props: props => {
     const mutate = props.mutate as CreateExperienceMutationFn;
     return {
-      createExperience: mutate
+      createExperience: mutate,
     };
   },
 
@@ -38,13 +38,13 @@ const createExperienceMutationGql = graphql<
     }
 
     return {};
-  }
+  },
 });
 
 export const ExperienceDefinition = compose(
   withApollo,
   createExperienceMutationGql,
-  createUnsavedExperienceGql
+  createUnsavedExperienceGql,
 )(Comp);
 
 export default ExperienceDefinition;

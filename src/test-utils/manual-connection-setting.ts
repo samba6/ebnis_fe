@@ -3,7 +3,7 @@ const MANUAL_CONNECTION_KEY_NAME = "MANUAL_CONNECTION_KEY";
 export enum ManualConnectionStatus {
   connected = "connected",
   disconnected = "disconnected",
-  unset = "unset"
+  unset = "unset",
 }
 
 export function setManualConnection(status: ManualConnectionStatus) {

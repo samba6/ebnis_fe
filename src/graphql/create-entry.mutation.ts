@@ -3,7 +3,7 @@ import { MutationFn } from "react-apollo";
 
 import {
   CreateEntryMutation,
-  CreateEntryMutationVariables
+  CreateEntryMutationVariables,
 } from "./apollo-types/CreateEntryMutation";
 import { ENTRY_FRAGMENT } from "./entry.fragment";
 

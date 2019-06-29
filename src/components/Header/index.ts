@@ -8,5 +8,5 @@ import { withLocationHOC } from "../with-location-hoc";
 export const Header = compose(
   fetchLogoHOC,
   withUserHOC,
-  withLocationHOC
+  withLocationHOC,
 )(Comp);

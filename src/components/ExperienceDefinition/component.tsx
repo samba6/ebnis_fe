@@ -7,7 +7,7 @@ import {
   FieldArray,
   ArrayHelpers,
   FormikErrors,
-  Field
+  Field,
 } from "formik";
 import Dropdown from "semantic-ui-react/dist/commonjs/modules/Dropdown";
 import Form from "semantic-ui-react/dist/commonjs/collections/Form";
@@ -30,12 +30,12 @@ import {
   Action_Types,
   Action,
   GraphQlErrorState,
-  GraphQlError
+  GraphQlError,
 } from "./utils";
 import { CreateExperienceMutation_createExperience } from "../../graphql/apollo-types/CreateExperienceMutation";
 import {
   CreateExperienceInput as FormValues,
-  CreateFieldDef
+  CreateFieldDef,
 } from "../../graphql/apollo-types/globalTypes";
 import { makeExperienceRoute } from "../../constants/experience-route";
 import { noop, setDocumentTitle, makeSiteTitle } from "../../constants";
@@ -51,7 +51,7 @@ import { FormCtrlError } from "../FormCtrlError/component";
 export function ExperienceDefinition(props: Props) {
   const { createExperience, navigate, client, createUnsavedExperience } = props;
   const [state, dispatch] = useReducer(reducer, {
-    showDescriptionInput: true
+    showDescriptionInput: true,
   } as State);
 
   const routeRef = useRef<HTMLDivElement | null>(null);
@@ -66,7 +66,7 @@ export function ExperienceDefinition(props: Props) {
     values: FormValues,
     arrayHelpers: ArrayHelpers,
     field: CreateFieldDef,
-    index: number
+    index: number,
   ) {
     const { submittedFormErrors, graphQlError } = state;
 
@@ -111,12 +111,12 @@ export function ExperienceDefinition(props: Props) {
   }
 
   const renderFieldDefs = (values: FormValues) => (
-    arrayHelpers: ArrayHelpers
+    arrayHelpers: ArrayHelpers,
   ) => {
     return (
       <>
         {values.fieldDefs.map((field, index) =>
-          FieldDef(values, arrayHelpers, field as CreateFieldDef, index)
+          FieldDef(values, arrayHelpers, field as CreateFieldDef, index),
         )}
       </>
     );
@@ -125,7 +125,7 @@ export function ExperienceDefinition(props: Props) {
   function onSubmit(formikProps: FormikProps<FormValues>) {
     return async function() {
       dispatch({
-        type: Action_Types.CLEAR_ALL_ERRORS
+        type: Action_Types.CLEAR_ALL_ERRORS,
       });
 
       const { validateForm, setSubmitting, values } = formikProps;
@@ -136,7 +136,7 @@ export function ExperienceDefinition(props: Props) {
       if (errors.title || errors.fieldDefs) {
         dispatch({
           type: Action_Types.SET_FORM_ERROR,
-          payload: errors
+          payload: errors,
         });
 
         setSubmitting(false);
@@ -152,11 +152,11 @@ export function ExperienceDefinition(props: Props) {
             variables: {
               createExperienceInput: values,
               entriesPagination: {
-                first: 20
-              }
+                first: 20,
+              },
             },
 
-            update: ExperienceDefinitionUpdate
+            update: ExperienceDefinitionUpdate,
           });
 
           expId = ((result &&
@@ -167,8 +167,8 @@ export function ExperienceDefinition(props: Props) {
         } else {
           result = await createUnsavedExperience({
             variables: {
-              createExperienceInput: values
-            }
+              createExperienceInput: values,
+            },
           });
 
           expId = ((result &&
@@ -180,7 +180,7 @@ export function ExperienceDefinition(props: Props) {
       } catch (error) {
         dispatch({
           type: Action_Types.SET_GRAPHQL_ERROR,
-          payload: parseGraphQlError(error)
+          payload: parseGraphQlError(error),
         });
 
         scrollTop(routeRef);
@@ -245,7 +245,7 @@ export function ExperienceDefinition(props: Props) {
           initialValues={{
             title: "",
             description: "",
-            fieldDefs: [{ ...EMPTY_FIELD }]
+            fieldDefs: [{ ...EMPTY_FIELD }],
           }}
           onSubmit={noop}
           render={renderForm}
@@ -264,7 +264,7 @@ function FieldNameComponent({
   index,
   dispatch,
   submittedFormErrors,
-  graphQlError
+  graphQlError,
 }: FieldProps<FormValues> & {
   index: number;
   dispatch: Dispatch<Action>;
@@ -293,7 +293,7 @@ function FieldDataTypeComponent({
   field: { name, value },
   form: { setFieldValue },
   submittedFormErrors,
-  index
+  index,
 }: FieldProps<FormValues> & {
   submittedFormErrors: FormikErrors<FormValues>;
   index: number;
@@ -336,7 +336,7 @@ function FieldBtnCtrlsComponent({
   index,
   values,
   arrayHelpers,
-  dispatch
+  dispatch,
 }: {
   index: number;
   values: FormValues;
@@ -368,7 +368,7 @@ function FieldBtnCtrlsComponent({
 
               dispatch({
                 type: Action_Types.CLEAR_ALL_ERRORS,
-                payload: undefined
+                payload: undefined,
               });
             }}
           >
@@ -385,7 +385,7 @@ function FieldBtnCtrlsComponent({
 
               dispatch({
                 type: Action_Types.CLEAR_ALL_ERRORS,
-                payload: undefined
+                payload: undefined,
               });
             }}
           >
@@ -426,7 +426,7 @@ function FieldBtnCtrlsComponent({
 function DescriptionInputComponent({
   field,
   showDescriptionInput,
-  dispatch
+  dispatch,
 }: FieldProps<FormValues> & {
   showDescriptionInput: boolean;
   dispatch: Dispatch<Action>;
@@ -440,7 +440,7 @@ function DescriptionInputComponent({
         onClick={() =>
           dispatch({
             type: Action_Types.SET_SHOW_DESCRIPTION_INPUT,
-            payload: !showDescriptionInput
+            payload: !showDescriptionInput,
           })
         }
       >
@@ -460,7 +460,7 @@ function DescriptionInputComponent({
 function TitleInputComponent({
   field,
   graphQlError,
-  formError
+  formError,
 }: FieldProps<FormValues> & {
   graphQlError: GraphQlErrorState | undefined;
   formError?: string;
@@ -580,7 +580,7 @@ function parseGraphQlErrorFieldName(val?: string): [number, string] | null {
 
 function GraphQlErrorsSummaryComponent({
   graphQlError,
-  dispatch
+  dispatch,
 }: {
   graphQlError: GraphQlErrorState | undefined;
   dispatch: Dispatch<Action>;
@@ -599,7 +599,7 @@ function GraphQlErrorsSummaryComponent({
       onDismiss={() =>
         dispatch({
           type: Action_Types.SET_GRAPHQL_ERROR,
-          payload: undefined
+          payload: undefined,
         })
       }
     >
@@ -617,7 +617,7 @@ function GraphQlErrorsSummaryComponent({
 }
 
 function GraphQlErrorFieldDefsComponent({
-  fieldDefs
+  fieldDefs,
 }: {
   fieldDefs?: { [k: string]: string };
 }) {
@@ -644,7 +644,7 @@ function makeFieldName(index: number, key: keyof CreateFieldDef) {
 
 function getFieldContainerErrorClassFromForm(
   index: number,
-  submittedFormErrors: FormikErrors<FormValues> | undefined
+  submittedFormErrors: FormikErrors<FormValues> | undefined,
 ) {
   if (!(submittedFormErrors && submittedFormErrors.fieldDefs)) {
     return "";
@@ -661,7 +661,7 @@ function getFieldContainerErrorClassFromForm(
 function getFieldError(
   formikName: string,
   fieldName: keyof CreateFieldDef,
-  submittedFormErrors: FormikErrors<FormValues> | undefined
+  submittedFormErrors: FormikErrors<FormValues> | undefined,
 ) {
   if (!(submittedFormErrors && submittedFormErrors.fieldDefs)) {
     return null;

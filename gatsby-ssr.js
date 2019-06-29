@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 import React from "react";
 import { ApolloProvider } from "react-apollo";
 import { HelmetProvider } from "react-helmet-async";
@@ -13,14 +14,14 @@ export const wrapRootElement = ({ element }) => {
   const { client } = buildClientCache({
     isNodeJs: true,
     uri: "/",
-    fetch
+    fetch,
   });
 
   return (
     <ApolloProvider client={client}>
       <EbnisAppProvider
         value={{
-          client
+          client,
         }}
       >
         <HelmetProvider context={helmetContext}>
@@ -40,7 +41,7 @@ export const onRenderBody = args => {
 function setupHelmet({
   setHeadComponents,
   setHtmlAttributes,
-  setBodyAttributes
+  setBodyAttributes,
 }) {
   const { helmet } = helmetContext;
 
@@ -56,7 +57,7 @@ function setupHelmet({
     helmet.link.toComponent(),
     helmet.style.toComponent(),
     helmet.script.toComponent(),
-    helmet.noscript.toComponent()
+    helmet.noscript.toComponent(),
   ]);
 
   setHtmlAttributes(helmet.htmlAttributes.toComponent());

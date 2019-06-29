@@ -14,13 +14,13 @@ export const MONTH_LABELS = [
   "Sep",
   "Oct",
   "Nov",
-  "Dec"
+  "Dec",
 ];
 
 export const MONTHS = MONTH_LABELS.map((m, index) => ({
   key: index,
   text: m,
-  value: index
+  value: index,
 }));
 
 export function getToday(today: Date) {
@@ -32,7 +32,7 @@ export function getToday(today: Date) {
     years.push({
       key: yrOffset,
       text: year + "",
-      value: year
+      value: year,
     });
   }
 
@@ -40,7 +40,7 @@ export function getToday(today: Date) {
     currYr,
     years,
     currMonth: today.getMonth(),
-    currDay: today.getDate()
+    currDay: today.getDate(),
   };
 }
 
@@ -54,14 +54,14 @@ for (let dayIndex = 1; dayIndex < 32; dayIndex++) {
   DAYS.push({
     key: dayIndex,
     text: dayIndex + "",
-    value: dayIndex
+    value: dayIndex,
   });
 }
 
 export const LABELS = {
   day: "Day",
   month: "Month",
-  year: "Year"
+  year: "Year",
 };
 
 export function makeFieldNames(compName: string) {
@@ -70,7 +70,7 @@ export function makeFieldNames(compName: string) {
       acc[k] = compName + "." + k;
       return acc;
     },
-    {} as { [k in keyof typeof LABELS]: string }
+    {} as { [k in keyof typeof LABELS]: string },
   );
 }
 

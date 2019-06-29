@@ -4,17 +4,17 @@ import {
   UnsavedExperienceReturnedValue,
   UnsavedExperienceGqlProps,
   GET_UNSAVED_EXPERIENCE_QUERY,
-  experienceNewEntryParentResolvers
+  experienceNewEntryParentResolvers,
 } from "./resolvers";
 import { isUnsavedId } from "../../constants";
 import { ExperienceNewEntryParent as Comp } from "./component";
 import {
   GET_EXPERIENCE_FULL_QUERY,
-  GetExperienceFullProps
+  GetExperienceFullProps,
 } from "../../graphql/get-experience-full.query";
 import {
   GetExperienceFullVariables,
-  GetExperienceFull
+  GetExperienceFull,
 } from "../../graphql/apollo-types/GetExperienceFull";
 
 let resolverAdded = false;
@@ -27,14 +27,14 @@ const unsavedExperienceGql = graphql<
 >(GET_UNSAVED_EXPERIENCE_QUERY, {
   props: ({ data }) =>
     data && {
-      unsavedExperienceGql: data
+      unsavedExperienceGql: data,
     },
 
   options: ({ experienceId }) => {
     return {
       variables: {
-        id: experienceId as string
-      }
+        id: experienceId as string,
+      },
     };
   },
 
@@ -45,7 +45,7 @@ const unsavedExperienceGql = graphql<
     }
 
     return !isUnsavedId(experienceId);
-  }
+  },
 });
 
 const experienceGql = graphql<
@@ -61,21 +61,21 @@ const experienceGql = graphql<
       variables: {
         id: experienceId as string,
         entriesPagination: {
-          first: 20
-        }
-      }
+          first: 20,
+        },
+      },
     };
   },
 
   skip: ({ experienceId }) => {
     return isUnsavedId(experienceId);
-  }
+  },
 });
 
 const ExperienceNewEntryParent = compose(
   withApollo,
   experienceGql,
-  unsavedExperienceGql
+  unsavedExperienceGql,
 )(Comp);
 
 export default ExperienceNewEntryParent;

@@ -16,7 +16,7 @@ import {
   ActionTypes,
   State,
   Action,
-  initialState
+  initialState,
 } from "./utils";
 import { LoginUser as FormValues } from "../../graphql/apollo-types/globalTypes";
 import { refreshToHome } from "../../refresh-to-app";
@@ -37,7 +37,7 @@ export function Login(props: Props) {
     updateLocalUser,
     client,
     location,
-    localUser: { loggedOutUser } = {} as UserLocalQueryData
+    localUser: { loggedOutUser } = {} as UserLocalQueryData,
   } = props;
 
   const [state, dispatch] = useReducer(reducer, initialState);
@@ -63,7 +63,7 @@ export function Login(props: Props) {
             onSubmit={async function onSubmit() {
               dispatch({
                 type: ActionTypes.clear_all_errors,
-                payload: null
+                payload: null,
               });
 
               if (!(await getConnStatus(client))) {
@@ -73,7 +73,7 @@ export function Login(props: Props) {
 
                 dispatch({
                   type: ActionTypes.set_other_errors,
-                  payload: "You are not connected"
+                  payload: "You are not connected",
                 });
 
                 return;
@@ -90,7 +90,7 @@ export function Login(props: Props) {
 
                 dispatch({
                   type: ActionTypes.set_form_error,
-                  payload: errors
+                  payload: errors,
                 });
 
                 return;
@@ -99,8 +99,8 @@ export function Login(props: Props) {
               try {
                 const result = await (login as LoginMutationFn)({
                   variables: {
-                    login: values
-                  }
+                    login: values,
+                  },
                 });
 
                 const user = (result &&
@@ -108,7 +108,7 @@ export function Login(props: Props) {
                   result.data.login) as LoginMutation_login;
 
                 await updateLocalUser({
-                  variables: { user }
+                  variables: { user },
                 });
 
                 refreshToHome(persistor);
@@ -119,7 +119,7 @@ export function Login(props: Props) {
 
                 dispatch({
                   type: ActionTypes.set_server_errors,
-                  payload: error
+                  payload: error,
                 });
               }
             }}
@@ -167,7 +167,7 @@ export function Login(props: Props) {
         <Formik
           initialValues={{
             email: loggedOutUser ? loggedOutUser.email : "",
-            password: ""
+            password: "",
           }}
           onSubmit={noop}
           render={renderForm}
@@ -245,7 +245,7 @@ function Errors(props: {
         onDismiss={function onDismiss() {
           dispatch({
             type: ActionTypes.clear_all_errors,
-            payload: null
+            payload: null,
           });
         }}
       >

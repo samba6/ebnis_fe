@@ -1,7 +1,7 @@
 import { GET_EXPERIENCES_MINI_QUERY } from "../../graphql/get-experience-connection-mini.query";
 import {
   GetExperienceConnectionMini,
-  GetExperienceConnectionMiniVariables
+  GetExperienceConnectionMiniVariables,
 } from "../../graphql/apollo-types/GetExperienceConnectionMini";
 import { CreateExpUpdateFn } from "./utils";
 import immer from "immer";
@@ -10,7 +10,7 @@ import immer from "immer";
 // during e2e test
 export const ExperienceDefinitionUpdate: CreateExpUpdateFn = async (
   client,
-  { data: newExperience }
+  { data: newExperience },
 ) => {
   if (!newExperience) {
     return;
@@ -30,9 +30,9 @@ export const ExperienceDefinitionUpdate: CreateExpUpdateFn = async (
     const variables = {
       input: {
         pagination: {
-          first: 20
-        }
-      }
+          first: 20,
+        },
+      },
     };
 
     const data = client.readQuery<
@@ -40,7 +40,7 @@ export const ExperienceDefinitionUpdate: CreateExpUpdateFn = async (
       GetExperienceConnectionMiniVariables
     >({
       query: GET_EXPERIENCES_MINI_QUERY,
-      variables
+      variables,
     });
 
     if (!data) {
@@ -59,7 +59,7 @@ export const ExperienceDefinitionUpdate: CreateExpUpdateFn = async (
       edges.push({
         node: experience,
         cursor: "",
-        __typename: "ExperienceEdge"
+        __typename: "ExperienceEdge",
       });
 
       proxy.edges = edges;
@@ -71,7 +71,7 @@ export const ExperienceDefinitionUpdate: CreateExpUpdateFn = async (
     >({
       query: GET_EXPERIENCES_MINI_QUERY,
       variables,
-      data: { getExperiences: updatedExperienceConnection }
+      data: { getExperiences: updatedExperienceConnection },
     });
   } catch (error) {
     if (

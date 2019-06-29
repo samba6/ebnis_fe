@@ -6,11 +6,11 @@ module.exports = api => {
 
   if (isUnitTest) {
     return {
-      presets: ["react-app"]
+      presets: ["react-app"],
     };
   }
 
   return {
-    presets: ["babel-preset-gatsby"]
+    presets: ["babel-preset-gatsby"],
   };
 };

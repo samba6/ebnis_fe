@@ -8,7 +8,7 @@ import { WithApolloClient } from "react-apollo";
 import { CreateUnsavedEntryMutationProps } from "./resolvers";
 import {
   ExperienceFragment,
-  ExperienceFragment_fieldDefs
+  ExperienceFragment_fieldDefs,
 } from "../../graphql/apollo-types/ExperienceFragment";
 import immer from "immer";
 import { ApolloError } from "apollo-client";
@@ -51,7 +51,7 @@ function initialFormValuesFromExperience(exp: ExperienceFragment) {
       ].default();
       return acc;
     },
-    {} as FormObj
+    {} as FormObj,
   );
 }
 
@@ -73,7 +73,7 @@ export enum ActionTypes {
   setFormObjField = "@components/new-entry/set-form-obj-field",
   experienceToFormValues = "@components/new-entry/experience-to-form-values",
   setServerErrors = "@components/new-entry/set-server-errors",
-  removeServerErrors = "@components/new-entry/unset-server-errors"
+  removeServerErrors = "@components/new-entry/unset-server-errors",
 }
 
 interface SetFormObjFieldPayload {
@@ -112,7 +112,7 @@ export interface State {
 
 export const reducer: Reducer<State, Action> = function reducerFn(
   prevState,
-  { type, payload }
+  { type, payload },
 ) {
   return immer(prevState, proxy => {
     switch (type) {
@@ -128,7 +128,7 @@ export const reducer: Reducer<State, Action> = function reducerFn(
       case ActionTypes.experienceToFormValues:
         {
           proxy.formObj = initialFormValuesFromExperience(
-            (payload as ExperienceToFormValuesPayload).experience
+            (payload as ExperienceToFormValuesPayload).experience,
           );
         }
 
@@ -167,7 +167,7 @@ export function parseApolloErrors(payload: ApolloError) {
 
   try {
     const { fields } = JSON.parse(
-      graphQLErrors[0].message
+      graphQLErrors[0].message,
     ) as CreateEntryFieldErrors;
 
     const fieldErrors = fields.reduce((acc, field) => {

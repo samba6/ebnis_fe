@@ -1,4 +1,4 @@
-// tslint:disable: no-any
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { onUploadSuccessUpdate } from "../components/UploadUnsaved/mutation-update";
 
 jest.mock("../state/resolvers-utils");
@@ -8,7 +8,7 @@ import {
   writeUnsavedExperiencesToCache,
   getSavedExperiencesWithUnsavedEntriesFromCache,
   updateGetExperiencesQuery,
-  removeAllReferencesToEntityFromCache
+  removeAllReferencesToEntityFromCache,
 } from "../state/resolvers-utils";
 
 const mockGetSavedExperiencesWithUnsavedEntries = getSavedExperiencesWithUnsavedEntriesFromCache as jest.Mock;
@@ -22,7 +22,7 @@ const mockUpdateGetExperiencesQuery = updateGetExperiencesQuery as jest.Mock;
 const mockRemoveAllReferencesToEntityFromCache = removeAllReferencesToEntityFromCache as jest.Mock;
 
 const mockDataProxy = {
-  writeQuery: jest.fn()
+  writeQuery: jest.fn(),
 } as any;
 
 beforeEach(() => {
@@ -42,7 +42,7 @@ it("does not update if no 'createEntries' and 'saveOfflineExperiences' operation
   const saveOfflineExperiences = null;
 
   const result = onUploadSuccessUpdate({} as any)(mockDataProxy, {
-    data: { createEntries, saveOfflineExperiences } as any
+    data: { createEntries, saveOfflineExperiences } as any,
   });
 
   expect(result.updatedSavedExperiences).not.toBeDefined();
@@ -54,8 +54,8 @@ it("returns empty updated experiences list if result of 'createEntries' operatio
 
   const result = onUploadSuccessUpdate({} as any)(mockDataProxy, {
     data: {
-      createEntries: createEntriesOperationResult
-    } as any
+      createEntries: createEntriesOperationResult,
+    } as any,
   });
 
   expect(result.updatedSavedExperiences).toEqual([]);
@@ -66,8 +66,8 @@ it("does not update if result of 'saveOfflineExperiences' operation is empty", (
 
   const result = onUploadSuccessUpdate({} as any)(mockDataProxy, {
     data: {
-      saveOfflineExperiences: saveOfflineExperiencesResult
-    } as any
+      saveOfflineExperiences: saveOfflineExperiencesResult,
+    } as any,
   });
 
   expect(result.didUnsavedExperiencesUpdate).toBe(false);
@@ -76,14 +76,14 @@ it("does not update if result of 'saveOfflineExperiences' operation is empty", (
 it("returns empty updated experiences list if 'createEntries' operation's entries list is empty", () => {
   const createEntriesOperationResult = [
     {
-      entries: []
-    }
+      entries: [],
+    },
   ];
 
   const result = onUploadSuccessUpdate({} as any)(mockDataProxy, {
     data: {
-      createEntries: createEntriesOperationResult
-    } as any
+      createEntries: createEntriesOperationResult,
+    } as any,
   });
 
   expect(result.updatedSavedExperiences).toEqual([]);
@@ -98,16 +98,16 @@ it("returns empty updated experiences list if 'createEntries' operation's experi
   const createEntriesOperationResult = [
     {
       expId: "1",
-      entries: [createEntriesOperationEntry]
-    }
+      entries: [createEntriesOperationEntry],
+    },
   ];
 
   const result = onUploadSuccessUpdate({
-    savedExperiencesIdsToUnsavedEntriesMap
+    savedExperiencesIdsToUnsavedEntriesMap,
   } as any)(mockDataProxy, {
     data: {
-      createEntries: createEntriesOperationResult
-    } as any
+      createEntries: createEntriesOperationResult,
+    } as any,
   });
 
   expect(result.updatedSavedExperiences).toEqual([]);
@@ -118,12 +118,12 @@ it("returns empty updated experiences list if 'createEntries' operation's experi
 it("removes saved experience from cache only if 'createEntries' operation returns no error for that experience", async done => {
   const unsavedEntry1 = {
     id: "unsaved-entry-1",
-    clientId: "a"
+    clientId: "a",
   } as any;
 
   const savedEntry1 = {
     id: "saved-entry-1",
-    clientId: "b"
+    clientId: "b",
   } as any;
 
   // No 'createEntries' operation errors
@@ -133,19 +133,19 @@ it("removes saved experience from cache only if 'createEntries' operation return
     entries: {
       edges: [
         {
-          node: unsavedEntry1
+          node: unsavedEntry1,
         },
 
         {
-          node: savedEntry1
-        }
-      ]
-    }
+          node: savedEntry1,
+        },
+      ],
+    },
   } as any;
 
   const unsavedEntry2 = {
     id: "unsaved-entry-2",
-    clientId: "c"
+    clientId: "c",
   } as any;
 
   // has 'createEntries' operation errors
@@ -155,10 +155,10 @@ it("removes saved experience from cache only if 'createEntries' operation return
     entries: {
       edges: [
         {
-          node: unsavedEntry2
-        }
-      ]
-    }
+          node: unsavedEntry2,
+        },
+      ],
+    },
   } as any;
 
   // not part of 'createEntries' operation, but exists in cache
@@ -167,55 +167,55 @@ it("removes saved experience from cache only if 'createEntries' operation return
   mockGetSavedExperiencesWithUnsavedEntries.mockReturnValue([
     savedExperience1,
     savedExperience2,
-    savedExperience3
+    savedExperience3,
   ]);
 
   const savedExperiencesIdsToUnsavedEntriesMap = {
     "1": {
       experience: savedExperience1,
-      unsavedEntries: [unsavedEntry1]
+      unsavedEntries: [unsavedEntry1],
     },
 
     "2": {
       experience: savedExperience2,
-      unsavedEntries: [unsavedEntry2]
-    }
+      unsavedEntries: [unsavedEntry2],
+    },
   };
 
   const createEntriesOperationEntry1 = {
     ...unsavedEntry1,
-    id: "created1"
+    id: "created1",
   };
 
   const createEntriesOperationEntry2 = {
     ...unsavedEntry2,
-    id: "created2"
+    id: "created2",
   };
 
   const createEntriesOperationResult = [
     {
       experienceId: "1",
-      entries: [createEntriesOperationEntry1]
+      entries: [createEntriesOperationEntry1],
     },
 
     {
       experienceId: "2",
       entries: [createEntriesOperationEntry2],
-      errors: {}
-    }
+      errors: {},
+    },
   ];
 
   const result = onUploadSuccessUpdate({
-    savedExperiencesIdsToUnsavedEntriesMap
+    savedExperiencesIdsToUnsavedEntriesMap,
   } as any)(mockDataProxy, {
     data: {
-      createEntries: createEntriesOperationResult as any
-    } as any
+      createEntries: createEntriesOperationResult as any,
+    } as any,
   });
 
   const [
     updatedExperience1,
-    updatedExperience2
+    updatedExperience2,
   ] = result.updatedSavedExperiences as any;
 
   const edges1 = updatedExperience1.entries.edges;
@@ -226,7 +226,7 @@ it("removes saved experience from cache only if 'createEntries' operation return
   expect(edges2[0].node).toEqual(createEntriesOperationEntry2);
 
   expect(
-    mockWriteSavedExperiencesWithUnsavedEntriesToCache.mock.calls[0][1]
+    mockWriteSavedExperiencesWithUnsavedEntriesToCache.mock.calls[0][1],
   ).toEqual([updatedExperience2, savedExperience3]);
 
   done();
@@ -240,8 +240,8 @@ it("removes unsaved experience from cache only if 'saveOfflineExperiences' opera
     clientId: "1",
 
     entries: {
-      edges: []
-    }
+      edges: [],
+    },
   } as any;
 
   const operationResultExperience1 = { ...experience1, id: "1" };
@@ -250,12 +250,12 @@ it("removes unsaved experience from cache only if 'saveOfflineExperiences' opera
   // cache
   const entry21 = {
     id: "unsaved-entry-1",
-    clientId: "a"
+    clientId: "a",
   } as any;
 
   const entry22 = {
     id: "unsaved-entry-2",
-    clientId: "b"
+    clientId: "b",
   } as any;
 
   // has 'saveOfflineExperiences' operation 'entriesErrors'
@@ -267,14 +267,14 @@ it("removes unsaved experience from cache only if 'saveOfflineExperiences' opera
     entries: {
       edges: [
         {
-          node: entry21
+          node: entry21,
         },
 
         {
-          node: entry22
-        }
-      ]
-    }
+          node: entry22,
+        },
+      ],
+    },
   } as any;
 
   const operationResultEntry21 = { ...entry21, id: "saved-entry-1" };
@@ -285,16 +285,16 @@ it("removes unsaved experience from cache only if 'saveOfflineExperiences' opera
     entries: {
       edges: [
         {
-          node: operationResultEntry21
-        }
-      ]
-    }
+          node: operationResultEntry21,
+        },
+      ],
+    },
   };
 
   // has 'saveOfflineExperiences' operation 'experienceError' error
   const experience3 = {
     id: "3",
-    clientId: "3"
+    clientId: "3",
   } as any;
 
   // not part of 'saveOfflineExperiences' operation result, but exists in cache
@@ -302,7 +302,7 @@ it("removes unsaved experience from cache only if 'saveOfflineExperiences' opera
 
   const operationResults = [
     {
-      experience: operationResultExperience1
+      experience: operationResultExperience1,
     },
 
     {
@@ -310,31 +310,31 @@ it("removes unsaved experience from cache only if 'saveOfflineExperiences' opera
 
       entriesErrors: [
         {
-          clientId: entry22.clientId
-        }
-      ]
+          clientId: entry22.clientId,
+        },
+      ],
     },
 
     {
       experienceError: {
-        clientId: "3"
-      }
-    }
+        clientId: "3",
+      },
+    },
   ];
 
   const { didUnsavedExperiencesUpdate } = onUploadSuccessUpdate({
-    unsavedExperiences: [experience1, experience2, experience3, experience4]
+    unsavedExperiences: [experience1, experience2, experience3, experience4],
   } as any)(mockDataProxy, {
     data: {
-      saveOfflineExperiences: operationResults as any
-    } as any
+      saveOfflineExperiences: operationResults as any,
+    } as any,
   });
 
   expect(didUnsavedExperiencesUpdate).toBe(true);
 
   expect(mockWriteUnsavedExperiencesToCache.mock.calls[0][1]).toEqual([
     experience3,
-    experience4
+    experience4,
   ]);
 
   const updatedExperience2 = {
@@ -343,18 +343,18 @@ it("removes unsaved experience from cache only if 'saveOfflineExperiences' opera
     entries: {
       edges: [
         {
-          node: operationResultEntry21
+          node: operationResultEntry21,
         },
 
         {
-          node: entry22
-        }
-      ]
-    }
+          node: entry22,
+        },
+      ],
+    },
   };
 
   expect(
-    mockWriteSavedExperiencesWithUnsavedEntriesToCache.mock.calls[0][1]
+    mockWriteSavedExperiencesWithUnsavedEntriesToCache.mock.calls[0][1],
   ).toEqual([updatedExperience2]);
 
   expect(mockUpdateGetExperiencesQuery).toHaveBeenCalled();
@@ -376,9 +376,9 @@ it("removes unsaved experience from cache only if 'saveOfflineExperiences' opera
       }
 
       return 0;
-    })
+    }),
   ).toEqual([
     { id: "unsaved-id-1", typename: undefined },
-    { id: "unsaved-id-2", typename: undefined }
+    { id: "unsaved-id-2", typename: undefined },
   ]);
 });

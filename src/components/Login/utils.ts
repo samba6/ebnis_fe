@@ -10,7 +10,7 @@ import { LoginMutationProps } from "../../graphql/login.mutation";
 import { PwdInputActionTypes } from "../PwdInput/pwd-input";
 import {
   UserLocalMutationProps,
-  UserLocalGqlProps
+  UserLocalGqlProps,
 } from "../../state/user.resolver";
 
 export interface OwnProps
@@ -28,18 +28,18 @@ export const ValidationSchema = Yup.object<FormValues>().shape({
     .required(),
   password: Yup.string()
     .required()
-    .min(4, "too short")
+    .min(4, "too short"),
 });
 
 export const RouterThings = {
-  documentTitle: "Log in"
+  documentTitle: "Log in",
 };
 
 export enum ActionTypes {
   set_other_errors = "@components/login/set_other_errors",
   set_form_error = "@components/login/set_form_error",
   set_server_errors = "@components/login/set_server_errors",
-  clear_all_errors = "@components/login/clear_all_errors"
+  clear_all_errors = "@components/login/clear_all_errors",
 }
 
 export interface State {
@@ -68,16 +68,16 @@ export interface Action {
 }
 
 const reducerFunctionsObject: {
-  [k in ActionSuperType]: (state: State, payload: Payload) => State
+  [k in ActionSuperType]: (state: State, payload: Payload) => State;
 } = {
   [ActionTypes.set_other_errors]: (prevState, payload) => ({
     ...prevState,
-    otherErrors: payload as string
+    otherErrors: payload as string,
   }),
 
   [ActionTypes.set_form_error]: (prevState, payload) => ({
     ...prevState,
-    formErrors: payload as FormikErrors<FormValues>
+    formErrors: payload as FormikErrors<FormValues>,
   }),
 
   [ActionTypes.set_server_errors]: (prevState, payload) => {
@@ -92,7 +92,7 @@ const reducerFunctionsObject: {
     return {
       ...prevState,
       serverFieldErrors: error,
-      networkError: networkError ? networkError.message : null
+      networkError: networkError ? networkError.message : null,
     };
   },
 
@@ -101,7 +101,7 @@ const reducerFunctionsObject: {
     // istanbul ignore next: covered in password input.
     return {
       ...prevState,
-      pwdType: payload as "password" | "text"
+      pwdType: payload as "password" | "text",
     };
   },
 
@@ -110,13 +110,13 @@ const reducerFunctionsObject: {
     otherErrors: null,
     serverFieldErrors: null,
     formErrors: null,
-    networkError: null
-  })
+    networkError: null,
+  }),
 };
 
 export const reducer: Reducer<State, Action> = (
   prevState,
-  { type, payload }
+  { type, payload },
 ) => {
   const fn = reducerFunctionsObject[type];
 
