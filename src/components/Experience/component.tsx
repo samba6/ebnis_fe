@@ -19,6 +19,8 @@ import makeClassNames from "classnames";
 
 export function Experience(props: Props) {
   const {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    navigate,
     experience,
     className = "",
     entryProps = {},
