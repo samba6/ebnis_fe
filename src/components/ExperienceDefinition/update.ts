@@ -5,6 +5,7 @@ import {
 } from "../../graphql/apollo-types/GetExperienceConnectionMini";
 import { CreateExpUpdateFn } from "./utils";
 import immer from "immer";
+import { writeGetExperienceFullQueryToCache } from "../../state/resolvers/write-get-experience-full-query-to-cache";
 
 // istanbul ignore next: trust apollo to act in good faith - will confirm
 // during e2e test
@@ -21,6 +22,8 @@ export const ExperienceDefinitionUpdate: CreateExpUpdateFn = async (
   if (!experience) {
     return;
   }
+
+  writeGetExperienceFullQueryToCache(client, experience);
 
   // if we have not fetched GET_EXP_DEFS_QUERY (e.g. by visiting
   // 'my experiences' page) in which case graphql field exps would have been
