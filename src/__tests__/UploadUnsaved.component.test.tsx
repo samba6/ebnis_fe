@@ -39,6 +39,11 @@ jest.mock("../components/scroll-into-view");
 import { getConnStatus } from "../state/get-conn-status";
 import { onUploadSuccessUpdate } from "../components/UploadUnsaved/mutation-update";
 import { scrollIntoView } from "../components/scroll-into-view";
+import {
+  SavedExperiencesWithUnsavedEntriesData,
+  UnsavedExperiencesData,
+} from "../state/unsaved-resolvers";
+import { UnsavedExperience } from "../components/ExperienceNewEntryParent/resolvers";
 
 const mockGetConnectionStatus = getConnStatus as jest.Mock;
 const mockOnUploadSuccessUpdate = onUploadSuccessUpdate as jest.Mock;
@@ -350,6 +355,8 @@ it("shows only 'unsaved experiences' data and uploading same succeeds", async do
 it("toggles saved and 'unsaved experiences' and uploads data", async done => {
   jest.useFakeTimers();
 
+  const entryId = makeUnsavedId("1");
+
   const {
     ui,
     mockUploadUnsavedExperiences,
@@ -363,40 +370,42 @@ it("toggles saved and 'unsaved experiences' and uploads data", async done => {
             id: "1",
             title: "a",
             clientId: "1",
+            fieldDefs: makeFieldDefs(),
 
             entries: {
               edges: [
                 {
                   node: {
-                    id: "1",
+                    ...makeEntryNode("1"),
                     clientId: "1",
                   },
                 },
               ],
             },
-          },
+          } as UnsavedExperience,
         ],
-      } as any,
+      } as UnsavedExperiencesData,
 
       savedExperiencesWithUnsavedEntriesProps: {
         savedExperiencesWithUnsavedEntries: [
           {
             id: "2",
             title: "a",
+            fieldDefs: makeFieldDefs(),
 
             entries: {
               edges: [
                 {
                   node: {
-                    id: makeUnsavedId("1"),
-                    clientId: makeUnsavedId("1"),
+                    ...makeEntryNode(entryId),
+                    clientId: entryId,
                   },
                 },
               ],
             },
-          },
+          } as ExperienceFragment,
         ],
-      } as any,
+      } as SavedExperiencesWithUnsavedEntriesData,
     },
   });
 
@@ -404,7 +413,13 @@ it("toggles saved and 'unsaved experiences' and uploads data", async done => {
     data: {
       createEntries: [
         {
-          errors: [],
+          errors: [
+            {
+              clientId: entryId,
+              error: `${entryId} error`,
+            },
+          ],
+
           experienceId: "2",
         },
       ],
