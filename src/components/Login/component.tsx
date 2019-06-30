@@ -13,7 +13,7 @@ import {
   Props,
   ValidationSchema,
   reducer,
-  ActionTypes,
+  ActionType,
   State,
   Action,
   initialState,
@@ -61,20 +61,14 @@ export function Login(props: Props) {
         <Card.Content>
           <Form
             onSubmit={async function onSubmit() {
-              dispatch({
-                type: ActionTypes.clear_all_errors,
-                payload: null,
-              });
+              dispatch([ActionType.clearAllErrors]);
 
               if (!(await getConnStatus(client))) {
                 scrollToTop(mainRef.current);
 
                 formikBag.setSubmitting(false);
 
-                dispatch({
-                  type: ActionTypes.set_other_errors,
-                  payload: "You are not connected",
-                });
+                dispatch([ActionType.setOtherErrors, "You are not connected"]);
 
                 return;
               }
@@ -88,10 +82,7 @@ export function Login(props: Props) {
 
                 formikBag.setSubmitting(false);
 
-                dispatch({
-                  type: ActionTypes.set_form_error,
-                  payload: errors,
-                });
+                dispatch([ActionType.setFormError, errors]);
 
                 return;
               }
@@ -117,10 +108,7 @@ export function Login(props: Props) {
 
                 formikBag.setSubmitting(false);
 
-                dispatch({
-                  type: ActionTypes.set_server_errors,
-                  payload: error,
-                });
+                dispatch([ActionType.setServerErrors, error]);
               }
             }}
           >
@@ -243,10 +231,7 @@ function Errors(props: {
       <Message
         error={true}
         onDismiss={function onDismiss() {
-          dispatch({
-            type: ActionTypes.clear_all_errors,
-            payload: null,
-          });
+          dispatch([ActionType.clearAllErrors]);
         }}
       >
         <Message.Content>{content}</Message.Content>

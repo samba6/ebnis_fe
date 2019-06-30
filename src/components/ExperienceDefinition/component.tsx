@@ -27,7 +27,7 @@ import {
   EMPTY_FIELD,
   reducer,
   State,
-  Action_Types,
+  ActionType,
   Action,
   GraphQlErrorState,
   GraphQlError,
@@ -124,9 +124,7 @@ export function ExperienceDefinition(props: Props) {
 
   function onSubmit(formikProps: FormikProps<FormValues>) {
     return async function() {
-      dispatch({
-        type: Action_Types.CLEAR_ALL_ERRORS,
-      });
+      dispatch([ActionType.clearAllErrors]);
 
       const { validateForm, setSubmitting, values } = formikProps;
       setSubmitting(true);
@@ -134,10 +132,7 @@ export function ExperienceDefinition(props: Props) {
       const errors = await validateForm(values);
 
       if (errors.title || errors.fieldDefs) {
-        dispatch({
-          type: Action_Types.SET_FORM_ERROR,
-          payload: errors,
-        });
+        dispatch([ActionType.setFormError, errors]);
 
         setSubmitting(false);
         return;
@@ -178,10 +173,7 @@ export function ExperienceDefinition(props: Props) {
 
         (navigate as NavigateFn)(makeExperienceRoute(expId));
       } catch (error) {
-        dispatch({
-          type: Action_Types.SET_GRAPHQL_ERROR,
-          payload: parseGraphQlError(error),
-        });
+        dispatch([ActionType.setGraphqlError, parseGraphQlError(error)]);
 
         scrollTop(routeRef);
       }
@@ -194,7 +186,8 @@ export function ExperienceDefinition(props: Props) {
     const { dirty, isSubmitting, values } = formikProps;
     const { title, fieldDefs } = values;
     const formInvalid = !(!!title && !!fieldDefs.length);
-    const { graphQlError, submittedFormErrors = {} } = state;
+    const { graphQlError } = state;
+    const submittedFormErrors = state.submittedFormErrors || {};
 
     return (
       <Form onSubmit={onSubmit(formikProps)}>
@@ -262,7 +255,6 @@ export function ExperienceDefinition(props: Props) {
 function FieldNameComponent({
   field,
   index,
-  dispatch,
   submittedFormErrors,
   graphQlError,
 }: FieldProps<FormValues> & {
@@ -366,10 +358,7 @@ function FieldBtnCtrlsComponent({
             onClick={function onFieldAddClicked() {
               arrayHelpers.insert(index1, { ...EMPTY_FIELD });
 
-              dispatch({
-                type: Action_Types.CLEAR_ALL_ERRORS,
-                payload: undefined,
-              });
+              dispatch([ActionType.clearAllErrors]);
             }}
           >
             <Icon name="plus" />
@@ -383,10 +372,7 @@ function FieldBtnCtrlsComponent({
             onClick={function onFieldDeleteClicked() {
               arrayHelpers.remove(index);
 
-              dispatch({
-                type: Action_Types.CLEAR_ALL_ERRORS,
-                payload: undefined,
-              });
+              dispatch([ActionType.clearAllErrors]);
             }}
           >
             <Icon name="minus" />
@@ -438,10 +424,7 @@ function DescriptionInputComponent({
         className="description-field-toggle"
         htmlFor={field.name}
         onClick={() =>
-          dispatch({
-            type: Action_Types.SET_SHOW_DESCRIPTION_INPUT,
-            payload: !showDescriptionInput,
-          })
+          dispatch([ActionType.showDescriptionInput, !showDescriptionInput])
         }
       >
         Description
@@ -582,7 +565,7 @@ function GraphQlErrorsSummaryComponent({
   graphQlError,
   dispatch,
 }: {
-  graphQlError: GraphQlErrorState | undefined;
+  graphQlError?: GraphQlErrorState | null;
   dispatch: Dispatch<Action>;
 }) {
   if (!graphQlError) {
@@ -596,12 +579,7 @@ function GraphQlErrorsSummaryComponent({
       data-testid="graphql-errors-summary"
       style={{ display: "block" }}
       error={true}
-      onDismiss={() =>
-        dispatch({
-          type: Action_Types.SET_GRAPHQL_ERROR,
-          payload: undefined,
-        })
-      }
+      onDismiss={() => dispatch([ActionType.setGraphqlError, null])}
     >
       <Message.Header className="graphql-errors-header">
         Error in submitted form!
@@ -644,7 +622,7 @@ function makeFieldName(index: number, key: keyof CreateFieldDef) {
 
 function getFieldContainerErrorClassFromForm(
   index: number,
-  submittedFormErrors: FormikErrors<FormValues> | undefined,
+  submittedFormErrors?: FormikErrors<FormValues> | null,
 ) {
   if (!(submittedFormErrors && submittedFormErrors.fieldDefs)) {
     return "";

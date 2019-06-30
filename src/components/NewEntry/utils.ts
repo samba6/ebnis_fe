@@ -85,16 +85,6 @@ interface ExperienceToFormValuesPayload {
   experience: ExperienceFragment;
 }
 
-export interface Action {
-  type: ActionTypes;
-  payload:
-    | null
-    | undefined
-    | SetFormObjFieldPayload
-    | ExperienceToFormValuesPayload
-    | ServerErrors;
-}
-
 interface FieldErrors {
   [k: string]: string;
 }
@@ -110,10 +100,16 @@ export interface State {
   readonly networkError?: string | null;
 }
 
-export const reducer: Reducer<State, Action> = function reducerFn(
-  prevState,
-  { type, payload },
-) {
+type Action =
+  | [ActionTypes.setFormObjField, SetFormObjFieldPayload]
+  | [
+      ActionTypes.experienceToFormValues,
+      ExperienceToFormValuesPayload["experience"],
+    ]
+  | [ActionTypes.setServerErrors, ServerErrors]
+  | [ActionTypes.removeServerErrors];
+
+export const reducer: Reducer<State, Action> = (prevState, [type, payload]) => {
   return immer(prevState, proxy => {
     switch (type) {
       case ActionTypes.setFormObjField:
@@ -128,7 +124,7 @@ export const reducer: Reducer<State, Action> = function reducerFn(
       case ActionTypes.experienceToFormValues:
         {
           proxy.formObj = initialFormValuesFromExperience(
-            (payload as ExperienceToFormValuesPayload).experience,
+            payload as ExperienceToFormValuesPayload["experience"],
           );
         }
 
@@ -186,7 +182,7 @@ export function parseApolloErrors(payload: ApolloError) {
 export type DispatchType = Dispatch<Action>;
 
 export interface CreateEntryFieldErrors {
-  fields: Array<{
+  fields: {
     errors: {
       data: string;
     };
@@ -195,5 +191,5 @@ export interface CreateEntryFieldErrors {
       def_id: string;
       index: number;
     };
-  }>;
+  }[];
 }

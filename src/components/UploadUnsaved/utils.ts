@@ -161,24 +161,16 @@ export enum ActionType {
   removeServerErrors = "@components/upload-unsaved/remove-server-error",
 }
 
-interface Action {
-  type: ActionType;
-  payload?:
-    | number
-    | boolean
-    | UploadAllUnsavedsMutation
-    | undefined
-    | void
-    | ApolloError
-    | null;
-}
+type Action =
+  | [ActionType.toggleTab, number | string]
+  | [ActionType.setUploading, boolean]
+  | [ActionType.uploadResult, UploadAllUnsavedsMutation | undefined | void]
+  | [ActionType.setServerError, ApolloError]
+  | [ActionType.removeServerErrors];
 
 export type DispatchType = Dispatch<Action>;
 
-export const reducer: Reducer<State, Action> = (
-  prevState,
-  { type, payload },
-) => {
+export const reducer: Reducer<State, Action> = (prevState, [type, payload]) => {
   return immer(prevState, proxy => {
     switch (type) {
       case ActionType.toggleTab:

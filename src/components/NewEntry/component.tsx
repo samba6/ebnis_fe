@@ -60,12 +60,7 @@ export function NewEntry(props: Props) {
   useEffect(
     function setInitialFormValues() {
       if (experience) {
-        dispatch({
-          type: ActionTypes.experienceToFormValues,
-          payload: {
-            experience,
-          },
-        });
+        dispatch([ActionTypes.experienceToFormValues, experience]);
       }
     },
     [experience],
@@ -131,10 +126,7 @@ export function NewEntry(props: Props) {
     } catch (errors) {
       const parsedErrors = parseApolloErrors(errors);
 
-      dispatch({
-        type: ActionTypes.setServerErrors,
-        payload: parsedErrors,
-      });
+      dispatch([ActionTypes.setServerErrors, parsedErrors]);
 
       if (parsedErrors.networkError) {
         scrollIntoView("js-scroll-into-view-network-error");
@@ -161,10 +153,7 @@ export function NewEntry(props: Props) {
             data-testid="network-error"
             error={true}
             onDismiss={function onDismiss() {
-              dispatch({
-                type: ActionTypes.removeServerErrors,
-                payload: null,
-              });
+              dispatch([ActionTypes.removeServerErrors]);
             }}
           >
             <Message.Content>

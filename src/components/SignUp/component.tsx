@@ -18,9 +18,8 @@ import {
   FormValuesKey,
   FORM_RENDER_PROPS,
   reducer,
-  initialState,
   DispatchType,
-  ActionTypes,
+  ActionType,
   ErrorSummary,
   FormFieldErrors,
   FormErrors,
@@ -39,7 +38,7 @@ import { LayoutContext } from "../Layout/utils";
 export function SignUp(props: Props) {
   const { client, regUser, updateLocalUser, location } = props;
   const mainRef = useRef<HTMLDivElement | null>(null);
-  const [state, dispatch] = useReducer(reducer, initialState);
+  const [state, dispatch] = useReducer(reducer, {});
   const {
     otherErrors,
     showingErrorSummary,
@@ -72,17 +71,11 @@ export function SignUp(props: Props) {
         <Card.Content>
           <Form
             onSubmit={async function onSubmit() {
-              dispatch({
-                type: ActionTypes.clear_all_errors,
-                payload: null,
-              });
+              dispatch([ActionType.clearAllErrors]);
 
               if (!(await getConnStatus(client))) {
                 formikBag.setSubmitting(false);
-                dispatch({
-                  type: ActionTypes.set_other_errors,
-                  payload: "You are not connected",
-                });
+                dispatch([ActionType.setOtherErrors, "You are not connected"]);
                 scrollToTop(mainRef);
                 return;
               }
@@ -92,10 +85,7 @@ export function SignUp(props: Props) {
 
               if (!loIsEmpty(errors)) {
                 formikBag.setSubmitting(false);
-                dispatch({
-                  type: ActionTypes.set_form_errors,
-                  payload: errors,
-                });
+                dispatch([ActionType.setFormErrors, errors]);
                 scrollToTop(mainRef);
 
                 return;
@@ -114,10 +104,7 @@ export function SignUp(props: Props) {
                 refreshToHome(persistor);
               } catch (error) {
                 formikBag.setSubmitting(false);
-                dispatch({
-                  type: ActionTypes.set_server_errors,
-                  payload: error,
-                });
+                dispatch([ActionType.setServerErrors, error]);
                 scrollToTop(mainRef);
               }
             }}
@@ -235,9 +222,7 @@ function ErrorsSummary(props: FormErrorsProps) {
       <Message
         error={true}
         onDismiss={function onDismissed() {
-          dispatch({
-            type: ActionTypes.clear_error_summary,
-          });
+          dispatch([ActionType.clearErrorSummary]);
         }}
       >
         <Message.Content>{content}</Message.Content>

@@ -1,5 +1,5 @@
 import React from "react";
-import { Props, PwdInputActionTypes } from "./pwd-input";
+import { Props, PasswordInputType } from "./pwd-input";
 import Icon from "semantic-ui-react/dist/commonjs/elements/Icon";
 import Input from "semantic-ui-react/dist/commonjs/elements/Input";
 import Form from "semantic-ui-react/dist/commonjs/collections/Form";
@@ -21,12 +21,7 @@ export const PwdInput = React.memo(
               name="eye"
               className="link"
               data-testid="password-unmask"
-              onClick={() =>
-                dispatch({
-                  payload: "text",
-                  type: PwdInputActionTypes.SET_PWD_TYPE,
-                })
-              }
+              onClick={() => dispatch([PasswordInputType, "text"])}
             />
           )}
 
@@ -35,12 +30,7 @@ export const PwdInput = React.memo(
               name="eye slash"
               className="link"
               data-testid="password-mask"
-              onClick={() =>
-                dispatch({
-                  payload: "password",
-                  type: PwdInputActionTypes.SET_PWD_TYPE,
-                })
-              }
+              onClick={() => dispatch([PasswordInputType, "password"])}
             />
           )}
         </Input>
@@ -60,8 +50,6 @@ export const PwdInput = React.memo(
     return true;
   },
 );
-
-export default PwdInput;
 
 export function makeId(name: string) {
   return `pwd-input-${name}`;

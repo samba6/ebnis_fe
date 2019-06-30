@@ -22,10 +22,10 @@ export const fieldTypeUtils = {
           value={value}
           fluid={true}
           onChange={(e, { value: inputVal }) => {
-            dispatch({
-              type: ActionTypes.setFormObjField,
-              payload: { formFieldName: name, value: inputVal },
-            });
+            dispatch([
+               ActionTypes.setFormObjField,
+               { formFieldName: name, value: inputVal },
+            ]);
           }}
         />
       );
@@ -46,10 +46,10 @@ export const fieldTypeUtils = {
           name={name}
           value={value as string}
           onChange={(e, { value: inputVal }) => {
-            dispatch({
-              type: ActionTypes.setFormObjField,
-              payload: { formFieldName: name, value: inputVal as string },
-            });
+            dispatch([
+               ActionTypes.setFormObjField,
+               { formFieldName: name, value: inputVal as string },
+            ]);
           }}
         />
       );
@@ -122,10 +122,10 @@ export const fieldTypeUtils = {
           value={value}
           fluid={true}
           onChange={(e, { value: inputVal }) => {
-            dispatch({
-              type: ActionTypes.setFormObjField,
-              payload: { formFieldName: name, value: Number(inputVal) },
-            });
+            dispatch([
+               ActionTypes.setFormObjField,
+               { formFieldName: name, value: Number(inputVal) },
+            ]);
           }}
         />
       );
@@ -148,10 +148,10 @@ export const fieldTypeUtils = {
           value={value}
           fluid={true}
           onChange={(e, { value: inputVal }) => {
-            dispatch({
-              type: ActionTypes.setFormObjField,
-              payload: { formFieldName: name, value: Number(inputVal) },
-            });
+            dispatch([
+               ActionTypes.setFormObjField,
+               { formFieldName: name, value: Number(inputVal) },
+            ]);
           }}
         />
       );
@@ -167,9 +167,9 @@ export const fieldTypeUtils = {
 
 function makeSetValueFunc(dispatch: DispatchType) {
   return function SetValue(fieldName: string, value: FormObjVal) {
-    dispatch({
-      type: ActionTypes.setFormObjField,
-      payload: { formFieldName: fieldName, value },
-    });
+    dispatch([
+       ActionTypes.setFormObjField,
+       { formFieldName: fieldName, value },
+    ]);
   };
 }

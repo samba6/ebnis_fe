@@ -97,10 +97,7 @@ export function UploadUnsaved(props: Props) {
 
   const onUploadAllClicked = useCallback(
     async function onUploadAllClickedFn() {
-      dispatch({
-        type: ActionType.setUploading,
-        payload: true,
-      });
+      dispatch([ActionType.setUploading, true]);
 
       try {
         let uploadFunction;
@@ -145,15 +142,9 @@ export function UploadUnsaved(props: Props) {
           }),
         });
 
-        dispatch({
-          type: ActionType.uploadResult,
-          payload: result && result.data,
-        });
+        dispatch([ActionType.uploadResult, result && result.data]);
       } catch (error) {
-        dispatch({
-          type: ActionType.setServerError,
-          payload: error,
-        });
+        dispatch([ActionType.setServerError, error]);
 
         scrollIntoView("js-scroll-into-view-server-error");
       }
@@ -373,20 +364,14 @@ function TabsMenuComponent({
 
   const toggleTab1 = useCallback(
     function toggleTab1Fn() {
-      dispatch({
-        type: ActionType.toggleTab,
-        payload: 1,
-      });
+      dispatch([ActionType.toggleTab, 1]);
     },
     [dispatch],
   );
 
   const toggleTab2 = useCallback(
     function toggleTab2Fn() {
-      dispatch({
-        type: ActionType.toggleTab,
-        payload: 2,
-      });
+      dispatch([ActionType.toggleTab, 2]);
     },
     [dispatch],
   );
@@ -505,10 +490,7 @@ function ServerError(props: {
       data-testid="server-error"
       error={true}
       onDismiss={function onDismiss() {
-        dispatch({
-          type: ActionType.removeServerErrors,
-          payload: null,
-        });
+        dispatch([ActionType.removeServerErrors]);
       }}
     >
       <Message.Content>

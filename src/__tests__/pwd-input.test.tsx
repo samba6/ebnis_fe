@@ -1,14 +1,24 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import React, { useReducer } from "react";
+import React, { useReducer, Reducer } from "react";
 import "jest-dom/extend-expect";
 import "react-testing-library/cleanup-after-each";
 import { render, fireEvent } from "react-testing-library";
 import { Formik, Field, FieldProps } from "formik";
 
-import PwdInput from "../components/PwdInput";
+import { PwdInput } from "../components/PwdInput/pwd-input-x";
 import { makeId } from "../components/PwdInput/pwd-input-x";
-import { reducer } from "../components/PwdInput/pwd-input";
+import {
+  PasswordInputAction,
+  PasswordInputPayload,
+} from "../components/PwdInput/pwd-input";
+
+const reducer: Reducer<
+  PasswordInputPayload | undefined,
+  PasswordInputAction
+> = (prevState, [, payload]) => {
+  return payload;
+};
 
 it("renders correctly", () => {
   const name = "pwd";

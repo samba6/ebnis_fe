@@ -4,7 +4,7 @@ import { DropdownItemProps } from "semantic-ui-react";
 import { MutationUpdaterFn } from "react-apollo";
 import { Reducer } from "react";
 import { FormikErrors } from "formik";
-
+import immer from "immer";
 import { CreateExperienceMutationProps } from "../../graphql/create-experience.mutation";
 import {
   CreateExperienceInput as FormValues,
@@ -60,62 +60,69 @@ for (const k of fieldTypeKeys) {
   });
 }
 
-export interface Action {
-  type: Action_Types;
-  payload?: undefined | boolean | FormikErrors<FormValues> | GraphQlErrorState;
+export enum ActionType {
+  setFormError = "@components/new-experience/SET_FORM_ERROR",
+
+  setGraphqlError = "@components/new-experience/SET_GRAPHQL_ERROR",
+
+  showDescriptionInput = "@components/new-experience/SET_SHOW_DESCRIPTION_INPUT",
+
+  clearAllErrors = "@components/new-experience/CLEAR_ALL_ERRORS",
 }
 
 export interface State {
-  readonly otherErrors?: string;
-  readonly submittedFormErrors?: FormikErrors<FormValues>;
-  readonly graphQlError?: GraphQlErrorState;
+  readonly otherErrors?: string | null;
+  readonly submittedFormErrors?: FormikErrors<FormValues> | null;
+  readonly graphQlError?: GraphQlErrorState | null;
   readonly showDescriptionInput: boolean;
 }
 
-export const reducer: Reducer<State, Action> = (state, action) => {
-  switch (action.type) {
-    case Action_Types.CLEAR_ALL_ERRORS:
-      return {
-        ...state,
-        otherErrors: undefined,
-        submittedFormErrors: undefined,
-        graphQlError: undefined,
-      };
+export type Action =
+  | [ActionType.setFormError, FormikErrors<FormValues>]
+  | [ActionType.setGraphqlError, GraphQlErrorState | null]
+  | [ActionType.showDescriptionInput, boolean]
+  | [ActionType.clearAllErrors];
 
-    case Action_Types.SET_FORM_ERROR:
-      return {
-        ...state,
-        submittedFormErrors: action.payload as FormikErrors<FormValues>,
-      };
+export const reducer: Reducer<State, Action> = (prevState, [type, payload]) => {
+  return immer(prevState, proxy => {
+    switch (type) {
+      case ActionType.clearAllErrors:
+        {
+          proxy.otherErrors = null;
+          proxy.submittedFormErrors = null;
+          proxy.graphQlError = null;
+        }
 
-    case Action_Types.SET_GRAPHQL_ERROR:
-      return { ...state, graphQlError: action.payload as GraphQlErrorState };
+        break;
 
-    case Action_Types.SET_SHOW_DESCRIPTION_INPUT:
-      return { ...state, showDescriptionInput: action.payload as boolean };
+      case ActionType.setFormError:
+        {
+          proxy.submittedFormErrors = payload as FormikErrors<FormValues>;
+        }
 
-    // istanbul ignore next - trust React.useReducer
-    default:
-      return state;
-  }
+        break;
+
+      case ActionType.setGraphqlError:
+        {
+          proxy.graphQlError = payload as GraphQlErrorState;
+        }
+
+        break;
+
+      case ActionType.showDescriptionInput:
+        {
+          proxy.showDescriptionInput = payload as boolean;
+        }
+
+        break;
+    }
+  });
 };
 
 export const EMPTY_FIELD = { name: "", type: "" as FieldType };
 
-export enum Action_Types {
-  SET_FORM_ERROR = "@components/new-experience/SET_FORM_ERROR",
-
-  SET_GRAPHQL_ERROR = "@components/new-experience/SET_GRAPHQL_ERROR",
-
-  SET_SHOW_DESCRIPTION_INPUT = "@components/new-experience/SET_SHOW_DESCRIPTION_INPUT",
-
-  SELECT_VALUES = "@components/new-experience/SELECT_VALUES",
-
-  CLEAR_ALL_ERRORS = "@components/new-experience/CLEAR_ALL_ERRORS",
-}
-
 export interface GraphQlError {
-  field_defs?: Array<{ name?: string; type?: string }>;
+  field_defs?: { name?: string; type?: string }[];
   title?: string;
 }
 

@@ -4,10 +4,10 @@ import { WithApolloClient } from "react-apollo";
 import { FormikErrors } from "formik";
 import { ApolloError } from "apollo-client";
 import { Reducer, Dispatch } from "react";
-
+import immer from "immer";
 import { RegMutationProps } from "../../graphql/user-reg.mutation";
 import { Registration } from "../../graphql/apollo-types/globalTypes";
-import { PwdInputActionTypes } from "../PwdInput/pwd-input";
+import { PasswordInputAction, PasswordInputType } from "../PwdInput/pwd-input";
 import { UserLocalMutationProps } from "../../state/user.resolver";
 
 export interface Props
@@ -58,12 +58,12 @@ export const FORM_RENDER_PROPS = {
   source: ["Source", "text"],
 };
 
-export enum ActionTypes {
-  set_other_errors = "@components/signup/set_other_errors",
-  set_form_errors = "@components/signup/set_form_errors",
-  set_server_errors = "@components/signup/set_server_errors",
-  clear_all_errors = "@components/signup/clear_all_errors",
-  clear_error_summary = "@components/signup/clear_error_summary",
+export enum ActionType {
+  setOtherErrors = "@components/signup/set_other_errors",
+  setFormErrors = "@components/signup/set_form_errors",
+  setServerErrors = "@components/signup/set_server_errors",
+  clearAllErrors = "@components/signup/clear_all_errors",
+  clearErrorSummary = "@components/signup/clear_error_summary",
 }
 
 export type FormErrors = FormikErrors<Registration>;
@@ -87,20 +87,13 @@ export interface State {
   readonly showingErrorSummary?: boolean;
 }
 
-export const initialState = {} as State;
-
-type ActionPayload =
-  | null
-  | undefined
-  | FormErrors
-  | ApolloError
-  | string
-  | boolean;
-
-export interface Action {
-  type: ActionTypes | PwdInputActionTypes;
-  payload?: ActionPayload;
-}
+type Action =
+  | [ActionType.setOtherErrors, string]
+  | [ActionType.setFormErrors, FormErrors]
+  | [ActionType.setServerErrors, ApolloError]
+  | [ActionType.clearAllErrors]
+  | [ActionType.clearErrorSummary]
+  | PasswordInputAction;
 
 /**
  * form-errors and server-field-errors should be at bottom of field and not in summary
@@ -109,67 +102,69 @@ export interface Action {
  *
  *
  */
+export const reducer: Reducer<State, Action> = (prevState, [type, payload]) => {
+  return immer(prevState, proxy => {
+    switch (type) {
+      case ActionType.clearAllErrors:
+        {
+          proxy.serverFieldsErrors = null;
+          proxy.formErrors = null;
+          proxy.networkError = null;
+          proxy.otherErrors = null;
+          proxy.showingErrorSummary = false;
+        }
 
-const reducerObject: {
-  [k in ActionTypes]: (prevState: State, payload: ActionPayload) => State;
-} = {
-  [ActionTypes.clear_all_errors]: prevState => ({
-    ...prevState,
-    serverFieldsErrors: null,
-    formErrors: null,
-    networkError: null,
-    otherErrors: null,
-    showingErrorSummary: false,
-  }),
+        break;
 
-  [ActionTypes.set_form_errors]: (prevState, payload) => ({
-    ...prevState,
-    formErrors: payload as FormErrors,
-    showingErrorSummary: true,
-  }),
+      case ActionType.setFormErrors:
+        {
+          proxy.formErrors = payload as FormErrors;
+          proxy.showingErrorSummary = true;
+        }
 
-  [ActionTypes.clear_error_summary]: prevState => ({
-    ...prevState,
-    networkError: null,
-    otherErrors: null,
-    showingErrorSummary: false,
-  }),
+        break;
 
-  [ActionTypes.set_server_errors]: (prevState, payload) => {
-    const { networkError, graphQLErrors } = payload as ApolloError;
-    let errors = null;
+      case ActionType.clearErrorSummary:
+        {
+          proxy.networkError = null;
+          proxy.otherErrors = null;
+          proxy.showingErrorSummary = false;
+        }
 
-    if (graphQLErrors && graphQLErrors[0]) {
-      errors = JSON.parse(graphQLErrors[0].message).errors;
+        break;
+
+      case ActionType.setServerErrors:
+        {
+          const { networkError, graphQLErrors } = payload as ApolloError;
+          let errors = null;
+
+          if (graphQLErrors && graphQLErrors[0]) {
+            errors = JSON.parse(graphQLErrors[0].message).errors;
+          }
+
+          (proxy.networkError = networkError && networkError.message),
+            (proxy.serverFieldsErrors = errors),
+            (proxy.showingErrorSummary = true);
+        }
+
+        break;
+
+      case ActionType.setOtherErrors:
+        {
+          (proxy.otherErrors = payload as string),
+            (proxy.showingErrorSummary = true);
+        }
+
+        break;
+
+      case PasswordInputType:
+        {
+          proxy.pwdType = payload as "password" | "text";
+        }
+
+        break;
     }
-
-    return {
-      ...prevState,
-      networkError: networkError && networkError.message,
-      serverFieldsErrors: errors,
-      showingErrorSummary: true,
-    };
-  },
-
-  [ActionTypes.set_other_errors]: (prevState, payload) => ({
-    ...prevState,
-    otherErrors: payload as string,
-    showingErrorSummary: true,
-  }),
-};
-
-export const reducer: Reducer<State, Action> = (
-  prevState,
-  { type, payload },
-) => {
-  const fn = reducerObject[type];
-
-  if (fn) {
-    return fn(prevState, payload);
-  }
-
-  // istanbul ignore next
-  return prevState;
+  });
 };
 
 export type DispatchType = Dispatch<Action>;

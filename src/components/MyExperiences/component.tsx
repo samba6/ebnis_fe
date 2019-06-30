@@ -1,14 +1,14 @@
-import React, { useEffect, useReducer, useRef, useMemo } from "react";
+import React, {
+  useEffect,
+  useRef,
+  useMemo,
+  useState,
+  useCallback,
+} from "react";
 import Icon from "semantic-ui-react/dist/commonjs/elements/Icon";
 
 import "./styles.scss";
-import {
-  Props,
-  reducer,
-  initialState,
-  DispatchType,
-  ActionTypes,
-} from "./utils";
+import { Props } from "./utils";
 import { EXPERIENCE_DEFINITION_URL } from "../../routes";
 import { makeExperienceRoute } from "../../constants/experience-route";
 import { Loading } from "../Loading";
@@ -46,7 +46,9 @@ export const MyExperiences = (props: Props) => {
 
   const loading = loadingExperiences || loadingUnsavedExperiences;
 
-  const [state, dispatch] = useReducer(reducer, initialState);
+  const [descriptionToggleMap, toggleDescription] = useState<DescriptionMap>(
+    {},
+  );
 
   // make sure we are only loading entries in the background once and not on
   // every render
@@ -84,7 +86,16 @@ export const MyExperiences = (props: Props) => {
     }, 1000);
 
     preFetchExperiencesRef.current = true;
-  }, [getExperiences]);
+  }, [getExperiences, client]);
+
+  const toggleDescriptionFn = useCallback(
+    (id: string) => {
+      toggleDescription(currentSate => {
+        return { ...currentSate, [id]: !currentSate[id] };
+      });
+    },
+    [toggleDescription],
+  );
 
   const unsavedExperiencesAsEdges = useMemo(() => {
     if (!unsavedExperiences) {
@@ -107,7 +118,7 @@ export const MyExperiences = (props: Props) => {
       unsavedExperiencesAsEdges || [],
     );
     return edges;
-  }, [getExperiences, unsavedExperiences]);
+  }, [getExperiences, unsavedExperiencesAsEdges]);
 
   function renderExperiences() {
     if (
@@ -133,8 +144,8 @@ export const MyExperiences = (props: Props) => {
             return (
               <Experience
                 key={id}
-                showingDescription={state.toggleDescriptionStates[id]}
-                dispatch={dispatch}
+                showingDescription={descriptionToggleMap[id]}
+                toggleDescription={toggleDescriptionFn}
                 id={id}
                 {...rest}
               />
@@ -174,15 +185,16 @@ export const MyExperiences = (props: Props) => {
   );
 };
 
-interface ExperienceProps extends ExperienceConnectionFragment_edges_node {
+interface ExperienceProps
+  extends ExperienceConnectionFragment_edges_node,
+    ToggleDescription {
   showingDescription: boolean;
-  dispatch: DispatchType;
 }
 
 const Experience = React.memo(
   function ExperienceFn({
     showingDescription,
-    dispatch,
+    toggleDescription,
     title,
     description,
     id,
@@ -193,7 +205,7 @@ const Experience = React.memo(
           description={description}
           showingDescription={showingDescription}
           id={id}
-          dispatch={dispatch}
+          toggleDescription={toggleDescription}
         />
 
         <Link
@@ -221,12 +233,11 @@ const ShowDescriptionToggle = React.memo(
     description,
     showingDescription,
     id,
-    dispatch,
-  }: {
+    toggleDescription,
+  }: ToggleDescription & {
     description: string | null;
     showingDescription: boolean;
     id: string;
-    dispatch: DispatchType;
   }) {
     if (!description) {
       return null;
@@ -237,11 +248,7 @@ const ShowDescriptionToggle = React.memo(
 
       "data-testid": `exp-toggle-${id}`,
 
-      onClick: () =>
-        dispatch({
-          type: ActionTypes.setToggleDescription,
-          payload: id,
-        }),
+      onClick: () => toggleDescription(id),
     };
 
     return showingDescription ? (
@@ -275,4 +282,12 @@ function mapExperiencesToIds(
   );
 
   return { idToExperienceMap, ids };
+}
+
+interface DescriptionMap {
+  [k: string]: boolean;
+}
+
+interface ToggleDescription {
+  toggleDescription: (id: string) => void;
 }
