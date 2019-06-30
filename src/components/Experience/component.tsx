@@ -19,7 +19,6 @@ import makeClassNames from "classnames";
 
 export function Experience(props: Props) {
   const {
-    navigate,
     experience,
     className = "",
     entryProps = {},
@@ -128,9 +127,17 @@ function OptionsMenuComponent({
     >
       <Dropdown.Menu>
         {newEntry && (
-          <Dropdown.Header data-testid="new-experience-entry-button">
+          <Dropdown.Header
+            style={{
+              display: "block",
+            }}
+            data-testid="new-experience-entry-button"
+            className="header"
+            as={Link}
+            to={makeNewEntryRoute(experience.id)}
+          >
             <Icon name="external alternate" />
-            <Link to={makeNewEntryRoute(experience.id)}>New Entry</Link>
+            New Entry
           </Dropdown.Header>
         )}
 
