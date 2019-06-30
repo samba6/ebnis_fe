@@ -161,15 +161,6 @@ it("removes saved experience from cache only if 'createEntries' operation return
     },
   } as any;
 
-  // not part of 'createEntries' operation, but exists in cache
-  const savedExperience3 = { id: "3" };
-
-  mockGetSavedExperiencesWithUnsavedEntries.mockReturnValue([
-    savedExperience1,
-    savedExperience2,
-    savedExperience3,
-  ]);
-
   const savedExperiencesIdsToUnsavedEntriesMap = {
     "1": {
       experience: savedExperience1,
@@ -227,7 +218,7 @@ it("removes saved experience from cache only if 'createEntries' operation return
 
   expect(
     mockWriteSavedExperiencesWithUnsavedEntriesToCache.mock.calls[0][1],
-  ).toEqual([updatedExperience2, savedExperience3]);
+  ).toEqual([updatedExperience2]);
 
   done();
 });

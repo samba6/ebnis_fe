@@ -21,7 +21,7 @@ export interface Props
   menuOptions?: {
     newEntry?: boolean;
   };
-  doNotShowNoEntriesLink?: boolean;
+  entriesJSX?: JSX.Element | JSX.Element[];
 }
 
 export type FormObjVal = Date | string;

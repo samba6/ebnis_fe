@@ -132,7 +132,7 @@ export function removeAllReferencesToEntityFromCache(
   dataProxy: DataProxy,
   entitiesToRemove: RemoveReferencesToEntityFromCache,
 ) {
-  // tslint:disable-next-line: no-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const cache = dataProxy as any;
   const dataClass = cache.data;
   const data = dataClass.data;
@@ -197,7 +197,7 @@ export function removeAllReferencesToEntityFromCache(
   return count;
 }
 
-export type RemoveReferencesToEntityFromCache = Array<{
+export type RemoveReferencesToEntityFromCache = {
   id: string;
   typename?: string;
-}>;
+}[];

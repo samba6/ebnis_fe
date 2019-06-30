@@ -7,7 +7,6 @@ import {
   ExperiencesIdsToObjectMap,
   DispatchType,
   State,
-  DidUploadSucceed,
   stateInitializerFn,
   ExperienceObjectMap,
 } from "./utils";
@@ -20,6 +19,7 @@ import { SidebarHeader } from "../SidebarHeader";
 import {
   ExperienceFragment_entries_edges_node,
   ExperienceFragment_entries_edges_node_fields,
+  ExperienceFragment_fieldDefs,
 } from "../../graphql/apollo-types/ExperienceFragment";
 import "./styles.scss";
 import { CSSTransition, TransitionGroup } from "react-transition-group";
@@ -38,6 +38,7 @@ import { Experience } from "../Experience/component";
 import { UnsavedExperience } from "../ExperienceDefinition/resolver-utils";
 import { scrollIntoView } from "../scroll-into-view";
 import { FormCtrlError } from "../FormCtrlError/component";
+import { Entry } from "../Entry/component";
 
 const timeoutMs = 500;
 
@@ -48,7 +49,7 @@ export function UploadUnsaved(props: Props) {
     } = {} as UnsavedExperiencesData,
 
     savedExperiencesWithUnsavedEntriesProps: {
-      loading: loadingSavedExperiencesWithUnsavedEntries,
+      loading: loadingSavedExperiences,
     } = {} as SavedExperiencesWithUnsavedEntriesData,
 
     uploadUnsavedExperiences,
@@ -72,14 +73,11 @@ export function UploadUnsaved(props: Props) {
     savedExperiencesLen,
     unsavedExperiences,
     savedExperiences,
-    savedExperiencesIdsToObjectMap,
-    unsavedExperiencesIdsToObjectMap,
-    allUnsavedEntriesSucceeded,
-    allUnsavedExperiencesSucceeded,
+    savedExperiencesMap,
+    unsavedExperiencesMap,
   } = state;
 
-  const loading =
-    loadingUnsavedExperiences || loadingSavedExperiencesWithUnsavedEntries;
+  const loading = loadingUnsavedExperiences || loadingSavedExperiences;
 
   useEffect(() => {
     if (unSavedCount === 0) {
@@ -108,28 +106,22 @@ export function UploadUnsaved(props: Props) {
 
           variables = {
             unsavedExperiences: unsavedExperiencesToUploadData(
-              unsavedExperiencesIdsToObjectMap,
+              unsavedExperiencesMap,
             ),
 
-            unsavedEntries: savedExperiencesToUploadData(
-              savedExperiencesIdsToObjectMap,
-            ),
+            unsavedEntries: savedExperiencesToUploadData(savedExperiencesMap),
           };
         } else if (unsavedExperiencesLen !== 0) {
           uploadFunction = uploadUnsavedExperiences;
 
           variables = ({
-            input: unsavedExperiencesToUploadData(
-              unsavedExperiencesIdsToObjectMap,
-            ),
+            input: unsavedExperiencesToUploadData(unsavedExperiencesMap),
           } as unknown) as UploadAllUnsavedsMutationVariables;
         } else {
           uploadFunction = createEntries;
 
           variables = ({
-            createEntries: savedExperiencesToUploadData(
-              savedExperiencesIdsToObjectMap,
-            ),
+            createEntries: savedExperiencesToUploadData(savedExperiencesMap),
           } as unknown) as UploadAllUnsavedsMutationVariables;
         }
 
@@ -137,7 +129,7 @@ export function UploadUnsaved(props: Props) {
           variables,
 
           update: onUploadSuccessUpdate({
-            savedExperiencesIdsToUnsavedEntriesMap: savedExperiencesIdsToObjectMap,
+            savedExperiencesIdsToUnsavedEntriesMap: savedExperiencesMap,
             unsavedExperiences: (unsavedExperiences as unknown) as UnsavedExperience[],
           }),
         });
@@ -154,8 +146,8 @@ export function UploadUnsaved(props: Props) {
       unsavedExperiencesLen,
       savedExperiencesLen,
       uploadAllUnsaveds,
-      unsavedExperiencesIdsToObjectMap,
-      savedExperiencesIdsToObjectMap,
+      unsavedExperiencesMap,
+      savedExperiencesMap,
       uploadUnsavedExperiences,
       createEntries,
       unsavedExperiences,
@@ -202,10 +194,7 @@ export function UploadUnsaved(props: Props) {
                     <ExperienceComponent
                       key={experience.id}
                       type="saved"
-                      experienceObjectMap={
-                        savedExperiencesIdsToObjectMap[experience.id]
-                      }
-                      allUploadSucceeded={allUnsavedEntriesSucceeded}
+                      experienceObjectMap={savedExperiencesMap[experience.id]}
                     />
                   );
                 })}
@@ -228,10 +217,7 @@ export function UploadUnsaved(props: Props) {
                     <ExperienceComponent
                       key={experience.id}
                       type="unsaved"
-                      experienceObjectMap={
-                        unsavedExperiencesIdsToObjectMap[experience.id]
-                      }
-                      allUploadSucceeded={allUnsavedExperiencesSucceeded}
+                      experienceObjectMap={unsavedExperiencesMap[experience.id]}
                     />
                   );
                 })}
@@ -248,12 +234,10 @@ export function UploadUnsaved(props: Props) {
 
 function ExperienceComponent({
   type,
-  allUploadSucceeded,
   experienceObjectMap,
 }: {
   experienceObjectMap: ExperienceObjectMap;
   type: "unsaved" | "saved";
-  allUploadSucceeded?: boolean;
 }) {
   const {
     experience,
@@ -266,20 +250,16 @@ function ExperienceComponent({
   const hasError = entriesErrors || experienceError;
 
   const experienceId = experience.id;
-
-  let titleClassSuffix = "";
-
-  if (allUploadSucceeded) {
-    titleClassSuffix = "--success";
-  }
-
-  if (hasError) {
-    titleClassSuffix = "--error";
-  }
-
+  const typePrefix = type + "-experience";
+  let uploadStatusIndicatorSuffix = "";
   let errorIcon = null;
+  let experienceClassName = "";
+  const dataTestId = `${typePrefix}-${experienceId}`;
 
   if (didUploadSucceed) {
+    uploadStatusIndicatorSuffix = "--success";
+    experienceClassName = typePrefix + uploadStatusIndicatorSuffix;
+
     errorIcon = (
       <Icon
         name="check"
@@ -288,6 +268,9 @@ function ExperienceComponent({
       />
     );
   } else if (hasError) {
+    uploadStatusIndicatorSuffix = "--error";
+    experienceClassName = typePrefix + uploadStatusIndicatorSuffix;
+
     errorIcon = (
       <Icon
         name="ban"
@@ -299,22 +282,35 @@ function ExperienceComponent({
 
   return (
     <Experience
+      className={experienceClassName}
       experience={experience}
-      data-testid={type + "-experience"}
+      data-testid={typePrefix}
       headerProps={{
-        "data-testid": type + "-experience-title-" + experienceId,
-        className: `experience-title--uploads experience-title${titleClassSuffix}`,
+        "data-testid": dataTestId + "-title",
+        className: `experience-title--uploads experience-title${uploadStatusIndicatorSuffix}`,
 
         children: errorIcon,
       }}
-      entryProps={{
-        "data-testid": `${type}-experience-${experienceId}-entry-`,
-      }}
-      entryNodes={unsavedEntries}
       menuOptions={{
         newEntry: false,
       }}
-      doNotShowNoEntriesLink={unsavedEntries.length === 0}
+      entriesJSX={unsavedEntries.map((entry, index) => {
+        const { id: entryId } = entry;
+
+        const error = entriesErrors && entriesErrors[entryId];
+
+        return (
+          <Entry
+            key={entryId}
+            entry={entry}
+            fieldDefs={experience.fieldDefs as ExperienceFragment_fieldDefs[]}
+            entriesLen={unsavedEntries.length}
+            index={index}
+            data-testid={`entry-${entryId}`}
+            className={makeClassNames({ "entry--error": !!error })}
+          />
+        );
+      })}
     >
       {experienceError && (
         <FormCtrlError
@@ -450,8 +446,9 @@ function TabsMenuComponent({
 function UploadAllButtonComponent({
   onUploadAllClicked,
   allUploadSucceeded,
-}: DidUploadSucceed & {
+}: {
   onUploadAllClicked: () => Promise<void>;
+  allUploadSucceeded?: boolean;
 }) {
   if (allUploadSucceeded) {
     return null;

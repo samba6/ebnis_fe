@@ -115,22 +115,20 @@ $transitionTime: 500ms;
   }
 
   .experience-title--error {
-    border: 2px solid $error-color !important;
     background-color: $error-bg-color !important;
     color: $error-color;
 
     &.content {
-      border-top: 2px solid $error-color !important;
+      border: 1px solid $error-color !important;
     }
   }
 
   .experience-title--success {
-    border: 2px solid $success-color !important;
     background-color: $success-bg-color !important;
     color: $success-color;
 
     &.content {
-      border-top: 2px solid $success-color !important;
+      border: 1px solid $success-color !important;
     }
   }
 
@@ -144,5 +142,15 @@ $transitionTime: 500ms;
   .experience-error {
     padding: 10px 5px;
     font-weight: 600;
+  }
+
+  .unsaved-experience--success,
+  .saved-experience--success {
+    box-shadow: 0px 1px 3px 0px $success-color, 0px 0px 0px 1px $success-color;
+  }
+
+  .unsaved-experience--error,
+  .saved-experience--error {
+    box-shadow: 0px 1px 3px 0px $error-color, 0px 0px 0px 1px $error-color;
   }
 }

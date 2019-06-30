@@ -27,12 +27,16 @@ export function Experience(props: Props) {
     headerProps = {},
     menuOptions = {},
     entryNodes: defaultEntryNodes,
-    doNotShowNoEntriesLink,
     children,
+    entriesJSX,
     ...otherProps
   } = props;
 
   const entryNodes = useMemo(() => {
+    if (entriesJSX) {
+      return [];
+    }
+
     if (defaultEntryNodes) {
       return defaultEntryNodes;
     }
@@ -44,7 +48,7 @@ export function Experience(props: Props) {
       (edge: ExperienceFragment_entries_edges) =>
         edge.node as ExperienceFragment_entries_edges_node,
     );
-  }, [experience, defaultEntryNodes]);
+  }, [experience, defaultEntryNodes, entriesJSX]);
 
   function renderEntries() {
     const nodesLen = entryNodes.length;
@@ -101,11 +105,9 @@ export function Experience(props: Props) {
 
       {children}
 
-      {!doNotShowNoEntriesLink && (
-        <Card.Content className="experience__main">
-          {renderEntries()}
-        </Card.Content>
-      )}
+      <Card.Content className="experience__main">
+        {entriesJSX || renderEntries()}
+      </Card.Content>
     </Card>
   );
 }

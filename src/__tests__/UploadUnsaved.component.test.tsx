@@ -32,7 +32,11 @@ jest.mock("../components/SidebarHeader", () => ({
 jest.mock("../state/get-conn-status");
 jest.mock("../components/UploadUnsaved/mutation-update");
 jest.mock("../components/Entry/component", () => ({
-  Entry: () => null,
+  Entry: (props: any) => {
+    return (
+      <div className={props.className} data-testid={props["data-testid"]} />
+    );
+  },
 }));
 jest.mock("../components/scroll-into-view");
 
@@ -186,7 +190,7 @@ it("shows only saved experiences, does not show saved entries and uploads unsave
   ).not.toBeInTheDocument();
 
   expect(
-    (queryByTestId("saved-experience-title-1") as any).classList,
+    (queryByTestId("saved-experience-1-title") as any).classList,
   ).not.toContain("experience-title--success");
 
   expect(
@@ -218,7 +222,7 @@ it("shows only saved experiences, does not show saved entries and uploads unsave
   expect(mockOnUploadSuccessUpdate).toHaveBeenCalledTimes(1);
 
   expect(
-    (queryByTestId("saved-experience-title-1") as any).classList,
+    (queryByTestId("saved-experience-1-title") as any).classList,
   ).toContain("experience-title--success");
 
   expect(queryByTestId("upload-all")).not.toBeInTheDocument();
@@ -299,7 +303,7 @@ it("shows only 'unsaved experiences' data and uploading same succeeds", async do
   ).not.toBeInTheDocument();
 
   expect(
-    (queryByTestId("unsaved-experience-title-1") as any).classList,
+    (queryByTestId("unsaved-experience-1-title") as any).classList,
   ).not.toContain("experience-title--success");
 
   expect(
@@ -344,7 +348,7 @@ it("shows only 'unsaved experiences' data and uploading same succeeds", async do
   ).toBeInTheDocument();
 
   expect(
-    (queryByTestId("unsaved-experience-title-1") as any).classList,
+    (queryByTestId("unsaved-experience-1-title") as any).classList,
   ).toContain("experience-title--success");
 
   expect(queryByTestId("upload-triggered-icon-success-1")).toBeInTheDocument();
@@ -454,7 +458,7 @@ it("toggles saved and 'unsaved experiences' and uploads data", async done => {
   expect(queryByTestId("unsaved-experiences")).toBeInTheDocument();
 
   expect(
-    (queryByTestId("unsaved-experience-title-1") as any).classList,
+    (queryByTestId("unsaved-experience-1-title") as any).classList,
   ).not.toContain("experience-title--error");
 
   const $savedMenu = queryByTestId("saved-experiences-menu") as any;
@@ -474,8 +478,12 @@ it("toggles saved and 'unsaved experiences' and uploads data", async done => {
   ).not.toBeInTheDocument();
 
   expect(
-    (queryByTestId("saved-experience-title-2") as any).classList,
+    (queryByTestId("saved-experience-2-title") as any).classList,
   ).not.toContain("experience-title--error");
+
+  expect((queryByTestId(`entry-${entryId}`) as any).classList).not.toContain(
+    "entry--error",
+  );
 
   expect(
     queryByTestId("upload-triggered-icon-error-1"),
@@ -514,8 +522,13 @@ it("toggles saved and 'unsaved experiences' and uploads data", async done => {
   // we are currently showing saved experiences - we confirm it has error class
   expect(queryByTestId("saved-experiences")).toBeInTheDocument();
   expect(
-    (queryByTestId("saved-experience-title-2") as any).classList,
+    (queryByTestId("saved-experience-2-title") as any).classList,
   ).toContain("experience-title--error");
+
+  // we also check to see that correct class has been applied to the entry
+  expect((queryByTestId(`entry-${entryId}`) as any).classList).toContain(
+    "entry--error",
+  );
 
   // we toggle to show unsaved experiences and confirm they also have error
   // class
@@ -525,7 +538,7 @@ it("toggles saved and 'unsaved experiences' and uploads data", async done => {
   expect(queryByTestId("unsaved-experiences")).toBeInTheDocument();
 
   expect(
-    (queryByTestId("unsaved-experience-title-1") as any).classList,
+    (queryByTestId("unsaved-experience-1-title") as any).classList,
   ).toContain("experience-title--error");
 
   expect(queryByTestId("upload-triggered-icon-error-1")).toBeInTheDocument();

@@ -14,6 +14,7 @@ import {
   ExperienceFragment_entries_edges,
   ExperienceFragment_fieldDefs,
 } from "../graphql/apollo-types/ExperienceFragment";
+import { Entry } from "../components/Entry/component";
 
 jest.mock("../components/SidebarHeader", () => ({
   SidebarHeader: jest.fn(() => null),
@@ -23,10 +24,6 @@ const ExperienceP = Experience as P;
 
 beforeEach(() => {
   jest.useFakeTimers();
-});
-
-afterEach(() => {
-  jest.clearAllTimers();
 });
 
 it("renders ui to show empty entries", () => {
@@ -62,7 +59,7 @@ it("renders ui to show empty entries", () => {
   expect(queryByTestId("experience-entry")).not.toBeInTheDocument();
 });
 
-it("renders entries", () => {
+it("renders entries when `entries prop provided`", () => {
   /**
    * Given that experience and associated entries exist in the system
    */
@@ -73,9 +70,7 @@ it("renders entries", () => {
         fields: [
           {
             defId: "1",
-            data: JSON.stringify({
-              [FieldType.SINGLE_LINE_TEXT]: "cat man 1",
-            }),
+            data: `{"SINGLE_LINE_TEXT":"c1"}`,
           },
         ],
       },
@@ -87,9 +82,7 @@ it("renders entries", () => {
         fields: [
           {
             defId: "2",
-            data: JSON.stringify({
-              [FieldType.MULTI_LINE_TEXT]: "cat man 2",
-            }),
+            data: `{"MULTI_LINE_TEXT":"c2"}`,
           },
         ],
       },
@@ -101,9 +94,7 @@ it("renders entries", () => {
         fields: [
           {
             defId: "3",
-            data: JSON.stringify({
-              [FieldType.DATE]: "2019-05-01",
-            }),
+            data: `{"DATE":"2019-05-01"}`,
           },
         ],
       },
@@ -115,9 +106,7 @@ it("renders entries", () => {
         fields: [
           {
             defId: "4",
-            data: JSON.stringify({
-              [FieldType.DATETIME]: "2019-05-01",
-            }),
+            data: `{"DATETIME":"2019-05-01"}`,
           },
         ],
       },
@@ -129,9 +118,7 @@ it("renders entries", () => {
         fields: [
           {
             defId: "5",
-            data: JSON.stringify({
-              [FieldType.DECIMAL]: "500.689",
-            }),
+            data: `{"DECIMAL":"500.689"}`,
           },
         ],
       },
@@ -143,9 +130,7 @@ it("renders entries", () => {
         fields: [
           {
             defId: "6",
-            data: JSON.stringify({
-              [FieldType.INTEGER]: "567012",
-            }),
+            data: `{"INTEGER":"567012"}`,
           },
         ],
       },
@@ -155,37 +140,37 @@ it("renders entries", () => {
   const fieldDefs = [
     {
       id: "1",
-      name: "field name 1",
+      name: "f1",
       type: FieldType.SINGLE_LINE_TEXT,
     },
 
     {
       id: "2",
-      name: "field name 2",
+      name: "f2",
       type: FieldType.MULTI_LINE_TEXT,
     },
 
     {
       id: "3",
-      name: "field name 3",
+      name: "f3",
       type: FieldType.DATE,
     },
 
     {
       id: "4",
-      name: "field name 4",
+      name: "f4",
       type: FieldType.DATETIME,
     },
 
     {
       id: "5",
-      name: "field name 5",
+      name: "f5",
       type: FieldType.DECIMAL,
     },
 
     {
       id: "6",
-      name: "field name 6",
+      name: "f6",
       type: FieldType.INTEGER,
     },
   ] as ExperienceFragment_fieldDefs[];
@@ -212,33 +197,64 @@ it("renders entries", () => {
   /**
    * And we should see the entries' field names and associated data
    */
-  expect(getByText(/field name 1/i)).toBeInTheDocument();
-  expect(getByText(/cat man 1/i)).toBeInTheDocument();
+  expect(getByText(/f1/i)).toBeInTheDocument();
+  expect(getByText(/c1/i)).toBeInTheDocument();
 
-  expect(getByText(/field name 2/i)).toBeInTheDocument();
-  expect(getByText(/cat man 2/i)).toBeInTheDocument();
+  expect(getByText(/f2/i)).toBeInTheDocument();
+  expect(getByText(/c2/i)).toBeInTheDocument();
 
-  expect(getByText(/field name 3/i)).toBeInTheDocument();
-  expect(getByText(/field name 4/i)).toBeInTheDocument();
-  expect(getByText(/field name 5/i)).toBeInTheDocument();
-  expect(getByText(/field name 6/i)).toBeInTheDocument();
+  expect(getByText(/f3/i)).toBeInTheDocument();
+  expect(getByText(/f4/i)).toBeInTheDocument();
+  expect(getByText(/f5/i)).toBeInTheDocument();
+  expect(getByText(/f6/i)).toBeInTheDocument();
 });
 
-it("does not show 'no entries' link if contained in props", () => {
+it("renders entries when `entriesJSX prop provided`", () => {
   /**
-   * Given that there is experience with no entry in the system
+   * Given that experience and associated entries exist in the system
    */
-  const { ui } = makeComp({
-    experience: {
-      entries: {
-        edges: [],
+  const entryNode = {
+    id: "1",
+    fields: [
+      {
+        defId: "1",
+        data: `{"SINGLE_LINE_TEXT":"c1"}`,
       },
-    } as any,
+    ],
+  } as ExperienceFragment_entries_edges["node"];
 
-    doNotShowNoEntriesLink: true,
+  const fieldDefs = [
+    {
+      id: "1",
+      name: "f1",
+      type: FieldType.SINGLE_LINE_TEXT,
+    },
+  ] as ExperienceFragment_fieldDefs[];
+
+  const entriesJSX = (
+    <Entry
+      entry={entryNode as any}
+      fieldDefs={fieldDefs}
+      entriesLen={1}
+      index={0}
+    />
+  );
+
+  const { ui } = makeComp({
+    experience: {} as any,
+    entriesJSX,
   });
 
-  const { queryByTestId } = render(ui);
+  /**
+   * When we start using the component
+   */
+  const { getByText, queryByTestId } = render(ui);
+
+  /**
+   * And we should see the entries' field names and associated data
+   */
+  expect(getByText(/f1/i)).toBeInTheDocument();
+  expect(getByText(/c1/i)).toBeInTheDocument();
 
   expect(queryByTestId("no-entries")).not.toBeInTheDocument();
 });

@@ -33,7 +33,7 @@ export function Entry(props: Props) {
         "component-experience-entry": true,
         [className]: !!className,
       })}
-      data-testid={dataTestId ? `${dataTestId}-${entry.id}` : `entry-container`}
+      data-testid={dataTestId ? dataTestId : `entry-container`}
     >
       {fields.map((field, fieldIndex) => {
         return (
