@@ -24,7 +24,6 @@ import { fieldTypeUtils } from "./field-types-utils";
 import { SidebarHeader } from "../SidebarHeader";
 import { setDocumentTitle, makeSiteTitle } from "../../constants";
 import { getConnStatus } from "../../state/get-conn-status";
-import { UnsavedExperience } from "../ExperienceDefinition/resolver-utils";
 import { ExperienceFragment_fieldDefs } from "../../graphql/apollo-types/ExperienceFragment";
 import makeClassNames from "classnames";
 import { FormCtrlError } from "../FormCtrlError/component";
@@ -116,7 +115,7 @@ export function NewEntry(props: Props) {
       } else {
         await createUnsavedEntry({
           variables: {
-            experience: (experience as unknown) as UnsavedExperience,
+            experience,
             fields,
           },
         });

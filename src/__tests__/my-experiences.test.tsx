@@ -16,10 +16,7 @@ jest.mock("../components/SidebarHeader", () => ({
 jest.mock("../components/MyExperiences/pre-fetch-experiences");
 
 import { preFetchExperiences } from "../components/MyExperiences/pre-fetch-experiences";
-import {
-  ExperienceConnectionFragment,
-  ExperienceConnectionFragment_edges_node,
-} from "../graphql/apollo-types/ExperienceConnectionFragment";
+import { ExperienceConnectionFragment } from "../graphql/apollo-types/ExperienceConnectionFragment";
 
 const mockPreFetchExperiences = preFetchExperiences as jest.Mock;
 
@@ -115,49 +112,6 @@ it("renders experiences from server", () => {
   expect(
     queryByText("lovely experience description 1"),
   ).not.toBeInTheDocument();
-});
-
-it("renders unsaved and saved experiences", () => {
-  /**
-   * Given that client has 2 unsaved experiences and 1 saved experience
-   */
-  const unsavedExperiences = [
-    {
-      id: "1",
-      title: "1",
-    },
-
-    {
-      id: "2",
-      title: "2",
-    },
-  ] as ExperienceConnectionFragment_edges_node[];
-
-  const getExperiences = {
-    edges: [
-      {
-        node: {
-          id: "3",
-          title: "3",
-        },
-      },
-    ],
-  } as ExperienceConnectionFragment;
-
-  const { Ui } = makeComp({
-    unsavedExperiencesProps: { unsavedExperiences } as any,
-    getExperiencesMiniProps: { getExperiences } as any,
-  });
-
-  /**
-   * When we use the component
-   */
-  const { getAllByTestId } = render(<Ui />);
-
-  /**
-   * Then we should only see 3 experiences
-   */
-  expect(getAllByTestId(/experience-main-/).length).toBe(3);
 });
 
 it("loads entries in the background when experiences are loaded", () => {

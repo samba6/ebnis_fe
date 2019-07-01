@@ -6,19 +6,17 @@ import { graphql } from "react-apollo";
 import { MutationFn } from "react-apollo";
 import gql from "graphql-tag";
 import {
-  UNSAVED_EXPERIENCE_FRAGMENT,
-  UnsavedExperience,
-  UNSAVED_EXPERIENCE_TYPENAME,
-} from "./resolver-utils";
-import { ExperienceFragment_fieldDefs } from "../../graphql/apollo-types/ExperienceFragment";
-import {
-  getUnsavedExperiencesFromCache,
-  writeUnsavedExperiencesToCache,
-} from "../../state/resolvers-utils";
+  ExperienceFragment_fieldDefs,
+  ExperienceFragment,
+} from "../../graphql/apollo-types/ExperienceFragment";
+import { EXPERIENCE_FRAGMENT } from "../../graphql/experience.fragment";
+import { writeGetExperienceFullQueryToCache } from "../../state/resolvers/write-get-experience-full-query-to-cache";
+import { updateGetExperienceConnectionMiniQuery } from "../../state/resolvers/update-get-experience-connection-mini-query";
+import { writeSavedAndUnsavedExperiences } from "../../state/unsaved-resolvers";
 
 const createUnsavedExperienceResolver: LocalResolverFn<
   CreateExperienceMutationVariables,
-  UnsavedExperience
+  ExperienceFragment
 > = (
   root,
   {
@@ -48,8 +46,8 @@ const createUnsavedExperienceResolver: LocalResolverFn<
     },
   );
 
-  const experience: UnsavedExperience = {
-    __typename: UNSAVED_EXPERIENCE_TYPENAME,
+  const experience: ExperienceFragment = {
+    __typename: "Experience",
     id: experienceId,
     clientId: experienceId,
     insertedAt: timestamp,
@@ -68,13 +66,9 @@ const createUnsavedExperienceResolver: LocalResolverFn<
     },
   };
 
-  const unsavedExperiences = [
-    ...getUnsavedExperiencesFromCache(cache),
-    experience,
-  ];
-
-  writeUnsavedExperiencesToCache(cache, unsavedExperiences);
-
+  writeGetExperienceFullQueryToCache(cache, experience);
+  updateGetExperienceConnectionMiniQuery(cache, experience, { force: true });
+  writeSavedAndUnsavedExperiences(cache, experienceId);
   return experience;
 };
 
@@ -84,15 +78,15 @@ export const CREATE_UNSAVED_EXPERIENCE_MUTATION = gql`
   ) {
     createUnsavedExperience(createExperienceInput: $createExperienceInput)
       @client {
-      ...UnsavedExperienceFragment
+      ...ExperienceFragment
     }
   }
 
-  ${UNSAVED_EXPERIENCE_FRAGMENT}
+  ${EXPERIENCE_FRAGMENT}
 `;
 
 export interface CreateUnsavedExperienceMutationData {
-  createUnsavedExperience: UnsavedExperience;
+  createUnsavedExperience: ExperienceFragment;
 }
 
 type Fn = MutationFn<

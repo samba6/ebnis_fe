@@ -1,45 +1,47 @@
+/* eslint-disable @typescript-eslint/no-namespace */
+/* eslint-disable @typescript-eslint/no-use-before-define */
 import "cypress-testing-library/add-commands";
 import { MutationOptions } from "apollo-client/core/watchQueryOptions";
 import { UserCreationObject } from "./user-creation-object";
 import {
   buildClientCache,
-  E2EWindowObject
+  E2EWindowObject,
 } from "../../src/state/apollo-setup";
 import {
   Registration,
   CreateEntryInput,
-  CreateExperienceInput
+  CreateExperienceInput,
 } from "../../src/graphql/apollo-types/globalTypes";
 import {
   UserRegMutation,
   UserRegMutationVariables,
-  UserRegMutation_registration
+  UserRegMutation_registration,
 } from "../../src/graphql/apollo-types/UserRegMutation";
 import { REG_USER_MUTATION } from "../../src/graphql/user-reg.mutation";
 import {
   USER_LOCAL_MUTATION,
-  UserLocalMutationVariable
+  UserLocalMutationVariable,
 } from "../../src/state/user.resolver";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { FetchResult } from "react-apollo";
 import {
   CreateEntriesMutation,
   CreateEntriesMutationVariables,
-  CreateEntriesMutation_createEntries_entries
+  CreateEntriesMutation_createEntries_entries,
 } from "../../src/graphql/apollo-types/CreateEntriesMutation";
 import { CREATE_ENTRIES_MUTATION } from "../../src/graphql/create-entries.mutation";
 import {
   ManualConnectionStatus,
-  setManualConnection
+  setManualConnection,
 } from "../../src/test-utils/manual-connection-setting";
 import {
   CreateUnsavedExperienceMutationData,
-  CREATE_UNSAVED_EXPERIENCE_MUTATION
+  CREATE_UNSAVED_EXPERIENCE_MUTATION,
 } from "../../src/components/ExperienceDefinition/resolvers";
-import { UnsavedExperience } from "../../src/components/ExperienceDefinition/resolver-utils";
 import { USER_JWT_ENV } from "./constants";
 import {
   SCHEMA_VERSION,
-  SCHEMA_VERSION_KEY
+  SCHEMA_VERSION_KEY,
 } from "../../src/constants/apollo-schema";
 import ApolloClient from "apollo-client";
 import { NormalizedCacheObject } from "apollo-cache-inmemory";
@@ -48,9 +50,10 @@ import { allResolvers } from "../../src/state/all-resolvers";
 import {
   CreateExperienceMutation,
   CreateExperienceMutationVariables,
-  CreateExperienceMutation_createExperience
+  CreateExperienceMutation_createExperience,
 } from "../../src/graphql/apollo-types/CreateExperienceMutation";
 import { CREATE_EXPERIENCE_MUTATION } from "../../src/graphql/create-experience.mutation";
+import { ExperienceFragment } from "../../src/graphql/apollo-types/ExperienceFragment";
 
 const serverUrl = Cypress.env("API_URL") as string;
 // let cache: InMemoryCache;
@@ -78,7 +81,7 @@ function createUser(userData: UserCreationObject) {
       const { jwt } = user;
       expect(jwt).to.be.a("string");
       Cypress.env(USER_JWT_ENV, jwt);
-    }
+    },
   );
 }
 
@@ -86,8 +89,8 @@ function registerUser(userData: Registration) {
   return mutate<UserRegMutation, UserRegMutationVariables>({
     mutation: REG_USER_MUTATION,
     variables: {
-      registration: userData
-    }
+      registration: userData,
+    },
   })
     .then(result => {
       const user =
@@ -101,7 +104,7 @@ function registerUser(userData: Registration) {
 
       return mutate<UserLocalMutationVariable, UserLocalMutationVariable>({
         mutation: USER_LOCAL_MUTATION,
-        variables: { user }
+        variables: { user },
       });
     })
     .then(result => {
@@ -115,13 +118,13 @@ function registerUser(userData: Registration) {
 }
 
 function defineOnlineExperience(
-  experienceDefinitionArgs: CreateExperienceInput
+  experienceDefinitionArgs: CreateExperienceInput,
 ) {
   return mutate<CreateExperienceMutation, CreateExperienceMutationVariables>({
     mutation: CREATE_EXPERIENCE_MUTATION,
     variables: {
-      createExperienceInput: experienceDefinitionArgs
-    }
+      createExperienceInput: experienceDefinitionArgs,
+    },
   }).then(result => {
     const exp =
       result &&
@@ -136,7 +139,7 @@ function defineOnlineExperience(
 }
 
 function defineUnsavedExperience(
-  experienceDefinitionArgs: CreateExperienceInput
+  experienceDefinitionArgs: CreateExperienceInput,
 ) {
   return mutate<
     CreateUnsavedExperienceMutationData,
@@ -144,13 +147,13 @@ function defineUnsavedExperience(
   >({
     mutation: CREATE_UNSAVED_EXPERIENCE_MUTATION,
     variables: {
-      createExperienceInput: experienceDefinitionArgs
-    }
+      createExperienceInput: experienceDefinitionArgs,
+    },
   }).then(result => {
     const exp =
       result &&
       result.data &&
-      (result.data.createUnsavedExperience as UnsavedExperience);
+      (result.data.createUnsavedExperience as ExperienceFragment);
 
     expect(exp.id).to.be.a("string");
 
@@ -160,13 +163,13 @@ function defineUnsavedExperience(
 
 function createExperienceEntries(
   experienceId: string,
-  createEntries: CreateEntryInput[]
+  createEntries: CreateEntryInput[],
 ) {
   return mutate<CreateEntriesMutation, CreateEntriesMutationVariables>({
     mutation: CREATE_ENTRIES_MUTATION,
     variables: {
-      createEntries
-    }
+      createEntries,
+    },
   }).then(result => {
     const data = result && result.data && result.data.createEntries;
 
@@ -174,7 +177,7 @@ function createExperienceEntries(
       (acc, obj) => {
         return acc.concat(obj.entries);
       },
-      [] as CreateEntriesMutation_createEntries_entries[]
+      [] as CreateEntriesMutation_createEntries_entries[],
     );
 
     return entries;
@@ -182,7 +185,7 @@ function createExperienceEntries(
 }
 
 function mutate<TData, TVariables>(
-  options: MutationOptions<TData, TVariables>
+  options: MutationOptions<TData, TVariables>,
 ) {
   return cy.window().then(win => {
     const e2eWindowObject = win.___e2e || emptyE2eWindowObject;
@@ -208,9 +211,9 @@ function mutate<TData, TVariables>(
       const apolloSetup = buildClientCache({
         uri: serverUrl,
         headers: {
-          jwt: Cypress.env(USER_JWT_ENV)
+          jwt: Cypress.env(USER_JWT_ENV),
         },
-        isE2e: true
+        isE2e: true,
       });
 
       client = apolloSetup.client;
@@ -266,9 +269,9 @@ declare global {
        *
        */
       mutate: <TData, TVariables>(
-        options: MutationOptions<TData, TVariables>
+        options: MutationOptions<TData, TVariables>,
       ) => Promise<
-        // tslint:disable-next-line: no-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         FetchResult<TData, Record<string, any>, Record<string, any>>
       >;
 
@@ -276,7 +279,7 @@ declare global {
        *
        */
       registerUser: (
-        userData: Registration
+        userData: Registration,
       ) => Promise<UserRegMutation_registration>;
 
       /**
@@ -288,19 +291,19 @@ declare global {
        *
        */
       defineOnlineExperience: (
-        experienceDefinitionArgs: CreateExperienceInput
+        experienceDefinitionArgs: CreateExperienceInput,
       ) => Promise<CreateExperienceMutation_createExperience>;
 
       defineUnsavedExperience: (
-        experienceDefinitionArgs: CreateExperienceInput
-      ) => Promise<UnsavedExperience>;
+        experienceDefinitionArgs: CreateExperienceInput,
+      ) => Promise<ExperienceFragment>;
 
       /**
        *
        */
       createExperienceEntries: (
         experienceId: string,
-        createEntries: CreateEntryInput[]
+        createEntries: CreateEntryInput[],
       ) => Promise<CreateEntriesMutation_createEntries_entries[]>;
 
       /**

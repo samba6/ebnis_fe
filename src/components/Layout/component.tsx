@@ -19,13 +19,6 @@ import { getUnsavedCount } from "../../state/unsaved-resolvers";
 export function Layout({ children }: PropsWithChildren<{}>) {
   const { cache, persistCache, client } = useContext(EbnisAppContext);
 
-  // this will be true if we are server rendering in gatsby build
-  if (!(cache && persistCache && client)) {
-    return (
-      <LayoutProvider value={{ unsavedCount: 0 }}>{children}</LayoutProvider>
-    );
-  }
-
   const persistorRef = useRef<
     CachePersistor<NormalizedCacheObject> | undefined
   >();
@@ -35,6 +28,10 @@ export function Layout({ children }: PropsWithChildren<{}>) {
   const [renderChildren, setRenderChildren] = useState(false);
 
   useEffect(() => {
+    if (!(cache && persistCache && client)) {
+      return;
+    }
+
     const user = getUser();
 
     if (user) {
@@ -43,7 +40,7 @@ export function Layout({ children }: PropsWithChildren<{}>) {
       if (renderChildren) {
         (async function() {
           if (await getConnStatus(client)) {
-            const newUnsavedCount = await getUnsavedCount(cache);
+            const newUnsavedCount = getUnsavedCount(cache);
             setUnsavedCount(newUnsavedCount);
           }
         })();
@@ -56,7 +53,8 @@ export function Layout({ children }: PropsWithChildren<{}>) {
 
             if (type === EmitAction.connectionChanged) {
               if (isConnected && reconnected === "true") {
-                getUnsavedCount(cache).then(setUnsavedCount);
+                const newUnsavedCount = getUnsavedCount(cache);
+                setUnsavedCount(newUnsavedCount);
               } else if (isConnected === false) {
                 // if we are disconnected, then we don't display unsaved UI
                 setUnsavedCount(0);
@@ -75,19 +73,33 @@ export function Layout({ children }: PropsWithChildren<{}>) {
         subscriptionRef.current = null;
       }
     };
-  }, [renderChildren]);
+  }, [renderChildren, cache, client, persistCache]);
 
-  useEffect(function PersistCache() {
-    (async function doPersistCache() {
-      try {
-        persistorRef.current = await persistCache(cache);
-
-        setRenderChildren(true);
-      } catch (error) {
-        return setRenderChildren(true);
+  useEffect(
+    function PersistCache() {
+      if (!(cache && persistCache)) {
+        return;
       }
-    })();
-  }, []);
+
+      (async function doPersistCache() {
+        try {
+          persistorRef.current = await persistCache(cache);
+
+          setRenderChildren(true);
+        } catch (error) {
+          return setRenderChildren(true);
+        }
+      })();
+    },
+    [cache, persistCache],
+  );
+
+  // this will be true if we are server rendering in gatsby build
+  if (!(cache && persistCache && client)) {
+    return (
+      <LayoutProvider value={{ unsavedCount: 0 }}>{children}</LayoutProvider>
+    );
+  }
 
   return renderChildren ? (
     <LayoutProvider

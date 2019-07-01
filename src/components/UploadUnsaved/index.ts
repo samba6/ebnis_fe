@@ -1,9 +1,6 @@
 import { UploadUnsaved as Comp } from "./component";
 import { compose, graphql, withApollo } from "react-apollo";
-import {
-  savedExperiencesWithUnSavedEntriesGql,
-  unSavedExperiencesGql,
-} from "../../state/unsaved-resolvers";
+import { getAllUnsavedGql } from "../../state/unsaved-resolvers";
 import {
   UPLOAD_UNSAVED_EXPERIENCES_MUTATION,
   UploadUnsavedExperiencesMutationProps,
@@ -64,8 +61,7 @@ const uploadAllUnsavedsGql = graphql<
 });
 
 export const UploadUnsaved = compose(
-  savedExperiencesWithUnSavedEntriesGql,
-  unSavedExperiencesGql,
+  getAllUnsavedGql,
   uploadUnsavedExperiencesGql,
   uploadSavedExperiencesWithUnsavedEntriesGql,
   uploadAllUnsavedsGql,

@@ -6,6 +6,7 @@ import {
 import { PRE_FETCH_EXPERIENCES_QUERY } from "../../graphql/get-experience-connection-mini.query";
 import { ExperienceMiniFragment } from "../../graphql/apollo-types/ExperienceMiniFragment";
 import { writeGetExperienceFullQueryToCache } from "../../state/resolvers/write-get-experience-full-query-to-cache";
+import { isUnsavedId } from "../../constants";
 
 export function preFetchExperiences({
   ids,
@@ -16,6 +17,12 @@ export function preFetchExperiences({
   client: ApolloClient<{}>;
   idToExperienceMap: { [k: string]: ExperienceMiniFragment };
 }) {
+  ids = ids.filter(id => !isUnsavedId(id));
+
+  if (ids.length === 0) {
+    return;
+  }
+
   const entriesPagination = {
     first: 20,
   };

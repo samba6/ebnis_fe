@@ -60,18 +60,6 @@ it("redirects to 404 page when getting experience from server errors", () => {
   expect(mockNavigate).toBeCalledWith("/404");
 });
 
-it("redirects to 404 page when getting unsaved experience errors", () => {
-  const { mockNavigate, ui } = makeComp({
-    props: {
-      unsavedExperienceGql: { error: {} } as any,
-    },
-  });
-
-  render(ui);
-
-  expect(mockNavigate).toBeCalledWith("/404");
-});
-
 it("loads NewEntry page", () => {
   /**
    * Given there is unsaved experience in the system and we request
@@ -79,7 +67,7 @@ it("loads NewEntry page", () => {
    */
   const { ui } = makeComp({
     props: {
-      unsavedExperienceGql: { unsavedExperience: {} } as any,
+      getExperienceGql: { exp: {} } as any,
       path: NEW_ENTRY_URL,
     },
   });

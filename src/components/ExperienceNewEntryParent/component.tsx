@@ -3,49 +3,34 @@ import { Props } from "./utils";
 import { Loading } from "../Loading";
 import { NEW_ENTRY_URL } from "../../constants/new-entry-route";
 import { GetExperienceFullData } from "../../graphql/get-experience-full.query";
-import { UnsavedExperienceDataValue } from "./resolvers";
 import { NavigateFn } from "@reach/router";
 import { NewEntry, ExperienceRoute } from "./loadables";
 
 export const ExperienceNewEntryParent = function(props: Props) {
   const {
     getExperienceGql: {
-      loading: loadingExperience,
+      loading,
       error: getExperienceGqlError,
       getExperience,
     } = {} as GetExperienceFullData,
-
-    unsavedExperienceGql: {
-      loading: loadingUnsavedExperience,
-      error: unsavedExperienceGqlError,
-      unsavedExperience,
-    } = {} as UnsavedExperienceDataValue,
 
     path,
     navigate,
   } = props;
 
-  const experience = getExperience || unsavedExperience;
-
-  const loading = loadingExperience || loadingUnsavedExperience;
-
   useEffect(() => {
-    if (
-      getExperienceGqlError ||
-      unsavedExperienceGqlError ||
-      (!loading && !experience)
-    ) {
+    if (getExperienceGqlError || (!loading && !getExperience)) {
       (navigate as NavigateFn)("/404");
     }
-  }, [getExperienceGqlError, unsavedExperienceGqlError, loading, experience]);
+  }, [getExperienceGqlError, loading, getExperience, navigate]);
 
   if (loading) {
     return <Loading loading={loading} />;
   }
 
   return path === NEW_ENTRY_URL ? (
-    <NewEntry {...props} experience={experience} />
+    <NewEntry {...props} experience={getExperience} />
   ) : (
-    <ExperienceRoute {...props} experience={experience} />
+    <ExperienceRoute {...props} experience={getExperience} />
   );
 };

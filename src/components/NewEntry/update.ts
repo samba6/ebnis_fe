@@ -1,62 +1,57 @@
-import { MutationUpdaterFn } from "react-apollo";
 import immer from "immer";
 
-// istanbul ignore next: why flag import?
 import { CreateEntryMutation } from "../../graphql/apollo-types/CreateEntryMutation";
-import {
-  GetExperienceFull,
-  GetExperienceFullVariables,
-} from "../../graphql/apollo-types/GetExperienceFull";
-import { GET_EXPERIENCE_FULL_QUERY } from "../../graphql/get-experience-full.query";
 import {
   ExperienceFragment,
   ExperienceFragment_entries,
+  ExperienceFragment_entries_edges_node,
 } from "../../graphql/apollo-types/ExperienceFragment";
+import { writeGetExperienceFullQueryToCache } from "../../state/resolvers/write-get-experience-full-query-to-cache";
+import { DataProxy } from "apollo-cache";
+import { FetchResult } from "apollo-link";
+import { readGetExperienceFullQueryFromCache } from "../../state/resolvers/read-get-experience-full-query-from-cache";
 
-// istanbul ignore next: trust apollo to do the right thing -
-export const updateExperienceWithNewEntry: (
-  experienceId: string,
-) => MutationUpdaterFn<CreateEntryMutation> = function updateFn(
-  experienceId: string,
+type Fn<T = string | ExperienceFragment> = (
+  arg: T,
+) => (
+  proxy: DataProxy,
+  mutationResult: FetchResult<CreateEntryMutation>,
+) => T extends ExperienceFragment
+  ? Promise<ExperienceFragment>
+  : Promise<ExperienceFragment | undefined>;
+
+/**
+ * Insert the entry into the experience and updates the Get full experience
+ * query
+ */
+export const updateExperienceWithNewEntry: Fn = function updateFn(
+  experienceOrId,
 ) {
   return async function updateFnInner(dataProxy, { data: newEntryEntry }) {
-    if (!newEntryEntry) {
-      return;
+    const entry = newEntryEntry && newEntryEntry.createEntry;
+    let experience = experienceOrId as (ExperienceFragment | null);
+
+    if (typeof experienceOrId === "string") {
+      if (!entry) {
+        return;
+      }
+
+      experience = readGetExperienceFullQueryFromCache(
+        dataProxy,
+        experienceOrId,
+      );
+
+      if (!experience) {
+        return;
+      }
     }
 
-    const { createEntry: entry } = newEntryEntry;
-
-    if (!entry) {
-      return;
-    }
-
-    const variables: GetExperienceFullVariables = {
-      id: experienceId,
-      entriesPagination: {
-        first: 20,
-      },
-    };
-
-    const data = dataProxy.readQuery<
-      GetExperienceFull,
-      GetExperienceFullVariables
-    >({
-      query: GET_EXPERIENCE_FULL_QUERY,
-      variables,
-    });
-
-    if (!data) {
-      return;
-    }
-
-    const exp = data.getExperience as ExperienceFragment;
-
-    const updatedExperience = immer(exp, proxy => {
+    const updatedExperience = immer(experience as ExperienceFragment, proxy => {
       const entries = proxy.entries as ExperienceFragment_entries;
       const edges = entries.edges || [];
 
       edges.push({
-        node: entry,
+        node: entry as ExperienceFragment_entries_edges_node,
         cursor: "",
         __typename: "EntryEdge",
       });
@@ -65,13 +60,7 @@ export const updateExperienceWithNewEntry: (
       proxy.entries = entries;
     });
 
-    await dataProxy.writeQuery<GetExperienceFull, GetExperienceFullVariables>({
-      query: GET_EXPERIENCE_FULL_QUERY,
-      variables,
-      data: {
-        getExperience: updatedExperience,
-      },
-    });
+    writeGetExperienceFullQueryToCache(dataProxy, updatedExperience);
 
     return updatedExperience;
   };

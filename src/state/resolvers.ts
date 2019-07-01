@@ -4,7 +4,7 @@ import {
   DEFAULT_CONNECTION_STATUS,
 } from "./connection.resolver";
 import { userLocalResolvers } from "./user.resolver";
-import { DEFAULT_UNSAVED_STATES } from "./unsaved-resolvers";
+import { DEFAULT_UNSAVED_STATES, unsavedResolvers } from "./unsaved-resolvers";
 import { DataProxy } from "apollo-cache";
 
 export interface CacheContext {
@@ -13,7 +13,17 @@ export interface CacheContext {
   getCacheKey: (args: { __typename: string; id: string }) => string;
 }
 
-export type LocalResolverFn<TVariables, TReturnedValue = void> = (
+export function defaultGetCacheKeyFn({
+  id,
+  __typename,
+}: {
+  __typename: string;
+  id: string;
+}) {
+  return `${__typename}:${id}`;
+}
+
+export type LocalResolverFn<TVariables = {}, TReturnedValue = void> = (
   root: object,
   variables: TVariables,
   context: CacheContext,
@@ -26,7 +36,7 @@ export type LocalState = ConnectionQueryData & {
 
 export function initState() {
   return {
-    resolvers: [connectionResolvers, userLocalResolvers],
+    resolvers: [connectionResolvers, userLocalResolvers, unsavedResolvers],
     defaults: {
       connected: DEFAULT_CONNECTION_STATUS,
       staleToken: null,

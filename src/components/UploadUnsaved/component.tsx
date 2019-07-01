@@ -1,4 +1,4 @@
-import React, { useReducer, useEffect, useCallback } from "react";
+import React, { useReducer, useEffect, useCallback, useRef } from "react";
 import {
   Props,
   reducer,
@@ -11,10 +11,6 @@ import {
   ExperienceObjectMap,
 } from "./utils";
 import { Loading } from "../Loading";
-import {
-  UnsavedExperiencesData,
-  SavedExperiencesWithUnsavedEntriesData,
-} from "../../state/unsaved-resolvers";
 import { SidebarHeader } from "../SidebarHeader";
 import {
   ExperienceFragment_entries_edges_node,
@@ -33,24 +29,20 @@ import Modal from "semantic-ui-react/dist/commonjs/modules/Modal";
 import Icon from "semantic-ui-react/dist/commonjs/elements/Icon";
 import Message from "semantic-ui-react/dist/commonjs/collections/Message";
 import { UploadAllUnsavedsMutationVariables } from "../../graphql/apollo-types/UploadAllUnsavedsMutation";
-import { onUploadSuccessUpdate } from "./mutation-update";
 import { Experience } from "../Experience/component";
-import { UnsavedExperience } from "../ExperienceDefinition/resolver-utils";
 import { scrollIntoView } from "../scroll-into-view";
 import { FormCtrlError } from "../FormCtrlError/component";
 import { Entry } from "../Entry/component";
+import { GetAllUnSavedQueryData } from "../../state/unsaved-resolvers";
 
 const timeoutMs = 500;
 
 export function UploadUnsaved(props: Props) {
   const {
-    unSavedExperiencesProps: {
-      loading: loadingUnsavedExperiences,
-    } = {} as UnsavedExperiencesData,
-
-    savedExperiencesWithUnsavedEntriesProps: {
-      loading: loadingSavedExperiences,
-    } = {} as SavedExperiencesWithUnsavedEntriesData,
+    getAllUnsavedProps: {
+      loading,
+      getAllUnsaved,
+    } = {} as GetAllUnSavedQueryData,
 
     uploadUnsavedExperiences,
 
@@ -61,37 +53,48 @@ export function UploadUnsaved(props: Props) {
     client,
   } = props;
 
-  const [state, dispatch] = useReducer(reducer, props, stateInitializerFn);
+  const [state, dispatch] = useReducer(
+    reducer,
+    getAllUnsaved,
+    stateInitializerFn,
+  );
 
   const {
     tabs,
     uploading,
     serverError,
     allUploadSucceeded,
-    unSavedCount,
     unsavedExperiencesLen,
     savedExperiencesLen,
-    unsavedExperiences,
-    savedExperiences,
     savedExperiencesMap,
     unsavedExperiencesMap,
   } = state;
 
-  const loading = loadingUnsavedExperiences || loadingSavedExperiences;
+  const connectionStatusRef = useRef(false);
+  const connectionStatus = connectionStatusRef.current;
 
   useEffect(() => {
-    if (unSavedCount === 0) {
-      (navigate as NavigateFn)("/404");
-      return;
-    }
-
     getConnStatus(client).then(isConnected => {
       if (!isConnected) {
         (navigate as NavigateFn)("/404");
         return;
       }
     });
-  }, [unSavedCount, navigate, client]);
+  }, [navigate, client, connectionStatus]);
+
+  useEffect(() => {
+    if (getAllUnsaved) {
+      const count =
+        getAllUnsaved.savedExperiencesLen + getAllUnsaved.unsavedExperiencesLen;
+
+      if (count === 0) {
+        (navigate as NavigateFn)("/404");
+        return;
+      }
+
+      dispatch([ActionType.initStateFromProps, getAllUnsaved]);
+    }
+  }, [getAllUnsaved, navigate]);
 
   const onUploadAllClicked = useCallback(
     async function onUploadAllClickedFn() {
@@ -127,11 +130,6 @@ export function UploadUnsaved(props: Props) {
 
         const result = await (uploadFunction as UploadAllUnsavedsMutationFn)({
           variables,
-
-          update: onUploadSuccessUpdate({
-            savedExperiencesIdsToUnsavedEntriesMap: savedExperiencesMap,
-            unsavedExperiences: (unsavedExperiences as unknown) as UnsavedExperience[],
-          }),
         });
 
         dispatch([ActionType.uploadResult, result && result.data]);
@@ -150,11 +148,10 @@ export function UploadUnsaved(props: Props) {
       savedExperiencesMap,
       uploadUnsavedExperiences,
       createEntries,
-      unsavedExperiences,
     ],
   );
 
-  if (loading && unSavedCount === 0) {
+  if (loading) {
     return <Loading />;
   }
 
@@ -189,12 +186,12 @@ export function UploadUnsaved(props: Props) {
                 className={makeClassNames({ tab: true, active: tabs["1"] })}
                 data-testid="saved-experiences"
               >
-                {savedExperiences.map(experience => {
+                {Object.entries(savedExperiencesMap).map(([id, map]) => {
                   return (
                     <ExperienceComponent
-                      key={experience.id}
+                      key={id}
                       type="saved"
-                      experienceObjectMap={savedExperiencesMap[experience.id]}
+                      experienceObjectMap={map}
                     />
                   );
                 })}
@@ -212,12 +209,12 @@ export function UploadUnsaved(props: Props) {
                 className={makeClassNames({ tab: true, active: tabs["2"] })}
                 data-testid="unsaved-experiences"
               >
-                {unsavedExperiences.map(experience => {
+                {Object.entries(unsavedExperiencesMap).map(([id, map]) => {
                   return (
                     <ExperienceComponent
-                      key={experience.id}
+                      key={id}
                       type="unsaved"
-                      experienceObjectMap={unsavedExperiencesMap[experience.id]}
+                      experienceObjectMap={map}
                     />
                   );
                 })}

@@ -9,8 +9,12 @@ import { UploadUnsaved } from "../components/UploadUnsaved/component";
 import {
   Props,
   fieldDefToUnsavedData,
+  ExperiencesIdsToObjectMap,
 } from "../components/UploadUnsaved/utils";
-import { ExperienceFragment } from "../graphql/apollo-types/ExperienceFragment";
+import {
+  ExperienceFragment,
+  ExperienceFragment_entries_edges_node,
+} from "../graphql/apollo-types/ExperienceFragment";
 import { makeUnsavedId } from "../constants";
 import {
   renderWithRouter,
@@ -30,7 +34,6 @@ jest.mock("../components/SidebarHeader", () => ({
 }));
 
 jest.mock("../state/get-conn-status");
-jest.mock("../components/UploadUnsaved/mutation-update");
 jest.mock("../components/Entry/component", () => ({
   Entry: (props: any) => {
     return (
@@ -41,16 +44,13 @@ jest.mock("../components/Entry/component", () => ({
 jest.mock("../components/scroll-into-view");
 
 import { getConnStatus } from "../state/get-conn-status";
-import { onUploadSuccessUpdate } from "../components/UploadUnsaved/mutation-update";
 import { scrollIntoView } from "../components/scroll-into-view";
 import {
-  SavedExperiencesWithUnsavedEntriesData,
-  UnsavedExperiencesData,
+  GetAllUnSavedQueryData,
+  GetUnsavedSummary,
 } from "../state/unsaved-resolvers";
-import { UnsavedExperience } from "../components/ExperienceNewEntryParent/resolvers";
 
 const mockGetConnectionStatus = getConnStatus as jest.Mock;
-const mockOnUploadSuccessUpdate = onUploadSuccessUpdate as jest.Mock;
 const mockScrollIntoView = scrollIntoView as jest.Mock;
 
 const timeStamps = { insertedAt: "a", updatedAt: "a" };
@@ -58,11 +58,6 @@ const timeStamps = { insertedAt: "a", updatedAt: "a" };
 it("redirects to 404 when not connected", async done => {
   const { ui, mockNavigate } = makeComp({
     isConnected: false,
-    props: {
-      unSavedExperiencesProps: {
-        unsavedExperiences: [{ id: "1", entries: {} }],
-      } as any,
-    },
   });
 
   const { queryByTestId } = render(ui);
@@ -76,22 +71,12 @@ it("redirects to 404 when not connected", async done => {
   done();
 });
 
-it("renders loading indicator while unsaved experiences loading", () => {
+it("renders loading indicator", () => {
   const { ui } = makeComp({
     props: {
-      unSavedExperiencesProps: { loading: true } as any,
-    },
-  });
-
-  const { queryByTestId } = render(ui);
-
-  expect(queryByTestId("loading")).toBeInTheDocument();
-});
-
-it("renders loading indicator while unsaved entries for saved experiences loading", () => {
-  const { ui } = makeComp({
-    props: {
-      savedExperiencesWithUnsavedEntriesProps: { loading: true } as any,
+      getAllUnsavedProps: {
+        loading: true,
+      } as GetAllUnSavedQueryData,
     },
   });
 
@@ -103,10 +88,12 @@ it("renders loading indicator while unsaved entries for saved experiences loadin
 it("redirects to 404 when there are no unsaved data", async done => {
   const { ui, mockNavigate } = makeComp({
     props: {
-      unSavedExperiencesProps: { unsavedExperiences: [] } as any,
-      savedExperiencesWithUnsavedEntriesProps: {
-        savedExperiencesWithUnsavedEntries: [],
-      } as any,
+      getAllUnsavedProps: {
+        getAllUnsaved: {
+          unsavedExperiencesLen: 0,
+          savedExperiencesLen: 0,
+        },
+      } as GetAllUnSavedQueryData,
     },
   });
 
@@ -129,26 +116,31 @@ it("shows only saved experiences, does not show saved entries and uploads unsave
     ...timeStamps,
   };
 
-  const experiences = [
-    {
-      id: "1",
-      title: "a",
+  const unsavedEntry = {
+    ...entry,
+    id: entryId,
+  } as ExperienceFragment_entries_edges_node;
 
-      entries: {
-        edges: [
-          {
-            node: { ...entry, id: entryId },
-          },
+  const savedEntry = {
+    id: "2",
+  } as ExperienceFragment_entries_edges_node;
 
-          {
-            node: {
-              id: "2",
-            },
-          },
-        ],
-      },
+  const experience = {
+    id: "1",
+    title: "a",
+
+    entries: {
+      edges: [
+        {
+          node: unsavedEntry,
+        },
+
+        {
+          node: savedEntry,
+        },
+      ],
     },
-  ] as ExperienceFragment[];
+  } as ExperienceFragment;
 
   const {
     ui,
@@ -157,9 +149,19 @@ it("shows only saved experiences, does not show saved entries and uploads unsave
     mockUploadAllUnsaveds,
   } = makeComp({
     props: {
-      savedExperiencesWithUnsavedEntriesProps: {
-        savedExperiencesWithUnsavedEntries: experiences,
-      } as any,
+      getAllUnsavedProps: {
+        getAllUnsaved: {
+          savedExperiencesMap: {
+            "1": {
+              experience,
+              unsavedEntries: [unsavedEntry],
+              savedEntries: [savedEntry],
+            },
+          } as ExperiencesIdsToObjectMap,
+
+          savedExperiencesLen: 1,
+        } as GetUnsavedSummary,
+      } as GetAllUnSavedQueryData,
     },
   });
 
@@ -219,7 +221,6 @@ it("shows only saved experiences, does not show saved entries and uploads unsave
 
   expect(mockUploadUnsavedExperiences).not.toHaveBeenCalled();
   expect(mockUploadAllUnsaveds).not.toHaveBeenCalled();
-  expect(mockOnUploadSuccessUpdate).toHaveBeenCalledTimes(1);
 
   expect(
     (queryByTestId("saved-experience-1-title") as any).classList,
@@ -243,7 +244,7 @@ it("shows only 'unsaved experiences' data and uploading same succeeds", async do
     description: "x",
     fieldDefs: makeFieldDefs(),
     ...timeStamps,
-  };
+  } as ExperienceFragment;
 
   const { id: entryId, ...entry } = {
     ...makeEntryNode(),
@@ -252,6 +253,11 @@ it("shows only 'unsaved experiences' data and uploading same succeeds", async do
     ...timeStamps,
   };
 
+  const unsavedEntry = {
+    ...entry,
+    id: entryId,
+  } as ExperienceFragment_entries_edges_node;
+
   const unsavedExperience = {
     id: "1",
     ...experience,
@@ -259,11 +265,11 @@ it("shows only 'unsaved experiences' data and uploading same succeeds", async do
     entries: {
       edges: [
         {
-          node: { ...entry, id: entryId },
+          node: unsavedEntry,
         },
       ],
     },
-  };
+  } as ExperienceFragment;
 
   const {
     ui,
@@ -272,9 +278,19 @@ it("shows only 'unsaved experiences' data and uploading same succeeds", async do
     mockUploadAllUnsaveds,
   } = makeComp({
     props: {
-      unSavedExperiencesProps: {
-        unsavedExperiences: [unsavedExperience],
-      } as any,
+      getAllUnsavedProps: {
+        getAllUnsaved: {
+          unsavedExperiencesLen: 1,
+
+          unsavedExperiencesMap: {
+            "1": {
+              experience: unsavedExperience,
+              unsavedEntries: [unsavedEntry],
+              savedEntries: [],
+            },
+          } as ExperiencesIdsToObjectMap,
+        },
+      } as GetAllUnSavedQueryData,
     },
   });
 
@@ -339,7 +355,6 @@ it("shows only 'unsaved experiences' data and uploading same succeeds", async do
 
   expect(mockUploadSavedExperiencesEntries).not.toHaveBeenCalled();
   expect(mockUploadAllUnsaveds).not.toHaveBeenCalled();
-  expect(mockOnUploadSuccessUpdate).toHaveBeenCalledTimes(1);
 
   expect(queryByTestId("upload-all")).not.toBeInTheDocument();
 
@@ -361,6 +376,16 @@ it("toggles saved and 'unsaved experiences' and uploads data", async done => {
 
   const entryId = makeUnsavedId("1");
 
+  const unsavedExperienceEntry = {
+    ...makeEntryNode("1"),
+    clientId: "1",
+  } as ExperienceFragment_entries_edges_node;
+
+  const savedExperienceEntry = {
+    ...makeEntryNode(entryId),
+    clientId: entryId,
+  } as ExperienceFragment_entries_edges_node;
+
   const {
     ui,
     mockUploadUnsavedExperiences,
@@ -368,48 +393,58 @@ it("toggles saved and 'unsaved experiences' and uploads data", async done => {
     mockUploadAllUnsaveds,
   } = makeComp({
     props: {
-      unSavedExperiencesProps: {
-        unsavedExperiences: [
-          {
-            id: "1",
-            title: "a",
-            clientId: "1",
-            fieldDefs: makeFieldDefs(),
+      getAllUnsavedProps: {
+        getAllUnsaved: {
+          unsavedExperiencesLen: 1,
 
-            entries: {
-              edges: [
-                {
-                  node: {
-                    ...makeEntryNode("1"),
-                    clientId: "1",
-                  },
+          unsavedExperiencesMap: {
+            "1": {
+              experience: {
+                id: "1",
+                title: "a",
+                clientId: "1",
+                fieldDefs: makeFieldDefs(),
+
+                entries: {
+                  edges: [
+                    {
+                      node: unsavedExperienceEntry,
+                    },
+                  ],
                 },
-              ],
+              } as ExperienceFragment,
+
+              unsavedEntries: [unsavedExperienceEntry],
+
+              savedEntries: [],
             },
-          } as UnsavedExperience,
-        ],
-      } as UnsavedExperiencesData,
+          } as ExperiencesIdsToObjectMap,
 
-      savedExperiencesWithUnsavedEntriesProps: {
-        savedExperiencesWithUnsavedEntries: [
-          {
-            id: "2",
-            title: "a",
-            fieldDefs: makeFieldDefs(),
+          savedExperiencesLen: 1,
 
-            entries: {
-              edges: [
-                {
-                  node: {
-                    ...makeEntryNode(entryId),
-                    clientId: entryId,
-                  },
+          savedExperiencesMap: {
+            "2": {
+              experience: {
+                id: "2",
+                title: "a",
+                fieldDefs: makeFieldDefs(),
+
+                entries: {
+                  edges: [
+                    {
+                      node: savedExperienceEntry,
+                    },
+                  ],
                 },
-              ],
+              } as ExperienceFragment,
+
+              unsavedEntries: [savedExperienceEntry],
+
+              savedEntries: [],
             },
-          } as ExperienceFragment,
-        ],
-      } as SavedExperiencesWithUnsavedEntriesData,
+          } as ExperiencesIdsToObjectMap,
+        } as GetUnsavedSummary,
+      } as GetAllUnSavedQueryData,
     },
   });
 
@@ -511,7 +546,6 @@ it("toggles saved and 'unsaved experiences' and uploads data", async done => {
 
   expect(mockUploadUnsavedExperiences).not.toHaveBeenCalled();
   expect(mockUploadSavedExperiencesEntries).not.toHaveBeenCalled();
-  expect(mockOnUploadSuccessUpdate).toHaveBeenCalledTimes(1);
 
   expect(queryByTestId("upload-triggered-icon-error-2")).toBeInTheDocument();
 
@@ -557,46 +591,71 @@ it("toggles saved and 'unsaved experiences' and uploads data", async done => {
 it("shows apollo errors", async done => {
   const { ui, mockUploadAllUnsaveds } = makeComp({
     props: {
-      unSavedExperiencesProps: {
-        unsavedExperiences: [
-          {
-            id: "1",
-            title: "a",
-            clientId: "1",
+      getAllUnsavedProps: {
+        getAllUnsaved: {
+          unsavedExperiencesLen: 1,
 
-            entries: {
-              edges: [
-                {
-                  node: {
-                    id: "1",
-                    clientId: "1",
-                  },
+          unsavedExperiencesMap: {
+            "1": {
+              experience: {
+                id: "1",
+                title: "a",
+                clientId: "1",
+
+                entries: {
+                  edges: [
+                    {
+                      node: {
+                        id: "1",
+                        clientId: "1",
+                      },
+                    },
+                  ],
                 },
-              ],
-            },
-          },
-        ],
-      } as any,
+              } as ExperienceFragment,
 
-      savedExperiencesWithUnsavedEntriesProps: {
-        savedExperiencesWithUnsavedEntries: [
-          {
-            id: "2",
-            title: "b",
-
-            entries: {
-              edges: [
+              unsavedEntries: [
                 {
-                  node: {
-                    id: makeUnsavedId("1"),
-                    clientId: makeUnsavedId("1"),
-                  },
-                },
+                  id: "1",
+                  clientId: "1",
+                } as ExperienceFragment_entries_edges_node,
               ],
+
+              savedEntries: [],
             },
-          },
-        ],
-      } as any,
+          } as ExperiencesIdsToObjectMap,
+
+          savedExperiencesLen: 1,
+
+          savedExperiencesMap: {
+            "2": {
+              experience: {
+                id: "2",
+                title: "b",
+
+                entries: {
+                  edges: [
+                    {
+                      node: {
+                        id: makeUnsavedId("1"),
+                        clientId: makeUnsavedId("1"),
+                      },
+                    },
+                  ],
+                },
+              } as ExperienceFragment,
+
+              unsavedEntries: [
+                {
+                  id: makeUnsavedId("1"),
+                  clientId: makeUnsavedId("1"),
+                } as ExperienceFragment_entries_edges_node,
+              ],
+              savedEntries: [],
+            },
+          } as ExperiencesIdsToObjectMap,
+        } as GetUnsavedSummary,
+      } as GetAllUnSavedQueryData,
     },
   });
 
@@ -658,7 +717,6 @@ function makeComp({
   mockScrollIntoView.mockReset();
   mockGetConnectionStatus.mockReset();
   mockGetConnectionStatus.mockResolvedValue(isConnected);
-  mockOnUploadSuccessUpdate.mockReset();
 
   const mockUploadUnsavedExperiences = jest.fn();
   const mockUploadSavedExperiencesEntries = jest.fn();

@@ -32,7 +32,6 @@ import {
   GraphQlErrorState,
   GraphQlError,
 } from "./utils";
-import { CreateExperienceMutation_createExperience } from "../../graphql/apollo-types/CreateExperienceMutation";
 import {
   CreateExperienceInput as FormValues,
   CreateFieldDef,
@@ -45,8 +44,8 @@ import { CreateExperienceMutationFn } from "../../graphql/create-experience.muta
 import { scrollTop } from "./scrollTop";
 import { SidebarHeader } from "../SidebarHeader";
 import { getConnStatus } from "../../state/get-conn-status";
-import { UnsavedExperience } from "./resolver-utils";
 import { FormCtrlError } from "../FormCtrlError/component";
+import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragment";
 
 export function ExperienceDefinition(props: Props) {
   const { createExperience, navigate, client, createUnsavedExperience } = props;
@@ -156,9 +155,7 @@ export function ExperienceDefinition(props: Props) {
 
           expId = ((result &&
             result.data &&
-            result.data
-              .createExperience) as CreateExperienceMutation_createExperience)
-            .id;
+            result.data.createExperience) as ExperienceFragment).id;
         } else {
           result = await createUnsavedExperience({
             variables: {
@@ -168,7 +165,7 @@ export function ExperienceDefinition(props: Props) {
 
           expId = ((result &&
             result.data &&
-            result.data.createUnsavedExperience) as UnsavedExperience).id;
+            result.data.createUnsavedExperience) as ExperienceFragment).id;
         }
 
         (navigate as NavigateFn)(makeExperienceRoute(expId));

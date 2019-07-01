@@ -1,10 +1,4 @@
-import React, {
-  useEffect,
-  useRef,
-  useMemo,
-  useState,
-  useCallback,
-} from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import Icon from "semantic-ui-react/dist/commonjs/elements/Icon";
 
 import "./styles.scss";
@@ -16,10 +10,6 @@ import { SidebarHeader } from "../SidebarHeader";
 import { setDocumentTitle, makeSiteTitle } from "../../constants";
 import { MY_EXPERIENCES_TITLE } from "../../constants/my-experiences-title";
 import { Link } from "gatsby";
-import {
-  UnsavedExperience,
-  UnsavedExperiencesQueryData,
-} from "../ExperienceDefinition/resolver-utils";
 import { preFetchExperiences } from "./pre-fetch-experiences";
 import { GetExperienceConnectionMiniData } from "../../graphql/get-experience-connection-mini.query";
 import { ExperienceMiniFragment } from "../../graphql/apollo-types/ExperienceMiniFragment";
@@ -28,23 +18,17 @@ import {
   ExperienceConnectionFragment_edges,
   ExperienceConnectionFragment_edges_node,
 } from "../../graphql/apollo-types/ExperienceConnectionFragment";
+import { GetExperienceConnectionMini_getExperiences } from "../../graphql/apollo-types/GetExperienceConnectionMini";
 
 export const MyExperiences = (props: Props) => {
   const {
     getExperiencesMiniProps: {
-      loading: loadingExperiences,
+      loading,
       getExperiences,
     } = {} as GetExperienceConnectionMiniData,
 
-    unsavedExperiencesProps: {
-      loading: loadingUnsavedExperiences,
-      unsavedExperiences,
-    } = {} as UnsavedExperiencesQueryData,
-
     client,
   } = props;
-
-  const loading = loadingExperiences || loadingUnsavedExperiences;
 
   const [descriptionToggleMap, toggleDescription] = useState<DescriptionMap>(
     {},
@@ -97,34 +81,12 @@ export const MyExperiences = (props: Props) => {
     [toggleDescription],
   );
 
-  const unsavedExperiencesAsEdges = useMemo(() => {
-    if (!unsavedExperiences) {
-      return;
-    }
+  function renderExperiences(
+    experiencesForDisplay: GetExperienceConnectionMini_getExperiences,
+  ) {
+    const edges = experiencesForDisplay.edges || [];
 
-    return unsavedExperiences.map((unsavedExperience: UnsavedExperience) => {
-      return ({
-        node: unsavedExperience,
-      } as unknown) as ExperienceConnectionFragment_edges;
-    });
-  }, [unsavedExperiences]);
-
-  const experiencesForDisplay = useMemo(() => {
-    if (!getExperiences) {
-      return unsavedExperiencesAsEdges;
-    }
-
-    const edges = (getExperiences.edges || []).concat(
-      unsavedExperiencesAsEdges || [],
-    );
-    return edges;
-  }, [getExperiences, unsavedExperiencesAsEdges]);
-
-  function renderExperiences() {
-    if (
-      (experiencesForDisplay as ExperienceConnectionFragment_edges[]).length ===
-      0
-    ) {
+    if (edges.length === 0) {
       return (
         <Link to={EXPERIENCE_DEFINITION_URL} className="no-exp-info">
           Click here to create your first experience
@@ -134,24 +96,22 @@ export const MyExperiences = (props: Props) => {
 
     return (
       <div data-testid="exps-container" className="exps-container">
-        {(experiencesForDisplay as ExperienceConnectionFragment_edges[]).map(
-          edge => {
-            const experience = (edge as ExperienceConnectionFragment_edges)
-              .node as ExperienceConnectionFragment_edges_node;
+        {edges.map(edge => {
+          const experience = (edge as ExperienceConnectionFragment_edges)
+            .node as ExperienceConnectionFragment_edges_node;
 
-            const { id, ...rest } = experience;
+          const { id, ...rest } = experience;
 
-            return (
-              <Experience
-                key={id}
-                showingDescription={descriptionToggleMap[id]}
-                toggleDescription={toggleDescriptionFn}
-                id={id}
-                {...rest}
-              />
-            );
-          },
-        )}
+          return (
+            <Experience
+              key={id}
+              showingDescription={descriptionToggleMap[id]}
+              toggleDescription={toggleDescriptionFn}
+              id={id}
+              {...rest}
+            />
+          );
+        })}
       </div>
     );
   }
@@ -161,9 +121,13 @@ export const MyExperiences = (props: Props) => {
       return <Loading loading={loading} />;
     }
 
+    if (!getExperiences) {
+      return null;
+    }
+
     return (
       <>
-        {renderExperiences()}
+        {renderExperiences(getExperiences)}
 
         <Link
           className="new-exp-btn"

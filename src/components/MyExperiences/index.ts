@@ -10,13 +10,8 @@ import {
   GET_EXPERIENCES_MINI_QUERY,
 } from "../../graphql/get-experience-connection-mini.query";
 import { OwnProps } from "./utils";
-import {
-  UNSAVED_EXPERIENCES_QUERY,
-  UnsavedExperiencesQueryReturned,
-  UnsavedExperiencesQueryProps,
-} from "../ExperienceDefinition/resolver-utils";
 
-const expDefsGql = graphql<
+const getExperienceConnectionMiniGql = graphql<
   OwnProps,
   GetExperienceConnectionMini,
   GetExperienceConnectionMiniVariables,
@@ -24,7 +19,7 @@ const expDefsGql = graphql<
 >(GET_EXPERIENCES_MINI_QUERY, {
   props: ({ data }) => data && { getExperiencesMiniProps: data },
 
-  options: ({ client }) => {
+  options: () => {
     return {
       variables: {
         input: {
@@ -37,22 +32,9 @@ const expDefsGql = graphql<
   },
 });
 
-const unsavedExperiencesGql = graphql<
-  {},
-  UnsavedExperiencesQueryReturned,
-  {},
-  UnsavedExperiencesQueryProps | undefined
->(UNSAVED_EXPERIENCES_QUERY, {
-  props: ({ data }) =>
-    data && {
-      unsavedExperiencesProps: data,
-    },
-});
-
 export const MyExperiences = compose(
   withApollo,
-  expDefsGql,
-  unsavedExperiencesGql,
+  getExperienceConnectionMiniGql,
 )(Comp);
 
 export default MyExperiences;

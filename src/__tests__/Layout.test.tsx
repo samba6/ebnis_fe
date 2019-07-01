@@ -144,7 +144,7 @@ it("queries unsaved when connection returns and we are reconnecting", async done
    */
   const { ui } = makeComp();
   mockGetUser.mockReturnValue({});
-  mockGetUnsavedCount.mockResolvedValue(5);
+  mockGetUnsavedCount.mockReturnValue(5);
   mockGetConnStatus.mockResolvedValue(false);
 
   const { getByTestId } = render(ui);
@@ -211,7 +211,7 @@ it("resets unsaved count when we lose connection", async done => {
   const { ui } = makeComp();
   mockGetUser.mockReturnValue({});
   mockGetConnStatus.mockResolvedValue(true);
-  mockGetUnsavedCount.mockResolvedValue(2);
+  mockGetUnsavedCount.mockReturnValue(2);
 
   const { getByTestId } = render(ui);
 

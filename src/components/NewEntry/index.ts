@@ -1,4 +1,4 @@
-import { graphql, compose } from "react-apollo";
+import { graphql, compose, withApollo } from "react-apollo";
 
 import { NewEntry as Comp } from "./component";
 import { OwnProps } from "./utils";
@@ -36,6 +36,7 @@ const createEntryGql = graphql<
 });
 
 export const NewEntry = compose(
+  withApollo,
   createEntryGql,
   createUnsavedEntryGql,
 )(Comp);
