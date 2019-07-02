@@ -42,6 +42,7 @@ jest.mock("../components/Entry/component", () => ({
   },
 }));
 jest.mock("../components/scroll-into-view");
+jest.mock("../components/UploadUnsaved/update-cache");
 
 import { getConnStatus } from "../state/get-conn-status";
 import { scrollIntoView } from "../components/scroll-into-view";
@@ -49,9 +50,12 @@ import {
   GetAllUnSavedQueryData,
   GetUnsavedSummary,
 } from "../state/unsaved-resolvers";
+import { updateCache } from "../components/UploadUnsaved/update-cache";
+import { LayoutProvider } from "../components/Layout/layout-provider";
 
 const mockGetConnectionStatus = getConnStatus as jest.Mock;
 const mockScrollIntoView = scrollIntoView as jest.Mock;
+const mockUpdateCache = updateCache as jest.Mock;
 
 const timeStamps = { insertedAt: "a", updatedAt: "a" };
 
@@ -170,6 +174,7 @@ it("shows only saved experiences, does not show saved entries and uploads unsave
       createEntries: [
         {
           experienceId: "1",
+          entries: [{}],
         },
       ],
     },
@@ -714,6 +719,7 @@ function makeComp({
   props = {},
   isConnected = true,
 }: { props?: Partial<Props>; isConnected?: boolean } = {}) {
+  mockUpdateCache.mockReset();
   mockScrollIntoView.mockReset();
   mockGetConnectionStatus.mockReset();
   mockGetConnectionStatus.mockResolvedValue(isConnected);
@@ -726,12 +732,14 @@ function makeComp({
 
   return {
     ui: (
-      <Ui
-        uploadUnsavedExperiences={mockUploadUnsavedExperiences}
-        createEntries={mockUploadSavedExperiencesEntries}
-        uploadAllUnsaveds={mockUploadAllUnsaveds}
-        {...props}
-      />
+      <LayoutProvider value={{ layoutDispatch: jest.fn() } as any}>
+        <Ui
+          uploadUnsavedExperiences={mockUploadUnsavedExperiences}
+          createEntries={mockUploadSavedExperiencesEntries}
+          uploadAllUnsaveds={mockUploadAllUnsaveds}
+          {...props}
+        />
+      </LayoutProvider>
     ),
 
     mockUploadUnsavedExperiences,

@@ -8,11 +8,9 @@ import { Header } from "../components/Header/component";
 import { Props } from "../components/Header/utils";
 import { renderWithRouter } from "./test_utils";
 import { EXPERIENCES_URL, ROOT_URL } from "../routes";
-import {
-  LayoutProvider,
-  ILayoutContextContext,
-} from "../components/Layout/utils";
+import { ILayoutContextContext } from "../components/Layout/utils";
 import { UPLOAD_UNSAVED_PREVIEW_URL } from "../constants/upload-unsaved-routes";
+import { LayoutProvider } from "../components/Layout/layout-provider";
 
 type P = ComponentType<Partial<Props>>;
 const HeaderP = Header as P;

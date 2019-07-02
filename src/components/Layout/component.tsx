@@ -7,12 +7,7 @@ import React, {
 } from "react";
 import { EbnisAppContext } from "../../context";
 import { Loading } from "../Loading";
-import {
-  LayoutProvider,
-  ILayoutContextContext,
-  reducer,
-  LayoutActionType,
-} from "./utils";
+import { ILayoutContextContext, reducer, LayoutActionType } from "./utils";
 import { getObservable, EmitAction } from "../../setup-observable";
 import { getUser } from "../../state/tokens";
 import { ZenObservable } from "zen-observable-ts";
@@ -20,6 +15,7 @@ import { getConnStatus } from "../../state/get-conn-status";
 import { CachePersistor } from "apollo-cache-persist";
 import { NormalizedCacheObject } from "apollo-cache-inmemory";
 import { getUnsavedCount } from "../../state/unsaved-resolvers";
+import { LayoutProvider } from "./layout-provider";
 
 export function Layout({ children }: PropsWithChildren<{}>) {
   const { cache, persistCache, client } = useContext(EbnisAppContext);
@@ -95,11 +91,9 @@ export function Layout({ children }: PropsWithChildren<{}>) {
       (async function doPersistCache() {
         try {
           persistorRef.current = await persistCache(cache);
+        } catch (error) {}
 
-          dispatch([LayoutActionType.shouldRenderChildren, true]);
-        } catch (error) {
-          dispatch([LayoutActionType.shouldRenderChildren, true]);
-        }
+        dispatch([LayoutActionType.shouldRenderChildren, true]);
       })();
     },
     [cache, persistCache],

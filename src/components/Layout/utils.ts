@@ -14,7 +14,6 @@ export interface ILayoutContextContext {
 export const LayoutContext = createContext<ILayoutContextContext>({
   unsavedCount: 0,
 } as ILayoutContextContext);
-export const LayoutProvider = LayoutContext.Provider;
 
 export enum LayoutActionType {
   setUnsavedCount = "@components/layout/set-unsaved-count",

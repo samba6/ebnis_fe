@@ -161,9 +161,10 @@ export const reducer: Reducer<State, Action> = (prevState, [type, payload]) => {
             createEntries,
           );
 
-          proxy.allUploadSucceeded =
-            proxy.hasUnsavedExperiencesUploadError !== false &&
-            proxy.hasSavedExperiencesUploadError !== false;
+          proxy.allUploadSucceeded = !(
+            proxy.hasUnsavedExperiencesUploadError === true ||
+            proxy.hasSavedExperiencesUploadError === true
+          );
 
           if (!(noSuccess1 && noSuccess2)) {
             const { layoutDispatch, ...rest } = payload;
@@ -250,7 +251,7 @@ function updateStateWithSavedExperiencesUploadResult(
       return;
     }
 
-    const { errors, experienceId, entries } = elm;
+    const { errors, experienceId, entries = [] } = elm;
     if (entries.length > 0) {
       noUploadSucceeded = false;
     }
