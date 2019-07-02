@@ -5,12 +5,13 @@ import {
   ExperienceFragment_entries_edges_node,
 } from "../graphql/apollo-types/ExperienceFragment";
 import gql from "graphql-tag";
-import { DataProxy } from "apollo-cache";
 import { LocalResolverFn } from "./resolvers";
 import { isUnsavedId } from "../constants";
 import { readGetExperienceFullQueryFromCache } from "./resolvers/read-get-experience-full-query-from-cache";
+import { getSavedAndUnsavedExperiencesFromCache } from "./resolvers/get-saved-and-unsaved-experiences-from-cache";
+import ApolloClient from "apollo-client";
 
-const SAVED_AND_UNSAVED_EXPERIENCES_QUERY = gql`
+export const SAVED_AND_UNSAVED_EXPERIENCES_QUERY = gql`
   {
     savedAndUnsavedExperiences @client {
       id
@@ -19,12 +20,8 @@ const SAVED_AND_UNSAVED_EXPERIENCES_QUERY = gql`
   }
 `;
 
-export function getUnsavedCount(dataProxy: DataProxy) {
-  const data = dataProxy.readQuery<SavedAndUnsavedExperiencesQueryReturned>({
-    query: SAVED_AND_UNSAVED_EXPERIENCES_QUERY,
-  });
-
-  return ((data && data.savedAndUnsavedExperiences) || []).reduce(
+export async function getUnsavedCount(client: ApolloClient<{}>) {
+  return (await getSavedAndUnsavedExperiencesFromCache(client)).reduce(
     (acc, { id, unsavedEntriesCount }) => {
       acc += unsavedEntriesCount;
 
@@ -48,57 +45,16 @@ export function entryNodesFromExperience({ entries }: ExperienceFragment) {
 
 type SavedAndUnsavedExperiencesTypeName = "SavedAndUnsavedExperiences";
 
-const SAVED_AND_UNSAVED_EXPERIENCE_TYPENAME = "SavedAndUnsavedExperiences" as SavedAndUnsavedExperiencesTypeName;
+export const SAVED_AND_UNSAVED_EXPERIENCE_TYPENAME = "SavedAndUnsavedExperiences" as SavedAndUnsavedExperiencesTypeName;
 
-interface SavedAndUnsavedExperiences {
+export interface SavedAndUnsavedExperiences {
   id: string;
   unsavedEntriesCount: number;
   __typename: SavedAndUnsavedExperiencesTypeName;
 }
 
-interface SavedAndUnsavedExperiencesQueryReturned {
+export interface SavedAndUnsavedExperiencesQueryReturned {
   savedAndUnsavedExperiences: SavedAndUnsavedExperiences[];
-}
-
-export function writeSavedAndUnsavedExperiences(
-  dataProxy: DataProxy,
-  id: string,
-) {
-  const data = dataProxy.readQuery<SavedAndUnsavedExperiencesQueryReturned>({
-    query: SAVED_AND_UNSAVED_EXPERIENCES_QUERY,
-  });
-
-  let existsInCache = false;
-
-  const cacheData = ((data && data.savedAndUnsavedExperiences) || []).reduce(
-    (acc, map) => {
-      if (map.id === id) {
-        ++map.unsavedEntriesCount;
-        existsInCache = true;
-      }
-
-      acc.push(map);
-
-      return acc;
-    },
-    [] as SavedAndUnsavedExperiences[],
-  );
-
-  if (existsInCache === false) {
-    cacheData.push({
-      id: id,
-      unsavedEntriesCount: isUnsavedId(id) ? 0 : 1,
-      __typename: SAVED_AND_UNSAVED_EXPERIENCE_TYPENAME,
-    });
-  }
-
-  dataProxy.writeQuery<SavedAndUnsavedExperiencesQueryReturned>({
-    query: SAVED_AND_UNSAVED_EXPERIENCES_QUERY,
-
-    data: {
-      savedAndUnsavedExperiences: cacheData,
-    },
-  });
 }
 
 export const GET_ALL_UNSAVED_QUERY = gql`
@@ -127,47 +83,40 @@ export const getAllUnsavedGql = graphql<
     data && {
       getAllUnsavedProps: data,
     },
-
-  options: {
-    fetchPolicy: "no-cache",
-  },
 });
 
-const getAllUnsavedResolver: LocalResolverFn<{}, GetUnsavedSummary> = (
-  root,
-  variables,
-  { cache },
-) => {
+const getAllUnsavedResolver: LocalResolverFn<
+  {},
+  Promise<GetUnsavedSummary>
+> = async (root, variables, { cache, client }) => {
   let unsavedExperiencesLen = 0;
   let savedExperiencesLen = 0;
   const unsavedExperiencesMap = {} as UnsavedExperienceSummaryMap;
   const savedExperiencesMap = {} as UnsavedExperienceSummaryMap;
 
-  const data = cache.readQuery<SavedAndUnsavedExperiencesQueryReturned>({
-    query: SAVED_AND_UNSAVED_EXPERIENCES_QUERY,
-  });
+  (await getSavedAndUnsavedExperiencesFromCache(client)).forEach(
+    ({ id: id }) => {
+      const experience = readGetExperienceFullQueryFromCache(cache, id);
 
-  ((data && data.savedAndUnsavedExperiences) || []).forEach(({ id: id }) => {
-    const experience = readGetExperienceFullQueryFromCache(cache, id);
+      if (experience) {
+        if (isUnsavedId(id)) {
+          ++unsavedExperiencesLen;
+          unsavedExperiencesMap[id] = {
+            experience,
+            savedEntries: [],
+            unsavedEntries: entryNodesFromExperience(experience),
+          };
+        } else {
+          ++savedExperiencesLen;
 
-    if (experience) {
-      if (isUnsavedId(id)) {
-        ++unsavedExperiencesLen;
-        unsavedExperiencesMap[id] = {
-          experience,
-          savedEntries: [],
-          unsavedEntries: entryNodesFromExperience(experience),
-        };
-      } else {
-        ++savedExperiencesLen;
-
-        savedExperiencesMap[id] = {
-          experience,
-          ...separateExperienceUnsavedEntries(experience),
-        };
+          savedExperiencesMap[id] = {
+            experience,
+            ...separateExperienceUnsavedEntries(experience),
+          };
+        }
       }
-    }
-  });
+    },
+  );
 
   return {
     unsavedExperiencesMap,

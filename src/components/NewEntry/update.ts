@@ -10,6 +10,7 @@ import { writeGetExperienceFullQueryToCache } from "../../state/resolvers/write-
 import { DataProxy } from "apollo-cache";
 import { FetchResult } from "apollo-link";
 import { readGetExperienceFullQueryFromCache } from "../../state/resolvers/read-get-experience-full-query-from-cache";
+import { entryToEdge } from "../../state/resolvers/entry-to-edge";
 
 type Fn<T = string | ExperienceFragment> = (
   arg: T,
@@ -50,17 +51,19 @@ export const updateExperienceWithNewEntry: Fn = function updateFn(
       const entries = proxy.entries as ExperienceFragment_entries;
       const edges = entries.edges || [];
 
-      edges.push({
-        node: entry as ExperienceFragment_entries_edges_node,
-        cursor: "",
-        __typename: "EntryEdge",
-      });
+      edges.push(entryToEdge(entry as ExperienceFragment_entries_edges_node));
 
       entries.edges = edges;
       proxy.entries = entries;
     });
 
-    writeGetExperienceFullQueryToCache(dataProxy, updatedExperience);
+    // PLEASE I NEED TO CHECK THIS AGAIN AS WE ARE ALREADY WRITING THE FULL
+    // EXPERIENCE FRAGMENT IN my-experiences/pre-fetch-experiences.
+    // if we don't re-write the experience fragment we will only be able to
+    // query EXPERIENCE_MINI_FRAGMENT and not EXPERIENCE_FRAGMENT.
+    writeGetExperienceFullQueryToCache(dataProxy, updatedExperience, {
+      writeFragment: true,
+    });
 
     return updatedExperience;
   };

@@ -68,10 +68,6 @@ export const connectionGql = graphql<
 
     return data.connected;
   },
-
-  options: {
-    fetchPolicy: "no-cache",
-  },
 });
 
 export const CONNECTION_SUBSCRIPTION = gql`

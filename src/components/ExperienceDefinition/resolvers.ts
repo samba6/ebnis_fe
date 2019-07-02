@@ -11,8 +11,8 @@ import {
 } from "../../graphql/apollo-types/ExperienceFragment";
 import { EXPERIENCE_FRAGMENT } from "../../graphql/experience.fragment";
 import { writeGetExperienceFullQueryToCache } from "../../state/resolvers/write-get-experience-full-query-to-cache";
-import { updateGetExperienceConnectionMiniQuery } from "../../state/resolvers/update-get-experience-connection-mini-query";
-import { writeSavedAndUnsavedExperiences } from "../../state/unsaved-resolvers";
+import { insertExperienceInGetExperiencesMiniQuery } from "../../state/resolvers/update-get-experiences-mini-query";
+import { UpdateEntriesCountSavedAndUnsavedExperiencesInCache } from "../../state/resolvers/update-entries-count-saved-and-unsaved-experiences-in-cache";
 
 const createUnsavedExperienceResolver: LocalResolverFn<
   CreateExperienceMutationVariables,
@@ -26,7 +26,7 @@ const createUnsavedExperienceResolver: LocalResolverFn<
       fieldDefs: createFieldDefs,
     },
   },
-  { cache },
+  { cache, client },
 ) => {
   const today = new Date();
   const timestamp = today.toJSON();
@@ -66,9 +66,13 @@ const createUnsavedExperienceResolver: LocalResolverFn<
     },
   };
 
-  writeGetExperienceFullQueryToCache(cache, experience);
-  updateGetExperienceConnectionMiniQuery(cache, experience, { force: true });
-  writeSavedAndUnsavedExperiences(cache, experienceId);
+  writeGetExperienceFullQueryToCache(cache, experience, {
+    writeFragment: false,
+  });
+  insertExperienceInGetExperiencesMiniQuery(cache, experience, {
+    force: true,
+  });
+  UpdateEntriesCountSavedAndUnsavedExperiencesInCache(client, experienceId);
   return experience;
 };
 

@@ -7,7 +7,7 @@ import { updateExperienceWithNewEntry } from "./update";
 import { ENTRY_FRAGMENT } from "../../graphql/entry.fragment";
 import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragment";
 import { EntryFragment } from "../../graphql/apollo-types/EntryFragment";
-import { writeSavedAndUnsavedExperiences } from "../../state/unsaved-resolvers";
+import { UpdateEntriesCountSavedAndUnsavedExperiencesInCache } from "../../state/resolvers/update-entries-count-saved-and-unsaved-experiences-in-cache";
 
 const CREATE_UNSAVED_ENTRY_MUTATION = gql`
   mutation CreateUnsavedEntry($experience: Experience!, $fields: [Fields!]!) {
@@ -54,7 +54,7 @@ const createUnsavedEntryResolver: LocalResolverFn<
   CreateUnsavedEntryVariables,
   Promise<CreateUnsavedEntryMutationReturned["createUnsavedEntry"]>
 > = async (root, variables, context) => {
-  const { cache } = context;
+  const { client } = context;
 
   let experience = variables.experience;
 
@@ -81,11 +81,11 @@ const createUnsavedEntryResolver: LocalResolverFn<
     updatedAt: timestamps,
   };
 
-  experience = (await updateExperienceWithNewEntry(experience)(cache, {
+  experience = (await updateExperienceWithNewEntry(experience)(client, {
     data: { createEntry: entry },
   })) as ExperienceFragment;
 
-  writeSavedAndUnsavedExperiences(cache, experienceId);
+  UpdateEntriesCountSavedAndUnsavedExperiencesInCache(client, experienceId);
 
   return { id, experience, entry, __typename: "Entry" };
 };

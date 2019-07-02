@@ -64,7 +64,13 @@ export function preFetchExperiences({
           return;
         }
 
-        writeGetExperienceFullQueryToCache(client, { ...experience, ...node });
+        writeGetExperienceFullQueryToCache(
+          client,
+          { ...experience, ...node },
+          {
+            writeFragment: true,
+          },
+        );
       });
     });
 }

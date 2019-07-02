@@ -35,10 +35,6 @@ export const userLocalGql = graphql<
     data && {
       localUser: data,
     },
-
-  options: {
-    fetchPolicy: "no-cache",
-  },
 });
 
 interface UserLocalQueryReturned {

@@ -5,24 +5,34 @@ import {
 } from "../../graphql/apollo-types/GetExperienceFull";
 import { GET_EXPERIENCE_FULL_QUERY } from "../../graphql/get-experience-full.query";
 import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragment";
+import { writeExperienceFragmentToCache } from "./write-experience-fragment-to-cache";
 
 export function writeGetExperienceFullQueryToCache(
   dataProxy: DataProxy,
   experience: ExperienceFragment,
+  { writeFragment }: { writeFragment: boolean },
 ) {
+  const { id } = experience;
+
+  const variables = {
+    id,
+
+    entriesPagination: {
+      first: 20,
+    },
+  };
+
   dataProxy.writeQuery<GetExperienceFull, GetExperienceFullVariables>({
     query: GET_EXPERIENCE_FULL_QUERY,
 
-    variables: {
-      id: experience.id,
-
-      entriesPagination: {
-        first: 20,
-      },
-    },
+    variables,
 
     data: {
       getExperience: experience,
     },
   });
+
+  if (writeFragment) {
+    writeExperienceFragmentToCache(dataProxy, experience);
+  }
 }

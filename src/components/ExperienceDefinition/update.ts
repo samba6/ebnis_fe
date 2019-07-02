@@ -1,11 +1,10 @@
 import { CreateExpUpdateFn } from "./utils";
-import { writeGetExperienceFullQueryToCache } from "../../state/resolvers/write-get-experience-full-query-to-cache";
-import { updateGetExperienceConnectionMiniQuery } from "../../state/resolvers/update-get-experience-connection-mini-query";
+import { insertExperienceInGetExperiencesMiniQuery } from "../../state/resolvers/update-get-experiences-mini-query";
 
 // istanbul ignore next: trust apollo to act in good faith - will confirm
 // during e2e test
 export const ExperienceDefinitionUpdate: CreateExpUpdateFn = async (
-  client,
+  dataProxy,
   { data: newExperience },
 ) => {
   if (!newExperience) {
@@ -18,15 +17,13 @@ export const ExperienceDefinitionUpdate: CreateExpUpdateFn = async (
     return;
   }
 
-  writeGetExperienceFullQueryToCache(client, experience);
-
   // if we have not fetched GET_EXPERIENCES_MINI_QUERY (e.g. by visiting
   // 'my experiences' page) in which case graphql field `getExperiences` would
   // have been written to apollo ROOT_QUERY, then this part of the code will
   // error because what we are trying to read does not exist on apollo
   //ROOT_QUERY
   try {
-    updateGetExperienceConnectionMiniQuery(client, experience, {
+    insertExperienceInGetExperiencesMiniQuery(dataProxy, experience, {
       force: false,
     });
   } catch (error) {

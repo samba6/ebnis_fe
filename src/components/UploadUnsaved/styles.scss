@@ -120,6 +120,7 @@ $transitionTime: 500ms;
 
     &.content {
       border: 1px solid $error-color !important;
+      border-bottom-width: 2px !important;
     }
   }
 
@@ -129,6 +130,7 @@ $transitionTime: 500ms;
 
     &.content {
       border: 1px solid $success-color !important;
+      border-bottom-width: 2px !important;
     }
   }
 

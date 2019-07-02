@@ -5,11 +5,12 @@ import {
 } from "./connection.resolver";
 import { userLocalResolvers } from "./user.resolver";
 import { DEFAULT_UNSAVED_STATES, unsavedResolvers } from "./unsaved-resolvers";
-import { DataProxy } from "apollo-cache";
+import ApolloClient from "apollo-client";
+import { InMemoryCache } from "apollo-cache-inmemory";
 
 export interface CacheContext {
-  cache: DataProxy;
-  client: DataProxy;
+  cache: InMemoryCache;
+  client: ApolloClient<{}>;
   getCacheKey: (args: { __typename: string; id: string }) => string;
 }
 

@@ -1,4 +1,4 @@
-import React, { useReducer, useEffect, useCallback, useRef } from "react";
+import React, { useReducer, useEffect, useCallback, useContext } from "react";
 import {
   Props,
   reducer,
@@ -34,6 +34,7 @@ import { scrollIntoView } from "../scroll-into-view";
 import { FormCtrlError } from "../FormCtrlError/component";
 import { Entry } from "../Entry/component";
 import { GetAllUnSavedQueryData } from "../../state/unsaved-resolvers";
+import { LayoutContext } from "../Layout/utils";
 
 const timeoutMs = 500;
 
@@ -45,9 +46,7 @@ export function UploadUnsaved(props: Props) {
     } = {} as GetAllUnSavedQueryData,
 
     uploadUnsavedExperiences,
-
     createEntries,
-
     uploadAllUnsaveds,
     navigate,
     client,
@@ -70,8 +69,7 @@ export function UploadUnsaved(props: Props) {
     unsavedExperiencesMap,
   } = state;
 
-  const connectionStatusRef = useRef(false);
-  const connectionStatus = connectionStatusRef.current;
+  const { cache, layoutDispatch } = useContext(LayoutContext);
 
   useEffect(() => {
     getConnStatus(client).then(isConnected => {
@@ -80,7 +78,7 @@ export function UploadUnsaved(props: Props) {
         return;
       }
     });
-  }, [navigate, client, connectionStatus]);
+  }, [navigate, client]);
 
   useEffect(() => {
     if (getAllUnsaved) {
@@ -96,60 +94,51 @@ export function UploadUnsaved(props: Props) {
     }
   }, [getAllUnsaved, navigate]);
 
-  const onUploadAllClicked = useCallback(
-    async function onUploadAllClickedFn() {
-      dispatch([ActionType.setUploading, true]);
+  async function onUploadAllClicked() {
+    dispatch([ActionType.setUploading, true]);
 
-      try {
-        let uploadFunction;
-        let variables;
+    try {
+      let uploadFunction;
+      let variables;
 
-        if (unsavedExperiencesLen !== 0 && savedExperiencesLen !== 0) {
-          uploadFunction = uploadAllUnsaveds;
+      if (unsavedExperiencesLen !== 0 && savedExperiencesLen !== 0) {
+        uploadFunction = uploadAllUnsaveds;
 
-          variables = {
-            unsavedExperiences: unsavedExperiencesToUploadData(
-              unsavedExperiencesMap,
-            ),
+        variables = {
+          unsavedExperiences: unsavedExperiencesToUploadData(
+            unsavedExperiencesMap,
+          ),
 
-            unsavedEntries: savedExperiencesToUploadData(savedExperiencesMap),
-          };
-        } else if (unsavedExperiencesLen !== 0) {
-          uploadFunction = uploadUnsavedExperiences;
+          unsavedEntries: savedExperiencesToUploadData(savedExperiencesMap),
+        };
+      } else if (unsavedExperiencesLen !== 0) {
+        uploadFunction = uploadUnsavedExperiences;
 
-          variables = ({
-            input: unsavedExperiencesToUploadData(unsavedExperiencesMap),
-          } as unknown) as UploadAllUnsavedsMutationVariables;
-        } else {
-          uploadFunction = createEntries;
+        variables = ({
+          input: unsavedExperiencesToUploadData(unsavedExperiencesMap),
+        } as unknown) as UploadAllUnsavedsMutationVariables;
+      } else {
+        uploadFunction = createEntries;
 
-          variables = ({
-            createEntries: savedExperiencesToUploadData(savedExperiencesMap),
-          } as unknown) as UploadAllUnsavedsMutationVariables;
-        }
-
-        const result = await (uploadFunction as UploadAllUnsavedsMutationFn)({
-          variables,
-        });
-
-        dispatch([ActionType.uploadResult, result && result.data]);
-      } catch (error) {
-        dispatch([ActionType.setServerError, error]);
-
-        scrollIntoView("js-scroll-into-view-server-error");
+        variables = ({
+          createEntries: savedExperiencesToUploadData(savedExperiencesMap),
+        } as unknown) as UploadAllUnsavedsMutationVariables;
       }
-    },
-    [
-      dispatch,
-      unsavedExperiencesLen,
-      savedExperiencesLen,
-      uploadAllUnsaveds,
-      unsavedExperiencesMap,
-      savedExperiencesMap,
-      uploadUnsavedExperiences,
-      createEntries,
-    ],
-  );
+
+      const result = await (uploadFunction as UploadAllUnsavedsMutationFn)({
+        variables,
+      });
+
+      dispatch([
+        ActionType.uploadResult,
+        { cache, layoutDispatch, client, result: result && result.data },
+      ]);
+    } catch (error) {
+      dispatch([ActionType.setServerError, error]);
+
+      scrollIntoView("js-scroll-into-view-server-error");
+    }
+  }
 
   if (loading) {
     return <Loading />;
