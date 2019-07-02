@@ -43,6 +43,7 @@ export function Entry(props: Props) {
             fieldDefs={fieldDefs}
             index={fieldIndex}
             fieldsLen={fieldsLen}
+            entryId={entry.id}
           />
         );
       })}
@@ -63,11 +64,13 @@ function FieldComponent({
   fieldDefs,
   index,
   fieldsLen,
+  entryId,
 }: {
   field: ExperienceFragment_entries_edges_node_fields;
   fieldDefs: ExperienceFragment_fieldDefs[];
   index: number;
   fieldsLen: number;
+  entryId: string;
 }) {
   const { defId, data } = field;
 
@@ -104,9 +107,10 @@ function FieldComponent({
               className="field__options"
               icon="ellipsis vertical"
               direction="left"
+              data-testid={`entry-${entryId}-options-menu`}
             >
               <Dropdown.Menu>
-                <Dropdown.Header data-testid="new-experience-entry-button">
+                <Dropdown.Header data-testid={`entry-${entryId}-modify-button`}>
                   <Icon name="external alternate" />
 
                   <Link to={`/`}>Modify</Link>
