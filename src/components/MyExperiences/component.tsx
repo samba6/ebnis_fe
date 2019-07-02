@@ -7,12 +7,11 @@ import { EXPERIENCE_DEFINITION_URL } from "../../routes";
 import { makeExperienceRoute } from "../../constants/experience-route";
 import { Loading } from "../Loading";
 import { SidebarHeader } from "../SidebarHeader";
-import { setDocumentTitle, makeSiteTitle } from "../../constants";
+import { setDocumentTitle, makeSiteTitle, isUnsavedId } from "../../constants";
 import { MY_EXPERIENCES_TITLE } from "../../constants/my-experiences-title";
 import { Link } from "gatsby";
 import { preFetchExperiences } from "./pre-fetch-experiences";
 import { GetExperienceConnectionMiniData } from "../../graphql/get-experience-connection-mini.query";
-import { ExperienceMiniFragment } from "../../graphql/apollo-types/ExperienceMiniFragment";
 import {
   ExperienceConnectionFragment,
   ExperienceConnectionFragment_edges,
@@ -53,7 +52,7 @@ export const MyExperiences = (props: Props) => {
       return;
     }
 
-    const { idToExperienceMap, ids } = mapExperiencesToIds(
+    const ids = mapSavedExperiencesToIds(
       getExperiences as ExperienceConnectionFragment,
     );
 
@@ -65,7 +64,6 @@ export const MyExperiences = (props: Props) => {
       preFetchExperiences({
         ids,
         client,
-        idToExperienceMap,
       });
     }, 1000);
 
@@ -227,25 +225,21 @@ const ShowDescriptionToggle = React.memo(
   },
 );
 
-function mapExperiencesToIds(
+function mapSavedExperiencesToIds(
   experienceConnection: ExperienceConnectionFragment,
 ) {
-  const edges = experienceConnection.edges as ExperienceConnectionFragment_edges[];
-  const ids: string[] = [];
-
-  const idToExperienceMap = edges.reduce(
+  return (experienceConnection.edges as ExperienceConnectionFragment_edges[]).reduce(
     (acc, edge: ExperienceConnectionFragment_edges) => {
-      const node = edge.node as ExperienceConnectionFragment_edges_node;
+      const { id } = edge.node as ExperienceConnectionFragment_edges_node;
 
-      const { id } = node;
-      acc[id] = node;
-      ids.push(id);
+      if (!isUnsavedId(id)) {
+        acc.push(id);
+      }
+
       return acc;
     },
-    {} as { [k: string]: ExperienceMiniFragment },
+    [] as string[],
   );
-
-  return { idToExperienceMap, ids };
 }
 
 interface DescriptionMap {

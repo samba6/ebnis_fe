@@ -25,6 +25,7 @@ import {
   middlewareLoggerLink,
   middlewareAuthLink,
 } from "./apollo-middlewares";
+import { CUSTOM_QUERY_RESOLVERS } from "./custom-query-resolvers";
 
 let cache: InMemoryCache;
 let client: ApolloClient<{}>;
@@ -62,6 +63,10 @@ export function buildClientCache(
   if (!cache) {
     cache = new InMemoryCache({
       addTypename: true,
+
+      cacheRedirects: {
+        ...CUSTOM_QUERY_RESOLVERS,
+      },
     });
   }
 
