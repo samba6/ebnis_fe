@@ -50,17 +50,28 @@ export function Login(props: Props) {
   } = props;
 
   const [state, dispatch] = useReducer(reducer, initialState);
-  const { otherErrors, formErrors, serverFieldErrors, networkError } = state;
+
   const mainRef = useRef<HTMLDivElement>(null);
+
   const { persistor } = useContext(LayoutContext);
+
+  const {
+    otherErrors,
+    formErrors,
+    serverFieldErrors,
+    networkError,
+    showPage,
+  } = state;
 
   useEffect(() => {
     if (user) {
       (navigate as NavigateFn)(EXPERIENCES_URL);
+    } else {
+      dispatch([ActionType.setShowPage, true]);
     }
   }, [user, navigate]);
 
-  if (user) {
+  if (!showPage) {
     return null;
   }
 

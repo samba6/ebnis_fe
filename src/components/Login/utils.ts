@@ -42,6 +42,7 @@ export enum ActionType {
   setFormError = "@components/login/set_form_error",
   setServerErrors = "@components/login/set_server_errors",
   clearAllErrors = "@components/login/clear_all_errors",
+  setShowPage = "@components/login/showPage",
 }
 
 export interface State {
@@ -50,6 +51,7 @@ export interface State {
   readonly serverFieldErrors?: string | null;
   readonly pwdType?: "password" | "text";
   readonly networkError?: string | null;
+  readonly showPage?: boolean;
 }
 
 export type Action =
@@ -57,7 +59,8 @@ export type Action =
   | [ActionType.setOtherErrors, string]
   | [ActionType.setFormError, FormikErrors<FormValues>]
   | [ActionType.setServerErrors, string]
-  | PasswordInputAction;
+  | PasswordInputAction
+  | [ActionType.setShowPage, boolean];
 
 export const initialState = {} as State;
 
@@ -108,6 +111,13 @@ export const reducer: Reducer<State, Action> = (prevState, [type, payload]) => {
       case PasswordInputType:
         {
           proxy.pwdType = payload as "password" | "text";
+        }
+
+        break;
+
+      case ActionType.setShowPage:
+        {
+          proxy.showPage = payload as boolean;
         }
 
         break;
