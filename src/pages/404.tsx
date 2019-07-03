@@ -8,7 +8,7 @@ import { makeSiteTitle, PAGE_NOT_FOUND_TITLE } from "../constants";
 
 export default function(props: RouteComponentProps) {
   return (
-    <Layout>
+    <Layout {...props}>
       <Helmet>
         <title>{makeSiteTitle(PAGE_NOT_FOUND_TITLE)}</title>
       </Helmet>

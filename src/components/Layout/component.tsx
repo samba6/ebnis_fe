@@ -16,8 +16,13 @@ import { CachePersistor } from "apollo-cache-persist";
 import { NormalizedCacheObject } from "apollo-cache-inmemory";
 import { getUnsavedCount } from "../../state/unsaved-resolvers";
 import { LayoutProvider } from "./layout-provider";
+import { RouteComponentProps } from "@reach/router";
 
-export function Layout({ children }: PropsWithChildren<{}>) {
+interface Props extends PropsWithChildren<{}>, RouteComponentProps {}
+
+export function Layout(props: Props) {
+  const { children } = props;
+
   const { cache, persistCache, client } = useContext(EbnisAppContext);
 
   const persistorRef = useRef<
@@ -116,6 +121,7 @@ export function Layout({ children }: PropsWithChildren<{}>) {
           unsavedCount,
           cache,
           layoutDispatch: dispatch,
+          client,
         } as ILayoutContextContext
       }
     >

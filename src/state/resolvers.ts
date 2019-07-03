@@ -4,7 +4,7 @@ import {
   DEFAULT_CONNECTION_STATUS,
 } from "./connection.resolver";
 import { userLocalResolvers } from "./user.resolver";
-import { DEFAULT_UNSAVED_STATES, unsavedResolvers } from "./unsaved-resolvers";
+import { DEFAULT_UNSAVED_STATES } from "./unsaved-resolvers";
 import ApolloClient from "apollo-client";
 import { InMemoryCache } from "apollo-cache-inmemory";
 
@@ -37,7 +37,7 @@ export type LocalState = ConnectionQueryData & {
 
 export function initState() {
   return {
-    resolvers: [connectionResolvers, userLocalResolvers, unsavedResolvers],
+    resolvers: [connectionResolvers, userLocalResolvers],
     defaults: {
       connected: DEFAULT_CONNECTION_STATUS,
       staleToken: null,

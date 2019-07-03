@@ -2,13 +2,14 @@ import { createContext, Reducer, Dispatch } from "react";
 import { CachePersistor } from "apollo-cache-persist";
 import { InMemoryCache } from "apollo-cache-inmemory";
 import immer from "immer";
+import ApolloClient from "apollo-client";
 
-// eslint-disable-next-line @typescript-eslint/interface-name-prefix
 export interface ILayoutContextContext {
   persistor: CachePersistor<{}>;
   unsavedCount: number;
   cache: InMemoryCache;
   layoutDispatch: LayoutDispatchType;
+  client: ApolloClient<{}>;
 }
 
 export const LayoutContext = createContext<ILayoutContextContext>({

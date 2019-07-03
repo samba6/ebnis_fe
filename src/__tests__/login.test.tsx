@@ -21,6 +21,8 @@ jest.mock("../components/Login/scroll-to-top");
 import { getConnStatus } from "../state/get-conn-status";
 import { refreshToHome } from "../refresh-to-app";
 import { scrollToTop } from "../components/Login/scroll-to-top";
+import { UserFragment } from "../graphql/apollo-types/UserFragment";
+import { EXPERIENCES_URL } from "../routes";
 
 const mockRefreshToHome = refreshToHome as jest.Mock;
 const mockGetConnStatus = getConnStatus as jest.Mock;
@@ -305,6 +307,25 @@ it("pre-fills form with user data", async () => {
    * Then email input should be pre-filled with user email
    */
   expect((getByLabelText("Email") as any).value).toBe("me@me.com");
+});
+
+it("navigates to 'my experiences page' if user is logged in", async () => {
+  /**
+   * Given user has logged out
+   */
+
+  const { ui, mockNavigate } = makeComp({
+    props: {
+      user: {} as UserFragment,
+    },
+  });
+
+  /**
+   * When we start to use the login component
+   */
+  const {} = render(ui);
+
+  expect(mockNavigate).toHaveBeenCalledWith(EXPERIENCES_URL);
 });
 
 function fillForm(getByLabelText: any, getByText: any) {

@@ -157,6 +157,7 @@ export const reducer: Reducer<State, Action> = (prevState, [type, payload]) => {
 
         break;
 
+      // istanbul ignore next: test covered in Password Component
       case PasswordInputType:
         {
           proxy.pwdType = payload as "password" | "text";

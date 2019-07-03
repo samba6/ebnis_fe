@@ -12,7 +12,7 @@ import {
 import { EXPERIENCE_FRAGMENT } from "../../graphql/experience.fragment";
 import { writeGetExperienceFullQueryToCache } from "../../state/resolvers/write-get-experience-full-query-to-cache";
 import { insertExperienceInGetExperiencesMiniQuery } from "../../state/resolvers/update-get-experiences-mini-query";
-import { UpdateEntriesCountSavedAndUnsavedExperiencesInCache } from "../../state/resolvers/update-entries-count-saved-and-unsaved-experiences-in-cache";
+import { updateEntriesCountSavedAndUnsavedExperiencesInCache } from "../../state/resolvers/update-saved-and-unsaved-experiences-in-cache";
 
 const createUnsavedExperienceResolver: LocalResolverFn<
   CreateExperienceMutationVariables,
@@ -69,10 +69,10 @@ const createUnsavedExperienceResolver: LocalResolverFn<
   writeGetExperienceFullQueryToCache(cache, experience, {
     writeFragment: false,
   });
-  insertExperienceInGetExperiencesMiniQuery(cache, experience, {
+  insertExperienceInGetExperiencesMiniQuery(client, experience, {
     force: true,
   });
-  UpdateEntriesCountSavedAndUnsavedExperiencesInCache(client, experienceId);
+  updateEntriesCountSavedAndUnsavedExperiencesInCache(client, experienceId);
   return experience;
 };
 

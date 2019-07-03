@@ -6,7 +6,7 @@ import { SidebarHeader } from "../SidebarHeader";
 import { ROOT_URL } from "../../routes";
 import { RouteComponentProps } from "@reach/router";
 
-export function Page404(props: RouteComponentProps) {
+export function Page404({  }: RouteComponentProps) {
   return (
     <>
       <SidebarHeader title="Page Not Found" />

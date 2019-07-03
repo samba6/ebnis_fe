@@ -17,7 +17,10 @@ import {
   ExperienceConnectionFragment_edges,
   ExperienceConnectionFragment_edges_node,
 } from "../../graphql/apollo-types/ExperienceConnectionFragment";
-import { GetExperienceConnectionMini_getExperiences } from "../../graphql/apollo-types/GetExperienceConnectionMini";
+import {
+  GetExperienceConnectionMini_getExperiences,
+  GetExperienceConnectionMini_getExperiences_edges,
+} from "../../graphql/apollo-types/GetExperienceConnectionMini";
 
 export const MyExperiences = (props: Props) => {
   const {
@@ -44,6 +47,7 @@ export const MyExperiences = (props: Props) => {
   }, []);
 
   useEffect(() => {
+    // istanbul ignore next:
     if (preFetchExperiencesRef.current === true) {
       return;
     }
@@ -82,7 +86,7 @@ export const MyExperiences = (props: Props) => {
   function renderExperiences(
     experiencesForDisplay: GetExperienceConnectionMini_getExperiences,
   ) {
-    const edges = experiencesForDisplay.edges || [];
+    const edges = experiencesForDisplay.edges as GetExperienceConnectionMini_getExperiences_edges[];
 
     if (edges.length === 0) {
       return (
@@ -120,7 +124,9 @@ export const MyExperiences = (props: Props) => {
     }
 
     if (!getExperiences) {
-      return null;
+      return (
+        <div data-testid="no-experiences-error">Error loading experiences</div>
+      );
     }
 
     return (

@@ -3,12 +3,14 @@ import dateFnParse from "date-fns/parse";
 import dateFnFormat from "date-fns/format";
 import { FieldType } from "../../graphql/apollo-types/globalTypes";
 import { NewEntryRouteParams } from "../../routes";
-import {
-  ExperienceFragment,
-  ExperienceFragment_entries_edges_node,
-} from "../../graphql/apollo-types/ExperienceFragment";
+import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragment";
 import { EbnisComponentProps } from "../../types";
 import { PropsWithChildren } from "react";
+
+export interface IMenuOptions {
+  newEntry?: boolean;
+  onDelete: (id: string) => void;
+}
 
 export interface Props
   extends EbnisComponentProps,
@@ -17,10 +19,7 @@ export interface Props
   experience: ExperienceFragment;
   entryProps?: EbnisComponentProps;
   headerProps?: EbnisComponentProps;
-  entryNodes?: ExperienceFragment_entries_edges_node[];
-  menuOptions?: {
-    newEntry?: boolean;
-  };
+  menuOptions: IMenuOptions;
   entriesJSX?: JSX.Element | JSX.Element[];
 }
 

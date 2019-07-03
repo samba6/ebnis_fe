@@ -13,27 +13,27 @@ import { UPLOAD_UNSAVED_PREVIEW_URL } from "../../constants/upload-unsaved-route
 
 const ExperienceDefinition = Loadable({
   loader: () => import("../../components/ExperienceDefinition"),
-  loading: LoadableLoading
+  loading: LoadableLoading,
 });
 
 const ExperienceNewEntryParent = Loadable({
   loader: () => import("../../components/ExperienceNewEntryParent"),
-  loading: LoadableLoading
+  loading: LoadableLoading,
 });
 
 const MyExperiences = Loadable({
   loader: () => import("../../components/MyExperiences"),
-  loading: LoadableLoading
+  loading: LoadableLoading,
 });
 
 const UploadUnsaved = Loadable({
   loader: () => import("../../components/UploadUnsaved"),
-  loading: LoadableLoading
+  loading: LoadableLoading,
 });
 
 export function App(props: RouteComponentProps) {
   return (
-    <Layout>
+    <Layout {...props}>
       <Router style={{ height: "100%" }}>
         <AuthRequired
           path={EXPERIENCE_DEFINITION_URL}

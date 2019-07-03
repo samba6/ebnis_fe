@@ -4,7 +4,7 @@ import {
   ExperienceFragment_entries_edges,
 } from "../../graphql/apollo-types/ExperienceFragment";
 import { SavedAndUnsavedExperiences } from "../../state/unsaved-resolvers";
-import { writeSavedAndUnsavedExperiencesToCache } from "../../state/resolvers/write-saved-and-unsaved-experiences-to-cache";
+import { writeSavedAndUnsavedExperiencesToCache } from "../../state/resolvers/update-saved-and-unsaved-experiences-in-cache";
 import immer from "immer";
 import { entryToEdge } from "../../state/resolvers/entry-to-edge";
 import { writeExperienceFragmentToCache } from "../../state/resolvers/write-experience-fragment-to-cache";
@@ -56,7 +56,7 @@ export function updateCache({
         const entry = edge.node as ExperienceFragment_entries_edges_node;
         const clientId = entry.clientId as string;
 
-        // we delete the unsaved version from cache.
+        // we will delete the unsaved version from cache.
         unsavedVersionOfSavedEntryIds.push(clientId);
       }
 
@@ -75,6 +75,7 @@ export function updateCache({
           __typename: "SavedAndUnsavedExperiences",
         });
 
+        // we merge unsaved entries into saved entries received from server.
         unsavedEntries.forEach(entry => {
           if (entriesErrorsIds.includes(entry.id)) {
             edges.push(entryToEdge(entry));
@@ -147,12 +148,14 @@ export function updateCache({
     unsavedVersionOfSavedEntryIds,
   );
 
-  // replacement must run before delete because after delete, apollo will
-  // return an empty object ({}) for the deleted experience.
-  replaceExperiencesInGetExperiencesMiniQuery(
-    client,
-    unsavedExperiencesToBeReplacedMap,
-  );
+  if (unsavedExperiencesNowSaved.length !== 0) {
+    // replacement must run before delete because after delete, apollo will
+    // return an empty object ({}) for the deleted experience.
+    replaceExperiencesInGetExperiencesMiniQuery(
+      client,
+      unsavedExperiencesToBeReplacedMap,
+    );
+  }
 
   // we need to do all deletes before writing anything to do with unsaved
   // experiences now saved.
@@ -170,12 +173,17 @@ export function updateCache({
     // when we visit e.g. 'experience page', we don't hit the network again.
     // and of course apollo had already written the fragment for us when
     // we received response from server.
+
+    // can I remove this part? Apollo should have generated this query for me
+    // when I received result from network
     writeGetExperienceFullQueryToCache(cache, updatedExperience, {
       writeFragment: false,
     });
   });
 
-  writeSavedAndUnsavedExperiencesToCache(cache, savedAndUnsavedExperiences);
+  if (savedAndUnsavedExperiences.length !== 0) {
+    writeSavedAndUnsavedExperiencesToCache(cache, savedAndUnsavedExperiences);
+  }
 
   return outstandingUnsavedCount;
 }

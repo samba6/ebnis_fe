@@ -5,7 +5,7 @@ import Dropdown from "semantic-ui-react/dist/commonjs/modules/Dropdown";
 import { Link } from "gatsby";
 
 import "./styles.scss";
-import { Props } from "./utils";
+import { Props, IMenuOptions } from "./utils";
 import { makeNewEntryRoute } from "../../constants/new-entry-route";
 import { Entry } from "../Entry/component";
 import {
@@ -25,8 +25,7 @@ export function Experience(props: Props) {
     className = "",
     entryProps = {},
     headerProps = {},
-    menuOptions = {},
-    entryNodes: defaultEntryNodes,
+    menuOptions = {} as IMenuOptions,
     children,
     entriesJSX,
     ...otherProps
@@ -37,10 +36,6 @@ export function Experience(props: Props) {
       return [];
     }
 
-    if (defaultEntryNodes) {
-      return defaultEntryNodes;
-    }
-
     const entries = experience.entries as ExperienceFragment_entries;
     const edges = entries.edges as ExperienceFragment_entries_edges[];
 
@@ -48,7 +43,7 @@ export function Experience(props: Props) {
       (edge: ExperienceFragment_entries_edges) =>
         edge.node as ExperienceFragment_entries_edges_node,
     );
-  }, [experience, defaultEntryNodes, entriesJSX]);
+  }, [experience, entriesJSX]);
 
   function renderEntries() {
     const nodesLen = entryNodes.length;
@@ -115,9 +110,13 @@ export function Experience(props: Props) {
 function OptionsMenuComponent({
   experience,
   newEntry = true,
-}: {
+  onDelete,
+}: Props["menuOptions"] & {
   experience: ExperienceFragment;
-} & Props["menuOptions"]) {
+}) {
+  const { id } = experience;
+  const experienceIdPrefix = `experience-${id}`;
+
   return (
     <Dropdown
       text="OPTIONS"
@@ -135,10 +134,10 @@ function OptionsMenuComponent({
             style={{
               display: "block",
             }}
-            data-testid="new-experience-entry-button"
+            data-testid={`${experienceIdPrefix}-new-entry-button`}
             className="header"
             as={Link}
-            to={makeNewEntryRoute(experience.id)}
+            to={makeNewEntryRoute(id)}
           >
             <Icon name="external alternate" />
             New Entry
@@ -150,6 +149,10 @@ function OptionsMenuComponent({
             text="Delete"
             value="Delete"
             label={{ color: "red", empty: true, circular: true }}
+            data-testid={`${experienceIdPrefix}-delete-button`}
+            onClick={() => {
+              onDelete(id);
+            }}
           />
 
           <Dropdown.Item

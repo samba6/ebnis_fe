@@ -3,9 +3,9 @@
 import React, { ComponentType } from "react";
 import "jest-dom/extend-expect";
 import "react-testing-library/cleanup-after-each";
-import { render } from "react-testing-library";
+import { render, fireEvent } from "react-testing-library";
 
-import { Experience } from "../components/Experience/component";
+import { Experience, getTitle } from "../components/Experience/component";
 import { Props } from "../components/Experience/utils";
 import { FieldType } from "../graphql/apollo-types/globalTypes";
 import {} from "../graphql/apollo-types/GetExperienceFull";
@@ -27,21 +27,25 @@ beforeEach(() => {
 });
 
 it("renders ui to show empty entries", () => {
-  /**
-   * Given that there is experience with no entry in the system
-   */
+  const mockOnDelete = jest.fn();
+
   const { ui } = makeComp({
     experience: {
+      id: "1",
       entries: {
         edges: [],
       },
     } as any,
+
+    menuOptions: {
+      onDelete: mockOnDelete,
+    },
   });
 
   /**
    * When we use the component
    */
-  const { queryByTestId } = render(ui);
+  const { queryByTestId, getByTestId } = render(ui);
 
   /**
    * Then we should not see loading spinner
@@ -57,6 +61,10 @@ it("renders ui to show empty entries", () => {
    * And we should not see any UI for an entry
    */
   expect(queryByTestId("experience-entry")).not.toBeInTheDocument();
+
+  fireEvent.click(getByTestId("experience-1-delete-button"));
+
+  expect(mockOnDelete.mock.calls[0][0]).toEqual("1");
 });
 
 it("renders entries when `entries prop provided`", () => {
@@ -257,6 +265,11 @@ it("renders entries when `entriesJSX prop provided`", () => {
   expect(getByText(/c1/i)).toBeInTheDocument();
 
   expect(queryByTestId("no-entries")).not.toBeInTheDocument();
+});
+
+test("getTitle", () => {
+  expect(getTitle({ title: "a" })).toEqual("a");
+  expect(getTitle()).toEqual("Experience");
 });
 
 type P = ComponentType<Partial<Props>>;

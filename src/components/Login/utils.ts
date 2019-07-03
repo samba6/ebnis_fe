@@ -12,10 +12,12 @@ import {
   UserLocalMutationProps,
   UserLocalGqlProps,
 } from "../../state/user.resolver";
+import { WithUser } from "../with-user-hoc";
 
 export interface OwnProps
   extends RouteComponentProps<{}>,
-    WithApolloClient<{}> {}
+    WithApolloClient<{}>,
+    WithUser {}
 
 export type Props = OwnProps &
   LoginMutationProps &
@@ -102,6 +104,7 @@ export const reducer: Reducer<State, Action> = (prevState, [type, payload]) => {
 
         break;
 
+      // istanbul ignore next: test covered in Password Component
       case PasswordInputType:
         {
           proxy.pwdType = payload as "password" | "text";

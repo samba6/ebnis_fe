@@ -11,6 +11,7 @@ export async function getSavedAndUnsavedExperiencesFromCache(
     SavedAndUnsavedExperiencesQueryReturned
   >({
     query: SAVED_AND_UNSAVED_EXPERIENCES_QUERY,
+    fetchPolicy: "cache-only",
   });
 
   return (data && data.savedAndUnsavedExperiences) || [];

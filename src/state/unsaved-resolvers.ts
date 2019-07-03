@@ -83,6 +83,12 @@ export const getAllUnsavedGql = graphql<
     data && {
       getAllUnsavedProps: data,
     },
+
+  options: () => {
+    return {
+      fetchPolicy: "cache-and-network",
+    };
+  },
 });
 
 const getAllUnsavedResolver: LocalResolverFn<

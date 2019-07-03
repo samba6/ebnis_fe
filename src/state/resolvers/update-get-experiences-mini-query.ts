@@ -54,12 +54,20 @@ export async function insertExperienceInGetExperiencesMiniQuery(
 
     getExperiences = data && data.getExperiences;
   } else {
-    const data = dataProxy.readQuery<
-      GetExperienceConnectionMini,
-      GetExperienceConnectionMiniVariables
-    >(readOptions);
+    try {
+      const data = dataProxy.readQuery<
+        GetExperienceConnectionMini,
+        GetExperienceConnectionMiniVariables
+      >(readOptions);
 
-    getExperiences = data && data.getExperiences;
+      getExperiences = data && data.getExperiences;
+    } catch (error) {
+      if (
+        !(error as Error).message.includes("Can't find field getExperiences")
+      ) {
+        throw error;
+      }
+    }
   }
 
   if (!getExperiences && !force) {
@@ -91,9 +99,13 @@ export async function insertExperienceInGetExperiencesMiniQuery(
   });
 }
 
+/**
+ * When null is supplied in the map, it means the experience will be removed
+ * from the query
+ */
 export async function replaceExperiencesInGetExperiencesMiniQuery(
   client: ApolloClient<{}>,
-  experiencesMap: { [k: string]: ExperienceFragment },
+  experiencesMap: { [k: string]: ExperienceFragment | null },
 ) {
   const variables: GetExperienceConnectionMiniVariables = {
     input: {
@@ -123,18 +135,23 @@ export async function replaceExperiencesInGetExperiencesMiniQuery(
       DEFAULT_EXPERIENCE_CONNECTION) as ExperienceConnectionFragment,
     proxy => {
       const edges = proxy.edges || [];
+      const newEdges: ExperienceConnectionFragment_edges[] = [];
 
       for (let edge of edges) {
         edge = edge as ExperienceConnectionFragment_edges;
         const node = edge.node as ExperienceConnectionFragment_edges_node;
         const replacementExperience = experiencesMap[node.id];
 
-        if (replacementExperience) {
-          edge.node = replacementExperience;
+        if (replacementExperience !== null) {
+          if (replacementExperience) {
+            edge.node = replacementExperience;
+          }
+
+          newEdges.push(edge);
         }
       }
 
-      proxy.edges = edges;
+      proxy.edges = newEdges;
     },
   );
 

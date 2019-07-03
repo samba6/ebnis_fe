@@ -30,7 +30,7 @@ import { updateCache } from "./update-cache";
 import { LayoutDispatchType, LayoutActionType } from "../Layout/utils";
 import { InMemoryCache } from "apollo-cache-inmemory";
 
-interface OwnProps
+export interface OwnProps
   extends GetAllUnSavedQueryProps,
     RouteComponentProps,
     WithApolloClient<{}> {}
@@ -55,6 +55,7 @@ export interface State {
   readonly unSavedCount: number;
   readonly savedExperiencesMap: ExperiencesIdsToObjectMap;
   readonly unsavedExperiencesMap: ExperiencesIdsToObjectMap;
+  readonly shouldRedirect?: boolean;
 }
 
 export function stateInitializerFn(getAllUnsaved?: GetUnsavedSummary) {
@@ -95,6 +96,7 @@ export enum ActionType {
   setServerError = "@components/upload-unsaved/set-server-error",
   removeServerErrors = "@components/upload-unsaved/remove-server-error",
   initStateFromProps = "@components/upload-unsaved/init-state-from-props",
+  experienceDeleted = "@components/upload-unsaved/experience-deleted",
 }
 
 type Action =
@@ -103,7 +105,8 @@ type Action =
   | [ActionType.uploadResult, UploadResultPayloadThirdArg]
   | [ActionType.setServerError, ApolloError]
   | [ActionType.removeServerErrors]
-  | [ActionType.initStateFromProps, GetUnsavedSummary];
+  | [ActionType.initStateFromProps, GetUnsavedSummary]
+  | [ActionType.experienceDeleted, DeleteActionPayload];
 
 export type DispatchType = Dispatch<Action>;
 
@@ -204,6 +207,27 @@ export const reducer: Reducer<State, Action> = (prevState, [type, payload]) => {
       case ActionType.removeServerErrors:
         {
           proxy.serverError = null;
+        }
+
+        break;
+
+      case ActionType.experienceDeleted:
+        {
+          const { id, type } = payload as DeleteActionPayload;
+
+          if (type === "unsaved") {
+            delete proxy.unsavedExperiencesMap[id];
+            proxy.hasUnsavedExperiencesUploadError = null;
+            --proxy.unsavedExperiencesLen;
+          } else {
+            delete proxy.savedExperiencesMap[id];
+            proxy.hasSavedExperiencesUploadError = null;
+            --proxy.savedExperiencesLen;
+          }
+
+          if (proxy.unsavedExperiencesLen + proxy.savedExperiencesLen === 0) {
+            proxy.shouldRedirect = true;
+          }
         }
 
         break;
@@ -354,3 +378,10 @@ export interface UploadResultPayloadThirdArg {
   layoutDispatch: LayoutDispatchType;
   result: UploadAllUnsavedsMutation | undefined | void;
 }
+
+interface DeleteActionPayload {
+  id: string;
+  type: SaveStatusType;
+}
+
+export type SaveStatusType = "saved" | "unsaved";

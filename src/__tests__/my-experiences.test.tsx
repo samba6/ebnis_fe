@@ -17,6 +17,7 @@ jest.mock("../components/MyExperiences/pre-fetch-experiences");
 
 import { preFetchExperiences } from "../components/MyExperiences/pre-fetch-experiences";
 import { ExperienceConnectionFragment } from "../graphql/apollo-types/ExperienceConnectionFragment";
+import { makeUnsavedId } from "../constants";
 
 const mockPreFetchExperiences = preFetchExperiences as jest.Mock;
 
@@ -130,7 +131,7 @@ it("loads entries in the background when experiences are loaded", () => {
 
       {
         node: {
-          id: "2",
+          id: makeUnsavedId("2"),
           title: "2",
         },
       },
@@ -152,10 +153,7 @@ it("loads entries in the background when experiences are loaded", () => {
    * Then we should load entries for the experiences in the background
    */
 
-  expect((mockPreFetchExperiences.mock.calls[0][0] as any).ids).toEqual([
-    "1",
-    "2",
-  ]);
+  expect((mockPreFetchExperiences.mock.calls[0][0] as any).ids).toEqual(["1"]);
 });
 
 it("does not load entries in background when experiences are loaded but empty", () => {
@@ -182,10 +180,22 @@ it("does not load entries in background when experiences are loaded but empty", 
   expect(mockPreFetchExperiences).not.toHaveBeenCalled();
 });
 
-function makeComp({
-  getExperiencesMiniProps = {} as any,
-  ...props
-}: Partial<Props> = {}) {
+it("renders error ui if we are unable to get experiences", () => {
+  const { Ui } = makeComp();
+
+  /**
+   * When we use the component
+   */
+  const { getByTestId } = render(<Ui />);
+
+  /**
+   * Then we should load entries for the experiences in the background
+   */
+
+  expect(getByTestId("no-experiences-error")).toBeInTheDocument();
+});
+
+function makeComp(props: Partial<Props> = {}) {
   mockPreFetchExperiences.mockReset();
 
   const mockQuery = jest.fn();
@@ -197,7 +207,6 @@ function makeComp({
     MyExperiencesP,
     {},
     {
-      getExperiencesMiniProps,
       client,
       ...props,
     },

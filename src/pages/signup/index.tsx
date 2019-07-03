@@ -11,7 +11,7 @@ export default function SignUpPage(props: RouteComponentProps) {
   const isLoggedIn = useIsLoggedIn();
 
   return (
-    <Layout>
+    <Layout {...props}>
       <Helmet>
         <title>{makeSiteTitle("Sign up")}</title>
       </Helmet>

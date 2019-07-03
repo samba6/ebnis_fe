@@ -9,6 +9,7 @@ import {
   State,
   stateInitializerFn,
   ExperienceObjectMap,
+  SaveStatusType,
 } from "./utils";
 import { Loading } from "../Loading";
 import { SidebarHeader } from "../SidebarHeader";
@@ -34,7 +35,11 @@ import { scrollIntoView } from "../scroll-into-view";
 import { FormCtrlError } from "../FormCtrlError/component";
 import { Entry } from "../Entry/component";
 import { GetAllUnSavedQueryData } from "../../state/unsaved-resolvers";
-import { LayoutContext } from "../Layout/utils";
+import { LayoutContext, LayoutActionType } from "../Layout/utils";
+import { replaceExperiencesInGetExperiencesMiniQuery } from "../../state/resolvers/update-get-experiences-mini-query";
+import { deleteIdsFromCache } from "../../state/resolvers/delete-ids-from-cache";
+import { deleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache } from "../../state/resolvers/update-saved-and-unsaved-experiences-in-cache";
+import { EXPERIENCES_URL } from "../../routes";
 
 const timeoutMs = 500;
 
@@ -49,7 +54,6 @@ export function UploadUnsaved(props: Props) {
     createEntries,
     uploadAllUnsaveds,
     navigate,
-    client,
   } = props;
 
   const [state, dispatch] = useReducer(
@@ -67,9 +71,10 @@ export function UploadUnsaved(props: Props) {
     savedExperiencesLen,
     savedExperiencesMap,
     unsavedExperiencesMap,
+    shouldRedirect,
   } = state;
 
-  const { cache, layoutDispatch } = useContext(LayoutContext);
+  const { cache, layoutDispatch, client } = useContext(LayoutContext);
 
   useEffect(() => {
     getConnStatus(client).then(isConnected => {
@@ -78,7 +83,8 @@ export function UploadUnsaved(props: Props) {
         return;
       }
     });
-  }, [navigate, client]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (getAllUnsaved) {
@@ -92,7 +98,17 @@ export function UploadUnsaved(props: Props) {
 
       dispatch([ActionType.initStateFromProps, getAllUnsaved]);
     }
-  }, [getAllUnsaved, navigate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [getAllUnsaved]);
+
+  useEffect(() => {
+    if (shouldRedirect) {
+      layoutDispatch([LayoutActionType.setUnsavedCount, 0]);
+
+      (navigate as NavigateFn)(EXPERIENCES_URL);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shouldRedirect]);
 
   async function onUploadAllClicked() {
     dispatch([ActionType.setUploading, true]);
@@ -181,6 +197,7 @@ export function UploadUnsaved(props: Props) {
                       key={id}
                       type="saved"
                       experienceObjectMap={map}
+                      dispatch={dispatch}
                     />
                   );
                 })}
@@ -204,6 +221,7 @@ export function UploadUnsaved(props: Props) {
                       key={id}
                       type="unsaved"
                       experienceObjectMap={map}
+                      dispatch={dispatch}
                     />
                   );
                 })}
@@ -221,10 +239,14 @@ export function UploadUnsaved(props: Props) {
 function ExperienceComponent({
   type,
   experienceObjectMap,
+  dispatch,
 }: {
   experienceObjectMap: ExperienceObjectMap;
-  type: "unsaved" | "saved";
+  type: SaveStatusType;
+  dispatch: DispatchType;
 }) {
+  const { client, cache } = useContext(LayoutContext);
+
   const {
     experience,
     didUploadSucceed,
@@ -279,6 +301,25 @@ function ExperienceComponent({
       }}
       menuOptions={{
         newEntry: false,
+        onDelete: async () => {
+          await replaceExperiencesInGetExperiencesMiniQuery(client, {
+            [experienceId]: null,
+          });
+
+          deleteIdsFromCache(
+            cache,
+            [experienceId].concat(
+              unsavedEntries.map(e => e.clientId as string),
+            ),
+          );
+
+          await deleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache(
+            client,
+            [experienceId],
+          );
+
+          dispatch([ActionType.experienceDeleted, { id: experienceId, type }]);
+        },
       }}
       entriesJSX={unsavedEntries.map((entry, index) => {
         const { id: entryId } = entry;

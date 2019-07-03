@@ -25,7 +25,12 @@ export function ExperienceRoute(props: Props) {
       <SidebarHeader title={title} sidebar={true} />
 
       <div className="main">
-        <Experience experience={experience} />
+        <Experience
+          experience={experience}
+          menuOptions={{
+            onDelete: () => {},
+          }}
+        />
       </div>
     </div>
   );

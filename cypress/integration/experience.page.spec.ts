@@ -1,6 +1,7 @@
 import { USER_REGISTRATION_OBJECT } from "../support/user-registration-object";
 import { makeExperienceRoute } from "../../src/constants/experience-route";
 import { FieldType } from "../../src/graphql/apollo-types/globalTypes";
+import { ExperienceFragment } from "../../src/graphql/apollo-types/ExperienceFragment";
 
 const title = "My experience no. 1";
 
@@ -20,9 +21,9 @@ context("experience page", () => {
       fieldDefs: [
         {
           name: "Field integer",
-          type: FieldType.INTEGER
-        }
-      ]
+          type: FieldType.INTEGER,
+        },
+      ],
     }).then(experience => {
       /**
        * When we visit experience page
@@ -56,9 +57,9 @@ context("experience page", () => {
       fieldDefs: [
         {
           name: "Field integer",
-          type: FieldType.INTEGER
-        }
-      ]
+          type: FieldType.INTEGER,
+        },
+      ],
     })
       .then(experience => {
         const id = experience.id;
@@ -75,18 +76,17 @@ context("experience page", () => {
                 fields: [
                   {
                     defId,
-                    data: JSON.stringify({ integer: int })
-                  }
-                ]
+                    data: JSON.stringify({ integer: int }),
+                  },
+                ],
               };
-            })
+            }),
           )
           .then(entries => {
             return [experience, entries];
           });
       })
-      // tslint:disable-next-line: no-any
-      .then(([experience]: any) => {
+      .then(([experience]: [ExperienceFragment]) => {
         /**
          * When we visit experience page
          */
@@ -104,7 +104,7 @@ context("experience page", () => {
          * When we click new experience button in the menu
          */
         cy.getByTestId("experience-options-menu").click();
-        cy.getByTestId("new-experience-entry-button").click();
+        cy.getByTestId(`experience-${experience.id}-new-entry-button`).click();
 
         /**
          * Then we should be redirected to new entry page

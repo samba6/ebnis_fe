@@ -1,4 +1,10 @@
-import React, { useReducer, Dispatch, useRef, useContext } from "react";
+import React, {
+  useReducer,
+  Dispatch,
+  useRef,
+  useContext,
+  useEffect,
+} from "react";
 import Card from "semantic-ui-react/dist/commonjs/views/Card";
 import Button from "semantic-ui-react/dist/commonjs/elements/Button";
 import Form from "semantic-ui-react/dist/commonjs/collections/Form";
@@ -6,7 +12,7 @@ import Icon from "semantic-ui-react/dist/commonjs/elements/Icon";
 import Message from "semantic-ui-react/dist/commonjs/collections/Message";
 import Input from "semantic-ui-react/dist/commonjs/elements/Input";
 import { Formik, FastField, FieldProps, FormikProps, Field } from "formik";
-import { WindowLocation } from "@reach/router";
+import { WindowLocation, NavigateFn } from "@reach/router";
 
 import "./styles.scss";
 import {
@@ -30,6 +36,7 @@ import { ToOtherAuthLink } from "../ToOtherAuthLink";
 import { scrollToTop } from "./scroll-to-top";
 import { UserLocalQueryData } from "../../state/user.resolver";
 import { LayoutContext } from "../Layout/utils";
+import { EXPERIENCES_URL } from "../../routes";
 
 export function Login(props: Props) {
   const {
@@ -38,12 +45,24 @@ export function Login(props: Props) {
     client,
     location,
     localUser: { loggedOutUser } = {} as UserLocalQueryData,
+    user,
+    navigate,
   } = props;
 
   const [state, dispatch] = useReducer(reducer, initialState);
   const { otherErrors, formErrors, serverFieldErrors, networkError } = state;
   const mainRef = useRef<HTMLDivElement>(null);
   const { persistor } = useContext(LayoutContext);
+
+  useEffect(() => {
+    if (user) {
+      (navigate as NavigateFn)(EXPERIENCES_URL);
+    }
+  }, [user, navigate]);
+
+  if (user) {
+    return null;
+  }
 
   function renderForm({
     dirty,

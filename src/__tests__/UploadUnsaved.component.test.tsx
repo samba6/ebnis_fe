@@ -43,6 +43,9 @@ jest.mock("../components/Entry/component", () => ({
 }));
 jest.mock("../components/scroll-into-view");
 jest.mock("../components/UploadUnsaved/update-cache");
+jest.mock("../state/resolvers/update-get-experiences-mini-query");
+jest.mock("../state/resolvers/delete-ids-from-cache");
+jest.mock("../state/resolvers/update-saved-and-unsaved-experiences-in-cache");
 
 import { getConnStatus } from "../state/get-conn-status";
 import { scrollIntoView } from "../components/scroll-into-view";
@@ -52,10 +55,20 @@ import {
 } from "../state/unsaved-resolvers";
 import { updateCache } from "../components/UploadUnsaved/update-cache";
 import { LayoutProvider } from "../components/Layout/layout-provider";
+import { replaceExperiencesInGetExperiencesMiniQuery } from "../state/resolvers/update-get-experiences-mini-query";
+import { deleteIdsFromCache } from "../state/resolvers/delete-ids-from-cache";
+import { deleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache } from "../state/resolvers/update-saved-and-unsaved-experiences-in-cache";
+import { EXPERIENCES_URL } from "../routes";
 
 const mockGetConnectionStatus = getConnStatus as jest.Mock;
 const mockScrollIntoView = scrollIntoView as jest.Mock;
 const mockUpdateCache = updateCache as jest.Mock;
+
+const mockReplaceExperiencesInGetExperiencesMiniQuery = replaceExperiencesInGetExperiencesMiniQuery as jest.Mock;
+
+const mockDeleteIdsFromCache = deleteIdsFromCache as jest.Mock;
+
+const mockDeleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache = deleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache as jest.Mock;
 
 const timeStamps = { insertedAt: "a", updatedAt: "a" };
 
@@ -117,7 +130,6 @@ it("shows only saved experiences, does not show saved entries and uploads unsave
     ...makeEntryNode(makeUnsavedId("1")),
     clientId: "a",
     expId: "1",
-    ...timeStamps,
   };
 
   const unsavedEntry = {
@@ -711,6 +723,132 @@ it("shows apollo errors", async done => {
   done();
 });
 
+it("deletes unsaved experience", async done => {
+  const unsavedEntry = {
+    id: "10",
+    clientId: "10",
+  } as ExperienceFragment_entries_edges_node;
+
+  const unsavedExperience = {
+    id: "1",
+    entries: {
+      edges: [
+        {
+          node: unsavedEntry,
+        },
+      ],
+    },
+  } as ExperienceFragment;
+
+  const { ui, mockNavigate, mockLayoutDispatch } = makeComp({
+    props: {
+      getAllUnsavedProps: {
+        getAllUnsaved: {
+          unsavedExperiencesLen: 1,
+
+          unsavedExperiencesMap: {
+            "1": {
+              experience: unsavedExperience,
+              unsavedEntries: [unsavedEntry],
+              savedEntries: [],
+            },
+          } as ExperiencesIdsToObjectMap,
+        },
+      } as GetAllUnSavedQueryData,
+    },
+  });
+
+  mockReplaceExperiencesInGetExperiencesMiniQuery.mockResolvedValue({});
+
+  const { getByTestId, queryByTestId } = render(ui);
+
+  fireEvent.click(getByTestId("experience-1-delete-button") as any);
+
+  await wait(() => {
+    expect(queryByTestId("experience-1-delete-button")).not.toBeInTheDocument();
+  });
+
+  expect(mockReplaceExperiencesInGetExperiencesMiniQuery).toHaveBeenCalledWith(
+    {},
+    { "1": null },
+  );
+
+  expect(mockDeleteIdsFromCache).toHaveBeenCalledWith({}, ["1", "10"]);
+
+  expect(
+    mockDeleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache,
+  ).toHaveBeenCalledWith({}, ["1"]);
+
+  expect(mockNavigate).toHaveBeenCalledWith(EXPERIENCES_URL);
+
+  expect(mockLayoutDispatch).toHaveBeenCalled();
+
+  done();
+});
+
+it("deletes saved experience", async done => {
+  const { ui, mockNavigate } = makeComp({
+    props: {
+      getAllUnsavedProps: {
+        getAllUnsaved: {
+          savedExperiencesLen: 1,
+
+          savedExperiencesMap: {
+            "1": {
+              experience: {
+                id: "1",
+              } as ExperienceFragment,
+              unsavedEntries: [],
+              savedEntries: [],
+            },
+          } as ExperiencesIdsToObjectMap,
+
+          unsavedExperiencesLen: 1,
+
+          unsavedExperiencesMap: {
+            "2": {
+              experience: {
+                id: "2",
+              } as ExperienceFragment,
+              unsavedEntries: [],
+              savedEntries: [],
+            },
+          } as ExperiencesIdsToObjectMap,
+        },
+      } as GetAllUnSavedQueryData,
+    },
+  });
+
+  mockReplaceExperiencesInGetExperiencesMiniQuery.mockResolvedValue({});
+
+  const { getByTestId, queryByTestId } = render(ui);
+
+  expect(getByTestId("saved-experiences-menu")).toBeInTheDocument();
+
+  fireEvent.click(getByTestId("experience-1-delete-button") as any);
+
+  await wait(() => {
+    expect(queryByTestId("experience-1-delete-button")).not.toBeInTheDocument();
+  });
+
+  expect(queryByTestId("saved-experiences-menu")).not.toBeInTheDocument();
+
+  expect(mockNavigate).not.toHaveBeenCalled();
+
+  expect(mockReplaceExperiencesInGetExperiencesMiniQuery).toHaveBeenCalledWith(
+    {},
+    { "1": null },
+  );
+
+  expect(mockDeleteIdsFromCache).toHaveBeenCalledWith({}, ["1"]);
+
+  expect(
+    mockDeleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache,
+  ).toHaveBeenCalledWith({}, ["1"]);
+
+  done();
+});
+
 ////////////////////////// HELPER FUNCTIONS ///////////////////////////////////
 
 const UploadUnsavedP = UploadUnsaved as ComponentType<Partial<Props>>;
@@ -719,6 +857,9 @@ function makeComp({
   props = {},
   isConnected = true,
 }: { props?: Partial<Props>; isConnected?: boolean } = {}) {
+  mockDeleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache.mockReset();
+  mockDeleteIdsFromCache.mockReset();
+  mockReplaceExperiencesInGetExperiencesMiniQuery.mockReset();
   mockUpdateCache.mockReset();
   mockScrollIntoView.mockReset();
   mockGetConnectionStatus.mockReset();
@@ -727,12 +868,17 @@ function makeComp({
   const mockUploadUnsavedExperiences = jest.fn();
   const mockUploadSavedExperiencesEntries = jest.fn();
   const mockUploadAllUnsaveds = jest.fn();
+  const mockLayoutDispatch = jest.fn();
 
   const { Ui, ...routerProps } = renderWithRouter(UploadUnsavedP);
 
   return {
     ui: (
-      <LayoutProvider value={{ layoutDispatch: jest.fn() } as any}>
+      <LayoutProvider
+        value={
+          { layoutDispatch: mockLayoutDispatch, client: {}, cache: {} } as any
+        }
+      >
         <Ui
           uploadUnsavedExperiences={mockUploadUnsavedExperiences}
           createEntries={mockUploadSavedExperiencesEntries}
@@ -745,6 +891,7 @@ function makeComp({
     mockUploadUnsavedExperiences,
     mockUploadSavedExperiencesEntries,
     mockUploadAllUnsaveds,
+    mockLayoutDispatch,
     ...routerProps,
   };
 }

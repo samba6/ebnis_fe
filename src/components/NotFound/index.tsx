@@ -8,10 +8,13 @@ import {
   PAGE_NOT_FOUND_TITLE,
 } from "../../constants";
 
+export type Props = RouteComponentProps & { default: boolean };
+
 export function NotFound({
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   default: defaultVal,
   ...props
-}: RouteComponentProps & { default: boolean }) {
+}: Props) {
   useEffect(() => {
     setDocumentTitle(makeSiteTitle(PAGE_NOT_FOUND_TITLE));
 
