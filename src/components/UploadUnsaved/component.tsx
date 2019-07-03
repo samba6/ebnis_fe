@@ -40,6 +40,7 @@ import { replaceExperiencesInGetExperiencesMiniQuery } from "../../state/resolve
 import { deleteIdsFromCache } from "../../state/resolvers/delete-ids-from-cache";
 import { deleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache } from "../../state/resolvers/update-saved-and-unsaved-experiences-in-cache";
 import { EXPERIENCES_URL } from "../../routes";
+import { updateCache } from "./update-cache";
 
 const timeoutMs = 500;
 
@@ -72,6 +73,7 @@ export function UploadUnsaved(props: Props) {
     savedExperiencesMap,
     unsavedExperiencesMap,
     shouldRedirect,
+    atLeastOneUploadSucceeded,
   } = state;
 
   const { cache, layoutDispatch, client } = useContext(LayoutContext);
@@ -110,6 +112,23 @@ export function UploadUnsaved(props: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shouldRedirect]);
 
+  useEffect(() => {
+    if (atLeastOneUploadSucceeded) {
+      const outstandingUnsavedCount = updateCache({
+        savedExperiencesMap: savedExperiencesMap,
+        unsavedExperiencesMap: unsavedExperiencesMap,
+        cache,
+        client,
+      });
+
+      layoutDispatch([
+        LayoutActionType.setUnsavedCount,
+        outstandingUnsavedCount,
+      ]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [atLeastOneUploadSucceeded]);
+
   async function onUploadAllClicked() {
     dispatch([ActionType.setUploading, true]);
 
@@ -145,10 +164,7 @@ export function UploadUnsaved(props: Props) {
         variables,
       });
 
-      dispatch([
-        ActionType.uploadResult,
-        { cache, layoutDispatch, client, result: result && result.data },
-      ]);
+      dispatch([ActionType.onUploadResult, result && result.data]);
     } catch (error) {
       dispatch([ActionType.setServerError, error]);
 
@@ -381,7 +397,6 @@ function TabsMenuComponent({
     hasSavedExperiencesUploadError,
     tabs,
     unsavedExperiencesLen,
-    uploadResult,
     savedExperiencesLen,
   } = state;
 
@@ -443,8 +458,7 @@ function TabsMenuComponent({
       })}
       data-testid="tabs-menu"
     >
-      {(savedExperiencesLen !== 0 ||
-        (uploadResult && uploadResult.createEntries)) && (
+      {savedExperiencesLen !== 0 && (
         <a
           className={setTabMenuClassNames("1", tabs)}
           data-testid="saved-experiences-menu"
@@ -455,8 +469,7 @@ function TabsMenuComponent({
         </a>
       )}
 
-      {(unsavedExperiencesLen !== 0 ||
-        (uploadResult && uploadResult.saveOfflineExperiences)) && (
+      {unsavedExperiencesLen !== 0 && (
         <a
           className={setTabMenuClassNames("2", tabs)}
           data-testid="unsaved-experiences-menu"

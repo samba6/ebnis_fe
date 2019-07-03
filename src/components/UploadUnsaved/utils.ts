@@ -26,8 +26,7 @@ import ApolloClient, { ApolloError } from "apollo-client";
 import { Dispatch } from "react";
 import { UploadUnsavedExperiencesExperienceErrorFragment } from "../../graphql/apollo-types/UploadUnsavedExperiencesExperienceErrorFragment";
 import { CreateEntriesErrorFragment } from "../../graphql/apollo-types/CreateEntriesErrorFragment";
-import { updateCache } from "./update-cache";
-import { LayoutDispatchType, LayoutActionType } from "../Layout/utils";
+import { LayoutDispatchType } from "../Layout/utils";
 import { InMemoryCache } from "apollo-cache-inmemory";
 
 export interface OwnProps
@@ -47,7 +46,6 @@ export interface State {
   readonly allUploadSucceeded?: boolean;
   readonly tabs: { [k: number]: boolean };
   readonly uploading?: boolean;
-  readonly uploadResult?: UploadAllUnsavedsMutation;
   readonly serverError?: string | null;
   readonly isUploadTriggered?: boolean;
   readonly savedExperiencesLen: number;
@@ -56,6 +54,7 @@ export interface State {
   readonly savedExperiencesMap: ExperiencesIdsToObjectMap;
   readonly unsavedExperiencesMap: ExperiencesIdsToObjectMap;
   readonly shouldRedirect?: boolean;
+  readonly atLeastOneUploadSucceeded?: boolean | null;
 }
 
 export function stateInitializerFn(getAllUnsaved?: GetUnsavedSummary) {
@@ -92,7 +91,7 @@ export function stateInitializerFn(getAllUnsaved?: GetUnsavedSummary) {
 export enum ActionType {
   toggleTab = "@components/upload-unsaved/toggle-tab",
   setUploading = "@components/upload-unsaved/set-uploading",
-  uploadResult = "@components/upload-unsaved/result",
+  onUploadResult = "@components/upload-unsaved/result",
   setServerError = "@components/upload-unsaved/set-server-error",
   removeServerErrors = "@components/upload-unsaved/remove-server-error",
   initStateFromProps = "@components/upload-unsaved/init-state-from-props",
@@ -102,7 +101,7 @@ export enum ActionType {
 type Action =
   | [ActionType.toggleTab, number | string]
   | [ActionType.setUploading, boolean]
-  | [ActionType.uploadResult, UploadResultPayloadThirdArg]
+  | [ActionType.onUploadResult, UploadAllUnsavedsMutation | undefined | void]
   | [ActionType.setServerError, ApolloError]
   | [ActionType.removeServerErrors]
   | [ActionType.initStateFromProps, GetUnsavedSummary]
@@ -140,19 +139,23 @@ export const reducer: Reducer<State, Action> = (prevState, [type, payload]) => {
             proxy.serverError = null;
             proxy.hasUnsavedExperiencesUploadError = null;
             proxy.hasSavedExperiencesUploadError = null;
+            proxy.atLeastOneUploadSucceeded = false;
           }
         }
 
         break;
 
-      case ActionType.uploadResult:
+      case ActionType.onUploadResult:
         {
-          payload = payload as UploadResultPayloadThirdArg;
-          const uploadResult = payload.result as UploadAllUnsavedsMutation;
-          proxy.uploadResult = uploadResult;
+          payload = payload as UploadAllUnsavedsMutation | undefined | void;
+
           proxy.uploading = false;
 
-          const { saveOfflineExperiences, createEntries } = uploadResult;
+          if (!payload) {
+            return;
+          }
+
+          const { saveOfflineExperiences, createEntries } = payload;
 
           const noSuccess1 = updateStateWithUnsavedExperiencesUploadResult(
             proxy,
@@ -169,20 +172,7 @@ export const reducer: Reducer<State, Action> = (prevState, [type, payload]) => {
             proxy.hasSavedExperiencesUploadError === true
           );
 
-          if (!(noSuccess1 && noSuccess2)) {
-            const { layoutDispatch, ...rest } = payload;
-
-            const outstandingUnsavedCount = updateCache({
-              savedExperiencesMap: proxy.savedExperiencesMap,
-              unsavedExperiencesMap: proxy.unsavedExperiencesMap,
-              ...rest,
-            });
-
-            layoutDispatch([
-              LayoutActionType.setUnsavedCount,
-              outstandingUnsavedCount,
-            ]);
-          }
+          proxy.atLeastOneUploadSucceeded = !(noSuccess1 && noSuccess2);
         }
 
         break;
