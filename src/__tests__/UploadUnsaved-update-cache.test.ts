@@ -19,6 +19,12 @@ import { replaceExperiencesInGetExperiencesMiniQuery } from "../state/resolvers/
 import { writeGetExperienceFullQueryToCache } from "../state/resolvers/write-get-experience-full-query-to-cache";
 import { writeSavedAndUnsavedExperiencesToCache } from "../state/resolvers/update-saved-and-unsaved-experiences-in-cache";
 import { writeExperienceFragmentToCache } from "../state/resolvers/write-experience-fragment-to-cache";
+import {
+  MUTATION_NAME_createUnsavedEntry,
+  MUTATION_NAME_createUnsavedExperience,
+  QUERY_NAME_getExperience,
+} from "../state/resolvers";
+import { SAVED_AND_UNSAVED_EXPERIENCE_TYPENAME } from "../state/unsaved-resolvers";
 
 const mockDeleteIdsFromCache = deleteIdsFromCache as jest.Mock;
 
@@ -186,13 +192,32 @@ test("", () => {
   // "1" - unsaved now completely saved experience
   // "2" - the unsaved now partially saved experience
   // "221" - client ID of experience "2"s entry that was successfully saved
-  expect(mockDeleteIdsFromCache).toHaveBeenCalledWith({}, [
-    "1",
-    "2",
-    "221",
-    "22-c",
-    "71-c",
-  ]);
+  expect(mockDeleteIdsFromCache).toHaveBeenCalledWith(
+    {},
+    [
+      "Experience:1",
+      `${SAVED_AND_UNSAVED_EXPERIENCE_TYPENAME}:1`,
+      "Experience:2",
+      "Entry:221",
+      "Entry:22-c",
+      "Entry:71-c",
+      `${SAVED_AND_UNSAVED_EXPERIENCE_TYPENAME}:7`,
+    ],
+    {
+      mutations: [
+        [MUTATION_NAME_createUnsavedExperience, "Experience:1"],
+        [MUTATION_NAME_createUnsavedExperience, "Experience:2"],
+        [MUTATION_NAME_createUnsavedEntry, "Entry:221"],
+        [MUTATION_NAME_createUnsavedEntry, "Entry:22-c"],
+        [MUTATION_NAME_createUnsavedEntry, "Entry:71-c"],
+      ],
+
+      queries: [
+        [QUERY_NAME_getExperience, "Experience:1"],
+        [QUERY_NAME_getExperience, "Experience:2"],
+      ],
+    },
+  );
 
   expect(mockReplaceExperiencesInGetExperiencesMiniQuery).toHaveBeenCalledWith(
     {},

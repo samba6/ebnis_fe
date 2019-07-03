@@ -46,3 +46,9 @@ export function initState() {
     },
   };
 }
+
+export const MUTATION_NAME_createUnsavedExperience = "createUnsavedExperience";
+
+export const MUTATION_NAME_createUnsavedEntry = "createUnsavedEntry";
+
+export const QUERY_NAME_getExperience = "getExperience";

@@ -1,4 +1,7 @@
-import { LocalResolverFn } from "../../state/resolvers";
+import {
+  LocalResolverFn,
+  MUTATION_NAME_createUnsavedEntry,
+} from "../../state/resolvers";
 import { makeUnsavedId } from "../../constants";
 import { CreateField } from "../../graphql/apollo-types/globalTypes";
 import gql from "graphql-tag";
@@ -30,7 +33,7 @@ export const createUnsavedEntryGql = graphql<
 >(CREATE_UNSAVED_ENTRY_MUTATION, {
   props: ({ mutate }) =>
     mutate && {
-      createUnsavedEntry: mutate,
+      [MUTATION_NAME_createUnsavedEntry]: mutate,
     },
 });
 
@@ -97,7 +100,7 @@ interface CreateUnsavedEntryVariables {
 
 export const newEntryResolvers = {
   Mutation: {
-    createUnsavedEntry: createUnsavedEntryResolver,
+    [MUTATION_NAME_createUnsavedEntry]: createUnsavedEntryResolver,
   },
 
   Query: {},

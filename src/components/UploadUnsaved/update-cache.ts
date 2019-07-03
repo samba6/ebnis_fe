@@ -3,7 +3,10 @@ import {
   ExperienceFragment_entries_edges_node,
   ExperienceFragment_entries_edges,
 } from "../../graphql/apollo-types/ExperienceFragment";
-import { SavedAndUnsavedExperiences } from "../../state/unsaved-resolvers";
+import {
+  SavedAndUnsavedExperiences,
+  SAVED_AND_UNSAVED_EXPERIENCE_TYPENAME,
+} from "../../state/unsaved-resolvers";
 import { writeSavedAndUnsavedExperiencesToCache } from "../../state/resolvers/update-saved-and-unsaved-experiences-in-cache";
 import immer from "immer";
 import { entryToEdge } from "../../state/resolvers/entry-to-edge";
@@ -14,6 +17,11 @@ import { writeGetExperienceFullQueryToCache } from "../../state/resolvers/write-
 import { replaceExperiencesInGetExperiencesMiniQuery } from "../../state/resolvers/update-get-experiences-mini-query";
 import { InMemoryCache } from "apollo-cache-inmemory";
 import ApolloClient from "apollo-client";
+import {
+  MUTATION_NAME_createUnsavedExperience,
+  MUTATION_NAME_createUnsavedEntry,
+  QUERY_NAME_getExperience,
+} from "../../state/resolvers";
 
 export function updateCache({
   unsavedExperiencesMap,
@@ -22,9 +30,10 @@ export function updateCache({
   client,
 }: Args) {
   const savedAndUnsavedExperiences: SavedAndUnsavedExperiences[] = [];
-  const unsavedVersionOfSavedExperienceIds: string[] = [];
-  const unsavedVersionOfSavedEntryIds: string[] = [];
   let outstandingUnsavedCount = 0;
+  const toDeletes: string[] = [];
+  const mutations: [string, string][] = [];
+  const queries: [string, string][] = [];
 
   // PLEASE DO ALL DELETES BEFORE UNSAVED EXPERIENCES NOW SAVED WRITES !!!!!!
   // This is because if now saved experience contains unsaved entries, those
@@ -44,7 +53,11 @@ export function updateCache({
       return;
     }
 
-    unsavedVersionOfSavedExperienceIds.push(unsavedId);
+    const cacheKey = `Experience:${unsavedId}`;
+
+    toDeletes.push(cacheKey);
+    mutations.push([MUTATION_NAME_createUnsavedExperience, cacheKey]);
+    queries.push([QUERY_NAME_getExperience, cacheKey]);
 
     const updatedExperience = immer(newlySavedExperience, proxy => {
       const entries = proxy.entries;
@@ -57,7 +70,9 @@ export function updateCache({
         const clientId = entry.clientId as string;
 
         // we will delete the unsaved version from cache.
-        unsavedVersionOfSavedEntryIds.push(clientId);
+        toDeletes.push(`Entry:${clientId}`);
+
+        mutations.push([MUTATION_NAME_createUnsavedEntry, `Entry:${clientId}`]);
       }
 
       // The experience from server will only have saved entries -
@@ -68,11 +83,11 @@ export function updateCache({
 
         outstandingUnsavedCount += errorsLen;
 
-        // we now replace unsaved version with saved version
+        // we now replace unsaved experience version with saved version
         savedAndUnsavedExperiences.push({
           id: newlySavedExperience.id,
           unsavedEntriesCount: errorsLen,
-          __typename: "SavedAndUnsavedExperiences",
+          __typename: SAVED_AND_UNSAVED_EXPERIENCE_TYPENAME,
         });
 
         // we merge unsaved entries into saved entries received from server.
@@ -81,6 +96,8 @@ export function updateCache({
             edges.push(entryToEdge(entry));
           }
         });
+      } else {
+        toDeletes.push(`${SAVED_AND_UNSAVED_EXPERIENCE_TYPENAME}:${unsavedId}`);
       }
 
       entries.edges = edges;
@@ -114,7 +131,12 @@ export function updateCache({
           acc[clientId] = entry;
 
           // we will delete unsaved entries now saved from cache
-          unsavedVersionOfSavedEntryIds.push(clientId);
+          toDeletes.push(`Entry:${clientId}`);
+
+          mutations.push([
+            MUTATION_NAME_createUnsavedEntry,
+            `Entry:${clientId}`,
+          ]);
 
           return acc;
         },
@@ -137,16 +159,16 @@ export function updateCache({
       savedAndUnsavedExperiences.push({
         id: experienceId,
         unsavedEntriesCount: errorsLen,
-        __typename: "SavedAndUnsavedExperiences",
+        __typename: SAVED_AND_UNSAVED_EXPERIENCE_TYPENAME,
       });
+    } else {
+      toDeletes.push(
+        `${SAVED_AND_UNSAVED_EXPERIENCE_TYPENAME}:${experienceId}`,
+      );
     }
 
     writeExperienceFragmentToCache(cache, updatedExperience);
   });
-
-  const toDelete = unsavedVersionOfSavedExperienceIds.concat(
-    unsavedVersionOfSavedEntryIds,
-  );
 
   if (unsavedExperiencesNowSaved.length !== 0) {
     // replacement must run before delete because after delete, apollo will
@@ -157,10 +179,11 @@ export function updateCache({
     );
   }
 
-  // we need to do all deletes before writing anything to do with unsaved
-  // experiences now saved.
-  if (toDelete.length !== 0) {
-    deleteIdsFromCache(cache, toDelete);
+  if (toDeletes.length !== 0) {
+    // we need to do all deletes before writing.
+    deleteIdsFromCache(cache, toDeletes, { mutations, queries });
+
+    writeSavedAndUnsavedExperiencesToCache(cache, savedAndUnsavedExperiences);
   }
 
   // Now if we have unsaved entries, we are sure they will be re-created if
@@ -180,10 +203,6 @@ export function updateCache({
       writeFragment: false,
     });
   });
-
-  if (savedAndUnsavedExperiences.length !== 0) {
-    writeSavedAndUnsavedExperiencesToCache(cache, savedAndUnsavedExperiences);
-  }
 
   return outstandingUnsavedCount;
 }

@@ -41,6 +41,7 @@ import { deleteIdsFromCache } from "../../state/resolvers/delete-ids-from-cache"
 import { deleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache } from "../../state/resolvers/update-saved-and-unsaved-experiences-in-cache";
 import { EXPERIENCES_URL } from "../../routes";
 import { updateCache } from "./update-cache";
+import { useDeleteMutationsOnExit } from "../use-delete-mutations-on-exit";
 
 const timeoutMs = 500;
 
@@ -128,6 +129,12 @@ export function UploadUnsaved(props: Props) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [atLeastOneUploadSucceeded]);
+
+  useDeleteMutationsOnExit([
+    "saveOfflineExperiences",
+    "createEntries",
+    "saveOfflineExperiences",
+  ]);
 
   async function onUploadAllClicked() {
     dispatch([ActionType.setUploading, true]);

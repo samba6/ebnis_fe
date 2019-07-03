@@ -1,4 +1,7 @@
-import { LocalResolverFn } from "../../state/resolvers";
+import {
+  LocalResolverFn,
+  MUTATION_NAME_createUnsavedExperience,
+} from "../../state/resolvers";
 import { CreateExperienceMutationVariables } from "../../graphql/apollo-types/CreateExperienceMutation";
 import { CreateFieldDef } from "../../graphql/apollo-types/globalTypes";
 import { makeUnsavedId } from "../../constants";
@@ -110,7 +113,7 @@ export const createUnsavedExperienceGql = graphql<
 >(CREATE_UNSAVED_EXPERIENCE_MUTATION, {
   props: ({ mutate }) =>
     mutate && {
-      createUnsavedExperience: mutate,
+      [MUTATION_NAME_createUnsavedExperience]: mutate,
     },
 });
 //////////////////////////// QUERIES /////////////////////////////////
@@ -119,7 +122,7 @@ export const createUnsavedExperienceGql = graphql<
 
 export const experienceDefinitionResolvers = {
   Mutation: {
-    createUnsavedExperience: createUnsavedExperienceResolver,
+    [MUTATION_NAME_createUnsavedExperience]: createUnsavedExperienceResolver,
   },
 
   Query: {},
