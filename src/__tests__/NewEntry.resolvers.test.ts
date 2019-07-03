@@ -6,11 +6,15 @@ import { isUnsavedId } from "../constants";
 import { makeTestCache } from "./test_utils";
 
 jest.mock("../components/NewEntry/update");
+jest.mock("../state/resolvers/update-saved-and-unsaved-experiences-in-cache");
 
 import { updateExperienceWithNewEntry } from "../components/NewEntry/update";
 import { ExperienceFragment } from "../graphql/apollo-types/ExperienceFragment";
+import { updateEntriesCountSavedAndUnsavedExperiencesInCache } from "../state/resolvers/update-saved-and-unsaved-experiences-in-cache";
 
 const mockUpdateExperienceWithNewEntry = updateExperienceWithNewEntry as jest.Mock;
+
+const mockUpdateEntriesCountSavedAndUnsavedExperiencesInCache = updateEntriesCountSavedAndUnsavedExperiencesInCache as jest.Mock;
 
 const { createUnsavedEntry } = newEntryResolvers.Mutation;
 
@@ -62,6 +66,10 @@ it("updates unsaved experience successfully", async done => {
 
   const experienceEntry = (updatedExperience.entries.edges as any)[0].node;
   expect(entry).toMatchObject(experienceEntry);
+
+  expect(
+    mockUpdateEntriesCountSavedAndUnsavedExperiencesInCache,
+  ).toHaveBeenCalled();
 
   done();
 });
