@@ -4,7 +4,7 @@ import React, { ComponentType } from "react";
 import "jest-dom/extend-expect";
 import "react-testing-library/cleanup-after-each";
 import { render, waitForElement, wait } from "react-testing-library";
-import { Layout } from "../components/Layout/component";
+import { Layout, Props } from "../components/Layout/component";
 import { EbnisAppProvider } from "../context";
 
 jest.mock("../state/tokens");
@@ -34,7 +34,6 @@ const mockGetUser = getUser as jest.Mock;
 const mockGetUnsavedCount = getUnsavedCount as jest.Mock;
 const mockGetConnStatus = getConnStatus as jest.Mock;
 
-const LayoutP = Layout as ComponentType<{}>;
 const browserRenderedTestId = "layout-loaded";
 
 it("renders children in ssr", () => {
@@ -237,6 +236,8 @@ it("resets unsaved count when we lose connection", async done => {
 
 ////////////////////////// HELPER FUNCTIONS ///////////////////////////////////
 
+const LayoutP = Layout as ComponentType<Partial<Props>>;
+
 function makeComp({
   context,
   testId = browserRenderedTestId,
@@ -259,7 +260,7 @@ function makeComp({
   return {
     ui: (
       <EbnisAppProvider value={context}>
-        <LayoutP>
+        <LayoutP location={{} as any}>
           <div data-testid={testId} />
         </LayoutP>
       </EbnisAppProvider>

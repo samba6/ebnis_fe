@@ -18,7 +18,7 @@ import { getUnsavedCount } from "../../state/unsaved-resolvers";
 import { LayoutProvider } from "./layout-provider";
 import { RouteComponentProps } from "@reach/router";
 
-interface Props extends PropsWithChildren<{}>, RouteComponentProps {}
+export interface Props extends PropsWithChildren<{}>, RouteComponentProps {}
 
 export function Layout(props: Props) {
   const { children } = props;

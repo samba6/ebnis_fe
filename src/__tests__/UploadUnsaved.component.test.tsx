@@ -876,7 +876,14 @@ function makeComp({
     ui: (
       <LayoutProvider
         value={
-          { layoutDispatch: mockLayoutDispatch, client: {}, cache: {} } as any
+          {
+            layoutDispatch: mockLayoutDispatch,
+            client: {},
+            cache: {},
+            persistor: {
+              persist: jest.fn(),
+            },
+          } as any
         }
       >
         <Ui

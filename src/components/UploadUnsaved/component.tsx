@@ -75,6 +75,7 @@ export function UploadUnsaved(props: Props) {
     unsavedExperiencesMap,
     shouldRedirect,
     atLeastOneUploadSucceeded,
+    isUploadTriggered,
   } = state;
 
   const { cache, layoutDispatch, client } = useContext(LayoutContext);
@@ -130,11 +131,10 @@ export function UploadUnsaved(props: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [atLeastOneUploadSucceeded]);
 
-  useDeleteMutationsOnExit([
-    "saveOfflineExperiences",
-    "createEntries",
-    "saveOfflineExperiences",
-  ]);
+  useDeleteMutationsOnExit(
+    ["saveOfflineExperiences", "createEntries"],
+    isUploadTriggered,
+  );
 
   async function onUploadAllClicked() {
     dispatch([ActionType.setUploading, true]);

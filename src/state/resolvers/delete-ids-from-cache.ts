@@ -115,60 +115,33 @@ export function removeMutationsFromCache(
   const data = dataClass.data;
   let count = 0;
 
-  // tslint:disable-next-line:no-console
-  console.log(
-    "\n\t\tLogging start\n\n\n\n data\n",
-    { ...data },
-    "\n\n\n\n\t\tLogging ends\n",
-  );
+  for (const k of Object.keys(data)) {
+    if (k === "ROOT_MUTATION") {
+      const rootMutation = data[k];
 
-  Object.keys(data).forEach(k => {
-    mutations.forEach(m => {
-      if (k === "ROOT_MUTATION") {
-        const rootMutation = data[k];
-
-        Object.keys(rootMutation).forEach(mk => {
-          if (mk.includes(m)) {
-            // tslint:disable-next-line:no-console
-            console.log(
-              "\n\t\tLogging start\n\n\n\n k, m mk\n",
-              k,
-              "|||",
-              m,
-              "|||",
-              mk,
-              "\n\n\n\n\t\tLogging ends\n",
-            );
-
-            delete rootMutation[k];
+      for (const mk of Object.keys(rootMutation)) {
+        for (const m of mutations) {
+          if (mk.startsWith(m)) {
+            delete rootMutation[mk];
             ++count;
+            break;
           }
-        });
+        }
       }
 
-      if (k.includes(m)) {
-        // tslint:disable-next-line:no-console
-        console.log(
-          "\n\t\tLogging start\n\n\n\n k\n",
-          k,
-          "\n\n\n\n\t\tLogging ends\n",
-        );
+      continue;
+    }
 
-        delete data[k];
-        ++count;
-        return;
+    if (k.startsWith("ROOT_MUTATION")) {
+      for (const m of mutations) {
+        if (k.includes(m)) {
+          delete data[k];
+          ++count;
+          break;
+        }
       }
-    });
-  });
-
-  // cache.broadcastWatches();
-
-  // tslint:disable-next-line:no-console
-  console.log(
-    "\n\t\tLogging start\n\n\n\n count\n",
-    count,
-    "\n\n\n\n\t\tLogging ends\n",
-  );
+    }
+  }
 
   return count;
 }
