@@ -39,7 +39,9 @@ export const MyExperiences = (props: Props) => {
 
   // make sure we are only loading entries in the background and only once
   // on app boot.
-  const { experiencesPreFetched, layoutDispatch } = useContext(LayoutContext);
+  const { experiencesPreFetched, layoutDispatch, cache } = useContext(
+    LayoutContext,
+  );
 
   useEffect(() => {
     setDocumentTitle(makeSiteTitle(MY_EXPERIENCES_TITLE));
@@ -69,6 +71,7 @@ export const MyExperiences = (props: Props) => {
       preFetchExperiences({
         ids,
         client,
+        cache,
         onDone: () => {
           layoutDispatch([LayoutActionType.setExperiencesPreFetched, true]);
         },
