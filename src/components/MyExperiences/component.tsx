@@ -22,6 +22,7 @@ import {
   GetExperienceConnectionMini_getExperiences_edges,
 } from "../../graphql/apollo-types/GetExperienceConnectionMini";
 import { LayoutContext, LayoutActionType } from "../Layout/utils";
+import { getConnStatus } from "../../state/get-conn-status";
 
 export const MyExperiences = (props: Props) => {
   const {
@@ -29,8 +30,6 @@ export const MyExperiences = (props: Props) => {
       loading,
       getExperiences,
     } = {} as GetExperienceConnectionMiniData,
-
-    client,
   } = props;
 
   const [descriptionToggleMap, toggleDescription] = useState<DescriptionMap>(
@@ -39,7 +38,7 @@ export const MyExperiences = (props: Props) => {
 
   // make sure we are only loading entries in the background and only once
   // on app boot.
-  const { experiencesPreFetched, layoutDispatch, cache } = useContext(
+  const { experiencesPreFetched, layoutDispatch, cache, client } = useContext(
     LayoutContext,
   );
 
@@ -59,15 +58,19 @@ export const MyExperiences = (props: Props) => {
       return;
     }
 
-    const ids = mapSavedExperiencesToIds(
-      getExperiences as ExperienceConnectionFragment,
-    );
+    setTimeout(async () => {
+      if (!(await getConnStatus(client))) {
+        return;
+      }
 
-    if (ids.length === 0) {
-      return;
-    }
+      const ids = mapSavedExperiencesToIds(
+        getExperiences as ExperienceConnectionFragment,
+      );
 
-    setTimeout(() => {
+      if (ids.length === 0) {
+        return;
+      }
+
       preFetchExperiences({
         ids,
         client,

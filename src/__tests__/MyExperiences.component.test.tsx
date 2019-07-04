@@ -3,25 +3,27 @@
 import React, { ComponentType } from "react";
 import "jest-dom/extend-expect";
 import "react-testing-library/cleanup-after-each";
-import { render, fireEvent } from "react-testing-library";
-
+import { render, fireEvent, wait } from "react-testing-library";
 import { MyExperiences } from "../components/MyExperiences/component";
 import { Props } from "../components/MyExperiences/utils";
 import { renderWithRouter } from "./test_utils";
+import { ExperienceConnectionFragment } from "../graphql/apollo-types/ExperienceConnectionFragment";
+import { makeUnsavedId } from "../constants";
+import { LayoutProvider } from "../components/Layout/layout-provider";
+import { ILayoutContextContext } from "../components/Layout/utils";
 
 jest.mock("../components/SidebarHeader", () => ({
   SidebarHeader: jest.fn(() => null),
 }));
 
 jest.mock("../components/MyExperiences/pre-fetch-experiences");
+jest.mock("../state/get-conn-status");
 
 import { preFetchExperiences } from "../components/MyExperiences/pre-fetch-experiences";
-import { ExperienceConnectionFragment } from "../graphql/apollo-types/ExperienceConnectionFragment";
-import { makeUnsavedId } from "../constants";
-import { LayoutProvider } from "../components/Layout/layout-provider";
-import { ILayoutContextContext } from "../components/Layout/utils";
+import { getConnStatus } from "../state/get-conn-status";
 
 const mockPreFetchExperiences = preFetchExperiences as jest.Mock;
+const mockGetConnStatus = getConnStatus as jest.Mock;
 
 beforeEach(() => {
   jest.useFakeTimers();
@@ -115,11 +117,9 @@ it("renders experiences from server", () => {
   ).not.toBeInTheDocument();
 });
 
-it("loads entries in the background when experiences are loaded", () => {
+it("loads entries in the background when experiences are loaded", async done => {
   jest.useFakeTimers();
-  /**
-   * Given there are experiences in the system
-   */
+
   const getExperiences = {
     edges: [
       {
@@ -142,24 +142,24 @@ it("loads entries in the background when experiences are loaded", () => {
     getExperiencesMiniProps: { getExperiences } as any,
   });
 
-  /**
-   * When we use the component
-   */
   render(ui);
+
+  mockGetConnStatus.mockResolvedValue(true);
 
   jest.runAllTimers();
 
-  /**
-   * Then we should load entries for the experiences in the background
-   */
+  await wait(() => {
+    expect((mockPreFetchExperiences.mock.calls[0][0] as any).ids).toEqual([
+      "1",
+    ]);
+  });
 
-  expect((mockPreFetchExperiences.mock.calls[0][0] as any).ids).toEqual(["1"]);
+  done();
 });
 
 it("does not load entries in background when experiences are loaded but empty", () => {
-  /**
-   * Given there are experiences in the system
-   */
+  jest.useFakeTimers();
+
   const getExperiences = {
     edges: [],
   } as any;
@@ -168,14 +168,27 @@ it("does not load entries in background when experiences are loaded but empty", 
     getExperiencesMiniProps: { getExperiences } as any,
   });
 
-  /**
-   * When we use the component
-   */
   render(ui);
 
-  /**
-   * Then we should load entries for the experiences in the background
-   */
+  mockGetConnStatus.mockResolvedValue(true);
+
+  jest.runAllTimers();
+
+  expect(mockPreFetchExperiences).not.toHaveBeenCalled();
+});
+
+it("does not load entries in background when we are not connected", () => {
+  jest.useFakeTimers();
+
+  const { ui } = makeComp({
+    getExperiencesMiniProps: { getExperiences: { edges: [] } } as any,
+  });
+
+  render(ui);
+
+  mockGetConnStatus.mockResolvedValue(false);
+
+  jest.runAllTimers();
 
   expect(mockPreFetchExperiences).not.toHaveBeenCalled();
 });
@@ -201,6 +214,7 @@ const MyExperiencesP = MyExperiences as ComponentType<Partial<Props>>;
 
 function makeComp(props: Partial<Props> = {}) {
   mockPreFetchExperiences.mockReset();
+  mockGetConnStatus.mockReset();
 
   const mockQuery = jest.fn();
   const client = {
@@ -209,20 +223,14 @@ function makeComp(props: Partial<Props> = {}) {
 
   const { Ui, ...rest } = renderWithRouter(MyExperiencesP);
 
-  const mockLayoutDispatch = jest.fn();
-
   return {
     ui: (
-      <LayoutProvider
-        value={
-          { layoutDispatch: mockLayoutDispatch as any } as ILayoutContextContext
-        }
-      >
+      <LayoutProvider value={{} as ILayoutContextContext}>
         <Ui client={client} {...props} />
       </LayoutProvider>
     ),
     mockQuery,
-    mockLayoutDispatch,
+
     ...rest,
   };
 }
