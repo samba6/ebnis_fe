@@ -21,8 +21,6 @@ import { makeUnsavedId } from "../constants";
 
 const mockPreFetchExperiences = preFetchExperiences as jest.Mock;
 
-const MyExperiencesP = MyExperiences as ComponentType<Partial<Props>>;
-
 beforeEach(() => {
   jest.useFakeTimers();
 });
@@ -194,6 +192,10 @@ it("renders error ui if we are unable to get experiences", () => {
 
   expect(getByTestId("no-experiences-error")).toBeInTheDocument();
 });
+
+////////////////////////// helper funcs ////////////////////////////
+
+const MyExperiencesP = MyExperiences as ComponentType<Partial<Props>>;
 
 function makeComp(props: Partial<Props> = {}) {
   mockPreFetchExperiences.mockReset();
