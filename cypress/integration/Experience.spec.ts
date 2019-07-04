@@ -18,7 +18,7 @@ context("experience page", () => {
     /**
      * Given there is an experience in the system with no entries
      */
-    return createSavedExperience({
+    let p = createSavedExperience({
       title,
       fieldDefs: [
         {
@@ -26,10 +26,10 @@ context("experience page", () => {
           type: FieldType.INTEGER,
         },
       ],
-    }).then(experience => {
-      /**
-       * When we visit experience page
-       */
+    });
+
+    cy.wrap(p).then(result => {
+      let experience = result as ExperienceFragment;
 
       cy.visit(makeExperienceRoute(experience.id));
 
@@ -54,7 +54,7 @@ context("experience page", () => {
     /**
      * Given there is an experience in the system with entries
      */
-    return createSavedExperience({
+    let p = createSavedExperience({
       title,
       fieldDefs: [
         {
@@ -62,54 +62,54 @@ context("experience page", () => {
           type: FieldType.INTEGER,
         },
       ],
-    })
-      .then(experience => {
-        const id = experience.id;
-        const [field] = experience.fieldDefs;
-        const { id: defId } = field;
+    }).then(experience => {
+      const id = experience.id;
+      const [field] = experience.fieldDefs;
+      const { id: defId } = field;
 
-        return createExperienceEntries(
-          id,
-          [1, 2, 3].map(int => {
-            return {
-              expId: id,
-              clientId: int + "",
-              fields: [
-                {
-                  defId,
-                  data: JSON.stringify({ integer: int }),
-                },
-              ],
-            };
-          }),
-        ).then(entries => {
-          return [experience, entries];
-        });
-      })
-      .then(([experience]: [ExperienceFragment]) => {
-        /**
-         * When we visit experience page
-         */
-
-        cy.visit(makeExperienceRoute(experience.id));
-
-        /**
-         * Then there should be 3 fields on the page
-         */
-        cy.getAllByTestId("entry-container").then(nodes => {
-          expect(nodes.length).to.eq(3);
-        });
-
-        /**
-         * When we click new experience button in the menu
-         */
-        cy.getByTestId("experience-options-menu").click();
-        cy.getByTestId(`experience-${experience.id}-new-entry-button`).click();
-
-        /**
-         * Then we should be redirected to new entry page
-         */
-        cy.title().should("contain", `[New Entry] ${title}`);
+      return createExperienceEntries(
+        id,
+        [1, 2, 3].map(int => {
+          return {
+            expId: id,
+            clientId: int + "",
+            fields: [
+              {
+                defId,
+                data: JSON.stringify({ integer: int }),
+              },
+            ],
+          };
+        }),
+      ).then(entries => {
+        return [experience, entries];
       });
+    });
+
+    cy.wrap(p).then(([experience]: [ExperienceFragment]) => {
+      /**
+       * When we visit experience page
+       */
+
+      cy.visit(makeExperienceRoute(experience.id));
+
+      /**
+       * Then there should be 3 fields on the page
+       */
+      cy.getAllByTestId("entry-container").then(nodes => {
+        expect(nodes.length).to.eq(3);
+      });
+
+      /**
+       * When we click new experience button in the menu
+       */
+      cy.getByTestId("experience-options-menu").click();
+      cy.getByTestId(`experience-${experience.id}-new-entry-button`).click();
+
+      /**
+       * Then we should be redirected to new entry page
+       */
+      cy.title().should("contain", `[New Entry] ${title}`);
+    });
   });
 });
