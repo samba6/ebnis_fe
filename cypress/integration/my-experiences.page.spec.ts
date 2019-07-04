@@ -4,6 +4,7 @@ import { EXPERIENCES_URL } from "../../src/routes";
 import { getDescendantByText } from "../support/get-descendant-by-text";
 import { EXPERIENCE_DEFINITION_TITLE } from "../../src/constants/experience-definition-title";
 import { MY_EXPERIENCES_TITLE } from "../../src/constants/my-experiences-title";
+import { createSavedExperience } from "../support/create-experience";
 
 const title = "My experience no. 1";
 
@@ -59,41 +60,41 @@ context("my experiences page", () => {
     /**
      * Given there is an experience in the system
      */
-    cy.defineOnlineExperience({
+    return createSavedExperience({
       title,
       fieldDefs: [
         {
           name: "Field integer",
-          type: FieldType.INTEGER
-        }
-      ]
+          type: FieldType.INTEGER,
+        },
+      ],
+    }).then(() => {
+      /**
+       * And we are at my experiences page
+       */
+      cy.visit(EXPERIENCES_URL);
+
+      /**
+       * When we click on the title of experience to which we want to add entry
+       */
+      cy.get('[data-testid="exps-container"]').then($node => {
+        getDescendantByText(title, $node).click();
+      });
+
+      /**
+       * Then we should be directed to the experience's detailed page
+       */
+      cy.title().should("contain", title);
+
+      /**
+       * When we click on "No entries" link
+       */
+      cy.getByText("No entries. Click here to add one").click();
+
+      /**
+       * Then we should be directed to entry page for the experience
+       */
+      cy.title().should("contain", `[New Entry] ${title}`);
     });
-
-    /**
-     * And we are at my experiences page
-     */
-    cy.visit(EXPERIENCES_URL);
-
-    /**
-     * When we click on the title of experience to which we want to add entry
-     */
-    cy.get('[data-testid="exps-container"]').then($node => {
-      getDescendantByText(title, $node).click();
-    });
-
-    /**
-     * Then we should be directed to the experience's detailed page
-     */
-    cy.title().should("contain", title);
-
-    /**
-     * When we click on "No entries" link
-     */
-    cy.getByText("No entries. Click here to add one").click();
-
-    /**
-     * Then we should be directed to entry page for the experience
-     */
-    cy.title().should("contain", `[New Entry] ${title}`);
   });
 });

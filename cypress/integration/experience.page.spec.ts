@@ -2,6 +2,8 @@ import { USER_REGISTRATION_OBJECT } from "../support/user-registration-object";
 import { makeExperienceRoute } from "../../src/constants/experience-route";
 import { FieldType } from "../../src/graphql/apollo-types/globalTypes";
 import { ExperienceFragment } from "../../src/graphql/apollo-types/ExperienceFragment";
+import { createSavedExperience } from "../support/create-experience";
+import { createExperienceEntries } from "../support/create-entries";
 
 const title = "My experience no. 1";
 
@@ -16,7 +18,7 @@ context("experience page", () => {
     /**
      * Given there is an experience in the system with no entries
      */
-    cy.defineOnlineExperience({
+    return createSavedExperience({
       title,
       fieldDefs: [
         {
@@ -52,7 +54,7 @@ context("experience page", () => {
     /**
      * Given there is an experience in the system with entries
      */
-    cy.defineOnlineExperience({
+    return createSavedExperience({
       title,
       fieldDefs: [
         {
@@ -66,25 +68,23 @@ context("experience page", () => {
         const [field] = experience.fieldDefs;
         const { id: defId } = field;
 
-        return cy
-          .createExperienceEntries(
-            id,
-            [1, 2, 3].map(int => {
-              return {
-                expId: id,
-                clientId: int + "",
-                fields: [
-                  {
-                    defId,
-                    data: JSON.stringify({ integer: int }),
-                  },
-                ],
-              };
-            }),
-          )
-          .then(entries => {
-            return [experience, entries];
-          });
+        return createExperienceEntries(
+          id,
+          [1, 2, 3].map(int => {
+            return {
+              expId: id,
+              clientId: int + "",
+              fields: [
+                {
+                  defId,
+                  data: JSON.stringify({ integer: int }),
+                },
+              ],
+            };
+          }),
+        ).then(entries => {
+          return [experience, entries];
+        });
       })
       .then(([experience]: [ExperienceFragment]) => {
         /**

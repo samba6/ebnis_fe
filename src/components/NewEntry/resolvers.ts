@@ -12,7 +12,7 @@ import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragmen
 import { EntryFragment } from "../../graphql/apollo-types/EntryFragment";
 import { updateEntriesCountSavedAndUnsavedExperiencesInCache } from "../../state/resolvers/update-saved-and-unsaved-experiences-in-cache";
 
-const CREATE_UNSAVED_ENTRY_MUTATION = gql`
+export const CREATE_UNSAVED_ENTRY_MUTATION = gql`
   mutation CreateUnsavedEntry($experience: Experience!, $fields: [Fields!]!) {
     createUnsavedEntry(experience: $experience, fields: $fields) @client {
       entry {
@@ -44,7 +44,7 @@ export interface CreateUnsavedEntryMutationProps {
   >;
 }
 
-interface CreateUnsavedEntryMutationReturned {
+export interface CreateUnsavedEntryMutationReturned {
   createUnsavedEntry: {
     id: string;
     entry: EntryFragment;
@@ -93,7 +93,7 @@ const createUnsavedEntryResolver: LocalResolverFn<
   return { id, experience, entry, __typename: "Entry" };
 };
 
-interface CreateUnsavedEntryVariables {
+export interface CreateUnsavedEntryVariables {
   fields: CreateField[];
   experience: ExperienceFragment;
 }
