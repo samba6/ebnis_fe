@@ -159,7 +159,7 @@ it("queries unsaved when connection returns and we are reconnecting", async done
    */
   await waitForElement(() => getByTestId(browserRenderedTestId));
 
-  expect(layoutContextValue.unsavedCount).toBe(0);
+  expect(layoutContextValue.unsavedCount).toBe(null);
 
   /**
    * And connection returns and we are reconnecting
@@ -247,7 +247,6 @@ function makeComp({
   mockGetUser.mockReset();
   mockGetConnStatus.mockReset();
 
-  // const persistor = jest.fn();
   const mockPersistCache = jest.fn();
   const cache = jest.fn();
   const mockQuery = jest.fn();

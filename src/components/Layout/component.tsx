@@ -17,6 +17,7 @@ import { NormalizedCacheObject } from "apollo-cache-inmemory";
 import { getUnsavedCount } from "../../state/unsaved-resolvers";
 import { LayoutProvider } from "./layout-provider";
 import { RouteComponentProps } from "@reach/router";
+import { preFetchExperiences } from "./pre-fetch-experiences";
 
 export interface Props extends PropsWithChildren<{}>, RouteComponentProps {}
 
@@ -32,11 +33,11 @@ export function Layout(props: Props) {
   const subscriptionRef = useRef<ZenObservable.Subscription | null>(null);
 
   const [state, dispatch] = useReducer(reducer, {
-    unsavedCount: 0,
+    unsavedCount: null,
     renderChildren: false,
   });
 
-  const { unsavedCount, renderChildren, experiencesPreFetched } = state;
+  const { unsavedCount, renderChildren, experiencesToPreFetch } = state;
 
   useEffect(() => {
     if (!(cache && persistCache && client)) {
@@ -46,9 +47,24 @@ export function Layout(props: Props) {
     const user = getUser();
 
     if (user) {
+      if (experiencesToPreFetch) {
+        setTimeout(async () => {
+          if (await getConnStatus(client)) {
+            preFetchExperiences({
+              ids: experiencesToPreFetch,
+              client,
+              cache,
+              onDone: () => {
+                dispatch([LayoutActionType.setExperiencesToPreFetch, null]);
+              },
+            });
+          }
+        });
+      }
+
       // by now we are done persisting cache so let's see if user has unsaved
       // data
-      if (renderChildren) {
+      if (renderChildren && unsavedCount === null) {
         (async function() {
           if (await getConnStatus(client)) {
             const newUnsavedCount = await getUnsavedCount(client);
@@ -60,13 +76,29 @@ export function Layout(props: Props) {
       if (!subscriptionRef.current) {
         subscriptionRef.current = getObservable().subscribe({
           next({ type, data }) {
-            const { isConnected, reconnected } = data;
-
             if (type === EmitAction.connectionChanged) {
+              const { isConnected, reconnected } = data;
+
               if (isConnected && reconnected === "true") {
                 getUnsavedCount(client).then(newUnsavedCount => {
                   dispatch([LayoutActionType.setUnsavedCount, newUnsavedCount]);
                 });
+
+                if (experiencesToPreFetch) {
+                  setTimeout(() => {
+                    preFetchExperiences({
+                      ids: experiencesToPreFetch,
+                      client,
+                      cache,
+                      onDone: () => {
+                        dispatch([
+                          LayoutActionType.setExperiencesToPreFetch,
+                          null,
+                        ]);
+                      },
+                    });
+                  }, 500);
+                }
               } else if (isConnected === false) {
                 // if we are disconnected, then we don't display unsaved UI
                 dispatch([LayoutActionType.setUnsavedCount, 0]);
@@ -85,7 +117,8 @@ export function Layout(props: Props) {
         subscriptionRef.current = null;
       }
     };
-  }, [renderChildren, cache, client, persistCache]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [renderChildren, experiencesToPreFetch]);
 
   useEffect(
     function PersistCache() {
@@ -101,7 +134,8 @@ export function Layout(props: Props) {
         dispatch([LayoutActionType.shouldRenderChildren, true]);
       })();
     },
-    [cache, persistCache],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
   );
 
   // this will be true if we are server rendering in gatsby build
@@ -122,7 +156,6 @@ export function Layout(props: Props) {
           cache,
           layoutDispatch: dispatch,
           client,
-          experiencesPreFetched,
         } as ILayoutContextContext
       }
     >

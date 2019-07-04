@@ -10,7 +10,6 @@ import { SidebarHeader } from "../SidebarHeader";
 import { setDocumentTitle, makeSiteTitle, isUnsavedId } from "../../constants";
 import { MY_EXPERIENCES_TITLE } from "../../constants/my-experiences-title";
 import { Link } from "gatsby";
-import { preFetchExperiences } from "./pre-fetch-experiences";
 import { GetExperienceConnectionMiniData } from "../../graphql/get-experience-connection-mini.query";
 import {
   ExperienceConnectionFragment,
@@ -22,7 +21,6 @@ import {
   GetExperienceConnectionMini_getExperiences_edges,
 } from "../../graphql/apollo-types/GetExperienceConnectionMini";
 import { LayoutContext, LayoutActionType } from "../Layout/utils";
-import { getConnStatus } from "../../state/get-conn-status";
 
 export const MyExperiences = (props: Props) => {
   const {
@@ -38,9 +36,7 @@ export const MyExperiences = (props: Props) => {
 
   // make sure we are only loading entries in the background and only once
   // on app boot.
-  const { experiencesPreFetched, layoutDispatch, cache, client } = useContext(
-    LayoutContext,
-  );
+  const { layoutDispatch } = useContext(LayoutContext);
 
   useEffect(() => {
     setDocumentTitle(makeSiteTitle(MY_EXPERIENCES_TITLE));
@@ -49,20 +45,11 @@ export const MyExperiences = (props: Props) => {
   }, []);
 
   useEffect(() => {
-    // istanbul ignore next:
-    if (experiencesPreFetched === true) {
-      return;
-    }
-
     if (!getExperiences) {
       return;
     }
 
-    setTimeout(async () => {
-      if (!(await getConnStatus(client))) {
-        return;
-      }
-
+    setTimeout(() => {
       const ids = mapSavedExperiencesToIds(
         getExperiences as ExperienceConnectionFragment,
       );
@@ -71,18 +58,11 @@ export const MyExperiences = (props: Props) => {
         return;
       }
 
-      preFetchExperiences({
-        ids,
-        client,
-        cache,
-        onDone: () => {
-          layoutDispatch([LayoutActionType.setExperiencesPreFetched, true]);
-        },
-      });
+      layoutDispatch([LayoutActionType.setExperiencesToPreFetch, ids]);
     }, 1000);
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [getExperiences, experiencesPreFetched]);
+  }, [getExperiences]);
 
   const toggleDescriptionFn = useCallback(
     (id: string) => {

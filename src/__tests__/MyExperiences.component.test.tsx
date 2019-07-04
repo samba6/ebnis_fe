@@ -3,7 +3,7 @@
 import React, { ComponentType } from "react";
 import "jest-dom/extend-expect";
 import "react-testing-library/cleanup-after-each";
-import { render, fireEvent, wait } from "react-testing-library";
+import { render, fireEvent } from "react-testing-library";
 import { MyExperiences } from "../components/MyExperiences/component";
 import { Props } from "../components/MyExperiences/utils";
 import { renderWithRouter } from "./test_utils";
@@ -15,15 +15,6 @@ import { ILayoutContextContext } from "../components/Layout/utils";
 jest.mock("../components/SidebarHeader", () => ({
   SidebarHeader: jest.fn(() => null),
 }));
-
-jest.mock("../components/MyExperiences/pre-fetch-experiences");
-jest.mock("../state/get-conn-status");
-
-import { preFetchExperiences } from "../components/MyExperiences/pre-fetch-experiences";
-import { getConnStatus } from "../state/get-conn-status";
-
-const mockPreFetchExperiences = preFetchExperiences as jest.Mock;
-const mockGetConnStatus = getConnStatus as jest.Mock;
 
 beforeEach(() => {
   jest.useFakeTimers();
@@ -117,7 +108,7 @@ it("renders experiences from server", () => {
   ).not.toBeInTheDocument();
 });
 
-it("loads entries in the background when experiences are loaded", async done => {
+it("loads full experiences in the background when experiences are loaded", async done => {
   jest.useFakeTimers();
 
   const getExperiences = {
@@ -138,59 +129,33 @@ it("loads entries in the background when experiences are loaded", async done => 
     ],
   } as ExperienceConnectionFragment;
 
-  const { ui } = makeComp({
+  const { ui, mockLayoutDispatch } = makeComp({
     getExperiencesMiniProps: { getExperiences } as any,
   });
 
   render(ui);
 
-  mockGetConnStatus.mockResolvedValue(true);
-
   jest.runAllTimers();
 
-  await wait(() => {
-    expect((mockPreFetchExperiences.mock.calls[0][0] as any).ids).toEqual([
-      "1",
-    ]);
-  });
+  expect(mockLayoutDispatch.mock.calls[0][0][1] as any).toEqual(["1"]);
 
   done();
 });
 
 it("does not load entries in background when experiences are loaded but empty", () => {
-  jest.useFakeTimers();
-
-  const getExperiences = {
-    edges: [],
-  } as any;
-
-  const { ui } = makeComp({
-    getExperiencesMiniProps: { getExperiences } as any,
+  const { ui, mockLayoutDispatch } = makeComp({
+    getExperiencesMiniProps: {
+      getExperiences: {
+        edges: [],
+      },
+    } as any,
   });
 
   render(ui);
 
-  mockGetConnStatus.mockResolvedValue(true);
-
   jest.runAllTimers();
 
-  expect(mockPreFetchExperiences).not.toHaveBeenCalled();
-});
-
-it("does not load entries in background when we are not connected", () => {
-  jest.useFakeTimers();
-
-  const { ui } = makeComp({
-    getExperiencesMiniProps: { getExperiences: { edges: [] } } as any,
-  });
-
-  render(ui);
-
-  mockGetConnStatus.mockResolvedValue(false);
-
-  jest.runAllTimers();
-
-  expect(mockPreFetchExperiences).not.toHaveBeenCalled();
+  expect(mockLayoutDispatch).not.toHaveBeenCalled();
 });
 
 it("renders error ui if we are unable to get experiences", () => {
@@ -213,23 +178,24 @@ it("renders error ui if we are unable to get experiences", () => {
 const MyExperiencesP = MyExperiences as ComponentType<Partial<Props>>;
 
 function makeComp(props: Partial<Props> = {}) {
-  mockPreFetchExperiences.mockReset();
-  mockGetConnStatus.mockReset();
-
-  const mockQuery = jest.fn();
-  const client = {
-    query: mockQuery,
-  } as any;
-
   const { Ui, ...rest } = renderWithRouter(MyExperiencesP);
+
+  const mockLayoutDispatch = jest.fn();
 
   return {
     ui: (
-      <LayoutProvider value={{} as ILayoutContextContext}>
-        <Ui client={client} {...props} />
+      <LayoutProvider
+        value={
+          {
+            layoutDispatch: mockLayoutDispatch as any,
+          } as ILayoutContextContext
+        }
+      >
+        <Ui {...props} />
       </LayoutProvider>
     ),
-    mockQuery,
+
+    mockLayoutDispatch,
 
     ...rest,
   };

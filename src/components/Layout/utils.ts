@@ -10,7 +10,6 @@ export interface ILayoutContextContext {
   cache: InMemoryCache;
   layoutDispatch: LayoutDispatchType;
   client: ApolloClient<{}>;
-  experiencesPreFetched?: boolean;
 }
 
 export const LayoutContext = createContext<ILayoutContextContext>({
@@ -20,18 +19,18 @@ export const LayoutContext = createContext<ILayoutContextContext>({
 export enum LayoutActionType {
   setUnsavedCount = "@components/layout/set-unsaved-count",
   shouldRenderChildren = "@components/layout/should-render-children",
-  setExperiencesPreFetched = "@components/layout/set-experiences-are-pre-fetched",
+  setExperiencesToPreFetch = "@components/layout/set-experiences-to-pre-fetch",
 }
 
 type Action =
   | [LayoutActionType.setUnsavedCount, number]
   | [LayoutActionType.shouldRenderChildren, boolean]
-  | [LayoutActionType.setExperiencesPreFetched, boolean];
+  | [LayoutActionType.setExperiencesToPreFetch, string[] | null];
 
 interface State {
-  unsavedCount: number;
+  unsavedCount: number | null;
   renderChildren: boolean;
-  experiencesPreFetched?: boolean;
+  experiencesToPreFetch?: string[] | null;
 }
 
 export const reducer: Reducer<State, Action> = (prevState, [type, payload]) => {
@@ -51,9 +50,9 @@ export const reducer: Reducer<State, Action> = (prevState, [type, payload]) => {
 
         break;
 
-      case LayoutActionType.setExperiencesPreFetched:
+      case LayoutActionType.setExperiencesToPreFetch:
         {
-          proxy.experiencesPreFetched = payload as boolean;
+          proxy.experiencesToPreFetch = payload as string[];
         }
 
         break;
