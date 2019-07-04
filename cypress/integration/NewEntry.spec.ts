@@ -6,6 +6,7 @@ import {
   createSavedExperience,
   createUnsavedExperience,
 } from "../support/create-experience";
+import { ExperienceFragment } from "../../src/graphql/apollo-types/ExperienceFragment";
 
 context("new experience entry page", () => {
   beforeEach(() => {
@@ -22,7 +23,7 @@ context("new experience entry page", () => {
      */
     const fieldName = "Total purchases";
 
-    return createUnsavedExperience(
+    let p = createUnsavedExperience(
       {
         title,
         fieldDefs: [
@@ -34,7 +35,10 @@ context("new experience entry page", () => {
       },
 
       { persist: true },
-    ).then(experience => {
+    );
+
+    cy.wrap(p).then(result => {
+      let experience = result as ExperienceFragment;
       /**
        * And user wishes to create new entry
        */
@@ -83,7 +87,7 @@ context("new experience entry page", () => {
      */
     const fieldName = "Total purchases";
 
-    return createSavedExperience(
+    let p = createSavedExperience(
       {
         title,
         fieldDefs: [
@@ -94,7 +98,11 @@ context("new experience entry page", () => {
         ],
       },
       // { persist: true },
-    ).then(experience => {
+    );
+
+    cy.wrap(p).then(result => {
+      let experience = result as ExperienceFragment;
+
       /**
        * And user wishes to create new entry
        */
@@ -141,7 +149,7 @@ context("new experience entry page", () => {
      */
     const fieldName = "Total purchases";
 
-    return createSavedExperience({
+    let p = createSavedExperience({
       title,
       fieldDefs: [
         {
@@ -149,7 +157,11 @@ context("new experience entry page", () => {
           type: FieldType.INTEGER,
         },
       ],
-    }).then(experience => {
+    });
+
+    cy.wrap(p).then(result => {
+      let experience = result as ExperienceFragment;
+
       /**
        * And user wishes to create new entry
        */
