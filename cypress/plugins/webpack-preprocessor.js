@@ -1,8 +1,9 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
 const webpackPreprocessor = require("@cypress/webpack-preprocessor");
 
 const webpackOptions = {
   resolve: {
-    extensions: [".ts", ".tsx", ".mjs", ".js", ".jsx"]
+    extensions: [".ts", ".tsx", ".mjs", ".js", ".jsx"],
   },
   module: {
     rules: [
@@ -13,17 +14,17 @@ const webpackOptions = {
           {
             loader: require.resolve("babel-loader"),
             options: {
-              presets: [require.resolve("@babel/preset-typescript")]
-            }
-          }
-        ]
-      }
-    ]
-  }
+              presets: [require.resolve("@babel/preset-typescript")],
+            },
+          },
+        ],
+      },
+    ],
+  },
 };
 
 const options = {
-  webpackOptions
+  webpackOptions,
 };
 
 exports.webpackPreprocessorFn = webpackPreprocessor(options);
