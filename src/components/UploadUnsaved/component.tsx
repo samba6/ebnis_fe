@@ -42,6 +42,7 @@ import { deleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache } from "../..
 import { EXPERIENCES_URL } from "../../routes";
 import { updateCache } from "./update-cache";
 import { useDeleteMutationsOnExit } from "../use-delete-mutations-on-exit";
+import { makeSiteTitle, setDocumentTitle } from "../../constants";
 
 const timeoutMs = 500;
 
@@ -79,6 +80,12 @@ export function UploadUnsaved(props: Props) {
   } = state;
 
   const { cache, layoutDispatch, client } = useContext(LayoutContext);
+
+  useEffect(function setCompTitle() {
+    setDocumentTitle(makeSiteTitle("Upload Unsaved"));
+
+    return setDocumentTitle;
+  }, []);
 
   useEffect(() => {
     getConnStatus(client).then(isConnected => {

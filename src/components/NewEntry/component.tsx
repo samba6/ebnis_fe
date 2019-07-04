@@ -96,7 +96,8 @@ export function NewEntry(props: Props) {
 
       fields.push({
         defId: id,
-        data: JSON.stringify({ [type.toLowerCase()]: toString(val) }),
+        //JSON.stringify({ [type.toLowerCase()]: toString(val) })
+        data: `{"${type.toLowerCase()}":"${toString(val)}"}`,
       });
     }
 
