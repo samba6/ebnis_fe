@@ -23,9 +23,9 @@ context("new experience entry page", () => {
       fieldDefs: [
         {
           name: fieldName,
-          type: FieldType.INTEGER
-        }
-      ]
+          type: FieldType.INTEGER,
+        },
+      ],
     }).then(experience => {
       /**
        * And user wishes to create new entry
@@ -78,9 +78,9 @@ context("new experience entry page", () => {
       fieldDefs: [
         {
           name: fieldName,
-          type: FieldType.INTEGER
-        }
-      ]
+          type: FieldType.INTEGER,
+        },
+      ],
     }).then(experience => {
       /**
        * And user wishes to create new entry
@@ -135,57 +135,49 @@ context("new experience entry page", () => {
       fieldDefs: [
         {
           name: fieldName,
-          type: FieldType.INTEGER
-        }
-      ]
-    })
-      .then(experience => {
-        return cy.persistCache().then(isPersisted => {
-          expect(isPersisted).to.eq(true);
+          type: FieldType.INTEGER,
+        },
+      ],
+    }).then(experience => {
+      /**
+       * And user wishes to create new entry
+       */
+      const fieldValue = "4567890";
+      const fieldValueRegex = new RegExp(fieldValue);
 
-          return experience;
-        });
-      })
-      .then(experience => {
-        /**
-         * And user wishes to create new entry
-         */
-        const fieldValue = "4567890";
-        const fieldValueRegex = new RegExp(fieldValue);
+      /**
+       * When we visit new entry page
+       */
+      cy.visit(makeNewEntryRoute(experience.id));
 
-        /**
-         * When we visit new entry page
-         */
-        cy.visit(makeNewEntryRoute(experience.id));
+      /**
+       * Then we should see the title
+       */
+      cy.title().should("contain", `[New Entry] ${title}`);
 
-        /**
-         * Then we should see the title
-         */
-        cy.title().should("contain", `[New Entry] ${title}`);
+      /**
+       * And data user wishes to create should not exist on page
+       */
+      cy.queryByText(fieldValueRegex).should("not.exist");
 
-        /**
-         * And data user wishes to create should not exist on page
-         */
-        cy.queryByText(fieldValueRegex).should("not.exist");
+      cy.setConnectionStatus(ManualConnectionStatus.disconnected);
 
-        cy.setConnectionStatus(ManualConnectionStatus.disconnected);
+      /**
+       * When user completes and submits the form
+       */
+      cy.getByLabelText(new RegExp(fieldName, "i")).type(fieldValue);
+      cy.getByText(/submit/i).click();
 
-        /**
-         * When user completes and submits the form
-         */
-        cy.getByLabelText(new RegExp(fieldName, "i")).type(fieldValue);
-        cy.getByText(/submit/i).click();
+      /**
+       * Then user should redirected to experience page
+       */
+      cy.title().should("not.contain", `[New Entry]`);
+      cy.title().should("contain", title);
 
-        /**
-         * Then user should redirected to experience page
-         */
-        cy.title().should("not.contain", `[New Entry]`);
-        cy.title().should("contain", title);
-
-        /**
-         * And data user wishes to create should exist on page
-         */
-        cy.getByText(fieldValueRegex).should("exist");
-      });
+      /**
+       * And data user wishes to create should exist on page
+       */
+      cy.getByText(fieldValueRegex).should("exist");
+    });
   });
 });

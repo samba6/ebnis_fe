@@ -150,14 +150,18 @@ function defineUnsavedExperience(
       createExperienceInput: experienceDefinitionArgs,
     },
   }).then(result => {
-    const exp =
+    const experience =
       result &&
       result.data &&
       (result.data.createUnsavedExperience as ExperienceFragment);
 
-    expect(exp.id).to.be.a("string");
+    expect(experience.id).to.be.a("string");
 
-    return exp;
+    return cy.persistCache().then(isPersisted => {
+      expect(isPersisted).to.eq(true);
+
+      return experience;
+    });
   });
 }
 
