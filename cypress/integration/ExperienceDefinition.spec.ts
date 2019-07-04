@@ -67,7 +67,7 @@ context("experience definition page", () => {
      */
     const title = "new experience title";
 
-    return createSavedExperience({
+    let p = createSavedExperience({
       title,
       fieldDefs: [
         {
@@ -75,7 +75,9 @@ context("experience definition page", () => {
           name: "Some random field",
         },
       ],
-    }).then(() => {
+    });
+
+    cy.wrap(p).then(() => {
       /**
        * When we visit the page
        */
