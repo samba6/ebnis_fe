@@ -44,7 +44,7 @@ jest.mock("../components/Entry/component", () => ({
 jest.mock("../components/scroll-into-view");
 jest.mock("../components/UploadUnsaved/update-cache");
 jest.mock("../state/resolvers/update-get-experiences-mini-query");
-jest.mock("../state/resolvers/delete-ids-from-cache");
+jest.mock("../state/resolvers/delete-references-from-cache");
 jest.mock("../state/resolvers/update-saved-and-unsaved-experiences-in-cache");
 
 import { getConnStatus } from "../state/get-conn-status";
@@ -56,7 +56,7 @@ import {
 import { updateCache } from "../components/UploadUnsaved/update-cache";
 import { LayoutProvider } from "../components/Layout/layout-provider";
 import { replaceExperiencesInGetExperiencesMiniQuery } from "../state/resolvers/update-get-experiences-mini-query";
-import { deleteIdsFromCache } from "../state/resolvers/delete-ids-from-cache";
+import { deleteIdsFromCache } from "../state/resolvers/delete-references-from-cache";
 import { deleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache } from "../state/resolvers/update-saved-and-unsaved-experiences-in-cache";
 import { EXPERIENCES_URL } from "../routes";
 

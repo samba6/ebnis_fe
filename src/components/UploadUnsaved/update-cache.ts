@@ -12,7 +12,7 @@ import immer from "immer";
 import { entryToEdge } from "../../state/resolvers/entry-to-edge";
 import { writeExperienceFragmentToCache } from "../../state/resolvers/write-experience-fragment-to-cache";
 import { ExperiencesIdsToObjectMap } from "./utils";
-import { deleteIdsFromCache } from "../../state/resolvers/delete-ids-from-cache";
+import { deleteIdsFromCache } from "../../state/resolvers/delete-references-from-cache";
 import { writeGetExperienceFullQueryToCache } from "../../state/resolvers/write-get-experience-full-query-to-cache";
 import { replaceExperiencesInGetExperiencesMiniQuery } from "../../state/resolvers/update-get-experiences-mini-query";
 import { InMemoryCache } from "apollo-cache-inmemory";

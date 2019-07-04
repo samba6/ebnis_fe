@@ -10,11 +10,11 @@ import {
 
 jest.mock("../state/resolvers/update-get-experiences-mini-query");
 jest.mock("../state/resolvers/write-get-experience-full-query-to-cache");
-jest.mock("../state/resolvers/delete-ids-from-cache");
+jest.mock("../state/resolvers/delete-references-from-cache");
 jest.mock("../state/resolvers/write-experience-fragment-to-cache");
 jest.mock("../state/resolvers/update-saved-and-unsaved-experiences-in-cache");
 
-import { deleteIdsFromCache } from "../state/resolvers/delete-ids-from-cache";
+import { deleteIdsFromCache } from "../state/resolvers/delete-references-from-cache";
 import { replaceExperiencesInGetExperiencesMiniQuery } from "../state/resolvers/update-get-experiences-mini-query";
 import { writeGetExperienceFullQueryToCache } from "../state/resolvers/write-get-experience-full-query-to-cache";
 import { writeSavedAndUnsavedExperiencesToCache } from "../state/resolvers/update-saved-and-unsaved-experiences-in-cache";

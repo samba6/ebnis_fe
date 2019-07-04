@@ -101,11 +101,11 @@ function deleteOperations(
   return count;
 }
 
-export function removeMutationsFromCache(
+export function removeQueriesAndMutationsFromCache(
   dataProxy: InMemoryCache,
-  mutations: string[],
+  operations: string[],
 ) {
-  if (mutations.length === 0) {
+  if (operations.length === 0) {
     return 0;
   }
 
@@ -115,14 +115,14 @@ export function removeMutationsFromCache(
   const data = dataClass.data;
   let count = 0;
 
-  for (const k of Object.keys(data)) {
-    if (k === "ROOT_MUTATION") {
-      const rootMutation = data[k];
+  for (const dataKey of Object.keys(data)) {
+    if (dataKey === "ROOT_MUTATION" || dataKey === "ROOT_QUERY") {
+      const rootOperation = data[dataKey];
 
-      for (const mk of Object.keys(rootMutation)) {
-        for (const m of mutations) {
-          if (mk.startsWith(m)) {
-            delete rootMutation[mk];
+      for (const rootKey of Object.keys(rootOperation)) {
+        for (const operationName of operations) {
+          if (rootKey.startsWith(operationName)) {
+            delete rootOperation[rootKey];
             ++count;
             break;
           }
@@ -132,10 +132,13 @@ export function removeMutationsFromCache(
       continue;
     }
 
-    if (k.startsWith("ROOT_MUTATION")) {
-      for (const m of mutations) {
-        if (k.includes(m)) {
-          delete data[k];
+    if (
+      dataKey.startsWith("ROOT_MUTATION") ||
+      dataKey.startsWith("$ROOT_QUERY")
+    ) {
+      for (const operationName of operations) {
+        if (dataKey.includes(operationName)) {
+          delete data[dataKey];
           ++count;
           break;
         }
