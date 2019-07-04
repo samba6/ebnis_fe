@@ -8,6 +8,7 @@ import { ExperienceNewEntryParent } from "../components/ExperienceNewEntryParent
 import { Props } from "../components/ExperienceNewEntryParent/utils";
 import { renderWithRouter } from "./test_utils";
 import { NEW_ENTRY_URL } from "../constants/new-entry-route";
+import { makeUnsavedId } from "../constants";
 
 jest.mock("../components/ExperienceNewEntryParent/loadables", () => ({
   NewEntry: jest.fn(() => <div data-testid="new-entry-page" />),
@@ -56,6 +57,22 @@ it("redirects to 404 page when getting experience from server errors", () => {
   });
 
   render(ui);
+
+  expect(mockNavigate).toBeCalledWith("/404");
+});
+
+it("redirects to 404 page when unsaved experience fails to load", () => {
+  jest.useFakeTimers();
+
+  const { mockNavigate, ui } = makeComp({
+    props: {
+      experienceId: makeUnsavedId("1"),
+    },
+  });
+
+  render(ui);
+
+  jest.runAllTimers();
 
   expect(mockNavigate).toBeCalledWith("/404");
 });

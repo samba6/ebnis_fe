@@ -277,14 +277,16 @@ function ExperienceComponent({
 }) {
   const { client, cache } = useContext(LayoutContext);
 
-  const {
+  let {
     experience,
+    newlySavedExperience,
     didUploadSucceed,
     unsavedEntries,
     entriesErrors,
     experienceError,
   } = experienceObjectMap;
 
+  experience = newlySavedExperience || experience;
   const hasError = entriesErrors || experienceError;
 
   const experienceId = experience.id;
