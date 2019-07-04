@@ -36,7 +36,7 @@ export function Layout(props: Props) {
     renderChildren: false,
   });
 
-  const { unsavedCount, renderChildren } = state;
+  const { unsavedCount, renderChildren, experiencesPreFetched } = state;
 
   useEffect(() => {
     if (!(cache && persistCache && client)) {
@@ -122,6 +122,7 @@ export function Layout(props: Props) {
           cache,
           layoutDispatch: dispatch,
           client,
+          experiencesPreFetched,
         } as ILayoutContextContext
       }
     >

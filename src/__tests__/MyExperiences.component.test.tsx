@@ -18,6 +18,8 @@ jest.mock("../components/MyExperiences/pre-fetch-experiences");
 import { preFetchExperiences } from "../components/MyExperiences/pre-fetch-experiences";
 import { ExperienceConnectionFragment } from "../graphql/apollo-types/ExperienceConnectionFragment";
 import { makeUnsavedId } from "../constants";
+import { LayoutProvider } from "../components/Layout/layout-provider";
+import { ILayoutContextContext } from "../components/Layout/utils";
 
 const mockPreFetchExperiences = preFetchExperiences as jest.Mock;
 
@@ -30,11 +32,11 @@ afterEach(() => {
 });
 
 it("renders loading state and not main", () => {
-  const { Ui } = makeComp({
+  const { ui } = makeComp({
     getExperiencesMiniProps: { loading: true } as any,
   });
 
-  const { getByTestId, queryByTestId } = render(<Ui />);
+  const { getByTestId, queryByTestId } = render(ui);
 
   jest.advanceTimersByTime(10000);
 
@@ -44,11 +46,11 @@ it("renders loading state and not main", () => {
 });
 
 it("does not render empty experiences", () => {
-  const { Ui } = makeComp({
+  const { ui } = makeComp({
     getExperiencesMiniProps: { getExperiences: { edges: [] } } as any,
   });
 
-  const { getByText, queryByTestId } = render(<Ui />);
+  const { getByText, queryByTestId } = render(ui);
 
   expect(queryByTestId("loading-spinner")).not.toBeInTheDocument();
   expect(queryByTestId("exps-container")).not.toBeInTheDocument();
@@ -83,11 +85,11 @@ it("renders experiences from server", () => {
     ],
   } as ExperienceConnectionFragment;
 
-  const { Ui } = makeComp({
+  const { ui } = makeComp({
     getExperiencesMiniProps: { getExperiences } as any,
   });
 
-  const { queryByText, getByText, queryByTestId, getByTestId } = render(<Ui />);
+  const { queryByText, getByText, queryByTestId, getByTestId } = render(ui);
 
   expect(getByText("love experience title 2")).toBeInTheDocument();
   expect(queryByTestId(`exp-toggle-${id2}`)).not.toBeInTheDocument();
@@ -136,14 +138,14 @@ it("loads entries in the background when experiences are loaded", () => {
     ],
   } as ExperienceConnectionFragment;
 
-  const { Ui } = makeComp({
+  const { ui } = makeComp({
     getExperiencesMiniProps: { getExperiences } as any,
   });
 
   /**
    * When we use the component
    */
-  render(<Ui />);
+  render(ui);
 
   jest.runAllTimers();
 
@@ -162,14 +164,14 @@ it("does not load entries in background when experiences are loaded but empty", 
     edges: [],
   } as any;
 
-  const { Ui } = makeComp({
+  const { ui } = makeComp({
     getExperiencesMiniProps: { getExperiences } as any,
   });
 
   /**
    * When we use the component
    */
-  render(<Ui />);
+  render(ui);
 
   /**
    * Then we should load entries for the experiences in the background
@@ -179,12 +181,12 @@ it("does not load entries in background when experiences are loaded but empty", 
 });
 
 it("renders error ui if we are unable to get experiences", () => {
-  const { Ui } = makeComp();
+  const { ui } = makeComp();
 
   /**
    * When we use the component
    */
-  const { getByTestId } = render(<Ui />);
+  const { getByTestId } = render(ui);
 
   /**
    * Then we should load entries for the experiences in the background
@@ -205,14 +207,22 @@ function makeComp(props: Partial<Props> = {}) {
     query: mockQuery,
   } as any;
 
-  const { Ui, ...rest } = renderWithRouter(
-    MyExperiencesP,
-    {},
-    {
-      client,
-      ...props,
-    },
-  );
+  const { Ui, ...rest } = renderWithRouter(MyExperiencesP);
 
-  return { Ui, mockQuery, ...rest };
+  const mockLayoutDispatch = jest.fn();
+
+  return {
+    ui: (
+      <LayoutProvider
+        value={
+          { layoutDispatch: mockLayoutDispatch as any } as ILayoutContextContext
+        }
+      >
+        <Ui client={client} {...props} />
+      </LayoutProvider>
+    ),
+    mockQuery,
+    mockLayoutDispatch,
+    ...rest,
+  };
 }

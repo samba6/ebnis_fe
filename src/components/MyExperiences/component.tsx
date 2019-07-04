@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useContext } from "react";
 import Icon from "semantic-ui-react/dist/commonjs/elements/Icon";
 
 import "./styles.scss";
@@ -21,6 +21,7 @@ import {
   GetExperienceConnectionMini_getExperiences,
   GetExperienceConnectionMini_getExperiences_edges,
 } from "../../graphql/apollo-types/GetExperienceConnectionMini";
+import { LayoutContext, LayoutActionType } from "../Layout/utils";
 
 export const MyExperiences = (props: Props) => {
   const {
@@ -36,9 +37,9 @@ export const MyExperiences = (props: Props) => {
     {},
   );
 
-  // make sure we are only loading entries in the background once and not on
-  // every render
-  const preFetchExperiencesRef = useRef(false);
+  // make sure we are only loading entries in the background and only once
+  // on app boot.
+  const { experiencesPreFetched, layoutDispatch } = useContext(LayoutContext);
 
   useEffect(() => {
     setDocumentTitle(makeSiteTitle(MY_EXPERIENCES_TITLE));
@@ -48,7 +49,7 @@ export const MyExperiences = (props: Props) => {
 
   useEffect(() => {
     // istanbul ignore next:
-    if (preFetchExperiencesRef.current === true) {
+    if (experiencesPreFetched === true) {
       return;
     }
 
@@ -68,11 +69,14 @@ export const MyExperiences = (props: Props) => {
       preFetchExperiences({
         ids,
         client,
+        onDone: () => {
+          layoutDispatch([LayoutActionType.setExperiencesPreFetched, true]);
+        },
       });
     }, 1000);
 
-    preFetchExperiencesRef.current = true;
-  }, [getExperiences, client]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [getExperiences, experiencesPreFetched]);
 
   const toggleDescriptionFn = useCallback(
     (id: string) => {
