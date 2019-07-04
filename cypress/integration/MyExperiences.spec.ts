@@ -60,7 +60,7 @@ context("my experiences page", () => {
     /**
      * Given there is an experience in the system
      */
-    return createSavedExperience({
+    let p = createSavedExperience({
       title,
       fieldDefs: [
         {
@@ -68,7 +68,9 @@ context("my experiences page", () => {
           type: FieldType.INTEGER,
         },
       ],
-    }).then(() => {
+    });
+
+    cy.wrap(p).then(() => {
       /**
        * And we are at my experiences page
        */
