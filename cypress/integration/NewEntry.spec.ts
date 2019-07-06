@@ -10,7 +10,6 @@ import { ExperienceFragment } from "../../src/graphql/apollo-types/ExperienceFra
 
 context("new experience entry page", () => {
   beforeEach(() => {
-    cy.closeSession();
     cy.checkoutSession();
     cy.registerUser(USER_REGISTRATION_OBJECT);
   });

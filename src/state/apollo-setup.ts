@@ -52,13 +52,7 @@ const onConnChange: OnConnectionChanged = args => {
 };
 
 export function buildClientCache(
-  {
-    uri,
-    headers,
-    isNodeJs,
-    fetch,
-    ...e2eOptions
-  }: BuildClientCache = {} as BuildClientCache,
+  { uri, headers, isNodeJs, fetch }: BuildClientCache = {} as BuildClientCache,
 ) {
   if (!cache) {
     cache = new InMemoryCache({
@@ -97,8 +91,8 @@ export function buildClientCache(
       };
 
       link = middlewareAuthLink(makeSocketLink, headers);
-      link = middlewareErrorLink(link, e2eOptions);
-      link = middlewareLoggerLink(link, e2eOptions);
+      link = middlewareErrorLink(link);
+      link = middlewareLoggerLink(link);
     }
 
     client = new ApolloClient({
@@ -180,25 +174,29 @@ export const resetClientAndPersistor = async (
 };
 
 ///////////////////// END TO END TESTS THINGS ///////////////////////
+
+function setupE2e() {
+  if (window.Cypress) {
+    window.Cypress.___e2e = {
+      cache,
+      client,
+      persistor,
+      usingWinCache: false,
+    };
+  }
+}
+
 export interface E2EWindowObject {
   cache: InMemoryCache;
   client: ApolloClient<{}>;
   persistor: CachePersistor<NormalizedCacheObject>;
+  usingWinCache: boolean;
 }
 
 declare global {
-  // tslint:disable-next-line: no-empty-interface
   interface Window {
-    ___e2e: E2EWindowObject;
-  }
-}
-
-function setupE2e() {
-  if (process.env.IS_E2E) {
-    window.___e2e = {
-      cache,
-      client,
-      persistor,
+    Cypress: {
+      ___e2e: E2EWindowObject;
     };
   }
 }

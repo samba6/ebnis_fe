@@ -47,7 +47,6 @@ export interface State {
   readonly tabs: { [k: number]: boolean };
   readonly uploading?: boolean;
   readonly serverError?: string | null;
-  readonly isUploadTriggered?: boolean;
   readonly savedExperiencesLen: number;
   readonly unsavedExperiencesLen: number;
   readonly unSavedCount: number;
@@ -135,7 +134,6 @@ export const reducer: Reducer<State, Action> = (prevState, [type, payload]) => {
           proxy.uploading = payload as boolean;
 
           if (payload === true) {
-            proxy.isUploadTriggered = true;
             proxy.serverError = null;
             proxy.hasUnsavedExperiencesUploadError = null;
             proxy.hasSavedExperiencesUploadError = null;
@@ -249,7 +247,7 @@ function updateStateWithSavedExperiencesUploadResult(
   stateProxy: Draft<State>,
   createEntries: (UploadAllUnsavedsMutation_createEntries | null)[] | null,
 ) {
-  stateProxy.hasSavedExperiencesUploadError = null;
+  stateProxy.hasSavedExperiencesUploadError = false;
   let noUploadSucceeded = true;
 
   if (!createEntries) {
@@ -294,7 +292,7 @@ function updateStateWithUnsavedExperiencesUploadResult(
     | (UploadAllUnsavedsMutation_saveOfflineExperiences | null)[]
     | null,
 ) {
-  stateProxy.hasUnsavedExperiencesUploadError = null;
+  stateProxy.hasUnsavedExperiencesUploadError = false;
   let noUploadSucceeded = true;
 
   if (!saveOfflineExperiences) {

@@ -10,7 +10,6 @@ const title = "My experience no. 1";
 
 context("my experiences page", () => {
   beforeEach(() => {
-    cy.closeSession();
     cy.checkoutSession();
     cy.registerUser(USER_REGISTRATION_OBJECT);
   });

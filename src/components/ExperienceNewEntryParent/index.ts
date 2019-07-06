@@ -9,6 +9,7 @@ import {
   GetExperienceFullVariables,
   GetExperienceFull,
 } from "../../graphql/apollo-types/GetExperienceFull";
+import { isUnsavedId } from "../../constants";
 
 const experienceGql = graphql<
   OwnProps,
@@ -26,6 +27,8 @@ const experienceGql = graphql<
           first: 20,
         },
       },
+
+      fetchPolicy: isUnsavedId(experienceId) ? "cache-only" : "cache-first",
     };
   },
 });

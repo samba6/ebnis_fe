@@ -8,7 +8,6 @@ import { createSavedExperience } from "../support/create-experience";
 
 context("experience definition page", () => {
   beforeEach(() => {
-    cy.closeSession();
     cy.checkoutSession();
     cy.registerUser(USER_REGISTRATION_OBJECT);
   });

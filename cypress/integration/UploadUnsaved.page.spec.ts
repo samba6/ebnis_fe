@@ -12,10 +12,10 @@ import {
 } from "../support/create-entries";
 import { persistCache } from "../support/mutate";
 import { PAGE_NOT_FOUND_TITLE } from "../../src/constants";
+import { UPLOAD_UNSAVED_TITLE } from "../../src/constants/upload-unsaved-title";
 
 context("Upload unsaved page", () => {
   beforeEach(() => {
-    cy.closeSession();
     cy.checkoutSession();
     cy.registerUser(USER_REGISTRATION_OBJECT);
   });
@@ -60,7 +60,7 @@ context("Upload unsaved page", () => {
     });
 
     const unsavedExperiencePromise = createUnsavedExperience({
-      title: "unsaved",
+      title: "olu omo",
       fieldDefs: [
         {
           name: "f2",
@@ -87,9 +87,7 @@ context("Upload unsaved page", () => {
       savedExperiencePromise,
       unsavedExperiencePromise,
     ]).then(result => {
-      return persistCache().then(isPersisted => {
-        expect(isPersisted).to.eq(true);
-
+      return persistCache().then(() => {
         return result;
       });
     });
@@ -100,49 +98,51 @@ context("Upload unsaved page", () => {
 
       cy.visit(unsavedRoute);
 
-      cy.url().should("contain", id);
-
-      cy.getByTestId("unsaved-count-label").click();
-
-      let cyTitle = cy.title();
-      cyTitle.should("contain", "Unsaved");
-
-      cy.queryByTestId(
-        "upload-triggered-icon-success-saved-experiences",
-      ).should("not.exist");
-
-      cy.queryByTestId(
-        "upload-triggered-icon-success-unsaved-experiences",
-      ).should("not.exist");
-
-      cy.getByTestId("upload-all").click();
-
-      cy.getByTestId("upload-triggered-icon-success-saved-experiences").should(
-        "exist",
-      );
-
-      cy.getByTestId(
-        "upload-triggered-icon-success-unsaved-experiences",
-      ).should("exist");
-
-      cy.getByTestId("unsaved-experiences-menu").click();
-
+      let title;
       let titleRegexp = /^unsaved-experience-(.+?)-title$/;
+      let uploadSuccessRegexp = /^upload-triggered-icon-success-(.+?)$/;
+      let newId;
 
-      cy.getByTestId(titleRegexp).then(elm => {
-        let newId = titleRegexp.exec((elm as any).attr("data-testid"))[1];
-        expect(id).not.to.eq(newId);
-        cy.visit(makeExperienceRoute(newId));
+      cy.title()
+        .should("contain", "olu omo")
+        .then(t => {
+          title = t;
+        })
+        .then(() => {
+          cy.getByTestId("unsaved-count-label").click();
+          cy.title().should("contain", UPLOAD_UNSAVED_TITLE);
+          cy.getByTestId("unsaved-experiences-menu").click();
 
-        cyTitle.then(g => {
-          // g is the global browser object
-          cy.title().should("eq", (g as any).document.title);
+          return cy.getByTestId(titleRegexp);
+        })
+        .then(elm => {
+          const sameId = titleRegexp.exec((elm as any).attr("data-testid"))[1];
+
+          expect(id).to.eq(sameId);
+          cy.getByTestId("upload-all").click();
+
+          return cy
+            .get(".unsaved-experience--success .experience-title__success-icon")
+            .should("exist");
+        })
+        .then(elm => {
+          newId = uploadSuccessRegexp.exec((elm as any).attr("data-testid"))[1];
+
+          expect(id).not.to.eq(newId);
+
+          return cy.wrap(persistCache(window.Cypress.___e2e.persistor));
+        })
+        .then(() => {
+          return cy.wait(200);
+        })
+        .then(() => {
+          cy.visit(makeExperienceRoute(newId));
+          cy.title().should("eq", title);
+        })
+        .then(() => {
+          cy.visit(unsavedRoute);
+          cy.title().should("contain", PAGE_NOT_FOUND_TITLE);
         });
-      });
-
-      cy.visit(unsavedRoute);
-
-      cy.title().should("contain", PAGE_NOT_FOUND_TITLE);
     });
   });
 });

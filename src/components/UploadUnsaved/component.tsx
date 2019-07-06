@@ -1,4 +1,4 @@
-import React, { useReducer, useEffect, useCallback, useContext } from "react";
+import React, { useReducer, useEffect, useContext } from "react";
 import {
   Props,
   reducer,
@@ -43,6 +43,8 @@ import { EXPERIENCES_URL } from "../../routes";
 import { updateCache } from "./update-cache";
 import { useDeleteMutationsOnExit } from "../use-delete-mutations-on-exit";
 import { makeSiteTitle, setDocumentTitle } from "../../constants";
+import { UPLOAD_UNSAVED_TITLE } from "../../constants/upload-unsaved-title";
+import { IconProps } from "semantic-ui-react";
 
 const timeoutMs = 500;
 
@@ -76,13 +78,12 @@ export function UploadUnsaved(props: Props) {
     unsavedExperiencesMap,
     shouldRedirect,
     atLeastOneUploadSucceeded,
-    isUploadTriggered,
   } = state;
 
   const { cache, layoutDispatch, client } = useContext(LayoutContext);
 
   useEffect(function setCompTitle() {
-    setDocumentTitle(makeSiteTitle("Upload Unsaved"));
+    setDocumentTitle(makeSiteTitle(UPLOAD_UNSAVED_TITLE));
 
     return setDocumentTitle;
   }, []);
@@ -140,7 +141,7 @@ export function UploadUnsaved(props: Props) {
 
   useDeleteMutationsOnExit(
     ["saveOfflineExperiences", "createEntries"],
-    isUploadTriggered,
+    state.hasSavedExperiencesUploadError !== null,
   );
 
   async function onUploadAllClicked() {
@@ -292,32 +293,31 @@ function ExperienceComponent({
   const experienceId = experience.id;
   const typePrefix = type + "-experience";
   let uploadStatusIndicatorSuffix = "";
-  let errorIcon = null;
   let experienceClassName = "";
   const dataTestId = `${typePrefix}-${experienceId}`;
+
+  let iconProps: IconProps | null = null;
 
   if (didUploadSucceed) {
     uploadStatusIndicatorSuffix = "--success";
     experienceClassName = typePrefix + uploadStatusIndicatorSuffix;
 
-    errorIcon = (
-      <Icon
-        name="check"
-        data-testid={"upload-triggered-icon-success-" + experienceId}
-        className="experience-title__success-icon upload-success-icon upload-result-icon"
-      />
-    );
+    iconProps = {
+      name: "check",
+      className:
+        "experience-title__success-icon upload-success-icon upload-result-icon",
+      "data-testid": "upload-triggered-icon-success-" + experienceId,
+    };
   } else if (hasError) {
     uploadStatusIndicatorSuffix = "--error";
     experienceClassName = typePrefix + uploadStatusIndicatorSuffix;
 
-    errorIcon = (
-      <Icon
-        name="ban"
-        data-testid={"upload-triggered-icon-error-" + experienceId}
-        className="experience-title__error-icon upload-error-icon upload-result-icon"
-      />
-    );
+    iconProps = {
+      name: "ban",
+      className:
+        "experience-title__error-icon upload-error-icon upload-result-icon",
+      "data-testid": "upload-triggered-icon-error-" + experienceId,
+    };
   }
 
   return (
@@ -329,7 +329,7 @@ function ExperienceComponent({
         "data-testid": dataTestId + "-title",
         className: `experience-title--uploads experience-title${uploadStatusIndicatorSuffix}`,
 
-        children: errorIcon,
+        children: iconProps ? <Icon {...iconProps} /> : null,
       }}
       menuOptions={{
         newEntry: false,
@@ -408,7 +408,6 @@ function TabsMenuComponent({
   state: State;
 }) {
   const {
-    isUploadTriggered,
     hasUnsavedExperiencesUploadError,
     hasSavedExperiencesUploadError,
     tabs,
@@ -416,85 +415,86 @@ function TabsMenuComponent({
     savedExperiencesLen,
   } = state;
 
-  const toggleTab1 = useCallback(
-    function toggleTab1Fn() {
-      dispatch([ActionType.toggleTab, 1]);
-    },
-    [dispatch],
-  );
-
-  const toggleTab2 = useCallback(
-    function toggleTab2Fn() {
-      dispatch([ActionType.toggleTab, 2]);
-    },
-    [dispatch],
-  );
+  let unsavedUploadTriggeredIcon = null;
+  let savedUploadTriggeredIcon = null;
 
   let unsavedIcon = null;
   let savedIcon = null;
 
-  if (isUploadTriggered) {
-    savedIcon =
-      savedExperiencesLen === 0 ? null : hasSavedExperiencesUploadError ? (
+  if (savedExperiencesLen > 0) {
+    if (hasSavedExperiencesUploadError === true) {
+      savedUploadTriggeredIcon = (
         <Icon
           name="ban"
           data-testid="upload-triggered-icon-error-saved-experiences"
           className="upload-error-icon upload-result-icon"
         />
-      ) : (
+      );
+    } else if (hasSavedExperiencesUploadError === false) {
+      savedUploadTriggeredIcon = (
         <Icon
           name="check"
           data-testid="upload-triggered-icon-success-saved-experiences"
           className="upload-success-icon upload-result-icon"
         />
       );
+    }
 
-    unsavedIcon =
-      unsavedExperiencesLen === 0 ? null : hasUnsavedExperiencesUploadError ? (
+    savedIcon = (
+      <a
+        className={setTabMenuClassNames("1", tabs)}
+        data-testid="saved-experiences-menu"
+        onClick={() => dispatch([ActionType.toggleTab, 1])}
+      >
+        Entries
+        {savedUploadTriggeredIcon}
+      </a>
+    );
+  }
+
+  if (unsavedExperiencesLen > 0) {
+    if (hasUnsavedExperiencesUploadError === true) {
+      unsavedUploadTriggeredIcon = (
         <Icon
           name="ban"
           data-testid="upload-triggered-icon-error-unsaved-experiences"
           className="upload-error-icon upload-result-icon"
         />
-      ) : (
+      );
+    } else if (hasUnsavedExperiencesUploadError === false) {
+      unsavedUploadTriggeredIcon = (
         <Icon
           name="check"
           data-testid="upload-triggered-icon-success-unsaved-experiences"
           className="upload-success-icon upload-result-icon"
         />
       );
+    }
+
+    unsavedIcon = (
+      <a
+        className={setTabMenuClassNames("2", tabs)}
+        data-testid="unsaved-experiences-menu"
+        onClick={() => dispatch([ActionType.toggleTab, 2])}
+      >
+        Experiences
+        {unsavedUploadTriggeredIcon}
+      </a>
+    );
   }
 
   return (
     <div
       className={makeClassNames({
         "ui item menu": true,
-        one: savedExperiencesLen === 0 || unsavedExperiencesLen === 0,
-        two: savedExperiencesLen !== 0 && unsavedExperiencesLen !== 0,
+        one: savedIcon === null || unsavedIcon === null,
+        two: savedIcon !== null && unsavedIcon !== null,
       })}
       data-testid="tabs-menu"
     >
-      {savedExperiencesLen !== 0 && (
-        <a
-          className={setTabMenuClassNames("1", tabs)}
-          data-testid="saved-experiences-menu"
-          onClick={toggleTab1}
-        >
-          Entries
-          {savedIcon}
-        </a>
-      )}
+      {savedIcon}
 
-      {unsavedExperiencesLen !== 0 && (
-        <a
-          className={setTabMenuClassNames("2", tabs)}
-          data-testid="unsaved-experiences-menu"
-          onClick={toggleTab2}
-        >
-          Experiences
-          {unsavedIcon}
-        </a>
-      )}
+      {unsavedIcon}
     </div>
   );
 }

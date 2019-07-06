@@ -38,11 +38,12 @@ export function middlewareAuthLink(
   });
 }
 
-export function middlewareLoggerLink(
-  link: ApolloLink,
-  { isE2e }: E2eOptions = {},
-) {
-  let loggerLink = new ApolloLink((operation, forward) => {
+export function middlewareLoggerLink(link: ApolloLink) {
+  if (process.env.NODE_ENV === "production" || process.env.NO_LOG) {
+    return link;
+  }
+
+  return new ApolloLink((operation, forward) => {
     const operationName = `Apollo operation: ${operation.operationName}`;
 
     // tslint:disable-next-line:no-console
@@ -78,63 +79,40 @@ export function middlewareLoggerLink(
     }
 
     return fop;
-  }).concat(link) as ApolloLink | null;
-
-  if (isE2e) {
-    return loggerLink as ApolloLink;
-  }
-
-  if (process.env.NODE_ENV === "production") {
-    loggerLink = null;
-    return link;
-  }
-
-  return loggerLink as ApolloLink;
+  }).concat(link);
 }
 
-export function middlewareErrorLink(
-  link: ApolloLink,
-  { isE2e }: E2eOptions = {},
-) {
-  let errorLink = onError(
-    ({ graphQLErrors, networkError, response, operation }) => {
-      const logError = (errorName: string, obj: object) => {
-        const operationName = `Response [${errorName} error] from Apollo operation: ${operation.operationName}`;
-
-        // tslint:disable-next-line:no-console
-        console.error(
-          "\n\n\n",
-          getNow(),
-          `\n=${operationName}=\n\n`,
-          obj,
-          `\n\n=End Response ${operationName}=`,
-        );
-      };
-
-      if (graphQLErrors) {
-        logError("graphQLErrors", graphQLErrors);
-      }
-
-      if (response) {
-        logError("", response);
-      }
-
-      if (networkError) {
-        logError("Network Error", networkError);
-      }
-    },
-  ).concat(link) as ApolloLink | null;
-
-  if (isE2e) {
-    return errorLink as ApolloLink;
-  }
-
-  if (process.env.NODE_ENV === "production") {
-    errorLink = null;
+export function middlewareErrorLink(link: ApolloLink) {
+  if (process.env.NODE_ENV === "production" || process.env.NO_LOG) {
     return link;
   }
 
-  return errorLink as ApolloLink;
+  return onError(({ graphQLErrors, networkError, response, operation }) => {
+    const logError = (errorName: string, obj: object) => {
+      const operationName = `Response [${errorName} error] from Apollo operation: ${operation.operationName}`;
+
+      // tslint:disable-next-line:no-console
+      console.error(
+        "\n\n\n",
+        getNow(),
+        `\n=${operationName}=\n\n`,
+        obj,
+        `\n\n=End Response ${operationName}=`,
+      );
+    };
+
+    if (graphQLErrors) {
+      logError("graphQLErrors", graphQLErrors);
+    }
+
+    if (response) {
+      logError("", response);
+    }
+
+    if (networkError) {
+      logError("Network Error", networkError);
+    }
+  }).concat(link);
 }
 
 function getNow() {

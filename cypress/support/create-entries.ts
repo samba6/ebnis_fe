@@ -52,9 +52,7 @@ export function createUnsavedEntry(
       result.data.createUnsavedEntry.entry) as EntryFragment;
 
     if (persist) {
-      return persistCache().then(isPersisted => {
-        expect(isPersisted).to.eq(true);
-
+      return persistCache().then(() => {
         return unsavedEntry;
       });
     }

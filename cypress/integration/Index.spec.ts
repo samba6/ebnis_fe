@@ -2,7 +2,6 @@ import { USER_CREATION_OBJECT } from "../support/user-creation-object";
 
 context("index route", () => {
   beforeEach(() => {
-    cy.closeSession();
     cy.checkoutSession();
   });
 

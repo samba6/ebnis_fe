@@ -2,7 +2,6 @@ import { USER_CREATION_OBJECT } from "../support/user-creation-object";
 
 context("login page", () => {
   beforeEach(() => {
-    cy.closeSession();
     cy.checkoutSession();
 
     /**

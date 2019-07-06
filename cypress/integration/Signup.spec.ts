@@ -2,7 +2,6 @@ import { USER_CREATION_OBJECT } from "../support/user-creation-object";
 
 context("signup page", () => {
   beforeEach(() => {
-    cy.closeSession();
     cy.checkoutSession();
 
     /**
@@ -24,7 +23,7 @@ context("signup page", () => {
     cy.getByLabelText("Email").type(USER_CREATION_OBJECT.email);
     cy.getByLabelText("Password").type(USER_CREATION_OBJECT.password);
     cy.getByLabelText("Password Confirm").type(
-      USER_CREATION_OBJECT.password_confirmation
+      USER_CREATION_OBJECT.password_confirmation,
     );
     cy.getByText(/submit/i).click();
 
@@ -52,7 +51,7 @@ context("signup page", () => {
     cy.getByLabelText("Email").type(USER_CREATION_OBJECT.email);
     cy.getByLabelText("Password").type(USER_CREATION_OBJECT.password);
     cy.getByLabelText("Password Confirm").type(
-      USER_CREATION_OBJECT.password_confirmation
+      USER_CREATION_OBJECT.password_confirmation,
     );
     cy.getByText(/submit/i).click();
 

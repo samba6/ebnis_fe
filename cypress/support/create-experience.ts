@@ -27,9 +27,7 @@ export function createSavedExperience(
       (result.data.createExperience as ExperienceFragment);
 
     if (persist) {
-      return persistCache().then(isPersisted => {
-        expect(isPersisted).to.eq(true);
-
+      return persistCache().then(() => {
         return experience;
       });
     }
@@ -56,10 +54,10 @@ export function createUnsavedExperience(
       result.data &&
       (result.data.createUnsavedExperience as ExperienceFragment);
 
-    if (persist) {
-      return persistCache().then(isPersisted => {
-        expect(isPersisted).to.eq(true);
+    expect(experience.id).to.be.a("string");
 
+    if (persist) {
+      return persistCache().then(() => {
         return experience;
       });
     }
