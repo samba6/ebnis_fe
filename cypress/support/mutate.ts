@@ -1,14 +1,18 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import ApolloClient from "apollo-client";
 import { CachePersistor } from "apollo-cache-persist";
 import { MutationOptions } from "apollo-client/core/watchQueryOptions";
-import { buildClientCache } from "../../src/state/apollo-setup";
+import {
+  buildClientCache,
+  CYPRESS_APOLLO_KEY,
+} from "../../src/state/apollo-setup";
 import { allResolvers } from "../../src/state/all-resolvers";
 import { USER_JWT_ENV } from "./constants";
+import { InMemoryCache } from "apollo-cache-inmemory";
 import {
   SCHEMA_VERSION,
   SCHEMA_VERSION_KEY,
 } from "../../src/constants/apollo-schema";
-import { InMemoryCache } from "apollo-cache-inmemory";
 
 const serverUrl = Cypress.env("API_URL") as string;
 let client: ApolloClient<{}>;
@@ -18,13 +22,12 @@ let cache: InMemoryCache;
 export function mutate<TData, TVariables>(
   options: MutationOptions<TData, TVariables>,
 ) {
-  const { ___e2e } = window.Cypress;
+  const cypressApollo = Cypress.env(CYPRESS_APOLLO_KEY);
 
-  if (___e2e) {
-    client = ___e2e.client;
-    client.addResolvers(allResolvers);
-    persistor = ___e2e.persistor;
-    cache = ___e2e.cache;
+  if (cypressApollo) {
+    client = cypressApollo.client;
+    persistor = cypressApollo.persistor;
+    cache = cypressApollo.cache;
   }
 
   if (!client) {
@@ -33,11 +36,11 @@ export function mutate<TData, TVariables>(
       headers: {
         jwt: Cypress.env(USER_JWT_ENV),
       },
-      isE2e: true,
+
+      resolvers: allResolvers,
     });
 
     client = apolloSetup.client;
-    client.addResolvers(allResolvers);
     persistor = apolloSetup.persistor;
     cache = apolloSetup.cache;
   }
@@ -46,13 +49,17 @@ export function mutate<TData, TVariables>(
 }
 
 export async function persistCache(customPersistor?: CachePersistor<{}>) {
+  // we need to set up local storage for local state management
+  // so that whatever we persist in this test will be picked up by apollo
+  // when app starts. Otherwise, apollo will always clear out the local
+  // storage when the app starts if it can not read the schema version.
+  localStorage.setItem(SCHEMA_VERSION_KEY, SCHEMA_VERSION);
+
   persistor = customPersistor || persistor;
 
   if (!persistor) {
     throw new Error("Persistor unavailable");
   }
-
-  localStorage.setItem(SCHEMA_VERSION_KEY, SCHEMA_VERSION);
 
   await persistor.persist();
 

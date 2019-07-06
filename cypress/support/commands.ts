@@ -19,7 +19,7 @@ import {
 } from "../../src/test-utils/manual-connection-setting";
 import { USER_JWT_ENV } from "./constants";
 import { mutate, persistCache } from "./mutate";
-import { E2EWindowObject } from "../../src/state/apollo-setup";
+import { CYPRESS_APOLLO_KEY } from "../../src/state/apollo-setup";
 
 const serverUrl = Cypress.env("API_URL") as string;
 
@@ -33,7 +33,7 @@ function checkoutSession() {
 
 function closeSession() {
   setManualConnection(ManualConnectionStatus.unset);
-  window.Cypress.___e2e = null;
+  Cypress.env(CYPRESS_APOLLO_KEY, null);
 }
 
 function createUser(userData: UserCreationObject) {
@@ -93,7 +93,7 @@ Cypress.Commands.add("persistCache", persistCache);
 declare global {
   interface Window {
     Cypress: {
-      ___e2e: E2EWindowObject;
+      env: <T>(k?: string, v?: T) => void | T;
     };
   }
 

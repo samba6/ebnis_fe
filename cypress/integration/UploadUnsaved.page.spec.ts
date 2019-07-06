@@ -130,7 +130,7 @@ context("Upload unsaved page", () => {
 
           expect(id).not.to.eq(newId);
 
-          return cy.wrap(persistCache(window.Cypress.___e2e.persistor));
+          return cy.wrap(persistCache());
         })
         .then(() => {
           return cy.wait(200);

@@ -8,7 +8,8 @@ export type MakeSocketLink = (
 ) => ApolloLink;
 
 export interface E2eOptions {
-  isE2e?: boolean;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  resolvers: any;
 }
 
 export function middlewareAuthLink(

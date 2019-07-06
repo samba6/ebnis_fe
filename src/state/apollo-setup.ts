@@ -52,8 +52,23 @@ const onConnChange: OnConnectionChanged = args => {
 };
 
 export function buildClientCache(
-  { uri, headers, isNodeJs, fetch }: BuildClientCache = {} as BuildClientCache,
+  {
+    uri,
+    headers,
+    isNodeJs,
+    fetch,
+    ...e2eOptions
+  }: BuildClientCache = {} as BuildClientCache,
 ) {
+  // we may invoke this function for the first time either from cypress or from
+  // our app (we really don't know which will come first and we really don't
+  // care). The idea is that if `buildClientCache` is invoked first from
+  // cypress, we make sure that subsequent invocation uses the cypress version.
+  // This should fix the problem whereby the cache used by some part of cypress
+  // is out of sync with other parts because some are using cypress version
+  // while others are using app version
+  clientCacheFromCypress();
+
   if (!cache) {
     cache = new InMemoryCache({
       addTypename: true,
@@ -109,8 +124,12 @@ export function buildClientCache(
 
       client.addResolvers(state.resolvers);
 
+      if (e2eOptions.resolvers) {
+        client.addResolvers(e2eOptions.resolvers);
+      }
+
       makePersistor(cache);
-      setupE2e();
+      setupCypressApollo();
     }
   }
 
@@ -175,14 +194,34 @@ export const resetClientAndPersistor = async (
 
 ///////////////////// END TO END TESTS THINGS ///////////////////////
 
-function setupE2e() {
+export const CYPRESS_APOLLO_KEY = "ebnis-cypress-apollo";
+
+function clientCacheFromCypress() {
+  if (typeof window === "undefined" || !window.Cypress) {
+    return;
+  }
+
+  const cypressApollo = window.Cypress.env(
+    CYPRESS_APOLLO_KEY,
+  ) as E2EWindowObject;
+
+  if (!cypressApollo) {
+    return;
+  }
+
+  // some how if I use the client from cypress, /app/ route fails to render
+  // client = cypressApollo.client;
+  cache = cypressApollo.cache;
+  persistor = cypressApollo.persistor;
+}
+
+function setupCypressApollo() {
   if (window.Cypress) {
-    window.Cypress.___e2e = {
+    window.Cypress.env(CYPRESS_APOLLO_KEY, {
       cache,
       client,
       persistor,
-      usingWinCache: false,
-    };
+    });
   }
 }
 
@@ -190,13 +229,12 @@ export interface E2EWindowObject {
   cache: InMemoryCache;
   client: ApolloClient<{}>;
   persistor: CachePersistor<NormalizedCacheObject>;
-  usingWinCache: boolean;
 }
 
 declare global {
   interface Window {
     Cypress: {
-      ___e2e: E2EWindowObject;
+      env: <T>(k?: string, v?: T) => void | T;
     };
   }
 }
