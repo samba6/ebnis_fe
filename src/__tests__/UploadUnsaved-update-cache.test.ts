@@ -100,7 +100,9 @@ test("", () => {
 
     "3": {
       // newlySavedExperience = undefined, outstanding unsaved count = 2
-      experience: {} as ExperienceFragment,
+      experience: {
+        id: "3",
+      } as ExperienceFragment,
       // since experience did not save, ditto entry. outstanding unsaved
       // count = 3
       unsavedEntries: [{} as ExperienceFragment_entries_edges_node],
@@ -112,11 +114,17 @@ test("", () => {
 
   const arg2 = {
     "4": {
+      experience: {
+        id: "4",
+      },
       // newlySavedEntries = undefined, outstanding unsaved count = 4
       unsavedEntries: [{}],
     } as any,
 
     "5": {
+      experience: {
+        id: "5",
+      },
       unsavedEntries: [{}],
       // newlySavedEntries = [], outstanding unsaved count = 5
       newlySavedEntries: [],
@@ -219,41 +227,58 @@ test("", () => {
     },
   );
 
-  expect(mockReplaceExperiencesInGetExperiencesMiniQuery).toHaveBeenCalledWith(
-    {},
-    {
-      "1": {
-        entries: {
-          edges: [],
-        },
-      },
-
-      "2": {
-        id: "2s",
-        entries: {
-          edges: [
-            {
-              node: {
-                clientId: "221",
-              },
-            },
-
-            {
-              __typename: "EntryEdge",
-              cursor: "",
-              node: {
-                id: "21",
-              },
-            },
-          ],
-        },
+  expect(
+    mockReplaceExperiencesInGetExperiencesMiniQuery.mock.calls[0][1],
+  ).toEqual({
+    "1": {
+      entries: {
+        edges: [],
       },
     },
-  );
 
-  expect(mockWriteSavedAndUnsavedExperiencesToCache).toHaveBeenCalledWith({}, [
+    "2": {
+      id: "2s",
+      entries: {
+        edges: [
+          {
+            node: {
+              clientId: "221",
+            },
+          },
+
+          {
+            __typename: "EntryEdge",
+            cursor: "",
+            node: {
+              id: "21",
+            },
+          },
+        ],
+      },
+    },
+  });
+
+  expect(mockWriteSavedAndUnsavedExperiencesToCache.mock.calls[0][1]).toEqual([
     {
       id: "2s",
+      unsavedEntriesCount: 1,
+      __typename: "SavedAndUnsavedExperiences",
+    },
+
+    {
+      id: "3",
+      unsavedEntriesCount: 1,
+      __typename: "SavedAndUnsavedExperiences",
+    },
+
+    {
+      id: "4",
+      unsavedEntriesCount: 1,
+      __typename: "SavedAndUnsavedExperiences",
+    },
+
+    {
+      id: "5",
       unsavedEntriesCount: 1,
       __typename: "SavedAndUnsavedExperiences",
     },

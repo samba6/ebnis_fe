@@ -46,10 +46,23 @@ export function updateCache({
   } = {};
 
   Object.entries(unsavedExperiencesMap).forEach(([unsavedId, map]) => {
-    const { newlySavedExperience, unsavedEntries, entriesErrors } = map;
+    const {
+      newlySavedExperience,
+      unsavedEntries,
+      entriesErrors,
+      experience,
+    } = map;
 
     if (!newlySavedExperience) {
-      outstandingUnsavedCount += 1 + unsavedEntries.length;
+      const errorsLen = unsavedEntries.length;
+      outstandingUnsavedCount += 1 + errorsLen;
+
+      savedAndUnsavedExperiences.push({
+        id: experience.id,
+        unsavedEntriesCount: errorsLen,
+        __typename: SAVED_AND_UNSAVED_EXPERIENCE_TYPENAME,
+      });
+
       return;
     }
 
@@ -117,7 +130,15 @@ export function updateCache({
     } = map;
 
     if (!newlySavedEntries || newlySavedEntries.length === 0) {
-      outstandingUnsavedCount += unsavedEntries.length;
+      const errorsLen = unsavedEntries.length;
+      outstandingUnsavedCount += errorsLen;
+
+      savedAndUnsavedExperiences.push({
+        id: experience.id,
+        unsavedEntriesCount: errorsLen,
+        __typename: SAVED_AND_UNSAVED_EXPERIENCE_TYPENAME,
+      });
+
       return;
     }
 
@@ -182,7 +203,9 @@ export function updateCache({
   if (toDeletes.length !== 0) {
     // we need to do all deletes before writing.
     deleteIdsFromCache(cache, toDeletes, { mutations, queries });
+  }
 
+  if (savedAndUnsavedExperiences.length !== 0 || toDeletes.length !== 0) {
     writeSavedAndUnsavedExperiencesToCache(cache, savedAndUnsavedExperiences);
   }
 
