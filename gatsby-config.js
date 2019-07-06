@@ -2,72 +2,74 @@
 const path = require("path");
 const fs = require("fs");
 
-module.exports = {
-  siteMetadata: {
-    title: "Ebnis",
+let plugins = [
+  "gatsby-plugin-typescript",
+
+  {
+    resolve: "gatsby-plugin-alias-imports",
+    options: {
+      alias: {
+        "../../theme.config": path.resolve(
+          "src/styles/semantic-theme/theme.config",
+        ),
+      },
+      extensions: [],
+    },
   },
 
-  plugins: [
-    "gatsby-plugin-typescript",
+  {
+    resolve: "gatsby-source-filesystem",
 
-    {
-      resolve: "gatsby-plugin-alias-imports",
-      options: {
-        alias: {
-          "../../theme.config": path.resolve(
-            "src/styles/semantic-theme/theme.config",
-          ),
-        },
-        extensions: [],
-      },
+    options: {
+      name: "images",
+
+      path: path.join(__dirname, "src", "images"),
     },
+  },
 
-    {
-      resolve: "gatsby-source-filesystem",
+  "gatsby-plugin-sharp",
 
-      options: {
-        name: "images",
+  "gatsby-transformer-sharp",
 
-        path: path.join(__dirname, "src", "images"),
-      },
+  {
+    resolve: "gatsby-plugin-env-variables",
+
+    options: {
+      whitelist: ["API_URL"],
     },
+  },
 
-    "gatsby-plugin-sharp",
-
-    "gatsby-transformer-sharp",
-
-    {
-      resolve: "gatsby-plugin-env-variables",
-
-      options: {
-        whitelist: ["API_URL", "IS_E2E"],
-      },
+  {
+    resolve: "gatsby-plugin-manifest",
+    options: {
+      name: "Ebnis",
+      short_name: "Ebnis",
+      start_url: "/",
+      background_color: "#ffffff",
+      theme_color: "#5faac7",
+      // Enables "Add to Home screen" prompt and disables browser UI (including back button)
+      // see https://developers.google.com/web/fundamentals/web-app-manifest/#display
+      display: "standalone",
+      icon: "src/images/logo.png", // This path is relative to the root of the site.
     },
+  },
 
-    {
-      resolve: "gatsby-plugin-manifest",
-      options: {
-        name: "Ebnis",
-        short_name: "Ebnis",
-        start_url: "/",
-        background_color: "#ffffff",
-        theme_color: "#5faac7",
-        // Enables "Add to Home screen" prompt and disables browser UI (including back button)
-        // see https://developers.google.com/web/fundamentals/web-app-manifest/#display
-        display: "standalone",
-        icon: "src/images/logo.png", // This path is relative to the root of the site.
-      },
-    },
+  {
+    resolve: `gatsby-plugin-create-client-paths`,
+    options: { prefixes: [`/app/*`] },
+  },
 
-    {
-      resolve: `gatsby-plugin-create-client-paths`,
-      options: { prefixes: [`/app/*`] },
-    },
+  "gatsby-plugin-sass",
 
+  "gatsby-plugin-less",
+];
+
+if (!process.env.IS_E2E) {
+  plugins = plugins.concat([
     {
       resolve: "offline-plugin",
       options: {
-        cacheId: `ebnis-offline`,
+        cacheId: `ebnis-app`,
         ignoreURLParametersMatching: [/v/],
         cleanupOutdatedCaches: true,
         clientsClaim: false,
@@ -79,12 +81,16 @@ module.exports = {
       },
     },
 
-    "gatsby-plugin-sass",
-
-    "gatsby-plugin-less",
-
     "gatsby-plugin-netlify",
-  ],
+  ]);
+}
+
+module.exports = {
+  siteMetadata: {
+    title: "Ebnis",
+  },
+
+  plugins,
 };
 
 function globPatternsFn() {
