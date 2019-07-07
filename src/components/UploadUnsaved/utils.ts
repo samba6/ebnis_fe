@@ -100,7 +100,7 @@ export enum ActionType {
 type Action =
   | [ActionType.toggleTab, number | string]
   | [ActionType.setUploading, boolean]
-  | [ActionType.onUploadResult, UploadAllUnsavedsMutation | undefined | void]
+  | [ActionType.onUploadResult, State]
   | [ActionType.setServerError, ApolloError]
   | [ActionType.removeServerErrors]
   | [ActionType.initStateFromProps, GetUnsavedSummary]
@@ -109,6 +109,10 @@ type Action =
 export type DispatchType = Dispatch<Action>;
 
 export const reducer: Reducer<State, Action> = (prevState, [type, payload]) => {
+  if (type === ActionType.onUploadResult) {
+    return payload as State;
+  }
+
   return immer(prevState, proxy => {
     switch (type) {
       case ActionType.initStateFromProps:
@@ -139,38 +143,6 @@ export const reducer: Reducer<State, Action> = (prevState, [type, payload]) => {
             proxy.hasSavedExperiencesUploadError = null;
             proxy.atLeastOneUploadSucceeded = false;
           }
-        }
-
-        break;
-
-      case ActionType.onUploadResult:
-        {
-          payload = payload as UploadAllUnsavedsMutation | undefined | void;
-
-          proxy.uploading = false;
-
-          if (!payload) {
-            return;
-          }
-
-          const { saveOfflineExperiences, createEntries } = payload;
-
-          const noSuccess1 = updateStateWithUnsavedExperiencesUploadResult(
-            proxy,
-            saveOfflineExperiences,
-          );
-
-          const noSuccess2 = updateStateWithSavedExperiencesUploadResult(
-            proxy,
-            createEntries,
-          );
-
-          proxy.allUploadSucceeded = !(
-            proxy.hasUnsavedExperiencesUploadError === true ||
-            proxy.hasSavedExperiencesUploadError === true
-          );
-
-          proxy.atLeastOneUploadSucceeded = !(noSuccess1 && noSuccess2);
         }
 
         break;
@@ -346,6 +318,38 @@ function updateStateWithUnsavedExperiencesUploadResult(
   });
 
   return noUploadSucceeded;
+}
+
+export function onUploadResult(
+  prevState: State,
+  payload: UploadAllUnsavedsMutation | undefined | void,
+) {
+  return immer(prevState, proxy => {
+    proxy.uploading = false;
+
+    if (!payload) {
+      return;
+    }
+
+    const { saveOfflineExperiences, createEntries } = payload;
+
+    const noSuccess1 = updateStateWithUnsavedExperiencesUploadResult(
+      proxy,
+      saveOfflineExperiences,
+    );
+
+    const noSuccess2 = updateStateWithSavedExperiencesUploadResult(
+      proxy,
+      createEntries,
+    );
+
+    proxy.allUploadSucceeded = !(
+      proxy.hasUnsavedExperiencesUploadError === true ||
+      proxy.hasSavedExperiencesUploadError === true
+    );
+
+    proxy.atLeastOneUploadSucceeded = !(noSuccess1 && noSuccess2);
+  });
 }
 
 export interface ExperiencesIdsToObjectMap {

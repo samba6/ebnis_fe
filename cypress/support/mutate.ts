@@ -48,18 +48,12 @@ export function mutate<TData, TVariables>(
   return client.mutate<TData, TVariables>(options);
 }
 
-export async function persistCache(customPersistor?: CachePersistor<{}>) {
+export async function persistCache() {
   // we need to set up local storage for local state management
   // so that whatever we persist in this test will be picked up by apollo
   // when app starts. Otherwise, apollo will always clear out the local
   // storage when the app starts if it can not read the schema version.
   localStorage.setItem(SCHEMA_VERSION_KEY, SCHEMA_VERSION);
-
-  persistor = customPersistor || persistor;
-
-  if (!persistor) {
-    throw new Error("Persistor unavailable");
-  }
 
   await persistor.persist();
 

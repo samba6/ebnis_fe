@@ -171,14 +171,6 @@ export async function persistCache(appCache: InMemoryCache) {
     localStorage.setItem(SCHEMA_VERSION_KEY, SCHEMA_VERSION);
   }
 
-  setTimeout(() => {
-    // These are old keys. We simply need to get rid of them on all clients.
-    // We will get rid of this code sometime later.
-    localStorage.removeItem("ebnis-token-key");
-    localStorage.removeItem("ebnis-apollo-schema-version");
-    localStorage.removeItem("ebnis-apollo-cache-persist");
-  });
-
   return persistor;
 }
 
@@ -215,7 +207,7 @@ function clientCacheFromCypress() {
   persistor = cypressApollo.persistor;
 }
 
-function setupCypressApollo() {
+export function setupCypressApollo() {
   if (window.Cypress) {
     window.Cypress.env(CYPRESS_APOLLO_KEY, {
       cache,
@@ -236,5 +228,7 @@ declare global {
     Cypress: {
       env: <T>(k?: string, v?: T) => void | T;
     };
+
+    ____ebnis: E2EWindowObject;
   }
 }

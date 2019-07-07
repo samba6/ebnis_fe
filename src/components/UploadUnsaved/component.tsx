@@ -10,6 +10,7 @@ import {
   stateInitializerFn,
   ExperienceObjectMap,
   SaveStatusType,
+  onUploadResult,
 } from "./utils";
 import { Loading } from "../Loading";
 import { SidebarHeader } from "../SidebarHeader";
@@ -77,24 +78,24 @@ export function UploadUnsaved(props: Props) {
     savedExperiencesMap,
     unsavedExperiencesMap,
     shouldRedirect,
-    atLeastOneUploadSucceeded,
   } = state;
 
-  const { cache, layoutDispatch, client } = useContext(LayoutContext);
+  const { cache, layoutDispatch, client, persistor } = useContext(
+    LayoutContext,
+  );
 
   useEffect(function setCompTitle() {
-    setDocumentTitle(makeSiteTitle(UPLOAD_UNSAVED_TITLE));
-
-    return setDocumentTitle;
-  }, []);
-
-  useEffect(() => {
     getConnStatus(client).then(isConnected => {
       if (!isConnected) {
         (navigate as NavigateFn)("/404");
         return;
       }
     });
+
+    setDocumentTitle(makeSiteTitle(UPLOAD_UNSAVED_TITLE));
+
+    return setDocumentTitle;
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -121,23 +122,6 @@ export function UploadUnsaved(props: Props) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shouldRedirect]);
-
-  useEffect(() => {
-    if (atLeastOneUploadSucceeded) {
-      const outstandingUnsavedCount = updateCache({
-        savedExperiencesMap: savedExperiencesMap,
-        unsavedExperiencesMap: unsavedExperiencesMap,
-        cache,
-        client,
-      });
-
-      layoutDispatch([
-        LayoutActionType.setUnsavedCount,
-        outstandingUnsavedCount,
-      ]);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [atLeastOneUploadSucceeded]);
 
   useDeleteMutationsOnExit(
     ["saveOfflineExperiences", "createEntries"],
@@ -179,7 +163,29 @@ export function UploadUnsaved(props: Props) {
         variables,
       });
 
-      dispatch([ActionType.onUploadResult, result && result.data]);
+      const newState = onUploadResult(state, result && result.data);
+
+      let outstandingUnsavedCount: number | null = null;
+
+      if (newState.atLeastOneUploadSucceeded) {
+        outstandingUnsavedCount = updateCache({
+          savedExperiencesMap: newState.savedExperiencesMap,
+          unsavedExperiencesMap: newState.unsavedExperiencesMap,
+          cache,
+          client,
+        });
+
+        await persistor.persist();
+      }
+
+      dispatch([ActionType.onUploadResult, newState]);
+
+      if (outstandingUnsavedCount !== null) {
+        layoutDispatch([
+          LayoutActionType.setUnsavedCount,
+          outstandingUnsavedCount,
+        ]);
+      }
     } catch (error) {
       dispatch([ActionType.setServerError, error]);
 

@@ -130,16 +130,9 @@ context("Upload unsaved page", () => {
 
           expect(id).not.to.eq(newId);
 
-          return cy.wrap(persistCache());
-        })
-        .then(() => {
-          return cy.wait(200);
-        })
-        .then(() => {
           cy.visit(makeExperienceRoute(newId));
           cy.title().should("eq", title);
-        })
-        .then(() => {
+
           cy.visit(unsavedRoute);
           cy.title().should("contain", PAGE_NOT_FOUND_TITLE);
         });
