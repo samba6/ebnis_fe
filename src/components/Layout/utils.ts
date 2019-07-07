@@ -50,6 +50,7 @@ export const reducer: Reducer<State, Action> = (prevState, [type, payload]) => {
 
         break;
 
+      // istanbul ignore next:tested in MyExperiences component
       case LayoutActionType.setExperiencesToPreFetch:
         {
           proxy.experiencesToPreFetch = payload as string[];
