@@ -136,13 +136,10 @@ export const reducer: Reducer<State, Action> = (prevState, [type, payload]) => {
       case ActionType.setUploading:
         {
           proxy.uploading = payload as boolean;
-
-          if (payload === true) {
-            proxy.serverError = null;
-            proxy.hasUnsavedExperiencesUploadError = null;
-            proxy.hasSavedExperiencesUploadError = null;
-            proxy.atLeastOneUploadSucceeded = false;
-          }
+          proxy.serverError = null;
+          proxy.hasUnsavedExperiencesUploadError = null;
+          proxy.hasSavedExperiencesUploadError = null;
+          proxy.atLeastOneUploadSucceeded = false;
         }
 
         break;
