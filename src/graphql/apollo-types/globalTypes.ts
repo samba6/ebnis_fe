@@ -108,6 +108,24 @@ export interface Registration {
   source: string;
 }
 
+/**
+ * Variables for updating an existing Experience
+ */
+export interface UpdateExperienceInput {
+  description?: string | null;
+  fieldDefinitions?: (UpdateFieldDefinitionInput | null)[] | null;
+  id: string;
+  title?: string | null;
+}
+
+/**
+ * Variables for updating an experience field definition
+ */
+export interface UpdateFieldDefinitionInput {
+  id: string;
+  name: string;
+}
+
 //==============================================================
 // END Enums and Input Objects
 //==============================================================
