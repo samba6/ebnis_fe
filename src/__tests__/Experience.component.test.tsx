@@ -29,6 +29,10 @@ jest.mock("../components/EditExperience/component", () => ({
   EditExperience: () => <div className="js-editor" />,
 }));
 
+jest.mock("../components/EditEntry/component", () => ({
+  EditEntry: () => <div id="entry-edit-modal" />,
+}));
+
 const ExperienceP = Experience as P;
 
 beforeEach(() => {
@@ -76,7 +80,7 @@ it("renders ui to show empty entries", () => {
   expect(mockOnDelete.mock.calls[0][0]).toEqual("1");
 });
 
-it("renders entries when `entries prop provided`", () => {
+it("renders entries when `entries prop provided`, triggers entry editor and uses default entry testid", () => {
   /**
    * Given that experience and associated entries exist in the system
    */
@@ -198,6 +202,7 @@ it("renders entries when `entries prop provided`", () => {
 
       entries: { edges },
     } as any,
+    updateEntry: jest.fn(),
   });
 
   /**
@@ -226,9 +231,23 @@ it("renders entries when `entries prop provided`", () => {
   expect(getByText(/f6/i)).toBeInTheDocument();
 
   expect(container.getElementsByClassName("js-edit-menu")[0]).toBeUndefined();
+
+  const $entryEditorTrigger = document.getElementById(
+    `entry-1-edit-trigger`,
+  ) as HTMLElement;
+
+  expect($entryEditorTrigger).not.toBeNull();
+
+  $entryEditorTrigger.click();
+
+  expect(document.getElementById("entry-edit-modal")).not.toBeNull();
+
+  expect(
+    container.querySelector('[data-testid="entry-container"]'),
+  ).not.toBeNull();
 });
 
-it("renders entries when `entriesJSX prop provided`", () => {
+it("renders entries when `entriesJSX prop provided` and sets entry data-testid ", () => {
   /**
    * Given that experience and associated entries exist in the system
    */
@@ -256,6 +275,7 @@ it("renders entries when `entriesJSX prop provided`", () => {
       fieldDefs={fieldDefs}
       entriesLen={1}
       index={0}
+      data-testid="random-val"
     />
   );
 
@@ -267,7 +287,7 @@ it("renders entries when `entriesJSX prop provided`", () => {
   /**
    * When we start using the component
    */
-  const { getByText, queryByTestId } = render(ui);
+  const { getByText, queryByTestId, container } = render(ui);
 
   /**
    * And we should see the entries' field names and associated data
@@ -276,6 +296,10 @@ it("renders entries when `entriesJSX prop provided`", () => {
   expect(getByText(/c1/i)).toBeInTheDocument();
 
   expect(queryByTestId("no-entries")).not.toBeInTheDocument();
+
+  expect(document.getElementById(`entry-1-edit-trigger`)).toBeNull();
+
+  expect(container.querySelector('[data-testid="random-val"]')).not.toBeNull();
 });
 
 it("toggles edit", () => {
@@ -305,11 +329,11 @@ test("reducer", () => {
 
   expect(
     reducer(prevState, [EditExperienceActionType.editCancelled]).editingState,
-  ).toEqual(EditingState.notEditing);
+  ).toEqual([EditingState.notEditing]);
 
   expect(
     reducer(prevState, [EditExperienceActionType.editFinished]).editingState,
-  ).toEqual(EditingState.notEditing);
+  ).toEqual([EditingState.notEditing]);
 
   expect(reducer(prevState, ["" as any]).editingState).toEqual("0");
 });

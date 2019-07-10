@@ -23,6 +23,7 @@ import {
 } from "../../graphql/apollo-types/ExperienceFragment";
 import makeClassNames from "classnames";
 import { EditExperience } from "../EditExperience/component";
+import { EditEntry } from "../EditEntry/component";
 
 export function Experience(props: Props) {
   const {
@@ -35,15 +36,17 @@ export function Experience(props: Props) {
     menuOptions = {} as IMenuOptions,
     children,
     entriesJSX,
+    updateEntry,
     ...otherProps
   } = props;
 
   const { onEdit } = menuOptions;
 
   const [state, dispatch] = useReducer(reducer, {
-    editingState: EditingState.notEditing,
+    editingState: [EditingState.notEditing],
   });
   const { editingState } = state;
+  const [editingStateTag] = editingState;
 
   const entryNodes = useMemo(() => {
     if (entriesJSX) {
@@ -85,6 +88,8 @@ export function Experience(props: Props) {
               entriesLen={nodesLen}
               index={index}
               {...entryProps}
+              editable={!!updateEntry}
+              dispatch={dispatch}
             />
           );
         })}
@@ -124,13 +129,15 @@ export function Experience(props: Props) {
         </Card.Content>
       </Card>
 
-      {onEdit && editingState === "editing" && (
+      {onEdit && editingStateTag === EditingState.editingExperience && (
         <EditExperience
           experience={experience}
           onEdit={onEdit}
           dispatch={dispatch}
         />
       )}
+
+      {editingStateTag === EditingState.editingEntry && <EditEntry />}
     </>
   );
 }

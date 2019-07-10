@@ -11,6 +11,13 @@ import {
   EditExperienceAction,
   EditExperienceActionType,
 } from "../EditExperience/utils";
+import {
+  Props as EntryProps,
+  EntryAction,
+  EntryActionTypes,
+} from "../Entry/utils";
+import { UpdateEntryMutationFn } from "../../graphql/update-entry.mutation";
+import { EntryFragment } from "../../graphql/apollo-types/EntryFragment";
 
 export interface IMenuOptions {
   newEntry?: boolean;
@@ -23,10 +30,11 @@ export interface Props
     RouteComponentProps<NewEntryRouteParams>,
     PropsWithChildren<{}> {
   experience: ExperienceFragment;
-  entryProps?: EbnisComponentProps;
+  entryProps?: EbnisComponentProps & Pick<EntryProps, "dispatch" | "editable">;
   headerProps?: EbnisComponentProps;
   menuOptions: IMenuOptions;
   entriesJSX?: JSX.Element | JSX.Element[];
+  updateEntry?: UpdateEntryMutationFn;
 }
 
 export type FormObjVal = Date | string;
@@ -74,27 +82,35 @@ export function formatDatetime(date: string | Date) {
 }
 
 export enum EditingState {
-  editing = "editing",
+  editingExperience = "editing-experience",
   notEditing = "not-editing",
+  editingEntry = "editing-entry",
 }
 
-export const reducer: Reducer<State, Action> = (prevState, [type]) => {
+export const reducer: Reducer<State, Action> = (prevState, [type, payload]) => {
   switch (type) {
     case EditExperienceActionType.editCancelled: {
-      return { ...prevState, editingState: EditingState.notEditing };
+      return { ...prevState, editingState: [EditingState.notEditing] };
     }
 
     case EditExperienceActionType.editFinished: {
       return {
         ...prevState,
-        editingState: EditingState.notEditing,
+        editingState: [EditingState.notEditing],
       };
     }
 
     case "show-editor": {
       return {
         ...prevState,
-        editingState: EditingState.editing,
+        editingState: [EditingState.editingExperience],
+      };
+    }
+
+    case EntryActionTypes.editClicked: {
+      return {
+        ...prevState,
+        editingState: [EditingState.editingEntry, payload as EntryFragment],
       };
     }
 
@@ -104,9 +120,12 @@ export const reducer: Reducer<State, Action> = (prevState, [type]) => {
 };
 
 export interface State {
-  readonly editingState: EditingState;
+  readonly editingState:
+    | [EditingState.notEditing]
+    | [EditingState.editingExperience]
+    | [EditingState.editingEntry, EntryFragment];
 }
 
-type Action = EditExperienceAction | ["show-editor"];
+type Action = EditExperienceAction | ["show-editor"] | EntryAction;
 
 export type DispatchType = Dispatch<Action>;

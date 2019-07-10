@@ -3,25 +3,19 @@ import { displayFieldType, formatDatetime } from "../Experience/utils";
 import "./styles.scss";
 import makeClassNames from "classnames";
 import {
-  ExperienceFragment_entries_edges_node,
   ExperienceFragment_fieldDefs,
   ExperienceFragment_entries_edges_node_fields,
 } from "../../graphql/apollo-types/ExperienceFragment";
 import Icon from "semantic-ui-react/dist/commonjs/elements/Icon";
 import Dropdown from "semantic-ui-react/dist/commonjs/modules/Dropdown";
-import { Link } from "gatsby";
-import { EbnisComponentProps } from "../../types";
-
-interface Props extends EbnisComponentProps {
-  entry: ExperienceFragment_entries_edges_node;
-  fieldDefs: ExperienceFragment_fieldDefs[];
-  entriesLen: number;
-  index: number;
-  className?: string;
-}
+import { Props, EntryActionTypes } from "./utils";
+import {
+  EntryFragment_fields,
+  EntryFragment,
+} from "../../graphql/apollo-types/EntryFragment";
 
 export function Entry(props: Props) {
-  const { entry, fieldDefs, className = "" } = props;
+  const { entry, fieldDefs, className = "", ...fieldProps } = props;
   const dataTestId = props["data-testid"];
 
   const fields = entry.fields as ExperienceFragment_entries_edges_node_fields[];
@@ -43,7 +37,8 @@ export function Entry(props: Props) {
             fieldDefs={fieldDefs}
             index={fieldIndex}
             fieldsLen={fieldsLen}
-            entryId={entry.id}
+            entry={entry}
+            {...fieldProps}
           />
         );
       })}
@@ -64,13 +59,15 @@ function FieldComponent({
   fieldDefs,
   index,
   fieldsLen,
-  entryId,
-}: {
-  field: ExperienceFragment_entries_edges_node_fields;
+  entry,
+  editable,
+  dispatch,
+}: Pick<Props, "dispatch" | "editable"> & {
+  field: EntryFragment_fields;
   fieldDefs: ExperienceFragment_fieldDefs[];
   index: number;
   fieldsLen: number;
-  entryId: string;
+  entry: EntryFragment;
 }) {
   const { defId, data } = field;
 
@@ -87,6 +84,7 @@ function FieldComponent({
 
   const [fieldData] = Object.values(JSON.parse(data));
   const text = displayFieldType[type](fieldData);
+  const { id: entryId } = entry;
 
   return (
     <div
@@ -110,23 +108,23 @@ function FieldComponent({
               data-testid={`entry-${entryId}-options-menu`}
             >
               <Dropdown.Menu>
-                <Dropdown.Header data-testid={`entry-${entryId}-modify-button`}>
-                  <Icon name="external alternate" />
-
-                  <Link to={`/`}>Modify</Link>
-                </Dropdown.Header>
+                {editable && dispatch && (
+                  <Dropdown.Header
+                    id={`entry-${entryId}-edit-trigger`}
+                    onClick={() => {
+                      dispatch([EntryActionTypes.editClicked, entry]);
+                    }}
+                  >
+                    <Icon name="pencil" />
+                    <span style={{ marginLeft: "8px" }}>Edit</span>
+                  </Dropdown.Header>
+                )}
 
                 <Dropdown.Menu scrolling={true}>
                   <Dropdown.Item
                     text="Delete"
                     value="Delete"
                     label={{ color: "red", empty: true, circular: true }}
-                  />
-
-                  <Dropdown.Item
-                    text="Announcement"
-                    value="Announcement"
-                    label={{ color: "blue", empty: true, circular: true }}
                   />
                 </Dropdown.Menu>
               </Dropdown.Menu>
