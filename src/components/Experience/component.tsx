@@ -1,11 +1,17 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useReducer } from "react";
 import Card from "semantic-ui-react/dist/commonjs/views/Card";
 import Icon from "semantic-ui-react/dist/commonjs/elements/Icon";
 import Dropdown from "semantic-ui-react/dist/commonjs/modules/Dropdown";
 import { Link } from "gatsby";
 
 import "./styles.scss";
-import { Props, IMenuOptions } from "./utils";
+import {
+  Props,
+  IMenuOptions,
+  reducer,
+  DispatchType,
+  EditingState,
+} from "./utils";
 import { makeNewEntryRoute } from "../../constants/new-entry-route";
 import { Entry } from "../Entry/component";
 import {
@@ -16,6 +22,7 @@ import {
   ExperienceFragment,
 } from "../../graphql/apollo-types/ExperienceFragment";
 import makeClassNames from "classnames";
+import { EditExperience } from "../EditExperience/component";
 
 export function Experience(props: Props) {
   const {
@@ -30,6 +37,13 @@ export function Experience(props: Props) {
     entriesJSX,
     ...otherProps
   } = props;
+
+  const { onEdit } = menuOptions;
+
+  const [state, dispatch] = useReducer(reducer, {
+    editingState: EditingState.notEditing,
+  });
+  const { editingState } = state;
 
   const entryNodes = useMemo(() => {
     if (entriesJSX) {
@@ -79,31 +93,45 @@ export function Experience(props: Props) {
   }
 
   return (
-    <Card
-      className={makeClassNames({
-        "components-experience": true,
-        [className]: !!className,
-      })}
-      {...otherProps}
-    >
-      <Card.Content className="experience__header" {...headerProps}>
-        <Card.Header>
-          <span>{getTitle(experience)}</span>
+    <>
+      <Card
+        className={makeClassNames({
+          "components-experience": true,
+          [className]: !!className,
+        })}
+        {...otherProps}
+      >
+        <Card.Content className="experience__header" {...headerProps}>
+          <Card.Header>
+            <span>{getTitle(experience)}</span>
 
-          <div className="options-menu-container">
-            <OptionsMenuComponent experience={experience} {...menuOptions} />
-          </div>
-        </Card.Header>
+            <div className="options-menu-container">
+              <OptionsMenuComponent
+                experience={experience}
+                dispatch={dispatch}
+                {...menuOptions}
+              />
+            </div>
+          </Card.Header>
 
-        <>{headerProps.children}</>
-      </Card.Content>
+          <>{headerProps.children}</>
+        </Card.Content>
 
-      {children}
+        {children}
 
-      <Card.Content className="experience__main">
-        {entriesJSX || renderEntries()}
-      </Card.Content>
-    </Card>
+        <Card.Content className="experience__main">
+          {entriesJSX || renderEntries()}
+        </Card.Content>
+      </Card>
+
+      {onEdit && editingState === "editing" && (
+        <EditExperience
+          experience={experience}
+          onEdit={onEdit}
+          dispatch={dispatch}
+        />
+      )}
+    </>
   );
 }
 
@@ -111,8 +139,11 @@ function OptionsMenuComponent({
   experience,
   newEntry = true,
   onDelete,
+  onEdit,
+  dispatch,
 }: Props["menuOptions"] & {
   experience: ExperienceFragment;
+  dispatch: DispatchType;
 }) {
   const { id } = experience;
   const experienceIdPrefix = `experience-${id}`;
@@ -145,6 +176,16 @@ function OptionsMenuComponent({
         )}
 
         <Dropdown.Menu scrolling={true}>
+          {onEdit && (
+            <Dropdown.Item
+              text="Edit"
+              value="Edit"
+              label={{ color: "blue", empty: true, circular: true }}
+              className="js-edit-menu"
+              onClick={() => dispatch(["show-editor"])}
+            />
+          )}
+
           <Dropdown.Item
             text="Delete"
             value="Delete"
@@ -153,12 +194,6 @@ function OptionsMenuComponent({
             onClick={() => {
               onDelete(id);
             }}
-          />
-
-          <Dropdown.Item
-            text="Announcement"
-            value="Announcement"
-            label={{ color: "blue", empty: true, circular: true }}
           />
         </Dropdown.Menu>
       </Dropdown.Menu>

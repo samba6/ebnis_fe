@@ -10,7 +10,7 @@ interface Props extends PropsWithChildren<{}>, EbnisComponentProps {
 }
 
 export function FormCtrlError(props: Props) {
-  const { error, id, className = "", children } = props;
+  const { error, id = "", className = "", children, ...others } = props;
 
   return children || error ? (
     <div
@@ -19,6 +19,8 @@ export function FormCtrlError(props: Props) {
         [className]: !!className,
       })}
       data-testid={props["data-testid"] || `form-control-error-${id}`}
+      id={id + ""}
+      {...others}
     >
       {children || error}
     </div>

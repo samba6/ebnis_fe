@@ -6,18 +6,28 @@ import "react-testing-library/cleanup-after-each";
 import { render, fireEvent } from "react-testing-library";
 
 import { Experience, getTitle } from "../components/Experience/component";
-import { Props } from "../components/Experience/utils";
+import {
+  Props,
+  State,
+  reducer,
+  EditingState,
+} from "../components/Experience/utils";
 import { FieldType } from "../graphql/apollo-types/globalTypes";
-import {} from "../graphql/apollo-types/GetExperienceFull";
 import { renderWithRouter } from "./test_utils";
 import {
   ExperienceFragment_entries_edges,
   ExperienceFragment_fieldDefs,
 } from "../graphql/apollo-types/ExperienceFragment";
 import { Entry } from "../components/Entry/component";
+import { EditExperienceActionType } from "../components/EditExperience/utils";
+import { ExperienceNoEntryFragment } from "../graphql/apollo-types/ExperienceNoEntryFragment";
 
 jest.mock("../components/SidebarHeader", () => ({
-  SidebarHeader: jest.fn(() => null),
+  SidebarHeader: () => null,
+}));
+
+jest.mock("../components/EditExperience/component", () => ({
+  EditExperience: () => <div className="js-editor" />,
 }));
 
 const ExperienceP = Experience as P;
@@ -194,7 +204,7 @@ it("renders entries when `entries prop provided`", () => {
   /**
    * When we start using the component
    */
-  const { queryByTestId, getByText } = render(ui);
+  const { queryByTestId, getByText, container } = render(ui);
 
   /**
    * Then we should not see text informing us there are not entries (of course
@@ -215,6 +225,8 @@ it("renders entries when `entries prop provided`", () => {
   expect(getByText(/f4/i)).toBeInTheDocument();
   expect(getByText(/f5/i)).toBeInTheDocument();
   expect(getByText(/f6/i)).toBeInTheDocument();
+
+  expect(container.getElementsByClassName("js-edit-menu")[0]).toBeUndefined();
 });
 
 it("renders entries when `entriesJSX prop provided`", () => {
@@ -267,10 +279,49 @@ it("renders entries when `entriesJSX prop provided`", () => {
   expect(queryByTestId("no-entries")).not.toBeInTheDocument();
 });
 
+it("toggles edit", () => {
+  const { ui } = makeComp({
+    experience: {
+      id: "a",
+      entries: {
+        edges: [],
+      },
+    } as any,
+    menuOptions: { onEdit: {} } as any,
+  });
+
+  const { container } = render(ui);
+
+  const $editMenu = container.getElementsByClassName(
+    "js-edit-menu",
+  )[0] as HTMLDivElement;
+
+  $editMenu.click();
+
+  expect(container.getElementsByClassName("js-editor")[0]).toBeDefined();
+});
+
+test("reducer", () => {
+  const prevState = {} as State;
+
+  expect(
+    reducer(prevState, [EditExperienceActionType.editCancelled]).editingState,
+  ).toEqual(EditingState.notEditing);
+
+  expect(
+    reducer(prevState, [
+      EditExperienceActionType.editFinished,
+      {} as ExperienceNoEntryFragment,
+    ]).editingState,
+  ).toEqual(EditingState.notEditing);
+});
+
 test("getTitle", () => {
   expect(getTitle({ title: "a" })).toEqual("a");
   expect(getTitle()).toEqual("Experience");
 });
+
+////////////////////////// HELPER FUNCTIONS ///////////////////////////
 
 type P = ComponentType<Partial<Props>>;
 

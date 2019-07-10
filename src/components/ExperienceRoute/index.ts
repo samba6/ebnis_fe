@@ -1,3 +1,27 @@
-import { ExperienceRoute } from "./component";
+import { ExperienceRoute as Comp } from "./component";
+import { graphql } from "react-apollo";
+import {
+  UPDATE_EXPERIENCE_MUTATION,
+  UpdateExperienceMutationProps,
+} from "../../graphql/update-experience.mutation";
+import {
+  UpdateExperienceMutation,
+  UpdateExperienceMutationVariables,
+} from "../../graphql/apollo-types/UpdateExperienceMutation";
+import { OwnProps } from "./utils";
+
+const updateExperienceGql = graphql<
+  OwnProps,
+  UpdateExperienceMutation,
+  UpdateExperienceMutationVariables,
+  UpdateExperienceMutationProps | undefined
+>(UPDATE_EXPERIENCE_MUTATION, {
+  props: ({ mutate }) =>
+    mutate && {
+      updateExperience: mutate,
+    },
+});
+
+const ExperienceRoute = updateExperienceGql(Comp);
 
 export default ExperienceRoute;
