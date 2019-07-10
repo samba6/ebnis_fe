@@ -206,7 +206,7 @@ export function EditExperience(props: Props) {
         </Form.Field>
 
         <fieldset className="edit-experience-fields-container">
-          <caption className="edit-experience-caption">Fields</caption>
+          <div className="edit-experience-caption">Fields</div>
 
           <FieldArray
             name="fieldDefs"
