@@ -17,6 +17,11 @@ export const UPDATE_EXPERIENCE_MUTATION = gql`
         id
         title
       }
+
+      fieldDefinitionsErrors {
+        id
+        name
+      }
     }
   }
 
@@ -29,5 +34,5 @@ export type UpdateExperienceMutationFn = MutationFn<
 >;
 
 export interface UpdateExperienceMutationProps {
-  createExperience?: UpdateExperienceMutationFn;
+  updateExperience: UpdateExperienceMutationFn;
 }

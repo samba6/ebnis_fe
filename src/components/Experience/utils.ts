@@ -5,11 +5,17 @@ import { FieldType } from "../../graphql/apollo-types/globalTypes";
 import { NewEntryRouteParams } from "../../routes";
 import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragment";
 import { EbnisComponentProps } from "../../types";
-import { PropsWithChildren } from "react";
+import { PropsWithChildren, Reducer, Dispatch } from "react";
+import { UpdateExperienceMutationFn } from "../../graphql/update-experience.mutation";
+import {
+  EditExperienceAction,
+  EditExperienceActionType,
+} from "../EditExperience/utils";
 
 export interface IMenuOptions {
   newEntry?: boolean;
   onDelete: (id: string) => void;
+  onEdit?: UpdateExperienceMutationFn;
 }
 
 export interface Props
@@ -66,3 +72,41 @@ export const displayFieldType = {
 export function formatDatetime(date: string | Date) {
   return dateFnFormat(date, "DD/MM/YYYY HH:mm:ss");
 }
+
+export enum EditingState {
+  editing = "editing",
+  notEditing = "not-editing",
+}
+
+export const reducer: Reducer<State, Action> = (prevState, [type]) => {
+  switch (type) {
+    case EditExperienceActionType.editCancelled: {
+      return { ...prevState, editingState: EditingState.notEditing };
+    }
+
+    case EditExperienceActionType.editFinished: {
+      return {
+        ...prevState,
+        editingState: EditingState.notEditing,
+      };
+    }
+
+    case "show-editor": {
+      return {
+        ...prevState,
+        editingState: EditingState.editing,
+      };
+    }
+
+    default:
+      return prevState;
+  }
+};
+
+export interface State {
+  readonly editingState: EditingState;
+}
+
+type Action = EditExperienceAction | ["show-editor"];
+
+export type DispatchType = Dispatch<Action>;

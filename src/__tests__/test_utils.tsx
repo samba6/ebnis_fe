@@ -76,13 +76,13 @@ export function makeFieldDefs() {
   return [{ id: "f1", type: "DECIMAL" as any, name: "f1" }];
 }
 
-export function closeMessage($error: any) {
+export function closeMessage($element: any) {
   const $icon =
-    $error && $error.querySelector && $error.querySelector(`.close.icon`);
+    $element && $element.querySelector && $element.querySelector(`.close.icon`);
 
   if (!$icon) {
     return;
   }
 
-  fireEvent.click($icon);
+  $icon.click();
 }

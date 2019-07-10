@@ -63,10 +63,17 @@ export interface UpdateExperienceMutation_updateExperience_experienceError {
   title: string | null;
 }
 
+export interface UpdateExperienceMutation_updateExperience_fieldDefinitionsErrors {
+  __typename: "FieldDefinitionsErrors";
+  id: string;
+  name: string | null;
+}
+
 export interface UpdateExperienceMutation_updateExperience {
   __typename: "ExperienceUpdateReturned";
   experience: UpdateExperienceMutation_updateExperience_experience | null;
   experienceError: UpdateExperienceMutation_updateExperience_experienceError | null;
+  fieldDefinitionsErrors: (UpdateExperienceMutation_updateExperience_fieldDefinitionsErrors | null)[] | null;
 }
 
 export interface UpdateExperienceMutation {

@@ -1,0 +1,17 @@
+.edit-experience-fields-container {
+  position: relative;
+  margin-bottom: 20px;
+  padding-top: 20px;
+  border-width: 0.5px;
+  border-color: rgba(34, 36, 38, 0.15);
+  border-radius: 1px;
+}
+
+.edit-experience-caption {
+  position: absolute;
+  top: -10px;
+  left: 10px;
+  background-color: rgb(255, 255, 255);
+  z-index: 1;
+  font-weight: bold;
+}
