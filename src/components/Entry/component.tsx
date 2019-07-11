@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo, CSSProperties } from "react";
 import { displayFieldType, formatDatetime } from "../Experience/utils";
 import "./styles.scss";
 import makeClassNames from "classnames";
@@ -21,6 +21,16 @@ export function Entry(props: Props) {
   const fields = entry.fields as ExperienceFragment_entries_edges_node_fields[];
   const fieldsLen = fields.length;
 
+  const fieldDefsMap = useMemo(() => {
+    return fieldDefs.reduce(
+      (acc, f) => {
+        acc[f.id] = f;
+        return acc;
+      },
+      {} as { [k: string]: ExperienceFragment_fieldDefs },
+    );
+  }, [fieldDefs]);
+
   return (
     <div
       className={makeClassNames({
@@ -30,15 +40,17 @@ export function Entry(props: Props) {
       data-testid={dataTestId ? dataTestId : `entry-container`}
     >
       {fields.map((field, fieldIndex) => {
+        const fieldDef = fieldDefsMap[field.defId];
+
         return (
           <FieldComponent
+            {...fieldProps}
             key={field.defId + fieldIndex}
             field={field}
-            fieldDefs={fieldDefs}
+            fieldDef={fieldDef}
             index={fieldIndex}
             fieldsLen={fieldsLen}
             entry={entry}
-            {...fieldProps}
           />
         );
       })}
@@ -56,7 +68,7 @@ export function Entry(props: Props) {
 
 function FieldComponent({
   field,
-  fieldDefs,
+  fieldDef,
   index,
   fieldsLen,
   entry,
@@ -64,21 +76,12 @@ function FieldComponent({
   dispatch,
 }: Pick<Props, "dispatch" | "editable"> & {
   field: EntryFragment_fields;
-  fieldDefs: ExperienceFragment_fieldDefs[];
+  fieldDef: ExperienceFragment_fieldDefs;
   index: number;
   fieldsLen: number;
   entry: EntryFragment;
 }) {
   const { defId, data } = field;
-
-  const fieldDef = fieldDefs.find(
-    (aFieldDef: ExperienceFragment_fieldDefs) => aFieldDef.id === defId,
-  );
-
-  // istanbul ignore next: impossible state?
-  if (!fieldDef) {
-    return null;
-  }
 
   const { type, name: fieldName } = fieldDef;
 
@@ -114,6 +117,11 @@ function FieldComponent({
                     onClick={() => {
                       dispatch([EntryActionTypes.editClicked, entry]);
                     }}
+                    style={
+                      {
+                        cursor: "pointer",
+                      } as CSSProperties
+                    }
                   >
                     <Icon name="pencil" />
                     <span style={{ marginLeft: "8px" }}>Edit</span>

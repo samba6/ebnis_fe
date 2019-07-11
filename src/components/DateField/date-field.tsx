@@ -1,3 +1,4 @@
+import React from "react";
 import getDaysInMonth from "date-fns/get_days_in_month";
 
 import { FieldComponentProps } from "../Experience/utils";
@@ -23,7 +24,7 @@ export const MONTHS = MONTH_LABELS.map((m, index) => ({
   value: index,
 }));
 
-export function getToday(today: Date) {
+export function getToday(today: Date, fieldName: string) {
   const currYr = today.getFullYear();
   const years = [];
 
@@ -33,6 +34,11 @@ export function getToday(today: Date) {
       key: yrOffset,
       text: year + "",
       value: year,
+      content: (
+        <span className="text" id={`${fieldName}-${year}`}>
+          {year}
+        </span>
+      ),
     });
   }
 
@@ -44,17 +50,19 @@ export function getToday(today: Date) {
   };
 }
 
-export const DAYS: Array<{
+export const DAYS: {
   key: number;
   text: string;
   value: number;
-}> = [];
+  content: JSX.Element;
+}[] = [];
 
 for (let dayIndex = 1; dayIndex < 32; dayIndex++) {
   DAYS.push({
     key: dayIndex,
     text: dayIndex + "",
     value: dayIndex,
+    content: <span className="text">{dayIndex}</span>,
   });
 }
 

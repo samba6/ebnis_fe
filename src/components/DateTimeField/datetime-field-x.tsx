@@ -10,6 +10,7 @@ import {
   LABELS,
   Props,
 } from "./datetime-field";
+import "../DateField/styles.scss";
 
 export function DateTimeField(props: Props) {
   const { className, name: compName, setValue, value } = props;
@@ -44,7 +45,7 @@ export function DateTimeField(props: Props) {
 
   return (
     <Form.Field
-      className={`${className || ""} datetime-field`}
+      className={`${className || ""} datetime-field light-border`}
       data-testid={`datetime-field-${compName}`}
     >
       <DateField
@@ -54,7 +55,7 @@ export function DateTimeField(props: Props) {
       />
 
       <div className="datetime-field-time">
-        <div className="entry-sub-field_container">
+        <div>
           <label htmlFor="" className="field_label">
             Hour
           </label>
@@ -72,7 +73,7 @@ export function DateTimeField(props: Props) {
           />
         </div>
 
-        <div className="entry-sub-field_container">
+        <div>
           <label htmlFor="" className="field_label">
             Minute
           </label>

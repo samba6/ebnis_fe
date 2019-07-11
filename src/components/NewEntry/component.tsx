@@ -234,7 +234,7 @@ const FieldComponent = React.memo(
           className="js-scroll-into-view"
         />
 
-        <label htmlFor={formFieldName}>{fieldTitle + " [" + type + "]"}</label>
+        <label htmlFor={formFieldName}>{`[${type}] ${fieldTitle}`}</label>
 
         {utils.component({
           formFieldName,

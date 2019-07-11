@@ -18,6 +18,7 @@ import {
 } from "../Entry/utils";
 import { UpdateEntryMutationFn } from "../../graphql/update-entry.mutation";
 import { EntryFragment } from "../../graphql/apollo-types/EntryFragment";
+import { EditEntryAction, EditEntryStateTag } from "../EditEntry/utils";
 
 export interface IMenuOptions {
   newEntry?: boolean;
@@ -89,11 +90,10 @@ export enum EditingState {
 
 export const reducer: Reducer<State, Action> = (prevState, [type, payload]) => {
   switch (type) {
-    case EditExperienceActionType.editCancelled: {
-      return { ...prevState, editingState: [EditingState.notEditing] };
-    }
-
-    case EditExperienceActionType.editFinished: {
+    case EditExperienceActionType.completed:
+    case EditExperienceActionType.aborted:
+    case EditEntryStateTag.aborted:
+    case EditEntryStateTag.completed: {
       return {
         ...prevState,
         editingState: [EditingState.notEditing],
@@ -126,6 +126,10 @@ export interface State {
     | [EditingState.editingEntry, EntryFragment];
 }
 
-type Action = EditExperienceAction | ["show-editor"] | EntryAction;
+type Action =
+  | EditExperienceAction
+  | ["show-editor"]
+  | EntryAction
+  | EditEntryAction;
 
 export type DispatchType = Dispatch<Action>;

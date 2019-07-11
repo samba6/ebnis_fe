@@ -20,6 +20,7 @@ import {
 } from "../graphql/apollo-types/ExperienceFragment";
 import { Entry } from "../components/Entry/component";
 import { EditExperienceActionType } from "../components/EditExperience/utils";
+import { EditEntryStateTag } from "../components/EditEntry/utils";
 
 jest.mock("../components/SidebarHeader", () => ({
   SidebarHeader: () => null,
@@ -328,11 +329,19 @@ test("reducer", () => {
   const prevState = { editingState: "0" as any } as State;
 
   expect(
-    reducer(prevState, [EditExperienceActionType.editCancelled]).editingState,
+    reducer(prevState, [EditExperienceActionType.aborted]).editingState,
   ).toEqual([EditingState.notEditing]);
 
   expect(
-    reducer(prevState, [EditExperienceActionType.editFinished]).editingState,
+    reducer(prevState, [EditExperienceActionType.completed]).editingState,
+  ).toEqual([EditingState.notEditing]);
+
+  expect(reducer(prevState, [EditEntryStateTag.aborted]).editingState).toEqual([
+    EditingState.notEditing,
+  ]);
+
+  expect(
+    reducer(prevState, [EditEntryStateTag.completed]).editingState,
   ).toEqual([EditingState.notEditing]);
 
   expect(reducer(prevState, ["" as any]).editingState).toEqual("0");

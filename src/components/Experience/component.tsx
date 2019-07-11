@@ -24,6 +24,8 @@ import {
 import makeClassNames from "classnames";
 import { EditExperience } from "../EditExperience/component";
 import { EditEntry } from "../EditEntry/component";
+import { EntryFragment } from "../../graphql/apollo-types/EntryFragment";
+import { UpdateEntryMutationFn } from "../../graphql/update-entry.mutation";
 
 export function Experience(props: Props) {
   const {
@@ -46,7 +48,7 @@ export function Experience(props: Props) {
     editingState: [EditingState.notEditing],
   });
   const { editingState } = state;
-  const [editingStateTag] = editingState;
+  const [editingStateTag, payload] = editingState;
 
   const entryNodes = useMemo(() => {
     if (entriesJSX) {
@@ -97,6 +99,8 @@ export function Experience(props: Props) {
     );
   }
 
+  const title = getTitle(experience);
+
   return (
     <>
       <Card
@@ -108,7 +112,7 @@ export function Experience(props: Props) {
       >
         <Card.Content className="experience__header" {...headerProps}>
           <Card.Header>
-            <span>{getTitle(experience)}</span>
+            <span>{title}</span>
 
             <div className="options-menu-container">
               <OptionsMenuComponent
@@ -137,7 +141,17 @@ export function Experience(props: Props) {
         />
       )}
 
-      {editingStateTag === EditingState.editingEntry && <EditEntry />}
+      {editingStateTag === EditingState.editingEntry && (
+        <EditEntry
+          entry={payload as EntryFragment}
+          dispatch={dispatch}
+          experienceTitle={title}
+          fieldDefinitions={
+            experience.fieldDefs as ExperienceFragment_fieldDefs[]
+          }
+          onEdit={updateEntry as UpdateEntryMutationFn}
+        />
+      )}
     </>
   );
 }

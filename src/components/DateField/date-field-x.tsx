@@ -9,22 +9,24 @@ import {
   makeFieldNames,
   Props,
 } from "./date-field";
+import "./styles.scss";
 
 export function DateField(props: Props) {
   const { className, setValue, value, name: compName } = props;
 
+  const fieldNames = useRef(makeFieldNames(compName)).current;
+
   const { years, currYr, currMonth, currDay } = useMemo(
     function() {
-      return getToday(value);
+      return getToday(value, fieldNames.year);
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [value],
   );
 
   const [selectedYear, setSelectedYear] = useState(currYr);
   const [selectedMonth, setSelectedMonth] = useState(currMonth);
   const [selectedDay, setSelectedDay] = useState(currDay);
-
-  const fieldNames = useRef(makeFieldNames(compName)).current;
 
   const dayOptions = useMemo(
     function computeDays() {
@@ -40,17 +42,19 @@ export function DateField(props: Props) {
 
   return (
     <Form.Field
-      className={`${className || ""} date-field`}
+      className={`${className || ""} components-date-field light-border`}
       data-testid={`date-field-${compName}`}
     >
-      <div className="entry-sub-field_container">
+      <div>
         <label htmlFor={fieldNames.day} className="field_label">
           {LABELS.day}
         </label>
+
         <Dropdown
           fluid={true}
           selection={true}
           data-testid={fieldNames.day}
+          id={fieldNames.day}
           name={fieldNames.day}
           compact={true}
           basic={true}
@@ -64,7 +68,7 @@ export function DateField(props: Props) {
         />
       </div>
 
-      <div className="entry-sub-field_container">
+      <div>
         <label htmlFor={fieldNames.month} className="field_label">
           {LABELS.month}
         </label>
@@ -72,6 +76,7 @@ export function DateField(props: Props) {
           fluid={true}
           selection={true}
           data-testid={fieldNames.month}
+          id={fieldNames.month}
           name={fieldNames.month}
           compact={true}
           options={MONTHS}
@@ -84,7 +89,7 @@ export function DateField(props: Props) {
         />
       </div>
 
-      <div className="entry-sub-field_container">
+      <div>
         <label htmlFor={fieldNames.year} className="field_label">
           {LABELS.year}
         </label>
@@ -93,6 +98,7 @@ export function DateField(props: Props) {
           selection={true}
           compact={true}
           data-testid={fieldNames.year}
+          id={fieldNames.year}
           name={fieldNames.year}
           options={years}
           defaultValue={currYr}
