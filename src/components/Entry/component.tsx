@@ -1,31 +1,35 @@
-import React from "react";
+import React, { useMemo, CSSProperties } from "react";
 import { displayFieldType, formatDatetime } from "../Experience/utils";
 import "./styles.scss";
 import makeClassNames from "classnames";
 import {
-  ExperienceFragment_entries_edges_node,
   ExperienceFragment_fieldDefs,
   ExperienceFragment_entries_edges_node_fields,
 } from "../../graphql/apollo-types/ExperienceFragment";
 import Icon from "semantic-ui-react/dist/commonjs/elements/Icon";
 import Dropdown from "semantic-ui-react/dist/commonjs/modules/Dropdown";
-import { Link } from "gatsby";
-import { EbnisComponentProps } from "../../types";
-
-interface Props extends EbnisComponentProps {
-  entry: ExperienceFragment_entries_edges_node;
-  fieldDefs: ExperienceFragment_fieldDefs[];
-  entriesLen: number;
-  index: number;
-  className?: string;
-}
+import { Props, EntryActionTypes } from "./utils";
+import {
+  EntryFragment_fields,
+  EntryFragment,
+} from "../../graphql/apollo-types/EntryFragment";
 
 export function Entry(props: Props) {
-  const { entry, fieldDefs, className = "" } = props;
+  const { entry, fieldDefs, className = "", ...fieldProps } = props;
   const dataTestId = props["data-testid"];
 
   const fields = entry.fields as ExperienceFragment_entries_edges_node_fields[];
   const fieldsLen = fields.length;
+
+  const fieldDefsMap = useMemo(() => {
+    return fieldDefs.reduce(
+      (acc, f) => {
+        acc[f.id] = f;
+        return acc;
+      },
+      {} as { [k: string]: ExperienceFragment_fieldDefs },
+    );
+  }, [fieldDefs]);
 
   return (
     <div
@@ -36,14 +40,17 @@ export function Entry(props: Props) {
       data-testid={dataTestId ? dataTestId : `entry-container`}
     >
       {fields.map((field, fieldIndex) => {
+        const fieldDef = fieldDefsMap[field.defId];
+
         return (
           <FieldComponent
+            {...fieldProps}
             key={field.defId + fieldIndex}
             field={field}
-            fieldDefs={fieldDefs}
+            fieldDef={fieldDef}
             index={fieldIndex}
             fieldsLen={fieldsLen}
-            entryId={entry.id}
+            entry={entry}
           />
         );
       })}
@@ -61,32 +68,26 @@ export function Entry(props: Props) {
 
 function FieldComponent({
   field,
-  fieldDefs,
+  fieldDef,
   index,
   fieldsLen,
-  entryId,
-}: {
-  field: ExperienceFragment_entries_edges_node_fields;
-  fieldDefs: ExperienceFragment_fieldDefs[];
+  entry,
+  editable,
+  dispatch,
+}: Pick<Props, "dispatch" | "editable"> & {
+  field: EntryFragment_fields;
+  fieldDef: ExperienceFragment_fieldDefs;
   index: number;
   fieldsLen: number;
-  entryId: string;
+  entry: EntryFragment;
 }) {
   const { defId, data } = field;
-
-  const fieldDef = fieldDefs.find(
-    (aFieldDef: ExperienceFragment_fieldDefs) => aFieldDef.id === defId,
-  );
-
-  // istanbul ignore next: impossible state?
-  if (!fieldDef) {
-    return null;
-  }
 
   const { type, name: fieldName } = fieldDef;
 
   const [fieldData] = Object.values(JSON.parse(data));
   const text = displayFieldType[type](fieldData);
+  const { id: entryId } = entry;
 
   return (
     <div
@@ -110,23 +111,28 @@ function FieldComponent({
               data-testid={`entry-${entryId}-options-menu`}
             >
               <Dropdown.Menu>
-                <Dropdown.Header data-testid={`entry-${entryId}-modify-button`}>
-                  <Icon name="external alternate" />
-
-                  <Link to={`/`}>Modify</Link>
-                </Dropdown.Header>
+                {editable && dispatch && (
+                  <Dropdown.Header
+                    id={`entry-${entryId}-edit-trigger`}
+                    onClick={() => {
+                      dispatch([EntryActionTypes.editClicked, entry]);
+                    }}
+                    style={
+                      {
+                        cursor: "pointer",
+                      } as CSSProperties
+                    }
+                  >
+                    <Icon name="pencil" />
+                    <span style={{ marginLeft: "8px" }}>Edit</span>
+                  </Dropdown.Header>
+                )}
 
                 <Dropdown.Menu scrolling={true}>
                   <Dropdown.Item
                     text="Delete"
                     value="Delete"
                     label={{ color: "red", empty: true, circular: true }}
-                  />
-
-                  <Dropdown.Item
-                    text="Announcement"
-                    value="Announcement"
-                    label={{ color: "blue", empty: true, circular: true }}
                   />
                 </Dropdown.Menu>
               </Dropdown.Menu>

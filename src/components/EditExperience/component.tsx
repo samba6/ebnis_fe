@@ -47,7 +47,7 @@ const unwantedFieldDefinitionFields: (keyof ExperienceFragment_fieldDefs)[] = [
 export function EditExperience(props: Props) {
   const { experience, dispatch, onEdit } = props;
 
-  const [[stateId, stateData], setState] = useState<EditingState>([
+  const [[stateTag, stateData], setState] = useState<EditingState>([
     EditExperienceActionType.ready,
   ]);
 
@@ -109,7 +109,7 @@ export function EditExperience(props: Props) {
         } = updatedData;
 
         if (experience) {
-          dispatch([EditExperienceActionType.editFinished]);
+          dispatch([EditExperienceActionType.completed]);
         } else {
           setState([
             EditExperienceActionType.experienceError,
@@ -135,7 +135,7 @@ export function EditExperience(props: Props) {
       fieldDefinitionsErrors: {},
     };
 
-    if (stateId !== EditExperienceActionType.experienceError) {
+    if (stateTag !== EditExperienceActionType.experienceError) {
       return errorObject;
     }
 
@@ -246,8 +246,8 @@ export function EditExperience(props: Props) {
           id="edit-experience-submit"
           color="green"
           inverted={true}
-          disabled={!dirty || stateId === EditExperienceActionType.submitting}
-          loading={stateId === EditExperienceActionType.submitting}
+          disabled={!dirty || stateTag === EditExperienceActionType.submitting}
+          loading={stateTag === EditExperienceActionType.submitting}
           type="submit"
           fluid={true}
         >
@@ -263,12 +263,13 @@ export function EditExperience(props: Props) {
       open={true}
       closeIcon={true}
       onClose={() => {
-        dispatch([EditExperienceActionType.editCancelled]);
+        dispatch([EditExperienceActionType.aborted]);
       }}
+      dimmer="inverted"
     >
       <Modal.Header>Edit Experience</Modal.Header>
 
-      {stateId === EditExperienceActionType.genericServerError && (
+      {stateTag === EditExperienceActionType.genericServerError && (
         <Modal.Content>
           <Message
             id="edit-experience-server-error"
@@ -278,7 +279,7 @@ export function EditExperience(props: Props) {
             }}
           >
             <Message.Content style={{ paddingTop: "15px" }}>
-              {stateData}{" "}
+              {stateData}
             </Message.Content>
           </Message>
         </Modal.Content>

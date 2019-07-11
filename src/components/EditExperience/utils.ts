@@ -4,8 +4,8 @@ import { Dispatch } from "react";
 import { UpdateExperienceMutation_updateExperience } from "../../graphql/apollo-types/UpdateExperienceMutation";
 
 export enum EditExperienceActionType {
-  editCancelled = "@components/edit-experience-modal/edit-cancelled",
-  editFinished = "@components/edit-experience-modal/edit-finished",
+  aborted = "@components/edit-experience-modal/edit-cancelled",
+  completed = "@components/edit-experience-modal/edit-finished",
   ready = "ready",
   submitting = "submitting",
   formError = "form-error",
@@ -22,8 +22,8 @@ export interface Props {
 }
 
 export type EditExperienceAction =
-  | [EditExperienceActionType.editCancelled]
-  | [EditExperienceActionType.editFinished];
+  | [EditExperienceActionType.aborted]
+  | [EditExperienceActionType.completed];
 
 export type EditingState =
   | [EditExperienceActionType.ready]

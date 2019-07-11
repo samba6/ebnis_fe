@@ -23,6 +23,9 @@ import {
 } from "../../graphql/apollo-types/ExperienceFragment";
 import makeClassNames from "classnames";
 import { EditExperience } from "../EditExperience/component";
+import { EditEntry } from "../EditEntry/component";
+import { EntryFragment } from "../../graphql/apollo-types/EntryFragment";
+import { UpdateEntryMutationFn } from "../../graphql/update-entry.mutation";
 
 export function Experience(props: Props) {
   const {
@@ -35,15 +38,17 @@ export function Experience(props: Props) {
     menuOptions = {} as IMenuOptions,
     children,
     entriesJSX,
+    updateEntry,
     ...otherProps
   } = props;
 
   const { onEdit } = menuOptions;
 
   const [state, dispatch] = useReducer(reducer, {
-    editingState: EditingState.notEditing,
+    editingState: [EditingState.notEditing],
   });
   const { editingState } = state;
+  const [editingStateTag, payload] = editingState;
 
   const entryNodes = useMemo(() => {
     if (entriesJSX) {
@@ -85,12 +90,16 @@ export function Experience(props: Props) {
               entriesLen={nodesLen}
               index={index}
               {...entryProps}
+              editable={!!updateEntry}
+              dispatch={dispatch}
             />
           );
         })}
       </>
     );
   }
+
+  const title = getTitle(experience);
 
   return (
     <>
@@ -103,7 +112,7 @@ export function Experience(props: Props) {
       >
         <Card.Content className="experience__header" {...headerProps}>
           <Card.Header>
-            <span>{getTitle(experience)}</span>
+            <span>{title}</span>
 
             <div className="options-menu-container">
               <OptionsMenuComponent
@@ -124,11 +133,23 @@ export function Experience(props: Props) {
         </Card.Content>
       </Card>
 
-      {onEdit && editingState === "editing" && (
+      {onEdit && editingStateTag === EditingState.editingExperience && (
         <EditExperience
           experience={experience}
           onEdit={onEdit}
           dispatch={dispatch}
+        />
+      )}
+
+      {editingStateTag === EditingState.editingEntry && (
+        <EditEntry
+          entry={payload as EntryFragment}
+          dispatch={dispatch}
+          experienceTitle={title}
+          fieldDefinitions={
+            experience.fieldDefs as ExperienceFragment_fieldDefs[]
+          }
+          onEdit={updateEntry as UpdateEntryMutationFn}
         />
       )}
     </>

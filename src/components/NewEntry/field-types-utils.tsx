@@ -23,8 +23,8 @@ export const fieldTypeUtils = {
           fluid={true}
           onChange={(e, { value: inputVal }) => {
             dispatch([
-               ActionTypes.setFormObjField,
-               { formFieldName: name, value: inputVal },
+              ActionTypes.setFormObjField,
+              { formFieldName: name, value: inputVal },
             ]);
           }}
         />
@@ -47,8 +47,8 @@ export const fieldTypeUtils = {
           value={value as string}
           onChange={(e, { value: inputVal }) => {
             dispatch([
-               ActionTypes.setFormObjField,
-               { formFieldName: name, value: inputVal as string },
+              ActionTypes.setFormObjField,
+              { formFieldName: name, value: inputVal as string },
             ]);
           }}
         />
@@ -75,7 +75,6 @@ export const fieldTypeUtils = {
           name={formFieldName}
           setValue={makeSetValueFunc(dispatch)}
           {...props}
-          className="light-border"
         />
       );
     },
@@ -100,7 +99,6 @@ export const fieldTypeUtils = {
           name={formFieldName}
           setValue={makeSetValueFunc(dispatch)}
           {...props}
-          className="light-border"
         />
       );
     },
@@ -123,8 +121,8 @@ export const fieldTypeUtils = {
           fluid={true}
           onChange={(e, { value: inputVal }) => {
             dispatch([
-               ActionTypes.setFormObjField,
-               { formFieldName: name, value: Number(inputVal) },
+              ActionTypes.setFormObjField,
+              { formFieldName: name, value: Number(inputVal) },
             ]);
           }}
         />
@@ -149,8 +147,8 @@ export const fieldTypeUtils = {
           fluid={true}
           onChange={(e, { value: inputVal }) => {
             dispatch([
-               ActionTypes.setFormObjField,
-               { formFieldName: name, value: Number(inputVal) },
+              ActionTypes.setFormObjField,
+              { formFieldName: name, value: Number(inputVal) },
             ]);
           }}
         />
@@ -168,8 +166,8 @@ export const fieldTypeUtils = {
 function makeSetValueFunc(dispatch: DispatchType) {
   return function SetValue(fieldName: string, value: FormObjVal) {
     dispatch([
-       ActionTypes.setFormObjField,
-       { formFieldName: fieldName, value },
+      ActionTypes.setFormObjField,
+      { formFieldName: fieldName, value },
     ]);
   };
 }

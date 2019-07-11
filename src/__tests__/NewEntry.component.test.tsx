@@ -25,6 +25,7 @@ import { FieldType } from "../graphql/apollo-types/globalTypes";
 import {
   ExperienceFragment_entries,
   ExperienceFragment,
+  ExperienceFragment_fieldDefs,
 } from "../graphql/apollo-types/ExperienceFragment";
 import { ApolloError } from "apollo-client";
 import { GraphQLError } from "graphql";
@@ -44,7 +45,7 @@ const mockGetConnStatus = getConnStatus as jest.Mock;
 const mockUpdate = updateExperienceWithNewEntry as jest.Mock;
 const mockScrollIntoView = scrollIntoView as jest.Mock;
 
-const title = "what lovely experience";
+const title = "ww";
 
 it("creates new experience entry when online", async () => {
   // an hour earlier
@@ -67,47 +68,44 @@ it("creates new experience entry when online", async () => {
     title,
 
     fieldDefs: [
-      { id: "f1", name: "f1", type: FieldType.DATE, __typename: "FieldDef" },
+      {
+        id: "f1",
+        name: "f1",
+        type: FieldType.DATE,
+      },
 
       {
         id: "f2",
         name: "f2",
         type: FieldType.DATETIME,
-        __typename: "FieldDef",
       },
 
       {
         id: "f3",
         name: "f3",
         type: FieldType.DECIMAL,
-        __typename: "FieldDef",
       },
 
       {
         id: "f4",
         name: "f4",
         type: FieldType.INTEGER,
-        __typename: "FieldDef",
       },
 
       {
         id: "f5",
         name: "f5",
         type: FieldType.SINGLE_LINE_TEXT,
-        __typename: "FieldDef",
       },
 
       {
         id: "f6",
         name: "f6",
         type: FieldType.MULTI_LINE_TEXT,
-        __typename: "FieldDef",
       },
-    ],
+    ] as ExperienceFragment_fieldDefs[],
 
     description: "lovely",
-
-    __typename: "Experience",
 
     entries: {} as ExperienceFragment_entries,
   } as ExperienceFragment;
@@ -130,7 +128,7 @@ it("creates new experience entry when online", async () => {
    * And SINGLE_LINE_TEXT field should be empty
    */
   const $singleText = getByLabelText(
-    "f5 [SINGLE_LINE_TEXT]",
+    "[SINGLE_LINE_TEXT] f5",
   ) as HTMLInputElement;
 
   expect($singleText.value).toBe("");
@@ -138,21 +136,21 @@ it("creates new experience entry when online", async () => {
   /**
    * And MULTI_LINE_TEXT field should be empty
    */
-  const $multiText = getByLabelText("f6 [MULTI_LINE_TEXT]") as HTMLInputElement;
+  const $multiText = getByLabelText("[MULTI_LINE_TEXT] f6") as HTMLInputElement;
 
   expect($multiText.value).toBe("");
 
   /**
    * And DECIMAL field should be empty
    */
-  const $decimal = getByLabelText("f3 [DECIMAL]") as HTMLInputElement;
+  const $decimal = getByLabelText("[DECIMAL] f3") as HTMLInputElement;
 
   expect($decimal.value).toBe("");
 
   /**
    * And INTEGER field should be empty
    */
-  const $integer = getByLabelText("f4 [INTEGER]") as HTMLInputElement;
+  const $integer = getByLabelText("[INTEGER] f4") as HTMLInputElement;
 
   expect($integer.value).toBe("");
 
@@ -215,16 +213,14 @@ it("sets decimal and integer fields to default to 0", async () => {
         id: "f1",
         name: "f3",
         type: FieldType.DECIMAL,
-        __typename: "FieldDef",
       },
 
       {
         id: "f2",
         name: "f4",
         type: FieldType.INTEGER,
-        __typename: "FieldDef",
       },
-    ],
+    ] as ExperienceFragment_fieldDefs[],
   } as ExperienceFragment;
 
   const { ui, mockCreateEntry } = makeComp({
@@ -271,19 +267,20 @@ it("sets values of date and datetime fields", async () => {
     title,
 
     fieldDefs: [
-      { id: "f1", name: "f1", type: FieldType.DATE, __typename: "FieldDef" },
+      {
+        id: "f1",
+        name: "f1",
+        type: FieldType.DATE,
+      },
 
       {
         id: "f2",
         name: "f2",
         type: FieldType.DATETIME,
-        __typename: "FieldDef",
       },
-    ],
+    ] as ExperienceFragment_fieldDefs[],
 
     description: "lovely",
-
-    __typename: "Experience",
 
     entries: {} as ExperienceFragment_entries,
   } as ExperienceFragment;
@@ -368,7 +365,6 @@ it("creates new experience entry when offline", async () => {
         id: "f1",
         name: "f1",
         type: FieldType.SINGLE_LINE_TEXT,
-        __typename: "FieldDef",
       },
     ],
 
@@ -396,7 +392,7 @@ it("creates new experience entry when offline", async () => {
    * When we complete and submit the form
    */
   const $singleText = getByLabelText(
-    "f1 [SINGLE_LINE_TEXT]",
+    "[SINGLE_LINE_TEXT] f1",
   ) as HTMLInputElement;
 
   fillField($singleText, "s");
@@ -464,7 +460,7 @@ it("renders error when entry creation fails", async done => {
 
   const { getByLabelText, getByText, getByTestId } = render(ui);
 
-  fillField(getByLabelText("f1 [SINGLE_LINE_TEXT]") as any, "s");
+  fillField(getByLabelText("[SINGLE_LINE_TEXT] f1") as any, "s");
 
   fireEvent.click(getByText(/submit/i));
 
@@ -508,7 +504,7 @@ it("renders network error", async done => {
 
   const { getByLabelText, getByText, getByTestId, queryByTestId } = render(ui);
 
-  fillField(getByLabelText("f1 [SINGLE_LINE_TEXT]") as any, "s");
+  fillField(getByLabelText("[SINGLE_LINE_TEXT] f1") as any, "s");
 
   expect(queryByTestId("network-error")).not.toBeInTheDocument();
 
@@ -556,7 +552,7 @@ it("treats non field graphql errors as network error", async done => {
 
   const { getByLabelText, getByText, getByTestId, queryByTestId } = render(ui);
 
-  fillField(getByLabelText("f1 [SINGLE_LINE_TEXT]") as any, "s");
+  fillField(getByLabelText("[SINGLE_LINE_TEXT] f1") as any, "s");
 
   expect(queryByTestId("network-error")).not.toBeInTheDocument();
 

@@ -63,7 +63,7 @@ it("submits form and closes modal when everything goes well", async () => {
   });
 
   expect(mockDispatch).toHaveBeenCalledWith([
-    EditExperienceActionType.editFinished,
+    EditExperienceActionType.completed,
   ]);
 });
 
@@ -108,7 +108,7 @@ it("renders apollo error and closes form when close button clicked", async () =>
   closeMessage(document.getElementById("edit-experience-modal") as any);
 
   expect(mockDispatch.mock.calls[0][0][0]).toBe(
-    EditExperienceActionType.editCancelled,
+    EditExperienceActionType.aborted,
   );
 });
 

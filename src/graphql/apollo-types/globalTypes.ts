@@ -109,6 +109,14 @@ export interface Registration {
 }
 
 /**
+ * Variables for updating an experience entry
+ */
+export interface UpdateEntryInput {
+  fields: (CreateField | null)[];
+  id: string;
+}
+
+/**
  * Variables for updating an existing Experience
  */
 export interface UpdateExperienceInput {
