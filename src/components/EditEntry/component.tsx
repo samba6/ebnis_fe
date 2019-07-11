@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from "react";
-import { Props, EditEntryStateTag, State } from "./utils";
+import React, { useMemo, useState, useEffect } from "react";
+import { Props, EditEntryStateTag, State, ServerFieldsErrors } from "./utils";
 import Modal from "semantic-ui-react/dist/commonjs/modules/Modal";
 import { Formik, FormikProps, Field, FieldProps, FieldArray } from "formik";
 import "./styles.scss";
@@ -11,14 +11,21 @@ import {
 } from "../../graphql/apollo-types/globalTypes";
 import { noop } from "../../constants";
 import Form from "semantic-ui-react/dist/commonjs/collections/Form";
-// import Input from "semantic-ui-react/dist/commonjs/elements/Input";
+import Input from "semantic-ui-react/dist/commonjs/elements/Input";
 import DateField from "../DateField";
 import dateFnFormat from "date-fns/format";
 import DateTimeField from "../DateTimeField";
 import Icon from "semantic-ui-react/dist/commonjs/elements/Icon";
 import Button from "semantic-ui-react/dist/commonjs/elements/Button";
 import Message from "semantic-ui-react/dist/commonjs/collections/Message";
-import { ApolloError } from "apollo-client";
+import TextArea from "semantic-ui-react/dist/commonjs/addons/TextArea";
+import { scrollIntoView } from "../scroll-into-view";
+import {
+  UpdateEntryMutation_updateEntry,
+  UpdateEntryMutation_updateEntry_fieldsErrors,
+  UpdateEntryMutation_updateEntry_fieldsErrors_error,
+} from "../../graphql/apollo-types/UpdateEntryMutation";
+import { FormCtrlError } from "../FormCtrlError/component";
 
 const unwantedEntryFields: (keyof EntryFragment)[] = [
   "clientId",
@@ -30,6 +37,7 @@ const unwantedEntryFields: (keyof EntryFragment)[] = [
 
 export function EditEntry(props: Props) {
   const { dispatch, experienceTitle, entry, fieldDefinitions, onEdit } = props;
+
   const [[stateTag, stateData], setState] = useState<State>([
     EditEntryStateTag.initial,
   ]);
@@ -71,6 +79,29 @@ export function EditEntry(props: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    if (stateTag === EditEntryStateTag.serverOtherErrors) {
+      scrollIntoView("edit-entry-server-error-scroll-into-view", {
+        behavior: "smooth",
+      });
+
+      return;
+    }
+
+    if (stateTag === EditEntryStateTag.serverFieldErrors) {
+      const [id] = Object.keys(stateData as ServerFieldsErrors);
+      const { entryFieldName } = fieldDefinitionsMap[id];
+
+      scrollIntoView(`${entryFieldName}-error`, {
+        behavior: "smooth",
+      });
+
+      return;
+    }
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stateTag]);
+
   function onsubmit(formProps: FormikProps<UpdateEntryInput>) {
     return async function onSubmitInner() {
       setState([EditEntryStateTag.submitting]);
@@ -78,19 +109,42 @@ export function EditEntry(props: Props) {
       const { values } = formProps;
 
       try {
-        await onEdit({
+        const result = await onEdit({
           variables: {
             input: values,
           },
         });
 
+        const { entry: updatedEntry, fieldsErrors } = ((result &&
+          result.data &&
+          result.data.updateEntry) ||
+          {}) as UpdateEntryMutation_updateEntry;
+
+        if (fieldsErrors) {
+          const errors = (fieldsErrors as UpdateEntryMutation_updateEntry_fieldsErrors[]).reduce(
+            (acc, item) => {
+              acc[
+                item.defId
+              ] = item.error as UpdateEntryMutation_updateEntry_fieldsErrors_error;
+              return acc;
+            },
+            {} as ServerFieldsErrors,
+          );
+
+          setState([EditEntryStateTag.serverFieldErrors, errors]);
+
+          return;
+        }
+
+        if (!updatedEntry) {
+          setState([EditEntryStateTag.serverOtherErrors, "Unknown error"]);
+
+          return;
+        }
+
         dispatch([EditEntryStateTag.completed]);
       } catch (errors) {
-        const { graphQLErrors } = errors as ApolloError;
-
-        const error = graphQLErrors[0].message;
-
-        setState([EditEntryStateTag.serverOtherErrors, error]);
+        setState([EditEntryStateTag.serverOtherErrors, errors.message]);
       }
     };
   }
@@ -104,22 +158,30 @@ export function EditEntry(props: Props) {
           {() => {
             return values.fields.map((entryField, entryFieldIndex) => {
               const { defId, data } = entryField as CreateField;
+
               const { type, entryFieldName, typeLower } = fieldDefinitionsMap[
                 defId
               ];
 
+              let errors = {};
+
+              if (stateTag === EditEntryStateTag.serverFieldErrors) {
+                errors = stateData as ServerFieldsErrors;
+              }
+
+              const error = errors[defId];
+              const hasError = !!error;
+
               return (
-                <Form.Field key={entryFieldName}>
+                <Form.Field key={entryFieldName} error={hasError}>
                   <label
                     htmlFor={entryFieldName}
                   >{`[${type}] ${entryFieldName}`}</label>
 
                   <Field name={`fields[${entryFieldIndex}].data`}>
-                    {({
-                      field: { name: fieldName },
-                      form,
-                    }: FieldProps<UpdateEntryInput>) => {
+                    {({ field, form }: FieldProps<UpdateEntryInput>) => {
                       const dataValue = JSON.parse(data)[typeLower];
+                      const { name: fieldName } = field;
 
                       switch (type) {
                         case FieldType.DATE: {
@@ -159,12 +221,77 @@ export function EditEntry(props: Props) {
                           );
                         }
 
+                        case FieldType.SINGLE_LINE_TEXT: {
+                          return (
+                            <Input
+                              value={dataValue}
+                              error={hasError}
+                              id={entryFieldName}
+                              name={fieldName}
+                              onChange={(_, { value }) => {
+                                form.setFieldValue(
+                                  fieldName,
+                                  `{"${typeLower}":"${value}"}`,
+                                );
+                              }}
+                            />
+                          );
+                        }
+
+                        case FieldType.MULTI_LINE_TEXT: {
+                          return (
+                            <TextArea
+                              value={dataValue}
+                              id={entryFieldName}
+                              name={fieldName}
+                              onChange={(_, { value }) => {
+                                form.setFieldValue(
+                                  fieldName,
+                                  `{"${typeLower}":"${value}"}`,
+                                );
+                              }}
+                            />
+                          );
+                        }
+
+                        case FieldType.DECIMAL:
+                        case FieldType.INTEGER: {
+                          return (
+                            <Input
+                              value={dataValue}
+                              type="number"
+                              error={hasError}
+                              id={entryFieldName}
+                              name={fieldName}
+                              onChange={(_, { value }) => {
+                                form.setFieldValue(
+                                  fieldName,
+                                  `{"${typeLower}":"${value}"}`,
+                                );
+                              }}
+                            />
+                          );
+                        }
+
                         default: {
-                          throw "We should never reach here!";
+                          return (
+                            <span id="unknown-data-type">
+                              Unknown data type!
+                            </span>
+                          );
                         }
                       }
                     }}
                   </Field>
+
+                  {error && (
+                    <FormCtrlError
+                      id={`${entryFieldName}-error`}
+                      error={
+                        error.data ? `data ${error.data}` : `id ${error.defId}`
+                      }
+                    />
+                  )}
                 </Form.Field>
               );
             });
@@ -204,7 +331,12 @@ export function EditEntry(props: Props) {
       </Modal.Header>
 
       {stateTag === EditEntryStateTag.serverOtherErrors && (
-        <Modal.Content>
+        <Modal.Content className="edit-entry-server-error-container">
+          <span
+            id="edit-entry-server-error-scroll-into-view"
+            className="edit-entry-server-error-scroll-into-view"
+          />
+
           <Message
             id="edit-entry-server-error"
             error={true}

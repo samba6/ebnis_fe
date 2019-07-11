@@ -1,6 +1,17 @@
-.entry-edit-experience-title {
+.edit-entry-title {
   font-weight: normal;
   font-size: 1rem;
   margin-bottom: -5px;
   line-height: 20px;
+}
+
+.edit-entry-server-error-container {
+  position: relative;
+}
+
+.edit-entry-server-error-scroll-into-view {
+  position: absolute;
+  top: -20px;
+  width: 0;
+  height: 0;
 }
