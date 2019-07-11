@@ -22,8 +22,7 @@ import {
   ExperienceFragment,
 } from "../../graphql/apollo-types/ExperienceFragment";
 import makeClassNames from "classnames";
-import { EditExperience } from "../EditExperience/component";
-import { EditEntry } from "../EditEntry/component";
+import { EditExperience, EditEntry } from "./loadables";
 import { EntryFragment } from "../../graphql/apollo-types/EntryFragment";
 import { UpdateEntryMutationFn } from "../../graphql/update-entry.mutation";
 
