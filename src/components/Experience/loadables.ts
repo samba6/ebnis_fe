@@ -2,12 +2,12 @@
 import Loadable from "react-loadable";
 import { LoadableLoading } from "../Loading";
 
-export const NewEntry = Loadable({
-  loader: () => import("../NewEntry"),
+export const EditEntry = Loadable({
+  loader: () => import("../EditEntry"),
   loading: LoadableLoading,
 }) as any;
 
-export const ExperienceRoute = Loadable({
-  loader: () => import("../ExperienceRoute"),
+export const EditExperience = Loadable({
+  loader: () => import("../EditExperience"),
   loading: LoadableLoading,
 }) as any;

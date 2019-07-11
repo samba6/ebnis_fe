@@ -10,9 +10,9 @@ import { renderWithRouter } from "./test_utils";
 import { NEW_ENTRY_URL } from "../constants/new-entry-route";
 
 jest.mock("../components/ExperienceNewEntryParent/loadables", () => ({
-  NewEntry: jest.fn(() => <div data-testid="new-entry-page" />),
+  NewEntry: () => <div data-testid="new-entry-page" />,
 
-  ExperienceRoute: jest.fn(() => <div data-testid="experience-page" />),
+  ExperienceRoute: () => <div data-testid="experience-page" />,
 }));
 
 beforeEach(() => {

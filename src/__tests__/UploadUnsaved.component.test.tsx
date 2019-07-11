@@ -34,6 +34,7 @@ jest.mock("../components/SidebarHeader", () => ({
 }));
 
 jest.mock("../state/get-conn-status");
+
 jest.mock("../components/Entry/component", () => ({
   Entry: (props: any) => {
     return (
@@ -41,6 +42,13 @@ jest.mock("../components/Entry/component", () => ({
     );
   },
 }));
+
+jest.mock("../components/Experience/loadables", () => ({
+  EditExperience: () => <div className="js-editor" />,
+
+  EditEntry: () => <div id="entry-edit-modal" />,
+}));
+
 jest.mock("../components/scroll-into-view");
 jest.mock("../components/UploadUnsaved/update-cache");
 jest.mock("../state/resolvers/update-get-experiences-mini-query");

@@ -26,11 +26,9 @@ jest.mock("../components/SidebarHeader", () => ({
   SidebarHeader: () => null,
 }));
 
-jest.mock("../components/EditExperience/component", () => ({
+jest.mock("../components/Experience/loadables", () => ({
   EditExperience: () => <div className="js-editor" />,
-}));
 
-jest.mock("../components/EditEntry/component", () => ({
   EditEntry: () => <div id="entry-edit-modal" />,
 }));
 
