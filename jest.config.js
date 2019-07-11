@@ -25,6 +25,7 @@ module.exports = {
     "!src/constants/apollo-schema.ts",
     "!src/components/ExperienceDefinition/resolvers.ts",
     "!src/components/Layout/pre-fetch-experiences.ts",
+    "!src/components/Experience/loadables.ts"
   ],
   setupFiles: ["<rootDir>/loadershim.js", "react-app-polyfill/jsdom"],
   setupFilesAfterEnv: ["<rootDir>/config/jest/setupTests.js"],
