@@ -15,6 +15,7 @@ import {
   ExperienceFragment_fieldDefs,
   ExperienceFragment,
   ExperienceFragment_entries_edges_node,
+  ExperienceFragment_entries_edges,
 } from "../../graphql/apollo-types/ExperienceFragment";
 import {
   UploadAllUnsavedsMutation,
@@ -28,6 +29,7 @@ import { UploadUnsavedExperiencesExperienceErrorFragment } from "../../graphql/a
 import { CreateEntriesErrorFragment } from "../../graphql/apollo-types/CreateEntriesErrorFragment";
 import { LayoutDispatchType } from "../Layout/utils";
 import { InMemoryCache } from "apollo-cache-inmemory";
+import { EntryFragment } from "../../graphql/apollo-types/EntryFragment";
 
 export interface OwnProps
   extends GetAllUnSavedQueryProps,
@@ -240,6 +242,11 @@ function updateStateWithSavedExperiencesUploadResult(
     const map = savedExperiencesMap[experienceId];
     map.newlySavedEntries = entries as ExperienceFragment_entries_edges_node[];
 
+    map.unsavedEntries = replaceUnsavedEntriesWithSavedVersions(
+      map.unsavedEntries,
+      map.newlySavedEntries,
+    );
+
     if (errors) {
       stateProxy.hasSavedExperiencesUploadError = true;
       map.didUploadSucceed = false;
@@ -299,6 +306,15 @@ function updateStateWithUnsavedExperiencesUploadResult(
       map = unsavedExperiencesMap[clientId as string];
       map.newlySavedExperience = experience;
 
+      map.unsavedEntries = replaceUnsavedEntriesWithSavedVersions(
+        map.unsavedEntries,
+        (experience.entries.edges || []).map(
+          edge =>
+            (edge as ExperienceFragment_entries_edges)
+              .node as ExperienceFragment_entries_edges_node,
+        ),
+      );
+
       if (entriesErrors) {
         map.entriesErrors = entriesErrorsToMap(
           entriesErrors as CreateEntriesErrorFragment[],
@@ -315,6 +331,33 @@ function updateStateWithUnsavedExperiencesUploadResult(
   });
 
   return noUploadSucceeded;
+}
+
+function replaceUnsavedEntriesWithSavedVersions(
+  unsavedEntries: EntryFragment[],
+  savedEntries: EntryFragment[],
+) {
+  if (savedEntries.length === 0) {
+    return unsavedEntries;
+  }
+
+  const savedEntriesMap = savedEntries.reduce(
+    (acc, item) => {
+      acc[item.clientId as string] = item;
+      return acc;
+    },
+    {} as { [k: string]: EntryFragment },
+  );
+
+  return unsavedEntries.map(entry => {
+    const saved = savedEntriesMap[entry.clientId as string];
+
+    if (saved) {
+      return saved;
+    }
+
+    return entry;
+  });
 }
 
 export function onUploadResult(

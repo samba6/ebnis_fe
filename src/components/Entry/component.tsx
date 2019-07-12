@@ -66,21 +66,25 @@ export function Entry(props: Props) {
   );
 }
 
-function FieldComponent({
-  field,
-  fieldDef,
-  index,
-  fieldsLen,
-  entry,
-  editable,
-  dispatch,
-}: Pick<Props, "dispatch" | "editable"> & {
-  field: EntryFragment_fields;
-  fieldDef: ExperienceFragment_fieldDefs;
-  index: number;
-  fieldsLen: number;
-  entry: EntryFragment;
-}) {
+function FieldComponent(
+  props: Pick<Props, "dispatch" | "editable"> & {
+    field: EntryFragment_fields;
+    fieldDef: ExperienceFragment_fieldDefs;
+    index: number;
+    fieldsLen: number;
+    entry: EntryFragment;
+  },
+) {
+  const {
+    field,
+    fieldDef,
+    index,
+    fieldsLen,
+    entry,
+    editable,
+    dispatch,
+  } = props;
+
   const { defId, data } = field;
 
   const { type, name: fieldName } = fieldDef;
