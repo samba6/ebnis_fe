@@ -18,22 +18,17 @@ import {
   setManualConnection,
 } from "../../src/test-utils/manual-connection-setting";
 import { USER_JWT_ENV } from "./constants";
-import { mutate, persistCache } from "./mutate";
-import { CYPRESS_APOLLO_KEY } from "../../src/state/apollo-setup";
+import { mutate } from "./mutate";
+import { CYPRESS_ENV_TEST_STARTS_KEY } from "../../src/state/apollo-setup";
 
 const serverUrl = Cypress.env("API_URL") as string;
 
 function checkoutSession() {
-  closeSession();
+  Cypress.env(CYPRESS_ENV_TEST_STARTS_KEY, true);
 
   cy.request("GET", serverUrl + "/reset_db").then(response => {
     expect(response.body).to.equal("ok");
   });
-}
-
-function closeSession() {
-  setManualConnection(ManualConnectionStatus.unset);
-  Cypress.env(CYPRESS_APOLLO_KEY, null);
 }
 
 function createUser(userData: UserCreationObject) {
@@ -84,11 +79,9 @@ function setConnectionStatus(status: ManualConnectionStatus) {
 }
 
 Cypress.Commands.add("checkoutSession", checkoutSession);
-Cypress.Commands.add("closeSession", closeSession);
 Cypress.Commands.add("createUser", createUser);
 Cypress.Commands.add("registerUser", registerUser);
 Cypress.Commands.add("setConnectionStatus", setConnectionStatus);
-Cypress.Commands.add("persistCache", persistCache);
 
 declare global {
   interface Window {
@@ -115,11 +108,6 @@ declare global {
       registerUser: (
         userData: Registration,
       ) => Promise<UserRegMutation_registration>;
-
-      /**
-       *
-       */
-      closeSession: () => void;
 
       /**
        *

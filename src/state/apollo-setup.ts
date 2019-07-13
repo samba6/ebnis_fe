@@ -67,6 +67,7 @@ export function buildClientCache(
   // This should fix the problem whereby the cache used by some part of cypress
   // is out of sync with other parts because some are using cypress version
   // while others are using app version
+
   clientCacheFromCypress();
 
   if (!cache) {
@@ -187,9 +188,30 @@ export const resetClientAndPersistor = async (
 ///////////////////// END TO END TESTS THINGS ///////////////////////
 
 export const CYPRESS_APOLLO_KEY = "ebnis-cypress-apollo";
+export const CYPRESS_ENV_TEST_STARTS_KEY = "ebnis-cypress-test-starts";
 
 function clientCacheFromCypress() {
   if (typeof window === "undefined" || !window.Cypress) {
+    return;
+  }
+
+  // At the start of every cypress test, we reset the cache etc. from here
+  // otherwise different parts of the app/test will end up using different
+  // versions of cache (probably cache version from previous run of test/app).
+  // This section guarantees that every section of
+  // app/test uses a fresh copy of cache from the beginning to the end.
+  if (window.Cypress.env(CYPRESS_ENV_TEST_STARTS_KEY)) {
+    cache = null;
+    persistor = null;
+    client = null;
+    window.Cypress.env(CYPRESS_ENV_TEST_STARTS_KEY, null);
+
+    // We need to set up local storage for local state management
+    // so that whatever we persist in this test will be picked up by apollo
+    // when app starts. Otherwise, apollo will always clear out the local
+    // storage when the app starts if it can not read the schema version.
+    localStorage.setItem(SCHEMA_VERSION_KEY, SCHEMA_VERSION);
+
     return;
   }
 

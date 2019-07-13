@@ -10,9 +10,9 @@ import {
   createExperienceEntries,
   createUnsavedEntry,
 } from "../support/create-entries";
-import { persistCache } from "../support/mutate";
 import { PAGE_NOT_FOUND_TITLE } from "../../src/constants";
 import { UPLOAD_UNSAVED_TITLE } from "../../src/constants/upload-unsaved-title";
+import { persistCache } from "../support/mutate";
 
 context("Upload unsaved page", () => {
   beforeEach(() => {
@@ -59,8 +59,10 @@ context("Upload unsaved page", () => {
       });
     });
 
+    const unsavedExperienceTitle = "olu omo";
+
     const unsavedExperiencePromise = createUnsavedExperience({
-      title: "olu omo",
+      title: unsavedExperienceTitle,
       fieldDefs: [
         {
           name: "f2",
@@ -83,31 +85,28 @@ context("Upload unsaved page", () => {
       });
     });
 
-    let p = Promise.all([
+    let experiencesPromises = Promise.all([
       savedExperiencePromise,
       unsavedExperiencePromise,
-    ]).then(result => {
+    ])
+    .then(result => {
       return persistCache().then(() => {
         return result;
       });
     });
 
-    cy.wrap(p).then(([, unsavedExperience]) => {
-      const { id } = unsavedExperience;
-      const unsavedRoute = makeExperienceRoute(id);
+    cy.wrap(experiencesPromises).then(([, unsavedExperience]) => {
+      const { id: unsavedId } = unsavedExperience;
+      const unsavedRoute = makeExperienceRoute(unsavedId);
 
       cy.visit(unsavedRoute);
 
-      let title;
       let titleRegexp = /^unsaved-experience-(.+?)-title$/;
       let uploadSuccessRegexp = /^upload-triggered-icon-success-(.+?)$/;
-      let newId;
+      let savedId;
 
       cy.title()
-        .should("contain", "olu omo")
-        .then(t => {
-          title = t;
-        })
+        .should("contain", unsavedExperienceTitle)
         .then(() => {
           cy.getByTestId("unsaved-count-label").click();
           cy.title().should("contain", UPLOAD_UNSAVED_TITLE);
@@ -116,9 +115,11 @@ context("Upload unsaved page", () => {
           return cy.getByTestId(titleRegexp);
         })
         .then(elm => {
-          const sameId = titleRegexp.exec((elm as any).attr("data-testid"))[1];
+          const sameUnsavedId = titleRegexp.exec(
+            (elm as any).attr("data-testid"),
+          )[1];
 
-          expect(id).to.eq(sameId);
+          expect(unsavedId).to.eq(sameUnsavedId);
           cy.getByTestId("upload-all").click();
 
           return cy
@@ -126,12 +127,14 @@ context("Upload unsaved page", () => {
             .should("exist");
         })
         .then(elm => {
-          newId = uploadSuccessRegexp.exec((elm as any).attr("data-testid"))[1];
+          savedId = uploadSuccessRegexp.exec(
+            (elm as any).attr("data-testid"),
+          )[1];
 
-          expect(id).not.to.eq(newId);
+          expect(unsavedId).not.to.eq(savedId);
 
-          cy.visit(makeExperienceRoute(newId));
-          cy.title().should("eq", title);
+          cy.visit(makeExperienceRoute(savedId));
+          cy.title().should("contain", unsavedExperienceTitle);
 
           cy.visit(unsavedRoute);
           cy.title().should("contain", PAGE_NOT_FOUND_TITLE);

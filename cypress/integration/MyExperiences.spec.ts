@@ -5,6 +5,7 @@ import { getDescendantByText } from "../support/get-descendant-by-text";
 import { EXPERIENCE_DEFINITION_TITLE } from "../../src/constants/experience-definition-title";
 import { MY_EXPERIENCES_TITLE } from "../../src/constants/my-experiences-title";
 import { createSavedExperience } from "../support/create-experience";
+import { persistCache } from "../support/mutate";
 
 const title = "My experience no. 1";
 
@@ -67,6 +68,10 @@ context("my experiences page", () => {
           type: FieldType.INTEGER,
         },
       ],
+    }).then(experience => {
+      return persistCache().then(() => {
+        return experience;
+      });
     });
 
     cy.wrap(p).then(() => {

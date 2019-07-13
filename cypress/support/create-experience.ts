@@ -54,8 +54,6 @@ export function createUnsavedExperience(
       result.data &&
       (result.data.createUnsavedExperience as ExperienceFragment);
 
-    expect(experience.id).to.be.a("string");
-
     if (persist) {
       return persistCache().then(() => {
         return experience;
