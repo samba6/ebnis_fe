@@ -2,24 +2,22 @@ import { ApolloLink } from "apollo-link";
 import { onError } from "apollo-link-error";
 import { getToken } from "./tokens";
 
-export type MakeSocketLink = (
-  token: string | null,
-  forceReconnect?: boolean,
-) => ApolloLink;
+export type MakeSocketLinkFn = (arg: {
+  token: string | null;
+  forceReconnect?: boolean;
+}) => ApolloLink;
 
-export function middlewareAuthLink(
-  makeSocketLink: MakeSocketLink,
-  headers: { [k: string]: string } = {},
-) {
+export function middlewareAuthLink(makeSocketLink: MakeSocketLinkFn) {
   let previousToken = getToken();
-  let socketLink = makeSocketLink(previousToken);
+  let socketLink = makeSocketLink({ token: previousToken });
+  const headers: { [k: string]: string } = {};
 
   return new ApolloLink((operation, forward) => {
     const token = getToken();
 
     if (token !== previousToken) {
       previousToken = token;
-      socketLink = makeSocketLink(token, true);
+      socketLink = makeSocketLink({ token, forceReconnect: true });
     }
 
     if (token) {

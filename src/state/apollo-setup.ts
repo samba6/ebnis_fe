@@ -1,10 +1,8 @@
 import { InMemoryCache, NormalizedCacheObject } from "apollo-cache-inmemory";
 import { ApolloClient } from "apollo-client";
-import { ApolloLink } from "apollo-link";
 import { CachePersistor } from "apollo-cache-persist";
 import * as AbsintheSocket from "@absinthe/socket";
 import { createAbsintheSocketLink } from "@absinthe/socket-apollo-link";
-import { HttpLink } from "apollo-link-http";
 import {
   SCHEMA_KEY,
   SCHEMA_VERSION,
@@ -19,7 +17,7 @@ import {
 } from "./connection.resolver";
 import { PersistentStorage, PersistedData } from "apollo-cache-persist/types";
 import {
-  MakeSocketLink,
+  MakeSocketLinkFn,
   middlewareErrorLink,
   middlewareLoggerLink,
   middlewareAuthLink,
@@ -32,15 +30,6 @@ let persistor: CachePersistor<NormalizedCacheObject>;
 
 interface BuildClientCache {
   uri?: string;
-
-  headers?: { [k: string]: string };
-
-  /**
-   * are we server side rendering?
-   */
-  isNodeJs?: boolean;
-
-  fetch?: GlobalFetch["fetch"];
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   resolvers: any;
@@ -58,9 +47,6 @@ const onConnChange: OnConnectionChanged = args => {
 export function buildClientCache(
   {
     uri,
-    headers,
-    isNodeJs,
-    fetch,
     resolvers,
     invalidateCache,
   }: BuildClientCache = {} as BuildClientCache,
@@ -86,57 +72,41 @@ export function buildClientCache(
   }
 
   if (!client) {
-    let link: ApolloLink;
+    const makeSocketLink: MakeSocketLinkFn = makeSocketLinkArgs => {
+      const absintheSocket = AbsintheSocket.create(
+        getSocket({
+          onConnChange,
+          uri,
+          ...makeSocketLinkArgs,
+        }),
+      );
 
-    if (isNodeJs) {
-      /**
-       * we do not use phoenix websocket. we use plain http
-       */
+      return createAbsintheSocketLink(absintheSocket);
+    };
 
-      link = new HttpLink({
-        uri,
-        fetch,
-      });
-    } else {
-      const makeSocketLink: MakeSocketLink = (token, forceReconnect) => {
-        const absintheSocket = AbsintheSocket.create(
-          getSocket({
-            onConnChange,
-            uri,
-            token,
-            forceReconnect,
-          }),
-        );
-
-        return createAbsintheSocketLink(absintheSocket);
-      };
-
-      link = middlewareAuthLink(makeSocketLink, headers);
-      link = middlewareErrorLink(link);
-      link = middlewareLoggerLink(link);
-    }
+    let link = middlewareAuthLink(makeSocketLink);
+    link = middlewareErrorLink(link);
+    link = middlewareLoggerLink(link);
 
     client = new ApolloClient({
       cache,
       link,
     });
 
-    if (!isNodeJs) {
-      const state = initState();
+    const state = initState();
 
-      cache.writeData({
-        data: state.defaults,
-      });
+    cache.writeData({
+      data: state.defaults,
+    });
 
-      client.addResolvers(state.resolvers);
+    client.addResolvers(state.resolvers);
 
-      if (resolvers) {
-        client.addResolvers(resolvers);
-      }
-
-      makePersistor(cache);
-      setupCypressApollo();
+    if (resolvers) {
+      client.addResolvers(resolvers);
     }
+
+    makePersistor(cache);
+    setupCypressApollo();
   }
 
   return { client, cache, persistor };

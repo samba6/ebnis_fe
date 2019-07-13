@@ -2,19 +2,25 @@
 import React from "react";
 import { ApolloProvider } from "react-apollo";
 import { HelmetProvider } from "react-helmet-async";
-import fetch from "isomorphic-fetch";
-
-import { buildClientCache } from "./src/state/apollo-setup";
 import { EbnisAppProvider } from "./src/context";
 import { RootHelmet } from "./src/components/RootHelmet";
+import { InMemoryCache } from "apollo-cache-inmemory";
+import { ApolloClient } from "apollo-client";
+import { HttpLink } from "apollo-link-http";
 
 const helmetContext = {};
 
 export const wrapRootElement = ({ element }) => {
-  const { client } = buildClientCache({
-    isNodeJs: true,
+  const cache = new InMemoryCache();
+
+  const link = new HttpLink({
     uri: "/",
-    fetch,
+    fetch: () => null,
+  });
+
+  const client = new ApolloClient({
+    cache,
+    link,
   });
 
   return (

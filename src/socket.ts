@@ -4,12 +4,12 @@ import { getBackendUrls } from "./state/get-backend-urls";
 
 enum CHANNEL {
   "DATA_PLAIN" = "data:pxy",
-  "DATA_AUTH" = "data:pxz"
+  "DATA_AUTH" = "data:pxz",
 }
 
 enum ChannelTopic {
   "GRAPHQL_PLAIN" = "graphql:pxy",
-  "GRAPHQL_AUTH" = "graphql:pxz"
+  "GRAPHQL_AUTH" = "graphql:pxz",
 }
 
 export interface AppSocket extends Socket {
@@ -17,11 +17,11 @@ export interface AppSocket extends Socket {
     query: string,
     variables: TVariables,
     ok: OnChannelMessage<TData>,
-    error?: OnError<TError>
+    error?: OnError<TError>,
   ) => void;
   ebnisConnect: (
     token?: string | null,
-    payload?: ConnectionPayload<{}> | undefined
+    payload?: ConnectionPayload<{}> | undefined,
   ) => AppSocket;
 }
 
@@ -30,7 +30,7 @@ let socket: AppSocket;
 export const defineSocket = ({
   uri,
   onConnChange,
-  token: connToken
+  token: connToken,
 }: DefineParams) => {
   // if we are disconnected, phoenix will keep trying to connect using
   // exponential back off which means
@@ -72,16 +72,16 @@ export const defineSocket = ({
     query: string,
     variables: TVariables,
     ok: OnChannelMessage<TData>,
-    error: OnError<TError> = defaultError
+    error: OnError<TError> = defaultError,
   ) {
     return sendChannelMsg(dataAuthChannel, {
       ok,
       params: {
         query,
-        variables
+        variables,
       },
       topic: ChannelTopic.GRAPHQL_AUTH,
-      error
+      error,
     });
   }
 
@@ -144,8 +144,8 @@ export const defineSocket = ({
       ok = defaultError,
       error,
       params,
-      onTimeout
-    }: ChannelMessageSend<TData, B, C>
+      onTimeout,
+    }: ChannelMessageSend<TData, B, C>,
   ) {
     if (!channel) {
       logger("warn", "Sending to channel: - channel unavailable", channel);
@@ -156,7 +156,7 @@ export const defineSocket = ({
       ok,
       error,
       params,
-      onTimeout
+      onTimeout,
     });
 
     channel
@@ -167,7 +167,7 @@ export const defineSocket = ({
           "socket send to topic",
           topic,
           "successful.\nReceived data:\n",
-          data
+          data,
         );
 
         ok(data);
