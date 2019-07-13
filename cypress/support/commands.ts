@@ -10,21 +10,23 @@ import {
 } from "../../src/graphql/apollo-types/UserRegMutation";
 import { REG_USER_MUTATION } from "../../src/graphql/user-reg.mutation";
 import {
-  USER_LOCAL_MUTATION,
-  UserLocalMutationVariable,
-} from "../../src/state/user.resolver";
-import {
   ManualConnectionStatus,
   setManualConnection,
 } from "../../src/test-utils/manual-connection-setting";
-import { USER_JWT_ENV } from "./constants";
 import { mutate } from "./mutate";
-import { CYPRESS_ENV_TEST_STARTS_KEY } from "../../src/state/apollo-setup";
+import { buildClientCache } from "../../src/state/apollo-setup";
+import { allResolvers } from "../../src/state/all-resolvers";
+import { UserFragment } from "../../src/graphql/apollo-types/UserFragment";
+import { storeUser, storeToken } from "../../src/state/tokens";
 
 const serverUrl = Cypress.env("API_URL") as string;
 
 function checkoutSession() {
-  Cypress.env(CYPRESS_ENV_TEST_STARTS_KEY, true);
+  buildClientCache({
+    uri: serverUrl,
+    resolvers: allResolvers,
+    invalidateCache: true,
+  });
 
   cy.request("GET", serverUrl + "/reset_db").then(response => {
     expect(response.body).to.equal("ok");
@@ -32,14 +34,11 @@ function checkoutSession() {
 }
 
 function createUser(userData: UserCreationObject) {
-  cy.request("POST", serverUrl + "/create_user", { user: userData }).then(
-    response => {
-      const user = response.body;
-      const { jwt } = user;
-      expect(jwt).to.be.a("string");
-      Cypress.env(USER_JWT_ENV, jwt);
-    },
-  );
+  return cy
+    .request("POST", serverUrl + "/create_user", { user: userData })
+    .then(response => {
+      return response.body as UserFragment;
+    });
 }
 
 function registerUser(userData: Registration) {
@@ -48,30 +47,17 @@ function registerUser(userData: Registration) {
     variables: {
       registration: userData,
     },
-  })
-    .then(result => {
-      const user =
-        result &&
-        result.data &&
-        (result.data.registration as UserRegMutation_registration);
+  }).then(result => {
+    const user =
+      result &&
+      result.data &&
+      (result.data.registration as UserRegMutation_registration);
 
-      const { jwt } = user;
+    storeUser(user);
+    storeToken(user.jwt);
 
-      Cypress.env(USER_JWT_ENV, jwt);
-
-      return mutate<UserLocalMutationVariable, UserLocalMutationVariable>({
-        mutation: USER_LOCAL_MUTATION,
-        variables: { user },
-      });
-    })
-    .then(result => {
-      const user =
-        result &&
-        result.data &&
-        (result.data.user as UserRegMutation_registration);
-
-      return user;
-    });
+    return user;
+  });
 }
 
 function setConnectionStatus(status: ManualConnectionStatus) {
@@ -100,7 +86,9 @@ declare global {
       /**
        *
        */
-      createUser: (data: UserCreationObject) => Chainable<Promise<void>>;
+      createUser: (
+        data: UserCreationObject,
+      ) => Chainable<Promise<UserFragment>>;
 
       /**
        *

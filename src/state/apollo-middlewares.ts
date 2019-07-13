@@ -7,11 +7,6 @@ export type MakeSocketLink = (
   forceReconnect?: boolean,
 ) => ApolloLink;
 
-export interface E2eOptions {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  resolvers: any;
-}
-
 export function middlewareAuthLink(
   makeSocketLink: MakeSocketLink,
   headers: { [k: string]: string } = {},

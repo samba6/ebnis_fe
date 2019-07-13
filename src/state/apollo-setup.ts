@@ -19,7 +19,6 @@ import {
 } from "./connection.resolver";
 import { PersistentStorage, PersistedData } from "apollo-cache-persist/types";
 import {
-  E2eOptions,
   MakeSocketLink,
   middlewareErrorLink,
   middlewareLoggerLink,
@@ -31,7 +30,7 @@ let cache: InMemoryCache;
 let client: ApolloClient<{}>;
 let persistor: CachePersistor<NormalizedCacheObject>;
 
-interface BuildClientCache extends E2eOptions {
+interface BuildClientCache {
   uri?: string;
 
   headers?: { [k: string]: string };
@@ -42,6 +41,11 @@ interface BuildClientCache extends E2eOptions {
   isNodeJs?: boolean;
 
   fetch?: GlobalFetch["fetch"];
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  resolvers: any;
+
+  invalidateCache?: boolean;
 }
 
 const onConnChange: OnConnectionChanged = args => {
@@ -57,7 +61,8 @@ export function buildClientCache(
     headers,
     isNodeJs,
     fetch,
-    ...e2eOptions
+    resolvers,
+    invalidateCache,
   }: BuildClientCache = {} as BuildClientCache,
 ) {
   // we may invoke this function for the first time either from cypress or from
@@ -68,7 +73,7 @@ export function buildClientCache(
   // is out of sync with other parts because some are using cypress version
   // while others are using app version
 
-  clientCacheFromCypress();
+  clientCacheFromCypress(invalidateCache);
 
   if (!cache) {
     cache = new InMemoryCache({
@@ -125,8 +130,8 @@ export function buildClientCache(
 
       client.addResolvers(state.resolvers);
 
-      if (e2eOptions.resolvers) {
-        client.addResolvers(e2eOptions.resolvers);
+      if (resolvers) {
+        client.addResolvers(resolvers);
       }
 
       makePersistor(cache);
@@ -188,23 +193,12 @@ export const resetClientAndPersistor = async (
 ///////////////////// END TO END TESTS THINGS ///////////////////////
 
 export const CYPRESS_APOLLO_KEY = "ebnis-cypress-apollo";
-export const CYPRESS_ENV_TEST_STARTS_KEY = "ebnis-cypress-test-starts";
 
-function clientCacheFromCypress() {
-  if (typeof window === "undefined" || !window.Cypress) {
-    return;
-  }
-
-  // At the start of every cypress test, we reset the cache etc. from here
-  // otherwise different parts of the app/test will end up using different
-  // versions of cache (probably cache version from previous run of test/app).
-  // This section guarantees that every section of
-  // app/test uses a fresh copy of cache from the beginning to the end.
-  if (window.Cypress.env(CYPRESS_ENV_TEST_STARTS_KEY)) {
+function clientCacheFromCypress(invalidateCache?: boolean) {
+  if (invalidateCache) {
     cache = null;
     persistor = null;
     client = null;
-    window.Cypress.env(CYPRESS_ENV_TEST_STARTS_KEY, null);
 
     // We need to set up local storage for local state management
     // so that whatever we persist in this test will be picked up by apollo
@@ -212,6 +206,10 @@ function clientCacheFromCypress() {
     // storage when the app starts if it can not read the schema version.
     localStorage.setItem(SCHEMA_VERSION_KEY, SCHEMA_VERSION);
 
+    return;
+  }
+
+  if (typeof window === "undefined" || !window.Cypress) {
     return;
   }
 
