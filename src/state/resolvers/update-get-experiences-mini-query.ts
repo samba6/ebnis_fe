@@ -80,7 +80,7 @@ export async function insertExperienceInGetExperiencesMiniQuery(
     proxy => {
       const edges = proxy.edges || [];
 
-      edges.push({
+      edges.unshift({
         node: experience,
         cursor: "",
         __typename: "ExperienceEdge",
