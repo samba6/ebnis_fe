@@ -76,7 +76,7 @@
     "babel-preset-gatsby": "0.1.11",
     "babel-preset-react-app": "9.0.0",
     "cheerio": "1.0.0-rc.3",
-    "cypress": "3.3.2",
+    "cypress": "3.4.0",
     "cypress-file-upload": "3.1.1",
     "cypress-testing-library": "3.0.1",
     "env-cmd": "9.0.1",
