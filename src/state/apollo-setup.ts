@@ -1,4 +1,4 @@
-import { InMemoryCache, NormalizedCacheObject } from "apollo-cache-inmemory";
+import { InMemoryCache } from "apollo-cache-inmemory";
 import { ApolloClient } from "apollo-client";
 import { CachePersistor } from "apollo-cache-persist";
 import * as AbsintheSocket from "@absinthe/socket";
@@ -24,21 +24,15 @@ import {
 } from "./apollo-middlewares";
 import { CUSTOM_QUERY_RESOLVERS } from "./custom-query-resolvers";
 
-let cache: InMemoryCache;
-let client: ApolloClient<{}>;
-let persistor: CachePersistor<NormalizedCacheObject>;
-
-interface BuildClientCache {
-  uri?: string;
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  resolvers: any;
-
-  invalidateCache?: boolean;
-}
+let cache: InMemoryCache | null = null;
+let client: ApolloClient<{}> | null = null;
+let persistor: CachePersistor<{}> | null = null;
 
 const onConnChange: OnConnectionChanged = args => {
-  client.mutate<ConnectionStatus, ConnectionMutationVariables>({
+  (client as ApolloClient<{}>).mutate<
+    ConnectionStatus,
+    ConnectionMutationVariables
+  >({
     mutation: CONNECTION_MUTATION,
     variables: args,
   });
@@ -51,7 +45,8 @@ export function buildClientCache(
     invalidateCache,
   }: BuildClientCache = {} as BuildClientCache,
 ) {
-  // we may invoke this function for the first time either from cypress or from
+  // we may invoke this function, `buildClientCache`,
+  // for the first time either from cypress or from
   // our app (we really don't know which will come first and we really don't
   // care). The idea is that if `buildClientCache` is invoked first from
   // cypress, we make sure that subsequent invocation uses the cypress version.
@@ -68,7 +63,7 @@ export function buildClientCache(
       cacheRedirects: {
         ...CUSTOM_QUERY_RESOLVERS,
       },
-    });
+    }) as InMemoryCache;
   }
 
   if (!client) {
@@ -91,7 +86,7 @@ export function buildClientCache(
     client = new ApolloClient({
       cache,
       link,
-    });
+    }) as ApolloClient<{}>;
 
     const state = initState();
 
@@ -114,17 +109,15 @@ export function buildClientCache(
 
 export type PersistCacheFn = (
   appCache: InMemoryCache,
-) => Promise<CachePersistor<NormalizedCacheObject>>;
+) => Promise<CachePersistor<{}>>;
 
 function makePersistor(appCache: InMemoryCache) {
   persistor = new CachePersistor({
     cache: appCache,
-    storage: localStorage as PersistentStorage<
-      PersistedData<NormalizedCacheObject>
-    >,
+    storage: localStorage as PersistentStorage<PersistedData<{}>>,
     key: SCHEMA_KEY,
     maxSize: false,
-  });
+  }) as CachePersistor<{}>;
 
   return persistor;
 }
@@ -152,13 +145,22 @@ export async function persistCache(appCache: InMemoryCache) {
 
 export const resetClientAndPersistor = async (
   appClient: ApolloClient<{}>,
-  appPersistor: CachePersistor<NormalizedCacheObject>,
+  appPersistor: CachePersistor<{}>,
 ) => {
   await appPersistor.pause(); // Pause automatic persistence.
   await appPersistor.purge(); // Delete everything in the storage provider.
   await appClient.clearStore();
   await appPersistor.resume();
 };
+
+interface BuildClientCache {
+  uri?: string;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  resolvers: any;
+
+  invalidateCache?: boolean;
+}
 
 ///////////////////// END TO END TESTS THINGS ///////////////////////
 
@@ -171,7 +173,7 @@ function clientCacheFromCypress(invalidateCache?: boolean) {
     client = null;
 
     // We need to set up local storage for local state management
-    // so that whatever we persist in this test will be picked up by apollo
+    // so that whatever we persist in e2e tests will be picked up by apollo
     // when app starts. Otherwise, apollo will always clear out the local
     // storage when the app starts if it can not read the schema version.
     localStorage.setItem(SCHEMA_VERSION_KEY, SCHEMA_VERSION);
@@ -210,7 +212,7 @@ export function setupCypressApollo() {
 export interface E2EWindowObject {
   cache: InMemoryCache;
   client: ApolloClient<{}>;
-  persistor: CachePersistor<NormalizedCacheObject>;
+  persistor: CachePersistor<{}>;
 }
 
 declare global {

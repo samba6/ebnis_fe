@@ -1,28 +1,8 @@
-import { Socket, Channel } from "phoenix";
-import { logger } from "./logger";
+import { Socket } from "phoenix";
 import { getBackendUrls } from "./state/get-backend-urls";
 
-enum CHANNEL {
-  "DATA_PLAIN" = "data:pxy",
-  "DATA_AUTH" = "data:pxz",
-}
-
-enum ChannelTopic {
-  "GRAPHQL_PLAIN" = "graphql:pxy",
-  "GRAPHQL_AUTH" = "graphql:pxz",
-}
-
 export interface AppSocket extends Socket {
-  sendDataAuth: <TVariables, TData, TError = {}>(
-    query: string,
-    variables: TVariables,
-    ok: OnChannelMessage<TData>,
-    error?: OnError<TError>,
-  ) => void;
-  ebnisConnect: (
-    token?: string | null,
-    payload?: ConnectionPayload<{}> | undefined,
-  ) => AppSocket;
+  ebnisConnect: (token?: string | null) => AppSocket;
 }
 
 let socket: AppSocket;
@@ -38,21 +18,15 @@ export const defineSocket = ({
   // disconnect (isDisconnected = true) and if so we do not send another
   // message.  We only dispatch the message if isDisconnected = false.
   let isDisconnected = false;
-  let dataAuthChannel: Channel;
 
-  function ebnisConnect(token?: string | null, payload?: ConnectionPayload) {
+  function ebnisConnect(token?: string | null) {
     const params = makeParams(token);
     socket = new Socket(getBackendUrls(uri).websocketUrl, params) as AppSocket;
     socket.ebnisConnect = ebnisConnect;
-    socket.sendDataAuth = sendDataAuth;
     socket.connect();
 
     socket.onOpen(() => {
       dispatchConnected();
-
-      if (token) {
-        joinDataAuthChannel(payload);
-      }
     });
 
     socket.onError(() => {
@@ -68,24 +42,7 @@ export const defineSocket = ({
 
   ebnisConnect(connToken);
 
-  function sendDataAuth<TVariables, TData, TError = {}>(
-    query: string,
-    variables: TVariables,
-    ok: OnChannelMessage<TData>,
-    error: OnError<TError> = defaultError,
-  ) {
-    return sendChannelMsg(dataAuthChannel, {
-      ok,
-      params: {
-        query,
-        variables,
-      },
-      topic: ChannelTopic.GRAPHQL_AUTH,
-      error,
-    });
-  }
-
-  async function dispatchDisconnected() {
+  function dispatchDisconnected() {
     if (isDisconnected === false) {
       if (onConnChange) {
         onConnChange({ isConnected: false, reconnected: "false" });
@@ -95,97 +52,12 @@ export const defineSocket = ({
     }
   }
 
-  async function dispatchConnected() {
+  function dispatchConnected() {
     if (onConnChange) {
       onConnChange({ isConnected: true, reconnected: "true" });
     }
 
     isDisconnected = false;
-  }
-
-  function joinDataAuthChannel(payload?: ConnectionPayload) {
-    const params = payload
-      ? { query: payload.query, variables: payload.variables }
-      : {};
-
-    // will be removed when I later figure out how to sync user's offline
-    // data
-    if (CHANNEL.DATA_AUTH) {
-      return;
-    }
-
-    dataAuthChannel = socket.channel(CHANNEL.DATA_AUTH, params);
-
-    dataAuthChannel
-      .join()
-      .receive("ok", message => {
-        isDisconnected = false;
-
-        if (payload) {
-          payload.onData(message);
-        }
-
-        logger("log", "Data auth channel joined", message);
-      })
-      .receive("error", reason => {
-        dispatchDisconnected();
-        logger("error", "Data auth channel join error", reason);
-      })
-      .receive("timeout", () => {
-        dispatchDisconnected();
-        logger("warn", "Data auth channel join timeout");
-      });
-  }
-
-  function sendChannelMsg<TData, B, C>(
-    channel: Channel,
-    {
-      topic,
-      ok = defaultError,
-      error,
-      params,
-      onTimeout,
-    }: ChannelMessageSend<TData, B, C>,
-  ) {
-    if (!channel) {
-      logger("warn", "Sending to channel: - channel unavailable", channel);
-      return;
-    }
-
-    logger("log", "Sending to channel topic:", topic, "params:\n", {
-      ok,
-      error,
-      params,
-      onTimeout,
-    });
-
-    channel
-      .push(topic, params || {})
-      .receive("ok", (data: TData) => {
-        logger(
-          "log",
-          "socket send to topic",
-          topic,
-          "successful.\nReceived data:\n",
-          data,
-        );
-
-        ok(data);
-      })
-      .receive("error", (reasons = {}) => {
-        logger("error", "socket send to topic", topic, "Errors:\n", reasons);
-
-        error(reasons);
-      })
-      .receive("timeout", reasons => {
-        if (onTimeout) {
-          onTimeout(reasons);
-        }
-      });
-  }
-
-  function defaultError() {
-    return null;
   }
 
   function makeParams(token?: string | null) {
@@ -219,32 +91,4 @@ interface DefineParams {
   uri?: string;
   token?: string | null;
   forceReconnect?: boolean;
-}
-
-type OnChannelMessage<T> = (msg: T) => void;
-type OnError<T> = (reason: T) => void;
-
-interface ChannelMessage<TData, TParams, TError = {}, TTimeout = {}> {
-  params: TParams;
-
-  ok: OnChannelMessage<TData>;
-
-  error: OnError<TError>;
-
-  onTimeout?: (reason: TTimeout) => void;
-}
-
-type ChannelMessageSend<
-  TData,
-  TParams,
-  TError = {},
-  TTimeout = {}
-> = ChannelMessage<TData, TParams, TError, TTimeout> & {
-  topic: ChannelTopic;
-};
-
-interface ConnectionPayload<TVariables = {}> {
-  query: string;
-  variables: TVariables;
-  onData: (data: { data: {} }) => void;
 }

@@ -19,7 +19,8 @@
     "deploy": "netlify deploy -p -d public",
     "cy-open": "env-cmd -e staging cypress open",
     "cy-run-task": "env-cmd -e staging cypress run",
-    "cy-run": "start-server-and-test build-serve :3022 cy-run-task",
+    "cy-run": "start-server-and-test serve-local-staging :3022 cy-run-task",
+    "build-cy-run": "start-server-and-test build-serve :3022 cy-run-task",
     "type-check": "yarn tsc --noEmit --project .",
     "type-check-cypress": "yarn tsc --noEmit --project ./cypress"
   },
