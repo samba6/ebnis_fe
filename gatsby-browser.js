@@ -57,8 +57,18 @@ function showRefreshUI(wb) {
     background-color: #5faac7;
   `;
 
-  const parent = document.createElement("div");
-  parent.style.cssText = `
+  const promptWrapper = document.createElement("div");
+  promptWrapper.style.cssText = `
+    position: absolute;
+    bottom: 15px;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  `;
+
+  const container = document.createElement("div");
+  container.style.cssText = `
     cursor: pointer;
     height: 100%;
     width: 100%;
@@ -67,13 +77,11 @@ function showRefreshUI(wb) {
     left: 0;
     opacity: 1;
     background: #fdfdfdc2;
-    display: flex;
-    justify-content: center;
-    align-items: center;
   `;
 
-  parent.appendChild(promptUi);
-  document.body.appendChild(parent);
+  promptWrapper.appendChild(promptUi);
+  container.appendChild(promptWrapper);
+  document.body.appendChild(container);
 
   function promptUiHandler() {
     wb.addEventListener("controlling", () => {
@@ -95,5 +103,5 @@ function showRefreshUI(wb) {
   // }
 
   // promptUi.addEventListener("click", promptUiHandler, false);
-  parent.addEventListener("click", promptUiHandler, false);
+  container.addEventListener("click", promptUiHandler, false);
 }
