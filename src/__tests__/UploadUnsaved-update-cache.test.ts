@@ -6,6 +6,7 @@ import {
   ExperienceFragment_entries_edges_node,
   ExperienceFragment_entries,
   ExperienceFragment_entries_edges,
+  ExperienceFragment_fieldDefs,
 } from "../graphql/apollo-types/ExperienceFragment";
 
 jest.mock("../state/resolvers/update-get-experiences-mini-query");
@@ -44,6 +45,11 @@ test("completely saved unsaved experience", () => {
   const unsavedExperiencesMap = {
     "1": {
       experience: {
+        fieldDefs: [
+          {
+            id: "1",
+          },
+        ] as ExperienceFragment_fieldDefs[],
         entries: {
           edges: [
             {
@@ -77,7 +83,11 @@ test("completely saved unsaved experience", () => {
 
   expect(mockDeleteIdsFromCache).toHaveBeenCalledWith(
     {},
-    ["Experience:1", `${SAVED_AND_UNSAVED_EXPERIENCE_TYPENAME}:1`],
+    [
+      "Experience:1",
+      "FieldDef:1",
+      `${SAVED_AND_UNSAVED_EXPERIENCE_TYPENAME}:1`,
+    ],
     {
       mutations: [[MUTATION_NAME_createUnsavedExperience, "Experience:1"]],
 
@@ -106,6 +116,11 @@ test("partially saved unsaved experience", () => {
       // experience partially saved, will be deleted from cache
       experience: {
         id: "21",
+        fieldDefs: [
+          {
+            id: "1",
+          },
+        ] as ExperienceFragment_fieldDefs[],
         entries: {
           edges: [
             {
@@ -153,7 +168,7 @@ test("partially saved unsaved experience", () => {
 
   expect(mockDeleteIdsFromCache).toHaveBeenCalledWith(
     {},
-    ["Experience:2", "Entry:221"],
+    ["Experience:2", "FieldDef:1", "Entry:221"],
     {
       mutations: [
         [MUTATION_NAME_createUnsavedExperience, "Experience:2"],

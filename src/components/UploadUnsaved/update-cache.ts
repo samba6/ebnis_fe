@@ -2,6 +2,7 @@ import {
   ExperienceFragment,
   ExperienceFragment_entries_edges_node,
   ExperienceFragment_entries_edges,
+  ExperienceFragment_fieldDefs,
 } from "../../graphql/apollo-types/ExperienceFragment";
 import {
   SavedAndUnsavedExperiences,
@@ -31,7 +32,7 @@ export function updateCache({
 }: Args) {
   const savedAndUnsavedExperiences: SavedAndUnsavedExperiences[] = [];
   let outstandingUnsavedCount = 0;
-  const toDeletes: string[] = [];
+  let toDeletes: string[] = [];
   const mutations: [string, string][] = [];
   const queries: [string, string][] = [];
 
@@ -69,6 +70,11 @@ export function updateCache({
     const cacheKey = `Experience:${unsavedId}`;
 
     toDeletes.push(cacheKey);
+
+    (experience.fieldDefs as ExperienceFragment_fieldDefs[]).forEach(f =>
+      toDeletes.push(`FieldDef:${f.id}`),
+    );
+
     mutations.push([MUTATION_NAME_createUnsavedExperience, cacheKey]);
     queries.push([QUERY_NAME_getExperience, cacheKey]);
 
