@@ -1,6 +1,6 @@
 import { ApolloLink } from "apollo-link";
 import { onError } from "apollo-link-error";
-import { getToken } from "./tokens";
+import { getToken } from "./users";
 
 export type MakeSocketLinkFn = (arg: {
   token: string | null;

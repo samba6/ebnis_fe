@@ -8,12 +8,10 @@ import immer from "immer";
 import { RegMutationProps } from "../../graphql/user-reg.mutation";
 import { Registration } from "../../graphql/apollo-types/globalTypes";
 import { PasswordInputAction, PasswordInputType } from "../PwdInput/pwd-input";
-import { UserLocalMutationProps } from "../../state/user.resolver";
 
 export interface Props
   extends RouteComponentProps,
     RegMutationProps,
-    UserLocalMutationProps,
     WithApolloClient<{}> {}
 
 export type FormValuesKey = keyof Registration;

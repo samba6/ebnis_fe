@@ -8,21 +8,12 @@ import immer from "immer";
 import { LoginUser as FormValues } from "../../graphql/apollo-types/globalTypes";
 import { LoginMutationProps } from "../../graphql/login.mutation";
 import { PasswordInputAction, PasswordInputType } from "../PwdInput/pwd-input";
-import {
-  UserLocalMutationProps,
-  UserLocalGqlProps,
-} from "../../state/user.resolver";
-import { WithUser } from "../with-user-hoc";
 
 export interface OwnProps
   extends RouteComponentProps<{}>,
-    WithApolloClient<{}>,
-    WithUser {}
+    WithApolloClient<{}> {}
 
-export type Props = OwnProps &
-  LoginMutationProps &
-  UserLocalMutationProps &
-  UserLocalGqlProps;
+export type Props = OwnProps & LoginMutationProps;
 
 export const ValidationSchema = Yup.object<FormValues>().shape({
   email: Yup.string()

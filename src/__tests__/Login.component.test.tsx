@@ -17,23 +17,30 @@ jest.mock("../components/SidebarHeader", () => ({
   SidebarHeader: jest.fn(() => null),
 }));
 jest.mock("../components/Login/scroll-to-top");
+jest.mock("../state/users");
+jest.mock("../components/use-user");
 
 import { getConnStatus } from "../state/get-conn-status";
 import { refreshToHome } from "../refresh-to-app";
 import { scrollToTop } from "../components/Login/scroll-to-top";
 import { UserFragment } from "../graphql/apollo-types/UserFragment";
 import { EXPERIENCES_URL } from "../routes";
+import { getLoggedOutUser, storeUser } from "../state/users";
+import { useUser } from "../components/use-user";
 
 const mockRefreshToHome = refreshToHome as jest.Mock;
 const mockGetConnStatus = getConnStatus as jest.Mock;
 const mockScrollToTop = scrollToTop as jest.Mock;
+const mockGetLoggedOutUser = getLoggedOutUser as jest.Mock;
+const mockStoreUser = storeUser as jest.Mock;
+const mockUseUser = useUser as jest.Mock;
 
 it("renders correctly and submits", async () => {
   /**
    * Given that server will return a valid user after form submission
    */
   const user = {};
-  const { ui, mockLogin, mockUpdateLocalUser } = makeComp();
+  const { ui, mockLogin } = makeComp();
 
   mockLogin.mockResolvedValue({
     data: {
@@ -93,7 +100,7 @@ it("renders correctly and submits", async () => {
   /**
    * And user should be saved on the client
    */
-  expect(mockUpdateLocalUser).toBeCalledWith({ variables: { user } });
+  expect(mockStoreUser).toBeCalledWith(user);
 
   /**
    * And we should be redirected
@@ -288,14 +295,10 @@ it("pre-fills form with user data", async () => {
    * Given user has logged out
    */
 
-  const { ui } = makeComp({
-    props: {
-      localUser: {
-        loggedOutUser: {
-          email: "me@me.com",
-        },
-      } as any,
-    },
+  const { ui } = makeComp();
+
+  mockGetLoggedOutUser.mockReturnValue({
+    email: "me@me.com",
   });
 
   /**
@@ -314,11 +317,9 @@ it("navigates to 'my experiences page' if user is logged in", async () => {
    * Given user has logged out
    */
 
-  const { ui, mockNavigate } = makeComp({
-    props: {
-      user: {} as UserFragment,
-    },
-  });
+  const { ui, mockNavigate } = makeComp();
+
+  mockUseUser.mockReturnValue({});
 
   /**
    * When we start to use the login component
@@ -328,32 +329,33 @@ it("navigates to 'my experiences page' if user is logged in", async () => {
   expect(mockNavigate).toHaveBeenCalledWith(EXPERIENCES_URL);
 });
 
+////////////////////////// HELPER FUNCTIONS ///////////////////////////
+
 function fillForm(getByLabelText: any, getByText: any) {
   fillField(getByLabelText("Email"), "me@me.com");
   fillField(getByLabelText("Password"), "awesome pass");
   fireEvent.click(getByText(/Submit/));
 }
 
+const LoginP = Login as ComponentType<Partial<Props>>;
+
 function makeComp({
   isConnected = true,
   props = {},
 }: { isConnected?: boolean; props?: Partial<Props> } = {}) {
   mockScrollToTop.mockReset();
-
   mockGetConnStatus.mockReset();
+  mockStoreUser.mockReset();
+  mockGetLoggedOutUser.mockReset();
+  mockUseUser.mockReset();
   mockGetConnStatus.mockResolvedValue(isConnected);
 
-  const LoginP = Login as ComponentType<Partial<Props>>;
   const mockLogin = jest.fn();
-  const mockUpdateLocalUser = jest.fn();
   const { Ui, ...rest } = renderWithRouter(LoginP);
 
   return {
-    ui: (
-      <Ui login={mockLogin} updateLocalUser={mockUpdateLocalUser} {...props} />
-    ),
+    ui: <Ui login={mockLogin} {...props} />,
     ...rest,
     mockLogin,
-    mockUpdateLocalUser,
   };
 }

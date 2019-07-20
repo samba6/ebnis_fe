@@ -4,6 +4,7 @@ import React, {
   useRef,
   useContext,
   useEffect,
+  useMemo,
 } from "react";
 import Card from "semantic-ui-react/dist/commonjs/views/Card";
 import Button from "semantic-ui-react/dist/commonjs/elements/Button";
@@ -34,26 +35,21 @@ import { LoginMutation_login } from "../../graphql/apollo-types/LoginMutation";
 import { SidebarHeader } from "../SidebarHeader";
 import { ToOtherAuthLink } from "../ToOtherAuthLink";
 import { scrollToTop } from "./scroll-to-top";
-import { UserLocalQueryData } from "../../state/user.resolver";
 import { LayoutContext } from "../Layout/utils";
 import { EXPERIENCES_URL } from "../../routes";
+import { storeUser, getLoggedOutUser } from "../../state/users";
+import { useUser } from "../use-user";
 
 export function Login(props: Props) {
-  const {
-    login,
-    updateLocalUser,
-    client,
-    location,
-    localUser: { loggedOutUser } = {} as UserLocalQueryData,
-    user,
-    navigate,
-  } = props;
+  const { login, client, location, navigate } = props;
 
   const [state, dispatch] = useReducer(reducer, initialState);
 
   const mainRef = useRef<HTMLDivElement>(null);
 
   const { persistor } = useContext(LayoutContext);
+
+  const user = useUser();
 
   const {
     otherErrors,
@@ -70,6 +66,12 @@ export function Login(props: Props) {
       dispatch([ActionType.setShowPage, true]);
     }
   }, [user, navigate]);
+
+  const initialFormValues = useMemo(() => {
+    const loggedOutUser = getLoggedOutUser();
+
+    return loggedOutUser ? loggedOutUser : { email: "" };
+  }, []);
 
   if (!showPage) {
     return null;
@@ -128,9 +130,7 @@ export function Login(props: Props) {
                   result.data &&
                   result.data.login) as LoginMutation_login;
 
-                await updateLocalUser({
-                  variables: { user },
-                });
+                storeUser(user);
 
                 refreshToHome(persistor);
               } catch (error) {
@@ -184,7 +184,7 @@ export function Login(props: Props) {
       <div className="main" ref={mainRef} data-testid="components-login-main">
         <Formik
           initialValues={{
-            email: loggedOutUser ? loggedOutUser.email : "",
+            email: initialFormValues.email,
             password: "",
           }}
           onSubmit={noop}

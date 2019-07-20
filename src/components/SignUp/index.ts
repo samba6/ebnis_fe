@@ -1,5 +1,4 @@
 import { graphql, compose, withApollo } from "react-apollo";
-
 import {
   UserRegMutation,
   UserRegMutationVariables,
@@ -10,7 +9,6 @@ import {
   RegMutationProps,
 } from "../../graphql/user-reg.mutation";
 import { SignUp as Comp } from "./component";
-import { userLocalMutationGql } from "../../state/user.resolver";
 
 const regUserGql = graphql<
   {},
@@ -29,6 +27,5 @@ const regUserGql = graphql<
 
 export const SignUp = compose(
   withApollo,
-  userLocalMutationGql,
   regUserGql,
 )(Comp);

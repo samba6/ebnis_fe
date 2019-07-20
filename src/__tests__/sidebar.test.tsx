@@ -3,8 +3,7 @@
 import React, { ComponentType } from "react";
 import "jest-dom/extend-expect";
 import "react-testing-library/cleanup-after-each";
-import { render, fireEvent, wait } from "react-testing-library";
-
+import { render, fireEvent } from "react-testing-library";
 import { Sidebar, Props } from "../components/Sidebar/component";
 import { renderWithRouter } from "./test_utils";
 import { RouteComponentProps } from "@reach/router";
@@ -14,7 +13,12 @@ import {
   LOGIN_URL,
 } from "../routes";
 
-const SidebarP = Sidebar as ComponentType<Partial<Props>>;
+jest.mock("../components/use-user");
+jest.mock("../state/users");
+
+import { useUser } from "../components/use-user";
+
+const mockUseUser = useUser as jest.Mock;
 
 it("renders as visible and sidebar item toggles visibility off", () => {
   /**
@@ -167,9 +171,8 @@ it("logs out user", async () => {
    * Given that user is logged in
    */
 
-  const { ui, mockUpdateLocalUser, mockNavigate } = setup({
-    props: { user: {} as any },
-  });
+  const { ui, mockNavigate } = setup({});
+  mockUseUser.mockReturnValue({});
   /**
    * When we are interacting with the component
    */
@@ -182,17 +185,7 @@ it("logs out user", async () => {
   fireEvent.click(getByText(/log out/i));
 
   /**
-   * Then we should be logged out
-   */
-
-  await wait(() => {
-    expect((mockUpdateLocalUser.mock.calls[0][0] as any).variables.user).toBe(
-      null,
-    );
-  });
-
-  /**
-   * And we should be redirected
+   * Then we should be redirected
    */
   expect(mockNavigate).toBeCalledWith(LOGIN_URL);
 });
@@ -202,9 +195,7 @@ it("does not render logout button if we are not logged in", () => {
    * Given that user is not logged in
    */
 
-  const { ui } = setup({
-    props: { user: null as any },
-  });
+  const { ui } = setup({});
   /**
    * When we are interacting with the component
    */
@@ -217,6 +208,10 @@ it("does not render logout button if we are not logged in", () => {
   expect(queryByText(/log out/i)).not.toBeInTheDocument();
 });
 
+////////////////////////// HELPER FUNCTIONS ///////////////////////////
+
+const SidebarP = Sidebar as ComponentType<Partial<Props>>;
+
 function setup({
   props = {},
   routeProps = {},
@@ -224,12 +219,11 @@ function setup({
   props?: Partial<Props>;
   routeProps?: Partial<RouteComponentProps>;
 } = {}) {
+  mockUseUser.mockReset();
   const mockToggleShowSidebar = jest.fn();
-  const mockUpdateLocalUser = jest.fn();
 
   const { Ui, ...rest } = renderWithRouter(SidebarP, routeProps, {
     toggleShowSidebar: mockToggleShowSidebar,
-    updateLocalUser: mockUpdateLocalUser,
     ...props,
   });
 
@@ -237,6 +231,5 @@ function setup({
     ui: <Ui />,
     ...rest,
     mockToggleShowSidebar,
-    mockUpdateLocalUser,
   };
 }

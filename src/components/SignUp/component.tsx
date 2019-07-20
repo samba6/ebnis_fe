@@ -30,13 +30,13 @@ import { getConnStatus } from "../../state/get-conn-status";
 import { noop } from "../../constants";
 import { UserRegMutationFn } from "../../graphql/user-reg.mutation";
 import { scrollToTop } from "./scrollToTop";
-import { UserFragment } from "../../graphql/apollo-types/UserFragment";
 import { SidebarHeader } from "../SidebarHeader";
 import { ToOtherAuthLink } from "../ToOtherAuthLink";
 import { LayoutContext } from "../Layout/utils";
+import { storeUser } from "../../state/users";
 
 export function SignUp(props: Props) {
-  const { client, regUser, updateLocalUser, location } = props;
+  const { client, regUser, location } = props;
   const mainRef = useRef<HTMLDivElement | null>(null);
   const [state, dispatch] = useReducer(reducer, {});
   const {
@@ -96,11 +96,9 @@ export function SignUp(props: Props) {
                   variables: { registration: values },
                 });
 
-                const user = (result &&
-                  result.data &&
-                  result.data.registration) as UserFragment;
+                const user = result && result.data && result.data.registration;
 
-                await updateLocalUser({ variables: { user } });
+                storeUser(user);
                 refreshToHome(persistor);
               } catch (error) {
                 formikBag.setSubmitting(false);

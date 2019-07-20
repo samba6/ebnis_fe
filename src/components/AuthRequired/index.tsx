@@ -2,11 +2,13 @@ import React, { useEffect } from "react";
 import { navigate } from "gatsby";
 
 import { LOGIN_URL } from "../../routes";
-import { withUserHOC } from "../with-user-hoc";
+import { useUser } from "../use-user";
 
-// tslint:disable-next-line: no-any
-function AuthRequiredComp(props: any) {
-  const { component: AuthComponent, user, ...rest } = props;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function AuthRequired(props: any) {
+  const { component: AuthComponent, ...rest } = props;
+
+  const user = useUser();
 
   useEffect(() => {
     if (!user) {
@@ -16,5 +18,3 @@ function AuthRequiredComp(props: any) {
 
   return user ? <AuthComponent {...rest} /> : null;
 }
-
-export const AuthRequired = withUserHOC(AuthRequiredComp);

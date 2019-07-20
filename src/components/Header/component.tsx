@@ -13,6 +13,7 @@ import {
   UPLOAD_UNSAVED_PREVIEW_URL,
   UPLOAD_UNSAVED_URL_START,
 } from "../../constants/upload-unsaved-routes";
+import { useUser } from "../use-user";
 
 export const Header = (props: Props) => {
   const {
@@ -20,13 +21,14 @@ export const Header = (props: Props) => {
     sidebar,
     toggleShowSidebar,
     show,
-    user,
     location,
     navigate,
     logoAttrs: { src, height, width },
     children,
     className = "",
   } = props;
+
+  const user = useUser();
 
   const pathname = (location as WindowLocation).pathname;
   const isHome = pathname === EXPERIENCES_URL || pathname === ROOT_URL;

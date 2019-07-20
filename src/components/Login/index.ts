@@ -9,8 +9,6 @@ import {
   LoginMutationProps,
   LOGIN_MUTATION,
 } from "../../graphql/login.mutation";
-import { userLocalMutationGql, userLocalGql } from "../../state/user.resolver";
-import { withUserHOC } from "../with-user-hoc";
 
 const loginGql = graphql<
   {},
@@ -28,10 +26,6 @@ const loginGql = graphql<
 });
 
 export const Login = compose(
-  withUserHOC,
-  userLocalGql,
   withApollo,
-  userLocalGql,
-  userLocalMutationGql,
   loginGql,
 )(Comp);

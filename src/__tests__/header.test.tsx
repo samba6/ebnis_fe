@@ -3,7 +3,6 @@
 import React, { ComponentType } from "react";
 import "jest-dom/extend-expect";
 import { render, fireEvent } from "react-testing-library";
-
 import { Header } from "../components/Header/component";
 import { Props } from "../components/Header/utils";
 import { renderWithRouter } from "./test_utils";
@@ -12,8 +11,11 @@ import { ILayoutContextContext } from "../components/Layout/utils";
 import { UPLOAD_UNSAVED_PREVIEW_URL } from "../constants/upload-unsaved-routes";
 import { LayoutProvider } from "../components/Layout/layout-provider";
 
-type P = ComponentType<Partial<Props>>;
-const HeaderP = Header as P;
+jest.mock("../components/use-user");
+
+import { useUser } from "../components/use-user";
+
+const mockUseUser = useUser as jest.Mock;
 
 const title = "My App title";
 
@@ -138,9 +140,10 @@ it("should navigate to experiences route when on any url except root and experie
       title,
       sidebar: true,
       location: { pathname: ROOT_URL + 5 } as any,
-      user: {} as any,
     },
   });
+
+  mockUseUser.mockReturnValue({});
 
   /**
    * And we are using header component
@@ -173,7 +176,6 @@ it("should navigate to root route when on any url except root and experiences ro
       title,
       sidebar: true,
       location: { pathname: ROOT_URL + 5 } as any,
-      user: undefined,
     },
   });
 
@@ -355,10 +357,16 @@ it("sets class name", () => {
   expect((firstChild as any).classList).toContain("yahoo");
 });
 
+////////////////////////// HELPER FUNCTIONS ///////////////////////////
+
+const HeaderP = Header as ComponentType<Partial<Props>>;
+
 function setup({
   props = {},
   context = {},
 }: { props?: Partial<Props>; context?: Partial<ILayoutContextContext> } = {}) {
+  mockUseUser.mockReset();
+
   const { Ui, ...rest } = renderWithRouter(
     HeaderP,
     {},

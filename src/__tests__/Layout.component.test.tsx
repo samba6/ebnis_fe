@@ -7,12 +7,12 @@ import { render, waitForElement, wait } from "react-testing-library";
 import { Layout, Props } from "../components/Layout/component";
 import { EbnisAppProvider } from "../context";
 
-jest.mock("../state/tokens");
 jest.mock("../state/unsaved-resolvers");
 jest.mock("../state/get-conn-status");
 jest.mock("../components/Loading", () => ({
   Loading: jest.fn(() => <div data-testid="loading" />),
 }));
+jest.mock("../components/use-user");
 
 let layoutContextValue = (null as unknown) as ILayoutContextContext;
 
@@ -24,15 +24,15 @@ jest.mock("../components/Layout/layout-provider", () => ({
   }),
 }));
 
-import { getUser } from "../state/tokens";
 import { getUnsavedCount } from "../state/unsaved-resolvers";
 import { getConnStatus } from "../state/get-conn-status";
 import { emitData, EmitAction } from "../setup-observable";
 import { ILayoutContextContext } from "../components/Layout/utils";
+import { useUser } from "../components/use-user";
 
-const mockGetUser = getUser as jest.Mock;
 const mockGetUnsavedCount = getUnsavedCount as jest.Mock;
 const mockGetConnStatus = getConnStatus as jest.Mock;
+const mockUseUser = useUser as jest.Mock;
 
 const browserRenderedTestId = "layout-loaded";
 
@@ -125,7 +125,7 @@ it("renders browser hydrated children if cache persist fails", async done => {
 
 it("queries unsaved when there is user and connection", async done => {
   const { ui } = makeComp();
-  mockGetUser.mockReturnValue({});
+  mockUseUser.mockReturnValue({});
   mockGetConnStatus.mockResolvedValue(true);
 
   const { getByTestId } = render(ui);
@@ -148,7 +148,7 @@ it("queries unsaved when connection returns and we are reconnecting", async done
    * Given there is user in the system and initially there is no connection
    */
   const { ui } = makeComp();
-  mockGetUser.mockReturnValue({});
+  mockUseUser.mockReturnValue({});
   mockGetUnsavedCount.mockResolvedValue(5);
   mockGetConnStatus.mockResolvedValue(false);
 
@@ -184,7 +184,7 @@ it("does not query unsaved when connection returns and we are not reconnecting",
    * Given there is user in the system and initially there is no connection
    */
   const { ui } = makeComp();
-  mockGetUser.mockReturnValue({});
+  mockUseUser.mockReturnValue({});
   mockGetConnStatus.mockResolvedValue(false);
 
   const { getByTestId } = render(ui);
@@ -214,7 +214,7 @@ it("does not query unsaved when connection returns and we are not reconnecting",
 
 it("resets unsaved count when we lose connection", async done => {
   const { ui } = makeComp();
-  mockGetUser.mockReturnValue({});
+  mockUseUser.mockReturnValue({});
   mockGetConnStatus.mockResolvedValue(true);
   mockGetUnsavedCount.mockResolvedValue(2);
 
@@ -244,7 +244,7 @@ function makeComp({
 }: { context?: {}; testId?: string } = {}) {
   layoutContextValue = (null as unknown) as ILayoutContextContext;
   mockGetUnsavedCount.mockReset();
-  mockGetUser.mockReset();
+  mockUseUser.mockReset();
   mockGetConnStatus.mockReset();
 
   const mockPersistCache = jest.fn();

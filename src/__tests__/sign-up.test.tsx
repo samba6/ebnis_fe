@@ -15,23 +15,26 @@ jest.mock("../components/SignUp/scrollToTop");
 jest.mock("../components/SidebarHeader", () => ({
   SidebarHeader: jest.fn(() => null),
 }));
+jest.mock("../state/users");
 
 import { getConnStatus } from "../state/get-conn-status";
 import { refreshToHome } from "../refresh-to-app";
 import { scrollToTop } from "../components/SignUp/scrollToTop";
 import { ApolloError } from "apollo-client";
 import { GraphQLError } from "graphql";
+import { storeUser } from "../state/users";
 
 const mockGetConnStatus = getConnStatus as jest.Mock;
 const mockRefreshToHome = refreshToHome as jest.Mock;
 const mockScrollToTop = scrollToTop as jest.Mock;
+const mockStoreUser = storeUser as jest.Mock;
 
 const SignUpP = SignUp as ComponentType<Partial<Props>>;
 
 it("renders correctly and submits", async () => {
   const user = {};
 
-  const { ui, mockRegUser, mockUpdateLocalUser } = makeComp();
+  const { ui, mockRegUser } = makeComp();
 
   mockRegUser.mockResolvedValue({
     data: {
@@ -98,7 +101,7 @@ it("renders correctly and submits", async () => {
   /**
    * And data received from server should be saved locally on the client
    */
-  expect(mockUpdateLocalUser).toHaveBeenCalledWith({ variables: { user } });
+  expect(mockStoreUser).toHaveBeenCalledWith(user);
 
   /**
    * And we should be redirected
@@ -318,16 +321,16 @@ function fillForm(getByLabelText: any, getByText: any) {
 
 function makeComp(isServerConnected: boolean = true) {
   mockScrollToTop.mockReset();
+  mockStoreUser.mockReset();
+
   mockGetConnStatus.mockResolvedValue(isServerConnected);
   const { Ui, ...rest } = renderWithRouter(SignUpP);
 
   const mockRegUser = jest.fn();
-  const mockUpdateLocalUser = jest.fn();
 
   return {
-    ui: <Ui regUser={mockRegUser} updateLocalUser={mockUpdateLocalUser} />,
+    ui: <Ui regUser={mockRegUser} />,
     mockRegUser,
-    mockUpdateLocalUser,
     ...rest,
   };
 }

@@ -17,7 +17,7 @@ import { mutate } from "./mutate";
 import { buildClientCache } from "../../src/state/apollo-setup";
 import { allResolvers } from "../../src/state/all-resolvers";
 import { UserFragment } from "../../src/graphql/apollo-types/UserFragment";
-import { storeUser, storeToken } from "../../src/state/tokens";
+import { storeUser } from "../../src/state/users";
 
 const serverUrl = Cypress.env("API_URL") as string;
 
@@ -54,7 +54,6 @@ function registerUser(userData: Registration) {
       (result.data.registration as UserRegMutation_registration);
 
     storeUser(user);
-    storeToken(user.jwt);
 
     return user;
   });

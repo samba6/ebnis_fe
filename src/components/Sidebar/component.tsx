@@ -8,13 +8,10 @@ import {
   EXPERIENCES_URL,
   LOGIN_URL,
 } from "../../routes";
-import { WithUser } from "../with-user-hoc";
-import { UserLocalMutationProps } from "../../state/user.resolver";
+import { clearUser } from "../../state/users";
+import { useUser } from "../use-user";
 
-export interface Props
-  extends RouteComponentProps,
-    WithUser,
-    UserLocalMutationProps {
+export interface Props extends RouteComponentProps {
   show: boolean;
   toggleShowSidebar: Dispatch<SetStateAction<boolean>>;
 }
@@ -23,14 +20,8 @@ const blockClicks: MouseEventHandler<HTMLDivElement> = evt =>
   evt.stopPropagation();
 
 export function Sidebar(props: Props) {
-  const {
-    location,
-    show,
-    toggleShowSidebar,
-    navigate,
-    updateLocalUser,
-    user,
-  } = props;
+  const { location, show, toggleShowSidebar, navigate } = props;
+  const user = useUser();
 
   const pathname = (location as WindowLocation).pathname;
 
@@ -99,10 +90,8 @@ export function Sidebar(props: Props) {
           {user && (
             <li
               className="sidebar__item"
-              onClick={async () => {
-                await updateLocalUser({
-                  variables: { user: null },
-                });
+              onClick={() => {
+                clearUser();
 
                 (navigate as NavigateFn)(LOGIN_URL);
               }}

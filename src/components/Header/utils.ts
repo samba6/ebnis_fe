@@ -2,7 +2,7 @@ import { SetStateAction, PropsWithChildren } from "react";
 import { RouteComponentProps } from "@reach/router";
 
 import { LogoImageQuery_file_childImageSharp_fixed } from "../../graphql/gatsby-types/LogoImageQuery";
-import { WithUser } from "../with-user-hoc";
+
 
 export interface OwnProps {
   title?: string;
@@ -15,7 +15,6 @@ export interface OwnProps {
 
 export interface Props
   extends WithLogo,
-    WithUser,
     RouteComponentProps,
     PropsWithChildren<OwnProps> {}
 

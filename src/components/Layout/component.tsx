@@ -9,7 +9,7 @@ import { EbnisAppContext } from "../../context";
 import { Loading } from "../Loading";
 import { ILayoutContextContext, reducer, LayoutActionType } from "./utils";
 import { getObservable, EmitAction } from "../../setup-observable";
-import { getUser } from "../../state/tokens";
+import { getUser } from "../../state/users";
 import { ZenObservable } from "zen-observable-ts";
 import { getConnStatus } from "../../state/get-conn-status";
 import { CachePersistor } from "apollo-cache-persist";
@@ -18,6 +18,7 @@ import { getUnsavedCount } from "../../state/unsaved-resolvers";
 import { LayoutProvider } from "./layout-provider";
 import { RouteComponentProps } from "@reach/router";
 import { preFetchExperiences } from "./pre-fetch-experiences";
+import { useUser } from "../use-user";
 
 export interface Props extends PropsWithChildren<{}>, RouteComponentProps {}
 
@@ -37,14 +38,14 @@ export function Layout(props: Props) {
     renderChildren: false,
   });
 
+  const user = useUser();
+
   const { unsavedCount, renderChildren, experiencesToPreFetch } = state;
 
   useEffect(() => {
     if (!(cache && persistCache && client)) {
       return;
     }
-
-    const user = getUser();
 
     if (user) {
       if (experiencesToPreFetch) {

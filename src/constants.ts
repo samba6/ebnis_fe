@@ -1,7 +1,5 @@
-export const TOKEN_KEY = "oVQ0XGQycGExYQdkeD2X2mCdVQ8GxrHTh";
 export const SITE_TITLE = "Ebnis";
 export const THEME_COLOR = "#5faac7";
-export const USER_KEY = "nOQhAH4V54h9MMBS3BSwtE/2eZeQWHRnPfoC4K+RDuWairX";
 export const PAGE_NOT_FOUND_TITLE = "Page Not Found";
 export const UNSAVED_ID_PREFIX = "ebnis-unsaved-id-";
 
