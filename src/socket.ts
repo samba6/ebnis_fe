@@ -1,5 +1,6 @@
 import { Socket } from "phoenix";
 import { getBackendUrls } from "./state/get-backend-urls";
+import { storeConnectionStatus } from "./state/connections";
 
 export interface AppSocket extends Socket {
   ebnisConnect: (token?: string | null) => AppSocket;
@@ -7,11 +8,7 @@ export interface AppSocket extends Socket {
 
 let socket: AppSocket;
 
-export const defineSocket = ({
-  uri,
-  onConnChange,
-  token: connToken,
-}: DefineParams) => {
+export const defineSocket = ({ uri, token: connToken }: DefineParams) => {
   // if we are disconnected, phoenix will keep trying to connect using
   // exponential back off which means
   // we will keep dispatching disconnect.  So we track if we already dispatched
@@ -44,20 +41,15 @@ export const defineSocket = ({
 
   function dispatchDisconnected() {
     if (isDisconnected === false) {
-      if (onConnChange) {
-        onConnChange({ isConnected: false, reconnected: "false" });
-      }
-
+      storeConnectionStatus(false);
       isDisconnected = true;
     }
   }
 
   function dispatchConnected() {
-    if (onConnChange) {
-      onConnChange({ isConnected: true, reconnected: "true" });
-    }
+    storeConnectionStatus(socket.isConnected());
 
-    isDisconnected = false;
+    isDisconnected = !socket.isConnected();
   }
 
   function makeParams(token?: string | null) {
@@ -81,13 +73,7 @@ export function getSocket({ forceReconnect, ...params }: DefineParams = {}) {
   return socket ? socket : defineSocket(params);
 }
 
-export type OnConnectionChanged = (args: {
-  isConnected: boolean;
-  reconnected: string;
-}) => void;
-
 interface DefineParams {
-  onConnChange?: OnConnectionChanged;
   uri?: string;
   token?: string | null;
   forceReconnect?: boolean;

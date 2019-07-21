@@ -43,12 +43,12 @@ import { ExperienceDefinitionUpdate } from "./update";
 import { CreateExperienceMutationFn } from "../../graphql/create-experience.mutation";
 import { scrollTop } from "./scrollTop";
 import { SidebarHeader } from "../SidebarHeader";
-import { getConnStatus } from "../../state/get-conn-status";
 import { FormCtrlError } from "../FormCtrlError/component";
 import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragment";
+import { isConnected } from "../../state/connections";
 
 export function ExperienceDefinition(props: Props) {
-  const { createExperience, navigate, client, createUnsavedExperience } = props;
+  const { createExperience, navigate, createUnsavedExperience } = props;
   const [state, dispatch] = useReducer(reducer, {
     showDescriptionInput: true,
   } as State);
@@ -141,7 +141,7 @@ export function ExperienceDefinition(props: Props) {
         let result;
         let expId;
 
-        if (await getConnStatus(client)) {
+        if (isConnected()) {
           result = await (createExperience as CreateExperienceMutationFn)({
             variables: {
               createExperienceInput: values,

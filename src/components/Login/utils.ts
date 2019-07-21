@@ -3,15 +3,13 @@ import { RouteComponentProps } from "@reach/router";
 import { Reducer } from "react";
 import { FormikErrors } from "formik";
 import { ApolloError } from "apollo-client";
-import { WithApolloClient } from "react-apollo";
 import immer from "immer";
 import { LoginUser as FormValues } from "../../graphql/apollo-types/globalTypes";
 import { LoginMutationProps } from "../../graphql/login.mutation";
 import { PasswordInputAction, PasswordInputType } from "../PwdInput/pwd-input";
 
-export interface OwnProps
-  extends RouteComponentProps<{}>,
-    WithApolloClient<{}> {}
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface OwnProps extends RouteComponentProps<{}> {}
 
 export type Props = OwnProps & LoginMutationProps;
 

@@ -9,15 +9,12 @@ import {
   UserRegMutation_registration,
 } from "../../src/graphql/apollo-types/UserRegMutation";
 import { REG_USER_MUTATION } from "../../src/graphql/user-reg.mutation";
-import {
-  ManualConnectionStatus,
-  setManualConnection,
-} from "../../src/test-utils/manual-connection-setting";
 import { mutate } from "./mutate";
 import { buildClientCache } from "../../src/state/apollo-setup";
 import { allResolvers } from "../../src/state/all-resolvers";
 import { UserFragment } from "../../src/graphql/apollo-types/UserFragment";
 import { storeUser } from "../../src/state/users";
+import { storeConnectionStatus } from "../../src/state/connections";
 
 const serverUrl = Cypress.env("API_URL") as string;
 
@@ -59,8 +56,8 @@ function registerUser(userData: Registration) {
   });
 }
 
-function setConnectionStatus(status: ManualConnectionStatus) {
-  setManualConnection(status);
+function setConnectionStatus(isConnected: boolean) {
+  storeConnectionStatus(isConnected, "manual");
 }
 
 Cypress.Commands.add("checkoutSession", checkoutSession);
@@ -99,7 +96,7 @@ declare global {
       /**
        *
        */
-      setConnectionStatus: (status: ManualConnectionStatus) => void;
+      setConnectionStatus: (isConnected: boolean) => void;
     }
   }
 }

@@ -11,7 +11,7 @@ import { renderWithRouter, fillField } from "./test_utils";
 import { ApolloError } from "apollo-client";
 import { GraphQLError } from "graphql";
 
-jest.mock("../state/get-conn-status");
+jest.mock("../state/connections");
 jest.mock("../refresh-to-app");
 jest.mock("../components/SidebarHeader", () => ({
   SidebarHeader: jest.fn(() => null),
@@ -20,16 +20,15 @@ jest.mock("../components/Login/scroll-to-top");
 jest.mock("../state/users");
 jest.mock("../components/use-user");
 
-import { getConnStatus } from "../state/get-conn-status";
 import { refreshToHome } from "../refresh-to-app";
 import { scrollToTop } from "../components/Login/scroll-to-top";
-import { UserFragment } from "../graphql/apollo-types/UserFragment";
 import { EXPERIENCES_URL } from "../routes";
 import { getLoggedOutUser, storeUser } from "../state/users";
 import { useUser } from "../components/use-user";
+import { isConnected } from "../state/connections";
 
 const mockRefreshToHome = refreshToHome as jest.Mock;
-const mockGetConnStatus = getConnStatus as jest.Mock;
+const mockIsConnected = isConnected as jest.Mock;
 const mockScrollToTop = scrollToTop as jest.Mock;
 const mockGetLoggedOutUser = getLoggedOutUser as jest.Mock;
 const mockStoreUser = storeUser as jest.Mock;
@@ -324,7 +323,7 @@ it("navigates to 'my experiences page' if user is logged in", async () => {
   /**
    * When we start to use the login component
    */
-  const {} = render(ui);
+  render(ui);
 
   expect(mockNavigate).toHaveBeenCalledWith(EXPERIENCES_URL);
 });
@@ -344,11 +343,11 @@ function makeComp({
   props = {},
 }: { isConnected?: boolean; props?: Partial<Props> } = {}) {
   mockScrollToTop.mockReset();
-  mockGetConnStatus.mockReset();
+  mockIsConnected.mockReset();
   mockStoreUser.mockReset();
   mockGetLoggedOutUser.mockReset();
   mockUseUser.mockReset();
-  mockGetConnStatus.mockResolvedValue(isConnected);
+  mockIsConnected.mockReturnValue(isConnected);
 
   const mockLogin = jest.fn();
   const { Ui, ...rest } = renderWithRouter(LoginP);

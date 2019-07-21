@@ -1,7 +1,6 @@
 import { USER_REGISTRATION_OBJECT } from "../support/user-registration-object";
 import { FieldType } from "../../src/graphql/apollo-types/globalTypes";
 import { makeNewEntryRoute } from "../../src/constants/new-entry-route";
-import { ManualConnectionStatus } from "../../src/test-utils/manual-connection-setting";
 import {
   createSavedExperience,
   createUnsavedExperience,
@@ -59,7 +58,7 @@ context("new experience entry page", () => {
        */
       cy.queryByText(fieldValueRegex).should("not.exist");
 
-      cy.setConnectionStatus(ManualConnectionStatus.disconnected);
+      cy.setConnectionStatus(false);
 
       /**
        * When user completes and submits the form
@@ -182,7 +181,7 @@ context("new experience entry page", () => {
        */
       cy.queryByText(fieldValueRegex).should("not.exist");
 
-      cy.setConnectionStatus(ManualConnectionStatus.disconnected);
+      cy.setConnectionStatus(false);
 
       /**
        * When user completes and submits the form

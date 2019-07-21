@@ -1,4 +1,4 @@
-import { graphql, compose, withApollo } from "react-apollo";
+import { graphql, compose } from "react-apollo";
 
 import { Login as Comp } from "./component";
 import {
@@ -25,7 +25,4 @@ const loginGql = graphql<
   },
 });
 
-export const Login = compose(
-  withApollo,
-  loginGql,
-)(Comp);
+export const Login = compose(loginGql)(Comp);

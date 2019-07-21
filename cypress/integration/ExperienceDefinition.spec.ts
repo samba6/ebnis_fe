@@ -3,7 +3,6 @@ import { FieldType } from "../../src/graphql/apollo-types/globalTypes";
 import { EXPERIENCE_DEFINITION_URL } from "../../src/routes";
 import { EXPERIENCE_DEFINITION_TITLE } from "../../src/constants/experience-definition-title";
 import { getDescendantByText } from "../support/get-descendant-by-text";
-import { ManualConnectionStatus } from "../../src/test-utils/manual-connection-setting";
 import { createSavedExperience } from "../support/create-experience";
 
 context("experience definition page", () => {
@@ -121,7 +120,7 @@ context("experience definition page", () => {
      */
     cy.title().should("contain", EXPERIENCE_DEFINITION_TITLE);
 
-    cy.setConnectionStatus(ManualConnectionStatus.disconnected);
+    cy.setConnectionStatus(false);
 
     /**
      * When we complete the title field with new experience definition title

@@ -33,7 +33,7 @@ jest.mock("../components/SidebarHeader", () => ({
   },
 }));
 
-jest.mock("../state/get-conn-status");
+jest.mock("../state/connections");
 
 jest.mock("../components/Entry/component", () => ({
   Entry: (props: any) => {
@@ -55,7 +55,6 @@ jest.mock("../state/resolvers/update-get-experiences-mini-query");
 jest.mock("../state/resolvers/delete-references-from-cache");
 jest.mock("../state/resolvers/update-saved-and-unsaved-experiences-in-cache");
 
-import { getConnStatus } from "../state/get-conn-status";
 import { scrollIntoView } from "../components/scroll-into-view";
 import {
   GetAllUnSavedQueryData,
@@ -67,8 +66,9 @@ import { replaceExperiencesInGetExperiencesMiniQuery } from "../state/resolvers/
 import { deleteIdsFromCache } from "../state/resolvers/delete-references-from-cache";
 import { deleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache } from "../state/resolvers/update-saved-and-unsaved-experiences-in-cache";
 import { EXPERIENCES_URL } from "../routes";
+import { isConnected } from "../state/connections";
 
-const mockGetConnectionStatus = getConnStatus as jest.Mock;
+const mockIsConnected = isConnected as jest.Mock;
 const mockScrollIntoView = scrollIntoView as jest.Mock;
 const mockUpdateCache = updateCache as jest.Mock;
 
@@ -870,8 +870,8 @@ function makeComp({
   mockReplaceExperiencesInGetExperiencesMiniQuery.mockReset();
   mockUpdateCache.mockReset();
   mockScrollIntoView.mockReset();
-  mockGetConnectionStatus.mockReset();
-  mockGetConnectionStatus.mockResolvedValue(isConnected);
+  mockIsConnected.mockReset();
+  mockIsConnected.mockReturnValue(isConnected);
 
   const mockUploadUnsavedExperiences = jest.fn();
   const mockUploadSavedExperiencesEntries = jest.fn();

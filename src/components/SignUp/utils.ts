@@ -1,6 +1,5 @@
 import * as Yup from "yup";
 import { RouteComponentProps } from "@reach/router";
-import { WithApolloClient } from "react-apollo";
 import { FormikErrors } from "formik";
 import { ApolloError } from "apollo-client";
 import { Reducer, Dispatch } from "react";
@@ -9,10 +8,7 @@ import { RegMutationProps } from "../../graphql/user-reg.mutation";
 import { Registration } from "../../graphql/apollo-types/globalTypes";
 import { PasswordInputAction, PasswordInputType } from "../PwdInput/pwd-input";
 
-export interface Props
-  extends RouteComponentProps,
-    RegMutationProps,
-    WithApolloClient<{}> {}
+export interface Props extends RouteComponentProps, RegMutationProps {}
 
 export type FormValuesKey = keyof Registration;
 

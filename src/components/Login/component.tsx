@@ -28,7 +28,7 @@ import {
 import { LoginUser as FormValues } from "../../graphql/apollo-types/globalTypes";
 import { refreshToHome } from "../../refresh-to-app";
 import PwdInput from "../PwdInput";
-import { getConnStatus } from "../../state/get-conn-status";
+import { isConnected } from "../../state/connections";
 import { noop } from "../../constants";
 import { LoginMutationFn } from "../../graphql/login.mutation";
 import { LoginMutation_login } from "../../graphql/apollo-types/LoginMutation";
@@ -41,7 +41,7 @@ import { storeUser, getLoggedOutUser } from "../../state/users";
 import { useUser } from "../use-user";
 
 export function Login(props: Props) {
-  const { login, client, location, navigate } = props;
+  const { login, location, navigate } = props;
 
   const [state, dispatch] = useReducer(reducer, initialState);
 
@@ -95,7 +95,7 @@ export function Login(props: Props) {
             onSubmit={async function onSubmit() {
               dispatch([ActionType.clearAllErrors]);
 
-              if (!(await getConnStatus(client))) {
+              if (!isConnected()) {
                 scrollToTop(mainRef.current);
 
                 formikBag.setSubmitting(false);

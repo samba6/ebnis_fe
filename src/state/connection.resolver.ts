@@ -1,7 +1,6 @@
 import { LocalResolverFn } from "./resolvers";
 import gql from "graphql-tag";
 import { graphql } from "react-apollo";
-import { emitData, EmitAction } from "../setup-observable";
 
 const CONNECTION_STATUS_ID = "connection-status";
 
@@ -97,11 +96,6 @@ const connectionMutationResolver: LocalResolverFn<
 
   cache.writeData({
     id,
-    data: connected,
-  });
-
-  emitData({
-    type: EmitAction.connectionChanged,
     data: connected,
   });
 

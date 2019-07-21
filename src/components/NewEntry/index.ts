@@ -12,7 +12,6 @@ import {
 } from "../../graphql/create-entry.mutation";
 import { createUnsavedEntryGql, newEntryResolvers } from "./resolvers";
 
-// tslint:disable-next-line: prefer-const
 let resolverAdded = false;
 
 const createEntryGql = graphql<

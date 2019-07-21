@@ -26,7 +26,7 @@ import {
 } from "./utils";
 import { Registration } from "../../graphql/apollo-types/globalTypes";
 import { refreshToHome } from "../../refresh-to-app";
-import { getConnStatus } from "../../state/get-conn-status";
+import { isConnected } from "../../state/connections";
 import { noop } from "../../constants";
 import { UserRegMutationFn } from "../../graphql/user-reg.mutation";
 import { scrollToTop } from "./scrollToTop";
@@ -36,7 +36,7 @@ import { LayoutContext } from "../Layout/utils";
 import { storeUser } from "../../state/users";
 
 export function SignUp(props: Props) {
-  const { client, regUser, location } = props;
+  const { regUser, location } = props;
   const mainRef = useRef<HTMLDivElement | null>(null);
   const [state, dispatch] = useReducer(reducer, {});
   const {
@@ -73,7 +73,7 @@ export function SignUp(props: Props) {
             onSubmit={async function onSubmit() {
               dispatch([ActionType.clearAllErrors]);
 
-              if (!(await getConnStatus(client))) {
+              if (!isConnected()) {
                 formikBag.setSubmitting(false);
                 dispatch([ActionType.setOtherErrors, "You are not connected"]);
                 scrollToTop(mainRef);

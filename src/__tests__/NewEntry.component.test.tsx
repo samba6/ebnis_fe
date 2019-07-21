@@ -34,14 +34,14 @@ jest.mock("../components/NewEntry/update");
 jest.mock("../components/SidebarHeader", () => ({
   SidebarHeader: jest.fn(() => null),
 }));
-jest.mock("../state/get-conn-status");
+jest.mock("../state/connections");
 jest.mock("../components/scroll-into-view");
 
 import { updateExperienceWithNewEntry } from "../components/NewEntry/update";
-import { getConnStatus } from "../state/get-conn-status";
+import { isConnected } from "../state/connections";
 import { scrollIntoView } from "../components/scroll-into-view";
 
-const mockGetConnStatus = getConnStatus as jest.Mock;
+const mockIsConnected = isConnected as jest.Mock;
 const mockUpdate = updateExperienceWithNewEntry as jest.Mock;
 const mockScrollIntoView = scrollIntoView as jest.Mock;
 
@@ -577,8 +577,8 @@ const NewEntryP = NewEntry as ComponentType<Partial<Props>>;
 
 function makeComp(props: Partial<Props>, connectionStatus: boolean = true) {
   mockScrollIntoView.mockReset();
-  mockGetConnStatus.mockReset();
-  mockGetConnStatus.mockResolvedValue(connectionStatus);
+  mockIsConnected.mockReset();
+  mockIsConnected.mockReturnValue(connectionStatus);
   mockUpdate.mockReset();
   const mockCreateEntry = jest.fn();
   const mockCreateUnsavedEntry = jest.fn();

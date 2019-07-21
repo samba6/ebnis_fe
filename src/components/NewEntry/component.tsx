@@ -23,20 +23,14 @@ import { updateExperienceWithNewEntry } from "./update";
 import { fieldTypeUtils } from "./field-types-utils";
 import { SidebarHeader } from "../SidebarHeader";
 import { setDocumentTitle, makeSiteTitle } from "../../constants";
-import { getConnStatus } from "../../state/get-conn-status";
+import { isConnected } from "../../state/connections";
 import { ExperienceFragment_fieldDefs } from "../../graphql/apollo-types/ExperienceFragment";
 import makeClassNames from "classnames";
 import { FormCtrlError } from "../FormCtrlError/component";
 import { makeScrollIntoViewId, scrollIntoView } from "../scroll-into-view";
 
 export function NewEntry(props: Props) {
-  const {
-    navigate,
-    createEntry,
-    createUnsavedEntry,
-    client,
-    experience,
-  } = props;
+  const { navigate, createEntry, createUnsavedEntry, experience } = props;
 
   const [state, dispatch] = useReducer(reducer, {
     formObj: {},
@@ -102,7 +96,7 @@ export function NewEntry(props: Props) {
     }
 
     try {
-      if (await getConnStatus(client)) {
+      if (isConnected()) {
         await (createEntry as CreateEntryMutationFn)({
           variables: {
             input: {

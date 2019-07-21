@@ -9,9 +9,7 @@ import { EbnisAppContext } from "../../context";
 import { Loading } from "../Loading";
 import { ILayoutContextContext, reducer, LayoutActionType } from "./utils";
 import { getObservable, EmitAction } from "../../setup-observable";
-import { getUser } from "../../state/users";
 import { ZenObservable } from "zen-observable-ts";
-import { getConnStatus } from "../../state/get-conn-status";
 import { CachePersistor } from "apollo-cache-persist";
 import { NormalizedCacheObject } from "apollo-cache-inmemory";
 import { getUnsavedCount } from "../../state/unsaved-resolvers";
@@ -19,6 +17,7 @@ import { LayoutProvider } from "./layout-provider";
 import { RouteComponentProps } from "@reach/router";
 import { preFetchExperiences } from "./pre-fetch-experiences";
 import { useUser } from "../use-user";
+import { isConnected } from "../../state/connections";
 
 export interface Props extends PropsWithChildren<{}>, RouteComponentProps {}
 
@@ -50,7 +49,7 @@ export function Layout(props: Props) {
     if (user) {
       if (experiencesToPreFetch) {
         setTimeout(async () => {
-          if (await getConnStatus(client)) {
+          if (await isConnected()) {
             preFetchExperiences({
               ids: experiencesToPreFetch,
               client,
@@ -67,7 +66,7 @@ export function Layout(props: Props) {
       // data
       if (renderChildren && unsavedCount === null) {
         (async function() {
-          if (await getConnStatus(client)) {
+          if (await isConnected()) {
             const newUnsavedCount = await getUnsavedCount(client);
             dispatch([LayoutActionType.setUnsavedCount, newUnsavedCount]);
           }
@@ -76,11 +75,11 @@ export function Layout(props: Props) {
 
       if (!subscriptionRef.current) {
         subscriptionRef.current = getObservable().subscribe({
-          next({ type, data }) {
+          next([type, data]) {
             if (type === EmitAction.connectionChanged) {
-              const { isConnected, reconnected } = data;
+              const isConnected = data as boolean;
 
-              if (isConnected && reconnected === "true") {
+              if (isConnected) {
                 getUnsavedCount(client).then(newUnsavedCount => {
                   dispatch([LayoutActionType.setUnsavedCount, newUnsavedCount]);
                 });

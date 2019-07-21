@@ -25,7 +25,7 @@ import makeClassNames from "classnames";
 import Button from "semantic-ui-react/dist/commonjs/elements/Button";
 import { CreateEntryInput } from "../../graphql/apollo-types/globalTypes";
 import { UploadAllUnsavedsMutationFn } from "../../graphql/upload-unsaveds.mutation";
-import { getConnStatus } from "../../state/get-conn-status";
+import { isConnected } from "../../state/connections";
 import { NavigateFn } from "@reach/router";
 import Modal from "semantic-ui-react/dist/commonjs/modules/Modal";
 import Icon from "semantic-ui-react/dist/commonjs/elements/Icon";
@@ -85,12 +85,10 @@ export function UploadUnsaved(props: Props) {
   );
 
   useEffect(function setCompTitle() {
-    getConnStatus(client).then(isConnected => {
-      if (!isConnected) {
-        (navigate as NavigateFn)("/404");
-        return;
-      }
-    });
+    if (!isConnected()) {
+      (navigate as NavigateFn)("/404");
+      return;
+    }
 
     setDocumentTitle(makeSiteTitle(UPLOAD_UNSAVED_TITLE));
 

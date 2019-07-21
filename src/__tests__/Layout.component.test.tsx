@@ -8,7 +8,7 @@ import { Layout, Props } from "../components/Layout/component";
 import { EbnisAppProvider } from "../context";
 
 jest.mock("../state/unsaved-resolvers");
-jest.mock("../state/get-conn-status");
+jest.mock("../state/connections");
 jest.mock("../components/Loading", () => ({
   Loading: jest.fn(() => <div data-testid="loading" />),
 }));
@@ -25,13 +25,13 @@ jest.mock("../components/Layout/layout-provider", () => ({
 }));
 
 import { getUnsavedCount } from "../state/unsaved-resolvers";
-import { getConnStatus } from "../state/get-conn-status";
 import { emitData, EmitAction } from "../setup-observable";
 import { ILayoutContextContext } from "../components/Layout/utils";
 import { useUser } from "../components/use-user";
+import { isConnected } from "../state/connections";
 
 const mockGetUnsavedCount = getUnsavedCount as jest.Mock;
-const mockGetConnStatus = getConnStatus as jest.Mock;
+const mockIsConnected = isConnected as jest.Mock;
 const mockUseUser = useUser as jest.Mock;
 
 const browserRenderedTestId = "layout-loaded";
@@ -126,7 +126,7 @@ it("renders browser hydrated children if cache persist fails", async done => {
 it("queries unsaved when there is user and connection", async done => {
   const { ui } = makeComp();
   mockUseUser.mockReturnValue({});
-  mockGetConnStatus.mockResolvedValue(true);
+  mockIsConnected.mockReturnValue(true);
 
   const { getByTestId } = render(ui);
 
@@ -143,14 +143,14 @@ it("queries unsaved when there is user and connection", async done => {
   done();
 });
 
-it("queries unsaved when connection returns and we are reconnecting", async done => {
+it("queries unsaved when connection returns", async done => {
   /**
    * Given there is user in the system and initially there is no connection
    */
   const { ui } = makeComp();
   mockUseUser.mockReturnValue({});
   mockGetUnsavedCount.mockResolvedValue(5);
-  mockGetConnStatus.mockResolvedValue(false);
+  mockIsConnected.mockResolvedValue(false);
 
   const { getByTestId } = render(ui);
 
@@ -164,10 +164,7 @@ it("queries unsaved when connection returns and we are reconnecting", async done
   /**
    * And connection returns and we are reconnecting
    */
-  emitData({
-    type: EmitAction.connectionChanged,
-    data: { isConnected: true, reconnected: "true" } as any,
-  });
+  emitData([EmitAction.connectionChanged, true]);
 
   /**
    * Then component should query for unsaved data
@@ -179,43 +176,10 @@ it("queries unsaved when connection returns and we are reconnecting", async done
   done();
 });
 
-it("does not query unsaved when connection returns and we are not reconnecting", async done => {
-  /**
-   * Given there is user in the system and initially there is no connection
-   */
-  const { ui } = makeComp();
-  mockUseUser.mockReturnValue({});
-  mockGetConnStatus.mockResolvedValue(false);
-
-  const { getByTestId } = render(ui);
-
-  /**
-   * When children are done rendering
-   */
-  await waitForElement(() => getByTestId(browserRenderedTestId));
-
-  /**
-   * And connection returns and we are not reconnecting
-   */
-  emitData({
-    type: EmitAction.connectionChanged,
-    data: { isConnected: true, reconnected: "false" } as any,
-  });
-
-  /**
-   * Then component should not query for unsaved data
-   */
-  await wait(() => {
-    expect(mockGetUnsavedCount).not.toHaveBeenCalled();
-  });
-
-  done();
-});
-
 it("resets unsaved count when we lose connection", async done => {
   const { ui } = makeComp();
   mockUseUser.mockReturnValue({});
-  mockGetConnStatus.mockResolvedValue(true);
+  mockIsConnected.mockResolvedValue(true);
   mockGetUnsavedCount.mockResolvedValue(2);
 
   const { getByTestId } = render(ui);
@@ -224,10 +188,7 @@ it("resets unsaved count when we lose connection", async done => {
 
   expect(layoutContextValue.unsavedCount).toBe(2);
 
-  emitData({
-    type: EmitAction.connectionChanged,
-    data: { isConnected: false } as any,
-  });
+  emitData([EmitAction.connectionChanged, false]);
 
   expect(layoutContextValue.unsavedCount).toBe(0);
 
@@ -245,7 +206,7 @@ function makeComp({
   layoutContextValue = (null as unknown) as ILayoutContextContext;
   mockGetUnsavedCount.mockReset();
   mockUseUser.mockReset();
-  mockGetConnStatus.mockReset();
+  mockIsConnected.mockReset();
 
   const mockPersistCache = jest.fn();
   const cache = jest.fn();

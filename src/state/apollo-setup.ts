@@ -8,13 +8,8 @@ import {
   SCHEMA_VERSION,
   SCHEMA_VERSION_KEY,
 } from "../constants/apollo-schema";
-import { getSocket, OnConnectionChanged } from "../socket";
+import { getSocket } from "../socket";
 import { initState } from "./resolvers";
-import {
-  CONNECTION_MUTATION,
-  ConnectionStatus,
-  ConnectionMutationVariables,
-} from "./connection.resolver";
 import { PersistentStorage, PersistedData } from "apollo-cache-persist/types";
 import {
   MakeSocketLinkFn,
@@ -27,16 +22,6 @@ import { CUSTOM_QUERY_RESOLVERS } from "./custom-query-resolvers";
 let cache: InMemoryCache | null = null;
 let client: ApolloClient<{}> | null = null;
 let persistor: CachePersistor<{}> | null = null;
-
-const onConnChange: OnConnectionChanged = args => {
-  (client as ApolloClient<{}>).mutate<
-    ConnectionStatus,
-    ConnectionMutationVariables
-  >({
-    mutation: CONNECTION_MUTATION,
-    variables: args,
-  });
-};
 
 export function buildClientCache(
   {
@@ -70,7 +55,6 @@ export function buildClientCache(
     const makeSocketLink: MakeSocketLinkFn = makeSocketLinkArgs => {
       const absintheSocket = AbsintheSocket.create(
         getSocket({
-          onConnChange,
           uri,
           ...makeSocketLinkArgs,
         }),

@@ -9,7 +9,7 @@ import { SignUp } from "../components/SignUp/component";
 import { Props } from "../components/SignUp/utils";
 import { renderWithRouter, fillField } from "./test_utils";
 
-jest.mock("../state/get-conn-status");
+jest.mock("../state/connections");
 jest.mock("../refresh-to-app");
 jest.mock("../components/SignUp/scrollToTop");
 jest.mock("../components/SidebarHeader", () => ({
@@ -17,19 +17,17 @@ jest.mock("../components/SidebarHeader", () => ({
 }));
 jest.mock("../state/users");
 
-import { getConnStatus } from "../state/get-conn-status";
+import { isConnected } from "../state/connections";
 import { refreshToHome } from "../refresh-to-app";
 import { scrollToTop } from "../components/SignUp/scrollToTop";
 import { ApolloError } from "apollo-client";
 import { GraphQLError } from "graphql";
 import { storeUser } from "../state/users";
 
-const mockGetConnStatus = getConnStatus as jest.Mock;
+const mockIsConnected = isConnected as jest.Mock;
 const mockRefreshToHome = refreshToHome as jest.Mock;
 const mockScrollToTop = scrollToTop as jest.Mock;
 const mockStoreUser = storeUser as jest.Mock;
-
-const SignUpP = SignUp as ComponentType<Partial<Props>>;
 
 it("renders correctly and submits", async () => {
   const user = {};
@@ -311,6 +309,8 @@ it("renders errors if server returns field errors", async () => {
   expect(getByText("has already been taken")).toBeInTheDocument();
 });
 
+////////////////////////// HELPER FUNCTIONS ///////////////////////////
+
 function fillForm(getByLabelText: any, getByText: any) {
   fillField(getByLabelText("Name"), "Kanmii");
   fillField(getByLabelText("Email"), "me@me.com");
@@ -319,11 +319,13 @@ function fillForm(getByLabelText: any, getByText: any) {
   fireEvent.click(getByText(/Submit/));
 }
 
+const SignUpP = SignUp as ComponentType<Partial<Props>>;
+
 function makeComp(isServerConnected: boolean = true) {
   mockScrollToTop.mockReset();
   mockStoreUser.mockReset();
 
-  mockGetConnStatus.mockResolvedValue(isServerConnected);
+  mockIsConnected.mockReturnValue(isServerConnected);
   const { Ui, ...rest } = renderWithRouter(SignUpP);
 
   const mockRegUser = jest.fn();

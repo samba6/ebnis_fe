@@ -10,7 +10,6 @@ import {
   SelectorMatcherOptions,
   waitForElement,
 } from "dom-testing-library";
-
 import { ExperienceDefinition } from "../components/ExperienceDefinition/component";
 import { CreateFieldDef, FieldType } from "../graphql/apollo-types/globalTypes";
 import { Props } from "../components/ExperienceDefinition/utils";
@@ -22,18 +21,14 @@ jest.mock("../components/ExperienceDefinition/scrollTop");
 jest.mock("../components/SidebarHeader", () => ({
   SidebarHeader: jest.fn(() => null),
 }));
-jest.mock("../state/get-conn-status");
+jest.mock("../state/connections");
 
 import { ExperienceDefinitionUpdate } from "../components/ExperienceDefinition/update";
 import { scrollTop } from "../components/ExperienceDefinition/scrollTop";
-import { getConnStatus } from "../state/get-conn-status";
+import { isConnected } from "../state/connections";
 
 const mockScrollTop = scrollTop as jest.Mock;
-const mockGetConnStatus = getConnStatus as jest.Mock;
-
-const ExperienceDefinitionP = ExperienceDefinition as ComponentType<
-  Partial<Props>
->;
+const mockIsConnected = isConnected as jest.Mock;
 
 const title = "my experience";
 
@@ -1383,6 +1378,8 @@ it("renders error even if there are no fields error", async done => {
   done();
 });
 
+////////////////////////// HELPER FUNCTIONS ///////////////////////////
+
 function selectDataType(
   getByText: (
     text: Matcher,
@@ -1397,13 +1394,17 @@ function selectDataType(
   );
 }
 
+const ExperienceDefinitionP = ExperienceDefinition as ComponentType<
+  Partial<Props>
+>;
+
 function makeComp(
   props: Partial<Props> = {},
   { isConnected = true }: { isConnected?: boolean } = {},
 ) {
   const mockCreateExperience = jest.fn();
-  mockGetConnStatus.mockReset();
-  mockGetConnStatus.mockResolvedValue(isConnected);
+  mockIsConnected.mockReset();
+  mockIsConnected.mockReturnValue(isConnected);
   const mockCreateUnsavedExperience = jest.fn();
 
   const { Ui, ...rest } = renderWithRouter(
