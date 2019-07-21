@@ -60,6 +60,7 @@ const createUnsavedEntryResolver: LocalResolverFn<
   const { client } = context;
 
   let experience = variables.experience;
+  experience.hasUnsaved = true;
 
   const { id: experienceId } = experience;
   const today = new Date();

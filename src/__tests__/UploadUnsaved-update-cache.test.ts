@@ -183,6 +183,7 @@ test("partially saved unsaved experience", () => {
     mockReplaceExperiencesInGetExperiencesMiniQuery.mock.calls[0][1],
   ).toEqual({
     "2": {
+      hasUnsaved: true,
       id: "2s",
       entries: {
         edges: [
@@ -425,7 +426,13 @@ test("saved experience completely saved", () => {
 
   expect(mockWriteGetExperienceFullQueryToCache).not.toHaveBeenCalled();
 
-  expect(mockWriteExperienceFragmentToCache).toHaveBeenCalledTimes(1);
+  expect(mockWriteExperienceFragmentToCache.mock.calls[0][1]).toEqual({
+    hasUnsaved: null,
+    id: "7",
+    entries: {
+      edges: [] as ExperienceFragment_entries_edges[],
+    },
+  });
 
   expect(outstandingUnsavedCount).toBe(0);
 

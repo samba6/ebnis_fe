@@ -50,6 +50,7 @@ const createUnsavedExperienceResolver: LocalResolverFn<
   );
 
   const experience: ExperienceFragment = {
+    hasUnsaved: true,
     __typename: "Experience",
     id: experienceId,
     clientId: experienceId,

@@ -97,6 +97,7 @@ export function updateCache({
       // The experience from server will only have saved entries -
       // add outstanding unsaved entries if any
       if (entriesErrors) {
+        proxy.hasUnsaved = true;
         const entriesErrorsIds = Object.keys(entriesErrors);
         const errorsLen = entriesErrorsIds.length;
 
@@ -176,6 +177,10 @@ export function updateCache({
 
       entries.edges = edges;
       proxy.entries = entries;
+
+      if (!entriesErrors) {
+        proxy.hasUnsaved = null;
+      }
     });
 
     if (entriesErrors) {
