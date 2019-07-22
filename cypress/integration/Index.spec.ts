@@ -24,9 +24,9 @@ context("index route", () => {
     /**
      * When we complete and submit the form
      */
-    cy.getByLabelText(/email/i).type(USER_CREATION_OBJECT.email);
-    cy.getByLabelText(/password/i).type(USER_CREATION_OBJECT.password);
-    cy.getByText(/submit/i).click();
+    cy.get("#email").type(USER_CREATION_OBJECT.email);
+    cy.get("#login-password").type(USER_CREATION_OBJECT.password);
+    cy.get("#login-submit").click();
 
     /**
      * Then we should see the new title

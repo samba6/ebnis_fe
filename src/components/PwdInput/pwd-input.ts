@@ -1,7 +1,10 @@
 import { Dispatch } from "react";
 import { FieldProps } from "formik";
+import { EbnisComponentProps } from "../../types";
 
-export interface Props<TFormValues> extends FieldProps<TFormValues> {
+export interface Props<TFormValues>
+  extends FieldProps<TFormValues>,
+    EbnisComponentProps {
   pwdType?: PasswordInputPayload;
   dispatch: Dispatch<PasswordInputAction>;
 }

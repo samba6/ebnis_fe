@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import React, { ComponentType } from "react";
-import "jest-dom/extend-expect";
 import "react-testing-library/cleanup-after-each";
 import { render, fireEvent, wait, waitForElement } from "react-testing-library";
 
@@ -50,30 +49,30 @@ it("renders correctly and submits", async () => {
   /**
    * When we start to use the login component
    */
-  const { getByText, getByLabelText } = render(ui);
+  render(ui);
 
   /**
    * Then email field should be empty
    */
-  const $email = getByLabelText("Email") as any;
+  const $email = document.getElementById("email") as any;
   expect($email.value).toBe("");
 
   /**
    * Then the submit button should be disabled
    */
-  const $button = getByText(/Submit/);
-  expect($button).toBeDisabled();
+  const $button = document.getElementById("login-submit") as HTMLButtonElement;
+  expect($button.disabled).toBe(true);
 
   /**
    * When the form is correctly completed
    */
   fillField($email, "me@me.com");
-  fillField(getByLabelText("Password"), "awesome pass");
+  fillField(document.getElementById("login-password") as any, "awesome pass");
 
   /**
    * Then the submit button should be enabled
    */
-  expect($button).not.toHaveAttribute("disabled");
+  expect($button.disabled).toBe(false);
 
   /**
    * When we submit the form
@@ -121,23 +120,26 @@ it("renders error if socket not connected", async () => {
   /**
    * When we start using the login component
    */
-  const { getByText, getByLabelText, getByTestId, queryByTestId } = render(ui);
+  render(ui);
 
   /**
    * Then we should not see any error UI
    */
-  expect(queryByTestId("other-errors")).not.toBeInTheDocument();
+  expect(document.getElementById("other-errors")).toBeNull();
 
   /**
    * When we complete and submit the form
    */
-  fillForm(getByLabelText, getByText);
+  fillForm();
 
   /**
    * Then we should see an error about not being connected
    */
-  const $error = await waitForElement(() => getByTestId("other-errors"));
-  expect($error).toBeInTheDocument();
+  const $error = await waitForElement(() =>
+    document.getElementById("other-errors"),
+  );
+
+  expect($error).not.toBeNull();
 
   /**
    * And page should be scrolled to top
@@ -153,25 +155,27 @@ it("renders error if email is invalid", async () => {
   /**
    * Given that we are using the login component
    */
-  const { getByText, getByLabelText, getByTestId, queryByTestId } = render(ui);
+  render(ui);
 
   /**
    * Then we should not see any error UI
    */
-  expect(queryByTestId("form-errors")).not.toBeInTheDocument();
+  expect(document.getElementById("form-errors")).toBeNull();
 
   /**
    * When we complete the form with invalid email and submit
    */
-  fillField(getByLabelText("Email"), "invalid email");
-  fillField(getByLabelText("Password"), "awesome pass");
-  fireEvent.click(getByText(/Submit/));
+  fillField(document.getElementById("email") as any, "invalid email");
+  fillField(document.getElementById("login-password") as any, "awesome pass");
+  fireEvent.click(document.getElementById("login-submit") as any);
 
   /**
    * Then we should see an error UI
    */
-  const $error = await waitForElement(() => getByTestId("form-errors"));
-  expect($error).toBeInTheDocument();
+  const $error = await waitForElement(() =>
+    document.getElementById("form-errors"),
+  );
+  expect($error).not.toBeNull();
 });
 
 it("renders error if password is invalid", async () => {
@@ -180,20 +184,23 @@ it("renders error if password is invalid", async () => {
   /**
    * Given that we are using the login component
    */
-  const { getByText, getByLabelText, getByTestId } = render(ui);
+  render(ui);
 
   /**
    * When we complete the form with wrong password and submit
    */
-  fillField(getByLabelText("Email"), "awesome@email.com");
-  fillField(getByLabelText("Password"), "12");
-  fireEvent.click(getByText(/Submit/));
+  fillField(document.getElementById("email") as any, "awesome@email.com");
+  fillField(document.getElementById("login-password") as any, "12");
+  fireEvent.click(document.getElementById("login-submit") as any);
 
   /**
    * Then we should see an error about the wrong password
    */
-  const $error = await waitForElement(() => getByTestId("form-errors"));
-  expect($error).toBeInTheDocument();
+  const $error = await waitForElement(() =>
+    document.getElementById("form-errors"),
+  );
+
+  expect($error).not.toBeNull();
 
   /**
    * And page should be scrolled to top
@@ -216,23 +223,25 @@ it("renders error if server returns field errors", async () => {
   /**
    * Given that we are using the login component
    */
-  const { getByText, getByLabelText, getByTestId, queryByTestId } = render(ui);
+  render(ui);
 
   /**
    * Then we should not see any error UI
    */
-  expect(queryByTestId("server-field-errors")).not.toBeInTheDocument();
+  expect(document.getElementById("server-field-errors")).toBeNull();
 
   /**
    * When we complete and submit the form, but server returns an error
    */
-  fillForm(getByLabelText, getByText);
+  fillForm();
 
   /**
    * Then we should see an error message
    */
-  const $error = await waitForElement(() => getByTestId("server-field-errors"));
-  expect($error).toBeInTheDocument();
+  const $error = await waitForElement(
+    () => document.getElementById("server-field-errors") as HTMLElement,
+  );
+  expect($error).not.toBeNull();
 
   /**
    * When we click on close button of error UI
@@ -242,7 +251,7 @@ it("renders error if server returns field errors", async () => {
   /**
    * Then the error UI should no longer be visible
    */
-  expect(queryByTestId("server-field-errors")).not.toBeInTheDocument();
+  expect(document.getElementById("server-field-errors")).toBeNull();
 
   /**
    * And page should be scrolled to top
@@ -265,23 +274,26 @@ it("renders error if server returns network errors", async () => {
   /**
    * When we start to use the login component
    */
-  const { getByText, getByLabelText, getByTestId, queryByTestId } = render(ui);
+  render(ui);
 
   /**
    * Then we should not see any error UI
    */
-  expect(queryByTestId("network-error")).not.toBeInTheDocument();
+  expect(document.getElementById("network-error")).toBeNull();
 
   /**
    * When we complete and submit the form
    */
-  fillForm(getByLabelText, getByText);
+  fillForm();
 
   /**
    * Then we should see an error message
    */
-  const $error = await waitForElement(() => getByTestId("network-error"));
-  expect($error).toBeInTheDocument();
+  const $error = await waitForElement(() =>
+    document.getElementById("network-error"),
+  );
+
+  expect($error).not.toBeNull();
 
   /**
    * And page should be scrolled to top
@@ -330,10 +342,10 @@ it("navigates to 'my experiences page' if user is logged in", async () => {
 
 ////////////////////////// HELPER FUNCTIONS ///////////////////////////
 
-function fillForm(getByLabelText: any, getByText: any) {
-  fillField(getByLabelText("Email"), "me@me.com");
-  fillField(getByLabelText("Password"), "awesome pass");
-  fireEvent.click(getByText(/Submit/));
+function fillForm() {
+  fillField(document.getElementById("email") as any, "me@me.com");
+  fillField(document.getElementById("login-password") as any, "awesome pass");
+  fireEvent.click(document.getElementById("login-submit") as any);
 }
 
 const LoginP = Login as ComponentType<Partial<Props>>;

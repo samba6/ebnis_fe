@@ -147,7 +147,12 @@ export function Login(props: Props) {
             <Field
               name="password"
               render={(f: FieldProps<FormValues>) => (
-                <PwdInput {...f} dispatch={dispatch} pwdType={state.pwdType} />
+                <PwdInput
+                  {...f}
+                  dispatch={dispatch}
+                  pwdType={state.pwdType}
+                  id="login-password"
+                />
               )}
             />
 
@@ -219,20 +224,20 @@ function Errors(props: {
 
   const { otherErrors, formErrors, serverFieldErrors, networkError } = errors;
 
-  let testId = "";
   let content = null;
+  let id = "";
 
   if (otherErrors) {
-    testId = "other-errors";
+    id = "other-errors";
     content = otherErrors;
   } else if (serverFieldErrors) {
-    testId = "server-field-errors";
+    id = "server-field-errors";
     content = serverFieldErrors;
   } else if (networkError) {
-    testId = "network-error";
+    id = "network-error";
     content = networkError;
   } else if (formErrors) {
-    testId = "form-errors";
+    id = "form-errors";
     const { email, password } = formErrors;
 
     content = (
@@ -257,7 +262,7 @@ function Errors(props: {
   }
 
   return content ? (
-    <Card.Content data-testid={testId} extra={true}>
+    <Card.Content extra={true} id={id}>
       <Message
         error={true}
         onDismiss={function onDismiss() {
