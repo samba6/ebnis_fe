@@ -19,13 +19,13 @@ context("signup page", () => {
     /**
      * When we complete the form and submit
      */
-    cy.getByLabelText("Name").type(USER_CREATION_OBJECT.name);
-    cy.getByLabelText("Email").type(USER_CREATION_OBJECT.email);
-    cy.getByLabelText("Password").type(USER_CREATION_OBJECT.password);
-    cy.getByLabelText("Password Confirm").type(
+    cy.get("#sign-up-name").type(USER_CREATION_OBJECT.name);
+    cy.get("#sign-up-email").type(USER_CREATION_OBJECT.email);
+    cy.get("#sign-up-password").type(USER_CREATION_OBJECT.password);
+    cy.get("#sign-up-passwordConfirmation").type(
       USER_CREATION_OBJECT.password_confirmation,
     );
-    cy.getByText(/submit/i).click();
+    cy.get("#sign-up-submit").click();
 
     /**
      * Then we should see the new title
@@ -47,17 +47,17 @@ context("signup page", () => {
     /**
      * When we complete the form and submit
      */
-    cy.getByLabelText("Name").type(USER_CREATION_OBJECT.name);
-    cy.getByLabelText("Email").type(USER_CREATION_OBJECT.email);
-    cy.getByLabelText("Password").type(USER_CREATION_OBJECT.password);
-    cy.getByLabelText("Password Confirm").type(
+    cy.get("#sign-up-name").type(USER_CREATION_OBJECT.name);
+    cy.get("#sign-up-email").type(USER_CREATION_OBJECT.email);
+    cy.get("#sign-up-password").type(USER_CREATION_OBJECT.password);
+    cy.get("#sign-up-passwordConfirmation").type(
       USER_CREATION_OBJECT.password_confirmation,
     );
-    cy.getByText(/submit/i).click();
+    cy.get("#sign-up-submit").click();
 
     /**
      * Then we should see errors
      */
-    cy.getByTestId("server-field-error").should("exist");
+    cy.get("#server-field-error").should("exist");
   });
 });

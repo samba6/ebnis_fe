@@ -1,10 +1,10 @@
 import React from "react";
-import { Props, PasswordInputType } from "./pwd-input";
+import { Props, PasswordInputType } from "./utils";
 import Icon from "semantic-ui-react/dist/commonjs/elements/Icon";
 import Input from "semantic-ui-react/dist/commonjs/elements/Input";
 import Form from "semantic-ui-react/dist/commonjs/collections/Form";
 
-export const PwdInput = React.memo(
+export const PasswordInput = React.memo(
   function PwdInputComponent<TFormValues>(props: Props<TFormValues>) {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { field, pwdType = "password", dispatch, form, ...rest } = props;

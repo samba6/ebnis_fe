@@ -1,17 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import React, { ComponentType } from "react";
-import "jest-dom/extend-expect";
 import "react-testing-library/cleanup-after-each";
 import { render, fireEvent, wait, waitForElement } from "react-testing-library";
 
-import { SignUp } from "../components/SignUp/component";
-import { Props } from "../components/SignUp/utils";
+import { SignUp } from "../components/Signup/component";
+import { Props } from "../components/Signup/utils";
 import { renderWithRouter, fillField } from "./test_utils";
 
 jest.mock("../state/connections");
 jest.mock("../refresh-to-app");
-jest.mock("../components/SignUp/scrollToTop");
+jest.mock("../components/Signup/scrollToTop");
 jest.mock("../components/SidebarHeader", () => ({
   SidebarHeader: jest.fn(() => null),
 }));
@@ -19,7 +18,7 @@ jest.mock("../state/users");
 
 import { isConnected } from "../state/connections";
 import { refreshToHome } from "../refresh-to-app";
-import { scrollToTop } from "../components/SignUp/scrollToTop";
+import { scrollToTop } from "../components/Signup/scrollToTop";
 import { ApolloError } from "apollo-client";
 import { GraphQLError } from "graphql";
 import { storeUser } from "../state/users";
@@ -43,34 +42,47 @@ it("renders correctly and submits", async () => {
   /**
    * Given we are using the signup component
    */
-  const { getByText, getByLabelText } = render(ui);
+  render(ui);
 
   /**
    * Then the submit button should be disabled
    */
-  const $button = getByText(/Submit/);
-  expect($button).toBeDisabled();
+  const $button = document.getElementById(
+    "sign-up-submit",
+  ) as HTMLButtonElement;
+
+  expect($button.disabled).toBe(true);
 
   /**
    * And source field should be readonly
    */
-  const $source = getByLabelText("Source");
-  expect($source).toHaveAttribute("readonly");
-  const $sourceParent = $source.closest(".form-field") as HTMLDivElement;
+  const $source = document.getElementById("sign-up-source") as HTMLInputElement;
+  expect($source.readOnly).toBe(true);
+
+  const $sourceParent = document.getElementById(
+    "sign-up-source-field",
+  ) as HTMLDivElement;
+
   expect($sourceParent.classList).toContain("disabled");
 
   /**
    * When we complete the form
    */
-  fillField(getByLabelText("Name"), "Kanmii");
-  fillField(getByLabelText("Email"), "me@me.com");
-  fillField(getByLabelText("Password"), "awesome pass");
-  fillField(getByLabelText("Password Confirm"), "awesome pass");
+  fillField(document.getElementById("sign-up-name") as any, "Kanmii");
+
+  fillField(document.getElementById("sign-up-email") as any, "me@me.com");
+
+  fillField(document.getElementById("sign-up-password") as any, "awesome pass");
+
+  fillField(
+    document.getElementById("sign-up-passwordConfirmation") as any,
+    "awesome pass",
+  );
 
   /**
    * Then the submit button should be enabled
    */
-  expect($button).not.toHaveAttribute("disabled");
+  expect($button.disabled).toBe(false);
 
   /**
    * When we submit the form
@@ -116,23 +128,26 @@ it("renders error if socket not connected", async () => {
   /**
    * And we are using the signup component
    */
-  const { getByText, getByLabelText, getByTestId, queryByTestId } = render(ui);
+  render(ui);
 
   /**
    * Then we should not see any error UI
    */
-  expect(queryByTestId("other-errors")).not.toBeInTheDocument();
+  expect(document.getElementById("other-errors")).toBeNull();
 
   /**
    * When we complete and submit the form
    */
-  fillForm(getByLabelText, getByText);
+  fillForm();
 
   /**
    * Then we should see error UI
    */
-  const $error = await waitForElement(() => getByTestId("other-errors"));
-  expect($error).toBeInTheDocument();
+  const $error = await waitForElement(() =>
+    document.getElementById("other-errors"),
+  );
+
+  expect($error).not.toBeNull();
 
   /**
    * And page should be automatically scrolled to the top of page
@@ -148,39 +163,54 @@ it("renders error if password and password confirm are not same", async () => {
   /**
    * Given we are using signup component
    */
-  const { getByText, getByLabelText, queryByText } = render(ui);
+  render(ui);
 
   /**
    * Then we should not see any error UI
    */
-  const passwordConfirmErrorRegexp = /Passwords do not match/i;
-  expect(queryByText(passwordConfirmErrorRegexp)).not.toBeInTheDocument();
-  const $passwordConfirmParent = getByLabelText("Password Confirm").closest(
-    ".form-field",
+
+  expect(
+    document.getElementById("sign-up-passwordConfirmation-error"),
+  ).toBeNull();
+
+  const $passwordConfirm = document.getElementById(
+    "sign-up-passwordConfirmation",
+  ) as HTMLInputElement;
+
+  const $passwordConfirmParent = document.getElementById(
+    "sign-up-passwordConfirmation-field",
   ) as HTMLElement;
+
   expect($passwordConfirmParent.classList).not.toContain("error");
 
   /**
    * When complete the form, but the password and password confirm fields
    * do not match
    */
-  fillField(getByLabelText("Name"), "Kanmii");
-  fillField(getByLabelText("Email"), "me@me.com");
-  fillField(getByLabelText("Password"), "awesome pass");
-  fillField(getByLabelText("Password Confirm"), "awesome pass1");
+  fillField(document.getElementById("sign-up-name") as any, "Kanmii");
+
+  fillField(document.getElementById("sign-up-email") as any, "me@me.com");
+
+  fillField(document.getElementById("sign-up-password") as any, "awesome pass");
+
+  fillField($passwordConfirm, "awesome pass1");
 
   /**
    * And we submit the form
    */
-  fireEvent.click(getByText(/Submit/));
+  fireEvent.click(document.getElementById(
+    "sign-up-submit",
+  ) as HTMLButtonElement);
 
   /**
    * Then we should see error UI
    */
   const $error = await waitForElement(() =>
-    getByText(passwordConfirmErrorRegexp),
+    document.getElementById("sign-up-passwordConfirmation-error"),
   );
-  expect($error).toBeInTheDocument();
+
+  expect($error).not.toBeNull();
+
   expect($passwordConfirmParent.classList).toContain("error");
 
   /**
@@ -204,23 +234,26 @@ it("renders errors if server returns network errors", async () => {
   /**
    * When we start using the component
    */
-  const { getByText, getByLabelText, getByTestId, queryByTestId } = render(ui);
+  render(ui);
 
   /**
    * Then we should not see any error UI
    */
-  expect(queryByTestId("network-error")).not.toBeInTheDocument();
+  expect(document.getElementById("network-error")).toBeNull();
 
   /**
    * When we complete and submit the form
    */
-  fillForm(getByLabelText, getByText);
+  fillForm();
 
   /**
    * Then we should see error UI
    */
-  const $error = await waitForElement(() => getByTestId("network-error"));
-  expect($error).toBeInTheDocument();
+  const $error = await waitForElement(() =>
+    document.getElementById("network-error"),
+  );
+
+  expect($error).not.toBeNull();
 
   /**
    * And we should be automatically scrolled to top
@@ -245,43 +278,41 @@ it("renders errors if server returns field errors", async () => {
   /**
    * When we start using the component
    */
-  const {
-    getByText,
-    getByLabelText,
-    getByTestId,
-    queryByTestId,
-    queryByText,
-  } = render(ui);
+  render(ui);
 
   /**
    * Then we should not see error summary UI
    */
-  expect(queryByTestId("server-field-error")).not.toBeInTheDocument();
+  expect(document.getElementById("server-field-error")).toBeNull();
 
   /**
    * And we should not see field error
    */
-  expect(queryByText("has already been taken")).not.toBeInTheDocument();
-  const $emailParent = getByLabelText(/email/i).closest(
-    ".form-field",
+  expect(document.getElementById("error-text-0")).toBeNull();
+
+  const $emailParent = document.getElementById(
+    "sign-up-email-field",
   ) as HTMLElement;
+
   expect($emailParent.classList).not.toContain("error");
 
   /**
    * When we complete and submit the form
    */
-  fillForm(getByLabelText, getByText);
+  fillForm();
 
   /**
    * Then we should see error summary
    */
-  const $error = await waitForElement(() => getByTestId("server-field-error"));
-  expect($error).toBeInTheDocument();
+  const $error = await waitForElement(
+    () => document.getElementById("server-field-error") as HTMLElement,
+  );
+  expect($error).not.toBeNull();
 
   /**
    * And we should see field error
    */
-  expect(getByText("has already been taken")).toBeInTheDocument();
+  expect(document.getElementById("error-text-0")).not.toBeNull();
 
   /**
    * And field error should visually indicate so
@@ -299,24 +330,31 @@ it("renders errors if server returns field errors", async () => {
   fireEvent.click($error.querySelector(`[class="close icon"]`) as any);
 
   /**
-   * Then error summary should no longer ve visible
+   * Then error summary should no longer bee visible
    */
-  expect(queryByTestId("server-field-error")).not.toBeInTheDocument();
+  expect(document.getElementById("server-field-error")).toBeNull();
 
   /**
    * But field error should still be visible
    */
-  expect(getByText("has already been taken")).toBeInTheDocument();
+  expect(document.getElementById("sign-up-email-error")).not.toBeNull();
 });
 
 ////////////////////////// HELPER FUNCTIONS ///////////////////////////
 
-function fillForm(getByLabelText: any, getByText: any) {
-  fillField(getByLabelText("Name"), "Kanmii");
-  fillField(getByLabelText("Email"), "me@me.com");
-  fillField(getByLabelText("Password"), "awesome pass");
-  fillField(getByLabelText("Password Confirm"), "awesome pass");
-  fireEvent.click(getByText(/Submit/));
+function fillForm() {
+  fillField(document.getElementById("sign-up-name") as any, "Kanmii");
+  fillField(document.getElementById("sign-up-email") as any, "me@me.com");
+  fillField(document.getElementById("sign-up-password") as any, "awesome pass");
+
+  fillField(
+    document.getElementById("sign-up-passwordConfirmation") as any,
+    "awesome pass",
+  );
+
+  fireEvent.click(document.getElementById(
+    "sign-up-submit",
+  ) as HTMLButtonElement);
 }
 
 const SignUpP = SignUp as ComponentType<Partial<Props>>;

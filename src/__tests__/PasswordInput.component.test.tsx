@@ -5,13 +5,13 @@ import "react-testing-library/cleanup-after-each";
 import { render, fireEvent } from "react-testing-library";
 import { Formik, Field, FieldProps } from "formik";
 
-import { PwdInput } from "../components/PwdInput/pwd-input-x";
-import { Props } from "../components/PwdInput/pwd-input";
-import { makeId } from "../components/PwdInput/pwd-input-x";
+import { PasswordInput } from "../components/PasswordInput/component";
+import { Props } from "../components/PasswordInput/utils";
+import { makeId } from "../components/PasswordInput/component";
 import {
   PasswordInputAction,
   PasswordInputPayload,
-} from "../components/PwdInput/pwd-input";
+} from "../components/PasswordInput/utils";
 
 const reducer: Reducer<
   PasswordInputPayload | undefined,
@@ -80,7 +80,7 @@ function App(props: Partial<Props<{}>> = {}) {
         <Field
           name={name}
           render={(fieldProps: FieldProps) => (
-            <PwdInput
+            <PasswordInput
               {...fieldProps}
               dispatch={dispatch}
               pwdType={state}

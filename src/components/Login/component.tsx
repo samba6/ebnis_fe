@@ -27,7 +27,7 @@ import {
 } from "./utils";
 import { LoginUser as FormValues } from "../../graphql/apollo-types/globalTypes";
 import { refreshToHome } from "../../refresh-to-app";
-import PwdInput from "../PwdInput";
+import { PasswordInput } from "../PasswordInput/component";
 import { isConnected } from "../../state/connections";
 import { noop } from "../../constants";
 import { LoginMutationFn } from "../../graphql/login.mutation";
@@ -147,7 +147,7 @@ export function Login(props: Props) {
             <Field
               name="password"
               render={(f: FieldProps<FormValues>) => (
-                <PwdInput
+                <PasswordInput
                   {...f}
                   dispatch={dispatch}
                   pwdType={state.pwdType}

@@ -6,7 +6,7 @@ import { Reducer, Dispatch } from "react";
 import immer from "immer";
 import { RegMutationProps } from "../../graphql/user-reg.mutation";
 import { Registration } from "../../graphql/apollo-types/globalTypes";
-import { PasswordInputAction, PasswordInputType } from "../PwdInput/pwd-input";
+import { PasswordInputAction, PasswordInputType } from "../PasswordInput/utils";
 
 export interface Props extends RouteComponentProps, RegMutationProps {}
 
