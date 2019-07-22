@@ -1,16 +1,53 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useMemo } from "react";
 import Dropdown from "semantic-ui-react/dist/commonjs/modules/Dropdown";
 import Form from "semantic-ui-react/dist/commonjs/collections/Form";
-import DateField from "../DateField";
+import { DateField } from "../DateField/component";
 import { FormObjVal } from "../Experience/utils";
-import {
-  HOUR_OPTIONS,
-  MINUTE_OPTIONS,
-  getFieldName,
-  LABELS,
-  Props,
-} from "./datetime-field";
+import { Props } from "./utils";
 import "../DateField/styles.scss";
+
+interface DropdownOptions {
+  key: number;
+  text: string;
+  value: number;
+  content?: JSX.Element;
+}
+
+export const HOUR_OPTIONS = Array.from<undefined, DropdownOptions>(
+  { length: 24 },
+  (_, hrIndex) => {
+    const text = ("" + hrIndex).padStart(2, "0");
+
+    return {
+      key: hrIndex,
+      text,
+      value: hrIndex,
+      content: (
+        <span className={`text js-datetime-field-input-hour-${text}`}>
+          {text}
+        </span>
+      ),
+    };
+  },
+);
+
+export const MINUTE_OPTIONS = Array.from<void, DropdownOptions>(
+  { length: 60 },
+  (_, minIndex) => {
+    const text = ("" + minIndex).padStart(2, "0");
+
+    return {
+      key: minIndex,
+      text,
+      value: minIndex,
+      content: (
+        <span className={`text js-datetime-field-input-minute-${text}`}>
+          {text}
+        </span>
+      ),
+    };
+  },
+);
 
 export function DateTimeField(props: Props) {
   const { className, name: compName, setValue, value } = props;
@@ -31,22 +68,21 @@ export function DateTimeField(props: Props) {
     setValue(compName, date);
   }
 
-  const fieldNames = useRef(
-    (function getFieldNames() {
-      return LABELS.reduce(
-        function reduceLabels(acc, l) {
-          acc[l] = getFieldName(compName, l);
-          return acc;
-        },
-        { date: "", hr: "", min: "" },
-      );
-    })(),
-  ).current;
+  const fieldNames = useMemo(function getFieldNames() {
+    return ["date", "hr", "min"].reduce(
+      function reduceLabels(acc, l) {
+        acc[l] = getFieldName(compName, l);
+        return acc;
+      },
+      { date: "", hr: "", min: "" },
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <Form.Field
       className={`${className || ""} datetime-field light-border`}
-      data-testid={`datetime-field-${compName}`}
+      id={`datetime-field-input-${compName}`}
     >
       <DateField
         name={fieldNames.date}
@@ -56,14 +92,13 @@ export function DateTimeField(props: Props) {
 
       <div className="datetime-field-time">
         <div>
-          <label htmlFor="" className="field_label">
-            Hour
-          </label>
+          <label className="field_label">Hour</label>
+
           <Dropdown
             fluid={true}
             selection={true}
             compact={true}
-            data-testid={fieldNames.hr}
+            id={`datetime-hour-field-${fieldNames.hr}`}
             name={fieldNames.hr}
             options={HOUR_OPTIONS}
             defaultValue={datetime.getHours()}
@@ -74,14 +109,12 @@ export function DateTimeField(props: Props) {
         </div>
 
         <div>
-          <label htmlFor="" className="field_label">
-            Minute
-          </label>
+          <label className="field_label">Minute</label>
           <Dropdown
             fluid={true}
             selection={true}
             compact={true}
-            data-testid={fieldNames.min}
+            id={`datetime-minute-field-${fieldNames.min}`}
             name={fieldNames.min}
             options={MINUTE_OPTIONS}
             defaultValue={datetime.getMinutes()}
@@ -95,4 +128,6 @@ export function DateTimeField(props: Props) {
   );
 }
 
-export default DateTimeField;
+export function getFieldName(compName: string, field: string) {
+  return compName + "." + field;
+}

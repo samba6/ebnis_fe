@@ -3,7 +3,6 @@ import { Reducer, Dispatch } from "react";
 
 import { NewEntryRouteParams } from "../../routes";
 import { CreateEntryMutationProps } from "../../graphql/create-entry.mutation";
-import { fieldTypeUtils } from "./field-types-utils";
 import { WithApolloClient } from "react-apollo";
 import { CreateUnsavedEntryMutationProps } from "./resolvers";
 import {
@@ -12,6 +11,7 @@ import {
 } from "../../graphql/apollo-types/ExperienceFragment";
 import immer from "immer";
 import { ApolloError } from "apollo-client";
+import { FieldType } from "../../graphql/apollo-types/globalTypes";
 
 export interface OwnProps
   extends WithApolloClient<{}>,
@@ -41,18 +41,27 @@ export interface FieldComponentProps {
 
 export type ToString = (val: FormObjVal) => string;
 
-function initialFormValuesFromExperience(exp: ExperienceFragment) {
-  const fieldDefs = exp.fieldDefs as ExperienceFragment_fieldDefs[];
+export function initialStateFromProps(experience: ExperienceFragment) {
+  const fieldDefs = experience.fieldDefs as ExperienceFragment_fieldDefs[];
 
-  return fieldDefs.reduce(
+  const formObj = fieldDefs.reduce(
     function fieldDefReducer(acc, field, index) {
-      acc[index] = fieldTypeUtils[
-        (field as ExperienceFragment_fieldDefs).type
-      ].default();
+      const value =
+        field.type === FieldType.DATE || field.type === FieldType.DATETIME
+          ? new Date()
+          : "";
+
+      acc[index] = value;
+
       return acc;
     },
     {} as FormObj,
   );
+
+  return {
+    formObj,
+    fieldErrors: {},
+  };
 }
 
 export function makePageTitle(exp: ExperienceFragment | null | undefined) {
@@ -71,7 +80,6 @@ function formFieldNameToIndex(formFieldName: string) {
 
 export enum ActionTypes {
   setFormObjField = "@components/new-entry/set-form-obj-field",
-  experienceToFormValues = "@components/new-entry/experience-to-form-values",
   setServerErrors = "@components/new-entry/set-server-errors",
   removeServerErrors = "@components/new-entry/unset-server-errors",
 }
@@ -79,10 +87,6 @@ export enum ActionTypes {
 interface SetFormObjFieldPayload {
   formFieldName: string;
   value: FormObjVal;
-}
-
-interface ExperienceToFormValuesPayload {
-  experience: ExperienceFragment;
 }
 
 interface FieldErrors {
@@ -102,10 +106,6 @@ export interface State {
 
 type Action =
   | [ActionTypes.setFormObjField, SetFormObjFieldPayload]
-  | [
-      ActionTypes.experienceToFormValues,
-      ExperienceToFormValuesPayload["experience"],
-    ]
   | [ActionTypes.setServerErrors, ServerErrors]
   | [ActionTypes.removeServerErrors];
 
@@ -117,15 +117,6 @@ export const reducer: Reducer<State, Action> = (prevState, [type, payload]) => {
           const { formFieldName, value } = payload as SetFormObjFieldPayload;
 
           proxy.formObj[formFieldNameToIndex(formFieldName)] = value;
-        }
-
-        break;
-
-      case ActionTypes.experienceToFormValues:
-        {
-          proxy.formObj = initialFormValuesFromExperience(
-            payload as ExperienceToFormValuesPayload["experience"],
-          );
         }
 
         break;

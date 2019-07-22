@@ -195,7 +195,7 @@ function ErrorsSummary(props: FormErrorsProps) {
     content = networkError;
     id = "network-error";
   } else if (formErrors || serverFieldsErrors) {
-    id = formErrors ? "form-errors" : "server-field-error";
+    id = formErrors ? "form-errors" : "sign-up-server-field-error";
 
     content = (
       <>

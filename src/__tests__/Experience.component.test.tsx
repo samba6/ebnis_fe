@@ -60,7 +60,7 @@ it("renders ui to show empty entries", () => {
   /**
    * And we should see texts informing us that there are no entries
    */
-  expect(document.getElementById("no-entries")).not.toBeNull();
+  expect(document.getElementById("experience-no-entries")).not.toBeNull();
 
   fireEvent.click(document.getElementById("experience-1-delete-button") as any);
 
@@ -100,7 +100,7 @@ it("renders entries when `entries prop provided`", () => {
    * Then we should not see text informing us there are not entries (of course
    * we have several)
    */
-  expect(document.getElementById("no-entries")).toBeNull();
+  expect(document.getElementById("experience-no-entries")).toBeNull();
   expect(document.getElementById("default-entry")).not.toBeNull();
 });
 

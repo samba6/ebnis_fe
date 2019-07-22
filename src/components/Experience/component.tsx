@@ -70,8 +70,7 @@ export function Experience(props: Props) {
       return (
         <Link
           className="no-entries"
-          data-testid="no-entries"
-          id="no-entries"
+          id="experience-no-entries"
           to={makeNewEntryRoute(experience.id)}
         >
           No entries. Click here to add one

@@ -1,20 +1,72 @@
-import React, { useState, useMemo, useRef } from "react";
+import React, { useState, useMemo } from "react";
 import Dropdown from "semantic-ui-react/dist/commonjs/modules/Dropdown";
 import Form from "semantic-ui-react/dist/commonjs/collections/Form";
-import {
-  MONTHS,
-  getToday,
-  getDisplayedDays,
-  LABELS,
-  makeFieldNames,
-  Props,
-} from "./date-field";
+import { Props } from "./utils";
 import "./styles.scss";
+import getDaysInMonth from "date-fns/get_days_in_month";
+
+const MONTHS_DROP_DOWN_OPTIONS = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+].map((m, index) => ({
+  key: index,
+  text: m,
+  value: index,
+  content: <span className={`js-date-field-input-month-${m}`}>{m}</span>,
+}));
+
+export const DAYS = Array.from<
+  undefined,
+  {
+    key: number;
+    text: string;
+    value: number;
+    content: JSX.Element;
+  }
+>({ length: 31 }, (_, index) => {
+  const dayIndex = index + 1;
+
+  return {
+    key: dayIndex,
+    text: dayIndex + "",
+    value: dayIndex,
+    content: (
+      <span className={`text js-date-field-input-day-${dayIndex}`}>
+        {dayIndex}
+      </span>
+    ),
+  };
+});
+
+const LABELS = {
+  day: "Day",
+  month: "Month",
+  year: "Year",
+};
 
 export function DateField(props: Props) {
   const { className, setValue, value, name: compName } = props;
 
-  const fieldNames = useRef(makeFieldNames(compName)).current;
+  const fieldNames = useMemo(() => {
+    return Object.keys(LABELS).reduce(
+      (acc, k) => {
+        acc[k] = compName + "." + k;
+        return acc;
+      },
+      {} as { [k in keyof typeof LABELS]: string },
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const { years, currYr, currMonth, currDay } = useMemo(
     function() {
@@ -44,17 +96,16 @@ export function DateField(props: Props) {
     <Form.Field
       className={`${className || ""} components-date-field light-border`}
       data-testid={`date-field-${compName}`}
+      id={`date-field-input-${compName}`}
     >
       <div>
-        <label htmlFor={fieldNames.day} className="field_label">
-          {LABELS.day}
-        </label>
+        <label className="field_label">{LABELS.day}</label>
 
         <Dropdown
           fluid={true}
           selection={true}
           data-testid={fieldNames.day}
-          id={fieldNames.day}
+          id={`date-field-input-${fieldNames.day}`}
           name={fieldNames.day}
           compact={true}
           basic={true}
@@ -69,17 +120,20 @@ export function DateField(props: Props) {
       </div>
 
       <div>
-        <label htmlFor={fieldNames.month} className="field_label">
+        <label
+          htmlFor={`date-field-input-${fieldNames.month}`}
+          className="field_label"
+        >
           {LABELS.month}
         </label>
         <Dropdown
           fluid={true}
           selection={true}
           data-testid={fieldNames.month}
-          id={fieldNames.month}
+          id={`date-field-input-${fieldNames.month}`}
           name={fieldNames.month}
           compact={true}
-          options={MONTHS}
+          options={MONTHS_DROP_DOWN_OPTIONS}
           defaultValue={currMonth}
           onChange={function(evt, data) {
             const dataVal = data.value as number;
@@ -90,7 +144,10 @@ export function DateField(props: Props) {
       </div>
 
       <div>
-        <label htmlFor={fieldNames.year} className="field_label">
+        <label
+          htmlFor={`date-field-input-${fieldNames.year}`}
+          className="field_label"
+        >
           {LABELS.year}
         </label>
         <Dropdown
@@ -98,7 +155,7 @@ export function DateField(props: Props) {
           selection={true}
           compact={true}
           data-testid={fieldNames.year}
-          id={fieldNames.year}
+          id={`date-field-input-${fieldNames.year}`}
           name={fieldNames.year}
           options={years}
           defaultValue={currYr}
@@ -113,4 +170,34 @@ export function DateField(props: Props) {
   );
 }
 
-export default DateField;
+function getToday(today: Date, fieldName: string) {
+  const currYr = today.getFullYear();
+  const years = [];
+
+  for (let yrOffset = -2; yrOffset < 2; yrOffset++) {
+    const year = currYr + yrOffset;
+    years.push({
+      key: yrOffset,
+      text: year + "",
+      value: year,
+      content: (
+        <span className="text" id={`date-field-input-${fieldName}-${year}`}>
+          {year}
+        </span>
+      ),
+    });
+  }
+
+  return {
+    currYr,
+    years,
+    currMonth: today.getMonth(),
+    currDay: today.getDate(),
+  };
+}
+
+export function getDisplayedDays(year: number, month: number) {
+  const numDaysInMonth = getDaysInMonth(new Date(year, month));
+
+  return DAYS.slice(0, numDaysInMonth);
+}

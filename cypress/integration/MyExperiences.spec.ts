@@ -92,7 +92,7 @@ context("my experiences page", () => {
       /**
        * When we click on "No entries" link
        */
-      cy.get("#no-entries").click();
+      cy.get("#experience-no-entries").click();
 
       /**
        * Then we should be directed to entry page for the experience

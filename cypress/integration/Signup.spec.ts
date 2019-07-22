@@ -42,7 +42,7 @@ context("signup page", () => {
     /**
      * Then we should not see any errors
      */
-    cy.queryByTestId("server-field-error").should("not.exist");
+    cy.get("#sign-up-server-field-error").should("not.exist");
 
     /**
      * When we complete the form and submit
@@ -58,6 +58,6 @@ context("signup page", () => {
     /**
      * Then we should see errors
      */
-    cy.get("#server-field-error").should("exist");
+    cy.get("#sign-up-server-field-error").should("exist");
   });
 });

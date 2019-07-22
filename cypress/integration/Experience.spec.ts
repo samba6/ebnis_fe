@@ -27,9 +27,7 @@ context("experience page", () => {
       ],
     });
 
-    cy.wrap(p).then(result => {
-      let experience = result as ExperienceFragment;
-
+    cy.wrap(p).then((experience: ExperienceFragment) => {
       cy.visit(makeExperienceRoute(experience.id));
 
       /**
@@ -40,7 +38,7 @@ context("experience page", () => {
       /**
        * When we click on 'no entry' link
        */
-      cy.getByTestId("no-entries").click();
+      cy.get("#experience-no-entries").click();
 
       /**
        * Then we should be redirected to new entry page

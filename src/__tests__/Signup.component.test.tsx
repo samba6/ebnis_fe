@@ -283,7 +283,7 @@ it("renders errors if server returns field errors", async () => {
   /**
    * Then we should not see error summary UI
    */
-  expect(document.getElementById("server-field-error")).toBeNull();
+  expect(document.getElementById("sign-up-server-field-error")).toBeNull();
 
   /**
    * And we should not see field error
@@ -305,7 +305,7 @@ it("renders errors if server returns field errors", async () => {
    * Then we should see error summary
    */
   const $error = await waitForElement(
-    () => document.getElementById("server-field-error") as HTMLElement,
+    () => document.getElementById("sign-up-server-field-error") as HTMLElement,
   );
   expect($error).not.toBeNull();
 
@@ -332,7 +332,7 @@ it("renders errors if server returns field errors", async () => {
   /**
    * Then error summary should no longer bee visible
    */
-  expect(document.getElementById("server-field-error")).toBeNull();
+  expect(document.getElementById("sign-up-server-field-error")).toBeNull();
 
   /**
    * But field error should still be visible

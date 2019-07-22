@@ -2,6 +2,8 @@ import React, { useEffect, useReducer } from "react";
 import Form from "semantic-ui-react/dist/commonjs/collections/Form";
 import Message from "semantic-ui-react/dist/commonjs/collections/Message";
 import Button from "semantic-ui-react/dist/commonjs/elements/Button";
+import Input from "semantic-ui-react/dist/commonjs/elements/Input";
+import TextArea from "semantic-ui-react/dist/commonjs/addons/TextArea";
 import { NavigateFn } from "@reach/router";
 
 import "./styles.scss";
@@ -9,18 +11,17 @@ import {
   Props,
   FormObj,
   FormObjVal,
-  ToString,
   makePageTitle,
   formFieldNameFromIndex,
   reducer,
   DispatchType,
   ActionTypes,
   parseApolloErrors,
+  initialStateFromProps,
 } from "./utils";
 import { makeExperienceRoute } from "../../constants/experience-route";
 import { CreateEntryMutationFn } from "../../graphql/create-entry.mutation";
 import { updateExperienceWithNewEntry } from "./update";
-import { fieldTypeUtils } from "./field-types-utils";
 import { SidebarHeader } from "../SidebarHeader";
 import { setDocumentTitle, makeSiteTitle } from "../../constants";
 import { isConnected } from "../../state/connections";
@@ -28,14 +29,19 @@ import { ExperienceFragment_fieldDefs } from "../../graphql/apollo-types/Experie
 import makeClassNames from "classnames";
 import { FormCtrlError } from "../FormCtrlError/component";
 import { makeScrollIntoViewId, scrollIntoView } from "../scroll-into-view";
+import { FieldType } from "../../graphql/apollo-types/globalTypes";
+import { DateField } from "../DateField/component";
+import { DateTimeField } from "../DateTimeField/component";
+import dateFnFormat from "date-fns/format";
 
 export function NewEntry(props: Props) {
   const { navigate, createEntry, createUnsavedEntry, experience } = props;
 
-  const [state, dispatch] = useReducer(reducer, {
-    formObj: {},
-    fieldErrors: {},
-  });
+  const [state, dispatch] = useReducer(
+    reducer,
+    experience,
+    initialStateFromProps,
+  );
 
   const { fieldErrors, networkError } = state;
 
@@ -48,15 +54,6 @@ export function NewEntry(props: Props) {
       return setDocumentTitle;
     },
     [pageTitle],
-  );
-
-  useEffect(
-    function setInitialFormValues() {
-      if (experience) {
-        dispatch([ActionTypes.experienceToFormValues, experience]);
-      }
-    },
-    [experience],
   );
 
   useEffect(() => {
@@ -86,12 +83,38 @@ export function NewEntry(props: Props) {
       const field = fieldDefs[index] as ExperienceFragment_fieldDefs;
 
       const { type, id } = field;
-      const toString = fieldTypeUtils[type].toString as ToString;
+
+      let toString = val;
+
+      switch (type) {
+        case FieldType.DATE:
+          {
+            toString = dateFnFormat(val, "YYYY-MM-DD");
+          }
+
+          break;
+
+        case FieldType.DATETIME: {
+          toString = (val as Date).toJSON();
+        }
+
+        case FieldType.DECIMAL:
+        case FieldType.INTEGER:
+          {
+            toString = (val || 0) + "";
+          }
+
+          break;
+
+        default:
+          toString = val;
+          break;
+      }
 
       fields.push({
         defId: id,
-        //JSON.stringify({ [type.toLowerCase()]: toString(val) })
-        data: `{"${type.toLowerCase()}":"${toString(val)}"}`,
+
+        data: `{"${type.toLowerCase()}":"${toString}"}`,
       });
     }
 
@@ -144,7 +167,7 @@ export function NewEntry(props: Props) {
               position: "relative",
               marginTop: 0,
             }}
-            data-testid="network-error"
+            id="new-entry-network-error"
             error={true}
             onDismiss={function onDismiss() {
               dispatch([ActionTypes.removeServerErrors]);
@@ -179,6 +202,7 @@ export function NewEntry(props: Props) {
 
           <Button
             className="submit-btn"
+            id="new-entry-submit-btn"
             type="submit"
             inverted={true}
             color="green"
@@ -214,8 +238,101 @@ const FieldComponent = React.memo(
 
     const { name: fieldTitle, type, id } = field;
     const formFieldName = formFieldNameFromIndex(index);
-    const utils = fieldTypeUtils[type];
-    const value = formValues[index] || (utils.default() as FormObjVal);
+    const value = formValues[index] as FormObjVal;
+
+    let component = null as React.ReactNode;
+    let inputId = `new-entry-${type}-input`;
+
+    switch (type) {
+      case FieldType.DECIMAL:
+      case FieldType.INTEGER:
+        {
+          component = (
+            <Input
+              type="number"
+              id={inputId}
+              name={formFieldName}
+              value={value}
+              fluid={true}
+              onChange={(e, { value: inputVal }) => {
+                dispatch([
+                  ActionTypes.setFormObjField,
+                  { formFieldName, value: Number(inputVal) },
+                ]);
+              }}
+            />
+          );
+        }
+
+        break;
+
+      case FieldType.SINGLE_LINE_TEXT:
+        {
+          component = (
+            <Input
+              id={inputId}
+              name={formFieldName}
+              value={value}
+              fluid={true}
+              onChange={(e, { value: inputVal }) => {
+                dispatch([
+                  ActionTypes.setFormObjField,
+                  { formFieldName, value: inputVal },
+                ]);
+              }}
+            />
+          );
+        }
+
+        break;
+
+      case FieldType.MULTI_LINE_TEXT:
+        {
+          component = (
+            <TextArea
+              id={inputId}
+              name={formFieldName}
+              value={value as string}
+              onChange={(e, { value: inputVal }) => {
+                dispatch([
+                  ActionTypes.setFormObjField,
+                  { formFieldName, value: inputVal as string },
+                ]);
+              }}
+            />
+          );
+        }
+
+        break;
+
+      case FieldType.DATE:
+        {
+          component = (
+            <DateField
+              value={value as Date}
+              name={formFieldName}
+              setValue={makeSetValueFunc(dispatch)}
+              {...props}
+            />
+          );
+        }
+
+        break;
+
+      case FieldType.DATETIME:
+        {
+          component = (
+            <DateTimeField
+              value={value as Date}
+              name={formFieldName}
+              setValue={makeSetValueFunc(dispatch)}
+              {...props}
+            />
+          );
+        }
+
+        break;
+    }
 
     return (
       <Form.Field
@@ -228,39 +345,38 @@ const FieldComponent = React.memo(
           className="js-scroll-into-view"
         />
 
-        <label htmlFor={formFieldName}>{`[${type}] ${fieldTitle}`}</label>
+        <label htmlFor={inputId}>{`[${type}] ${fieldTitle}`}</label>
 
-        {utils.component({
-          formFieldName,
-          dispatch,
-          value,
-        })}
+        {component}
 
         {error && (
-          <FormCtrlError error={error} data-testid={`field-error-${id}`} />
+          <FormCtrlError
+            error={error}
+            data-testid={`field-error-${id}`}
+            id={`new-entry-field-error-${id}`}
+          />
         )}
       </Form.Field>
     );
   },
 
   function FieldComponentDiff(prevProps, nextProps) {
-    const {
-      field: { type: prevType },
-      formValues: prevFormValues,
-      error: currentError,
-    } = prevProps;
-    const {
-      field: { type: nextType },
-      formValues: nextFormValues,
-      error: nextError,
-    } = nextProps;
+    const { formValues: prevFormValues, error: currentError } = prevProps;
+    const { formValues: nextFormValues, error: nextError } = nextProps;
 
-    const prevVal =
-      prevFormValues[prevProps.index] || fieldTypeUtils[prevType].default;
+    const prevVal = prevFormValues[prevProps.index];
 
-    const nextVal =
-      nextFormValues[nextProps.index] || fieldTypeUtils[nextType].default;
+    const nextVal = nextFormValues[nextProps.index];
 
     return prevVal === nextVal && currentError === nextError;
   },
 );
+
+function makeSetValueFunc(dispatch: DispatchType) {
+  return function SetValue(fieldName: string, value: FormObjVal) {
+    dispatch([
+      ActionTypes.setFormObjField,
+      { formFieldName: fieldName, value },
+    ]);
+  };
+}
