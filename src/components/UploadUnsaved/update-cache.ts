@@ -11,7 +11,6 @@ import {
 import { writeSavedAndUnsavedExperiencesToCache } from "../../state/resolvers/update-saved-and-unsaved-experiences-in-cache";
 import immer from "immer";
 import { entryToEdge } from "../../state/resolvers/entry-to-edge";
-import { writeExperienceFragmentToCache } from "../../state/resolvers/write-experience-fragment-to-cache";
 import { ExperiencesIdsToObjectMap } from "./utils";
 import { deleteIdsFromCache } from "../../state/resolvers/delete-references-from-cache";
 import { writeGetExperienceFullQueryToCache } from "../../state/resolvers/write-get-experience-full-query-to-cache";
@@ -30,21 +29,94 @@ export function updateCache({
   cache,
   client,
 }: Args) {
-  const savedAndUnsavedExperiences: SavedAndUnsavedExperiences[] = [];
-  let outstandingUnsavedCount = 0;
-  let toDeletes: string[] = [];
-  const mutations: [string, string][] = [];
-  const queries: [string, string][] = [];
+  const unsavedExperiences = handleUnsavedExperiences(unsavedExperiencesMap);
+
+  const savedExperiences = handleSavedExperiences(savedExperiencesMap);
 
   // PLEASE DO ALL DELETES BEFORE UNSAVED EXPERIENCES NOW SAVED WRITES !!!!!!
   // This is because if now saved experience contains unsaved entries, those
   // will be deleted if write occurs before delete. But if write happens after
   // delete, we are guaranteed to rewrite those unsaved entries back when we
   // write the newly saved experience.
+  const unsavedExperiencesNowSaved = unsavedExperiences.unsavedExperiencesNowSaved.concat(
+    savedExperiences.unsavedExperiencesNowSaved,
+  );
+
+  const nowSaved = unsavedExperiences.unsavedExperiencesNowSaved.reduce(
+    (acc, e) => {
+      acc[e.clientId as string] = e;
+      return acc;
+    },
+    {},
+  );
+
+  if (unsavedExperiencesNowSaved.length !== 0) {
+    // replacement must run before delete because after delete, apollo will
+    // return an empty object ({}) for the deleted experience.
+    replaceExperiencesInGetExperiencesMiniQuery(
+      client,
+      savedExperiences.unsavedExperiencesNowSaved.reduce((acc, e) => {
+        acc[e.id] = e;
+        return acc;
+      }, nowSaved),
+    );
+  }
+
+  const toDeletes = unsavedExperiences.toDeletes.concat(
+    savedExperiences.toDeletes,
+  );
+
+  if (toDeletes.length !== 0) {
+    // we need to do all deletes before writing.
+    deleteIdsFromCache(cache, toDeletes, {
+      mutations: unsavedExperiences.mutations.concat(
+        savedExperiences.mutations,
+      ),
+      queries: unsavedExperiences.queries,
+    });
+  }
+
+  const savedAndUnsavedExperiences = unsavedExperiences.savedAndUnsavedExperiences.concat(
+    savedExperiences.savedAndUnsavedExperiences,
+  );
+
+  if (savedAndUnsavedExperiences.length !== 0 || toDeletes.length !== 0) {
+    writeSavedAndUnsavedExperiencesToCache(cache, savedAndUnsavedExperiences);
+  }
+
+  // Now if we have unsaved entries, we are sure they will be re-created if
+  // we accidentally delete above.
+  unsavedExperiencesNowSaved.forEach(updatedExperience => {
+    // notice we are not writing the fragment for newly saved experience like
+    // we did with for existing saved experience
+    // this is because the `GetExperienceFullQuery` already exists for those
+    // and we now need to write the query for newly saved experience so that
+    // when we visit e.g. 'experience page', we don't hit the network again.
+    // and of course apollo had already written the fragment for us when
+    // we received response from server.
+
+    // can I remove this part? Apollo should have generated this query for me
+    // when I received result from network
+    writeGetExperienceFullQueryToCache(cache, updatedExperience, {
+      writeFragment: false,
+    });
+  });
+
+  return (
+    unsavedExperiences.outstandingUnsavedCount +
+    savedExperiences.outstandingUnsavedCount
+  );
+}
+
+function handleUnsavedExperiences(
+  unsavedExperiencesMap: ExperiencesIdsToObjectMap,
+) {
+  const savedAndUnsavedExperiences: SavedAndUnsavedExperiences[] = [];
+  let outstandingUnsavedCount = 0;
+  let toDeletes: string[] = [];
+  const mutations: [string, string][] = [];
+  const queries: [string, string][] = [];
   const unsavedExperiencesNowSaved: ExperienceFragment[] = [];
-  const unsavedExperiencesToBeReplacedMap: {
-    [k: string]: ExperienceFragment;
-  } = {};
 
   Object.entries(unsavedExperiencesMap).forEach(([unsavedId, map]) => {
     const {
@@ -125,8 +197,26 @@ export function updateCache({
     });
 
     unsavedExperiencesNowSaved.push(updatedExperience);
-    unsavedExperiencesToBeReplacedMap[unsavedId] = updatedExperience;
   });
+
+  return {
+    savedAndUnsavedExperiences,
+    outstandingUnsavedCount,
+    toDeletes,
+    mutations,
+    unsavedExperiencesNowSaved,
+    queries,
+  };
+}
+
+function handleSavedExperiences(
+  savedExperiencesMap: ExperiencesIdsToObjectMap,
+) {
+  const savedAndUnsavedExperiences: SavedAndUnsavedExperiences[] = [];
+  let outstandingUnsavedCount = 0;
+  let toDeletes: string[] = [];
+  const mutations: [string, string][] = [];
+  const unsavedExperiencesNowSaved: ExperienceFragment[] = [];
 
   Object.entries(savedExperiencesMap).forEach(([experienceId, map]) => {
     const {
@@ -198,47 +288,16 @@ export function updateCache({
         `${SAVED_AND_UNSAVED_EXPERIENCE_TYPENAME}:${experienceId}`,
       );
     }
-
-    writeExperienceFragmentToCache(cache, updatedExperience);
+    unsavedExperiencesNowSaved.push(updatedExperience);
   });
 
-  if (unsavedExperiencesNowSaved.length !== 0) {
-    // replacement must run before delete because after delete, apollo will
-    // return an empty object ({}) for the deleted experience.
-    replaceExperiencesInGetExperiencesMiniQuery(
-      client,
-      unsavedExperiencesToBeReplacedMap,
-    );
-  }
-
-  if (toDeletes.length !== 0) {
-    // we need to do all deletes before writing.
-    deleteIdsFromCache(cache, toDeletes, { mutations, queries });
-  }
-
-  if (savedAndUnsavedExperiences.length !== 0 || toDeletes.length !== 0) {
-    writeSavedAndUnsavedExperiencesToCache(cache, savedAndUnsavedExperiences);
-  }
-
-  // Now if we have unsaved entries, we are sure they will be re-created if
-  // we accidentally delete above.
-  unsavedExperiencesNowSaved.forEach(updatedExperience => {
-    // notice we are not writing the fragment for newly saved experience like
-    // we did with for existing saved experience
-    // this is because the `GetExperienceFullQuery` already exists for those
-    // and we now need to write the query for newly saved experience so that
-    // when we visit e.g. 'experience page', we don't hit the network again.
-    // and of course apollo had already written the fragment for us when
-    // we received response from server.
-
-    // can I remove this part? Apollo should have generated this query for me
-    // when I received result from network
-    writeGetExperienceFullQueryToCache(cache, updatedExperience, {
-      writeFragment: false,
-    });
-  });
-
-  return outstandingUnsavedCount;
+  return {
+    savedAndUnsavedExperiences,
+    outstandingUnsavedCount,
+    toDeletes,
+    mutations,
+    unsavedExperiencesNowSaved,
+  };
 }
 
 function swapUnsavedEntriesWithNewlySaved(
