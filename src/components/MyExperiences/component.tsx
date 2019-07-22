@@ -21,6 +21,7 @@ import {
   GetExperienceConnectionMini_getExperiences_edges,
 } from "../../graphql/apollo-types/GetExperienceConnectionMini";
 import { LayoutContext, LayoutActionType } from "../Layout/utils";
+import { ExperienceMiniFragment } from "../../graphql/apollo-types/ExperienceMiniFragment";
 
 export const MyExperiences = (props: Props) => {
   const {
@@ -80,27 +81,30 @@ export const MyExperiences = (props: Props) => {
 
     if (edges.length === 0) {
       return (
-        <Link to={EXPERIENCE_DEFINITION_URL} className="no-exp-info">
+        <Link
+          to={EXPERIENCE_DEFINITION_URL}
+          className="no-experiences-info"
+          id="no-experiences-info"
+        >
           Click here to create your first experience
         </Link>
       );
     }
 
     return (
-      <div data-testid="exps-container" className="exps-container">
+      <div id="experiences-container" className="experiences-container">
         {edges.map(edge => {
           const experience = (edge as ExperienceConnectionFragment_edges)
             .node as ExperienceConnectionFragment_edges_node;
 
-          const { id, ...rest } = experience;
+          const { id } = experience;
 
           return (
             <Experience
               key={id}
               showingDescription={descriptionToggleMap[id]}
               toggleDescription={toggleDescriptionFn}
-              id={id}
-              {...rest}
+              experience={experience}
             />
           );
         })}
@@ -114,9 +118,7 @@ export const MyExperiences = (props: Props) => {
     }
 
     if (!getExperiences) {
-      return (
-        <div data-testid="no-experiences-error">Error loading experiences</div>
-      );
+      return <div id="no-experiences-error">Error loading experiences</div>;
     }
 
     return (
@@ -124,8 +126,8 @@ export const MyExperiences = (props: Props) => {
         {renderExperiences(getExperiences)}
 
         <Link
-          className="new-exp-btn"
-          data-testid="go-to-new-exp"
+          className="new-experience-button"
+          id="new-experience-button"
           to={EXPERIENCE_DEFINITION_URL}
         >
           +
@@ -143,38 +145,43 @@ export const MyExperiences = (props: Props) => {
   );
 };
 
-interface ExperienceProps
-  extends ExperienceConnectionFragment_edges_node,
-    ToggleDescription {
+interface ExperienceProps extends ToggleDescription {
   showingDescription: boolean;
+  experience: ExperienceConnectionFragment_edges_node;
 }
 
 const Experience = React.memo(
   function ExperienceFn({
     showingDescription,
     toggleDescription,
-    title,
-    description,
-    id,
+    experience,
   }: ExperienceProps) {
+    const { title, description, id } = experience;
+
     return (
       <div className="exp-container">
         <ShowDescriptionToggle
-          description={description}
           showingDescription={showingDescription}
-          id={id}
+          experience={experience}
           toggleDescription={toggleDescription}
         />
 
         <Link
           className="exp-container-main"
           to={makeExperienceRoute(id)}
-          data-testid={`experience-main-${id}`}
+          id={`experience-main-${id}`}
         >
-          <span className="exp_title">{title}</span>
+          <span className="experience-title" id={`experience-title-${id}`}>
+            {title}
+          </span>
 
           {showingDescription && (
-            <div className="exp_description">{description}</div>
+            <div
+              className="experience-description"
+              id={`experience-description-${id}`}
+            >
+              {description}
+            </div>
           )}
         </Link>
       </div>
@@ -188,14 +195,12 @@ const Experience = React.memo(
 
 const ShowDescriptionToggle = React.memo(
   function ShowDescriptionToggleFn({
-    description,
     showingDescription,
-    id,
+    experience: { id, description },
     toggleDescription,
   }: ToggleDescription & {
-    description: string | null;
+    experience: ExperienceMiniFragment;
     showingDescription: boolean;
-    id: string;
   }) {
     if (!description) {
       return null;
@@ -204,7 +209,7 @@ const ShowDescriptionToggle = React.memo(
     const props = {
       className: "reveal-hide-description",
 
-      "data-testid": `exp-toggle-${id}`,
+      id: `experience-description-toggle-${id}`,
 
       onClick: () => toggleDescription(id),
     };

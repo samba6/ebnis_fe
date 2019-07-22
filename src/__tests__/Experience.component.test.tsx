@@ -12,27 +12,25 @@ import {
   reducer,
   EditingState,
 } from "../components/Experience/utils";
-import { FieldType } from "../graphql/apollo-types/globalTypes";
 import { renderWithRouter } from "./test_utils";
 import {
   ExperienceFragment_entries_edges,
   ExperienceFragment_fieldDefs,
 } from "../graphql/apollo-types/ExperienceFragment";
-import { Entry } from "../components/Entry/component";
 import { EditExperienceActionType } from "../components/EditExperience/utils";
 import { EditEntryStateTag } from "../components/EditEntry/utils";
-
-jest.mock("../components/SidebarHeader", () => ({
-  SidebarHeader: () => null,
-}));
+import { EntryActionTypes } from "../components/Entry/utils";
+import { EntryFragment } from "../graphql/apollo-types/EntryFragment";
 
 jest.mock("../components/Experience/loadables", () => ({
-  EditExperience: () => <div className="js-editor" />,
+  EditExperience: () => <div id="js-editor" />,
 
   EditEntry: () => <div id="entry-edit-modal" />,
 }));
 
-const ExperienceP = Experience as P;
+jest.mock("../components/Entry/component", () => ({
+  Entry: () => <div id="default-entry" />,
+}));
 
 beforeEach(() => {
   jest.useFakeTimers();
@@ -57,146 +55,35 @@ it("renders ui to show empty entries", () => {
   /**
    * When we use the component
    */
-  const { queryByTestId, getByTestId } = render(ui);
-
-  /**
-   * Then we should not see loading spinner
-   */
-  expect(queryByTestId("loading-spinner")).not.toBeInTheDocument();
+  render(ui);
 
   /**
    * And we should see texts informing us that there are no entries
    */
-  expect(queryByTestId("no-entries")).toBeInTheDocument();
+  expect(document.getElementById("no-entries")).not.toBeNull();
 
-  /**
-   * And we should not see any UI for an entry
-   */
-  expect(queryByTestId("experience-entry")).not.toBeInTheDocument();
-
-  fireEvent.click(getByTestId("experience-1-delete-button"));
+  fireEvent.click(document.getElementById("experience-1-delete-button") as any);
 
   expect(mockOnDelete.mock.calls[0][0]).toEqual("1");
 });
 
-it("renders entries when `entries prop provided`, triggers entry editor and uses default entry testid", () => {
+it("renders entries when `entries prop provided`", () => {
   /**
    * Given that experience and associated entries exist in the system
    */
   const edges = [
     {
       node: {
-        id: "1",
-        fields: [
-          {
-            defId: "1",
-            data: `{"SINGLE_LINE_TEXT":"c1"}`,
-          },
-        ],
-      },
-    },
-
-    {
-      node: {
-        id: "2",
-        fields: [
-          {
-            defId: "2",
-            data: `{"MULTI_LINE_TEXT":"c2"}`,
-          },
-        ],
-      },
-    },
-
-    {
-      node: {
-        id: "3",
-        fields: [
-          {
-            defId: "3",
-            data: `{"DATE":"2019-05-01"}`,
-          },
-        ],
-      },
-    },
-
-    {
-      node: {
-        id: "4",
-        fields: [
-          {
-            defId: "4",
-            data: `{"DATETIME":"2019-05-01"}`,
-          },
-        ],
-      },
-    },
-
-    {
-      node: {
-        id: "5",
-        fields: [
-          {
-            defId: "5",
-            data: `{"DECIMAL":"500.689"}`,
-          },
-        ],
-      },
-    },
-
-    {
-      node: {
-        id: "6",
-        fields: [
-          {
-            defId: "6",
-            data: `{"INTEGER":"567012"}`,
-          },
-        ],
+        id: "a",
       },
     },
   ] as ExperienceFragment_entries_edges[];
 
-  const fieldDefs = [
-    {
-      id: "1",
-      name: "f1",
-      type: FieldType.SINGLE_LINE_TEXT,
-    },
-
-    {
-      id: "2",
-      name: "f2",
-      type: FieldType.MULTI_LINE_TEXT,
-    },
-
-    {
-      id: "3",
-      name: "f3",
-      type: FieldType.DATE,
-    },
-
-    {
-      id: "4",
-      name: "f4",
-      type: FieldType.DATETIME,
-    },
-
-    {
-      id: "5",
-      name: "f5",
-      type: FieldType.DECIMAL,
-    },
-
-    {
-      id: "6",
-      name: "f6",
-      type: FieldType.INTEGER,
-    },
-  ] as ExperienceFragment_fieldDefs[];
+  const fieldDefs = [{}] as ExperienceFragment_fieldDefs[];
 
   const { ui } = makeComp({
     experience: {
+      id: "1",
       fieldDefs,
 
       entries: { edges },
@@ -207,101 +94,35 @@ it("renders entries when `entries prop provided`, triggers entry editor and uses
   /**
    * When we start using the component
    */
-  const { queryByTestId, getByText, container } = render(ui);
+  render(ui);
 
   /**
    * Then we should not see text informing us there are not entries (of course
    * we have several)
    */
-  expect(queryByTestId("no-entries")).not.toBeInTheDocument();
-
-  /**
-   * And we should see the entries' field names and associated data
-   */
-  expect(getByText(/f1/i)).toBeInTheDocument();
-  expect(getByText(/c1/i)).toBeInTheDocument();
-
-  expect(getByText(/f2/i)).toBeInTheDocument();
-  expect(getByText(/c2/i)).toBeInTheDocument();
-
-  expect(getByText(/f3/i)).toBeInTheDocument();
-  expect(getByText(/f4/i)).toBeInTheDocument();
-  expect(getByText(/f5/i)).toBeInTheDocument();
-  expect(getByText(/f6/i)).toBeInTheDocument();
-
-  expect(container.getElementsByClassName("js-edit-menu")[0]).toBeUndefined();
-
-  const $entryEditorTrigger = document.getElementById(
-    `entry-1-edit-trigger`,
-  ) as HTMLElement;
-
-  expect($entryEditorTrigger).not.toBeNull();
-
-  $entryEditorTrigger.click();
-
-  expect(document.getElementById("entry-edit-modal")).not.toBeNull();
-
-  expect(
-    container.querySelector('[data-testid="entry-container"]'),
-  ).not.toBeNull();
+  expect(document.getElementById("no-entries")).toBeNull();
+  expect(document.getElementById("default-entry")).not.toBeNull();
 });
 
 it("renders entries when `entriesJSX prop provided` and sets entry data-testid ", () => {
   /**
    * Given that experience and associated entries exist in the system
    */
-  const entryNode = {
-    id: "1",
-    fields: [
-      {
-        defId: "1",
-        data: `{"SINGLE_LINE_TEXT":"c1"}`,
-      },
-    ],
-  } as ExperienceFragment_entries_edges["node"];
-
-  const fieldDefs = [
-    {
-      id: "1",
-      name: "f1",
-      type: FieldType.SINGLE_LINE_TEXT,
-    },
-  ] as ExperienceFragment_fieldDefs[];
-
-  const entriesJSX = (
-    <Entry
-      entry={entryNode as any}
-      fieldDefs={fieldDefs}
-      entriesLen={1}
-      index={0}
-      data-testid="random-val"
-    />
-  );
 
   const { ui } = makeComp({
     experience: {} as any,
-    entriesJSX,
+    entriesJSX: <div id="custom-entry" />,
   });
 
   /**
    * When we start using the component
    */
-  const { getByText, queryByTestId, container } = render(ui);
+  render(ui);
 
-  /**
-   * And we should see the entries' field names and associated data
-   */
-  expect(getByText(/f1/i)).toBeInTheDocument();
-  expect(getByText(/c1/i)).toBeInTheDocument();
-
-  expect(queryByTestId("no-entries")).not.toBeInTheDocument();
-
-  expect(document.getElementById(`entry-1-edit-trigger`)).toBeNull();
-
-  expect(container.querySelector('[data-testid="random-val"]')).not.toBeNull();
+  expect(document.getElementById(`custom-entry`)).not.toBeNull();
 });
 
-it("toggles edit", () => {
+it("toggles experience editor", () => {
   const { ui } = makeComp({
     experience: {
       id: "a",
@@ -312,15 +133,13 @@ it("toggles edit", () => {
     menuOptions: { onEdit: {} } as any,
   });
 
-  const { container } = render(ui);
+  render(ui);
 
-  const $editMenu = container.getElementsByClassName(
-    "js-edit-menu",
-  )[0] as HTMLDivElement;
+  expect(document.getElementById("js-editor")).toBeNull();
 
-  $editMenu.click();
+  (document.getElementById("experience-a-edit-menu") as HTMLDivElement).click();
 
-  expect(container.getElementsByClassName("js-editor")[0]).toBeDefined();
+  expect(document.getElementById("js-editor")).not.toBeNull();
 });
 
 test("reducer", () => {
@@ -343,6 +162,11 @@ test("reducer", () => {
   ).toEqual([EditingState.notEditing]);
 
   expect(reducer(prevState, ["" as any]).editingState).toEqual("0");
+
+  expect(
+    reducer(prevState, [EntryActionTypes.editClicked, {} as EntryFragment])
+      .editingState,
+  ).toEqual([EditingState.editingEntry, {}]);
 });
 
 test("getTitle", () => {
@@ -351,6 +175,8 @@ test("getTitle", () => {
 });
 
 ////////////////////////// HELPER FUNCTIONS ///////////////////////////
+
+const ExperienceP = Experience as P;
 
 type P = ComponentType<Partial<Props>>;
 

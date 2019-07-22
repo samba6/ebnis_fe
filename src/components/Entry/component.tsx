@@ -16,7 +16,7 @@ import {
 
 export function Entry(props: Props) {
   const { entry, fieldDefs, className = "", ...fieldProps } = props;
-  const dataTestId = props["data-testid"];
+  const containerId = props.id || `entry-container-${entry.id}`;
 
   const fields = entry.fields as ExperienceFragment_entries_edges_node_fields[];
   const fieldsLen = fields.length;
@@ -37,7 +37,7 @@ export function Entry(props: Props) {
         "component-experience-entry": true,
         [className]: !!className,
       })}
-      data-testid={dataTestId ? dataTestId : `entry-container`}
+      id={containerId}
     >
       {fields.map((field, fieldIndex) => {
         const fieldDef = fieldDefsMap[field.defId];
@@ -75,15 +75,7 @@ function FieldComponent(
     entry: EntryFragment;
   },
 ) {
-  const {
-    field,
-    fieldDef,
-    index,
-    fieldsLen,
-    entry,
-    editable,
-    dispatch,
-  } = props;
+  const { field, fieldDef, index, entry, editable, dispatch } = props;
 
   const { defId, data } = field;
 
@@ -98,7 +90,6 @@ function FieldComponent(
       key={defId}
       className={makeClassNames({
         field: true,
-        "field--last": index === fieldsLen - 1,
       })}
     >
       <div className="field__content">
@@ -144,7 +135,9 @@ function FieldComponent(
           )}
         </div>
 
-        <div className="field__text">{text}</div>
+        <div className="field__value" id={`${entryId}-value-${defId}`}>
+          {text}
+        </div>
       </div>
     </div>
   );

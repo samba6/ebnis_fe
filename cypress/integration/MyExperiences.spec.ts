@@ -1,7 +1,6 @@
 import { USER_REGISTRATION_OBJECT } from "../support/user-registration-object";
 import { FieldType } from "../../src/graphql/apollo-types/globalTypes";
 import { EXPERIENCES_URL } from "../../src/routes";
-import { getDescendantByText } from "../support/get-descendant-by-text";
 import { EXPERIENCE_DEFINITION_TITLE } from "../../src/constants/experience-definition-title";
 import { MY_EXPERIENCES_TITLE } from "../../src/constants/my-experiences-title";
 import { createSavedExperience } from "../support/create-experience";
@@ -30,7 +29,7 @@ context("my experiences page", () => {
     /**
      * When we click on link to create new experience
      */
-    cy.getByText("Click here to create your first experience").click();
+    cy.get("#no-experiences-info").click();
 
     /**
      * Then we should be taken to new experience definition page
@@ -48,7 +47,7 @@ context("my experiences page", () => {
     /**
      * And click on the button
      */
-    cy.getByText("+").click();
+    cy.get("#new-experience-button").click();
 
     /**
      * Then we should be taken to new experience definition page
@@ -83,9 +82,7 @@ context("my experiences page", () => {
       /**
        * When we click on the title of experience to which we want to add entry
        */
-      cy.get('[data-testid="exps-container"]').then($node => {
-        getDescendantByText(title, $node).click();
-      });
+      cy.get(`.experience-title`).click();
 
       /**
        * Then we should be directed to the experience's detailed page
@@ -95,7 +92,7 @@ context("my experiences page", () => {
       /**
        * When we click on "No entries" link
        */
-      cy.getByText("No entries. Click here to add one").click();
+      cy.get("#no-entries").click();
 
       /**
        * Then we should be directed to entry page for the experience
