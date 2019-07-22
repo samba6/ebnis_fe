@@ -8,7 +8,6 @@ import { MyExperiences } from "../components/MyExperiences/component";
 import { Props } from "../components/MyExperiences/utils";
 import { renderWithRouter } from "./test_utils";
 import { ExperienceConnectionFragment } from "../graphql/apollo-types/ExperienceConnectionFragment";
-import { makeUnsavedId } from "../constants";
 import { LayoutProvider } from "../components/Layout/layout-provider";
 import { ILayoutContextContext } from "../components/Layout/utils";
 
@@ -122,8 +121,9 @@ it("loads full experiences in the background when experiences are loaded", async
 
       {
         node: {
-          id: makeUnsavedId("2"),
+          id: "2",
           title: "2",
+          hasUnsaved: true,
         },
       },
     ],

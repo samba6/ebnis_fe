@@ -11,6 +11,7 @@ export const EXPERIENCE_MINI_FRAGMENT = gql`
     clientId
     insertedAt
     updatedAt
+    hasUnsaved
   }
 `;
 

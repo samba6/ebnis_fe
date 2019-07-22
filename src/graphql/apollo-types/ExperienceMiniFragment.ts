@@ -29,4 +29,5 @@ export interface ExperienceMiniFragment {
   clientId: string | null;
   insertedAt: any;
   updatedAt: any;
+  hasUnsaved: boolean | null;
 }

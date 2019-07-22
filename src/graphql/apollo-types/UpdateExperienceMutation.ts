@@ -51,6 +51,7 @@ export interface UpdateExperienceMutation_updateExperience_experience {
   clientId: string | null;
   insertedAt: any;
   updatedAt: any;
+  hasUnsaved: boolean | null;
   /**
    * The field definitions used for the experience entries
    */

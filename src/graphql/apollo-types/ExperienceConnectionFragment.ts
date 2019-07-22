@@ -124,6 +124,7 @@ export interface ExperienceConnectionFragment_edges_node {
   clientId: string | null;
   insertedAt: any;
   updatedAt: any;
+  hasUnsaved: boolean | null;
   /**
    * The field definitions used for the experience entries
    */

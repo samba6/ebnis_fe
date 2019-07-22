@@ -12,14 +12,12 @@ import {
 jest.mock("../state/resolvers/update-get-experiences-mini-query");
 jest.mock("../state/resolvers/write-get-experience-full-query-to-cache");
 jest.mock("../state/resolvers/delete-references-from-cache");
-jest.mock("../state/resolvers/write-experience-fragment-to-cache");
 jest.mock("../state/resolvers/update-saved-and-unsaved-experiences-in-cache");
 
 import { deleteIdsFromCache } from "../state/resolvers/delete-references-from-cache";
 import { replaceExperiencesInGetExperiencesMiniQuery } from "../state/resolvers/update-get-experiences-mini-query";
 import { writeGetExperienceFullQueryToCache } from "../state/resolvers/write-get-experience-full-query-to-cache";
 import { writeSavedAndUnsavedExperiencesToCache } from "../state/resolvers/update-saved-and-unsaved-experiences-in-cache";
-import { writeExperienceFragmentToCache } from "../state/resolvers/write-experience-fragment-to-cache";
 import {
   MUTATION_NAME_createUnsavedEntry,
   MUTATION_NAME_createUnsavedExperience,
@@ -35,8 +33,6 @@ const mockWriteGetExperienceFullQueryToCache = writeGetExperienceFullQueryToCach
 
 const mockWriteSavedAndUnsavedExperiencesToCache = writeSavedAndUnsavedExperiencesToCache as jest.Mock;
 
-const mockWriteExperienceFragmentToCache = writeExperienceFragmentToCache as jest.Mock;
-
 beforeEach(() => {
   jest.resetAllMocks();
 });
@@ -45,6 +41,8 @@ test("completely saved unsaved experience", () => {
   const unsavedExperiencesMap = {
     "1": {
       experience: {
+        id: "1",
+        clientId: "1",
         fieldDefs: [
           {
             id: "1",
@@ -63,6 +61,8 @@ test("completely saved unsaved experience", () => {
       savedEntries: [],
       newlySavedEntries: [],
       newlySavedExperience: {
+        id: "1s",
+        clientId: "1",
         entries: {
           edges: [] as ExperienceFragment_entries_edges[],
         },
@@ -79,7 +79,6 @@ test("completely saved unsaved experience", () => {
 
   expect(outstandingUnsavedCount).toBe(0);
   expect(mockWriteGetExperienceFullQueryToCache).toHaveBeenCalledTimes(1);
-  expect(mockWriteExperienceFragmentToCache).not.toHaveBeenCalled();
 
   expect(mockDeleteIdsFromCache).toHaveBeenCalledWith(
     {},
@@ -99,6 +98,8 @@ test("completely saved unsaved experience", () => {
     mockReplaceExperiencesInGetExperiencesMiniQuery.mock.calls[0][1],
   ).toEqual({
     "1": {
+      id: "1s",
+      clientId: "1",
       entries: {
         edges: [],
       },
@@ -115,7 +116,8 @@ test("partially saved unsaved experience", () => {
     "2": {
       // experience partially saved, will be deleted from cache
       experience: {
-        id: "21",
+        id: "2",
+        clientId: "2",
         fieldDefs: [
           {
             id: "1",
@@ -142,6 +144,7 @@ test("partially saved unsaved experience", () => {
       ],
       newlySavedExperience: {
         id: "2s",
+        clientId: "2",
         entries: {
           edges: [
             {
@@ -164,7 +167,6 @@ test("partially saved unsaved experience", () => {
 
   expect(outstandingUnsavedCount).toBe(1);
   expect(mockWriteGetExperienceFullQueryToCache).toHaveBeenCalledTimes(1);
-  expect(mockWriteExperienceFragmentToCache).not.toHaveBeenCalled();
 
   expect(mockDeleteIdsFromCache).toHaveBeenCalledWith(
     {},
@@ -183,7 +185,9 @@ test("partially saved unsaved experience", () => {
     mockReplaceExperiencesInGetExperiencesMiniQuery.mock.calls[0][1],
   ).toEqual({
     "2": {
+      hasUnsaved: true,
       id: "2s",
+      clientId: "2",
       entries: {
         edges: [
           {
@@ -238,7 +242,7 @@ test("unsaved experience not saved", () => {
 
   expect(outstandingUnsavedCount).toBe(2);
   expect(mockWriteGetExperienceFullQueryToCache).not.toHaveBeenCalled();
-  expect(mockWriteExperienceFragmentToCache).not.toHaveBeenCalled();
+
   expect(mockDeleteIdsFromCache).not.toHaveBeenCalled();
 
   expect(
@@ -302,9 +306,15 @@ test("saved experience with unsaved entry not saved", () => {
     client: {} as any,
   });
 
-  expect(mockWriteGetExperienceFullQueryToCache).not.toHaveBeenCalled();
-
-  expect(mockWriteExperienceFragmentToCache).toHaveBeenCalledTimes(1);
+  expect(mockWriteGetExperienceFullQueryToCache.mock.calls[0][1]).toEqual({
+    id: "6",
+    entries: {
+      edges: [
+        { node: { clientId: "22-c", id: "22s" } },
+        { node: { clientId: "23-c", id: "23" } },
+      ],
+    },
+  });
 
   expect(outstandingUnsavedCount).toBe(1);
 
@@ -315,8 +325,18 @@ test("saved experience with unsaved entry not saved", () => {
   });
 
   expect(
-    mockReplaceExperiencesInGetExperiencesMiniQuery,
-  ).not.toHaveBeenCalled();
+    mockReplaceExperiencesInGetExperiencesMiniQuery.mock.calls[0][1],
+  ).toEqual({
+    "6": {
+      id: "6",
+      entries: {
+        edges: [
+          { node: { clientId: "22-c", id: "22s" } },
+          { node: { clientId: "23-c", id: "23" } },
+        ],
+      },
+    },
+  });
 
   expect(mockWriteSavedAndUnsavedExperiencesToCache.mock.calls[0][1]).toEqual([
     {
@@ -346,7 +366,7 @@ test("saved experience with no 'newlySavedEntries' ", () => {
   });
 
   expect(mockWriteGetExperienceFullQueryToCache).not.toHaveBeenCalled();
-  expect(mockWriteExperienceFragmentToCache).not.toHaveBeenCalled();
+
   expect(outstandingUnsavedCount).toBe(1);
   expect(mockDeleteIdsFromCache).not.toHaveBeenCalled();
 
@@ -382,7 +402,7 @@ test("saved experience with empty 'newlySavedEntries' ", () => {
   });
 
   expect(mockWriteGetExperienceFullQueryToCache).not.toHaveBeenCalled();
-  expect(mockWriteExperienceFragmentToCache).not.toHaveBeenCalled();
+
   expect(outstandingUnsavedCount).toBe(1);
   expect(mockDeleteIdsFromCache).not.toHaveBeenCalled();
 
@@ -423,9 +443,11 @@ test("saved experience completely saved", () => {
     client: {} as any,
   });
 
-  expect(mockWriteGetExperienceFullQueryToCache).not.toHaveBeenCalled();
-
-  expect(mockWriteExperienceFragmentToCache).toHaveBeenCalledTimes(1);
+  expect(mockWriteGetExperienceFullQueryToCache.mock.calls[0][1]).toEqual({
+    id: "7",
+    entries: { edges: [] },
+    hasUnsaved: null,
+  });
 
   expect(outstandingUnsavedCount).toBe(0);
 
@@ -440,8 +462,14 @@ test("saved experience completely saved", () => {
   );
 
   expect(
-    mockReplaceExperiencesInGetExperiencesMiniQuery,
-  ).not.toHaveBeenCalled();
+    mockReplaceExperiencesInGetExperiencesMiniQuery.mock.calls[0][1],
+  ).toEqual({
+    "7": {
+      id: "7",
+      entries: { edges: [] },
+      hasUnsaved: null,
+    },
+  });
 
   expect(mockWriteSavedAndUnsavedExperiencesToCache.mock.calls[0][1]).toEqual(
     [],
@@ -467,6 +495,4 @@ it("is a noop when updating and there is nothing to update", () => {
   expect(mockWriteGetExperienceFullQueryToCache).not.toHaveBeenCalled();
 
   expect(mockWriteSavedAndUnsavedExperiencesToCache).not.toHaveBeenCalled();
-
-  expect(mockWriteExperienceFragmentToCache).not.toHaveBeenCalled();
 });

@@ -43,6 +43,7 @@ export interface GetExperienceConnectionMini_getExperiences_edges_node {
   clientId: string | null;
   insertedAt: any;
   updatedAt: any;
+  hasUnsaved: boolean | null;
 }
 
 export interface GetExperienceConnectionMini_getExperiences_edges {

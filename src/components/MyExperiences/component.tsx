@@ -7,7 +7,7 @@ import { EXPERIENCE_DEFINITION_URL } from "../../routes";
 import { makeExperienceRoute } from "../../constants/experience-route";
 import { Loading } from "../Loading";
 import { SidebarHeader } from "../SidebarHeader";
-import { setDocumentTitle, makeSiteTitle, isUnsavedId } from "../../constants";
+import { setDocumentTitle, makeSiteTitle } from "../../constants";
 import { MY_EXPERIENCES_TITLE } from "../../constants/my-experiences-title";
 import { Link } from "gatsby";
 import { GetExperienceConnectionMiniData } from "../../graphql/get-experience-connection-mini.query";
@@ -226,9 +226,12 @@ function mapSavedExperiencesToIds(
 ) {
   return (experienceConnection.edges as ExperienceConnectionFragment_edges[]).reduce(
     (acc, edge: ExperienceConnectionFragment_edges) => {
-      const { id } = edge.node as ExperienceConnectionFragment_edges_node;
+      const {
+        hasUnsaved,
+        id,
+      } = edge.node as ExperienceConnectionFragment_edges_node;
 
-      if (!isUnsavedId(id)) {
+      if (!hasUnsaved) {
         acc.push(id);
       }
 
