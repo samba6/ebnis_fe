@@ -1,8 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { USER_REGISTRATION_OBJECT } from "../support/user-registration-object";
 import { FieldType } from "../../src/graphql/apollo-types/globalTypes";
 import { EXPERIENCE_DEFINITION_URL } from "../../src/routes";
 import { EXPERIENCE_DEFINITION_TITLE } from "../../src/constants/experience-definition-title";
-import { getDescendantByText } from "../support/get-descendant-by-text";
 import { createSavedExperience } from "../support/create-experience";
 
 context("experience definition page", () => {
@@ -26,7 +26,7 @@ context("experience definition page", () => {
      * When we complete the title field with new experience definition title
      */
     const title = "new experience title";
-    cy.getByLabelText("Title").type(title);
+    cy.get("#experience-definition-title-input").type(title);
 
     /**
      * And we complete the description field
@@ -41,10 +41,10 @@ context("experience definition page", () => {
     /**
      * And we click on field type
      */
-    cy.get('[name="fieldDefs[0].type"]')
+    cy.get("#experience-definition-field-type-0")
       .click()
       .then($fieldType => {
-        getDescendantByText(FieldType.DATETIME, $fieldType).click();
+        ($fieldType[0].getElementsByClassName("js-DATETIME")[0] as any).click();
       });
 
     /**
@@ -84,20 +84,24 @@ context("experience definition page", () => {
       /**
        * Then we should not see any error
        */
-      cy.get('[data-testid="graphql-errors-summary"]').should("not.exist");
+      cy.get("#experience-definition-graphql-errors-summary").should(
+        "not.exist",
+      );
 
       /**
        * And complete the form with same title as in the system and submit
        */
 
-      cy.getByLabelText("Title").type(title);
+      cy.get("#experience-definition-title-input").type(title);
 
       cy.getByLabelText("Field 1 Name").type("experience field 1");
 
-      cy.get('[name="fieldDefs[0].type"]')
+      cy.get("#experience-definition-field-type-0")
         .click()
         .then($fieldType => {
-          getDescendantByText(FieldType.MULTI_LINE_TEXT, $fieldType).click();
+          ($fieldType[0].getElementsByClassName(
+            "js-MULTI_LINE_TEXT",
+          )[0] as any).click();
         });
 
       cy.getByText("Submit").click();
@@ -105,7 +109,7 @@ context("experience definition page", () => {
       /**
        * Then we should see error
        */
-      cy.get('[data-testid="graphql-errors-summary"]').should("exist");
+      cy.get("#experience-definition-graphql-errors-summary").should("exist");
     });
   });
 
@@ -126,7 +130,7 @@ context("experience definition page", () => {
      * When we complete the title field with new experience definition title
      */
     const title = "new experience title";
-    cy.getByLabelText("Title").type(title);
+    cy.get("#experience-definition-title-input").type(title);
 
     /**
      * And we complete the description field
@@ -141,10 +145,10 @@ context("experience definition page", () => {
     /**
      * And we click on field type
      */
-    cy.get('[name="fieldDefs[0].type"]')
+    cy.get("#experience-definition-field-type-0")
       .click()
       .then($fieldType => {
-        getDescendantByText(FieldType.DATETIME, $fieldType).click();
+        ($fieldType[0].getElementsByClassName("js-DATETIME")[0] as any).click();
       });
 
     /**

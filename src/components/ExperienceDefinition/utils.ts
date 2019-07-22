@@ -1,6 +1,5 @@
 import { RouteComponentProps } from "@reach/router";
 import * as Yup from "yup";
-import { DropdownItemProps } from "semantic-ui-react";
 import { MutationUpdaterFn } from "react-apollo";
 import { Reducer } from "react";
 import { FormikErrors } from "formik";
@@ -26,7 +25,7 @@ export interface Props
     CreateExperienceMutationProps,
     CreateUnsavedExperienceMutationProps {}
 
-const fieldTypeKeys = Object.values(FieldType);
+export const fieldTypeKeys = Object.values(FieldType);
 
 export const ValidationSchema = Yup.object<FormValues>().shape({
   title: Yup.string()
@@ -49,16 +48,6 @@ export const ValidationSchema = Yup.object<FormValues>().shape({
     .min(1)
     .ensure(),
 });
-
-export const FIELD_TYPES: DropdownItemProps[] = [];
-
-for (const k of fieldTypeKeys) {
-  FIELD_TYPES.push({
-    value: k,
-    text: k,
-    key: k,
-  });
-}
 
 export enum ActionType {
   setFormError = "@components/new-experience/SET_FORM_ERROR",
