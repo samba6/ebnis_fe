@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-namespace */
 /* eslint-disable @typescript-eslint/no-use-before-define */
-import "cypress-testing-library/add-commands";
+
 import { UserCreationObject } from "./user-creation-object";
 import { Registration } from "../../src/graphql/apollo-types/globalTypes";
 import {

@@ -18,12 +18,10 @@ import Message from "semantic-ui-react/dist/commonjs/collections/Message";
 import TextArea from "semantic-ui-react/dist/commonjs/addons/TextArea";
 import { ApolloError } from "apollo-client";
 import { NavigateFn } from "@reach/router";
-
 import "./styles.scss";
 import {
   Props,
   ValidationSchema,
-  FIELD_TYPES,
   EMPTY_FIELD,
   reducer,
   State,
@@ -31,6 +29,7 @@ import {
   Action,
   GraphQlErrorState,
   GraphQlError,
+  fieldTypeKeys,
 } from "./utils";
 import {
   CreateExperienceInput as FormValues,
@@ -46,6 +45,7 @@ import { SidebarHeader } from "../SidebarHeader";
 import { FormCtrlError } from "../FormCtrlError/component";
 import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragment";
 import { isConnected } from "../../state/connections";
+import { DropdownItemProps } from "semantic-ui-react";
 
 export function ExperienceDefinition(props: Props) {
   const { createExperience, navigate, createUnsavedExperience } = props;
@@ -61,7 +61,7 @@ export function ExperienceDefinition(props: Props) {
     return setDocumentTitle;
   }, []);
 
-  function FieldDef(
+  function FieldDefinitionComponent(
     values: FormValues,
     arrayHelpers: ArrayHelpers,
     field: CreateFieldDef,
@@ -79,7 +79,7 @@ export function ExperienceDefinition(props: Props) {
 
     return (
       <div
-        data-testid={`field-def-container-${index + 1}`}
+        id={`experience-field-definition-container-${index}`}
         key={index}
         className={`${errorClass} field-def-container`}
       >
@@ -109,13 +109,18 @@ export function ExperienceDefinition(props: Props) {
     );
   }
 
-  const renderFieldDefs = (values: FormValues) => (
+  const FieldDefinitionsComponent = (values: FormValues) => (
     arrayHelpers: ArrayHelpers,
   ) => {
     return (
       <>
         {values.fieldDefs.map((field, index) =>
-          FieldDef(values, arrayHelpers, field as CreateFieldDef, index),
+          FieldDefinitionComponent(
+            values,
+            arrayHelpers,
+            field as CreateFieldDef,
+            index,
+          ),
         )}
       </>
     );
@@ -207,12 +212,15 @@ export function ExperienceDefinition(props: Props) {
           component={DescriptionInputComponent}
         />
 
-        <FieldArray name="fieldDefs" render={renderFieldDefs(values)} />
+        <FieldArray
+          name="fieldDefs"
+          render={FieldDefinitionsComponent(values)}
+        />
 
         <Button
           className="submit-btn"
-          id="experience-def-submit-btn"
-          name="experience-def-submit-btn"
+          id="experience-definition-submit-btn"
+          name="experience-definition-submit-btn"
           color="green"
           inverted={true}
           disabled={!dirty || formInvalid || isSubmitting}
@@ -267,16 +275,31 @@ function FieldNameComponent({
     (graphQlError && graphQlError[name]) ||
     "";
 
+  const idPrefix = `field-name-${index}`;
+
   return (
     <Form.Field error={!!error}>
-      <label htmlFor={name}>{`Field ${index + 1} Name`}</label>
+      <label htmlFor={idPrefix}>{`Field ${index + 1} Name`}</label>
 
-      <Input {...rest} value={value} autoComplete="off" name={name} id={name} />
+      <Input
+        {...rest}
+        value={value}
+        autoComplete="off"
+        name={name}
+        id={idPrefix}
+      />
 
-      <FormCtrlError error={error} id={index + 1} />
+      <FormCtrlError error={error} id={`${idPrefix}-error`} />
     </Form.Field>
   );
 }
+
+const FIELD_TYPES: DropdownItemProps[] = fieldTypeKeys.map(k => ({
+  value: k,
+  text: k,
+  key: k,
+  content: <span className={`js-${k}`}>{k}</span>,
+}));
 
 function FieldDataTypeComponent({
   field: { name, value },
@@ -289,16 +312,18 @@ function FieldDataTypeComponent({
 }) {
   const error = getFieldError(name, "type", submittedFormErrors);
 
+  const idPrefix = `experience-definition-field-type-${index}`;
+
   return (
     <Form.Field error={!!error}>
       <label htmlFor={name}>{`Field ${index + 1} Data Type`}</label>
 
       <Dropdown
+        id={idPrefix}
         fluid={true}
         selection={true}
         value={value}
         compact={true}
-        name={name}
         options={FIELD_TYPES}
         onChange={function fieldTypeChanged(evt, data) {
           const val = data.value as string;
@@ -307,7 +332,7 @@ function FieldDataTypeComponent({
         }}
       />
 
-      <FormCtrlError error={error} id={index + 1} />
+      <FormCtrlError error={error} id={"" + (index + 1)} />
     </Form.Field>
   );
 }
@@ -346,11 +371,11 @@ function FieldBtnCtrlsComponent({
   const index1 = index + 1;
 
   return (
-    <div data-testid={`field-controls-${index1}`} className="field-controls">
+    <div className="field-controls">
       <Button.Group className="control-buttons" basic={true} compact={true}>
         {isCompletelyFilled && (
           <Button
-            data-testid={`add-field-btn-${index1}`}
+            id={`add-field-btn-${index}`}
             type="button"
             onClick={function onFieldAddClicked() {
               arrayHelpers.insert(index1, { ...EMPTY_FIELD });
@@ -364,7 +389,7 @@ function FieldBtnCtrlsComponent({
 
         {len > 1 && (
           <Button
-            data-testid={`remove-field-btn-${index1}`}
+            id={`remove-field-btn-${index}`}
             type="button"
             onClick={function onFieldDeleteClicked() {
               arrayHelpers.remove(index);
@@ -378,7 +403,7 @@ function FieldBtnCtrlsComponent({
 
         {showUp && (
           <Button
-            data-testid={`go-up-field-btn-${index1}`}
+            id={`go-up-field-btn-${index}`}
             type="button"
             onClick={function onFieldUpClicked() {
               const indexUp = index;
@@ -392,7 +417,7 @@ function FieldBtnCtrlsComponent({
 
         {showDown && (
           <Button
-            data-testid={`go-down-field-btn-${index1}`}
+            id={`go-down-field-btn-${index}`}
             type="button"
             onClick={function onFieldDownClicked() {
               arrayHelpers.swap(index, index1);
@@ -417,22 +442,30 @@ function DescriptionInputComponent({
   return (
     <Form.Field>
       <label
-        data-testid="description-field-toggle"
+        id="experience-definition-description-toggle"
         className="description-field-toggle"
-        htmlFor={field.name}
+        htmlFor={"experience-definition-description-input"}
         onClick={() =>
           dispatch([ActionType.showDescriptionInput, !showDescriptionInput])
         }
       >
         Description
         {showDescriptionInput ? (
-          <Icon name="caret down" data-testid="description-visible-icon" />
+          <Icon
+            name="caret down"
+            id="experience-definition-description-visible-icon"
+          />
         ) : (
-          <Icon name="caret left" data-testid="description-not-visible-icon" />
+          <Icon
+            name="caret left"
+            id="experience-definition-description-not-visible-icon"
+          />
         )}
       </label>
 
-      {showDescriptionInput && <TextArea {...field} id={field.name} />}
+      {showDescriptionInput && (
+        <TextArea {...field} id={"experience-definition-description-input"} />
+      )}
     </Form.Field>
   );
 }
@@ -446,14 +479,15 @@ function TitleInputComponent({
   formError?: string;
 }) {
   const error = formError || (graphQlError && graphQlError.title) || "";
+  const id = "experience-definition-title-input";
 
   return (
     <Form.Field error={!!error}>
-      <label htmlFor={field.name}>Title</label>
+      <label htmlFor={id}>Title</label>
 
-      <Input {...field} autoComplete="off" id={field.name} />
+      <Input {...field} autoComplete="off" id={id} />
 
-      <FormCtrlError error={error} id={0} />
+      <FormCtrlError error={error} id="experience-definition-title-error" />
     </Form.Field>
   );
 }
@@ -573,7 +607,7 @@ function GraphQlErrorsSummaryComponent({
 
   return (
     <Message
-      data-testid="graphql-errors-summary"
+      id="experience-definition-graphql-errors-summary"
       style={{ display: "block" }}
       error={true}
       onDismiss={() => dispatch([ActionType.setGraphqlError, null])}

@@ -35,14 +35,7 @@ context("new experience entry page", () => {
       { persist: true },
     );
 
-    cy.wrap(p).then(result => {
-      let experience = result as ExperienceFragment;
-      /**
-       * And user wishes to create new entry
-       */
-      const fieldValue = "4567890";
-      const fieldValueRegex = new RegExp(fieldValue);
-
+    cy.wrap(p).then((experience: ExperienceFragment) => {
       /**
        * When we visit new entry page
        */
@@ -53,18 +46,13 @@ context("new experience entry page", () => {
        */
       cy.title().should("contain", `[New Entry] ${title}`);
 
-      /**
-       * And data user wishes to create should not exist on page
-       */
-      cy.queryByText(fieldValueRegex).should("not.exist");
-
       cy.setConnectionStatus(false);
 
       /**
        * When user completes and submits the form
        */
-      cy.getByLabelText(new RegExp(fieldName, "i")).type(fieldValue);
-      cy.getByText(/submit/i).click();
+      cy.get("#new-entry-INTEGER-input").type("2");
+      cy.get("#new-entry-submit-btn").click();
 
       /**
        * Then user should redirected to experience page
@@ -73,9 +61,11 @@ context("new experience entry page", () => {
       cy.title().should("contain", title);
 
       /**
-       * And data user wishes to create should exist on page
+       * Then data user just created should exist on page
        */
-      cy.getByText(fieldValueRegex).should("exist");
+      cy.get(makeIdAttributeSelector(experience)).then($element => {
+        expect($element[0].textContent).eq("2");
+      });
     });
   });
 
@@ -98,15 +88,7 @@ context("new experience entry page", () => {
       // { persist: true },
     );
 
-    cy.wrap(p).then(result => {
-      let experience = result as ExperienceFragment;
-
-      /**
-       * And user wishes to create new entry
-       */
-      const fieldValue = "4567890";
-      const fieldValueRegex = new RegExp(fieldValue);
-
+    cy.wrap(p).then((experience: ExperienceFragment) => {
       /**
        * When we visit new entry page
        */
@@ -118,15 +100,10 @@ context("new experience entry page", () => {
       cy.title().should("contain", `[New Entry] ${title}`);
 
       /**
-       * And data user wishes to create should not exist on page
-       */
-      cy.queryByText(fieldValueRegex).should("not.exist");
-
-      /**
        * When user completes and submits the form
        */
-      cy.getByLabelText(new RegExp(fieldName, "i")).type(fieldValue);
-      cy.getByText(/submit/i).click();
+      cy.get("#new-entry-INTEGER-input").type("3");
+      cy.get("#new-entry-submit-btn").click();
 
       /**
        * Then user should redirected to experience page
@@ -135,9 +112,11 @@ context("new experience entry page", () => {
       cy.title().should("contain", title);
 
       /**
-       * And data user wishes to create should exist on page
+       * Then data user just created should exist on page
        */
-      cy.getByText(fieldValueRegex).should("exist");
+      cy.get(makeIdAttributeSelector(experience)).then($element => {
+        expect($element[0].textContent).eq("3");
+      });
     });
   });
 
@@ -157,15 +136,7 @@ context("new experience entry page", () => {
       ],
     });
 
-    cy.wrap(p).then(result => {
-      let experience = result as ExperienceFragment;
-
-      /**
-       * And user wishes to create new entry
-       */
-      const fieldValue = "4567890";
-      const fieldValueRegex = new RegExp(fieldValue);
-
+    cy.wrap(p).then((experience: ExperienceFragment) => {
       /**
        * When we visit new entry page
        */
@@ -176,29 +147,24 @@ context("new experience entry page", () => {
        */
       cy.title().should("contain", `[New Entry] ${title}`);
 
-      /**
-       * And data user wishes to create should not exist on page
-       */
-      cy.queryByText(fieldValueRegex).should("not.exist");
-
       cy.setConnectionStatus(false);
 
       /**
        * When user completes and submits the form
        */
-      cy.getByLabelText(new RegExp(fieldName, "i")).type(fieldValue);
-      cy.getByText(/submit/i).click();
+      cy.get("#new-entry-INTEGER-input").type("4");
+      cy.get("#new-entry-submit-btn").click();
 
       /**
-       * Then user should redirected to experience page
+       * Then data user just created should exist on page
        */
-      cy.title().should("not.contain", `[New Entry]`);
-      cy.title().should("contain", title);
-
-      /**
-       * And data user wishes to create should exist on page
-       */
-      cy.getByText(fieldValueRegex).should("exist");
+      cy.get(makeIdAttributeSelector(experience)).then($element => {
+        expect($element[0].textContent).eq("4");
+      });
     });
   });
 });
+
+function makeIdAttributeSelector(experience: ExperienceFragment) {
+  return `[id$="-value-${experience.fieldDefs[0].id}"]`;
+}

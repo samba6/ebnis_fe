@@ -1,26 +1,33 @@
 import React from "react";
-import { Props, PasswordInputType } from "./pwd-input";
+import { Props, PasswordInputType } from "./utils";
 import Icon from "semantic-ui-react/dist/commonjs/elements/Icon";
 import Input from "semantic-ui-react/dist/commonjs/elements/Input";
 import Form from "semantic-ui-react/dist/commonjs/collections/Form";
 
-export const PwdInput = React.memo(
+export const PasswordInput = React.memo(
   function PwdInputComponent<TFormValues>(props: Props<TFormValues>) {
-    const { field, pwdType = "password", dispatch } = props;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { field, pwdType = "password", dispatch, form, ...rest } = props;
     const id = makeId(field.name);
 
     return (
       <Form.Field>
-        <label htmlFor={id}>Password</label>
+        <label htmlFor={rest.id || id}>Password</label>
 
-        <Input icon={true} placeholder="" data-testid={id}>
-          <input {...field} type={pwdType} autoComplete="off" id={id} />
+        <Input icon={true}>
+          <input
+            {...field}
+            type={pwdType}
+            autoComplete="off"
+            id={id}
+            {...rest}
+          />
 
           {pwdType === "password" && field.value && (
             <Icon
               name="eye"
               className="link"
-              data-testid="password-unmask"
+              id="password-unmask"
               onClick={() => dispatch([PasswordInputType, "text"])}
             />
           )}
@@ -29,7 +36,7 @@ export const PwdInput = React.memo(
             <Icon
               name="eye slash"
               className="link"
-              data-testid="password-mask"
+              id="password-mask"
               onClick={() => dispatch([PasswordInputType, "password"])}
             />
           )}

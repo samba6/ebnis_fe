@@ -155,7 +155,7 @@ export function SignUp(props: Props) {
     <div className="routes-sign-up-route">
       <SidebarHeader title="Sign up for Ebnis" />
 
-      <div className="main" ref={mainRef} data-testid="components-signup-main">
+      <div className="main" ref={mainRef} id="components-signup-main">
         <Formik
           initialValues={initialFormValues}
           onSubmit={noop}
@@ -189,24 +189,26 @@ function ErrorsSummary(props: FormErrorsProps) {
   }
 
   let content = otherErrors as React.ReactNode;
-  let testId = "other-errors";
+  let id = "other-errors";
 
   if (networkError) {
     content = networkError;
-    testId = "network-error";
+    id = "network-error";
   } else if (formErrors || serverFieldsErrors) {
-    testId = formErrors ? "form-errors" : "server-field-error";
+    id = formErrors ? "form-errors" : "sign-up-server-field-error";
 
     content = (
       <>
         <span>Errors in fields:</span>
         {Object.entries((formErrors || serverFieldsErrors) as FormErrors).map(
-          ([k, err]: [string, string | undefined]) => {
+          ([k, err]: [string, string | undefined], index) => {
             const label = FORM_RENDER_PROPS[k][0];
             return (
               <div key={label}>
                 <div className="error-label">{label}</div>
-                <div className="error-text">{err}</div>
+                <div className="error-text" id={`error-text-${index}`}>
+                  {err}
+                </div>
               </div>
             );
           },
@@ -216,7 +218,7 @@ function ErrorsSummary(props: FormErrorsProps) {
   }
 
   return (
-    <Card.Content extra={true} data-testid={testId}>
+    <Card.Content extra={true} id={id}>
       <Message
         error={true}
         onDismiss={function onDismissed() {
@@ -245,6 +247,7 @@ function InputComponent({
   const isSourceField = name === "source";
   const { formErrors, serverFieldsErrors } = errors;
   const fieldError = (formErrors || serverFieldsErrors || {})[name];
+  const id = `sign-up-${name}`;
 
   return (
     <Form.Field
@@ -253,18 +256,23 @@ function InputComponent({
         disabled: isSourceField,
         error: fieldError,
       })}
+      id={`${id}-field`}
     >
-      <label htmlFor={name}>{label}</label>
+      <label htmlFor={id}>{label}</label>
 
       <Input
         {...field}
         type={type}
         autoComplete="off"
-        id={name}
+        id={id}
         readOnly={isSourceField}
       />
 
-      {fieldError && <div className="field-error">{fieldError}</div>}
+      {fieldError && (
+        <div id={`${id}-error`} className="field-error">
+          {fieldError}
+        </div>
+      )}
     </Form.Field>
   );
 }

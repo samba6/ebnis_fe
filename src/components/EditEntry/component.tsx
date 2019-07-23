@@ -12,9 +12,9 @@ import {
 import { noop } from "../../constants";
 import Form from "semantic-ui-react/dist/commonjs/collections/Form";
 import Input from "semantic-ui-react/dist/commonjs/elements/Input";
-import DateField from "../DateField";
+import { DateField } from "../DateField/component";
 import dateFnFormat from "date-fns/format";
-import DateTimeField from "../DateTimeField";
+import { DateTimeField } from "../DateTimeField/component";
 import Icon from "semantic-ui-react/dist/commonjs/elements/Icon";
 import Button from "semantic-ui-react/dist/commonjs/elements/Button";
 import Message from "semantic-ui-react/dist/commonjs/collections/Message";

@@ -27,9 +27,7 @@ context("experience page", () => {
       ],
     });
 
-    cy.wrap(p).then(result => {
-      let experience = result as ExperienceFragment;
-
+    cy.wrap(p).then((experience: ExperienceFragment) => {
       cy.visit(makeExperienceRoute(experience.id));
 
       /**
@@ -40,7 +38,7 @@ context("experience page", () => {
       /**
        * When we click on 'no entry' link
        */
-      cy.getByTestId("no-entries").click();
+      cy.get("#experience-no-entries").click();
 
       /**
        * Then we should be redirected to new entry page
@@ -63,47 +61,39 @@ context("experience page", () => {
       ],
     }).then(experience => {
       const id = experience.id;
-      const [field] = experience.fieldDefs;
-      const { id: defId } = field;
+      const [fieldDefinition] = experience.fieldDefs;
+      const { id: defId } = fieldDefinition;
 
-      return createExperienceEntries(
-        id,
-        [1, 2, 3].map(int => {
-          return {
-            expId: id,
-            clientId: int + "",
-            fields: [
-              {
-                defId,
-                data: JSON.stringify({ integer: int }),
-              },
-            ],
-          };
-        }),
-      ).then(entries => {
-        return [experience, entries];
+      return createExperienceEntries(id, [
+        {
+          expId: id,
+          clientId: "1",
+          fields: [
+            {
+              defId,
+              data: `{"integer":1}`,
+            },
+          ],
+        },
+      ]).then(() => {
+        return experience;
       });
     });
 
-    cy.wrap(p).then(([experience]: [ExperienceFragment]) => {
+    cy.wrap(p).then((experience: ExperienceFragment) => {
       /**
        * When we visit experience page
        */
 
       cy.visit(makeExperienceRoute(experience.id));
 
-      /**
-       * Then there should be 3 fields on the page
-       */
-      cy.getAllByTestId("entry-container").then(nodes => {
-        expect(nodes.length).to.eq(3);
-      });
+      const escapedExperienceId = CSS.escape(experience.id);
 
       /**
        * When we click new experience button in the menu
        */
-      cy.getByTestId("experience-options-menu").click();
-      cy.getByTestId(`experience-${experience.id}-new-entry-button`).click();
+      cy.get("#experience-options-menu").click();
+      cy.get(`#experience-${escapedExperienceId}-new-entry-button`).click();
 
       /**
        * Then we should be redirected to new entry page

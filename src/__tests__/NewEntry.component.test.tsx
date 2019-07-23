@@ -1,16 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import React, { ComponentType } from "react";
-import "jest-dom/extend-expect";
 import "react-testing-library/cleanup-after-each";
-import {
-  render,
-  fireEvent,
-  wait,
-  getByText as getDescendantByText,
-  getByTestId as getDescendantByTestId,
-  waitForElement,
-} from "react-testing-library";
+import { render, fireEvent, wait, waitForElement } from "react-testing-library";
 import isDateWithinRange from "date-fns/is_within_range";
 import addHours from "date-fns/add_hours";
 import addDays from "date-fns/add_days";
@@ -20,7 +12,7 @@ import differenceInHours from "date-fns/difference_in_hours";
 
 import { NewEntry } from "../components/NewEntry/component";
 import { Props, CreateEntryFieldErrors } from "../components/NewEntry/utils";
-import { renderWithRouter, fillField } from "./test_utils";
+import { renderWithRouter, fillField, closeMessage } from "./test_utils";
 import { FieldType } from "../graphql/apollo-types/globalTypes";
 import {
   ExperienceFragment_entries,
@@ -32,7 +24,7 @@ import { GraphQLError } from "graphql";
 
 jest.mock("../components/NewEntry/update");
 jest.mock("../components/SidebarHeader", () => ({
-  SidebarHeader: jest.fn(() => null),
+  SidebarHeader: () => null,
 }));
 jest.mock("../state/connections");
 jest.mock("../components/scroll-into-view");
@@ -47,14 +39,14 @@ const mockScrollIntoView = scrollIntoView as jest.Mock;
 
 const title = "ww";
 
-it("creates new experience entry when online", async () => {
+it.only("creates new experience entry when online", async () => {
   // an hour earlier
   const now = addHours(new Date(), -1);
 
   // we will check that date submitted to server is between yesterday
-  // and today
+  // and tomorrow
   const startDate = addDays(now, -1);
-  const endDate = addDays(startDate, 2);
+  const endDate = addDays(now, 1);
 
   // we will check that datetime submitted to server is within an hour from now
   const endDatetime = addHours(now, 2);
@@ -62,7 +54,7 @@ it("creates new experience entry when online", async () => {
   /**
    * Given we have received experiences from server
    */
-  const exp = {
+  const experience = {
     id: "1000",
 
     title,
@@ -111,24 +103,19 @@ it("creates new experience entry when online", async () => {
   } as ExperienceFragment;
 
   const { ui, mockCreateEntry } = makeComp({
-    experience: exp,
+    experience: experience,
   });
 
   /**
    * While we are on new entry page
    */
-  const { queryByTestId, getByLabelText, getByText } = render(ui);
+  render(ui);
 
   /**
-   * Then we should not see loading indicator
+   * Then SINGLE_LINE_TEXT field should be empty
    */
-  expect(queryByTestId("loading-spinner")).not.toBeInTheDocument();
-
-  /**
-   * And SINGLE_LINE_TEXT field should be empty
-   */
-  const $singleText = getByLabelText(
-    "[SINGLE_LINE_TEXT] f5",
+  const $singleText = document.getElementById(
+    "new-entry-SINGLE_LINE_TEXT-input",
   ) as HTMLInputElement;
 
   expect($singleText.value).toBe("");
@@ -136,21 +123,27 @@ it("creates new experience entry when online", async () => {
   /**
    * And MULTI_LINE_TEXT field should be empty
    */
-  const $multiText = getByLabelText("[MULTI_LINE_TEXT] f6") as HTMLInputElement;
+  const $multiText = document.getElementById(
+    "new-entry-MULTI_LINE_TEXT-input",
+  ) as HTMLInputElement;
 
   expect($multiText.value).toBe("");
 
   /**
    * And DECIMAL field should be empty
    */
-  const $decimal = getByLabelText("[DECIMAL] f3") as HTMLInputElement;
+  const $decimal = document.getElementById(
+    "new-entry-DECIMAL-input",
+  ) as HTMLInputElement;
 
   expect($decimal.value).toBe("");
 
   /**
    * And INTEGER field should be empty
    */
-  const $integer = getByLabelText("[INTEGER] f4") as HTMLInputElement;
+  const $integer = document.getElementById(
+    "new-entry-INTEGER-input",
+  ) as HTMLInputElement;
 
   expect($integer.value).toBe("");
 
@@ -162,7 +155,7 @@ it("creates new experience entry when online", async () => {
   fillField($multiText, "m");
   fillField($singleText, "s");
 
-  fireEvent.click(getByText(/submit/i));
+  fireEvent.click(document.getElementById("new-entry-submit-btn") as any);
 
   /**
    * Then the correct values should be sent to the server
@@ -230,12 +223,12 @@ it("sets decimal and integer fields to default to 0", async () => {
   /**
    * While we are on new entry page
    */
-  const { getByText } = render(ui);
+  render(ui);
 
   /**
    * When we submit the form without making any input
    */
-  fireEvent.click(getByText(/submit/i));
+  fireEvent.click(document.getElementById("new-entry-submit-btn") as any);
 
   /**
    * Then default values should be sent to the server
@@ -292,7 +285,7 @@ it("sets values of date and datetime fields", async () => {
   /**
    * While we are on new entry page
    */
-  const { getByText, getByTestId } = render(ui);
+  render(ui);
 
   /**
    * When we change datetime field to 2 hours ago
@@ -300,37 +293,57 @@ it("sets values of date and datetime fields", async () => {
   const datetime = addHours(now, -2);
 
   const [y, m, d, h, mi] = formatDate(datetime, "YYYY MMM D HH mm").split(" ");
-  const $datetimeField = getByTestId("datetime-field-fields[1]");
-  fireEvent.click(getDescendantByText($datetimeField, y));
-  fireEvent.click(getDescendantByText($datetimeField, m));
-  fireEvent.click(getDescendantByText($datetimeField, d));
-  fireEvent.click(
-    getDescendantByText(
-      getDescendantByTestId($datetimeField, "fields[1].hr"),
-      h,
-    ),
-  );
-  fireEvent.click(
-    getDescendantByText(
-      getDescendantByTestId($datetimeField, "fields[1].min"),
-      mi,
-    ),
-  );
+
+  const $datetimeField = document.getElementById(
+    "datetime-field-input-fields[1]",
+  ) as HTMLDivElement;
+
+  (document.getElementById(
+    `date-field-input-fields[1].date.year-${y}`,
+  ) as any).click();
+
+  ($datetimeField.getElementsByClassName(
+    `js-date-field-input-month-${m}`,
+  )[0] as any).click();
+
+  ($datetimeField.getElementsByClassName(
+    `js-date-field-input-day-${d}`,
+  )[0] as any).click();
+
+  ($datetimeField.getElementsByClassName(
+    `js-datetime-field-input-hour-${h}`,
+  )[0] as any).click();
+
+  ($datetimeField.getElementsByClassName(
+    `js-datetime-field-input-minute-${mi}`,
+  )[0] as any).click();
 
   /**
    * And we change date to 2 days ago
    */
   const date = addDays(now, -2);
   const [y1, m1, d1] = formatDate(date, "YYYY MMM D").split(" ");
-  const $dateField = getByTestId("date-field-fields[0]");
-  fireEvent.click(getDescendantByText($dateField, y1));
-  fireEvent.click(getDescendantByText($dateField, m1));
-  fireEvent.click(getDescendantByText($dateField, d1));
+
+  const $dateField = document.getElementById(
+    `date-field-input-fields[0]`,
+  ) as HTMLDivElement;
+
+  (document.getElementById(
+    `date-field-input-fields[0].year-${y1}`,
+  ) as any).click();
+
+  ($dateField.getElementsByClassName(
+    `js-date-field-input-month-${m1}`,
+  )[0] as any).click();
+
+  ($dateField.getElementsByClassName(
+    `js-date-field-input-day-${d1}`,
+  )[0] as any).click();
 
   /**
    * And submit the form
    */
-  fireEvent.click(getByText(/submit/i));
+  fireEvent.click(document.getElementById("new-entry-submit-btn") as any);
 
   /**
    * Then the correct values should be sent to the server
@@ -381,23 +394,18 @@ it("creates new experience entry when offline", async () => {
   /**
    * While we are on new entry page
    */
-  const { queryByTestId, getByLabelText, getByText } = render(ui);
-
-  /**
-   * Then we should not see loading indicator
-   */
-  expect(queryByTestId("loading-spinner")).not.toBeInTheDocument();
+  render(ui);
 
   /**
    * When we complete and submit the form
    */
-  const $singleText = getByLabelText(
-    "[SINGLE_LINE_TEXT] f1",
+  const $singleText = document.getElementById(
+    "new-entry-SINGLE_LINE_TEXT-input",
   ) as HTMLInputElement;
 
   fillField($singleText, "s");
 
-  fireEvent.click(getByText(/submit/i));
+  fireEvent.click(document.getElementById("new-entry-submit-btn") as any);
 
   /**
    * Then the correct values should be saved locally
@@ -421,7 +429,7 @@ it("creates new experience entry when offline", async () => {
   expect(mockCreateEntry).not.toBeCalled();
 });
 
-it("renders error when entry creation fails", async done => {
+it("renders error when entry creation fails", async () => {
   const experience = {
     id: "1000",
 
@@ -458,24 +466,27 @@ it("renders error when entry creation fails", async done => {
     }),
   );
 
-  const { getByLabelText, getByText, getByTestId } = render(ui);
+  render(ui);
 
-  fillField(getByLabelText("[SINGLE_LINE_TEXT] f1") as any, "s");
+  fillField(
+    document.getElementById("new-entry-SINGLE_LINE_TEXT]-input") as any,
+    "s",
+  );
 
-  fireEvent.click(getByText(/submit/i));
+  fireEvent.click(document.getElementById("new-entry-submit-btn") as any);
 
-  const $error = await waitForElement(() => getByTestId("field-error-f1"));
+  const $error = await waitForElement(() =>
+    document.getElementById("new-entry-field-error-f1"),
+  );
 
-  expect($error).toBeInTheDocument();
+  expect($error).not.toBeNull();
 
   expect(mockNavigate).not.toHaveBeenCalled();
 
   expect(mockScrollIntoView).toHaveBeenCalled();
-
-  done();
 });
 
-it("renders network error", async done => {
+it("renders network error", async () => {
   const experience = {
     id: "1000",
 
@@ -502,28 +513,30 @@ it("renders network error", async done => {
     }),
   );
 
-  const { getByLabelText, getByText, getByTestId, queryByTestId } = render(ui);
+  render(ui);
 
-  fillField(getByLabelText("[SINGLE_LINE_TEXT] f1") as any, "s");
+  fillField(
+    document.getElementById("new-entry-[SINGLE_LINE_TEXT]-input") as any,
+    "s",
+  );
 
-  expect(queryByTestId("network-error")).not.toBeInTheDocument();
+  expect(document.getElementById("new-entry-network-error")).toBeNull;
 
-  fireEvent.click(getByText(/submit/i));
+  fireEvent.click(document.getElementById("new-entry-submit-btn") as any);
 
-  const $error = await waitForElement(() => getByTestId("network-error"));
+  const $error = await waitForElement(
+    () => document.getElementById("new-entry-network-error") as HTMLDivElement,
+  );
 
-  expect($error).toBeInTheDocument();
   expect(mockNavigate).not.toHaveBeenCalled();
   expect(mockScrollIntoView).toHaveBeenCalled();
 
-  fireEvent.click($error.querySelector(`.close.icon`) as any);
+  closeMessage($error);
 
-  expect(queryByTestId("network-error")).not.toBeInTheDocument();
-
-  done();
+  expect(document.getElementById("new-entry-network-error")).toBeNull();
 });
 
-it("treats non field graphql errors as network error", async done => {
+it("treats non field graphql errors as network error", async () => {
   const experience = {
     id: "1000",
 
@@ -550,25 +563,27 @@ it("treats non field graphql errors as network error", async done => {
     }),
   );
 
-  const { getByLabelText, getByText, getByTestId, queryByTestId } = render(ui);
+  render(ui);
 
-  fillField(getByLabelText("[SINGLE_LINE_TEXT] f1") as any, "s");
+  fillField(
+    document.getElementById("new-entry-[SINGLE_LINE_TEXT]-input") as any,
+    "s",
+  );
 
-  expect(queryByTestId("network-error")).not.toBeInTheDocument();
+  expect(document.getElementById("new-entry-network-error")).toBeNull();
 
-  fireEvent.click(getByText(/submit/i));
+  fireEvent.click(document.getElementById("new-entry-submit-btn") as any);
 
-  const $error = await waitForElement(() => getByTestId("network-error"));
+  const $error = await waitForElement(
+    () => document.getElementById("new-entry-network-error") as any,
+  );
 
-  expect($error).toBeInTheDocument();
   expect(mockNavigate).not.toHaveBeenCalled();
   expect(mockScrollIntoView).toHaveBeenCalled();
 
-  fireEvent.click($error.querySelector(`.close.icon`) as any);
+  closeMessage($error);
 
-  expect(queryByTestId("network-error")).not.toBeInTheDocument();
-
-  done();
+  expect(document.getElementById("new-entry-network-error")).toBeNull();
 });
 
 ////////////////////////// HELPER FUNCTIONS ///////////////////////////////////

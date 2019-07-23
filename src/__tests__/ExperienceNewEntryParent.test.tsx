@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import React, { ComponentType } from "react";
-import "jest-dom/extend-expect";
 import "react-testing-library/cleanup-after-each";
 import { render } from "react-testing-library";
 import { ExperienceNewEntryParent } from "../components/ExperienceNewEntryParent/component";
@@ -10,18 +9,14 @@ import { renderWithRouter } from "./test_utils";
 import { NEW_ENTRY_URL } from "../constants/new-entry-route";
 
 jest.mock("../components/ExperienceNewEntryParent/loadables", () => ({
-  NewEntry: () => <div data-testid="new-entry-page" />,
+  NewEntry: () => <div id="new-entry-page" />,
 
-  ExperienceRoute: () => <div data-testid="experience-page" />,
+  ExperienceRoute: () => <div id="experience-page" />,
 }));
 
-beforeEach(() => {
-  jest.useFakeTimers();
-});
-
-afterEach(() => {
-  jest.clearAllTimers();
-});
+jest.mock("../components/Loading", () => ({
+  Loading: () => <div id="a-a-l" />,
+}));
 
 it("renders loading indicator if we have not returned from server", () => {
   const { ui } = makeComp({
@@ -33,11 +28,9 @@ it("renders loading indicator if we have not returned from server", () => {
   /**
    * While we are on new entry page
    */
-  const { getByTestId } = render(ui);
+  render(ui);
 
-  jest.advanceTimersByTime(1000000);
-
-  expect(getByTestId("loading-spinner")).toBeInTheDocument();
+  expect(document.getElementById("a-a-l")).not.toBeNull();
 });
 
 it("redirects to 404 page when no experience to render", () => {
@@ -75,18 +68,18 @@ it("loads NewEntry page", () => {
   /**
    * When we use the component
    */
-  const { queryByTestId } = render(ui);
+  render(ui);
 
   /**
    * Then new entry page should be loaded
    */
 
-  expect(queryByTestId("new-entry-page")).toBeInTheDocument();
+  expect(document.getElementById("new-entry-page")).not.toBeNull();
 
   /**
    * And experience page should not be loaded
    */
-  expect(queryByTestId("experience-page")).not.toBeInTheDocument();
+  expect(document.getElementById("experience-page")).toBeNull();
 });
 
 it("loads Experience page", () => {
@@ -103,18 +96,18 @@ it("loads Experience page", () => {
   /**
    * When we use the component
    */
-  const { queryByTestId } = render(ui);
+  render(ui);
 
   /**
    * Then experience page should be loaded
    */
 
-  expect(queryByTestId("experience-page")).toBeInTheDocument();
+  expect(document.getElementById("experience-page")).not.toBeNull();
 
   /**
    * And new entry page should not be loaded
    */
-  expect(queryByTestId("new-entry-page")).not.toBeInTheDocument();
+  expect(document.getElementById("new-entry-page")).toBeNull();
 });
 
 ////////////////////////// HELPER FUNCTIONS ///////////////////////////////////

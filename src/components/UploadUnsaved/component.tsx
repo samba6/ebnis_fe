@@ -224,7 +224,7 @@ export function UploadUnsaved(props: Props) {
             >
               <div
                 className={makeClassNames({ tab: true, active: tabs["1"] })}
-                data-testid="saved-experiences"
+                id="upload-unsaved-saved-experiences-container"
               >
                 {Object.entries(savedExperiencesMap).map(([id, map]) => {
                   return (
@@ -248,7 +248,7 @@ export function UploadUnsaved(props: Props) {
             >
               <div
                 className={makeClassNames({ tab: true, active: tabs["2"] })}
-                data-testid="unsaved-experiences"
+                id="upload-unsaved-unsaved-experiences-container"
               >
                 {Object.entries(unsavedExperiencesMap).map(([id, map]) => {
                   return (
@@ -298,7 +298,7 @@ function ExperienceComponent({
   const typePrefix = type + "-experience";
   let uploadStatusIndicatorSuffix = "";
   let experienceClassName = "";
-  const dataTestId = `${typePrefix}-${experienceId}`;
+  const idPrefix = `${typePrefix}-${experienceId}`;
 
   let iconProps: IconProps | null = null;
 
@@ -310,7 +310,7 @@ function ExperienceComponent({
       name: "check",
       className:
         "experience-title__success-icon upload-success-icon upload-result-icon",
-      "data-testid": "upload-triggered-icon-success-" + experienceId,
+      id: "upload-triggered-icon-success-" + experienceId,
     };
   } else if (hasError) {
     uploadStatusIndicatorSuffix = "--error";
@@ -320,7 +320,7 @@ function ExperienceComponent({
       name: "ban",
       className:
         "experience-title__error-icon upload-error-icon upload-result-icon",
-      "data-testid": "upload-triggered-icon-error-" + experienceId,
+      id: "upload-triggered-icon-error-" + experienceId,
     };
   }
 
@@ -328,9 +328,8 @@ function ExperienceComponent({
     <Experience
       className={experienceClassName}
       experience={experience}
-      data-testid={typePrefix}
       headerProps={{
-        "data-testid": dataTestId + "-title",
+        id: `upload-unsaved-${idPrefix}-title`,
         className: `experience-title--uploads experience-title${uploadStatusIndicatorSuffix}`,
 
         children: iconProps ? <Icon {...iconProps} /> : null,
@@ -369,7 +368,7 @@ function ExperienceComponent({
             fieldDefs={experience.fieldDefs as ExperienceFragment_fieldDefs[]}
             entriesLen={unsavedEntries.length}
             index={index}
-            data-testid={`entry-${entryId}`}
+            id={`upload-unsaved-entry-${entryId}`}
             className={makeClassNames({ "entry--error": !!error })}
           />
         );
@@ -378,7 +377,7 @@ function ExperienceComponent({
       {experienceError && (
         <FormCtrlError
           className="experience-error"
-          data-testid={`unsaved-experience-errors-${experienceId}`}
+          id={`unsaved-experience-errors-${experienceId}`}
         >
           <div>Error while saving experience ::</div>
           <div>{experienceError}</div>
@@ -390,13 +389,7 @@ function ExperienceComponent({
 
 function ModalComponent({ open }: { open?: boolean }) {
   return (
-    <Modal
-      data-testid="uploading-data"
-      basic={true}
-      size="small"
-      open={open}
-      dimmer="inverted"
-    >
+    <Modal basic={true} size="small" open={open} dimmer="inverted">
       <Modal.Content>
         <Loading />
       </Modal.Content>
@@ -430,7 +423,7 @@ function TabsMenuComponent({
       savedUploadTriggeredIcon = (
         <Icon
           name="ban"
-          data-testid="upload-triggered-icon-error-saved-experiences"
+          id="upload-triggered-icon-error-saved-experiences"
           className="upload-error-icon upload-result-icon"
         />
       );
@@ -438,7 +431,7 @@ function TabsMenuComponent({
       savedUploadTriggeredIcon = (
         <Icon
           name="check"
-          data-testid="upload-triggered-icon-success-saved-experiences"
+          id="upload-triggered-icon-success-saved-experiences"
           className="upload-success-icon upload-result-icon"
         />
       );
@@ -447,7 +440,7 @@ function TabsMenuComponent({
     savedIcon = (
       <a
         className={setTabMenuClassNames("1", tabs)}
-        data-testid="saved-experiences-menu"
+        id="upload-unsaved-saved-experiences-menu"
         onClick={() => dispatch([ActionType.toggleTab, 1])}
       >
         Entries
@@ -461,7 +454,7 @@ function TabsMenuComponent({
       unsavedUploadTriggeredIcon = (
         <Icon
           name="ban"
-          data-testid="upload-triggered-icon-error-unsaved-experiences"
+          id="upload-triggered-icon-error-unsaved-experiences"
           className="upload-error-icon upload-result-icon"
         />
       );
@@ -469,7 +462,7 @@ function TabsMenuComponent({
       unsavedUploadTriggeredIcon = (
         <Icon
           name="check"
-          data-testid="upload-triggered-icon-success-unsaved-experiences"
+          id="upload-triggered-icon-success-unsaved-experiences"
           className="upload-success-icon upload-result-icon"
         />
       );
@@ -478,7 +471,7 @@ function TabsMenuComponent({
     unsavedIcon = (
       <a
         className={setTabMenuClassNames("2", tabs)}
-        data-testid="unsaved-experiences-menu"
+        id="upload-unsaved-unsaved-experiences-menu"
         onClick={() => dispatch([ActionType.toggleTab, 2])}
       >
         Experiences
@@ -494,7 +487,7 @@ function TabsMenuComponent({
         one: savedIcon === null || unsavedIcon === null,
         two: savedIcon !== null && unsavedIcon !== null,
       })}
-      data-testid="tabs-menu"
+      id="upload-unsaved-tabs-menu"
     >
       {savedIcon}
 
@@ -517,7 +510,7 @@ function UploadAllButtonComponent({
   return (
     <Button
       className="upload-button"
-      data-testid="upload-all"
+      id="upload-unsaved-upload-btn"
       onClick={onUploadAllClicked}
     >
       UPLOAD
@@ -544,7 +537,7 @@ function ServerError(props: {
         marginLeft: "20px",
         marginRight: "20px",
       }}
-      data-testid="server-error"
+      id="upload-unsaved-server-error"
       error={true}
       onDismiss={function onDismiss() {
         dispatch([ActionType.removeServerErrors]);

@@ -63,7 +63,9 @@ it("renders date field and submits successfully", done => {
   expect($button).toBeDisabled();
 
   // the data year is 2015, let's change to previous year
-  (document.getElementById("fields[0].data.year-2014") as any).click();
+  (document.getElementById(
+    "date-field-input-fields[0].data.year-2014",
+  ) as any).click();
 
   expect($button).not.toBeDisabled();
 
@@ -119,7 +121,9 @@ it("renders datetime field and apollo error", async () => {
   const {} = render(ui);
 
   // the data year is 2015, let's change to previous year
-  (document.getElementById("fields[0].data.date.year-2014") as any).click();
+  (document.getElementById(
+    "date-field-input-fields[0].data.date.year-2014",
+  ) as any).click();
 
   act(() => {
     (document.getElementById("edit-entry-submit") as HTMLButtonElement).click();

@@ -20,18 +20,19 @@ context("login page", () => {
     /**
      * And we should not see any error
      */
-    cy.queryByTestId("server-field-errors").should("not.exist");
+
+    cy.get("#server-field-errors").should("not.exist");
 
     /**
      * When we complete and submit the form
      */
-    cy.getByLabelText(/email/i).type(USER_CREATION_OBJECT.email);
-    cy.getByLabelText(/password/i).type(USER_CREATION_OBJECT.password);
-    cy.getByText(/submit/i).click();
+    cy.get("#login-email").type(USER_CREATION_OBJECT.email);
+    cy.get("#login-password").type(USER_CREATION_OBJECT.password);
+    cy.get("#login-submit").click();
 
     /**
      * The we should not see any error
      */
-    cy.getByTestId("server-field-errors").should("exist");
+    cy.get("#server-field-errors").should("exist");
   });
 });

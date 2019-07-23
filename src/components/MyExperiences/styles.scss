@@ -8,7 +8,7 @@
     @extend %app-main;
   }
 
-  .exps-container {
+  .experiences-container {
     padding: 10px 5px 60px 5px;
   }
 
@@ -17,7 +17,7 @@
     display: block;
   }
 
-  .no-exp-info {
+  .no-experiences-info {
     cursor: pointer;
     color: initial;
     padding: 15px 5px 10px 10px;
@@ -44,7 +44,7 @@
     }
   }
 
-  .exp_title {
+  .experience-title {
     display: block;
     padding-left: 10px;
   }
@@ -54,7 +54,7 @@
     float: left;
   }
 
-  .exp_description {
+  .experience-description {
     position: relative;
     left: 20px;
     margin-right: 15px;
@@ -64,7 +64,7 @@
     word-break: break-all;
   }
 
-  .new-exp-btn {
+  .new-experience-button {
     position: absolute;
     border: 1px solid darken($color: $app-color, $amount: 10);
     border-radius: 50%;

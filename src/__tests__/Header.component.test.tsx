@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import React, { ComponentType } from "react";
-import "jest-dom/extend-expect";
 import { render, fireEvent } from "react-testing-library";
 import { Header } from "../components/Header/component";
 import { Props } from "../components/Header/utils";
@@ -25,19 +24,19 @@ it("renders sidebar", () => {
   /**
    * Given we are using header component
    */
-  const { getByTestId } = render(ui);
+  render(ui);
 
   /**
    * Then header should contain the sidebar trigger UI
    */
-  expect(getByTestId("sidebar-trigger")).toBeInTheDocument();
+  expect(document.getElementById("header-sidebar-trigger")).not.toBeNull();
 
   /**
    * And the logo should not be centered
    */
-  expect(getByTestId("logo-container").classList).not.toContain(
-    "center-children",
-  );
+  expect(
+    (document.getElementById("header-logo-container") as any).classList,
+  ).not.toContain("center-children");
 
   /**
    * And app title should reflect that we are showing sidebar
@@ -50,17 +49,19 @@ it("does not render sidebar", () => {
   /**
    * Given we are using header component
    */
-  const { queryByTestId, getByTestId } = render(ui);
+  render(ui);
 
   /**
    * Then header should not render sidebar trigger UI
    */
-  expect(queryByTestId("sidebar-trigger")).not.toBeInTheDocument();
+  expect(document.getElementById("header-sidebar-trigger")).toBeNull();
 
   /**
    * And the logo should be centered
    */
-  expect(getByTestId("logo-container").classList).toContain("center-children");
+  expect(
+    (document.getElementById("header-logo-container") as any).classList,
+  ).toContain("center-children");
 });
 
 it("should not navigate when in experiences route", () => {
@@ -78,12 +79,12 @@ it("should not navigate when in experiences route", () => {
   /**
    * And we are using header component
    */
-  const { getByTestId } = render(ui);
+  render(ui);
 
   /**
    * Then the logo should not have a pointer
    */
-  const $logo = getByTestId("logo-container");
+  const $logo = document.getElementById("header-logo-container") as any;
   expect($logo.classList).not.toContain("with-pointer");
 
   /**
@@ -112,12 +113,12 @@ it("should not navigate when in root route", () => {
   /**
    * And we are using header component
    */
-  const { getByTestId } = render(ui);
+  render(ui);
 
   /**
    * Then the logo should not have a pointer
    */
-  const $logo = getByTestId("logo-container");
+  const $logo = document.getElementById("header-logo-container") as any;
   expect($logo.classList).not.toContain("with-pointer");
 
   /**
@@ -148,12 +149,12 @@ it("should navigate to experiences route when on any url except root and experie
   /**
    * And we are using header component
    */
-  const { getByTestId } = render(ui);
+  render(ui);
 
   /**
    * Then the logo should have a pointer
    */
-  const $logo = getByTestId("logo-container");
+  const $logo = document.getElementById("header-logo-container") as any;
   expect($logo.classList).toContain("with-pointer");
 
   /**
@@ -182,12 +183,12 @@ it("should navigate to root route when on any url except root and experiences ro
   /**
    * And we are using header component
    */
-  const { getByTestId } = render(ui);
+  render(ui);
 
   /**
    * When we click on the logo
    */
-  fireEvent.click(getByTestId("logo-container"));
+  fireEvent.click(document.getElementById("header-logo-container") as any);
 
   /**
    * Then we should be navigated away to root url
@@ -209,19 +210,18 @@ it("renders close sidebar icon but not show icon", () => {
     },
   });
 
-  const { getByTestId, queryByTestId } = render(ui);
+  render(ui);
 
   /**
    * Then show sidebar icon should not be visible
    */
 
-  expect(queryByTestId("show-sidebar-icon")).not.toBeInTheDocument();
+  expect(document.getElementById("header-show-sidebar-icon")).toBeNull();
 
   /**
    * And close sidebar icon should be visible
    */
-  const $close = getByTestId("close-sidebar-icon");
-  expect($close).toBeInTheDocument();
+  const $close = document.getElementById("header-close-sidebar-icon") as any;
 
   /**
    * When we click the close icon
@@ -248,19 +248,18 @@ it("renders show sidebar icon but not close icon", () => {
     },
   });
 
-  const { getByTestId, queryByTestId } = render(ui);
+  render(ui);
 
   /**
    * Then show sidebar icon should be visible
    */
 
-  const $show = getByTestId("show-sidebar-icon");
-  expect($show).toBeInTheDocument();
+  const $show = document.getElementById("header-show-sidebar-icon") as any;
 
   /**
    * And close sidebar icon should not be visible
    */
-  expect(queryByTestId("close-sidebar-icon")).not.toBeInTheDocument();
+  expect(document.getElementById("header-close-sidebar-icon")).toBeNull();
 
   /**
    * When we click on the show icon
@@ -272,7 +271,7 @@ it("renders show sidebar icon but not close icon", () => {
    */
   expect(mockToggleShowSidebar).toBeCalledWith(true);
 
-  expect(queryByTestId("unsaved-count-label")).not.toBeInTheDocument();
+  expect(document.getElementById("header-unsaved-count-label")).toBeNull();
 });
 
 it("renders unsaved count when not in 'upload unsaved' route", () => {
@@ -282,9 +281,9 @@ it("renders unsaved count when not in 'upload unsaved' route", () => {
     },
   });
 
-  const { queryByTestId } = render(ui);
+  render(ui);
 
-  expect(queryByTestId("unsaved-count-label")).toBeInTheDocument();
+  expect(document.getElementById("header-unsaved-count-label")).not.toBeNull();
 });
 
 it("does not render unsaved count in 'upload unsaved' route", () => {
@@ -298,9 +297,9 @@ it("does not render unsaved count in 'upload unsaved' route", () => {
     },
   });
 
-  const { queryByTestId } = render(ui);
+  render(ui);
 
-  expect(queryByTestId("unsaved-count-label")).not.toBeInTheDocument();
+  expect(document.getElementById("header-unsaved-count-label")).toBeNull();
 });
 
 it("does not render title when there is none to render", () => {
@@ -310,37 +309,39 @@ it("does not render title when there is none to render", () => {
     },
   });
 
-  const { queryByTestId } = render(ui);
+  render(ui);
 
-  expect(queryByTestId("app-header-title")).not.toBeInTheDocument();
+  expect(document.getElementById("header-app-header-title")).toBeNull();
 });
 
 it("renders children", () => {
   const { ui } = setup({
     props: {
       title: "",
-      children: <div data-testid="child" />,
+      children: <div id="c" />,
     },
   });
 
-  const { queryByTestId } = render(ui);
+  render(ui);
 
-  expect(queryByTestId("app-header-title")).not.toBeInTheDocument();
-  expect(queryByTestId("child")).toBeInTheDocument();
+  expect(document.getElementById("header-app-header-title")).toBeNull();
+
+  expect(document.getElementById("c")).not.toBeNull();
 });
 
 it("renders only title if there are title and children", () => {
   const { ui } = setup({
     props: {
       title: "cool title",
-      children: <div data-testid="child" />,
+      children: <div id="c" />,
     },
   });
 
-  const { queryByTestId } = render(ui);
+  render(ui);
 
-  expect(queryByTestId("app-header-title")).toBeInTheDocument();
-  expect(queryByTestId("child")).not.toBeInTheDocument();
+  expect(document.getElementById("header-app-header-title")).not.toBeNull();
+
+  expect(document.getElementById("c")).toBeNull();
 });
 
 it("sets class name", () => {

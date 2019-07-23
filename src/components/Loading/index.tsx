@@ -42,7 +42,7 @@ export function Loading({
   }, [loading]);
 
   return shouldShow ? (
-    <div className="components-loading" data-testid="loading-spinner">
+    <div className="components-loading" id="loading-spinner">
       <div
         className={makeClassNames({
           "components-loading__spinner": true,

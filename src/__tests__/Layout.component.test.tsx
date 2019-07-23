@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import React, { ComponentType } from "react";
-import "jest-dom/extend-expect";
 import "react-testing-library/cleanup-after-each";
 import { render, waitForElement, wait } from "react-testing-library";
 import { Layout, Props } from "../components/Layout/component";
@@ -10,18 +9,18 @@ import { EbnisAppProvider } from "../context";
 jest.mock("../state/unsaved-resolvers");
 jest.mock("../state/connections");
 jest.mock("../components/Loading", () => ({
-  Loading: jest.fn(() => <div data-testid="loading" />),
+  Loading: () => <div id="o-o-1" />,
 }));
 jest.mock("../components/use-user");
 
 let layoutContextValue = (null as unknown) as ILayoutContextContext;
 
 jest.mock("../components/Layout/layout-provider", () => ({
-  LayoutProvider: jest.fn(({ children, ...props }) => {
+  LayoutProvider: ({ children, ...props }: any) => {
     layoutContextValue = props.value;
 
     return <>{children}</>;
-  }),
+  },
 }));
 
 import { getUnsavedCount } from "../state/unsaved-resolvers";
@@ -34,7 +33,7 @@ const mockGetUnsavedCount = getUnsavedCount as jest.Mock;
 const mockIsConnected = isConnected as jest.Mock;
 const mockUseUser = useUser as jest.Mock;
 
-const browserRenderedTestId = "layout-loaded";
+const browserRenderedUiId = "layout-loaded";
 
 it("renders children in ssr", () => {
   /**
@@ -43,17 +42,17 @@ it("renders children in ssr", () => {
   const testId = "ssr-loaded";
   const { ui } = makeComp({ context: {}, testId });
 
-  const { queryByTestId } = render(ui);
+  render(ui);
 
   /**
    * Then its server rendered children should be loaded
    */
-  expect(queryByTestId(testId)).toBeInTheDocument();
+  expect(document.getElementById(testId)).not.toBeNull();
 
   /**
    * And we should not see browser hydrated children
    */
-  expect(queryByTestId(browserRenderedTestId)).not.toBeInTheDocument();
+  expect(document.getElementById(browserRenderedUiId)).toBeNull();
 });
 
 it("renders loading", () => {
@@ -62,20 +61,20 @@ it("renders loading", () => {
    */
   const { ui } = makeComp();
 
-  const { queryByTestId } = render(ui);
+  render(ui);
 
   /**
    * Then we should see loading indicator
    */
-  expect(queryByTestId("loading")).toBeInTheDocument();
+  expect(document.getElementById("o-o-1")).not.toBeNull();
 
   /**
    * And we should not see component's children
    */
-  expect(queryByTestId(browserRenderedTestId)).not.toBeInTheDocument();
+  expect(document.getElementById(browserRenderedUiId)).toBeNull();
 });
 
-it("renders browser hydrated children if cache persist succeeds", async done => {
+it("renders browser hydrated children if cache persist succeeds", async () => {
   /**
    * Given component was rendered with all context props
    */
@@ -83,23 +82,24 @@ it("renders browser hydrated children if cache persist succeeds", async done => 
 
   mockPersistCache.mockResolvedValue({});
 
-  const { queryByTestId, getByTestId } = render(ui);
+  render(ui);
 
   /**
    * Then we should see component's children
    */
-  const $elm = await waitForElement(() => getByTestId(browserRenderedTestId));
-  expect($elm).toBeInTheDocument();
+  const $elm = await waitForElement(() =>
+    document.getElementById(browserRenderedUiId),
+  );
+
+  expect($elm).not.toBeNull();
 
   /**
    * And we should not see loading indicator
    */
-  expect(queryByTestId("loading")).not.toBeInTheDocument();
-
-  done();
+  expect(document.getElementById("o-o-1")).toBeNull();
 });
 
-it("renders browser hydrated children if cache persist fails", async done => {
+it("renders browser hydrated children if cache persist fails", async () => {
   /**
    * Given component was rendered with all context props
    */
@@ -107,43 +107,42 @@ it("renders browser hydrated children if cache persist fails", async done => {
 
   mockPersistCache.mockRejectedValue({});
 
-  const { queryByTestId, getByTestId } = render(ui);
+  render(ui);
 
   /**
    * Then we should see component's children
    */
-  const $elm = await waitForElement(() => getByTestId(browserRenderedTestId));
-  expect($elm).toBeInTheDocument();
+  const $elm = await waitForElement(() =>
+    document.getElementById(browserRenderedUiId),
+  );
+
+  expect($elm).not.toBeNull();
 
   /**
    * And we should not see loading indicator
    */
-  expect(queryByTestId("loading")).not.toBeInTheDocument();
-
-  done();
+  expect(document.getElementById("o-o-1")).toBeNull();
 });
 
-it("queries unsaved when there is user and connection", async done => {
+it("queries unsaved when there is user and connection", async () => {
   const { ui } = makeComp();
   mockUseUser.mockReturnValue({});
   mockIsConnected.mockReturnValue(true);
 
-  const { getByTestId } = render(ui);
+  render(ui);
 
   /**
    * When children are done rendering
    */
-  await waitForElement(() => getByTestId(browserRenderedTestId));
+  await waitForElement(() => document.getElementById(browserRenderedUiId));
 
   /**
    * Then component should query for unsaved data
    */
   expect(mockGetUnsavedCount).toHaveBeenCalled();
-
-  done();
 });
 
-it("queries unsaved when connection returns", async done => {
+it("queries unsaved when connection returns", async () => {
   /**
    * Given there is user in the system and initially there is no connection
    */
@@ -152,12 +151,12 @@ it("queries unsaved when connection returns", async done => {
   mockGetUnsavedCount.mockResolvedValue(5);
   mockIsConnected.mockResolvedValue(false);
 
-  const { getByTestId } = render(ui);
+  render(ui);
 
   /**
    * When children are done rendering
    */
-  await waitForElement(() => getByTestId(browserRenderedTestId));
+  await waitForElement(() => document.getElementById(browserRenderedUiId));
 
   expect(layoutContextValue.unsavedCount).toBe(null);
 
@@ -172,27 +171,23 @@ it("queries unsaved when connection returns", async done => {
   await wait(() => {
     expect(layoutContextValue.unsavedCount).toBe(5);
   });
-
-  done();
 });
 
-it("resets unsaved count when we lose connection", async done => {
+it("resets unsaved count when we lose connection", async () => {
   const { ui } = makeComp();
   mockUseUser.mockReturnValue({});
   mockIsConnected.mockResolvedValue(true);
   mockGetUnsavedCount.mockResolvedValue(2);
 
-  const { getByTestId } = render(ui);
+  render(ui);
 
-  await waitForElement(() => getByTestId(browserRenderedTestId));
+  await waitForElement(() => document.getElementById(browserRenderedUiId));
 
   expect(layoutContextValue.unsavedCount).toBe(2);
 
   emitData([EmitAction.connectionChanged, false]);
 
   expect(layoutContextValue.unsavedCount).toBe(0);
-
-  done();
 });
 
 ////////////////////////// HELPER FUNCTIONS ///////////////////////////////////
@@ -201,7 +196,7 @@ const LayoutP = Layout as ComponentType<Partial<Props>>;
 
 function makeComp({
   context,
-  testId = browserRenderedTestId,
+  testId = browserRenderedUiId,
 }: { context?: {}; testId?: string } = {}) {
   layoutContextValue = (null as unknown) as ILayoutContextContext;
   mockGetUnsavedCount.mockReset();
@@ -221,7 +216,7 @@ function makeComp({
     ui: (
       <EbnisAppProvider value={context}>
         <LayoutP location={{} as any}>
-          <div data-testid={testId} />
+          <div id={testId} />
         </LayoutP>
       </EbnisAppProvider>
     ),

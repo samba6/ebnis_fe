@@ -27,7 +27,7 @@ import {
 } from "./utils";
 import { LoginUser as FormValues } from "../../graphql/apollo-types/globalTypes";
 import { refreshToHome } from "../../refresh-to-app";
-import PwdInput from "../PwdInput";
+import { PasswordInput } from "../PasswordInput/component";
 import { isConnected } from "../../state/connections";
 import { noop } from "../../constants";
 import { LoginMutationFn } from "../../graphql/login.mutation";
@@ -147,7 +147,12 @@ export function Login(props: Props) {
             <Field
               name="password"
               render={(f: FieldProps<FormValues>) => (
-                <PwdInput {...f} dispatch={dispatch} pwdType={state.pwdType} />
+                <PasswordInput
+                  {...f}
+                  dispatch={dispatch}
+                  pwdType={state.pwdType}
+                  id="login-password"
+                />
               )}
             />
 
@@ -181,7 +186,7 @@ export function Login(props: Props) {
     <div className="components-login">
       <SidebarHeader title="Login to Ebnis" />
 
-      <div className="main" ref={mainRef} data-testid="components-login-main">
+      <div className="main" ref={mainRef} id="components-login-main">
         <Formik
           initialValues={{
             email: initialFormValues.email,
@@ -203,7 +208,7 @@ function EmailInput(props: FieldProps<FormValues>) {
   return (
     <Form.Field>
       <label htmlFor="email">Email</label>
-      <Input {...field} type="email" autoComplete="off" id="email" />
+      <Input {...field} type="email" autoComplete="off" id="login-email" />
     </Form.Field>
   );
 }
@@ -219,20 +224,20 @@ function Errors(props: {
 
   const { otherErrors, formErrors, serverFieldErrors, networkError } = errors;
 
-  let testId = "";
   let content = null;
+  let id = "";
 
   if (otherErrors) {
-    testId = "other-errors";
+    id = "other-errors";
     content = otherErrors;
   } else if (serverFieldErrors) {
-    testId = "server-field-errors";
+    id = "server-field-errors";
     content = serverFieldErrors;
   } else if (networkError) {
-    testId = "network-error";
+    id = "network-error";
     content = networkError;
   } else if (formErrors) {
-    testId = "form-errors";
+    id = "form-errors";
     const { email, password } = formErrors;
 
     content = (
@@ -257,7 +262,7 @@ function Errors(props: {
   }
 
   return content ? (
-    <Card.Content data-testid={testId} extra={true}>
+    <Card.Content extra={true} id={id}>
       <Message
         error={true}
         onDismiss={function onDismiss() {

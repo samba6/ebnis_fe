@@ -88,8 +88,7 @@ context("Upload unsaved page", () => {
     let experiencesPromises = Promise.all([
       savedExperiencePromise,
       unsavedExperiencePromise,
-    ])
-    .then(result => {
+    ]).then(result => {
       return persistCache().then(() => {
         return result;
       });
@@ -101,44 +100,27 @@ context("Upload unsaved page", () => {
 
       cy.visit(unsavedRoute);
 
-      let titleRegexp = /^unsaved-experience-(.+?)-title$/;
       let uploadSuccessRegexp = /^upload-triggered-icon-success-(.+?)$/;
       let savedId;
 
-      cy.title()
-        .should("contain", unsavedExperienceTitle)
-        .then(() => {
-          cy.getByTestId("unsaved-count-label").click();
-          cy.title().should("contain", UPLOAD_UNSAVED_TITLE);
-          cy.getByTestId("unsaved-experiences-menu").click();
+      cy.title().should("contain", unsavedExperienceTitle);
 
-          return cy.getByTestId(titleRegexp);
-        })
-        .then(elm => {
-          const sameUnsavedId = titleRegexp.exec(
-            (elm as any).attr("data-testid"),
-          )[1];
+      cy.get("#header-unsaved-count-label").click();
+      cy.title().should("contain", UPLOAD_UNSAVED_TITLE);
+      cy.get("#upload-unsaved-unsaved-experiences-menu").click();
+      cy.get("#upload-unsaved-upload-btn").click();
 
-          expect(unsavedId).to.eq(sameUnsavedId);
-          cy.getByTestId("upload-all").click();
+      cy.get(
+        ".unsaved-experience--success .experience-title__success-icon",
+      ).then($elm => {
+        savedId = uploadSuccessRegexp.exec($elm.attr("id"))[1];
 
-          return cy
-            .get(".unsaved-experience--success .experience-title__success-icon")
-            .should("exist");
-        })
-        .then(elm => {
-          savedId = uploadSuccessRegexp.exec(
-            (elm as any).attr("data-testid"),
-          )[1];
+        cy.visit(makeExperienceRoute(savedId));
+        cy.title().should("contain", unsavedExperienceTitle);
 
-          expect(unsavedId).not.to.eq(savedId);
-
-          cy.visit(makeExperienceRoute(savedId));
-          cy.title().should("contain", unsavedExperienceTitle);
-
-          cy.visit(unsavedRoute);
-          cy.title().should("contain", PAGE_NOT_FOUND_TITLE);
-        });
+        cy.visit(unsavedRoute);
+        cy.title().should("contain", PAGE_NOT_FOUND_TITLE);
+      });
     });
   });
 });

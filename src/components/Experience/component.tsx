@@ -70,7 +70,7 @@ export function Experience(props: Props) {
       return (
         <Link
           className="no-entries"
-          data-testid="no-entries"
+          id="experience-no-entries"
           to={makeNewEntryRoute(experience.id)}
         >
           No entries. Click here to add one
@@ -131,7 +131,6 @@ export function Experience(props: Props) {
           {entriesJSX || renderEntries()}
         </Card.Content>
       </Card>
-
       {onEdit && editingStateTag === EditingState.editingExperience && (
         <EditExperience
           experience={experience}
@@ -140,6 +139,7 @@ export function Experience(props: Props) {
         />
       )}
 
+      {/* istanbul ignore next: tested as part of reducer */}
       {editingStateTag === EditingState.editingEntry && (
         <EditEntry
           entry={payload as EntryFragment}
@@ -176,7 +176,7 @@ function OptionsMenuComponent({
       labeled={true}
       button={true}
       className="icon options-menu__trigger"
-      data-testid="experience-options-menu"
+      id="experience-options-menu"
       direction="left"
     >
       <Dropdown.Menu>
@@ -185,7 +185,7 @@ function OptionsMenuComponent({
             style={{
               display: "block",
             }}
-            data-testid={`${experienceIdPrefix}-new-entry-button`}
+            id={`${experienceIdPrefix}-new-entry-button`}
             className="header"
             as={Link}
             to={makeNewEntryRoute(id)}
@@ -202,6 +202,7 @@ function OptionsMenuComponent({
               value="Edit"
               label={{ color: "blue", empty: true, circular: true }}
               className="js-edit-menu"
+              id={`${experienceIdPrefix}-edit-menu`}
               onClick={() => dispatch(["show-editor"])}
             />
           )}
@@ -210,7 +211,7 @@ function OptionsMenuComponent({
             text="Delete"
             value="Delete"
             label={{ color: "red", empty: true, circular: true }}
-            data-testid={`${experienceIdPrefix}-delete-button`}
+            id={`${experienceIdPrefix}-delete-button`}
             onClick={() => {
               onDelete(id);
             }}
