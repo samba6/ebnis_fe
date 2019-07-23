@@ -102,7 +102,7 @@ context("new experience entry page", () => {
       /**
        * When user completes and submits the form
        */
-      cy.getByLabelText(new RegExp(fieldName, "i")).type("3");
+      cy.get("#new-entry-INTEGER-input").type("3");
       cy.get("#new-entry-submit-btn").click();
 
       /**
@@ -152,7 +152,7 @@ context("new experience entry page", () => {
       /**
        * When user completes and submits the form
        */
-      cy.getByLabelText(new RegExp(fieldName, "i")).type("4");
+      cy.get("#new-entry-INTEGER-input").type("4");
       cy.get("#new-entry-submit-btn").click();
 
       /**

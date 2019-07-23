@@ -339,22 +339,14 @@ const FieldComponent = React.memo(
         key={id}
         className={makeClassNames({ error: !!error, "form-field": true })}
       >
-        <span
-          id={makeScrollIntoViewId(id)}
-          data-testid="js-scroll-into-view"
-          className="js-scroll-into-view"
-        />
+        <span id={makeScrollIntoViewId(id)} className="js-scroll-into-view" />
 
         <label htmlFor={inputId}>{`[${type}] ${fieldTitle}`}</label>
 
         {component}
 
         {error && (
-          <FormCtrlError
-            error={error}
-            data-testid={`field-error-${id}`}
-            id={`new-entry-field-error-${id}`}
-          />
+          <FormCtrlError error={error} id={`new-entry-field-error-${id}`} />
         )}
       </Form.Field>
     );

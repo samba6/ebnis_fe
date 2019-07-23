@@ -31,12 +31,14 @@ context("experience definition page", () => {
     /**
      * And we complete the description field
      */
-    cy.getByLabelText("Description").type("new experience description");
+    cy.get("#experience-definition-description-input").type(
+      "new experience description",
+    );
 
     /**
      * And we complete the field name field
      */
-    cy.getByLabelText("Field 1 Name").type("experience field 1");
+    cy.get("#field-name-0").type("experience field 1");
 
     /**
      * And we click on field type
@@ -50,7 +52,7 @@ context("experience definition page", () => {
     /**
      * And submit the form
      */
-    cy.getByText("Submit").click();
+    cy.get("#experience-definition-submit-btn").click();
 
     /**
      * Then we should see the new title we just created
@@ -94,7 +96,7 @@ context("experience definition page", () => {
 
       cy.get("#experience-definition-title-input").type(title);
 
-      cy.getByLabelText("Field 1 Name").type("experience field 1");
+      cy.get("#field-name-0").type("experience field 1");
 
       cy.get("#experience-definition-field-type-0")
         .click()
@@ -104,7 +106,7 @@ context("experience definition page", () => {
           )[0] as any).click();
         });
 
-      cy.getByText("Submit").click();
+      cy.get("#experience-definition-submit-btn").click();
 
       /**
        * Then we should see error
@@ -135,12 +137,14 @@ context("experience definition page", () => {
     /**
      * And we complete the description field
      */
-    cy.getByLabelText("Description").type("new experience description");
+    cy.get("#experience-definition-description-input").type(
+      "new experience description",
+    );
 
     /**
      * And we complete the field name field
      */
-    cy.getByLabelText("Field 1 Name").type("experience field 1");
+    cy.get("#field-name-0").type("experience field 1");
 
     /**
      * And we click on field type
@@ -154,7 +158,7 @@ context("experience definition page", () => {
     /**
      * And submit the form
      */
-    cy.getByText("Submit").click();
+    cy.get("#experience-definition-submit-btn").click();
 
     /**
      * Then we should see the new title we just created

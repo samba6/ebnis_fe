@@ -103,7 +103,6 @@ function FieldComponent(
               className="field__options"
               icon="ellipsis vertical"
               direction="left"
-              data-testid={`entry-${entryId}-options-menu`}
             >
               <Dropdown.Menu>
                 {editable && dispatch && (

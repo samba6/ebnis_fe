@@ -186,7 +186,7 @@ export function Login(props: Props) {
     <div className="components-login">
       <SidebarHeader title="Login to Ebnis" />
 
-      <div className="main" ref={mainRef} data-testid="components-login-main">
+      <div className="main" ref={mainRef} id="components-login-main">
         <Formik
           initialValues={{
             email: initialFormValues.email,
@@ -208,7 +208,7 @@ function EmailInput(props: FieldProps<FormValues>) {
   return (
     <Form.Field>
       <label htmlFor="email">Email</label>
-      <Input {...field} type="email" autoComplete="off" id="email" />
+      <Input {...field} type="email" autoComplete="off" id="login-email" />
     </Form.Field>
   );
 }

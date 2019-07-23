@@ -54,7 +54,7 @@ it("renders correctly and submits", async () => {
   /**
    * Then email field should be empty
    */
-  const $email = document.getElementById("email") as any;
+  const $email = document.getElementById("login-email") as any;
   expect($email.value).toBe("");
 
   /**
@@ -144,9 +144,9 @@ it("renders error if socket not connected", async () => {
   /**
    * And page should be scrolled to top
    */
-  expect(
-    (mockScrollToTop.mock.calls[0][0] as HTMLElement).dataset.testid,
-  ).toEqual("components-login-main");
+  expect((mockScrollToTop.mock.calls[0][0] as HTMLElement).id).toEqual(
+    "components-login-main",
+  );
 });
 
 it("renders error if email is invalid", async () => {
@@ -165,7 +165,7 @@ it("renders error if email is invalid", async () => {
   /**
    * When we complete the form with invalid email and submit
    */
-  fillField(document.getElementById("email") as any, "invalid email");
+  fillField(document.getElementById("login-email") as any, "invalid email");
   fillField(document.getElementById("login-password") as any, "awesome pass");
   fireEvent.click(document.getElementById("login-submit") as any);
 
@@ -189,7 +189,7 @@ it("renders error if password is invalid", async () => {
   /**
    * When we complete the form with wrong password and submit
    */
-  fillField(document.getElementById("email") as any, "awesome@email.com");
+  fillField(document.getElementById("login-email") as any, "awesome@email.com");
   fillField(document.getElementById("login-password") as any, "12");
   fireEvent.click(document.getElementById("login-submit") as any);
 
@@ -315,12 +315,14 @@ it("pre-fills form with user data", async () => {
   /**
    * When we start to use the login component
    */
-  const { getByLabelText } = render(ui);
+  render(ui);
 
   /**
    * Then email input should be pre-filled with user email
    */
-  expect((getByLabelText("Email") as any).value).toBe("me@me.com");
+  expect((document.getElementById("login-email") as any).value).toBe(
+    "me@me.com",
+  );
 });
 
 it("navigates to 'my experiences page' if user is logged in", async () => {
@@ -343,7 +345,7 @@ it("navigates to 'my experiences page' if user is logged in", async () => {
 ////////////////////////// HELPER FUNCTIONS ///////////////////////////
 
 function fillForm() {
-  fillField(document.getElementById("email") as any, "me@me.com");
+  fillField(document.getElementById("login-email") as any, "me@me.com");
   fillField(document.getElementById("login-password") as any, "awesome pass");
   fireEvent.click(document.getElementById("login-submit") as any);
 }

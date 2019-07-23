@@ -104,7 +104,7 @@ it("renders entries when `entries prop provided`", () => {
   expect(document.getElementById("default-entry")).not.toBeNull();
 });
 
-it("renders entries when `entriesJSX prop provided` and sets entry data-testid ", () => {
+it("renders entries when `entriesJSX prop provided` and sets entry id", () => {
   /**
    * Given that experience and associated entries exist in the system
    */

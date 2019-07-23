@@ -48,7 +48,6 @@ export const Header = (props: Props) => {
         "components-header": true,
         [className]: true,
       })}
-      data-testid="app-header"
     >
       <Menu secondary={true}>
         <style>

@@ -26,7 +26,7 @@ context("login page", () => {
     /**
      * When we complete and submit the form
      */
-    cy.get("#email").type(USER_CREATION_OBJECT.email);
+    cy.get("#login-email").type(USER_CREATION_OBJECT.email);
     cy.get("#login-password").type(USER_CREATION_OBJECT.password);
     cy.get("#login-submit").click();
 

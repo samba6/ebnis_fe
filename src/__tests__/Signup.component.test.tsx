@@ -152,7 +152,7 @@ it("renders error if socket not connected", async () => {
   /**
    * And page should be automatically scrolled to the top of page
    */
-  expect((mockScrollToTop.mock.calls[0][0] as any).current.dataset.testid).toBe(
+  expect((mockScrollToTop.mock.calls[0][0] as any).current.id).toBe(
     "components-signup-main",
   );
 });

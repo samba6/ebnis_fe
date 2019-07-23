@@ -14,7 +14,7 @@ export const PasswordInput = React.memo(
       <Form.Field>
         <label htmlFor={rest.id || id}>Password</label>
 
-        <Input icon={true} placeholder="" data-testid={id}>
+        <Input icon={true}>
           <input
             {...field}
             type={pwdType}

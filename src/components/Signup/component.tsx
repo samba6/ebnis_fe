@@ -155,7 +155,7 @@ export function SignUp(props: Props) {
     <div className="routes-sign-up-route">
       <SidebarHeader title="Sign up for Ebnis" />
 
-      <div className="main" ref={mainRef} data-testid="components-signup-main">
+      <div className="main" ref={mainRef} id="components-signup-main">
         <Formik
           initialValues={initialFormValues}
           onSubmit={noop}

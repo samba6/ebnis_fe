@@ -95,7 +95,6 @@ export function DateField(props: Props) {
   return (
     <Form.Field
       className={`${className || ""} components-date-field light-border`}
-      data-testid={`date-field-${compName}`}
       id={`date-field-input-${compName}`}
     >
       <div>
@@ -104,7 +103,6 @@ export function DateField(props: Props) {
         <Dropdown
           fluid={true}
           selection={true}
-          data-testid={fieldNames.day}
           id={`date-field-input-${fieldNames.day}`}
           name={fieldNames.day}
           compact={true}
@@ -129,7 +127,6 @@ export function DateField(props: Props) {
         <Dropdown
           fluid={true}
           selection={true}
-          data-testid={fieldNames.month}
           id={`date-field-input-${fieldNames.month}`}
           name={fieldNames.month}
           compact={true}
@@ -154,7 +151,6 @@ export function DateField(props: Props) {
           fluid={true}
           selection={true}
           compact={true}
-          data-testid={fieldNames.year}
           id={`date-field-input-${fieldNames.year}`}
           name={fieldNames.year}
           options={years}

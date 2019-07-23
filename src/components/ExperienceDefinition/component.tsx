@@ -332,7 +332,7 @@ function FieldDataTypeComponent({
         }}
       />
 
-      <FormCtrlError error={error} id={index + 1} />
+      <FormCtrlError error={error} id={"" + (index + 1)} />
     </Form.Field>
   );
 }
@@ -371,7 +371,7 @@ function FieldBtnCtrlsComponent({
   const index1 = index + 1;
 
   return (
-    <div data-testid={`field-controls-${index1}`} className="field-controls">
+    <div className="field-controls">
       <Button.Group className="control-buttons" basic={true} compact={true}>
         {isCompletelyFilled && (
           <Button
