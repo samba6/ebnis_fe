@@ -4653,19 +4653,6 @@ cyclist@~0.2.2:
   resolved "https://registry.yarnpkg.com/cyclist/-/cyclist-0.2.2.tgz#1b33792e11e914a2fd6d6ed6447464444e5fa640"
   integrity sha1-GzN5LhHpFKL9bW7WRHRkRE5fpkA=
 
-cypress-file-upload@3.1.1:
-  version "3.1.1"
-  resolved "https://registry.yarnpkg.com/cypress-file-upload/-/cypress-file-upload-3.1.1.tgz#ae389367e5a041857fafa96de89dce18fdeb6827"
-  integrity sha512-ACGgYksZsk7Hq+S5LUq9+F+1uFzh4sVBnSfVn+1GzS5e4Ti249CrMlaA53QO3ksHYcyJr3h3kbioVDW0b3LeZQ==
-
-cypress-testing-library@3.0.1:
-  version "3.0.1"
-  resolved "https://registry.yarnpkg.com/cypress-testing-library/-/cypress-testing-library-3.0.1.tgz#cd5f4ce4423cbb20cafdb869b435b35d01d11b66"
-  integrity sha512-vpGRbcYS229KP/FOASKQuT717GxpO9mG7rnFz2dOe7sz7JPnIHIP5M3KoPvoLfAN1TictFFv05jndyJi2OLa3A==
-  dependencies:
-    "@babel/runtime" "^7.4.3"
-    dom-testing-library "^4.0.0"
-
 cypress@3.4.0:
   version "3.4.0"
   resolved "https://registry.yarnpkg.com/cypress/-/cypress-3.4.0.tgz#8053ee107eb6309f26abd57e882d05578bdc3391"
@@ -5100,16 +5087,6 @@ dom-testing-library@^3.19.0:
   version "3.19.4"
   resolved "https://registry.yarnpkg.com/dom-testing-library/-/dom-testing-library-3.19.4.tgz#f5b737f59ee9749a4568fa353f1f59be97c888c3"
   integrity sha512-GJOx8CLpnkvM3takILOsld/itUUc9+7Qh6caN1Spj6+9jIgNPY36fsvoH7sEgYokC0lBRdttO7G7fIFYCXlmcA==
-  dependencies:
-    "@babel/runtime" "^7.4.3"
-    "@sheerun/mutationobserver-shim" "^0.3.2"
-    pretty-format "^24.7.0"
-    wait-for-expect "^1.1.1"
-
-dom-testing-library@^4.0.0:
-  version "4.0.1"
-  resolved "https://registry.yarnpkg.com/dom-testing-library/-/dom-testing-library-4.0.1.tgz#f21ef42aea0bd635969b4227a487e4704dbea735"
-  integrity sha512-Yr0yWlpI2QdTDEgPEk0TEekwP4VyZlJpl9E7nKP2FCKni44cb1jzjsy9KX6hBDsNA7EVlPpq9DHzO2eoEaqDZg==
   dependencies:
     "@babel/runtime" "^7.4.3"
     "@sheerun/mutationobserver-shim" "^0.3.2"
