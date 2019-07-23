@@ -211,7 +211,6 @@ function OptionsMenuComponent({
             text="Delete"
             value="Delete"
             label={{ color: "red", empty: true, circular: true }}
-            data-testid={`${experienceIdPrefix}-delete-button`}
             id={`${experienceIdPrefix}-delete-button`}
             onClick={() => {
               onDelete(id);

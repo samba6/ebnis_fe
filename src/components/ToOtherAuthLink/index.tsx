@@ -12,13 +12,19 @@ export interface ToOtherAuthLinkProps {
 }
 
 const linkTexts = {
-  [SIGN_UP_URL]: "Don't have an account? Sign Up",
-  [LOGIN_URL]: " Already have an account? Login",
+  [SIGN_UP_URL]: [
+    "Don't have an account? Sign Up",
+    "to-other-auth-sign-up-link",
+  ],
+  [LOGIN_URL]: ["Already have an account? Login", "to-other-auth-login-link"],
 };
 
 export function ToOtherAuthLink(props: ToOtherAuthLinkProps) {
   const { isSubmitting, pathname, className = "" } = props;
-  const to = pathname === LOGIN_URL ? SIGN_UP_URL : LOGIN_URL;
+
+  const path = pathname === LOGIN_URL ? SIGN_UP_URL : LOGIN_URL;
+
+  const [text, id] = linkTexts[path];
 
   return (
     <Button
@@ -28,13 +34,14 @@ export function ToOtherAuthLink(props: ToOtherAuthLinkProps) {
       })}
       type="button"
       fluid={true}
-      to={to}
+      to={path}
       disabled={isSubmitting}
       name="to-sign-up"
       as={Link}
       primary={true}
+      id={id}
     >
-      {linkTexts[to]}
+      {text}
     </Button>
   );
 }

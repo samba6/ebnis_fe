@@ -36,6 +36,7 @@ const unwantedExperienceFields: (keyof ExperienceFragment)[] = [
   "updatedAt",
   "clientId",
   "fieldDefs",
+  "hasUnsaved",
 ];
 
 const unwantedFieldDefinitionFields: (keyof ExperienceFragment_fieldDefs)[] = [
@@ -47,9 +48,11 @@ const unwantedFieldDefinitionFields: (keyof ExperienceFragment_fieldDefs)[] = [
 export function EditExperience(props: Props) {
   const { experience, dispatch, onEdit } = props;
 
-  const [[stateTag, stateData], setState] = useState<EditingState>([
+  const [editingState, setState] = useState<EditingState>([
     EditExperienceActionType.ready,
   ]);
+
+  const [stateTag, stateData] = editingState;
 
   const initialFormValues = useMemo(() => {
     return immer(experience, proxy => {
@@ -127,44 +130,10 @@ export function EditExperience(props: Props) {
     };
   }
 
-  function parseErrors() {
-    const errorObject: {
-      titleError?: string | null;
-      fieldDefinitionsErrors: { [k: string]: string };
-    } = {
-      fieldDefinitionsErrors: {},
-    };
-
-    if (stateTag !== EditExperienceActionType.experienceError) {
-      return errorObject;
-    }
-
-    const {
-      experienceError,
-      fieldDefinitionsErrors,
-    } = stateData as UpdateErrors;
-
-    if (experienceError) {
-      const { title } = experienceError;
-
-      errorObject.titleError = title;
-    }
-
-    if (fieldDefinitionsErrors) {
-      (fieldDefinitionsErrors as UpdateExperienceMutation_updateExperience_fieldDefinitionsErrors[]).forEach(
-        err => {
-          errorObject.fieldDefinitionsErrors[err.id] = err.name as string;
-        },
-      );
-    }
-
-    return errorObject;
-  }
-
   function renderForm(formikProps: FormikProps<UpdateExperienceInput>) {
     const { values, dirty } = formikProps;
 
-    const { titleError, fieldDefinitionsErrors } = parseErrors();
+    const { titleError, fieldDefinitionsErrors } = parseErrors(editingState);
 
     return (
       <Form onSubmit={onSubmit(formikProps)}>
@@ -295,4 +264,35 @@ export function EditExperience(props: Props) {
       </Modal.Content>
     </Modal>
   );
+}
+
+function parseErrors([stateTag, stateData]: EditingState) {
+  const errorObject: {
+    titleError?: string | null;
+    fieldDefinitionsErrors: { [k: string]: string };
+  } = {
+    fieldDefinitionsErrors: {},
+  };
+
+  if (stateTag !== EditExperienceActionType.experienceError) {
+    return errorObject;
+  }
+
+  const { experienceError, fieldDefinitionsErrors } = stateData as UpdateErrors;
+
+  if (experienceError) {
+    const { title } = experienceError;
+
+    errorObject.titleError = title;
+  }
+
+  if (fieldDefinitionsErrors) {
+    (fieldDefinitionsErrors as UpdateExperienceMutation_updateExperience_fieldDefinitionsErrors[]).forEach(
+      err => {
+        errorObject.fieldDefinitionsErrors[err.id] = err.name as string;
+      },
+    );
+  }
+
+  return errorObject;
 }

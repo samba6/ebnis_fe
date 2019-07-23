@@ -38,18 +38,14 @@ export function Sidebar(props: Props) {
 
   return (
     <aside
-      data-testid="app-sidebar"
+      id="app-sidebar"
       className={makeClassNames({ "components-sidebar": true, visible: show })}
       onClick={hideSidebar}
     >
-      <nav
-        className="container"
-        data-testid="sidebar-container"
-        onClick={blockClicks}
-      >
+      <nav className="container" id="sidebar-container" onClick={blockClicks}>
         <div
           className="sidebar-hide item"
-          data-testid="sidebar-hide"
+          id="sidebar-hide"
           onClick={hideSidebar}
         />
 
@@ -58,6 +54,7 @@ export function Sidebar(props: Props) {
             <li
               className="sidebar__item"
               onClick={onGoToExperience(EXPERIENCES_URL)}
+              id="side-bar-my-experiences-link"
             >
               My Experiences
             </li>
@@ -67,6 +64,7 @@ export function Sidebar(props: Props) {
             <li
               className="sidebar__item"
               onClick={onGoToExperience(EXPERIENCE_DEFINITION_URL)}
+              id="sidebar-new-experience-definition-link"
             >
               New Experience Definition
             </li>
@@ -95,6 +93,7 @@ export function Sidebar(props: Props) {
 
                 (navigate as NavigateFn)(LOGIN_URL);
               }}
+              id="sidebar-logout-link"
             >
               Log out
             </li>

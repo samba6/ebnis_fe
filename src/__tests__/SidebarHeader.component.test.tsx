@@ -11,19 +11,19 @@ jest.mock("../components/Header", () => ({
 }));
 
 jest.mock("../components/Sidebar", () => ({
-  Sidebar: jest.fn(() => <div>side bar side</div>),
+  Sidebar: jest.fn(() => <div id="yo" />),
 }));
 
 const SidebarHeaderP = SidebarHeader as ComponentType<Partial<Props>>;
 
 it("renders no sidebar", () => {
-  const { queryByText } = render(<SidebarHeaderP />);
+  render(<SidebarHeaderP />);
 
-  expect(queryByText("side bar side")).not.toBeInTheDocument();
+  expect(document.getElementById("yo")).toBeNull();
 });
 
 it("renders sidebar", () => {
-  const { getByText } = render(<SidebarHeaderP sidebar={true} />);
+  render(<SidebarHeaderP sidebar={true} />);
 
-  expect(getByText("side bar side")).toBeInTheDocument();
+  expect(document.getElementById("yo")).not.toBeNull();
 });

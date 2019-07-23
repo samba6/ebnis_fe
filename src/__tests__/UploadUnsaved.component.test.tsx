@@ -2,7 +2,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import React, { ComponentType } from "react";
-import "jest-dom/extend-expect";
 import "react-testing-library/cleanup-after-each";
 import { render, fireEvent, wait, waitForElement } from "react-testing-library";
 import { UploadUnsaved } from "../components/UploadUnsaved/component";
@@ -24,7 +23,7 @@ import {
 } from "./test_utils";
 
 jest.mock("../components/Loading", () => ({
-  Loading: () => <div data-testid="loading" />,
+  Loading: () => <div id="a-lo" />,
 }));
 
 jest.mock("../components/SidebarHeader", () => ({
@@ -37,9 +36,7 @@ jest.mock("../state/connections");
 
 jest.mock("../components/Entry/component", () => ({
   Entry: (props: any) => {
-    return (
-      <div className={props.className} data-testid={props["data-testid"]} />
-    );
+    return <div className={props.className} id={props.id} />;
   },
 }));
 
@@ -80,20 +77,18 @@ const mockDeleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache = deleteExpe
 
 const timeStamps = { insertedAt: "a", updatedAt: "a" };
 
-it("redirects to 404 when not connected", async done => {
+it("redirects to 404 when not connected", async () => {
   const { ui, mockNavigate } = makeComp({
     isConnected: false,
   });
 
-  const { queryByTestId } = render(ui);
+  render(ui);
 
   await wait(() => {
     expect(mockNavigate).toHaveBeenCalledWith("/404");
   });
 
-  expect(queryByTestId("loading")).not.toBeInTheDocument();
-
-  done();
+  expect(document.getElementById("a-lo")).toBeNull();
 });
 
 it("renders loading indicator", () => {
@@ -105,12 +100,12 @@ it("renders loading indicator", () => {
     },
   });
 
-  const { queryByTestId } = render(ui);
+  render(ui);
 
-  expect(queryByTestId("loading")).toBeInTheDocument();
+  expect(document.getElementById("a-lo")).not.toBeNull();
 });
 
-it("redirects to 404 when there are no unsaved data", async done => {
+it("redirects to 404 when there are no unsaved data", async () => {
   const { ui, mockNavigate } = makeComp({
     props: {
       getAllUnsavedProps: {
@@ -122,18 +117,16 @@ it("redirects to 404 when there are no unsaved data", async done => {
     },
   });
 
-  const { queryByTestId } = render(ui);
+  render(ui);
 
   await wait(() => {
     expect(mockNavigate).toHaveBeenCalledWith("/404");
   });
 
-  expect(queryByTestId("loading")).not.toBeInTheDocument();
-
-  done();
+  expect(document.getElementById("a-lo")).toBeNull();
 });
 
-it("shows only saved experiences, does not show saved entries and uploads unsaved entries", async done => {
+it("shows only saved experiences, does not show saved entries and uploads unsaved entries", async () => {
   const { id: entryId, ...entry } = {
     ...makeEntryNode(makeUnsavedId("1")),
     clientId: "a",
@@ -200,40 +193,39 @@ it("shows only saved experiences, does not show saved entries and uploads unsave
     },
   });
 
-  const { queryByTestId, getAllByTestId } = render(ui);
-
-  expect(queryByTestId("no-unsaved")).not.toBeInTheDocument();
-
-  expect(getAllByTestId("saved-experience").length).toBe(1);
-
-  expect(queryByTestId("saved-experiences-menu")).toBeInTheDocument();
-  expect(queryByTestId("unsaved-experiences")).not.toBeInTheDocument();
-  expect(queryByTestId("unsaved-experiences-menu")).not.toBeInTheDocument();
-
-  expect(queryByTestId("uploading-data")).not.toBeInTheDocument();
+  render(ui);
 
   expect(
-    queryByTestId("unsaved-entries-upload-success-icon"),
-  ).not.toBeInTheDocument();
+    document.getElementById("upload-unsaved-saved-experiences-menu"),
+  ).not.toBeNull();
 
   expect(
-    (queryByTestId("saved-experience-1-title") as any).classList,
+    document.getElementById("upload-unsaved-unsaved-experiences-container"),
+  ).toBeNull();
+
+  expect(
+    document.getElementById("upload-unsaved-unsaved-experiences-menu"),
+  ).toBeNull();
+
+  expect(
+    (document.getElementById("upload-unsaved-saved-experience-1-title") as any)
+      .classList,
   ).not.toContain("experience-title--success");
 
-  expect(
-    queryByTestId("upload-triggered-icon-success-1"),
-  ).not.toBeInTheDocument();
+  expect(document.getElementById("upload-triggered-icon-success-1")).toBeNull();
 
   expect(
-    queryByTestId("upload-triggered-icon-success-saved-experiences"),
-  ).not.toBeInTheDocument();
+    document.getElementById("upload-triggered-icon-success-saved-experiences"),
+  ).toBeNull();
 
-  const tabsMenuClassList = (queryByTestId("tabs-menu") as any).classList;
+  const tabsMenuClassList = (document.getElementById(
+    "upload-unsaved-tabs-menu",
+  ) as any).classList;
 
   expect(tabsMenuClassList).toContain("one");
   expect(tabsMenuClassList).not.toContain("two");
 
-  fireEvent.click(queryByTestId("upload-all") as any);
+  fireEvent.click(document.getElementById("upload-unsaved-upload-btn") as any);
 
   await wait(() => {
     expect(mockUploadSavedExperiencesEntries).toHaveBeenCalled();
@@ -248,21 +240,22 @@ it("shows only saved experiences, does not show saved entries and uploads unsave
   expect(mockUploadAllUnsaveds).not.toHaveBeenCalled();
 
   expect(
-    (queryByTestId("saved-experience-1-title") as any).classList,
+    (document.getElementById("upload-unsaved-saved-experience-1-title") as any)
+      .classList,
   ).toContain("experience-title--success");
 
-  expect(queryByTestId("upload-all")).not.toBeInTheDocument();
-
-  expect(queryByTestId("upload-triggered-icon-success-1")).toBeInTheDocument();
+  expect(document.getElementById("upload-unsaved-upload-btn")).toBeNull();
 
   expect(
-    queryByTestId("upload-triggered-icon-success-saved-experiences"),
-  ).toBeInTheDocument();
+    document.getElementById("upload-triggered-icon-success-1"),
+  ).not.toBeNull();
 
-  done();
+  expect(
+    document.getElementById("upload-triggered-icon-success-saved-experiences"),
+  ).not.toBeNull();
 });
 
-it("shows only 'unsaved experiences' data and uploading same succeeds", async done => {
+it("shows only 'unsaved experiences' data and uploading same succeeds", async () => {
   const experience = {
     title: "a",
     clientId: "1",
@@ -329,42 +322,56 @@ it("shows only 'unsaved experiences' data and uploading same succeeds", async do
     },
   });
 
-  const { queryByTestId } = render(ui);
-
-  expect(queryByTestId("saved-experiences")).not.toBeInTheDocument();
-  expect(queryByTestId("saved-experiences-menu")).not.toBeInTheDocument();
-
-  expect(queryByTestId("unsaved-experiences")).toBeInTheDocument();
-  expect(queryByTestId("unsaved-experiences-menu")).toBeInTheDocument();
-
-  expect(queryByTestId("uploading-data")).not.toBeInTheDocument();
+  render(ui);
 
   expect(
-    queryByTestId("upload-triggered-icon-success-unsaved-experiences"),
-  ).not.toBeInTheDocument();
+    document.getElementById("upload-unsaved-saved-experiences-container"),
+  ).toBeNull();
 
   expect(
-    (queryByTestId("unsaved-experience-1-title") as any).classList,
+    document.getElementById("upload-unsaved-saved-experiences-menu"),
+  ).toBeNull();
+
+  expect(
+    document.getElementById("upload-unsaved-unsaved-experiences-container"),
+  ).not.toBeNull();
+
+  expect(
+    document.getElementById("upload-unsaved-unsaved-experiences-menu"),
+  ).not.toBeNull();
+
+  expect(
+    document.getElementById(
+      "upload-triggered-icon-success-unsaved-experiences",
+    ),
+  ).toBeNull();
+
+  expect(
+    (document.getElementById(
+      "upload-unsaved-unsaved-experience-1-title",
+    ) as any).classList,
   ).not.toContain("experience-title--success");
 
-  expect(
-    queryByTestId("upload-triggered-icon-error-1"),
-  ).not.toBeInTheDocument();
+  expect(document.getElementById("upload-triggered-icon-error-1")).toBeNull();
 
-  expect(
-    queryByTestId("upload-triggered-icon-success-1"),
-  ).not.toBeInTheDocument();
+  expect(document.getElementById("upload-triggered-icon-success-1")).toBeNull();
 
-  const tabsMenuClassList = (queryByTestId("tabs-menu") as any).classList;
+  const tabsMenuClassList = (document.getElementById(
+    "upload-unsaved-tabs-menu",
+  ) as any).classList;
 
   expect(tabsMenuClassList).toContain("one");
   expect(tabsMenuClassList).not.toContain("two");
 
-  fireEvent.click(queryByTestId("upload-all") as any);
+  fireEvent.click(document.getElementById("upload-unsaved-upload-btn") as any);
 
-  await wait(() => {
-    expect(mockUploadUnsavedExperiences).toHaveBeenCalled();
-  });
+  const $successIcon = await waitForElement(() =>
+    document.getElementById(
+      "upload-triggered-icon-success-unsaved-experiences",
+    ),
+  );
+
+  expect($successIcon).not.toBeNull();
 
   const {
     entries: uploadedEntries,
@@ -381,22 +388,20 @@ it("shows only 'unsaved experiences' data and uploading same succeeds", async do
   expect(mockUploadSavedExperiencesEntries).not.toHaveBeenCalled();
   expect(mockUploadAllUnsaveds).not.toHaveBeenCalled();
 
-  expect(queryByTestId("upload-all")).not.toBeInTheDocument();
+  expect(document.getElementById("upload-unsaved-upload-btn")).toBeNull();
 
   expect(
-    queryByTestId("upload-triggered-icon-success-unsaved-experiences"),
-  ).toBeInTheDocument();
-
-  expect(
-    (queryByTestId("unsaved-experience-1-title") as any).classList,
+    (document.getElementById(
+      "upload-unsaved-unsaved-experience-1-title",
+    ) as any).classList,
   ).toContain("experience-title--success");
 
-  expect(queryByTestId("upload-triggered-icon-success-1")).toBeInTheDocument();
-
-  done();
+  expect(
+    document.getElementById("upload-triggered-icon-success-1"),
+  ).not.toBeNull();
 });
 
-it("toggles saved and 'unsaved experiences' and uploads data", async done => {
+it("toggles saved and 'unsaved experiences' and uploads data", async () => {
   jest.useFakeTimers();
 
   const entryId = makeUnsavedId("1");
@@ -499,121 +504,143 @@ it("toggles saved and 'unsaved experiences' and uploads data", async done => {
     },
   });
 
-  const { queryByTestId } = render(ui);
+  render(ui);
 
-  expect(queryByTestId("saved-experiences")).toBeInTheDocument();
-  expect(queryByTestId("unsaved-experiences")).not.toBeInTheDocument();
+  expect(
+    document.getElementById("upload-unsaved-saved-experiences-container"),
+  ).not.toBeNull();
 
-  const tabsMenuClassList = (queryByTestId("tabs-menu") as any).classList;
+  expect(
+    document.getElementById("upload-unsaved-unsaved-experiences-container"),
+  ).toBeNull();
+
+  const tabsMenuClassList = (document.getElementById(
+    "upload-unsaved-tabs-menu",
+  ) as any).classList;
 
   expect(tabsMenuClassList).not.toContain("one");
   expect(tabsMenuClassList).toContain("two");
 
-  const $unsavedMenu = queryByTestId("unsaved-experiences-menu") as any;
+  const $unsavedMenu = document.getElementById(
+    "upload-unsaved-unsaved-experiences-menu",
+  ) as any;
 
   fireEvent.click($unsavedMenu);
   jest.runAllTimers();
 
-  expect(queryByTestId("saved-experiences")).not.toBeInTheDocument();
-  expect(queryByTestId("unsaved-experiences")).toBeInTheDocument();
+  expect(
+    document.getElementById("upload-unsaved-saved-experiences-container"),
+  ).toBeNull();
 
   expect(
-    (queryByTestId("unsaved-experience-1-title") as any).classList,
+    document.getElementById("upload-unsaved-unsaved-experiences-container"),
+  ).not.toBeNull();
+
+  expect(
+    (document.getElementById(
+      "upload-unsaved-unsaved-experience-1-title",
+    ) as any).classList,
   ).not.toContain("experience-title--error");
 
-  const $savedMenu = queryByTestId("saved-experiences-menu") as any;
+  const $savedMenu = document.getElementById(
+    "upload-unsaved-saved-experiences-menu",
+  ) as any;
 
   fireEvent.click($savedMenu);
   jest.runAllTimers();
 
-  expect(queryByTestId("saved-experiences")).toBeInTheDocument();
-  expect(queryByTestId("unsaved-experiences")).not.toBeInTheDocument();
+  expect(
+    document.getElementById("upload-unsaved-saved-experiences-container"),
+  ).not.toBeNull();
 
   expect(
-    queryByTestId("unsaved-experiences-upload-error-icon"),
-  ).not.toBeInTheDocument();
+    document.getElementById("upload-unsaved-unsaved-experiences-container"),
+  ).toBeNull();
 
   expect(
-    queryByTestId("unsaved-entries-upload-error-icon"),
-  ).not.toBeInTheDocument();
-
-  expect(
-    (queryByTestId("saved-experience-2-title") as any).classList,
+    (document.getElementById("upload-unsaved-saved-experience-2-title") as any)
+      .classList,
   ).not.toContain("experience-title--error");
 
-  expect((queryByTestId(`entry-${entryId}`) as any).classList).not.toContain(
-    "entry--error",
+  const $entry = document.getElementById(
+    `upload-unsaved-entry-${entryId}`,
+  ) as any;
+
+  expect($entry.classList).not.toContain("entry--error");
+
+  expect(document.getElementById("upload-triggered-icon-error-1")).toBeNull();
+
+  expect(document.getElementById("upload-triggered-icon-error-2")).toBeNull();
+
+  expect(
+    document.getElementById("upload-triggered-icon-error-saved-experiences"),
+  ).toBeNull();
+
+  expect(
+    document.getElementById("upload-triggered-icon-error-unsaved-experiences"),
+  ).toBeNull();
+
+  expect(document.getElementById("unsaved-experience-errors-1")).toBeNull();
+
+  fireEvent.click(document.getElementById("upload-unsaved-upload-btn") as any);
+
+  const $error = await waitForElement(() =>
+    document.getElementById("upload-triggered-icon-error-2"),
   );
 
-  expect(
-    queryByTestId("upload-triggered-icon-error-1"),
-  ).not.toBeInTheDocument();
+  expect($error).not.toBeNull();
 
-  expect(
-    queryByTestId("upload-triggered-icon-error-2"),
-  ).not.toBeInTheDocument();
-
-  expect(
-    queryByTestId("upload-triggered-icon-error-saved-experiences"),
-  ).not.toBeInTheDocument();
-
-  expect(
-    queryByTestId("upload-triggered-icon-error-unsaved-experiences"),
-  ).not.toBeInTheDocument();
-
-  expect(queryByTestId("unsaved-experience-errors-1")).not.toBeInTheDocument();
-
-  fireEvent.click(queryByTestId("upload-all") as any);
-
-  await wait(() => {
-    expect(mockUploadAllUnsaveds).toHaveBeenCalled();
-  });
+  expect(mockUploadAllUnsaveds).toHaveBeenCalled();
 
   expect(mockUploadUnsavedExperiences).not.toHaveBeenCalled();
   expect(mockUploadSavedExperiencesEntries).not.toHaveBeenCalled();
 
-  expect(queryByTestId("upload-triggered-icon-error-2")).toBeInTheDocument();
-
   expect(
-    queryByTestId("upload-triggered-icon-error-saved-experiences"),
-  ).toBeInTheDocument();
+    document.getElementById("upload-triggered-icon-error-saved-experiences"),
+  ).not.toBeNull();
 
   // we are currently showing saved experiences - we confirm it has error class
-  expect(queryByTestId("saved-experiences")).toBeInTheDocument();
   expect(
-    (queryByTestId("saved-experience-2-title") as any).classList,
+    document.getElementById("upload-unsaved-saved-experiences-container"),
+  ).not.toBeNull();
+
+  expect(
+    (document.getElementById("upload-unsaved-saved-experience-2-title") as any)
+      .classList,
   ).toContain("experience-title--error");
 
   // we also check to see that correct class has been applied to the entry
-  expect((queryByTestId(`entry-${entryId}`) as any).classList).toContain(
-    "entry--error",
-  );
+  expect($entry.classList).toContain("entry--error");
 
   // we toggle to show unsaved experiences and confirm they also have error
   // class
   fireEvent.click($unsavedMenu);
   jest.runAllTimers();
 
-  expect(queryByTestId("unsaved-experiences")).toBeInTheDocument();
+  expect(
+    document.getElementById("upload-unsaved-unsaved-experiences-container"),
+  ).not.toBeNull();
 
   expect(
-    (queryByTestId("unsaved-experience-1-title") as any).classList,
+    (document.getElementById(
+      "upload-unsaved-unsaved-experience-1-title",
+    ) as any).classList,
   ).toContain("experience-title--error");
 
-  expect(queryByTestId("upload-triggered-icon-error-1")).toBeInTheDocument();
+  expect(
+    document.getElementById("upload-triggered-icon-error-1"),
+  ).not.toBeNull();
 
   expect(
-    queryByTestId("upload-triggered-icon-error-unsaved-experiences"),
-  ).toBeInTheDocument();
+    document.getElementById("upload-triggered-icon-error-unsaved-experiences"),
+  ).not.toBeNull();
 
-  expect(queryByTestId("upload-all")).toBeInTheDocument();
+  expect(document.getElementById("upload-unsaved-upload-btn")).not.toBeNull();
 
-  expect(queryByTestId("unsaved-experience-errors-1")).toBeInTheDocument();
-
-  done();
+  expect(document.getElementById("unsaved-experience-errors-1")).not.toBeNull();
 });
 
-it("shows apollo errors", async done => {
+it("shows apollo errors", async () => {
   const { ui, mockUploadAllUnsaveds } = makeComp({
     props: {
       getAllUnsavedProps: {
@@ -686,52 +713,54 @@ it("shows apollo errors", async done => {
 
   mockUploadAllUnsaveds.mockRejectedValue(new Error("a"));
 
-  const { queryByTestId } = render(ui);
+  render(ui);
 
-  expect(queryByTestId("server-error")).not.toBeInTheDocument();
+  expect(document.getElementById("upload-unsaved-server-error")).toBeNull();
 
-  fireEvent.click(queryByTestId("upload-all") as any);
+  fireEvent.click(document.getElementById("upload-unsaved-upload-btn") as any);
 
-  const $errorUi = await waitForElement(() => queryByTestId("server-error"));
+  const $errorUi = await waitForElement(() =>
+    document.getElementById("upload-unsaved-server-error"),
+  );
 
-  expect($errorUi).toBeInTheDocument();
+  expect($errorUi).not.toBeNull();
 
   expect(mockScrollIntoView).toHaveBeenCalledWith(
     "js-scroll-into-view-server-error",
   );
 
   expect(
-    queryByTestId("upload-triggered-icon-success-unsaved-experiences"),
-  ).not.toBeInTheDocument();
+    document.getElementById(
+      "upload-triggered-icon-success-unsaved-experiences",
+    ),
+  ).toBeNull();
 
   expect(
-    queryByTestId("upload-triggered-icon-error-unsaved-experiences"),
-  ).toBeInTheDocument();
+    document.getElementById("upload-triggered-icon-error-unsaved-experiences"),
+  ).not.toBeNull();
 
   expect(
-    queryByTestId("upload-triggered-icon-success-saved-experiences"),
-  ).not.toBeInTheDocument();
+    document.getElementById("upload-triggered-icon-success-saved-experiences"),
+  ).toBeNull();
 
   expect(
-    queryByTestId("upload-triggered-icon-error-saved-experiences"),
-  ).toBeInTheDocument();
+    document.getElementById("upload-triggered-icon-error-saved-experiences"),
+  ).not.toBeNull();
 
   closeMessage($errorUi);
 
-  expect(queryByTestId("server-error")).not.toBeInTheDocument();
+  expect(document.getElementById("upload-unsaved-server-error")).toBeNull();
 
   expect(
-    queryByTestId("upload-triggered-icon-error-unsaved-experiences"),
-  ).toBeInTheDocument();
+    document.getElementById("upload-triggered-icon-error-unsaved-experiences"),
+  ).not.toBeNull();
 
   expect(
-    queryByTestId("upload-triggered-icon-error-saved-experiences"),
-  ).toBeInTheDocument();
-
-  done();
+    document.getElementById("upload-triggered-icon-error-saved-experiences"),
+  ).not.toBeNull();
 });
 
-it("deletes unsaved experience", async done => {
+it("deletes unsaved experience", async () => {
   const unsavedEntry = {
     id: "10",
     clientId: "10",
@@ -768,18 +797,17 @@ it("deletes unsaved experience", async done => {
 
   mockReplaceExperiencesInGetExperiencesMiniQuery.mockResolvedValue({});
 
-  const { getByTestId, queryByTestId } = render(ui);
+  render(ui);
 
-  fireEvent.click(getByTestId("experience-1-delete-button") as any);
+  fireEvent.click(document.getElementById("experience-1-delete-button") as any);
 
   await wait(() => {
-    expect(queryByTestId("experience-1-delete-button")).not.toBeInTheDocument();
+    expect(document.getElementById("experience-1-delete-button")).toBeNull();
   });
 
-  expect(mockReplaceExperiencesInGetExperiencesMiniQuery).toHaveBeenCalledWith(
-    {},
-    { "1": null },
-  );
+  expect(
+    mockReplaceExperiencesInGetExperiencesMiniQuery.mock.calls[0][1],
+  ).toEqual({ "1": null });
 
   expect(mockDeleteIdsFromCache).toHaveBeenCalledWith({}, ["1", "10"]);
 
@@ -790,11 +818,9 @@ it("deletes unsaved experience", async done => {
   expect(mockNavigate).toHaveBeenCalledWith(EXPERIENCES_URL);
 
   expect(mockLayoutDispatch).toHaveBeenCalled();
-
-  done();
 });
 
-it("deletes saved experience", async done => {
+it("deletes saved experience", async () => {
   const { ui, mockNavigate } = makeComp({
     props: {
       getAllUnsavedProps: {
@@ -829,32 +855,34 @@ it("deletes saved experience", async done => {
 
   mockReplaceExperiencesInGetExperiencesMiniQuery.mockResolvedValue({});
 
-  const { getByTestId, queryByTestId } = render(ui);
+  render(ui);
 
-  expect(getByTestId("saved-experiences-menu")).toBeInTheDocument();
+  expect(
+    document.getElementById("upload-unsaved-saved-experiences-menu"),
+  ).not.toBeNull();
 
-  fireEvent.click(getByTestId("experience-1-delete-button") as any);
+  fireEvent.click(document.getElementById("experience-1-delete-button") as any);
 
   await wait(() => {
-    expect(queryByTestId("experience-1-delete-button")).not.toBeInTheDocument();
+    expect(document.getElementById("experience-1-delete-button")).toBeNull();
   });
 
-  expect(queryByTestId("saved-experiences-menu")).not.toBeInTheDocument();
+  expect(
+    document.getElementById("upload-unsaved-saved-experiences-menu"),
+  ).toBeNull();
 
   expect(mockNavigate).not.toHaveBeenCalled();
 
-  expect(mockReplaceExperiencesInGetExperiencesMiniQuery).toHaveBeenCalledWith(
-    {},
-    { "1": null },
-  );
+  expect(
+    mockReplaceExperiencesInGetExperiencesMiniQuery.mock.calls[0][1],
+  ).toEqual({ "1": null });
 
-  expect(mockDeleteIdsFromCache).toHaveBeenCalledWith({}, ["1"]);
+  expect(mockDeleteIdsFromCache.mock.calls[0][1]).toEqual(["1"]);
 
   expect(
-    mockDeleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache,
-  ).toHaveBeenCalledWith({}, ["1"]);
-
-  done();
+    mockDeleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache.mock
+      .calls[0][1],
+  ).toEqual(["1"]);
 });
 
 ////////////////////////// HELPER FUNCTIONS ///////////////////////////////////

@@ -56,7 +56,7 @@ export const Header = (props: Props) => {
         </style>
 
         <Menu.Item
-          data-testid="logo-container"
+          id="header-logo-container"
           className={makeClassnames({
             "logo-container": true,
             "with-pointer": !isHome,
@@ -72,16 +72,16 @@ export const Header = (props: Props) => {
             position="right"
             className="sidebar-trigger"
             onClick={() => toggleShowSidebar && toggleShowSidebar(!show)}
-            data-testid="sidebar-trigger"
+            id="header-sidebar-trigger"
           >
             {show ? (
               <Icon
-                data-testid="close-sidebar-icon"
+                id="header-close-sidebar-icon"
                 className="close-sidebar-icon"
                 name="close"
               />
             ) : (
-              <Icon data-testid="show-sidebar-icon" name="content" />
+              <Icon id="header-show-sidebar-icon" name="content" />
             )}
           </Menu.Item>
         )}
@@ -90,7 +90,7 @@ export const Header = (props: Props) => {
       {unsavedCount > 0 && !pathname.includes(UPLOAD_UNSAVED_URL_START) && (
         <Link
           to={UPLOAD_UNSAVED_PREVIEW_URL}
-          data-testid="unsaved-count-label"
+          id="header-unsaved-count-label"
           className="unsaved-count-label"
         >
           {unsavedCount}
@@ -100,7 +100,7 @@ export const Header = (props: Props) => {
       {(title || children) &&
         (title ? (
           <div
-            data-testid="app-header-title"
+            id="header-app-header-title"
             className={makeClassnames({
               "app-header-title": true,
               "no-sidebar": !sidebar,
