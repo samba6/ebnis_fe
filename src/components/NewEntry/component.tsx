@@ -84,7 +84,7 @@ export function NewEntry(props: Props) {
 
       const { type, id } = field;
 
-      let toString = val;
+      let toString;
 
       switch (type) {
         case FieldType.DATE:
@@ -94,9 +94,12 @@ export function NewEntry(props: Props) {
 
           break;
 
-        case FieldType.DATETIME: {
-          toString = (val as Date).toJSON();
-        }
+        case FieldType.DATETIME:
+          {
+            toString = (val as Date).toJSON();
+          }
+
+          break;
 
         case FieldType.DECIMAL:
         case FieldType.INTEGER:
@@ -106,8 +109,12 @@ export function NewEntry(props: Props) {
 
           break;
 
-        default:
-          toString = val;
+        case FieldType.SINGLE_LINE_TEXT:
+        case FieldType.MULTI_LINE_TEXT:
+          {
+            toString = val;
+          }
+
           break;
       }
 
