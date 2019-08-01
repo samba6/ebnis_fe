@@ -3,7 +3,6 @@
 import React, { ComponentType } from "react";
 import "react-testing-library/cleanup-after-each";
 import { render, fireEvent, wait, waitForElement } from "react-testing-library";
-import isDateWithinRange from "date-fns/is_within_range";
 import addHours from "date-fns/add_hours";
 import addDays from "date-fns/add_days";
 import formatDate from "date-fns/format";
@@ -39,39 +38,16 @@ const mockScrollIntoView = scrollIntoView as jest.Mock;
 
 const title = "ww";
 
-it.only("creates new experience entry when online", async () => {
-  // an hour earlier
-  const now = addHours(new Date(), -1);
-
-  // we will check that date submitted to server is between yesterday
-  // and tomorrow
-  const startDate = addDays(now, -1);
-  const endDate = addDays(now, 1);
-
-  // we will check that datetime submitted to server is within an hour from now
-  const endDatetime = addHours(now, 2);
-
+it("creates new experience entry when online", async () => {
   /**
    * Given we have received experiences from server
    */
   const experience = {
-    id: "1000",
+    id: "1",
 
     title,
 
     fieldDefs: [
-      {
-        id: "f1",
-        name: "f1",
-        type: FieldType.DATE,
-      },
-
-      {
-        id: "f2",
-        name: "f2",
-        type: FieldType.DATETIME,
-      },
-
       {
         id: "f3",
         name: "f3",
@@ -82,18 +58,6 @@ it.only("creates new experience entry when online", async () => {
         id: "f4",
         name: "f4",
         type: FieldType.INTEGER,
-      },
-
-      {
-        id: "f5",
-        name: "f5",
-        type: FieldType.SINGLE_LINE_TEXT,
-      },
-
-      {
-        id: "f6",
-        name: "f6",
-        type: FieldType.MULTI_LINE_TEXT,
       },
     ] as ExperienceFragment_fieldDefs[],
 
@@ -110,24 +74,6 @@ it.only("creates new experience entry when online", async () => {
    * While we are on new entry page
    */
   render(ui);
-
-  /**
-   * Then SINGLE_LINE_TEXT field should be empty
-   */
-  const $singleText = document.getElementById(
-    "new-entry-SINGLE_LINE_TEXT-input",
-  ) as HTMLInputElement;
-
-  expect($singleText.value).toBe("");
-
-  /**
-   * And MULTI_LINE_TEXT field should be empty
-   */
-  const $multiText = document.getElementById(
-    "new-entry-MULTI_LINE_TEXT-input",
-  ) as HTMLInputElement;
-
-  expect($multiText.value).toBe("");
 
   /**
    * And DECIMAL field should be empty
@@ -152,8 +98,6 @@ it.only("creates new experience entry when online", async () => {
    */
   fillField($integer, "1");
   fillField($decimal, "2.0");
-  fillField($multiText, "m");
-  fillField($singleText, "s");
 
   fireEvent.click(document.getElementById("new-entry-submit-btn") as any);
 
@@ -167,32 +111,16 @@ it.only("creates new experience entry when online", async () => {
       },
     } = mockCreateEntry.mock.calls[0][0] as any;
 
-    expect(expId).toBe("1000");
-    expect((mockUpdate as jest.Mock).mock.calls[0][0]).toBe("1000");
+    expect(expId).toBe("1");
+    expect((mockUpdate as jest.Mock).mock.calls[0][0]).toBe("1");
 
-    const [f1, f2, f3, f4, f5, f6] = fields;
-
-    expect(f1.defId).toBe("f1");
-    expect(
-      isDateWithinRange(JSON.parse(f1.data).date, startDate, endDate),
-    ).toBe(true);
-
-    expect(f2.defId).toBe("f2");
-    expect(
-      isDateWithinRange(JSON.parse(f2.data).datetime, now, endDatetime),
-    ).toBe(true);
+    const [f3, f4] = fields;
 
     expect(f3.defId).toBe("f3");
     expect(JSON.parse(f3.data).decimal).toBe("2");
 
     expect(f4.defId).toBe("f4");
     expect(JSON.parse(f4.data).integer).toBe("1");
-
-    expect(f5.defId).toBe("f5");
-    expect(JSON.parse(f5.data).single_line_text).toBe("s");
-
-    expect(f6.defId).toBe("f6");
-    expect(JSON.parse(f6.data).multi_line_text).toBe("m");
   });
 });
 
@@ -255,7 +183,7 @@ it("sets values of date and datetime fields", async () => {
    * Given we have received experiences from server
    */
   const exp = {
-    id: "1000",
+    id: "1",
 
     title,
 
@@ -357,19 +285,24 @@ it("sets values of date and datetime fields", async () => {
 
     const [f1, f2] = fields;
 
+    expect(f1.defId).toBe("f1");
+
+    expect(f2.defId).toBe("f2");
+
     expect(differenceInDays(now, JSON.parse(f1.data).date)).toBe(2);
+
     expect(
       differenceInHours(now, JSON.parse(f2.data).datetime),
     ).toBeGreaterThanOrEqual(1);
   });
 });
 
-it("creates new experience entry when offline", async () => {
+it("creates new entry when offline", async () => {
   /**
    * Given we have received experiences from server
    */
   const exp = {
-    id: "1000",
+    id: "1",
 
     title,
 
@@ -403,6 +336,8 @@ it("creates new experience entry when offline", async () => {
     "new-entry-SINGLE_LINE_TEXT-input",
   ) as HTMLInputElement;
 
+  expect($singleText.value).toBe("");
+
   fillField($singleText, "s");
 
   fireEvent.click(document.getElementById("new-entry-submit-btn") as any);
@@ -415,7 +350,7 @@ it("creates new experience entry when offline", async () => {
       variables: { experience, fields },
     } = mockCreateUnsavedEntry.mock.calls[0][0] as any;
 
-    expect(experience.id).toBe("1000");
+    expect(experience.id).toBe("1");
 
     const [f1] = fields;
 
@@ -431,7 +366,7 @@ it("creates new experience entry when offline", async () => {
 
 it("renders error when entry creation fails", async () => {
   const experience = {
-    id: "1000",
+    id: "1",
 
     title,
 
@@ -439,7 +374,7 @@ it("renders error when entry creation fails", async () => {
       {
         id: "f1",
         name: "f1",
-        type: FieldType.SINGLE_LINE_TEXT,
+        type: FieldType.MULTI_LINE_TEXT,
       },
     ],
 
@@ -468,10 +403,13 @@ it("renders error when entry creation fails", async () => {
 
   render(ui);
 
-  fillField(
-    document.getElementById("new-entry-SINGLE_LINE_TEXT]-input") as any,
-    "s",
-  );
+  const $multiText = document.getElementById(
+    "new-entry-MULTI_LINE_TEXT-input",
+  ) as HTMLInputElement;
+
+  expect($multiText.value).toBe("");
+
+  fillField($multiText, "s");
 
   fireEvent.click(document.getElementById("new-entry-submit-btn") as any);
 
@@ -481,6 +419,19 @@ it("renders error when entry creation fails", async () => {
 
   expect($error).not.toBeNull();
 
+  const {
+    variables: {
+      input: { expId, fields },
+    },
+  } = mockCreateEntry.mock.calls[0][0] as any;
+
+  expect(expId).toBe("1");
+
+  const [f1] = fields;
+
+  expect(f1.defId).toBe("f1");
+  expect(JSON.parse(f1.data).multi_line_text).toBe("s");
+
   expect(mockNavigate).not.toHaveBeenCalled();
 
   expect(mockScrollIntoView).toHaveBeenCalled();
@@ -488,7 +439,7 @@ it("renders error when entry creation fails", async () => {
 
 it("renders network error", async () => {
   const experience = {
-    id: "1000",
+    id: "1",
 
     title,
 
@@ -516,7 +467,7 @@ it("renders network error", async () => {
   render(ui);
 
   fillField(
-    document.getElementById("new-entry-[SINGLE_LINE_TEXT]-input") as any,
+    document.getElementById("new-entry-SINGLE_LINE_TEXT-input") as any,
     "s",
   );
 
@@ -538,7 +489,7 @@ it("renders network error", async () => {
 
 it("treats non field graphql errors as network error", async () => {
   const experience = {
-    id: "1000",
+    id: "1",
 
     title,
 
@@ -566,7 +517,7 @@ it("treats non field graphql errors as network error", async () => {
   render(ui);
 
   fillField(
-    document.getElementById("new-entry-[SINGLE_LINE_TEXT]-input") as any,
+    document.getElementById("new-entry-SINGLE_LINE_TEXT-input") as any,
     "s",
   );
 
