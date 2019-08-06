@@ -151,7 +151,7 @@ export function ExperienceDefinition(props: Props) {
             variables: {
               createExperienceInput: values,
               entriesPagination: {
-                first: 20,
+                first: 20000,
               },
             },
 

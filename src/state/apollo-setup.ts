@@ -19,10 +19,6 @@ import {
 } from "./apollo-middlewares";
 import { CUSTOM_QUERY_RESOLVERS } from "./custom-query-resolvers";
 
-let cache: InMemoryCache | null = null;
-let client: ApolloClient<{}> | null = null;
-let persistor: CachePersistor<{}> | null = null;
-
 export function buildClientCache(
   {
     uri,
@@ -39,7 +35,7 @@ export function buildClientCache(
   // is out of sync with other parts because some are using cypress version
   // while others are using app version
 
-  clientCacheFromCypress(invalidateCache);
+  let { cache, persistor } = clientCacheFromCypress(invalidateCache);
 
   if (!cache) {
     cache = new InMemoryCache({
@@ -51,66 +47,68 @@ export function buildClientCache(
     }) as InMemoryCache;
   }
 
-  if (!client) {
-    const makeSocketLink: MakeSocketLinkFn = makeSocketLinkArgs => {
-      const absintheSocket = AbsintheSocket.create(
-        getSocket({
-          uri,
-          ...makeSocketLinkArgs,
-        }),
-      );
+  persistor = makePersistor(cache, persistor);
 
-      return createAbsintheSocketLink(absintheSocket);
-    };
+  const makeSocketLink: MakeSocketLinkFn = makeSocketLinkArgs => {
+    const absintheSocket = AbsintheSocket.create(
+      getSocket({
+        uri,
+        ...makeSocketLinkArgs,
+      }),
+    );
 
-    let link = middlewareAuthLink(makeSocketLink);
-    link = middlewareErrorLink(link);
-    link = middlewareLoggerLink(link);
+    return createAbsintheSocketLink(absintheSocket);
+  };
 
-    client = new ApolloClient({
-      cache,
-      link,
-    }) as ApolloClient<{}>;
+  let link = middlewareAuthLink(makeSocketLink);
+  link = middlewareErrorLink(link);
+  link = middlewareLoggerLink(link);
 
-    const state = initState();
+  const client = new ApolloClient({
+    cache,
+    link,
+  }) as ApolloClient<{}>;
 
-    cache.writeData({
-      data: state.defaults,
-    });
+  const state = initState();
 
-    client.addResolvers(state.resolvers);
+  cache.writeData({
+    data: state.defaults,
+  });
 
-    if (resolvers) {
-      client.addResolvers(resolvers);
-    }
+  client.addResolvers(state.resolvers);
 
-    makePersistor(cache);
-    setupCypressApollo();
+  if (resolvers) {
+    client.addResolvers(resolvers);
   }
+
+  setupCypressApollo({ client, cache, persistor });
 
   return { client, cache, persistor };
 }
 
-export type PersistCacheFn = (
-  appCache: InMemoryCache,
+export type RestoreCacheOrPurgeStorageFn = (
+  persistor: CachePersistor<{}>,
 ) => Promise<CachePersistor<{}>>;
 
-function makePersistor(appCache: InMemoryCache) {
-  persistor = new CachePersistor({
-    cache: appCache,
-    storage: localStorage as PersistentStorage<PersistedData<{}>>,
-    key: SCHEMA_KEY,
-    maxSize: false,
-  }) as CachePersistor<{}>;
+function makePersistor(
+  appCache: InMemoryCache,
+  persistor?: CachePersistor<{}>,
+) {
+  persistor = persistor
+    ? persistor
+    : (new CachePersistor({
+        cache: appCache,
+        storage: localStorage as PersistentStorage<PersistedData<{}>>,
+        key: SCHEMA_KEY,
+        maxSize: false,
+      }) as CachePersistor<{}>);
 
   return persistor;
 }
 
-export async function persistCache(appCache: InMemoryCache) {
-  if (!persistor) {
-    persistor = makePersistor(appCache);
-  }
-
+export async function restoreCacheOrPurgeStorage(
+  persistor: CachePersistor<{}>,
+) {
   const currentVersion = localStorage.getItem(SCHEMA_VERSION_KEY);
 
   if (currentVersion === SCHEMA_VERSION) {
@@ -151,22 +149,24 @@ interface BuildClientCache {
 export const CYPRESS_APOLLO_KEY = "ebnis-cypress-apollo";
 
 function clientCacheFromCypress(invalidateCache?: boolean) {
-  if (invalidateCache) {
-    cache = null;
-    persistor = null;
-    client = null;
+  const result: {
+    cache?: InMemoryCache;
+    persistor?: CachePersistor<{}>;
+    client?: ApolloClient<{}>;
+  } = {};
 
+  if (invalidateCache) {
     // We need to set up local storage for local state management
     // so that whatever we persist in e2e tests will be picked up by apollo
     // when app starts. Otherwise, apollo will always clear out the local
     // storage when the app starts if it can not read the schema version.
     localStorage.setItem(SCHEMA_VERSION_KEY, SCHEMA_VERSION);
 
-    return;
+    return result;
   }
 
   if (typeof window === "undefined" || !window.Cypress) {
-    return;
+    return result;
   }
 
   const cypressApollo = window.Cypress.env(
@@ -174,21 +174,28 @@ function clientCacheFromCypress(invalidateCache?: boolean) {
   ) as E2EWindowObject;
 
   if (!cypressApollo) {
-    return;
+    return result;
   }
 
   // some how if I use the client from cypress, /app/ route fails to render
   // client = cypressApollo.client;
-  cache = cypressApollo.cache;
-  persistor = cypressApollo.persistor;
+
+  return {
+    cache: cypressApollo.cache,
+    persistor: cypressApollo.persistor,
+  };
 }
 
-export function setupCypressApollo() {
+export function setupCypressApollo(args: {
+  client: ApolloClient<{}>;
+  cache: InMemoryCache;
+  persistor: CachePersistor<{}>;
+}) {
   if (window.Cypress) {
     window.Cypress.env(CYPRESS_APOLLO_KEY, {
-      cache,
-      client,
-      persistor,
+      cache: args.cache,
+      client: args.client,
+      persistor: args.persistor,
     });
   }
 }

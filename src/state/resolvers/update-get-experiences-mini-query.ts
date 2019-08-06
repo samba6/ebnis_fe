@@ -31,7 +31,7 @@ export async function insertExperienceInGetExperiencesMiniQuery(
   const variables: GetExperienceConnectionMiniVariables = {
     input: {
       pagination: {
-        first: 20,
+        first: 20000,
       },
     },
   };
@@ -110,7 +110,7 @@ export async function replaceExperiencesInGetExperiencesMiniQuery(
   const variables: GetExperienceConnectionMiniVariables = {
     input: {
       pagination: {
-        first: 20,
+        first: 20000,
       },
     },
   };

@@ -24,7 +24,7 @@ const getExperienceConnectionMiniGql = graphql<
       variables: {
         input: {
           pagination: {
-            first: 20,
+            first: 20000,
           },
         },
       },
