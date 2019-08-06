@@ -10,7 +10,10 @@ import {
 } from "../../src/graphql/apollo-types/UserRegMutation";
 import { REG_USER_MUTATION } from "../../src/graphql/user-reg.mutation";
 import { mutate } from "./mutate";
-import { buildClientCache } from "../../src/state/apollo-setup";
+import {
+  buildClientCache,
+  CYPRESS_APOLLO_KEY,
+} from "../../src/state/apollo-setup";
 import { allResolvers } from "../../src/state/all-resolvers";
 import { UserFragment } from "../../src/graphql/apollo-types/UserFragment";
 import { storeUser } from "../../src/state/users";
@@ -19,6 +22,8 @@ import { storeConnectionStatus } from "../../src/state/connections";
 const serverUrl = Cypress.env("API_URL") as string;
 
 function checkoutSession() {
+  Cypress.env(CYPRESS_APOLLO_KEY, null);
+
   buildClientCache({
     uri: serverUrl,
     resolvers: allResolvers,

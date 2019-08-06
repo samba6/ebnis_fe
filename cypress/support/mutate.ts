@@ -16,4 +16,6 @@ export function mutate<TData, TVariables>(
 export async function persistCache() {
   await (Cypress.env(CYPRESS_APOLLO_KEY)
     .persistor as CachePersistor<{}>).persist();
+
+  return true;
 }

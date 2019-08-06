@@ -10,8 +10,6 @@ import { Loading } from "../Loading";
 import { ILayoutContextContext, reducer, LayoutActionType } from "./utils";
 import { getObservable, EmitAction } from "../../setup-observable";
 import { ZenObservable } from "zen-observable-ts";
-import { CachePersistor } from "apollo-cache-persist";
-import { NormalizedCacheObject } from "apollo-cache-inmemory";
 import { getUnsavedCount } from "../../state/unsaved-resolvers";
 import { LayoutProvider } from "./layout-provider";
 import { RouteComponentProps } from "@reach/router";
@@ -24,11 +22,9 @@ export interface Props extends PropsWithChildren<{}>, RouteComponentProps {}
 export function Layout(props: Props) {
   const { children } = props;
 
-  const { cache, persistCache, client } = useContext(EbnisAppContext);
-
-  const persistorRef = useRef<
-    CachePersistor<NormalizedCacheObject> | undefined
-  >();
+  const { cache, restoreCacheOrPurgeStorage, client, persistor } = useContext(
+    EbnisAppContext,
+  );
 
   const subscriptionRef = useRef<ZenObservable.Subscription | null>(null);
 
@@ -42,7 +38,7 @@ export function Layout(props: Props) {
   const { unsavedCount, renderChildren, experiencesToPreFetch } = state;
 
   useEffect(() => {
-    if (!(cache && persistCache && client)) {
+    if (!(cache && restoreCacheOrPurgeStorage && client)) {
       return;
     }
 
@@ -122,13 +118,13 @@ export function Layout(props: Props) {
 
   useEffect(
     function PersistCache() {
-      if (!(cache && persistCache)) {
+      if (!(cache && restoreCacheOrPurgeStorage)) {
         return;
       }
 
       (async function doPersistCache() {
         try {
-          persistorRef.current = await persistCache(cache);
+          await restoreCacheOrPurgeStorage(persistor);
         } catch (error) {}
 
         dispatch([LayoutActionType.shouldRenderChildren, true]);
@@ -139,7 +135,7 @@ export function Layout(props: Props) {
   );
 
   // this will be true if we are server rendering in gatsby build
-  if (!(cache && persistCache && client)) {
+  if (!(cache && restoreCacheOrPurgeStorage && client)) {
     return (
       <LayoutProvider value={{ unsavedCount: 0 } as ILayoutContextContext}>
         {children}
@@ -151,7 +147,7 @@ export function Layout(props: Props) {
     <LayoutProvider
       value={
         {
-          persistor: persistorRef.current,
+          persistor,
           unsavedCount,
           cache,
           layoutDispatch: dispatch,

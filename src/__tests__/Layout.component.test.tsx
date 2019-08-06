@@ -78,9 +78,9 @@ it("renders browser hydrated children if cache persist succeeds", async () => {
   /**
    * Given component was rendered with all context props
    */
-  const { ui, mockPersistCache } = makeComp();
+  const { ui, mockRestoreCacheOrPurgeStorage } = makeComp();
 
-  mockPersistCache.mockResolvedValue({});
+  mockRestoreCacheOrPurgeStorage.mockResolvedValue({});
 
   render(ui);
 
@@ -103,9 +103,9 @@ it("renders browser hydrated children if cache persist fails", async () => {
   /**
    * Given component was rendered with all context props
    */
-  const { ui, mockPersistCache } = makeComp();
+  const { ui, mockRestoreCacheOrPurgeStorage } = makeComp();
 
-  mockPersistCache.mockRejectedValue({});
+  mockRestoreCacheOrPurgeStorage.mockRejectedValue({});
 
   render(ui);
 
@@ -203,14 +203,18 @@ function makeComp({
   mockUseUser.mockReset();
   mockIsConnected.mockReset();
 
-  const mockPersistCache = jest.fn();
+  const mockRestoreCacheOrPurgeStorage = jest.fn();
   const cache = jest.fn();
   const mockQuery = jest.fn();
   const client = { query: mockQuery };
 
   context = context
     ? context
-    : { persistCache: mockPersistCache, cache, client };
+    : {
+        restoreCacheOrPurgeStorage: mockRestoreCacheOrPurgeStorage,
+        cache,
+        client,
+      };
 
   return {
     ui: (
@@ -220,6 +224,6 @@ function makeComp({
         </LayoutP>
       </EbnisAppProvider>
     ),
-    mockPersistCache,
+    mockRestoreCacheOrPurgeStorage,
   };
 }

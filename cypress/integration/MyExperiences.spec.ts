@@ -68,12 +68,33 @@ context("my experiences page", () => {
         },
       ],
     }).then(experience => {
-      return persistCache().then(() => {
+      return persistCache().then(isPersisted => {
+        // tslint:disable-next-line:no-console
+        console.log(
+          `\n\t\tLogging start\n\n\n\n isPersisted\n`,
+          isPersisted,
+          `\n\n\n\n\t\tLogging ends\n`,
+        );
+
+        // tslint:disable-next-line:no-console
+        console.log(
+          `\n\t\tLogging start\n\n\n\n experience\n`,
+          experience,
+          `\n\n\n\n\t\tLogging ends\n`,
+        );
+
         return experience;
       });
     });
 
-    cy.wrap(p).then(() => {
+    cy.wrap(p).then(experience => {
+      // tslint:disable-next-line:no-console
+      console.log(
+        `\n\t\tLogging start\n\n\n\n wrapped experience\n`,
+        experience,
+        `\n\n\n\n\t\tLogging ends\n`,
+      );
+
       /**
        * And we are at my experiences page
        */

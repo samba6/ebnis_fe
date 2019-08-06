@@ -6,7 +6,10 @@ import { Workbox } from "workbox-window";
 
 import "./src/styles/semantic-theme/semantic.less";
 import "./src/styles/globals.scss";
-import { buildClientCache, persistCache } from "./src/state/apollo-setup";
+import {
+  buildClientCache,
+  restoreCacheOrPurgeStorage,
+} from "./src/state/apollo-setup";
 import { EbnisAppProvider } from "./src/context";
 import { RootHelmet } from "./src/components/RootHelmet";
 
@@ -19,7 +22,7 @@ export const wrapRootElement = ({ element }) => {
         value={{
           client,
           cache,
-          persistCache,
+          restoreCacheOrPurgeStorage,
           persistor,
         }}
       >

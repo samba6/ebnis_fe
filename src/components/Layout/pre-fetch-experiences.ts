@@ -19,7 +19,7 @@ export function preFetchExperiences({
   cache: InMemoryCache;
 }) {
   const entriesPagination = {
-    first: 20,
+    first: 20000,
   };
 
   client

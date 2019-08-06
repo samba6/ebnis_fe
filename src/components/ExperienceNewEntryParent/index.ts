@@ -24,7 +24,7 @@ const experienceGql = graphql<
       variables: {
         id: experienceId as string,
         entriesPagination: {
-          first: 20,
+          first: 20000,
         },
       },
 

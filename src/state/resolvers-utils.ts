@@ -29,7 +29,7 @@ export function updateGetExperiencesQuery(
   const variables: GetExperienceConnectionMiniVariables = {
     input: {
       pagination: {
-        first: 20,
+        first: 20000,
       },
     },
   };

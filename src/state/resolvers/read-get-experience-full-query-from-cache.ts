@@ -12,7 +12,7 @@ export function readGetExperienceFullQueryFromCache(
   const variables: GetExperienceFullVariables = {
     id: experienceId,
     entriesPagination: {
-      first: 20,
+      first: 20000,
     },
   };
 
