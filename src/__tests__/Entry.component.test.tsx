@@ -33,7 +33,7 @@ it("renders single line text", () => {
 
       entriesLen: 1,
 
-      dataDefinitions: [
+      definitions: [
         {
           id: "1",
           name: "f1",
@@ -70,7 +70,7 @@ it("renders multi line text", () => {
 
       entry,
 
-      dataDefinitions: [
+      definitions: [
         {
           id: "2",
           name: "f2",
@@ -102,7 +102,7 @@ it("renders date field", () => {
 
       entry,
 
-      dataDefinitions: [
+      definitions: [
         {
           id: "3",
           name: "f3",
@@ -132,7 +132,7 @@ it("renders datetime field", () => {
     props: {
       entry,
 
-      dataDefinitions: [
+      definitions: [
         {
           id: "4",
           name: "f4",
@@ -160,7 +160,7 @@ it("renders decimal field", () => {
     props: {
       entry,
 
-      dataDefinitions: [
+      definitions: [
         {
           id: "5",
           name: "f5",
@@ -191,7 +191,7 @@ it("renders integer field and uses custom container id", () => {
       id: "custom",
       entry,
 
-      dataDefinitions: [
+      definitions: [
         {
           id: "6",
           name: "f6",

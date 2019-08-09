@@ -18,6 +18,7 @@ import {
   ActionTypes,
   parseApolloErrors,
   initialStateFromProps,
+  State,
 } from "./utils";
 import { makeExperienceRoute } from "../../constants/experience-route";
 import { CreateEntryMutationFn } from "../../graphql/create-entry.mutation";
@@ -29,7 +30,10 @@ import { ExperienceFragment_dataDefinitions } from "../../graphql/apollo-types/E
 import makeClassNames from "classnames";
 import { FormCtrlError } from "../FormCtrlError/component";
 import { makeScrollIntoViewId, scrollIntoView } from "../scroll-into-view";
-import { FieldType } from "../../graphql/apollo-types/globalTypes";
+import {
+  FieldType,
+  CreateDataObject,
+} from "../../graphql/apollo-types/globalTypes";
 import { DateField } from "../DateField/component";
 import { DateTimeField } from "../DateTimeField/component";
 import dateFnFormat from "date-fns/format";
@@ -77,57 +81,12 @@ export function NewEntry(props: Props) {
   }
 
   async function onSubmit() {
-    const dataObjects = [];
     const { dataDefinitions, id: experienceId } = experience;
 
-    for (const [stringIndex, val] of Object.entries(state.formObj)) {
-      const index = Number(stringIndex);
-      const definition = dataDefinitions[
-        index
-      ] as ExperienceFragment_dataDefinitions;
-
-      const { type, id: definitionId } = definition;
-
-      let toString;
-
-      switch (type) {
-        case FieldType.DATE:
-          {
-            toString = dateFnFormat(val, "YYYY-MM-DD");
-          }
-
-          break;
-
-        case FieldType.DATETIME:
-          {
-            toString = (val as Date).toJSON();
-          }
-
-          break;
-
-        case FieldType.DECIMAL:
-        case FieldType.INTEGER:
-          {
-            toString = (val || 0) + "";
-          }
-
-          break;
-
-        case FieldType.SINGLE_LINE_TEXT:
-        case FieldType.MULTI_LINE_TEXT:
-          {
-            toString = val;
-          }
-
-          break;
-      }
-
-      dataObjects.push({
-        definitionId,
-
-        data: `{"${type.toLowerCase()}":"${toString}"}`,
-      });
-    }
+    const dataObjects = dataObjectsFromFormValues(
+      state.formObj,
+      dataDefinitions as ExperienceFragment_dataDefinitions[],
+    );
 
     try {
       let createResult: CreateEntryMutation_createEntry;
@@ -223,12 +182,12 @@ export function NewEntry(props: Props) {
 
         <Form onSubmit={onSubmit}>
           {dataDefinitions.map((obj, index) => {
-            const fieldDefinition = obj as ExperienceFragment_dataDefinitions;
+            const definition = obj as ExperienceFragment_dataDefinitions;
 
             return (
-              <FieldComponent
-                key={fieldDefinition.id}
-                field={fieldDefinition}
+              <DataComponent
+                key={definition.id}
+                field={definition}
                 index={index}
                 formValues={state.formObj}
                 dispatch={dispatch}
@@ -261,7 +220,7 @@ export function NewEntry(props: Props) {
   );
 }
 
-interface FieldComponentProps {
+interface DataComponentProps {
   field: ExperienceFragment_dataDefinitions;
   index: number;
   formValues: FormObj;
@@ -269,8 +228,8 @@ interface FieldComponentProps {
   error?: string;
 }
 
-const FieldComponent = React.memo(
-  function FieldComponentFn(props: FieldComponentProps) {
+const DataComponent = React.memo(
+  function FieldComponentFn(props: DataComponentProps) {
     const { field, index, dispatch, formValues, error } = props;
 
     const { name: fieldTitle, type, id } = field;
@@ -408,4 +367,63 @@ function makeSetValueFunc(dispatch: DispatchType) {
       { formFieldName: fieldName, value },
     ]);
   };
+}
+
+function dataObjectsFromFormValues(
+  formObj: State["formObj"],
+  dataDefinitions: ExperienceFragment_dataDefinitions[],
+) {
+  return Object.entries(formObj).reduce(
+    (acc, [stringIndex, val]) => {
+      const index = Number(stringIndex);
+      const definition = dataDefinitions[
+        index
+      ] as ExperienceFragment_dataDefinitions;
+
+      const { type, id: definitionId } = definition;
+
+      let toString;
+
+      switch (type) {
+        case FieldType.DATE:
+          {
+            toString = dateFnFormat(val, "YYYY-MM-DD");
+          }
+
+          break;
+
+        case FieldType.DATETIME:
+          {
+            toString = (val as Date).toJSON();
+          }
+
+          break;
+
+        case FieldType.DECIMAL:
+        case FieldType.INTEGER:
+          {
+            toString = (val || 0) + "";
+          }
+
+          break;
+
+        case FieldType.SINGLE_LINE_TEXT:
+        case FieldType.MULTI_LINE_TEXT:
+          {
+            toString = val;
+          }
+
+          break;
+      }
+
+      acc.push({
+        definitionId,
+
+        data: `{"${type.toLowerCase()}":"${toString}"}`,
+      });
+
+      return acc;
+    },
+    [] as CreateDataObject[],
+  );
 }

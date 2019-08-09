@@ -64,13 +64,6 @@ const createUnsavedEntryResolver: LocalResolverFn<
 > = async (root, variables, context) => {
   const { client } = context;
 
-  // tslint:disable-next-line:no-console
-  console.log(
-    `\n\t\tLogging start\n\n\n\n variables\n`,
-    variables,
-    `\n\n\n\n\t\tLogging ends\n`,
-  );
-
   let experience = variables.experience;
   experience.hasUnsaved = true;
 

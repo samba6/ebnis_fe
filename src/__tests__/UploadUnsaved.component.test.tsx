@@ -7,7 +7,7 @@ import { render, fireEvent, wait, waitForElement } from "react-testing-library";
 import { UploadUnsaved } from "../components/UploadUnsaved/component";
 import {
   Props,
-  fieldDefToUnsavedData,
+  definitionToUnsavedData,
   ExperiencesIdsToObjectMap,
 } from "../components/UploadUnsaved/utils";
 import {
@@ -21,6 +21,20 @@ import {
   makeEntryNode,
   closeMessage,
 } from "./test_utils";
+import { CreateEntryMutationVariables } from "../graphql/apollo-types/CreateEntryMutation";
+import {
+  UploadAllUnsavedsMutation,
+  UploadAllUnsavedsMutation_createEntries,
+  UploadAllUnsavedsMutation_saveOfflineExperiences,
+} from "../graphql/apollo-types/UploadAllUnsavedsMutation";
+import { Props as EntryProps } from "../components/Entry/utils";
+import { DataObjectFragment } from "../graphql/apollo-types/DataObjectFragment";
+import { EXPERIENCES_URL } from "../routes";
+import {
+  GetAllUnSavedQueryData,
+  GetUnsavedSummary,
+} from "../state/unsaved-resolvers";
+import { LayoutProvider } from "../components/Layout/layout-provider";
 
 jest.mock("../components/Loading", () => ({
   Loading: () => <div id="a-lo" />,
@@ -35,9 +49,9 @@ jest.mock("../components/SidebarHeader", () => ({
 jest.mock("../state/connections");
 
 jest.mock("../components/Entry/component", () => ({
-  Entry: (props: any) => {
+  Entry: jest.fn((props: any) => {
     return <div className={props.className} id={props.id} />;
-  },
+  }),
 }));
 
 jest.mock("../components/Experience/loadables", () => ({
@@ -52,24 +66,17 @@ jest.mock("../state/resolvers/update-get-experiences-mini-query");
 jest.mock("../state/resolvers/delete-references-from-cache");
 jest.mock("../state/resolvers/update-saved-and-unsaved-experiences-in-cache");
 
+////////////////////////// MOCK IMPORT ////////////////////////////
+
 import { scrollIntoView } from "../components/scroll-into-view";
-import {
-  GetAllUnSavedQueryData,
-  GetUnsavedSummary,
-} from "../state/unsaved-resolvers";
 import { updateCache } from "../components/UploadUnsaved/update-cache";
-import { LayoutProvider } from "../components/Layout/layout-provider";
 import { replaceExperiencesInGetExperiencesMiniQuery } from "../state/resolvers/update-get-experiences-mini-query";
 import { deleteIdsFromCache } from "../state/resolvers/delete-references-from-cache";
 import { deleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache } from "../state/resolvers/update-saved-and-unsaved-experiences-in-cache";
-import { EXPERIENCES_URL } from "../routes";
 import { isConnected } from "../state/connections";
-import { CreateEntryMutationVariables } from "../graphql/apollo-types/CreateEntryMutation";
-import {
-  UploadAllUnsavedsMutation,
-  UploadAllUnsavedsMutation_createEntries,
-  UploadAllUnsavedsMutation_saveOfflineExperiences,
-} from "../graphql/apollo-types/UploadAllUnsavedsMutation";
+import { Entry } from "../components/Entry/component";
+
+////////////////////////// END MOCK IMPORT ////////////////////////////
 
 const mockIsConnected = isConnected as jest.Mock;
 const mockScrollIntoView = scrollIntoView as jest.Mock;
@@ -80,6 +87,8 @@ const mockReplaceExperiencesInGetExperiencesMiniQuery = replaceExperiencesInGetE
 const mockDeleteIdsFromCache = deleteIdsFromCache as jest.Mock;
 
 const mockDeleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache = deleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache as jest.Mock;
+
+const mockEntry = Entry as jest.Mock;
 
 const timeStamps = { insertedAt: "a", updatedAt: "a" };
 
@@ -386,7 +395,7 @@ it("shows only 'unsaved experiences' data and uploading same succeeds", async ()
   } = (mockUploadUnsavedExperiences.mock.calls[0][0] as any).variables.input[0];
 
   experience.dataDefinitions = experience.dataDefinitions.map(
-    fieldDefToUnsavedData as any,
+    definitionToUnsavedData as any,
   );
 
   expect(otherExperienceFields).toEqual(experience);
@@ -409,7 +418,7 @@ it("shows only 'unsaved experiences' data and uploading same succeeds", async ()
   ).not.toBeNull();
 });
 
-it("toggles saved and 'unsaved experiences' and uploads data", async () => {
+it("toggles saved and 'unsaved experiences' and uploads data but returns errors for both unsaved entries and unsaved experiences", async () => {
   jest.useFakeTimers();
 
   const entryId = makeUnsavedId("1");
@@ -897,6 +906,133 @@ it("deletes saved experience", async () => {
   ).toEqual(["1"]);
 });
 
+test("experience saved but entry did not", async () => {
+  const unsavedEntry = {
+    id: "1",
+    clientId: "1",
+    dataObjects: [
+      {
+        definitionId: "f1",
+        data: `{"decimal":1}`,
+      },
+    ],
+    experienceId: "1",
+    ...timeStamps,
+  } as ExperienceFragment_entries_edges_node;
+
+  const unsavedExperience = {
+    title: "a",
+    clientId: "1",
+    id: "1",
+
+    entries: {
+      edges: [
+        {
+          node: unsavedEntry,
+        },
+      ],
+    },
+
+    dataDefinitions: [
+      {
+        id: "f1",
+        clientId: "f1",
+        type: "DECIMAL" as any,
+        name: "f1",
+      },
+    ],
+
+    ...timeStamps,
+  } as ExperienceFragment;
+
+  const savedExperience = {
+    title: "a",
+    clientId: "1",
+    // id will change on successful save
+    id: "2",
+
+    entries: {},
+
+    dataDefinitions: [
+      {
+        // id will change on successful save
+        id: "f2",
+        clientId: "f1",
+        type: "DECIMAL" as any,
+        name: "f1",
+      },
+    ],
+    ...timeStamps,
+  } as ExperienceFragment;
+
+  const { ui, mockUploadUnsavedExperiences } = makeComp({
+    props: {
+      getAllUnsavedProps: {
+        getAllUnsaved: {
+          unsavedExperiencesLen: 1,
+
+          unsavedExperiencesMap: {
+            "1": {
+              experience: unsavedExperience,
+              unsavedEntries: [unsavedEntry],
+              savedEntries: [],
+            },
+          } as ExperiencesIdsToObjectMap,
+        },
+      } as GetAllUnSavedQueryData,
+    },
+  });
+
+  mockUploadUnsavedExperiences.mockResolvedValue({
+    data: {
+      saveOfflineExperiences: [
+        {
+          experience: savedExperience,
+          entriesErrors: [
+            {
+              experienceId: "2",
+              clientId: "1",
+              errors: {
+                experienceId: "err",
+              },
+            },
+          ],
+        } as UploadAllUnsavedsMutation_saveOfflineExperiences,
+      ],
+    },
+  });
+
+  render(ui);
+
+  expect(
+    document.getElementById(
+      "upload-triggered-icon-success-unsaved-experiences",
+    ),
+  ).toBeNull();
+
+  expect(document.getElementById("upload-triggered-icon-error-2")).toBeNull();
+
+  fireEvent.click(document.getElementById("upload-unsaved-upload-btn") as any);
+
+  const $errorIcon = await waitForElement(() =>
+    document.getElementById("upload-triggered-icon-error-2"),
+  );
+
+  expect($errorIcon).not.toBeNull();
+
+  expect(document.getElementById("upload-unsaved-upload-btn")).not.toBeNull();
+
+  expect(document.getElementById("upload-triggered-icon-success-1")).toBeNull();
+
+  const { entry } = mockEntry.mock.calls[
+    mockEntry.mock.calls.length - 1
+  ][0] as EntryProps;
+
+  expect((entry.dataObjects[0] as DataObjectFragment).definitionId).toEqual(
+    "f2", // the new definition.id
+  );
+});
+
 ////////////////////////// HELPER FUNCTIONS ///////////////////////////////////
 
 const UploadUnsavedP = UploadUnsaved as ComponentType<Partial<Props>>;
@@ -911,6 +1047,8 @@ function makeComp({
   mockUpdateCache.mockReset();
   mockScrollIntoView.mockReset();
   mockIsConnected.mockReset();
+  mockEntry.mockClear();
+
   mockIsConnected.mockReturnValue(isConnected);
 
   const mockUploadUnsavedExperiences = jest.fn();

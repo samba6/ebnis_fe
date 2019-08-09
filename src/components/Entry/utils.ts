@@ -5,7 +5,7 @@ import { Dispatch } from "react";
 
 export interface Props extends EbnisComponentProps {
   entry: EntryFragment;
-  dataDefinitions: ExperienceFragment_dataDefinitions[];
+  definitions: ExperienceFragment_dataDefinitions[];
   entriesLen: number;
   index: number;
   className?: string;

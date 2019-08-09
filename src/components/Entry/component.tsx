@@ -15,26 +15,21 @@ import {
 } from "../../graphql/apollo-types/EntryFragment";
 
 export function Entry(props: Props) {
-  const {
-    entry,
-    dataDefinitions: fieldDefs,
-    className = "",
-    ...fieldProps
-  } = props;
+  const { entry, definitions, className = "", ...fieldProps } = props;
   const containerId = props.id || `entry-container-${entry.id}`;
 
   const dataObjects = entry.dataObjects as ExperienceFragment_entries_edges_node_dataObjects[];
-  const fieldsLen = dataObjects.length;
+  const dataObjectsLen = dataObjects.length;
 
-  const fieldDefsMap = useMemo(() => {
-    return fieldDefs.reduce(
+  const definitionsMap = useMemo(() => {
+    return definitions.reduce(
       (acc, f) => {
         acc[f.id] = f;
         return acc;
       },
       {} as { [k: string]: ExperienceFragment_dataDefinitions },
     );
-  }, [fieldDefs]);
+  }, [definitions]);
 
   return (
     <div
@@ -44,17 +39,17 @@ export function Entry(props: Props) {
       })}
       id={containerId}
     >
-      {dataObjects.map((dataObject, fieldIndex) => {
-        const fieldDef = fieldDefsMap[dataObject.definitionId];
+      {dataObjects.map((dataObject, index) => {
+        const definition = definitionsMap[dataObject.definitionId];
 
         return (
-          <FieldComponent
+          <DataComponent
             {...fieldProps}
-            key={dataObject.definitionId + fieldIndex}
-            field={dataObject}
-            fieldDef={fieldDef}
-            index={fieldIndex}
-            fieldsLen={fieldsLen}
+            key={dataObject.definitionId + index}
+            dataObject={dataObject}
+            definition={definition}
+            index={index}
+            dataObjectsLen={dataObjectsLen}
             entry={entry}
           />
         );
@@ -71,20 +66,20 @@ export function Entry(props: Props) {
   );
 }
 
-function FieldComponent(
+function DataComponent(
   props: Pick<Props, "dispatch" | "editable"> & {
-    field: EntryFragment_dataObjects;
-    fieldDef: ExperienceFragment_dataDefinitions;
+    dataObject: EntryFragment_dataObjects;
+    definition: ExperienceFragment_dataDefinitions;
     index: number;
-    fieldsLen: number;
+    dataObjectsLen: number;
     entry: EntryFragment;
   },
 ) {
-  const { field, fieldDef, index, entry, editable, dispatch } = props;
+  const { dataObject, definition, index, entry, editable, dispatch } = props;
 
-  const { definitionId, data } = field;
+  const { definitionId, data } = dataObject;
 
-  const { type, name: fieldName } = fieldDef;
+  const { type, name: fieldName } = definition;
 
   const [fieldData] = Object.values(JSON.parse(data));
   const text = displayFieldType[type](fieldData);

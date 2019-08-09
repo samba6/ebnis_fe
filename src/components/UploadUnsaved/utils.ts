@@ -25,10 +25,15 @@ import {
 import { WithApolloClient } from "react-apollo";
 import ApolloClient, { ApolloError } from "apollo-client";
 import { Dispatch } from "react";
-import { CreateEntriesErrorsFragment } from "../../graphql/apollo-types/CreateEntriesErrorsFragment";
+import {
+  CreateEntriesErrorsFragment,
+  CreateEntriesErrorsFragment_errors,
+} from "../../graphql/apollo-types/CreateEntriesErrorsFragment";
 import { LayoutDispatchType } from "../Layout/utils";
 import { InMemoryCache } from "apollo-cache-inmemory";
 import { EntryFragment } from "../../graphql/apollo-types/EntryFragment";
+import { DataDefinitionFragment } from "../../graphql/apollo-types/DataDefinitionFragment";
+import { DataObjectFragment } from "../../graphql/apollo-types/DataObjectFragment";
 
 export interface OwnProps
   extends GetAllUnSavedQueryProps,
@@ -193,7 +198,7 @@ export const reducer: Reducer<State, Action> = (prevState, [type, payload]) => {
   });
 };
 
-export function fieldDefToUnsavedData(
+export function definitionToUnsavedData(
   value: ExperienceFragment_dataDefinitions | null,
 ) {
   const { clientId, name, type } = value as ExperienceFragment_dataDefinitions;
@@ -204,12 +209,12 @@ export function fieldDefToUnsavedData(
 function entriesErrorsToMap(errors: CreateEntriesErrorsFragment[]) {
   return errors.reduce(
     (acc, { errors, clientId }) => {
-      acc[clientId] = errors.clientId as string;
+      acc[clientId] = errors;
 
       return acc;
     },
 
-    {} as { [K: string]: string },
+    {} as { [K: string]: CreateEntriesErrorsFragment_errors },
   );
 }
 
@@ -241,7 +246,7 @@ function updateStateWithSavedExperiencesUploadResult(
     const map = savedExperiencesMap[experienceId];
     map.newlySavedEntries = entries as ExperienceFragment_entries_edges_node[];
 
-    map.unsavedEntries = replaceUnsavedEntriesWithSavedVersions(
+    map.unsavedEntries = replaceUnsavedEntriesWithSavedVersionsSaveds(
       map.unsavedEntries,
       map.newlySavedEntries,
     );
@@ -306,13 +311,9 @@ function updateStateWithUnsavedExperiencesUploadResult(
       map = unsavedExperiencesMap[clientId as string];
       map.newlySavedExperience = experience;
 
-      map.unsavedEntries = replaceUnsavedEntriesWithSavedVersions(
+      map.unsavedEntries = replaceUnsavedEntriesWithSavedVersionsUnsaveds(
         map.unsavedEntries,
-        (experience.entries.edges || []).map(
-          edge =>
-            (edge as ExperienceFragment_entries_edges)
-              .node as ExperienceFragment_entries_edges_node,
-        ),
+        experience,
       );
 
       if (entriesErrors) {
@@ -333,7 +334,7 @@ function updateStateWithUnsavedExperiencesUploadResult(
   return noUploadSucceeded;
 }
 
-function replaceUnsavedEntriesWithSavedVersions(
+function replaceUnsavedEntriesWithSavedVersionsSaveds(
   unsavedEntries: EntryFragment[],
   savedEntries: EntryFragment[],
 ) {
@@ -357,6 +358,66 @@ function replaceUnsavedEntriesWithSavedVersions(
     }
 
     return entry;
+  });
+}
+
+function replaceUnsavedEntriesWithSavedVersionsUnsaveds(
+  unsavedEntries: EntryFragment[],
+  experience: ExperienceFragment,
+) {
+  const savedEntries = (experience.entries.edges || []).map(
+    edge =>
+      (edge as ExperienceFragment_entries_edges)
+        .node as ExperienceFragment_entries_edges_node,
+  );
+
+  const savedEntriesMap = savedEntries.reduce(
+    (acc, item) => {
+      acc[item.clientId as string] = item;
+      return acc;
+    },
+    {} as { [k: string]: EntryFragment },
+  );
+
+  const definitionsMap = experience.dataDefinitions.reduce(
+    (acc, elm) => {
+      const { clientId, id } = elm as DataDefinitionFragment;
+
+      acc[clientId as string] = id;
+
+      return acc;
+    },
+    {} as { [k: string]: string },
+  );
+
+  return unsavedEntries.map(entry => {
+    const saved = savedEntriesMap[entry.clientId as string];
+
+    if (saved) {
+      return saved;
+    }
+
+    entry.dataObjects = mapDataObjectsDefinitionIdsToServerIds(
+      entry.dataObjects as DataObjectFragment[],
+      definitionsMap,
+    );
+
+    return entry;
+  });
+}
+
+function mapDataObjectsDefinitionIdsToServerIds(
+  dataObjects: DataObjectFragment[],
+  definitionClientIdMap: { [k: string]: string },
+) {
+  return dataObjects.map(dataObject => {
+    const definitionId = definitionClientIdMap[dataObject.definitionId];
+
+    if (definitionId) {
+      dataObject.definitionId = definitionId;
+    }
+
+    return dataObject;
   });
 }
 
@@ -399,7 +460,9 @@ export interface ExperiencesIdsToObjectMap {
 export interface ExperienceObjectMap extends SavedAndUnsavedExperienceSummary {
   didUploadSucceed?: boolean;
   experienceError?: string;
-  entriesErrors?: { [k: string]: string };
+  entriesErrors?: {
+    [K: string]: CreateEntriesErrorsFragment_errors;
+  };
   newlySavedExperience?: ExperienceFragment;
   newlySavedEntries?: ExperienceFragment_entries_edges_node[];
 }

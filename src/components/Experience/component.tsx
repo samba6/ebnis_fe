@@ -82,7 +82,7 @@ export function Experience(props: Props) {
             <Entry
               key={entryNode.id}
               entry={entryNode}
-              dataDefinitions={
+              definitions={
                 experience.dataDefinitions as ExperienceFragment_dataDefinitions[]
               }
               entriesLen={nodesLen}

@@ -3,7 +3,7 @@ import {
   Props,
   reducer,
   ActionType,
-  fieldDefToUnsavedData,
+  definitionToUnsavedData,
   ExperiencesIdsToObjectMap,
   DispatchType,
   State,
@@ -126,7 +126,7 @@ export function UploadUnsaved(props: Props) {
     state.hasSavedExperiencesUploadError !== null,
   );
 
-  async function onUploadAllClicked() {
+  async function onSubmit() {
     dispatch([ActionType.setUploading, true]);
 
     try {
@@ -206,7 +206,7 @@ export function UploadUnsaved(props: Props) {
           <span>Unsaved Preview</span>
 
           <UploadAllButtonComponent
-            onUploadAllClicked={onUploadAllClicked}
+            onUploadAllClicked={onSubmit}
             allUploadSucceeded={allUploadSucceeded}
           />
         </div>
@@ -367,7 +367,7 @@ function ExperienceComponent({
           <Entry
             key={entryId}
             entry={entry}
-            dataDefinitions={
+            definitions={
               experience.dataDefinitions as ExperienceFragment_dataDefinitions[]
             }
             entriesLen={unsavedEntries.length}
@@ -594,7 +594,9 @@ function unsavedExperiencesToUploadData(
         entries: unsavedEntries.map(toUploadableEntry),
         title: experience.title,
         clientId: experience.clientId,
-        dataDefinitions: experience.dataDefinitions.map(fieldDefToUnsavedData),
+        dataDefinitions: experience.dataDefinitions.map(
+          definitionToUnsavedData,
+        ),
         insertedAt: experience.insertedAt,
         updatedAt: experience.updatedAt,
         description: experience.description,
