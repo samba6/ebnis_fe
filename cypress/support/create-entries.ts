@@ -1,5 +1,5 @@
 import { mutate, persistCache } from "./mutate";
-import { CreateEntryInput } from "../../src/graphql/apollo-types/globalTypes";
+import { CreateEntriesInput } from "../../src/graphql/apollo-types/globalTypes";
 import {
   CreateEntriesMutation,
   CreateEntriesMutationVariables,
@@ -14,12 +14,12 @@ import {
 
 export function createExperienceEntries(
   experienceId: string,
-  createEntries: CreateEntryInput[],
+  input: CreateEntriesInput[],
 ) {
   return mutate<CreateEntriesMutation, CreateEntriesMutationVariables>({
     mutation: CREATE_ENTRIES_MUTATION,
     variables: {
-      createEntries,
+      input,
     },
   }).then(result => {
     const data = result && result.data && result.data.createEntries;

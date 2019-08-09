@@ -18,13 +18,11 @@ import {
   ExperienceFragment_entries,
   ExperienceFragment_entries_edges,
   ExperienceFragment_entries_edges_node,
-  ExperienceFragment_fieldDefs,
+  ExperienceFragment_dataDefinitions,
   ExperienceFragment,
 } from "../../graphql/apollo-types/ExperienceFragment";
 import makeClassNames from "classnames";
-import { EditExperience, EditEntry } from "./loadables";
-import { EntryFragment } from "../../graphql/apollo-types/EntryFragment";
-import { UpdateEntryMutationFn } from "../../graphql/update-entry.mutation";
+import { EditExperience } from "./loadables";
 
 export function Experience(props: Props) {
   const {
@@ -37,7 +35,6 @@ export function Experience(props: Props) {
     menuOptions = {} as IMenuOptions,
     children,
     entriesJSX,
-    updateEntry,
     ...otherProps
   } = props;
 
@@ -47,7 +44,7 @@ export function Experience(props: Props) {
     editingState: [EditingState.notEditing],
   });
   const { editingState } = state;
-  const [editingStateTag, payload] = editingState;
+  const [editingStateTag] = editingState;
 
   const entryNodes = useMemo(() => {
     if (entriesJSX) {
@@ -85,11 +82,12 @@ export function Experience(props: Props) {
             <Entry
               key={entryNode.id}
               entry={entryNode}
-              fieldDefs={experience.fieldDefs as ExperienceFragment_fieldDefs[]}
+              dataDefinitions={
+                experience.dataDefinitions as ExperienceFragment_dataDefinitions[]
+              }
               entriesLen={nodesLen}
               index={index}
               {...entryProps}
-              editable={!!updateEntry}
               dispatch={dispatch}
             />
           );
@@ -136,19 +134,6 @@ export function Experience(props: Props) {
           experience={experience}
           onEdit={onEdit}
           dispatch={dispatch}
-        />
-      )}
-
-      {/* istanbul ignore next: tested as part of reducer */}
-      {editingStateTag === EditingState.editingEntry && (
-        <EditEntry
-          entry={payload as EntryFragment}
-          dispatch={dispatch}
-          experienceTitle={title}
-          fieldDefinitions={
-            experience.fieldDefs as ExperienceFragment_fieldDefs[]
-          }
-          onEdit={updateEntry as UpdateEntryMutationFn}
         />
       )}
     </>

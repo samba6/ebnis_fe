@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { Formik, Field, FormikProps, FieldArray, FieldProps } from "formik";
+import { Formik, Field, FormikProps, FieldProps } from "formik";
 import { noop } from "../../constants";
 import {
   EditExperienceActionType,
@@ -14,19 +14,11 @@ import Input from "semantic-ui-react/dist/commonjs/elements/Input";
 import Icon from "semantic-ui-react/dist/commonjs/elements/Icon";
 import Modal from "semantic-ui-react/dist/commonjs/modules/Modal";
 import TextArea from "semantic-ui-react/dist/commonjs/addons/TextArea";
-import {
-  ExperienceFragment,
-  ExperienceFragment_fieldDefs,
-} from "../../graphql/apollo-types/ExperienceFragment";
-import {
-  UpdateExperienceInput,
-  UpdateFieldDefinitionInput,
-} from "../../graphql/apollo-types/globalTypes";
+import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragment";
+import { UpdateExperienceInput } from "../../graphql/apollo-types/globalTypes";
 import immer from "immer";
 import { ApolloError } from "apollo-client";
 import { FormCtrlError } from "../FormCtrlError/component";
-import { UpdateExperienceMutation_updateExperience_fieldDefinitionsErrors } from "../../graphql/apollo-types/UpdateExperienceMutation";
-
 import "./styles.scss";
 
 const unwantedExperienceFields: (keyof ExperienceFragment)[] = [
@@ -35,14 +27,8 @@ const unwantedExperienceFields: (keyof ExperienceFragment)[] = [
   "insertedAt",
   "updatedAt",
   "clientId",
-  "fieldDefs",
+  "dataDefinitions",
   "hasUnsaved",
-];
-
-const unwantedFieldDefinitionFields: (keyof ExperienceFragment_fieldDefs)[] = [
-  "__typename",
-  "clientId",
-  "type",
 ];
 
 export function EditExperience(props: Props) {
@@ -59,23 +45,9 @@ export function EditExperience(props: Props) {
       proxy.description = proxy.description || "";
       // proxy.id = "1";
 
-      const fieldDefinitions = proxy.fieldDefs.map(v => {
-        const val = v as ExperienceFragment_fieldDefs;
-
-        unwantedFieldDefinitionFields.forEach(f => {
-          delete val[f];
-        });
-
-        return val;
-      });
-
       unwantedExperienceFields.forEach(f => {
         delete proxy[f];
       });
-
-      const formValuesProxy = proxy as UpdateExperienceInput;
-
-      formValuesProxy.fieldDefinitions = fieldDefinitions;
     });
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -86,6 +58,8 @@ export function EditExperience(props: Props) {
       setState([EditExperienceActionType.submitting]);
 
       const { values } = formikProps;
+
+
 
       try {
         const result = await onEdit({
@@ -105,18 +79,18 @@ export function EditExperience(props: Props) {
           return;
         }
 
-        const {
-          experience,
-          experienceError,
-          fieldDefinitionsErrors,
-        } = updatedData;
+        const { experience, errors } = updatedData;
 
         if (experience) {
           dispatch([EditExperienceActionType.completed]);
-        } else {
+
+          return
+        }
+
+        if (errors) {
           setState([
             EditExperienceActionType.experienceError,
-            { experienceError, fieldDefinitionsErrors },
+            { experienceError: errors },
           ]);
         }
       } catch (error) {
@@ -131,9 +105,9 @@ export function EditExperience(props: Props) {
   }
 
   function renderForm(formikProps: FormikProps<UpdateExperienceInput>) {
-    const { values, dirty } = formikProps;
+    const { dirty } = formikProps;
 
-    const { titleError, fieldDefinitionsErrors } = parseErrors(editingState);
+    const { titleError } = parseErrors(editingState);
 
     return (
       <Form onSubmit={onSubmit(formikProps)}>
@@ -173,42 +147,6 @@ export function EditExperience(props: Props) {
             }}
           />
         </Form.Field>
-
-        <fieldset className="edit-experience-fields-container">
-          <div className="edit-experience-caption">Fields</div>
-
-          <FieldArray
-            name="fieldDefs"
-            render={() => {
-              return (values.fieldDefinitions as UpdateFieldDefinitionInput[]).map(
-                (val, index) => {
-                  const { id } = val;
-                  const error = fieldDefinitionsErrors[id];
-
-                  return (
-                    <Form.Field key={id} error={!!error}>
-                      <Field
-                        name={`fieldDefinitions[${index}].name`}
-                        render={({
-                          field,
-                        }: FieldProps<UpdateExperienceInput>) => {
-                          return <Input error={!!error} id={id} {...field} />;
-                        }}
-                      />
-
-                      {error && (
-                        <FormCtrlError
-                          id={`edit-experience-ctrl-error-${id}`}
-                          error={error}
-                        />
-                      )}
-                    </Form.Field>
-                  );
-                },
-              );
-            }}
-          />
-        </fieldset>
 
         <Button
           className="edit-experience-submit"
@@ -269,29 +207,21 @@ export function EditExperience(props: Props) {
 function parseErrors([stateTag, stateData]: EditingState) {
   const errorObject: {
     titleError?: string | null;
-    fieldDefinitionsErrors: { [k: string]: string };
+    dataDefinitionsErrors: { [k: string]: string };
   } = {
-    fieldDefinitionsErrors: {},
+    dataDefinitionsErrors: {},
   };
 
   if (stateTag !== EditExperienceActionType.experienceError) {
     return errorObject;
   }
 
-  const { experienceError, fieldDefinitionsErrors } = stateData as UpdateErrors;
+  const { experienceError } = stateData as UpdateErrors;
 
   if (experienceError) {
     const { title } = experienceError;
 
     errorObject.titleError = title;
-  }
-
-  if (fieldDefinitionsErrors) {
-    (fieldDefinitionsErrors as UpdateExperienceMutation_updateExperience_fieldDefinitionsErrors[]).forEach(
-      err => {
-        errorObject.fieldDefinitionsErrors[err.id] = err.name as string;
-      },
-    );
   }
 
   return errorObject;

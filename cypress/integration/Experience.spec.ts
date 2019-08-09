@@ -19,7 +19,7 @@ context("experience page", () => {
      */
     let p = createSavedExperience({
       title,
-      fieldDefs: [
+      dataDefinitions: [
         {
           name: "Field integer",
           type: FieldType.INTEGER,
@@ -53,7 +53,7 @@ context("experience page", () => {
      */
     let p = createSavedExperience({
       title,
-      fieldDefs: [
+      dataDefinitions: [
         {
           name: "Field integer",
           type: FieldType.INTEGER,
@@ -61,16 +61,16 @@ context("experience page", () => {
       ],
     }).then(experience => {
       const id = experience.id;
-      const [fieldDefinition] = experience.fieldDefs;
-      const { id: defId } = fieldDefinition;
+      const [fieldDefinition] = experience.dataDefinitions;
+      const { id: definitionId } = fieldDefinition;
 
       return createExperienceEntries(id, [
         {
-          expId: id,
+          experienceId: id,
           clientId: "1",
-          fields: [
+          dataObjects: [
             {
-              defId,
+              definitionId,
               data: `{"integer":1}`,
             },
           ],

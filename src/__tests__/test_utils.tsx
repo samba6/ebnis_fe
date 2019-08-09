@@ -63,16 +63,16 @@ export function makeEntryNode(id: string = "1") {
   return {
     id,
 
-    fields: [
+    dataObjects: [
       {
-        defId: "f1",
+        definitionId: "f1",
         data: `{"decimal":1}`,
       },
     ],
   };
 }
 
-export function makeFieldDefs() {
+export function makeDataDefinitions() {
   return [{ id: "f1", type: "DECIMAL" as any, name: "f1" }];
 }
 
@@ -85,4 +85,12 @@ export function closeMessage($element: any) {
   }
 
   $icon.click();
+}
+
+export interface ToVariables<T> {
+  variables: T;
+}
+
+export interface ToData<T> {
+  data: T;
 }

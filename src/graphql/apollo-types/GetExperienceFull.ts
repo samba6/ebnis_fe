@@ -8,8 +8,8 @@ import { PaginationInput, FieldType } from "./globalTypes";
 // GraphQL query operation: GetExperienceFull
 // ====================================================
 
-export interface GetExperienceFull_getExperience_fieldDefs {
-  __typename: "FieldDef";
+export interface GetExperienceFull_getExperience_dataDefinitions {
+  __typename: "DataDefinition";
   id: string;
   /**
    * Name of field e.g start, end, meal
@@ -20,9 +20,9 @@ export interface GetExperienceFull_getExperience_fieldDefs {
    */
   type: FieldType;
   /**
-   * String that uniquely identifies this field definition has been
+   * String that uniquely identifies this data definition has been
    *   created offline. If an associated entry is also created
-   *   offline, then `createField.defId` **MUST BE** the same as this
+   *   offline, then `createField.definitionId` **MUST BE** the same as this
    *   field and will be validated as such.
    */
   clientId: string | null;
@@ -40,10 +40,11 @@ export interface GetExperienceFull_getExperience_entries_pageInfo {
   hasPreviousPage: boolean;
 }
 
-export interface GetExperienceFull_getExperience_entries_edges_node_fields {
-  __typename: "Field";
-  defId: string;
+export interface GetExperienceFull_getExperience_entries_edges_node_dataObjects {
+  __typename: "DataObject";
+  id: string;
   data: any;
+  definitionId: string;
 }
 
 export interface GetExperienceFull_getExperience_entries_edges_node {
@@ -55,20 +56,20 @@ export interface GetExperienceFull_getExperience_entries_edges_node {
   /**
    * The ID of experience to which this entry belongs.
    */
-  expId: string;
+  experienceId: string;
   /**
    * The client ID which indicates that an entry has been created while server
-   *   is offline and is to be saved with the server, the client ID uniquely
+   *   is offline and is to be saved. The client ID uniquely
    *   identifies this entry and will be used prevent conflict while saving entry
-   *   created while server offline.
+   *   created offline and must thus be non null in this situation.
    */
   clientId: string | null;
   insertedAt: any;
   updatedAt: any;
   /**
-   * The data fields belonging to this entry
+   * The list of data belonging to this entry
    */
-  fields: (GetExperienceFull_getExperience_entries_edges_node_fields | null)[];
+  dataObjects: (GetExperienceFull_getExperience_entries_edges_node_dataObjects | null)[];
 }
 
 export interface GetExperienceFull_getExperience_entries_edges {
@@ -116,7 +117,7 @@ export interface GetExperienceFull_getExperience {
   /**
    * The field definitions used for the experience entries
    */
-  fieldDefs: (GetExperienceFull_getExperience_fieldDefs | null)[];
+  dataDefinitions: (GetExperienceFull_getExperience_dataDefinitions | null)[];
   /**
    * The entries of the experience - can be paginated
    */
@@ -125,12 +126,12 @@ export interface GetExperienceFull_getExperience {
 
 export interface GetExperienceFull {
   /**
-   * get an experience
+   * Get an experience
    */
   getExperience: GetExperienceFull_getExperience | null;
 }
 
 export interface GetExperienceFullVariables {
   id: string;
-  entriesPagination?: PaginationInput | null;
+  entriesPagination: PaginationInput;
 }

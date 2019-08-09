@@ -16,9 +16,7 @@ import {
   EntryAction,
   EntryActionTypes,
 } from "../Entry/utils";
-import { UpdateEntryMutationFn } from "../../graphql/update-entry.mutation";
 import { EntryFragment } from "../../graphql/apollo-types/EntryFragment";
-import { EditEntryAction, EditEntryStateTag } from "../EditEntry/utils";
 
 export interface IMenuOptions {
   newEntry?: boolean;
@@ -35,7 +33,6 @@ export interface Props
   headerProps?: EbnisComponentProps;
   menuOptions: IMenuOptions;
   entriesJSX?: JSX.Element | JSX.Element[];
-  updateEntry?: UpdateEntryMutationFn;
 }
 
 export type FormObjVal = Date | string;
@@ -91,9 +88,7 @@ export enum EditingState {
 export const reducer: Reducer<State, Action> = (prevState, [type, payload]) => {
   switch (type) {
     case EditExperienceActionType.completed:
-    case EditExperienceActionType.aborted:
-    case EditEntryStateTag.aborted:
-    case EditEntryStateTag.completed: {
+    case EditExperienceActionType.aborted: {
       return {
         ...prevState,
         editingState: [EditingState.notEditing],
@@ -126,10 +121,6 @@ export interface State {
     | [EditingState.editingEntry, EntryFragment];
 }
 
-type Action =
-  | EditExperienceAction
-  | ["show-editor"]
-  | EntryAction
-  | EditEntryAction;
+type Action = EditExperienceAction | ["show-editor"] | EntryAction;
 
 export type DispatchType = Dispatch<Action>;

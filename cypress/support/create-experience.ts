@@ -19,12 +19,13 @@ export function createSavedExperience(
     mutation: CREATE_EXPERIENCE_MUTATION,
     variables: {
       createExperienceInput: experienceDefinitionArgs,
+      entriesPagination: { first: 1000 },
     },
   }).then(result => {
-    const experience =
-      result &&
+    const experience = (result &&
       result.data &&
-      (result.data.createExperience as ExperienceFragment);
+      result.data.createExperience &&
+      result.data.createExperience.experience) as ExperienceFragment;
 
     if (persist) {
       return persistCache().then(() => {
@@ -47,6 +48,7 @@ export function createUnsavedExperience(
     mutation: CREATE_UNSAVED_EXPERIENCE_MUTATION,
     variables: {
       createExperienceInput: experienceDefinitionArgs,
+      entriesPagination: { first: 1000 },
     },
   }).then(result => {
     const experience =

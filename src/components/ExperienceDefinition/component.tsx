@@ -1,4 +1,4 @@
-import React, { useEffect, Dispatch, useRef, useReducer } from "react";
+import React, { useEffect, Dispatch, useReducer } from "react";
 import {
   Formik,
   FastField,
@@ -16,7 +16,6 @@ import Icon from "semantic-ui-react/dist/commonjs/elements/Icon";
 import Input from "semantic-ui-react/dist/commonjs/elements/Input";
 import Message from "semantic-ui-react/dist/commonjs/collections/Message";
 import TextArea from "semantic-ui-react/dist/commonjs/addons/TextArea";
-import { ApolloError } from "apollo-client";
 import { NavigateFn } from "@reach/router";
 import "./styles.scss";
 import {
@@ -27,25 +26,34 @@ import {
   State,
   ActionType,
   Action,
-  GraphQlErrorState,
-  GraphQlError,
   fieldTypeKeys,
+  DispatchType,
+  ServerDataDefinitionsErrorsMap,
 } from "./utils";
 import {
   CreateExperienceInput as FormValues,
-  CreateFieldDef,
+  CreateDataDefinition,
 } from "../../graphql/apollo-types/globalTypes";
 import { makeExperienceRoute } from "../../constants/experience-route";
 import { noop, setDocumentTitle, makeSiteTitle } from "../../constants";
 import { EXPERIENCE_DEFINITION_TITLE } from "../../constants/experience-definition-title";
 import { ExperienceDefinitionUpdate } from "./update";
 import { CreateExperienceMutationFn } from "../../graphql/create-experience.mutation";
-import { scrollTop } from "./scrollTop";
 import { SidebarHeader } from "../SidebarHeader";
 import { FormCtrlError } from "../FormCtrlError/component";
 import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragment";
 import { isConnected } from "../../state/connections";
 import { DropdownItemProps } from "semantic-ui-react";
+import {
+  CreateExperienceMutation_createExperience,
+  CreateExperienceMutation_createExperience_errors,
+  CreateExperienceMutation_createExperience_errors_dataDefinitionsErrors_errors,
+} from "../../graphql/apollo-types/CreateExperienceMutation";
+import makeClassNames from "classnames";
+import { scrollIntoView } from "../scroll-into-view";
+import { ApolloError } from "apollo-client";
+
+const mainComponentId = "components-experience-definition";
 
 export function ExperienceDefinition(props: Props) {
   const { createExperience, navigate, createUnsavedExperience } = props;
@@ -53,75 +61,31 @@ export function ExperienceDefinition(props: Props) {
     showDescriptionInput: true,
   } as State);
 
-  const routeRef = useRef<HTMLDivElement | null>(null);
-
   useEffect(function setCompTitle() {
     setDocumentTitle(makeSiteTitle(EXPERIENCE_DEFINITION_TITLE));
 
     return setDocumentTitle;
   }, []);
 
-  function FieldDefinitionComponent(
-    values: FormValues,
-    arrayHelpers: ArrayHelpers,
-    field: CreateFieldDef,
-    index: number,
-  ) {
-    const { submittedFormErrors, graphQlError } = state;
-
-    const errorClass =
-      getFieldContainerErrorClassFromForm(index, submittedFormErrors) ||
-      (graphQlError &&
-        graphQlError.fieldDefs &&
-        graphQlError.fieldDefs[index] &&
-        "errors") ||
-      "";
-
-    return (
-      <div
-        id={`experience-field-definition-container-${index}`}
-        key={index}
-        className={`${errorClass} field-def-container`}
-      >
-        <FastField
-          name={makeFieldName(index, "name")}
-          index={index}
-          component={FieldNameComponent}
-          dispatch={dispatch}
-          submittedFormErrors={submittedFormErrors}
-          graphQlError={graphQlError}
-        />
-
-        <FastField
-          index={index}
-          name={makeFieldName(index, "type")}
-          submittedFormErrors={submittedFormErrors}
-          component={FieldDataTypeComponent}
-        />
-
-        <FieldBtnCtrlsComponent
-          index={index}
-          values={values}
-          arrayHelpers={arrayHelpers}
-          dispatch={dispatch}
-        />
-      </div>
-    );
-  }
-
-  const FieldDefinitionsComponent = (values: FormValues) => (
+  const DataDefinitionsComponent = (values: FormValues) => (
     arrayHelpers: ArrayHelpers,
   ) => {
     return (
       <>
-        {values.fieldDefs.map((field, index) =>
-          FieldDefinitionComponent(
-            values,
-            arrayHelpers,
-            field as CreateFieldDef,
-            index,
-          ),
-        )}
+        {values.dataDefinitions.map((definition, index) => {
+          return (
+            <DataDefinitionComponent
+              key={index}
+              arrayHelpers={arrayHelpers}
+              index={index}
+              definitionsErrorsMap={state.serverDataDefinitionsErrorsMap}
+              formErrors={state.submittedFormErrors}
+              values={values}
+              dispatch={dispatch}
+              field={definition as CreateDataDefinition}
+            />
+          );
+        })}
       </>
     );
   };
@@ -135,49 +99,83 @@ export function ExperienceDefinition(props: Props) {
 
       const errors = await validateForm(values);
 
-      if (errors.title || errors.fieldDefs) {
+      if (errors.title || errors.dataDefinitions) {
         dispatch([ActionType.setFormError, errors]);
 
         setSubmitting(false);
         return;
       }
 
+      const entriesPagination = {
+        first: 20000,
+      };
+
       try {
         let result;
-        let expId;
+        let experienceId;
+        let fieldErrors: CreateExperienceMutation_createExperience_errors | null = null;
 
         if (isConnected()) {
           result = await (createExperience as CreateExperienceMutationFn)({
             variables: {
               createExperienceInput: values,
-              entriesPagination: {
-                first: 20000,
-              },
+              entriesPagination,
             },
 
             update: ExperienceDefinitionUpdate,
           });
 
-          expId = ((result &&
+          const { experience, errors } = ((result &&
             result.data &&
-            result.data.createExperience) as ExperienceFragment).id;
+            result.data.createExperience) ||
+            {}) as CreateExperienceMutation_createExperience;
+
+          fieldErrors = errors;
+
+          if (experience) {
+            experienceId = experience.id;
+          }
         } else {
           result = await createUnsavedExperience({
             variables: {
               createExperienceInput: values,
+              entriesPagination,
             },
           });
 
-          expId = ((result &&
+          experienceId = ((result &&
             result.data &&
             result.data.createUnsavedExperience) as ExperienceFragment).id;
         }
 
-        (navigate as NavigateFn)(makeExperienceRoute(expId));
-      } catch (error) {
-        dispatch([ActionType.setGraphqlError, parseGraphQlError(error)]);
+        if (experienceId) {
+          (navigate as NavigateFn)(makeExperienceRoute(experienceId));
 
-        scrollTop(routeRef);
+          return;
+        }
+
+        scrollIntoView(mainComponentId);
+
+        if (fieldErrors) {
+          dispatch([ActionType.setFieldErrors, fieldErrors]);
+          return;
+        }
+
+        dispatch([
+          ActionType.setApolloError,
+          {
+            networkError: { message: "Unknown error occurred" },
+          } as ApolloError,
+        ]);
+      } catch (error) {
+        scrollIntoView(mainComponentId);
+
+        dispatch([
+          ActionType.setApolloError,
+          error instanceof ApolloError
+            ? error
+            : ({ networkError: error } as ApolloError),
+        ]);
       }
 
       setSubmitting(false);
@@ -186,22 +184,31 @@ export function ExperienceDefinition(props: Props) {
 
   function renderForm(formikProps: FormikProps<FormValues>) {
     const { dirty, isSubmitting, values } = formikProps;
-    const { title, fieldDefs } = values;
-    const formInvalid = !(!!title && !!fieldDefs.length);
-    const { graphQlError } = state;
+    const { title, dataDefinitions } = values;
+    const formInvalid = dataDefinitions.length === 0 && !title;
     const submittedFormErrors = state.submittedFormErrors || {};
+
+    const {
+      graphQlError,
+      serverDataDefinitionsErrorsMap,
+      serverOtherErrorsMap,
+    } = state;
 
     return (
       <Form onSubmit={onSubmit(formikProps)}>
-        <GraphQlErrorsSummaryComponent
+        <AllErrorsSummaryComponent
+          serverDataDefinitionsErrorsMap={serverDataDefinitionsErrorsMap}
+          serverOtherErrorsMap={serverOtherErrorsMap}
           graphQlError={graphQlError}
           dispatch={dispatch}
         />
 
         <Field
           name="title"
-          graphQlError={graphQlError}
-          formError={submittedFormErrors.title}
+          error={
+            (serverOtherErrorsMap && serverOtherErrorsMap.title) ||
+            submittedFormErrors.title
+          }
           component={TitleInputComponent}
         />
 
@@ -213,14 +220,13 @@ export function ExperienceDefinition(props: Props) {
         />
 
         <FieldArray
-          name="fieldDefs"
-          render={FieldDefinitionsComponent(values)}
+          name="dataDefinitions"
+          render={DataDefinitionsComponent(values)}
         />
 
         <Button
           className="submit-btn"
           id="experience-definition-submit-btn"
-          name="experience-definition-submit-btn"
           color="green"
           inverted={true}
           disabled={!dirty || formInvalid || isSubmitting}
@@ -234,16 +240,16 @@ export function ExperienceDefinition(props: Props) {
     );
   }
 
-  const render = (
+  return (
     <div className="components-experience-definition">
       <SidebarHeader title="[New] Experience Definition" sidebar={true} />
 
-      <div className="main" ref={routeRef}>
+      <div className="main" id={mainComponentId}>
         <Formik<FormValues>
           initialValues={{
             title: "",
             description: "",
-            fieldDefs: [{ ...EMPTY_FIELD }],
+            dataDefinitions: [{ ...EMPTY_FIELD }],
           }}
           onSubmit={noop}
           render={renderForm}
@@ -253,27 +259,82 @@ export function ExperienceDefinition(props: Props) {
       </div>
     </div>
   );
+}
 
-  return render;
+interface DataDefinitionComponentProps {
+  values: FormValues;
+  arrayHelpers: ArrayHelpers;
+  field: CreateDataDefinition;
+  index: number;
+  dispatch: DispatchType;
+  definitionsErrorsMap: State["serverDataDefinitionsErrorsMap"];
+  formErrors: State["submittedFormErrors"];
+}
+
+function DataDefinitionComponent({
+  values,
+  arrayHelpers,
+  index,
+  definitionsErrorsMap,
+  formErrors,
+  dispatch,
+}: DataDefinitionComponentProps) {
+  const formError = getDefinitionErrorFromForm(index, formErrors);
+
+  const serverErrors = definitionsErrorsMap && definitionsErrorsMap[index];
+
+  const formErrorsMap = formError
+    ? formError
+    : ({} as FormikErrors<CreateDataDefinition>);
+
+  const serverErrorsMap = serverErrors
+    ? serverErrors
+    : ({} as CreateExperienceMutation_createExperience_errors_dataDefinitionsErrors_errors);
+
+  return (
+    <div
+      id={`experience-definition-container-${index}`}
+      key={index}
+      className={makeClassNames({
+        "definition-container": true,
+        errors: !!(formError || serverErrors),
+      })}
+    >
+      <Field
+        name={makeFieldName(index, "name")}
+        index={index}
+        component={FieldNameComponent}
+        dispatch={dispatch}
+        error={formErrorsMap.name || serverErrorsMap.name}
+      />
+
+      <FastField
+        index={index}
+        name={makeFieldName(index, "type")}
+        // error={formErrorsMap.type}
+        component={FieldDataTypeComponent}
+      />
+
+      <DefinitionBtnCtrlsComponent
+        index={index}
+        values={values}
+        arrayHelpers={arrayHelpers}
+        dispatch={dispatch}
+      />
+    </div>
+  );
 }
 
 function FieldNameComponent({
   field,
   index,
-  submittedFormErrors,
-  graphQlError,
+  error,
 }: FieldProps<FormValues> & {
   index: number;
   dispatch: Dispatch<Action>;
-  submittedFormErrors: FormikErrors<FormValues>;
-  graphQlError: GraphQlErrorState;
+  error?: string;
 }) {
   const { name, value, ...rest } = field;
-
-  const error =
-    getFieldError(name, "name", submittedFormErrors) ||
-    (graphQlError && graphQlError[name]) ||
-    "";
 
   const idPrefix = `field-name-${index}`;
 
@@ -289,7 +350,7 @@ function FieldNameComponent({
         id={idPrefix}
       />
 
-      <FormCtrlError error={error} id={`${idPrefix}-error`} />
+      {error && <FormCtrlError error={error} id={`${idPrefix}-error`} />}
     </Form.Field>
   );
 }
@@ -304,18 +365,15 @@ const FIELD_TYPES: DropdownItemProps[] = fieldTypeKeys.map(k => ({
 function FieldDataTypeComponent({
   field: { name, value },
   form: { setFieldValue },
-  submittedFormErrors,
   index,
 }: FieldProps<FormValues> & {
-  submittedFormErrors: FormikErrors<FormValues>;
+  error?: string;
   index: number;
 }) {
-  const error = getFieldError(name, "type", submittedFormErrors);
-
-  const idPrefix = `experience-definition-field-type-${index}`;
+  const idPrefix = `experience-data-type-${index}`;
 
   return (
-    <Form.Field error={!!error}>
+    <Form.Field>
       <label htmlFor={name}>{`Field ${index + 1} Data Type`}</label>
 
       <Dropdown
@@ -331,8 +389,6 @@ function FieldDataTypeComponent({
           setFieldValue(name, val);
         }}
       />
-
-      <FormCtrlError error={error} id={"" + (index + 1)} />
     </Form.Field>
   );
 }
@@ -346,7 +402,7 @@ function FieldDataTypeComponent({
  * 4. The first field never gets an up button
  * 5. The last field never gets a down button
  */
-function FieldBtnCtrlsComponent({
+function DefinitionBtnCtrlsComponent({
   index,
   values,
   arrayHelpers,
@@ -357,17 +413,17 @@ function FieldBtnCtrlsComponent({
   arrayHelpers: ArrayHelpers;
   dispatch: Dispatch<Action>;
 }) {
-  const fieldDefs = values.fieldDefs as CreateFieldDef[];
-  const field = fieldDefs[index];
-  const len = fieldDefs.length;
-  const isCompletelyFilled = field.name && field.type;
+  const dataDefinitions = values.dataDefinitions as CreateDataDefinition[];
+  const definition = dataDefinitions[index];
+  const len = dataDefinitions.length;
+  const isCompletelyFilled = definition.name && definition.type;
 
   if (len === 1 && !isCompletelyFilled) {
     return null;
   }
 
-  const showUp = index > 0;
-  const showDown = len - index !== 1;
+  const showUpBtn = index > 0;
+  const showDownBtn = len - index !== 1;
   const index1 = index + 1;
 
   return (
@@ -375,9 +431,9 @@ function FieldBtnCtrlsComponent({
       <Button.Group className="control-buttons" basic={true} compact={true}>
         {isCompletelyFilled && (
           <Button
-            id={`add-field-btn-${index}`}
+            id={`add-definition-btn-${index}`}
             type="button"
-            onClick={function onFieldAddClicked() {
+            onClick={function onAddDefinitionClicked() {
               arrayHelpers.insert(index1, { ...EMPTY_FIELD });
 
               dispatch([ActionType.clearAllErrors]);
@@ -389,9 +445,9 @@ function FieldBtnCtrlsComponent({
 
         {len > 1 && (
           <Button
-            id={`remove-field-btn-${index}`}
+            id={`remove-definition-btn---${index}`}
             type="button"
-            onClick={function onFieldDeleteClicked() {
+            onClick={function onDeleteDefinitionClicked() {
               arrayHelpers.remove(index);
 
               dispatch([ActionType.clearAllErrors]);
@@ -401,11 +457,11 @@ function FieldBtnCtrlsComponent({
           </Button>
         )}
 
-        {showUp && (
+        {showUpBtn && (
           <Button
-            id={`go-up-field-btn-${index}`}
+            id={`definition-go-up-btn-${index}`}
             type="button"
-            onClick={function onFieldUpClicked() {
+            onClick={function onDefinitionGoUpClicked() {
               const indexUp = index;
               const indexDown = index - 1;
               arrayHelpers.swap(indexUp, indexDown);
@@ -415,11 +471,11 @@ function FieldBtnCtrlsComponent({
           </Button>
         )}
 
-        {showDown && (
+        {showDownBtn && (
           <Button
-            id={`go-down-field-btn-${index}`}
+            id={`definition-go-down-btn-${index}`}
             type="button"
-            onClick={function onFieldDownClicked() {
+            onClick={function onDefinitionDownClicked() {
               arrayHelpers.swap(index, index1);
             }}
           >
@@ -472,13 +528,10 @@ function DescriptionInputComponent({
 
 function TitleInputComponent({
   field,
-  graphQlError,
-  formError,
+  error,
 }: FieldProps<FormValues> & {
-  graphQlError: GraphQlErrorState | undefined;
-  formError?: string;
+  error?: string;
 }) {
-  const error = formError || (graphQlError && graphQlError.title) || "";
   const id = "experience-definition-title-input";
 
   return (
@@ -492,201 +545,107 @@ function TitleInputComponent({
   );
 }
 
-function parseGraphQlError({ graphQLErrors }: ApolloError) {
-  const transformedError = {} as GraphQlErrorState;
-
-  for (const err of graphQLErrors) {
-    /**
-     * example of err.message JSON string:
-     * {
-     *  "field_defs":[
-     *    {"name":"aaaaaaaaaaaa---1 has already been taken"},
-     *    {"name":"aaaaaaaaaaaa---2 has already been taken"}
-     *  ],
-     *  "title": "too short"
-     * }
-     */
-    const { field_defs, title } = JSON.parse(err.message) as GraphQlError;
-
-    // istanbul ignore next: this is trivial. The complexity is with field_defs
-    if (title) {
-      transformedError.title = title;
-    }
-
-    // istanbul ignore next: this is trivial also - no need to set up test
-    if (!field_defs) {
-      continue;
-    }
-
-    for (const { name } of field_defs) {
-      const fieldNameError = parseGraphQlErrorFieldName(name);
-
-      // istanbul ignore next: we trust server to give us expected JSON string
-      if (!fieldNameError) {
-        continue;
-      }
-
-      const [index, nameError] = fieldNameError;
-      // we store the errors as formik field name so we can trivially access
-      // the errors at places where we have formik field name
-      transformedError[makeFieldName(index, "name")] = nameError;
-
-      // we also store the field index and corresponding error so we can easily
-      // access error with field index (no transformation required)
-      const fieldDefs = transformedError.fieldDefs || {};
-      fieldDefs[index] = `name ${nameError}`;
-      transformedError.fieldDefs = fieldDefs;
-    }
-  }
-
-  /**
-   * At the end of the day, transformedError looks like this:
-   * {
-   *    title: "title related error",
-   *    "fieldDefs[0].name": "field definition 0 name error",
-   *    "fieldDefs[1].name": "field definition 1 name error",
-   *    fieldDefs: {
-   *      "1": "field definition 0 name error",
-   *      "2": "field definition 1 name error",
-   *    }
-   * }
-   *
-   * we store the formik path names
-   * (fieldDefs[0].name, fieldDefs[1].name, fieldDefs[index].name)
-   * on the upper level so we can easily access
-   * them from render without transforming the error.
-   * An earlier attempt
-   * required calling functions to transform the data into forms that can
-   * be used - this is no longer required because all shapes in which the
-   * data can be consumed (formik field names and indices)
-   * are now stored on this object. This potentially
-   * makes this object large and convenient but I'm not sure if it is better
-   * than the previous approach of calling functions to tranform errors
-   */
-
-  return transformedError;
-}
-
-/**
- * The server will return field definition errors in the form
- * {\"name\":\"aaaaaaaaaaaa---2 has already been taken\"}
- * we are interested in the number following --- (2 in this case) which
- * represents the 1-based index of the field and the texts following the
- * number which represent the error associated with that field
- */
-const graphQLErrorsRegExp = /---(\d+)\s*(.+)/;
-
-function parseGraphQlErrorFieldName(val?: string): [number, string] | null {
-  // istanbul ignore next: trivial
-  if (!val) {
-    return null;
-  }
-
-  const exec = graphQLErrorsRegExp.exec(val);
-
-  // istanbul ignore next: trust the server to return the correct string
-  if (!exec) {
-    return null;
-  }
-
-  return [Number(exec[1]), exec[2]];
-}
-
-function GraphQlErrorsSummaryComponent({
+function AllErrorsSummaryComponent({
+  serverDataDefinitionsErrorsMap,
+  serverOtherErrorsMap,
   graphQlError,
   dispatch,
-}: {
-  graphQlError?: GraphQlErrorState | null;
-  dispatch: Dispatch<Action>;
+}: Pick<
+  State,
+  "serverDataDefinitionsErrorsMap" | "serverOtherErrorsMap" | "graphQlError"
+> & {
+  dispatch: DispatchType;
 }) {
-  if (!graphQlError) {
+  if (
+    !(serverDataDefinitionsErrorsMap || serverOtherErrorsMap || graphQlError)
+  ) {
     return null;
   }
 
-  const { fieldDefs, title } = graphQlError;
+  const otherErrors = serverOtherErrorsMap
+    ? Object.entries(serverOtherErrorsMap).reduce(
+        (acc, [k, v]) => {
+          if (v) {
+            acc.push(
+              <div key={k}>
+                {k} : {v}
+              </div>,
+            );
+          }
+
+          return acc;
+        },
+        [] as JSX.Element[],
+      )
+    : null;
 
   return (
     <Message
-      id="experience-definition-graphql-errors-summary"
+      id="experience-definition-errors-summary"
       style={{ display: "block" }}
       error={true}
-      onDismiss={() => dispatch([ActionType.setGraphqlError, null])}
+      onDismiss={() => dispatch([ActionType.clearAllErrors])}
     >
       <Message.Header className="graphql-errors-header">
         Error in submitted form!
       </Message.Header>
 
       <Message.Content>
-        {title && <div>Title {title}</div>}
+        {graphQlError && <span>{graphQlError}</span>}
 
-        <GraphQlErrorFieldDefsComponent fieldDefs={fieldDefs} />
+        {otherErrors}
+
+        {serverDataDefinitionsErrorsMap && (
+          <DefinitionsErrorsComponent
+            definitionsErrors={serverDataDefinitionsErrorsMap}
+          />
+        )}
       </Message.Content>
     </Message>
   );
 }
 
-function GraphQlErrorFieldDefsComponent({
-  fieldDefs,
+function DefinitionsErrorsComponent({
+  definitionsErrors,
 }: {
-  fieldDefs?: { [k: string]: string };
+  definitionsErrors: ServerDataDefinitionsErrorsMap;
 }) {
-  // istanbul ignore next: trivial
-  if (!fieldDefs) {
-    return null;
-  }
-
   return (
     <>
-      {Object.entries(fieldDefs).map(([index, error]) => (
-        <div key={index} className="graphql-field-defs-error-inner">
-          <span>Field {Number(index) + 1}</span>
-          <span>{error}</span>
-        </div>
-      ))}
+      {Object.entries(definitionsErrors).map(([index, errors]) => {
+        return (
+          <div key={index} className="graphql-field-defs-error-inner">
+            <span>Field {Number(index) + 1}</span>
+            {Object.entries(errors).reduce(
+              (acc, [k, v]) => {
+                if (v) {
+                  acc.push(<span key={k}>{v}</span>);
+                }
+
+                return acc;
+              },
+              [] as JSX.Element[],
+            )}
+          </div>
+        );
+      })}
     </>
   );
 }
 
-function makeFieldName(index: number, key: keyof CreateFieldDef) {
-  return `fieldDefs[${index}].${key}`;
+function makeFieldName(index: number, key: keyof CreateDataDefinition) {
+  return `dataDefinitions[${index}].${key}`;
 }
 
-function getFieldContainerErrorClassFromForm(
+function getDefinitionErrorFromForm(
   index: number,
-  submittedFormErrors?: FormikErrors<FormValues> | null,
+  formErrors?: FormikErrors<FormValues> | null,
 ) {
-  if (!(submittedFormErrors && submittedFormErrors.fieldDefs)) {
-    return "";
-  }
-
-  const fieldDefs = submittedFormErrors.fieldDefs as string[];
-
-  if (fieldDefs[index]) {
-    return "errors";
-  }
-  return "";
-}
-
-function getFieldError(
-  formikName: string,
-  fieldName: keyof CreateFieldDef,
-  submittedFormErrors: FormikErrors<FormValues> | undefined,
-) {
-  if (!(submittedFormErrors && submittedFormErrors.fieldDefs)) {
+  if (!(formErrors && formErrors.dataDefinitions)) {
     return null;
   }
 
-  const fieldDefs = submittedFormErrors.fieldDefs as string[];
-
-  // tslint:disable-next-line:prefer-for-of
-  for (let i = 0; i < fieldDefs.length; i++) {
-    const field = (fieldDefs[i] || {}) as CreateFieldDef;
-    const val = field[fieldName] || "";
-
-    if (val.startsWith(formikName)) {
-      return val.replace(formikName, "");
-    }
-  }
-
-  return null;
+  return (formErrors.dataDefinitions as FormikErrors<CreateDataDefinition[]>)[
+    index
+  ];
 }

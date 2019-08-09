@@ -6,7 +6,7 @@ import { render } from "react-testing-library";
 import { Entry } from "../components/Entry/component";
 import { Props, EntryActionTypes } from "../components/Entry/utils";
 import { EntryFragment } from "../graphql/apollo-types/EntryFragment";
-import { ExperienceFragment_fieldDefs } from "../graphql/apollo-types/ExperienceFragment";
+import { ExperienceFragment_dataDefinitions } from "../graphql/apollo-types/ExperienceFragment";
 import { FieldType } from "../graphql/apollo-types/globalTypes";
 
 const EntryP = Entry as ComponentType<Partial<Props>>;
@@ -16,9 +16,9 @@ it("renders single line text", () => {
 
   const entry = {
     id: "1",
-    fields: [
+    dataObjects: [
       {
-        defId: "1",
+        definitionId: "1",
         data: `{"SINGLE_LINE_TEXT":"c1"}`,
       },
     ],
@@ -33,13 +33,13 @@ it("renders single line text", () => {
 
       entriesLen: 1,
 
-      fieldDefs: [
+      dataDefinitions: [
         {
           id: "1",
           name: "f1",
           type: FieldType.SINGLE_LINE_TEXT,
         },
-      ] as ExperienceFragment_fieldDefs[],
+      ] as ExperienceFragment_dataDefinitions[],
     },
   });
 
@@ -56,9 +56,9 @@ it("renders single line text", () => {
 it("renders multi line text", () => {
   const entry = {
     id: "2",
-    fields: [
+    dataObjects: [
       {
-        defId: "2",
+        definitionId: "2",
         data: `{"MULTI_LINE_TEXT":"c2"}`,
       },
     ],
@@ -70,13 +70,13 @@ it("renders multi line text", () => {
 
       entry,
 
-      fieldDefs: [
+      dataDefinitions: [
         {
           id: "2",
           name: "f2",
           type: FieldType.MULTI_LINE_TEXT,
         },
-      ] as ExperienceFragment_fieldDefs[],
+      ] as ExperienceFragment_dataDefinitions[],
     },
   });
 
@@ -88,9 +88,9 @@ it("renders multi line text", () => {
 it("renders date field", () => {
   const entry = {
     id: "3",
-    fields: [
+    dataObjects: [
       {
-        defId: "3",
+        definitionId: "3",
         data: `{"DATE":"2019-05-01"}`,
       },
     ],
@@ -102,13 +102,13 @@ it("renders date field", () => {
 
       entry,
 
-      fieldDefs: [
+      dataDefinitions: [
         {
           id: "3",
           name: "f3",
           type: FieldType.DATE,
         },
-      ] as ExperienceFragment_fieldDefs[],
+      ] as ExperienceFragment_dataDefinitions[],
     },
   });
 
@@ -120,9 +120,9 @@ it("renders date field", () => {
 it("renders datetime field", () => {
   const entry = {
     id: "4",
-    fields: [
+    dataObjects: [
       {
-        defId: "4",
+        definitionId: "4",
         data: `{"DATETIME":"2019-05-01"}`,
       },
     ],
@@ -132,13 +132,13 @@ it("renders datetime field", () => {
     props: {
       entry,
 
-      fieldDefs: [
+      dataDefinitions: [
         {
           id: "4",
           name: "f4",
           type: FieldType.DATETIME,
         },
-      ] as ExperienceFragment_fieldDefs[],
+      ] as ExperienceFragment_dataDefinitions[],
     },
   });
 
@@ -148,9 +148,9 @@ it("renders datetime field", () => {
 it("renders decimal field", () => {
   const entry = {
     id: "5",
-    fields: [
+    dataObjects: [
       {
-        defId: "5",
+        definitionId: "5",
         data: `{"DECIMAL":"500.689"}`,
       },
     ],
@@ -160,13 +160,13 @@ it("renders decimal field", () => {
     props: {
       entry,
 
-      fieldDefs: [
+      dataDefinitions: [
         {
           id: "5",
           name: "f5",
           type: FieldType.DECIMAL,
         },
-      ] as ExperienceFragment_fieldDefs[],
+      ] as ExperienceFragment_dataDefinitions[],
     },
   });
 
@@ -178,9 +178,9 @@ it("renders decimal field", () => {
 it("renders integer field and uses custom container id", () => {
   const entry = {
     id: "6",
-    fields: [
+    dataObjects: [
       {
-        defId: "6",
+        definitionId: "6",
         data: `{"INTEGER":"567012"}`,
       },
     ],
@@ -191,13 +191,13 @@ it("renders integer field and uses custom container id", () => {
       id: "custom",
       entry,
 
-      fieldDefs: [
+      dataDefinitions: [
         {
           id: "6",
           name: "f6",
           type: FieldType.INTEGER,
         },
-      ] as ExperienceFragment_fieldDefs[],
+      ] as ExperienceFragment_dataDefinitions[],
     },
   });
 

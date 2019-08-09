@@ -61,7 +61,7 @@ context("my experiences page", () => {
      */
     let p = createSavedExperience({
       title,
-      fieldDefs: [
+      dataDefinitions: [
         {
           name: "Field integer",
           type: FieldType.INTEGER,

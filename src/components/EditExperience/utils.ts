@@ -1,7 +1,7 @@
 import { ExperienceNoEntryFragment } from "../../graphql/apollo-types/ExperienceNoEntryFragment";
 import { UpdateExperienceMutationFn } from "../../graphql/update-experience.mutation";
 import { Dispatch } from "react";
-import { UpdateExperienceMutation_updateExperience } from "../../graphql/apollo-types/UpdateExperienceMutation";
+import { UpdateExperienceMutation_updateExperience_errors } from "../../graphql/apollo-types/UpdateExperienceMutation";
 
 export enum EditExperienceActionType {
   aborted = "@components/edit-experience-modal/edit-cancelled",
@@ -33,6 +33,5 @@ export type EditingState =
   | [EditExperienceActionType.experienceError, UpdateErrors];
 
 export interface UpdateErrors {
-  experienceError: UpdateExperienceMutation_updateExperience["experienceError"];
-  fieldDefinitionsErrors: UpdateExperienceMutation_updateExperience["fieldDefinitionsErrors"];
+  experienceError: UpdateExperienceMutation_updateExperience_errors;
 }

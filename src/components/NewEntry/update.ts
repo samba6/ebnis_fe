@@ -28,8 +28,15 @@ type Fn<T = string | ExperienceFragment> = (
 export const updateExperienceWithNewEntry: Fn = function updateFn(
   experienceOrId,
 ) {
-  return async function updateFnInner(dataProxy, { data: newEntry }) {
-    const entry = newEntry && newEntry.createEntry;
+  return async function updateFnInner(
+    dataProxy,
+    { data: createEntryResponse },
+  ) {
+    const entry =
+      createEntryResponse &&
+      createEntryResponse.createEntry &&
+      createEntryResponse.createEntry.entry;
+
     let experience = experienceOrId as (ExperienceFragment | null);
 
     if (typeof experienceOrId === "string") {

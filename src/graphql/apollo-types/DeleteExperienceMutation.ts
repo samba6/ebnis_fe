@@ -8,8 +8,8 @@ import { FieldType } from "./globalTypes";
 // GraphQL mutation operation: DeleteExperienceMutation
 // ====================================================
 
-export interface DeleteExperienceMutation_deleteExperience_fieldDefs {
-  __typename: "FieldDef";
+export interface DeleteExperienceMutation_deleteExperience_dataDefinitions {
+  __typename: "DataDefinition";
   id: string;
   /**
    * Name of field e.g start, end, meal
@@ -20,9 +20,9 @@ export interface DeleteExperienceMutation_deleteExperience_fieldDefs {
    */
   type: FieldType;
   /**
-   * String that uniquely identifies this field definition has been
+   * String that uniquely identifies this data definition has been
    *   created offline. If an associated entry is also created
-   *   offline, then `createField.defId` **MUST BE** the same as this
+   *   offline, then `createField.definitionId` **MUST BE** the same as this
    *   field and will be validated as such.
    */
   clientId: string | null;
@@ -55,7 +55,7 @@ export interface DeleteExperienceMutation_deleteExperience {
   /**
    * The field definitions used for the experience entries
    */
-  fieldDefs: (DeleteExperienceMutation_deleteExperience_fieldDefs | null)[];
+  dataDefinitions: (DeleteExperienceMutation_deleteExperience_dataDefinitions | null)[];
 }
 
 export interface DeleteExperienceMutation {

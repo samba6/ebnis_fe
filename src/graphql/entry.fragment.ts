@@ -1,16 +1,18 @@
 import gql from "graphql-tag";
+import { DATA_OBJECT_FRAGMENT } from "./data-object-fragment";
 
 export const ENTRY_FRAGMENT = gql`
   fragment EntryFragment on Entry {
     id
-    expId
+    experienceId
     clientId
     insertedAt
     updatedAt
 
-    fields {
-      defId
-      data
+    dataObjects {
+      ...DataObjectFragment
     }
   }
+
+  ${DATA_OBJECT_FRAGMENT}
 `;

@@ -4,7 +4,7 @@ import React, { ComponentType } from "react";
 import "react-testing-library/cleanup-after-each";
 import { render, waitForElement, wait } from "react-testing-library";
 import { Layout, Props } from "../components/Layout/component";
-import { EbnisAppProvider } from "../context";
+import { EbnisAppProvider, EbnisContextProps } from "../context";
 
 jest.mock("../state/unsaved-resolvers");
 jest.mock("../state/connections");
@@ -218,7 +218,7 @@ function makeComp({
 
   return {
     ui: (
-      <EbnisAppProvider value={context}>
+      <EbnisAppProvider value={context as EbnisContextProps}>
         <LayoutP location={{} as any}>
           <div id={testId} />
         </LayoutP>

@@ -8,8 +8,8 @@ import { FieldType } from "./globalTypes";
 // GraphQL fragment: ExperienceNoEntryFragment
 // ====================================================
 
-export interface ExperienceNoEntryFragment_fieldDefs {
-  __typename: "FieldDef";
+export interface ExperienceNoEntryFragment_dataDefinitions {
+  __typename: "DataDefinition";
   id: string;
   /**
    * Name of field e.g start, end, meal
@@ -20,9 +20,9 @@ export interface ExperienceNoEntryFragment_fieldDefs {
    */
   type: FieldType;
   /**
-   * String that uniquely identifies this field definition has been
+   * String that uniquely identifies this data definition has been
    *   created offline. If an associated entry is also created
-   *   offline, then `createField.defId` **MUST BE** the same as this
+   *   offline, then `createField.definitionId` **MUST BE** the same as this
    *   field and will be validated as such.
    */
   clientId: string | null;
@@ -55,5 +55,5 @@ export interface ExperienceNoEntryFragment {
   /**
    * The field definitions used for the experience entries
    */
-  fieldDefs: (ExperienceNoEntryFragment_fieldDefs | null)[];
+  dataDefinitions: (ExperienceNoEntryFragment_dataDefinitions | null)[];
 }

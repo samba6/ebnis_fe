@@ -5,13 +5,15 @@ import { insertExperienceInGetExperiencesMiniQuery } from "../../state/resolvers
 // during e2e test
 export const ExperienceDefinitionUpdate: CreateExpUpdateFn = async (
   dataProxy,
-  { data: newExperience },
+  { data: createExperienceResponse },
 ) => {
-  if (!newExperience) {
+  if (!createExperienceResponse) {
     return;
   }
 
-  const { createExperience: experience } = newExperience;
+  const experience =
+    createExperienceResponse.createExperience &&
+    createExperienceResponse.createExperience.experience;
 
   if (!experience) {
     return;

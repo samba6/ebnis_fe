@@ -15,10 +15,9 @@ import {
 import { renderWithRouter } from "./test_utils";
 import {
   ExperienceFragment_entries_edges,
-  ExperienceFragment_fieldDefs,
+  ExperienceFragment_dataDefinitions,
 } from "../graphql/apollo-types/ExperienceFragment";
 import { EditExperienceActionType } from "../components/EditExperience/utils";
-import { EditEntryStateTag } from "../components/EditEntry/utils";
 import { EntryActionTypes } from "../components/Entry/utils";
 import { EntryFragment } from "../graphql/apollo-types/EntryFragment";
 
@@ -79,7 +78,7 @@ it("renders entries when `entries prop provided`", () => {
     },
   ] as ExperienceFragment_entries_edges[];
 
-  const fieldDefs = [{}] as ExperienceFragment_fieldDefs[];
+  const fieldDefs = [{}] as ExperienceFragment_dataDefinitions[];
 
   const { ui } = makeComp({
     experience: {
@@ -88,7 +87,6 @@ it("renders entries when `entries prop provided`", () => {
 
       entries: { edges },
     } as any,
-    updateEntry: jest.fn(),
   });
 
   /**
@@ -151,14 +149,6 @@ test("reducer", () => {
 
   expect(
     reducer(prevState, [EditExperienceActionType.completed]).editingState,
-  ).toEqual([EditingState.notEditing]);
-
-  expect(reducer(prevState, [EditEntryStateTag.aborted]).editingState).toEqual([
-    EditingState.notEditing,
-  ]);
-
-  expect(
-    reducer(prevState, [EditEntryStateTag.completed]).editingState,
   ).toEqual([EditingState.notEditing]);
 
   expect(reducer(prevState, ["" as any]).editingState).toEqual("0");

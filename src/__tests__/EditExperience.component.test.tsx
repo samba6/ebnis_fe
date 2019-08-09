@@ -11,11 +11,12 @@ import {
 import { ExperienceFragment } from "../graphql/apollo-types/ExperienceFragment";
 import { fillField, closeMessage } from "./test_utils";
 import { ApolloError } from "apollo-client";
+import { UpdateExperienceMutation } from '../graphql/apollo-types/UpdateExperienceMutation';
 
 const experience = {
   id: "1",
   title: "aa",
-  fieldDefs: [
+  dataDefinitions: [
     {
       id: "f1",
       name: "aa",
@@ -38,7 +39,7 @@ it("submits form and closes modal when everything goes well", async () => {
     },
   });
 
-  const {} = render(ui);
+  const { } = render(ui);
 
   const $description = document.getElementById(
     "edit-experience-form-description",
@@ -80,7 +81,7 @@ it("renders apollo error and closes form when close button clicked", async () =>
     }),
   );
 
-  const {} = render(ui);
+  const { } = render(ui);
 
   fillField(
     document.getElementById("edit-experience-form-description") as any,
@@ -122,14 +123,14 @@ it("renders experience error", async () => {
   mockOnEdit.mockResolvedValue({
     data: {
       updateExperience: {
-        experienceError: {
+        errors: {
           title: "error",
         },
       },
-    },
+    } as UpdateExperienceMutation,
   });
 
-  const {} = render(ui);
+  const { } = render(ui);
 
   fillField(
     document.getElementById(
@@ -153,49 +154,7 @@ it("renders experience error", async () => {
   expect(mockDispatch).not.toHaveBeenCalled();
 });
 
-it("renders field definition errors", async () => {
-  const { ui, mockOnEdit, mockDispatch } = makeComp({
-    props: {
-      experience,
-    },
-  });
 
-  mockOnEdit.mockResolvedValue({
-    data: {
-      updateExperience: {
-        fieldDefinitionsErrors: [
-          {
-            name: "error",
-            id: "f1",
-          },
-        ],
-      },
-    },
-  });
-
-  const {} = render(ui);
-
-  fillField(
-    document.getElementById(
-      "edit-experience-form-description",
-    ) as HTMLInputElement,
-    "cc",
-  );
-
-  act(() => {
-    (document.getElementById(
-      "edit-experience-submit",
-    ) as HTMLButtonElement).click();
-  });
-
-  const $error = await waitForElement(() => {
-    return document.getElementById("edit-experience-ctrl-error-f1");
-  });
-
-  expect($error).not.toBeNull();
-
-  expect(mockDispatch).not.toHaveBeenCalled();
-});
 
 it("renders other errors", async () => {
   const { ui, mockOnEdit, mockDispatch } = makeComp({
@@ -206,7 +165,7 @@ it("renders other errors", async () => {
 
   mockOnEdit.mockResolvedValue({});
 
-  const {} = render(ui);
+  const { } = render(ui);
 
   fillField(
     document.getElementById(

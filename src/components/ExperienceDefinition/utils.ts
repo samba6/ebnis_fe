@@ -1,18 +1,24 @@
 import { RouteComponentProps } from "@reach/router";
 import * as Yup from "yup";
 import { MutationUpdaterFn } from "react-apollo";
-import { Reducer } from "react";
+import { Reducer, Dispatch } from "react";
 import { FormikErrors } from "formik";
 import immer from "immer";
 import { CreateExperienceMutationProps } from "../../graphql/create-experience.mutation";
 import {
   CreateExperienceInput as FormValues,
-  CreateFieldDef,
+  CreateDataDefinition,
   FieldType,
 } from "../../graphql/apollo-types/globalTypes";
-import { CreateExperienceMutation } from "../../graphql/apollo-types/CreateExperienceMutation";
+import {
+  CreateExperienceMutation,
+  CreateExperienceMutation_createExperience_errors,
+  CreateExperienceMutation_createExperience_errors_dataDefinitionsErrors_errors,
+  CreateExperienceMutation_createExperience_errors_dataDefinitionsErrors,
+} from "../../graphql/apollo-types/CreateExperienceMutation";
 import { CreateUnsavedExperienceMutationProps } from "./resolvers";
 import { WithApolloClient } from "react-apollo";
+import { ApolloError } from "apollo-client";
 
 export type CreateExpUpdateFn = MutationUpdaterFn<CreateExperienceMutation>;
 
@@ -27,13 +33,13 @@ export interface Props
 
 export const fieldTypeKeys = Object.values(FieldType);
 
-export const ValidationSchema = Yup.object<FormValues>().shape({
+export const ValidationSchema = Yup.object().shape<FormValues>({
   title: Yup.string()
     .required()
     .min(2),
-  fieldDefs: Yup.array<CreateFieldDef>()
-    .of<CreateFieldDef>(
-      Yup.object<CreateFieldDef>().shape({
+  dataDefinitions: Yup.array<CreateDataDefinition>()
+    .of<CreateDataDefinition>(
+      Yup.object<CreateDataDefinition>().shape({
         name: Yup.string()
           .required()
           .min(2),
@@ -50,27 +56,26 @@ export const ValidationSchema = Yup.object<FormValues>().shape({
 });
 
 export enum ActionType {
-  setFormError = "@components/new-experience/SET_FORM_ERROR",
+  setFormError = "@components/experience-definition/set-form-error",
 
-  setGraphqlError = "@components/new-experience/SET_GRAPHQL_ERROR",
+  setApolloError = "@components/experience-definition/set-apollo-error",
 
-  showDescriptionInput = "@components/new-experience/SET_SHOW_DESCRIPTION_INPUT",
+  showDescriptionInput = "@components/experience-definition/set-show-description-input",
 
-  clearAllErrors = "@components/new-experience/CLEAR_ALL_ERRORS",
-}
+  clearAllErrors = "@components/experience-definition/clear-all-errors",
 
-export interface State {
-  readonly otherErrors?: string | null;
-  readonly submittedFormErrors?: FormikErrors<FormValues> | null;
-  readonly graphQlError?: GraphQlErrorState | null;
-  readonly showDescriptionInput: boolean;
+  setFieldErrors = "@components/experience-definition/set-field-errors",
 }
 
 export type Action =
   | [ActionType.setFormError, FormikErrors<FormValues>]
-  | [ActionType.setGraphqlError, GraphQlErrorState | null]
+  | [ActionType.setApolloError, ApolloError]
   | [ActionType.showDescriptionInput, boolean]
-  | [ActionType.clearAllErrors];
+  | [ActionType.clearAllErrors]
+  | [
+      ActionType.setFieldErrors,
+      CreateExperienceMutation_createExperience_errors,
+    ];
 
 export const reducer: Reducer<State, Action> = (prevState, [type, payload]) => {
   return immer(prevState, proxy => {
@@ -80,6 +85,21 @@ export const reducer: Reducer<State, Action> = (prevState, [type, payload]) => {
           proxy.otherErrors = null;
           proxy.submittedFormErrors = null;
           proxy.graphQlError = null;
+          proxy.serverOtherErrorsMap = null;
+          proxy.serverDataDefinitionsErrorsMap = null;
+        }
+
+        break;
+
+      case ActionType.setFieldErrors:
+        {
+          const errors = normalizeServerFieldsErrors(
+            payload as CreateExperienceMutation_createExperience_errors,
+          );
+
+          proxy.serverOtherErrorsMap = errors.serverOtherErrorsMap;
+          proxy.serverDataDefinitionsErrorsMap =
+            errors.serverDataDefinitionsErrorsMap;
         }
 
         break;
@@ -91,9 +111,12 @@ export const reducer: Reducer<State, Action> = (prevState, [type, payload]) => {
 
         break;
 
-      case ActionType.setGraphqlError:
+      case ActionType.setApolloError:
         {
-          proxy.graphQlError = payload as GraphQlErrorState;
+          const { networkError, graphQLErrors } = payload as ApolloError;
+          proxy.graphQlError =
+            (networkError && networkError.message) ||
+            (graphQLErrors && graphQLErrors[0].message);
         }
 
         break;
@@ -110,13 +133,55 @@ export const reducer: Reducer<State, Action> = (prevState, [type, payload]) => {
 
 export const EMPTY_FIELD = { name: "", type: "" as FieldType };
 
+function normalizeServerFieldsErrors(
+  serverFieldErrors: CreateExperienceMutation_createExperience_errors,
+) {
+  const { dataDefinitionsErrors, ...serverOtherErrorsMap } = serverFieldErrors;
+
+  return {
+    serverOtherErrorsMap,
+    serverDataDefinitionsErrorsMap: (dataDefinitionsErrors || []).reduce(
+      (acc, val) => {
+        const {
+          index,
+          errors,
+        } = val as CreateExperienceMutation_createExperience_errors_dataDefinitionsErrors;
+
+        acc[index] = errors;
+
+        return acc;
+      },
+      {} as ServerDataDefinitionsErrorsMap,
+    ),
+  };
+}
+
+export interface ServerDataDefinitionsErrorsMap {
+  [k: string]: CreateExperienceMutation_createExperience_errors_dataDefinitionsErrors_errors;
+}
+
+type ServerOtherErrorsMap = Pick<
+  CreateExperienceMutation_createExperience_errors,
+  Exclude<
+    keyof CreateExperienceMutation_createExperience_errors,
+    "dataDefinitionsErrors"
+  >
+>;
+
 export interface GraphQlError {
   field_defs?: { name?: string; type?: string }[];
   title?: string;
 }
 
-export type GraphQlErrorState = { [k: string]: string } & {
-  fieldDefs?: {
-    [k: number]: string;
-  };
-};
+export type FormErrors = FormikErrors<FormValues>;
+
+export interface State {
+  readonly otherErrors?: string | null;
+  readonly submittedFormErrors?: FormErrors | null;
+  readonly graphQlError?: string | null;
+  readonly showDescriptionInput: boolean;
+  readonly serverOtherErrorsMap?: ServerOtherErrorsMap | null;
+  readonly serverDataDefinitionsErrorsMap?: ServerDataDefinitionsErrorsMap | null;
+}
+
+export type DispatchType = Dispatch<Action>;

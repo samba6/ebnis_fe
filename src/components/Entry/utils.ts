@@ -1,11 +1,11 @@
 import { EbnisComponentProps } from "../../types";
-import { ExperienceFragment_fieldDefs } from "../../graphql/apollo-types/ExperienceFragment";
+import { ExperienceFragment_dataDefinitions } from "../../graphql/apollo-types/ExperienceFragment";
 import { EntryFragment } from "../../graphql/apollo-types/EntryFragment";
 import { Dispatch } from "react";
 
 export interface Props extends EbnisComponentProps {
   entry: EntryFragment;
-  fieldDefs: ExperienceFragment_fieldDefs[];
+  dataDefinitions: ExperienceFragment_dataDefinitions[];
   entriesLen: number;
   index: number;
   className?: string;

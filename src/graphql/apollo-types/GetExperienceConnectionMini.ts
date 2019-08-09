@@ -66,8 +66,9 @@ export interface GetExperienceConnectionMini_getExperiences {
 
 export interface GetExperienceConnectionMini {
   /**
-   * Get all experiences belonging to a user. The experiences returned may be
-   *   paginated
+   * Get all experiences belonging to a user.
+   *   The experiences returned may be paginated
+   *   and may be filtered by IDs
    */
   getExperiences: GetExperienceConnectionMini_getExperiences | null;
 }

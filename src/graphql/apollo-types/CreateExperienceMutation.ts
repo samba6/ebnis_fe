@@ -8,8 +8,8 @@ import { CreateExperienceInput, PaginationInput, FieldType } from "./globalTypes
 // GraphQL mutation operation: CreateExperienceMutation
 // ====================================================
 
-export interface CreateExperienceMutation_createExperience_fieldDefs {
-  __typename: "FieldDef";
+export interface CreateExperienceMutation_createExperience_experience_dataDefinitions {
+  __typename: "DataDefinition";
   id: string;
   /**
    * Name of field e.g start, end, meal
@@ -20,15 +20,15 @@ export interface CreateExperienceMutation_createExperience_fieldDefs {
    */
   type: FieldType;
   /**
-   * String that uniquely identifies this field definition has been
+   * String that uniquely identifies this data definition has been
    *   created offline. If an associated entry is also created
-   *   offline, then `createField.defId` **MUST BE** the same as this
+   *   offline, then `createField.definitionId` **MUST BE** the same as this
    *   field and will be validated as such.
    */
   clientId: string | null;
 }
 
-export interface CreateExperienceMutation_createExperience_entries_pageInfo {
+export interface CreateExperienceMutation_createExperience_experience_entries_pageInfo {
   __typename: "PageInfo";
   /**
    * When paginating forwards, are there more items?
@@ -40,13 +40,14 @@ export interface CreateExperienceMutation_createExperience_entries_pageInfo {
   hasPreviousPage: boolean;
 }
 
-export interface CreateExperienceMutation_createExperience_entries_edges_node_fields {
-  __typename: "Field";
-  defId: string;
+export interface CreateExperienceMutation_createExperience_experience_entries_edges_node_dataObjects {
+  __typename: "DataObject";
+  id: string;
   data: any;
+  definitionId: string;
 }
 
-export interface CreateExperienceMutation_createExperience_entries_edges_node {
+export interface CreateExperienceMutation_createExperience_experience_entries_edges_node {
   __typename: "Entry";
   /**
    * The ID of an object
@@ -55,23 +56,23 @@ export interface CreateExperienceMutation_createExperience_entries_edges_node {
   /**
    * The ID of experience to which this entry belongs.
    */
-  expId: string;
+  experienceId: string;
   /**
    * The client ID which indicates that an entry has been created while server
-   *   is offline and is to be saved with the server, the client ID uniquely
+   *   is offline and is to be saved. The client ID uniquely
    *   identifies this entry and will be used prevent conflict while saving entry
-   *   created while server offline.
+   *   created offline and must thus be non null in this situation.
    */
   clientId: string | null;
   insertedAt: any;
   updatedAt: any;
   /**
-   * The data fields belonging to this entry
+   * The list of data belonging to this entry
    */
-  fields: (CreateExperienceMutation_createExperience_entries_edges_node_fields | null)[];
+  dataObjects: (CreateExperienceMutation_createExperience_experience_entries_edges_node_dataObjects | null)[];
 }
 
-export interface CreateExperienceMutation_createExperience_entries_edges {
+export interface CreateExperienceMutation_createExperience_experience_entries_edges {
   __typename: "EntryEdge";
   /**
    * A cursor for use in pagination
@@ -80,16 +81,16 @@ export interface CreateExperienceMutation_createExperience_entries_edges {
   /**
    * The item at the end of the edge
    */
-  node: CreateExperienceMutation_createExperience_entries_edges_node | null;
+  node: CreateExperienceMutation_createExperience_experience_entries_edges_node | null;
 }
 
-export interface CreateExperienceMutation_createExperience_entries {
+export interface CreateExperienceMutation_createExperience_experience_entries {
   __typename: "EntryConnection";
-  pageInfo: CreateExperienceMutation_createExperience_entries_pageInfo;
-  edges: (CreateExperienceMutation_createExperience_entries_edges | null)[] | null;
+  pageInfo: CreateExperienceMutation_createExperience_experience_entries_pageInfo;
+  edges: (CreateExperienceMutation_createExperience_experience_entries_edges | null)[] | null;
 }
 
-export interface CreateExperienceMutation_createExperience {
+export interface CreateExperienceMutation_createExperience_experience {
   __typename: "Experience";
   /**
    * The ID of an object
@@ -116,11 +117,37 @@ export interface CreateExperienceMutation_createExperience {
   /**
    * The field definitions used for the experience entries
    */
-  fieldDefs: (CreateExperienceMutation_createExperience_fieldDefs | null)[];
+  dataDefinitions: (CreateExperienceMutation_createExperience_experience_dataDefinitions | null)[];
   /**
    * The entries of the experience - can be paginated
    */
-  entries: CreateExperienceMutation_createExperience_entries;
+  entries: CreateExperienceMutation_createExperience_experience_entries;
+}
+
+export interface CreateExperienceMutation_createExperience_errors_dataDefinitionsErrors_errors {
+  __typename: "DataDefinitionError";
+  name: string | null;
+  type: string | null;
+}
+
+export interface CreateExperienceMutation_createExperience_errors_dataDefinitionsErrors {
+  __typename: "DataDefinitionErrors";
+  index: number;
+  errors: CreateExperienceMutation_createExperience_errors_dataDefinitionsErrors_errors;
+}
+
+export interface CreateExperienceMutation_createExperience_errors {
+  __typename: "CreateExperienceErrors";
+  clientId: string | null;
+  title: string | null;
+  user: string | null;
+  dataDefinitionsErrors: (CreateExperienceMutation_createExperience_errors_dataDefinitionsErrors | null)[] | null;
+}
+
+export interface CreateExperienceMutation_createExperience {
+  __typename: "CreateExperienceReturnValue";
+  experience: CreateExperienceMutation_createExperience_experience | null;
+  errors: CreateExperienceMutation_createExperience_errors | null;
 }
 
 export interface CreateExperienceMutation {
@@ -132,5 +159,5 @@ export interface CreateExperienceMutation {
 
 export interface CreateExperienceMutationVariables {
   createExperienceInput: CreateExperienceInput;
-  entriesPagination?: PaginationInput | null;
+  entriesPagination: PaginationInput;
 }

@@ -5,11 +5,11 @@
 import { FieldType } from "./globalTypes";
 
 // ====================================================
-// GraphQL fragment: FieldDefFragment
+// GraphQL fragment: DataDefinitionFragment
 // ====================================================
 
-export interface FieldDefFragment {
-  __typename: "FieldDef";
+export interface DataDefinitionFragment {
+  __typename: "DataDefinition";
   id: string;
   /**
    * Name of field e.g start, end, meal
@@ -20,9 +20,9 @@ export interface FieldDefFragment {
    */
   type: FieldType;
   /**
-   * String that uniquely identifies this field definition has been
+   * String that uniquely identifies this data definition has been
    *   created offline. If an associated entry is also created
-   *   offline, then `createField.defId` **MUST BE** the same as this
+   *   offline, then `createField.definitionId` **MUST BE** the same as this
    *   field and will be validated as such.
    */
   clientId: string | null;

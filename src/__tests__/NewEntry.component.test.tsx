@@ -10,16 +10,29 @@ import differenceInDays from "date-fns/difference_in_days";
 import differenceInHours from "date-fns/difference_in_hours";
 
 import { NewEntry } from "../components/NewEntry/component";
-import { Props, CreateEntryFieldErrors } from "../components/NewEntry/utils";
-import { renderWithRouter, fillField, closeMessage } from "./test_utils";
-import { FieldType } from "../graphql/apollo-types/globalTypes";
+import { Props } from "../components/NewEntry/utils";
+import {
+  renderWithRouter,
+  fillField,
+  closeMessage,
+  ToVariables,
+  ToData,
+} from "./test_utils";
+import {
+  FieldType,
+  CreateDataObject,
+} from "../graphql/apollo-types/globalTypes";
 import {
   ExperienceFragment_entries,
   ExperienceFragment,
-  ExperienceFragment_fieldDefs,
+  ExperienceFragment_dataDefinitions,
 } from "../graphql/apollo-types/ExperienceFragment";
 import { ApolloError } from "apollo-client";
-import { GraphQLError } from "graphql";
+import {
+  CreateEntryMutation_createEntry_errors,
+  CreateEntryMutation,
+  CreateEntryMutationVariables,
+} from "../graphql/apollo-types/CreateEntryMutation";
 
 jest.mock("../components/NewEntry/update");
 jest.mock("../components/SidebarHeader", () => ({
@@ -31,6 +44,11 @@ jest.mock("../components/scroll-into-view");
 import { updateExperienceWithNewEntry } from "../components/NewEntry/update";
 import { isConnected } from "../state/connections";
 import { scrollIntoView } from "../components/scroll-into-view";
+import {
+  CreateUnsavedEntryVariables,
+  CreateUnsavedEntryMutationReturned,
+} from "../components/NewEntry/resolvers";
+import { GraphQLError } from "graphql";
 
 const mockIsConnected = isConnected as jest.Mock;
 const mockUpdate = updateExperienceWithNewEntry as jest.Mock;
@@ -47,7 +65,7 @@ it("creates new experience entry when online", async () => {
 
     title,
 
-    fieldDefs: [
+    dataDefinitions: [
       {
         id: "f3",
         name: "f3",
@@ -59,7 +77,7 @@ it("creates new experience entry when online", async () => {
         name: "f4",
         type: FieldType.INTEGER,
       },
-    ] as ExperienceFragment_fieldDefs[],
+    ] as ExperienceFragment_dataDefinitions[],
 
     description: "lovely",
 
@@ -107,19 +125,21 @@ it("creates new experience entry when online", async () => {
   await wait(() => {
     const {
       variables: {
-        input: { expId, fields },
+        input: { experienceId, dataObjects },
       },
-    } = mockCreateEntry.mock.calls[0][0] as any;
+    } = mockCreateEntry.mock.calls[0][0] as ToVariables<
+      CreateEntryMutationVariables
+    >;
 
-    expect(expId).toBe("1");
+    expect(experienceId).toBe("1");
     expect((mockUpdate as jest.Mock).mock.calls[0][0]).toBe("1");
 
-    const [f3, f4] = fields;
+    const [f3, f4] = dataObjects as CreateDataObject[];
 
-    expect(f3.defId).toBe("f3");
+    expect(f3.definitionId).toBe("f3");
     expect(JSON.parse(f3.data).decimal).toBe("2");
 
-    expect(f4.defId).toBe("f4");
+    expect(f4.definitionId).toBe("f4");
     expect(JSON.parse(f4.data).integer).toBe("1");
   });
 });
@@ -129,7 +149,7 @@ it("sets decimal and integer fields to default to 0", async () => {
    * Given we have received experiences from server
    */
   const exp = {
-    fieldDefs: [
+    dataDefinitions: [
       {
         id: "f1",
         name: "f3",
@@ -141,12 +161,20 @@ it("sets decimal and integer fields to default to 0", async () => {
         name: "f4",
         type: FieldType.INTEGER,
       },
-    ] as ExperienceFragment_fieldDefs[],
+    ] as ExperienceFragment_dataDefinitions[],
   } as ExperienceFragment;
 
-  const { ui, mockCreateEntry } = makeComp({
+  const { ui, mockCreateEntry, mockNavigate } = makeComp({
     experience: exp,
   });
+
+  mockCreateEntry.mockResolvedValue({
+    data: {
+      createEntry: {
+        entry: {},
+      },
+    },
+  } as ToData<CreateEntryMutation>);
 
   /**
    * While we are on new entry page
@@ -158,22 +186,27 @@ it("sets decimal and integer fields to default to 0", async () => {
    */
   fireEvent.click(document.getElementById("new-entry-submit-btn") as any);
 
+  await wait(() => {
+    expect(mockNavigate).toHaveBeenCalled();
+  });
+
   /**
    * Then default values should be sent to the server
    */
-  await wait(() => {
-    const {
-      variables: {
-        input: { fields },
-      },
-    } = mockCreateEntry.mock.calls[0][0] as any;
 
-    const [f1, f2] = fields;
+  const {
+    variables: {
+      input: { dataObjects },
+    },
+  } = mockCreateEntry.mock.calls[0][0] as ToVariables<
+    CreateEntryMutationVariables
+  >;
 
-    expect(JSON.parse(f1.data).decimal).toBe("0");
+  const [f1, f2] = dataObjects as CreateDataObject[];
 
-    expect(JSON.parse(f2.data).integer).toBe("0");
-  });
+  expect(JSON.parse(f1.data).decimal).toBe("0");
+
+  expect(JSON.parse(f2.data).integer).toBe("0");
 });
 
 it("sets values of date and datetime fields", async () => {
@@ -182,12 +215,12 @@ it("sets values of date and datetime fields", async () => {
   /**
    * Given we have received experiences from server
    */
-  const exp = {
+  const experience = {
     id: "1",
 
     title,
 
-    fieldDefs: [
+    dataDefinitions: [
       {
         id: "f1",
         name: "f1",
@@ -199,7 +232,7 @@ it("sets values of date and datetime fields", async () => {
         name: "f2",
         type: FieldType.DATETIME,
       },
-    ] as ExperienceFragment_fieldDefs[],
+    ] as ExperienceFragment_dataDefinitions[],
 
     description: "lovely",
 
@@ -207,7 +240,7 @@ it("sets values of date and datetime fields", async () => {
   } as ExperienceFragment;
 
   const { ui, mockCreateEntry } = makeComp({
-    experience: exp,
+    experience: experience,
   });
 
   /**
@@ -279,15 +312,17 @@ it("sets values of date and datetime fields", async () => {
   await wait(() => {
     const {
       variables: {
-        input: { fields },
+        input: { dataObjects },
       },
-    } = mockCreateEntry.mock.calls[0][0] as any;
+    } = mockCreateEntry.mock.calls[0][0] as ToVariables<
+      CreateEntryMutationVariables
+    >;
 
-    const [f1, f2] = fields;
+    const [f1, f2] = dataObjects as CreateDataObject[];
 
-    expect(f1.defId).toBe("f1");
+    expect(f1.definitionId).toBe("f1");
 
-    expect(f2.defId).toBe("f2");
+    expect(f2.definitionId).toBe("f2");
 
     expect(differenceInDays(now, JSON.parse(f1.data).date)).toBe(2);
 
@@ -306,7 +341,7 @@ it("creates new entry when offline", async () => {
 
     title,
 
-    fieldDefs: [
+    dataDefinitions: [
       {
         id: "f1",
         name: "f1",
@@ -317,12 +352,25 @@ it("creates new entry when offline", async () => {
     entries: {},
   };
 
-  const { ui, mockCreateUnsavedEntry, mockCreateEntry } = makeComp(
+  const {
+    ui,
+    mockCreateUnsavedEntry,
+    mockCreateEntry,
+    mockNavigate,
+  } = makeComp(
     {
       experience: exp as any,
     },
     false,
   );
+
+  mockCreateUnsavedEntry.mockResolvedValue({
+    data: {
+      createUnsavedEntry: {
+        entry: {},
+      },
+    } as CreateUnsavedEntryMutationReturned,
+  });
 
   /**
    * While we are on new entry page
@@ -342,21 +390,26 @@ it("creates new entry when offline", async () => {
 
   fireEvent.click(document.getElementById("new-entry-submit-btn") as any);
 
+  await wait(() => {
+    expect(mockNavigate).toHaveBeenCalled();
+  });
+
   /**
    * Then the correct values should be saved locally
    */
-  await wait(() => {
-    const {
-      variables: { experience, fields },
-    } = mockCreateUnsavedEntry.mock.calls[0][0] as any;
 
-    expect(experience.id).toBe("1");
+  const {
+    variables: { experience, dataObjects },
+  } = mockCreateUnsavedEntry.mock.calls[0][0] as ToVariables<
+    CreateUnsavedEntryVariables
+  >;
 
-    const [f1] = fields;
+  expect(experience.id).toBe("1");
 
-    expect(f1.defId).toBe("f1");
-    expect(JSON.parse(f1.data).single_line_text).toBe("s");
-  });
+  const [f1] = dataObjects as CreateDataObject[];
+
+  expect(f1.definitionId).toBe("f1");
+  expect(JSON.parse(f1.data).single_line_text).toBe("s");
 
   /**
    * No values should be uploaded to the server
@@ -370,7 +423,7 @@ it("renders error when entry creation fails", async () => {
 
     title,
 
-    fieldDefs: [
+    dataDefinitions: [
       {
         id: "f1",
         name: "f1",
@@ -385,21 +438,20 @@ it("renders error when entry creation fails", async () => {
     experience,
   });
 
-  const graphQLErrorMessage = JSON.stringify({
-    fields: [
+  const errors = {
+    dataObjectsErrors: [
       {
-        errors: { data: "is invalid" },
-
-        meta: { def_id: "f1", index: 0 },
+        index: 0,
+        errors: { data: "is invalid", definitionId: "f1" },
       },
     ],
-  } as CreateEntryFieldErrors);
+  } as CreateEntryMutation_createEntry_errors;
 
-  mockCreateEntry.mockRejectedValue(
-    new ApolloError({
-      graphQLErrors: [new GraphQLError(graphQLErrorMessage)],
-    }),
-  );
+  mockCreateEntry.mockResolvedValue({
+    data: {
+      createEntry: { errors },
+    } as CreateEntryMutation,
+  });
 
   render(ui);
 
@@ -421,15 +473,17 @@ it("renders error when entry creation fails", async () => {
 
   const {
     variables: {
-      input: { expId, fields },
+      input: { experienceId, dataObjects },
     },
-  } = mockCreateEntry.mock.calls[0][0] as any;
+  } = mockCreateEntry.mock.calls[0][0] as {
+    variables: CreateEntryMutationVariables;
+  };
 
-  expect(expId).toBe("1");
+  expect(experienceId).toBe("1");
 
-  const [f1] = fields;
+  const [f1] = dataObjects as CreateDataObject[];
 
-  expect(f1.defId).toBe("f1");
+  expect(f1.definitionId).toBe("f1");
   expect(JSON.parse(f1.data).multi_line_text).toBe("s");
 
   expect(mockNavigate).not.toHaveBeenCalled();
@@ -443,7 +497,7 @@ it("renders network error", async () => {
 
     title,
 
-    fieldDefs: [
+    dataDefinitions: [
       {
         id: "f1",
         name: "f1",
@@ -493,7 +547,7 @@ it("treats non field graphql errors as network error", async () => {
 
     title,
 
-    fieldDefs: [
+    dataDefinitions: [
       {
         id: "f1",
         name: "f1",
@@ -510,7 +564,7 @@ it("treats non field graphql errors as network error", async () => {
 
   mockCreateEntry.mockRejectedValue(
     new ApolloError({
-      graphQLErrors: [],
+      graphQLErrors: [new GraphQLError("error")],
     }),
   );
 

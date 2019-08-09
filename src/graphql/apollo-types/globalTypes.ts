@@ -14,8 +14,34 @@ export enum FieldType {
   DATETIME = "DATETIME",
   DECIMAL = "DECIMAL",
   INTEGER = "INTEGER",
+  INTEGER1 = "INTEGER1",
   MULTI_LINE_TEXT = "MULTI_LINE_TEXT",
   SINGLE_LINE_TEXT = "SINGLE_LINE_TEXT",
+}
+
+/**
+ * Variables for defining field while defining a new experience
+ */
+export interface CreateDataDefinition {
+  clientId?: string | null;
+  name: string;
+  type: FieldType;
+}
+
+/**
+ * Variables for creating an entry field
+ */
+export interface CreateDataObject {
+  data: any;
+  definitionId: string;
+}
+
+export interface CreateEntriesInput {
+  clientId: string;
+  dataObjects: (CreateDataObject | null)[];
+  experienceId: string;
+  insertedAt?: any | null;
+  updatedAt?: any | null;
 }
 
 /**
@@ -23,58 +49,23 @@ export enum FieldType {
  */
 export interface CreateEntryInput {
   clientId?: string | null;
-  expId: string;
-  fields: (CreateField | null)[];
+  dataObjects: (CreateDataObject | null)[];
+  experienceId: string;
   insertedAt?: any | null;
   updatedAt?: any | null;
 }
 
 /**
- * Variables for defining a new Experience
+ * Input object for defining a new Experience
  */
 export interface CreateExperienceInput {
   clientId?: string | null;
+  dataDefinitions: (CreateDataDefinition | null)[];
   description?: string | null;
   entries?: (CreateEntryInput | null)[] | null;
-  fieldDefs: (CreateFieldDef | null)[];
   insertedAt?: any | null;
   title: string;
   updatedAt?: any | null;
-}
-
-/**
- * Variables for creating an entry field
- * 
- * It is of the form:
- * {
- *   defId: string;
- *   data: JSON_string;
- * }
- * 
- * The `defId` key comes from experience to which this entry is associated and
- * using this `defId`, we will retrieve the associated field definition for
- * each field so as to ensure that we are storing valid JSON string data for
- * the field. For instance, if user submits a field with JSON string data:
- *     {date: "2016-05-10"}
- * and defId:
- *     field_definition_id_10000
- * but when we query the experience for field definition id
- * `field_definition_id_10000`, it tells us it should be associated with an
- * integer data, then we will return error with explanation `invalid data type`
- * for this field.
- */
-export interface CreateField {
-  data: any;
-  defId: string;
-}
-
-/**
- * Variables for defining field while defining a new experience
- */
-export interface CreateFieldDef {
-  clientId?: string | null;
-  name: string;
-  type: FieldType;
 }
 
 export interface GetExperiencesInput {
@@ -109,29 +100,12 @@ export interface Registration {
 }
 
 /**
- * Variables for updating an experience entry
- */
-export interface UpdateEntryInput {
-  fields: (CreateField | null)[];
-  id: string;
-}
-
-/**
  * Variables for updating an existing Experience
  */
 export interface UpdateExperienceInput {
   description?: string | null;
-  fieldDefinitions?: (UpdateFieldDefinitionInput | null)[] | null;
   id: string;
   title?: string | null;
-}
-
-/**
- * Variables for updating an experience field definition
- */
-export interface UpdateFieldDefinitionInput {
-  id: string;
-  name: string;
 }
 
 //==============================================================

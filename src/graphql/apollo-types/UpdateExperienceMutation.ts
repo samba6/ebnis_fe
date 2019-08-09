@@ -8,8 +8,8 @@ import { UpdateExperienceInput, FieldType } from "./globalTypes";
 // GraphQL mutation operation: UpdateExperienceMutation
 // ====================================================
 
-export interface UpdateExperienceMutation_updateExperience_experience_fieldDefs {
-  __typename: "FieldDef";
+export interface UpdateExperienceMutation_updateExperience_experience_dataDefinitions {
+  __typename: "DataDefinition";
   id: string;
   /**
    * Name of field e.g start, end, meal
@@ -20,9 +20,9 @@ export interface UpdateExperienceMutation_updateExperience_experience_fieldDefs 
    */
   type: FieldType;
   /**
-   * String that uniquely identifies this field definition has been
+   * String that uniquely identifies this data definition has been
    *   created offline. If an associated entry is also created
-   *   offline, then `createField.defId` **MUST BE** the same as this
+   *   offline, then `createField.definitionId` **MUST BE** the same as this
    *   field and will be validated as such.
    */
   clientId: string | null;
@@ -55,26 +55,19 @@ export interface UpdateExperienceMutation_updateExperience_experience {
   /**
    * The field definitions used for the experience entries
    */
-  fieldDefs: (UpdateExperienceMutation_updateExperience_experience_fieldDefs | null)[];
+  dataDefinitions: (UpdateExperienceMutation_updateExperience_experience_dataDefinitions | null)[];
 }
 
-export interface UpdateExperienceMutation_updateExperience_experienceError {
-  __typename: "ExperienceError";
-  id: string | null;
+export interface UpdateExperienceMutation_updateExperience_errors {
+  __typename: "UpdateExperienceErrors";
   title: string | null;
-}
-
-export interface UpdateExperienceMutation_updateExperience_fieldDefinitionsErrors {
-  __typename: "FieldDefinitionsErrors";
-  id: string;
-  name: string | null;
+  clientId: string | null;
 }
 
 export interface UpdateExperienceMutation_updateExperience {
-  __typename: "ExperienceUpdateReturned";
+  __typename: "UpdateExperienceReturnValue";
   experience: UpdateExperienceMutation_updateExperience_experience | null;
-  experienceError: UpdateExperienceMutation_updateExperience_experienceError | null;
-  fieldDefinitionsErrors: (UpdateExperienceMutation_updateExperience_fieldDefinitionsErrors | null)[] | null;
+  errors: UpdateExperienceMutation_updateExperience_errors | null;
 }
 
 export interface UpdateExperienceMutation {

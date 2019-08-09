@@ -8,8 +8,8 @@ import { CreateExperienceInput, FieldType } from "./globalTypes";
 // GraphQL mutation operation: UploadUnsavedExperiencesMutation
 // ====================================================
 
-export interface UploadUnsavedExperiencesMutation_saveOfflineExperiences_experience_fieldDefs {
-  __typename: "FieldDef";
+export interface UploadUnsavedExperiencesMutation_saveOfflineExperiences_experience_dataDefinitions {
+  __typename: "DataDefinition";
   id: string;
   /**
    * Name of field e.g start, end, meal
@@ -20,9 +20,9 @@ export interface UploadUnsavedExperiencesMutation_saveOfflineExperiences_experie
    */
   type: FieldType;
   /**
-   * String that uniquely identifies this field definition has been
+   * String that uniquely identifies this data definition has been
    *   created offline. If an associated entry is also created
-   *   offline, then `createField.defId` **MUST BE** the same as this
+   *   offline, then `createField.definitionId` **MUST BE** the same as this
    *   field and will be validated as such.
    */
   clientId: string | null;
@@ -40,10 +40,11 @@ export interface UploadUnsavedExperiencesMutation_saveOfflineExperiences_experie
   hasPreviousPage: boolean;
 }
 
-export interface UploadUnsavedExperiencesMutation_saveOfflineExperiences_experience_entries_edges_node_fields {
-  __typename: "Field";
-  defId: string;
+export interface UploadUnsavedExperiencesMutation_saveOfflineExperiences_experience_entries_edges_node_dataObjects {
+  __typename: "DataObject";
+  id: string;
   data: any;
+  definitionId: string;
 }
 
 export interface UploadUnsavedExperiencesMutation_saveOfflineExperiences_experience_entries_edges_node {
@@ -55,20 +56,20 @@ export interface UploadUnsavedExperiencesMutation_saveOfflineExperiences_experie
   /**
    * The ID of experience to which this entry belongs.
    */
-  expId: string;
+  experienceId: string;
   /**
    * The client ID which indicates that an entry has been created while server
-   *   is offline and is to be saved with the server, the client ID uniquely
+   *   is offline and is to be saved. The client ID uniquely
    *   identifies this entry and will be used prevent conflict while saving entry
-   *   created while server offline.
+   *   created offline and must thus be non null in this situation.
    */
   clientId: string | null;
   insertedAt: any;
   updatedAt: any;
   /**
-   * The data fields belonging to this entry
+   * The list of data belonging to this entry
    */
-  fields: (UploadUnsavedExperiencesMutation_saveOfflineExperiences_experience_entries_edges_node_fields | null)[];
+  dataObjects: (UploadUnsavedExperiencesMutation_saveOfflineExperiences_experience_entries_edges_node_dataObjects | null)[];
 }
 
 export interface UploadUnsavedExperiencesMutation_saveOfflineExperiences_experience_entries_edges {
@@ -116,29 +117,91 @@ export interface UploadUnsavedExperiencesMutation_saveOfflineExperiences_experie
   /**
    * The field definitions used for the experience entries
    */
-  fieldDefs: (UploadUnsavedExperiencesMutation_saveOfflineExperiences_experience_fieldDefs | null)[];
+  dataDefinitions: (UploadUnsavedExperiencesMutation_saveOfflineExperiences_experience_dataDefinitions | null)[];
   /**
    * The entries of the experience - can be paginated
    */
   entries: UploadUnsavedExperiencesMutation_saveOfflineExperiences_experience_entries;
 }
 
-export interface UploadUnsavedExperiencesMutation_saveOfflineExperiences_experienceError {
-  __typename: "OfflineExperienceError";
+export interface UploadUnsavedExperiencesMutation_saveOfflineExperiences_experienceErrors_errors_dataDefinitionsErrors_errors {
+  __typename: "DataDefinitionError";
+  name: string | null;
+  type: string | null;
+}
+
+export interface UploadUnsavedExperiencesMutation_saveOfflineExperiences_experienceErrors_errors_dataDefinitionsErrors {
+  __typename: "DataDefinitionErrors";
+  index: number;
+  errors: UploadUnsavedExperiencesMutation_saveOfflineExperiences_experienceErrors_errors_dataDefinitionsErrors_errors;
+}
+
+export interface UploadUnsavedExperiencesMutation_saveOfflineExperiences_experienceErrors_errors {
+  __typename: "CreateExperienceErrors";
+  clientId: string | null;
+  title: string | null;
+  user: string | null;
+  dataDefinitionsErrors: (UploadUnsavedExperiencesMutation_saveOfflineExperiences_experienceErrors_errors_dataDefinitionsErrors | null)[] | null;
+}
+
+export interface UploadUnsavedExperiencesMutation_saveOfflineExperiences_experienceErrors {
+  __typename: "CreateOfflineExperienceErrors";
   /**
    * The client ID of the failing experience. As user may not have provided a
    *   client ID, this field is nullable and in that case, the index field will
    *   be used to identify this error
    */
+  clientId: string;
+  /**
+   * The index of the failing experience in the list of experiences input
+   */
+  index: number;
+  /**
+   * The error object representing the insert failure reasons
+   */
+  errors: UploadUnsavedExperiencesMutation_saveOfflineExperiences_experienceErrors_errors;
+}
+
+export interface UploadUnsavedExperiencesMutation_saveOfflineExperiences_entriesErrors_errors_dataObjectsErrors_errors {
+  __typename: "DataObjectError";
+  data: string | null;
+  definition: string | null;
+  definitionId: string | null;
+}
+
+export interface UploadUnsavedExperiencesMutation_saveOfflineExperiences_entriesErrors_errors_dataObjectsErrors {
+  __typename: "DataObjectsErrors";
+  index: number;
+  errors: UploadUnsavedExperiencesMutation_saveOfflineExperiences_entriesErrors_errors_dataObjectsErrors_errors;
+}
+
+export interface UploadUnsavedExperiencesMutation_saveOfflineExperiences_entriesErrors_errors {
+  __typename: "CreateEntryErrors";
+  /**
+   * May be because client ID is not unique for experience
+   */
   clientId: string | null;
   /**
-   * The error string explaining why experience fails to insert.
+   * A catch-all field for when we are unable to create an entry
    */
-  error: string;
+  entry: string | null;
+  /**
+   * While saving an offline entry, its experience ID must be same as
+   *   experience.clientId if saving entry via offline experience
+   */
+  experienceId: string | null;
+  /**
+   * Did we fail because, say, we did could not fetch the experience
+   */
+  experience: string | null;
+  /**
+   * Did we fail because there are errors in the data object object?
+   */
+  dataObjectsErrors: (UploadUnsavedExperiencesMutation_saveOfflineExperiences_entriesErrors_errors_dataObjectsErrors | null)[] | null;
 }
 
 export interface UploadUnsavedExperiencesMutation_saveOfflineExperiences_entriesErrors {
-  __typename: "CreateEntriesError";
+  __typename: "CreateEntriesErrors";
   /**
    * The experience ID of the entry which fails to save
    */
@@ -147,24 +210,21 @@ export interface UploadUnsavedExperiencesMutation_saveOfflineExperiences_entries
    * The client ID of the entry which fails to save
    */
   clientId: string;
-  /**
-   * The failure error
-   */
-  error: string;
+  errors: UploadUnsavedExperiencesMutation_saveOfflineExperiences_entriesErrors_errors;
 }
 
 export interface UploadUnsavedExperiencesMutation_saveOfflineExperiences {
   __typename: "OfflineExperience";
   /**
-   * The experience which was successfully inserted - will be null if
-   *   experience fails to insert
+   * The experience which was successfully inserted
+   *   - will be null if experience fails to insert
    */
   experience: UploadUnsavedExperiencesMutation_saveOfflineExperiences_experience | null;
   /**
    * If the experience fails to insert, then this is the error object
    *   returned
    */
-  experienceError: UploadUnsavedExperiencesMutation_saveOfflineExperiences_experienceError | null;
+  experienceErrors: UploadUnsavedExperiencesMutation_saveOfflineExperiences_experienceErrors | null;
   /**
    * A list of error objects denoting entries which fail to insert
    */

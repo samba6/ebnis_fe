@@ -12,7 +12,7 @@ import immer, { Draft } from "immer";
 import { Reducer } from "react";
 import { RouteComponentProps } from "@reach/router";
 import {
-  ExperienceFragment_fieldDefs,
+  ExperienceFragment_dataDefinitions,
   ExperienceFragment,
   ExperienceFragment_entries_edges_node,
   ExperienceFragment_entries_edges,
@@ -25,8 +25,7 @@ import {
 import { WithApolloClient } from "react-apollo";
 import ApolloClient, { ApolloError } from "apollo-client";
 import { Dispatch } from "react";
-import { UploadUnsavedExperiencesExperienceErrorFragment } from "../../graphql/apollo-types/UploadUnsavedExperiencesExperienceErrorFragment";
-import { CreateEntriesErrorFragment } from "../../graphql/apollo-types/CreateEntriesErrorFragment";
+import { CreateEntriesErrorsFragment } from "../../graphql/apollo-types/CreateEntriesErrorsFragment";
 import { LayoutDispatchType } from "../Layout/utils";
 import { InMemoryCache } from "apollo-cache-inmemory";
 import { EntryFragment } from "../../graphql/apollo-types/EntryFragment";
@@ -195,17 +194,17 @@ export const reducer: Reducer<State, Action> = (prevState, [type, payload]) => {
 };
 
 export function fieldDefToUnsavedData(
-  value: ExperienceFragment_fieldDefs | null,
+  value: ExperienceFragment_dataDefinitions | null,
 ) {
-  const { clientId, name, type } = value as ExperienceFragment_fieldDefs;
+  const { clientId, name, type } = value as ExperienceFragment_dataDefinitions;
 
   return { clientId, name, type };
 }
 
-function entriesErrorsToMap(errors: CreateEntriesErrorFragment[]) {
+function entriesErrorsToMap(errors: CreateEntriesErrorsFragment[]) {
   return errors.reduce(
-    (acc, { error, clientId }) => {
-      acc[clientId] = error;
+    (acc, { errors, clientId }) => {
+      acc[clientId] = errors.clientId as string;
 
       return acc;
     },
@@ -252,7 +251,7 @@ function updateStateWithSavedExperiencesUploadResult(
       map.didUploadSucceed = false;
 
       map.entriesErrors = entriesErrorsToMap(
-        errors as CreateEntriesErrorFragment[],
+        errors as CreateEntriesErrorsFragment[],
       );
     } else if (map.didUploadSucceed !== false) {
       map.didUploadSucceed = true;
@@ -284,21 +283,22 @@ function updateStateWithUnsavedExperiencesUploadResult(
       return;
     }
 
-    const { experience, entriesErrors, experienceError } = elm;
+    const { experience, entriesErrors, experienceErrors } = elm;
 
     let map = {} as ExperiencesIdsToObjectMap["k"];
 
-    if (experienceError) {
-      const { clientId } = experienceError;
-      map = unsavedExperiencesMap[clientId as string];
+    if (experienceErrors) {
+      map = unsavedExperiencesMap[experienceErrors.clientId as string];
+      map.experienceError = Object.entries(experienceErrors.errors).reduce(
+        (acc, [k, v]) => {
+          if (v) {
+            acc += `\n${k}: ${v}`;
+          }
 
-      try {
-        const [[k, v]] = Object.entries(JSON.parse(experienceError.error));
-
-        map.experienceError = k + ": " + v;
-      } catch (error) {
-        map.experienceError = experienceError.error;
-      }
+          return acc;
+        },
+        "",
+      );
     } else if (experience) {
       noUploadSucceeded = false;
 
@@ -317,12 +317,12 @@ function updateStateWithUnsavedExperiencesUploadResult(
 
       if (entriesErrors) {
         map.entriesErrors = entriesErrorsToMap(
-          entriesErrors as CreateEntriesErrorFragment[],
+          entriesErrors as CreateEntriesErrorsFragment[],
         );
       }
     }
 
-    if (experienceError || entriesErrors) {
+    if (experienceErrors || entriesErrors) {
       map.didUploadSucceed = false;
       stateProxy.hasUnsavedExperiencesUploadError = true;
     } else if (map.didUploadSucceed !== false) {
@@ -398,7 +398,7 @@ export interface ExperiencesIdsToObjectMap {
 
 export interface ExperienceObjectMap extends SavedAndUnsavedExperienceSummary {
   didUploadSucceed?: boolean;
-  experienceError?: UploadUnsavedExperiencesExperienceErrorFragment["error"];
+  experienceError?: string;
   entriesErrors?: { [k: string]: string };
   newlySavedExperience?: ExperienceFragment;
   newlySavedEntries?: ExperienceFragment_entries_edges_node[];

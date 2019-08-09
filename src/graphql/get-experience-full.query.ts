@@ -7,7 +7,7 @@ import {
 } from "./apollo-types/GetExperienceFull";
 
 export const GET_EXPERIENCE_FULL_QUERY = gql`
-  query GetExperienceFull($id: ID!, $entriesPagination: PaginationInput) {
+  query GetExperienceFull($id: ID!, $entriesPagination: PaginationInput!) {
     getExperience(id: $id) {
       ...ExperienceFragment
     }

@@ -7,7 +7,7 @@ import { setDocumentTitle, makeSiteTitle } from "../../constants";
 import { Experience, getTitle } from "../Experience/component";
 
 export function ExperienceRoute(props: Props) {
-  const { experience, updateExperience, updateEntry } = props;
+  const { experience, updateExperience } = props;
 
   const title = getTitle(experience);
 
@@ -31,7 +31,6 @@ export function ExperienceRoute(props: Props) {
             onDelete: () => {},
             onEdit: updateExperience,
           }}
-          updateEntry={updateEntry}
         />
       </div>
     </div>

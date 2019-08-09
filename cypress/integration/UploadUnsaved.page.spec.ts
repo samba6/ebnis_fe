@@ -23,33 +23,34 @@ context("Upload unsaved page", () => {
   it("uploads unsaved data successfully", () => {
     const savedExperiencePromise = createSavedExperience({
       title: "saved-1",
-      fieldDefs: [
+      dataDefinitions: [
         {
           name: "f1",
           type: FieldType.INTEGER,
         },
       ],
     }).then(experience => {
-      const { id, fieldDefs } = experience;
+      const { id, dataDefinitions } = experience;
 
       const saved = createExperienceEntries(id, [
         {
-          fields: [
+          dataObjects: [
             {
-              defId: fieldDefs[0].id,
+              definitionId: dataDefinitions[0].id,
               data: `{"integer":"1"}`,
             },
           ],
-          expId: id,
+          experienceId: id,
+          clientId: "1",
         },
       ]);
 
       const unsaved = createUnsavedEntry({
         experience,
-        fields: [
+        dataObjects: [
           {
             data: `{"integer":"2"}`,
-            defId: fieldDefs[0].id,
+            definitionId: dataDefinitions[0].id,
           },
         ],
       });
@@ -63,21 +64,21 @@ context("Upload unsaved page", () => {
 
     const unsavedExperiencePromise = createUnsavedExperience({
       title: unsavedExperienceTitle,
-      fieldDefs: [
+      dataDefinitions: [
         {
           name: "f2",
           type: FieldType.INTEGER,
         },
       ],
     }).then(unsavedExperience => {
-      const { fieldDefs } = unsavedExperience;
+      const { dataDefinitions } = unsavedExperience;
 
       return createUnsavedEntry({
         experience: unsavedExperience,
-        fields: [
+        dataObjects: [
           {
             data: `{"integer":"3"}`,
-            defId: fieldDefs[0].id,
+            definitionId: dataDefinitions[0].id,
           },
         ],
       }).then(() => {

@@ -43,7 +43,7 @@ context("experience definition page", () => {
     /**
      * And we click on field type
      */
-    cy.get("#experience-definition-field-type-0")
+    cy.get("#experience-data-type-0")
       .click()
       .then($fieldType => {
         ($fieldType[0].getElementsByClassName("js-DATETIME")[0] as any).click();
@@ -69,7 +69,7 @@ context("experience definition page", () => {
 
     let p = createSavedExperience({
       title,
-      fieldDefs: [
+      dataDefinitions: [
         {
           type: FieldType.DATE,
           name: "Some random field",
@@ -86,9 +86,7 @@ context("experience definition page", () => {
       /**
        * Then we should not see any error
        */
-      cy.get("#experience-definition-graphql-errors-summary").should(
-        "not.exist",
-      );
+      cy.get("#experience-definition-errors-summary").should("not.exist");
 
       /**
        * And complete the form with same title as in the system and submit
@@ -98,7 +96,7 @@ context("experience definition page", () => {
 
       cy.get("#field-name-0").type("experience field 1");
 
-      cy.get("#experience-definition-field-type-0")
+      cy.get("#experience-data-type-0")
         .click()
         .then($fieldType => {
           ($fieldType[0].getElementsByClassName(
@@ -111,7 +109,7 @@ context("experience definition page", () => {
       /**
        * Then we should see error
        */
-      cy.get("#experience-definition-graphql-errors-summary").should("exist");
+      cy.get("#experience-definition-errors-summary").should("exist");
     });
   });
 
@@ -149,7 +147,7 @@ context("experience definition page", () => {
     /**
      * And we click on field type
      */
-    cy.get("#experience-definition-field-type-0")
+    cy.get("#experience-data-type-0")
       .click()
       .then($fieldType => {
         ($fieldType[0].getElementsByClassName("js-DATETIME")[0] as any).click();

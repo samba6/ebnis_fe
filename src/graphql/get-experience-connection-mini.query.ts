@@ -42,7 +42,7 @@ export interface GetExperienceConnectionMiniProps {
 export const PRE_FETCH_EXPERIENCES_QUERY = gql`
   query PreFetchExperiences(
     $experiencesArgs: GetExperiencesInput
-    $entriesPagination: PaginationInput
+    $entriesPagination: PaginationInput!
   ) {
     getExperiences(input: $experiencesArgs) {
       ...ExperienceConnectionPreFetchFragment

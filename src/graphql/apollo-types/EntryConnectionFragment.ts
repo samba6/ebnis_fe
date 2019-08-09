@@ -18,10 +18,11 @@ export interface EntryConnectionFragment_pageInfo {
   hasPreviousPage: boolean;
 }
 
-export interface EntryConnectionFragment_edges_node_fields {
-  __typename: "Field";
-  defId: string;
+export interface EntryConnectionFragment_edges_node_dataObjects {
+  __typename: "DataObject";
+  id: string;
   data: any;
+  definitionId: string;
 }
 
 export interface EntryConnectionFragment_edges_node {
@@ -33,20 +34,20 @@ export interface EntryConnectionFragment_edges_node {
   /**
    * The ID of experience to which this entry belongs.
    */
-  expId: string;
+  experienceId: string;
   /**
    * The client ID which indicates that an entry has been created while server
-   *   is offline and is to be saved with the server, the client ID uniquely
+   *   is offline and is to be saved. The client ID uniquely
    *   identifies this entry and will be used prevent conflict while saving entry
-   *   created while server offline.
+   *   created offline and must thus be non null in this situation.
    */
   clientId: string | null;
   insertedAt: any;
   updatedAt: any;
   /**
-   * The data fields belonging to this entry
+   * The list of data belonging to this entry
    */
-  fields: (EntryConnectionFragment_edges_node_fields | null)[];
+  dataObjects: (EntryConnectionFragment_edges_node_dataObjects | null)[];
 }
 
 export interface EntryConnectionFragment_edges {

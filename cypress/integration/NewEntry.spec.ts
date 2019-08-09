@@ -24,7 +24,7 @@ context("new experience entry page", () => {
     let p = createUnsavedExperience(
       {
         title,
-        fieldDefs: [
+        dataDefinitions: [
           {
             name: fieldName,
             type: FieldType.INTEGER,
@@ -78,7 +78,7 @@ context("new experience entry page", () => {
     let p = createSavedExperience(
       {
         title,
-        fieldDefs: [
+        dataDefinitions: [
           {
             name: fieldName,
             type: FieldType.INTEGER,
@@ -128,7 +128,7 @@ context("new experience entry page", () => {
 
     let p = createSavedExperience({
       title,
-      fieldDefs: [
+      dataDefinitions: [
         {
           name: fieldName,
           type: FieldType.INTEGER,
@@ -166,5 +166,5 @@ context("new experience entry page", () => {
 });
 
 function makeIdAttributeSelector(experience: ExperienceFragment) {
-  return `[id$="-value-${experience.fieldDefs[0].id}"]`;
+  return `[id$="-value-${experience.dataDefinitions[0].id}"]`;
 }

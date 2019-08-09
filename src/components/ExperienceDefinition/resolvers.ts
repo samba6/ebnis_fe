@@ -3,13 +3,13 @@ import {
   MUTATION_NAME_createUnsavedExperience,
 } from "../../state/resolvers";
 import { CreateExperienceMutationVariables } from "../../graphql/apollo-types/CreateExperienceMutation";
-import { CreateFieldDef } from "../../graphql/apollo-types/globalTypes";
+import { CreateDataDefinition } from "../../graphql/apollo-types/globalTypes";
 import { makeUnsavedId } from "../../constants";
 import { graphql } from "react-apollo";
 import { MutationFn } from "react-apollo";
 import gql from "graphql-tag";
 import {
-  ExperienceFragment_fieldDefs,
+  ExperienceFragment_dataDefinitions,
   ExperienceFragment,
 } from "../../graphql/apollo-types/ExperienceFragment";
 import { EXPERIENCE_FRAGMENT } from "../../graphql/experience.fragment";
@@ -26,7 +26,7 @@ const createUnsavedExperienceResolver: LocalResolverFn<
     createExperienceInput: {
       description = null,
       title,
-      fieldDefs: createFieldDefs,
+      dataDefinitions: createDataDefinitions,
     },
   },
   { cache, client },
@@ -35,16 +35,16 @@ const createUnsavedExperienceResolver: LocalResolverFn<
   const timestamp = today.toJSON();
   const experienceId = makeUnsavedId(today.getTime());
 
-  const fieldDefs: ExperienceFragment_fieldDefs[] = (createFieldDefs as CreateFieldDef[]).map(
+  const dataDefinitions: ExperienceFragment_dataDefinitions[] = (createDataDefinitions as CreateDataDefinition[]).map(
     ({ name, type }, index) => {
-      const fieldDefId = experienceId + "--" + index;
+      const id = experienceId + "--" + index;
 
       return {
-        __typename: "FieldDef",
+        __typename: "DataDefinition",
         name,
         type,
-        id: fieldDefId,
-        clientId: fieldDefId,
+        id,
+        clientId: id,
       };
     },
   );
@@ -58,7 +58,7 @@ const createUnsavedExperienceResolver: LocalResolverFn<
     updatedAt: timestamp,
     description,
     title,
-    fieldDefs,
+    dataDefinitions,
     entries: {
       __typename: "EntryConnection",
       edges: [],

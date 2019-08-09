@@ -4,6 +4,7 @@ import { newEntryResolvers } from "../components/NewEntry/resolvers";
 import { CacheContext } from "../state/resolvers";
 import { isUnsavedId } from "../constants";
 import { makeTestCache } from "./test_utils";
+import { EntryFragment } from "../graphql/apollo-types/EntryFragment";
 
 jest.mock("../components/NewEntry/update");
 jest.mock("../state/resolvers/update-saved-and-unsaved-experiences-in-cache");
@@ -29,9 +30,9 @@ it("updates unsaved experience successfully", async done => {
     entries: {},
   } as ExperienceFragment;
 
-  const field = {
+  const dataObject = {
     data: "2",
-    defId: "3",
+    definitionId: "3",
   };
 
   mockUpdateExperienceWithNewEntryInnerFn.mockResolvedValue({
@@ -40,9 +41,9 @@ it("updates unsaved experience successfully", async done => {
       edges: [
         {
           node: {
-            expId: experienceId,
-            fields: [field],
-          },
+            experienceId,
+            dataObjects: [dataObject],
+          } as EntryFragment,
         },
       ],
     },
@@ -55,7 +56,7 @@ it("updates unsaved experience successfully", async done => {
     experience: updatedExperience,
   } = await createUnsavedEntry(
     {},
-    { experience, fields: [field] },
+    { experience, dataObjects: [dataObject] },
     mockContext,
   );
 

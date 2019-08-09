@@ -16,14 +16,14 @@ import { Loading } from "../Loading";
 import { SidebarHeader } from "../SidebarHeader";
 import {
   ExperienceFragment_entries_edges_node,
-  ExperienceFragment_entries_edges_node_fields,
-  ExperienceFragment_fieldDefs,
+  ExperienceFragment_entries_edges_node_dataObjects,
+  ExperienceFragment_dataDefinitions,
 } from "../../graphql/apollo-types/ExperienceFragment";
 import "./styles.scss";
 import { CSSTransition, TransitionGroup } from "react-transition-group";
 import makeClassNames from "classnames";
 import Button from "semantic-ui-react/dist/commonjs/elements/Button";
-import { CreateEntryInput } from "../../graphql/apollo-types/globalTypes";
+import { CreateEntriesInput } from "../../graphql/apollo-types/globalTypes";
 import { UploadAllUnsavedsMutationFn } from "../../graphql/upload-unsaveds.mutation";
 import { isConnected } from "../../state/connections";
 import { NavigateFn } from "@reach/router";
@@ -137,11 +137,13 @@ export function UploadUnsaved(props: Props) {
         uploadFunction = uploadAllUnsaveds;
 
         variables = {
-          unsavedExperiences: unsavedExperiencesToUploadData(
+          unsavedExperiencesInput: unsavedExperiencesToUploadData(
             unsavedExperiencesMap,
           ),
 
-          unsavedEntries: savedExperiencesToUploadData(savedExperiencesMap),
+          unsavedEntriesInput: savedExperiencesToUploadData(
+            savedExperiencesMap,
+          ),
         };
       } else if (unsavedExperiencesLen !== 0) {
         uploadFunction = uploadUnsavedExperiences;
@@ -153,7 +155,7 @@ export function UploadUnsaved(props: Props) {
         uploadFunction = createEntries;
 
         variables = ({
-          createEntries: savedExperiencesToUploadData(savedExperiencesMap),
+          input: savedExperiencesToUploadData(savedExperiencesMap),
         } as unknown) as UploadAllUnsavedsMutationVariables;
       }
 
@@ -365,7 +367,9 @@ function ExperienceComponent({
           <Entry
             key={entryId}
             entry={entry}
-            fieldDefs={experience.fieldDefs as ExperienceFragment_fieldDefs[]}
+            dataDefinitions={
+              experience.dataDefinitions as ExperienceFragment_dataDefinitions[]
+            }
             entriesLen={unsavedEntries.length}
             index={index}
             id={`upload-unsaved-entry-${entryId}`}
@@ -563,19 +567,19 @@ function ServerError(props: {
 ////////////////////////// HELPER FUNCTIONS ///////////////////////////////////
 
 function toUploadableEntry(entry: ExperienceFragment_entries_edges_node) {
-  const fields = entry.fields.map(value => {
-    const field = value as ExperienceFragment_entries_edges_node_fields;
+  const dataObjects = entry.dataObjects.map(value => {
+    const dataObject = value as ExperienceFragment_entries_edges_node_dataObjects;
 
     return {
-      data: field.data,
-      defId: field.defId,
+      data: dataObject.data,
+      definitionId: dataObject.definitionId,
     };
   });
 
   return {
-    expId: entry.expId,
-    clientId: entry.clientId,
-    fields,
+    experienceId: entry.experienceId,
+    clientId: entry.clientId as string,
+    dataObjects,
     insertedAt: entry.insertedAt,
     updatedAt: entry.updatedAt,
   };
@@ -590,7 +594,7 @@ function unsavedExperiencesToUploadData(
         entries: unsavedEntries.map(toUploadableEntry),
         title: experience.title,
         clientId: experience.clientId,
-        fieldDefs: experience.fieldDefs.map(fieldDefToUnsavedData),
+        dataDefinitions: experience.dataDefinitions.map(fieldDefToUnsavedData),
         insertedAt: experience.insertedAt,
         updatedAt: experience.updatedAt,
         description: experience.description,
@@ -606,7 +610,7 @@ function savedExperiencesToUploadData(
     (acc, [, { unsavedEntries }]) => {
       return acc.concat(unsavedEntries.map(toUploadableEntry));
     },
-    [] as CreateEntryInput[],
+    [] as CreateEntriesInput[],
   );
 }
 

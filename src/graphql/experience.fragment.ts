@@ -1,5 +1,5 @@
 import gql from "graphql-tag";
-import { FIELD_DEF_FRAGMENT } from "./field-def.fragment";
+import { DATA_DEFINITION_FRAGMENT } from "./data-definition.fragment";
 import { ENTRY_CONNECTION_FRAGMENT } from "./entry-connection.fragment";
 
 // the minimum fields needed to quickly display an experience
@@ -19,9 +19,8 @@ export const EXPERIENCE_MINI_FRAGMENT = gql`
 export const EXPERIENCE_REST_FRAGMENT = gql`
   fragment ExperienceRestFragment on Experience {
     id
-
-    fieldDefs {
-      ...FieldDefFragment
+    dataDefinitions {
+      ...DataDefinitionFragment
     }
 
     entries(pagination: $entriesPagination) {
@@ -29,7 +28,7 @@ export const EXPERIENCE_REST_FRAGMENT = gql`
     }
   }
 
-  ${FIELD_DEF_FRAGMENT}
+  ${DATA_DEFINITION_FRAGMENT}
   ${ENTRY_CONNECTION_FRAGMENT}
 `;
 
@@ -37,8 +36,8 @@ export const EXPERIENCE_FRAGMENT = gql`
   fragment ExperienceFragment on Experience {
     ...ExperienceMiniFragment
 
-    fieldDefs {
-      ...FieldDefFragment
+    dataDefinitions {
+      ...DataDefinitionFragment
     }
 
     entries(pagination: $entriesPagination) {
@@ -47,7 +46,7 @@ export const EXPERIENCE_FRAGMENT = gql`
   }
 
   ${EXPERIENCE_MINI_FRAGMENT}
-  ${FIELD_DEF_FRAGMENT}
+  ${DATA_DEFINITION_FRAGMENT}
   ${ENTRY_CONNECTION_FRAGMENT}
 `;
 
@@ -86,11 +85,11 @@ export const EXPERIENCE_NO_ENTRY_FRAGMENT = gql`
   fragment ExperienceNoEntryFragment on Experience {
     ...ExperienceMiniFragment
 
-    fieldDefs {
-      ...FieldDefFragment
+    dataDefinitions {
+      ...DataDefinitionFragment
     }
   }
 
   ${EXPERIENCE_MINI_FRAGMENT}
-  ${FIELD_DEF_FRAGMENT}
+  ${DATA_DEFINITION_FRAGMENT}
 `;

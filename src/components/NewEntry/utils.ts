@@ -7,11 +7,15 @@ import { WithApolloClient } from "react-apollo";
 import { CreateUnsavedEntryMutationProps } from "./resolvers";
 import {
   ExperienceFragment,
-  ExperienceFragment_fieldDefs,
+  ExperienceFragment_dataDefinitions,
 } from "../../graphql/apollo-types/ExperienceFragment";
 import immer from "immer";
 import { ApolloError } from "apollo-client";
 import { FieldType } from "../../graphql/apollo-types/globalTypes";
+import {
+  CreateEntryMutation_createEntry_errors,
+  CreateEntryMutation_createEntry_errors_dataObjectsErrors,
+} from "../../graphql/apollo-types/CreateEntryMutation";
 
 export interface OwnProps
   extends WithApolloClient<{}>,
@@ -42,9 +46,9 @@ export interface FieldComponentProps {
 export type ToString = (val: FormObjVal) => string;
 
 export function initialStateFromProps(experience: ExperienceFragment) {
-  const fieldDefs = experience.fieldDefs as ExperienceFragment_fieldDefs[];
+  const dataDefinitions = experience.dataDefinitions as ExperienceFragment_dataDefinitions[];
 
-  const formObj = fieldDefs.reduce(
+  const formObj = dataDefinitions.reduce(
     function fieldDefReducer(acc, field, index) {
       const value =
         field.type === FieldType.DATE || field.type === FieldType.DATETIME
@@ -81,6 +85,7 @@ function formFieldNameToIndex(formFieldName: string) {
 export enum ActionTypes {
   setFormObjField = "@components/new-entry/set-form-obj-field",
   setServerErrors = "@components/new-entry/set-server-errors",
+  setCreateEntryErrors = "@components/new-entry/set-create-entry-errors",
   removeServerErrors = "@components/new-entry/unset-server-errors",
 }
 
@@ -107,7 +112,8 @@ export interface State {
 type Action =
   | [ActionTypes.setFormObjField, SetFormObjFieldPayload]
   | [ActionTypes.setServerErrors, ServerErrors]
-  | [ActionTypes.removeServerErrors];
+  | [ActionTypes.removeServerErrors]
+  | [ActionTypes.setCreateEntryErrors, CreateEntryMutation_createEntry_errors];
 
 export const reducer: Reducer<State, Action> = (prevState, [type, payload]) => {
   return immer(prevState, proxy => {
@@ -117,6 +123,38 @@ export const reducer: Reducer<State, Action> = (prevState, [type, payload]) => {
           const { formFieldName, value } = payload as SetFormObjFieldPayload;
 
           proxy.formObj[formFieldNameToIndex(formFieldName)] = value;
+        }
+
+        break;
+
+      case ActionTypes.setCreateEntryErrors:
+        {
+          const {
+            dataObjectsErrors,
+          } = payload as CreateEntryMutation_createEntry_errors;
+
+          if (!dataObjectsErrors) {
+            return;
+          }
+
+          const fieldErrors = dataObjectsErrors.reduce((acc, field) => {
+            const {
+              errors,
+              index,
+            } = field as CreateEntryMutation_createEntry_errors_dataObjectsErrors;
+
+            acc[index] = Object.entries(errors).reduce((a, [k, v]) => {
+              if (v) {
+                a += `\n${k}: ${v}`;
+              }
+
+              return a;
+            }, "");
+
+            return acc;
+          }, {});
+
+          proxy.fieldErrors = fieldErrors;
         }
 
         break;
@@ -151,36 +189,7 @@ export function parseApolloErrors(payload: ApolloError) {
   if (networkError) {
     return { networkError: "Network error!" };
   }
-
-  try {
-    const { fields } = JSON.parse(
-      graphQLErrors[0].message,
-    ) as CreateEntryFieldErrors;
-
-    const fieldErrors = fields.reduce((acc, field) => {
-      const [[k, v]] = Object.entries(field.errors);
-
-      acc[field.meta.def_id] = `${k}: ${v}`;
-      return acc;
-    }, {});
-
-    return { fieldErrors };
-  } catch (error) {
-    return { networkError: "Network error!" };
-  }
+  return { networkError: graphQLErrors[0].message };
 }
 
 export type DispatchType = Dispatch<Action>;
-
-export interface CreateEntryFieldErrors {
-  fields: {
-    errors: {
-      data: string;
-    };
-
-    meta: {
-      def_id: string;
-      index: number;
-    };
-  }[];
-}

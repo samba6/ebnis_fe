@@ -13,14 +13,9 @@ export const UPDATE_EXPERIENCE_MUTATION = gql`
         ...ExperienceNoEntryFragment
       }
 
-      experienceError {
-        id
+      errors {
         title
-      }
-
-      fieldDefinitionsErrors {
-        id
-        name
+        clientId
       }
     }
   }

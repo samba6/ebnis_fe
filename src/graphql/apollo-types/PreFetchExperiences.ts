@@ -8,8 +8,8 @@ import { GetExperiencesInput, PaginationInput, FieldType } from "./globalTypes";
 // GraphQL query operation: PreFetchExperiences
 // ====================================================
 
-export interface PreFetchExperiences_getExperiences_edges_node_fieldDefs {
-  __typename: "FieldDef";
+export interface PreFetchExperiences_getExperiences_edges_node_dataDefinitions {
+  __typename: "DataDefinition";
   id: string;
   /**
    * Name of field e.g start, end, meal
@@ -20,9 +20,9 @@ export interface PreFetchExperiences_getExperiences_edges_node_fieldDefs {
    */
   type: FieldType;
   /**
-   * String that uniquely identifies this field definition has been
+   * String that uniquely identifies this data definition has been
    *   created offline. If an associated entry is also created
-   *   offline, then `createField.defId` **MUST BE** the same as this
+   *   offline, then `createField.definitionId` **MUST BE** the same as this
    *   field and will be validated as such.
    */
   clientId: string | null;
@@ -40,10 +40,11 @@ export interface PreFetchExperiences_getExperiences_edges_node_entries_pageInfo 
   hasPreviousPage: boolean;
 }
 
-export interface PreFetchExperiences_getExperiences_edges_node_entries_edges_node_fields {
-  __typename: "Field";
-  defId: string;
+export interface PreFetchExperiences_getExperiences_edges_node_entries_edges_node_dataObjects {
+  __typename: "DataObject";
+  id: string;
   data: any;
+  definitionId: string;
 }
 
 export interface PreFetchExperiences_getExperiences_edges_node_entries_edges_node {
@@ -55,20 +56,20 @@ export interface PreFetchExperiences_getExperiences_edges_node_entries_edges_nod
   /**
    * The ID of experience to which this entry belongs.
    */
-  expId: string;
+  experienceId: string;
   /**
    * The client ID which indicates that an entry has been created while server
-   *   is offline and is to be saved with the server, the client ID uniquely
+   *   is offline and is to be saved. The client ID uniquely
    *   identifies this entry and will be used prevent conflict while saving entry
-   *   created while server offline.
+   *   created offline and must thus be non null in this situation.
    */
   clientId: string | null;
   insertedAt: any;
   updatedAt: any;
   /**
-   * The data fields belonging to this entry
+   * The list of data belonging to this entry
    */
-  fields: (PreFetchExperiences_getExperiences_edges_node_entries_edges_node_fields | null)[];
+  dataObjects: (PreFetchExperiences_getExperiences_edges_node_entries_edges_node_dataObjects | null)[];
 }
 
 export interface PreFetchExperiences_getExperiences_edges_node_entries_edges {
@@ -98,7 +99,7 @@ export interface PreFetchExperiences_getExperiences_edges_node {
   /**
    * The field definitions used for the experience entries
    */
-  fieldDefs: (PreFetchExperiences_getExperiences_edges_node_fieldDefs | null)[];
+  dataDefinitions: (PreFetchExperiences_getExperiences_edges_node_dataDefinitions | null)[];
   /**
    * The entries of the experience - can be paginated
    */
@@ -124,13 +125,14 @@ export interface PreFetchExperiences_getExperiences {
 
 export interface PreFetchExperiences {
   /**
-   * Get all experiences belonging to a user. The experiences returned may be
-   *   paginated
+   * Get all experiences belonging to a user.
+   *   The experiences returned may be paginated
+   *   and may be filtered by IDs
    */
   getExperiences: PreFetchExperiences_getExperiences | null;
 }
 
 export interface PreFetchExperiencesVariables {
   experiencesArgs?: GetExperiencesInput | null;
-  entriesPagination?: PaginationInput | null;
+  entriesPagination: PaginationInput;
 }

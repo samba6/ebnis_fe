@@ -1,13 +1,24 @@
 import gql from "graphql-tag";
 
 import { ENTRY_FRAGMENT } from "./entry.fragment";
+import { DATA_OBJECTS_ERRORS } from "./data-objects-errors-fragment";
 
 export const CREATE_ENTRIES_ERROR_FRAGMENT = gql`
-  fragment CreateEntriesErrorFragment on CreateEntriesError {
+  fragment CreateEntriesErrorsFragment on CreateEntriesErrors {
     experienceId
     clientId
-    error
+    errors {
+      clientId
+      entry
+      experienceId
+      experience
+      dataObjectsErrors {
+        ...DataObjectsErrorsFragment
+      }
+    }
   }
+
+  ${DATA_OBJECTS_ERRORS}
 `;
 
 export const CREATE_ENTRIES_RESPONSE_FRAGMENT = gql`
@@ -19,7 +30,7 @@ export const CREATE_ENTRIES_RESPONSE_FRAGMENT = gql`
     }
 
     errors {
-      ...CreateEntriesErrorFragment
+      ...CreateEntriesErrorsFragment
     }
   }
 

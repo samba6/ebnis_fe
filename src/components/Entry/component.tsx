@@ -3,23 +3,28 @@ import { displayFieldType, formatDatetime } from "../Experience/utils";
 import "./styles.scss";
 import makeClassNames from "classnames";
 import {
-  ExperienceFragment_fieldDefs,
-  ExperienceFragment_entries_edges_node_fields,
+  ExperienceFragment_dataDefinitions,
+  ExperienceFragment_entries_edges_node_dataObjects,
 } from "../../graphql/apollo-types/ExperienceFragment";
 import Icon from "semantic-ui-react/dist/commonjs/elements/Icon";
 import Dropdown from "semantic-ui-react/dist/commonjs/modules/Dropdown";
 import { Props, EntryActionTypes } from "./utils";
 import {
-  EntryFragment_fields,
+  EntryFragment_dataObjects,
   EntryFragment,
 } from "../../graphql/apollo-types/EntryFragment";
 
 export function Entry(props: Props) {
-  const { entry, fieldDefs, className = "", ...fieldProps } = props;
+  const {
+    entry,
+    dataDefinitions: fieldDefs,
+    className = "",
+    ...fieldProps
+  } = props;
   const containerId = props.id || `entry-container-${entry.id}`;
 
-  const fields = entry.fields as ExperienceFragment_entries_edges_node_fields[];
-  const fieldsLen = fields.length;
+  const dataObjects = entry.dataObjects as ExperienceFragment_entries_edges_node_dataObjects[];
+  const fieldsLen = dataObjects.length;
 
   const fieldDefsMap = useMemo(() => {
     return fieldDefs.reduce(
@@ -27,7 +32,7 @@ export function Entry(props: Props) {
         acc[f.id] = f;
         return acc;
       },
-      {} as { [k: string]: ExperienceFragment_fieldDefs },
+      {} as { [k: string]: ExperienceFragment_dataDefinitions },
     );
   }, [fieldDefs]);
 
@@ -39,14 +44,14 @@ export function Entry(props: Props) {
       })}
       id={containerId}
     >
-      {fields.map((field, fieldIndex) => {
-        const fieldDef = fieldDefsMap[field.defId];
+      {dataObjects.map((dataObject, fieldIndex) => {
+        const fieldDef = fieldDefsMap[dataObject.definitionId];
 
         return (
           <FieldComponent
             {...fieldProps}
-            key={field.defId + fieldIndex}
-            field={field}
+            key={dataObject.definitionId + fieldIndex}
+            field={dataObject}
             fieldDef={fieldDef}
             index={fieldIndex}
             fieldsLen={fieldsLen}
@@ -68,8 +73,8 @@ export function Entry(props: Props) {
 
 function FieldComponent(
   props: Pick<Props, "dispatch" | "editable"> & {
-    field: EntryFragment_fields;
-    fieldDef: ExperienceFragment_fieldDefs;
+    field: EntryFragment_dataObjects;
+    fieldDef: ExperienceFragment_dataDefinitions;
     index: number;
     fieldsLen: number;
     entry: EntryFragment;
@@ -77,7 +82,7 @@ function FieldComponent(
 ) {
   const { field, fieldDef, index, entry, editable, dispatch } = props;
 
-  const { defId, data } = field;
+  const { definitionId, data } = field;
 
   const { type, name: fieldName } = fieldDef;
 
@@ -87,7 +92,7 @@ function FieldComponent(
 
   return (
     <div
-      key={defId}
+      key={definitionId}
       className={makeClassNames({
         field: true,
       })}
@@ -134,7 +139,7 @@ function FieldComponent(
           )}
         </div>
 
-        <div className="field__value" id={`${entryId}-value-${defId}`}>
+        <div className="field__value" id={`${entryId}-value-${definitionId}`}>
           {text}
         </div>
       </div>

@@ -6,18 +6,31 @@ import {
   CreateExperienceMutationVariables,
 } from "./apollo-types/CreateExperienceMutation";
 import { EXPERIENCE_FRAGMENT } from "./experience.fragment";
+import { DATA_DEFINITIONS_ERRORS } from "./create-experience-errors.fragment";
 
 export const CREATE_EXPERIENCE_MUTATION = gql`
   mutation CreateExperienceMutation(
     $createExperienceInput: CreateExperienceInput!
-    $entriesPagination: PaginationInput
+    $entriesPagination: PaginationInput!
   ) {
     createExperience(input: $createExperienceInput) {
-      ...ExperienceFragment
+      experience {
+        ...ExperienceFragment
+      }
+
+      errors {
+        clientId
+        title
+        user
+        dataDefinitionsErrors {
+          ...DataDefinitionsErrorsFragment
+        }
+      }
     }
   }
 
   ${EXPERIENCE_FRAGMENT}
+  ${DATA_DEFINITIONS_ERRORS}
 `;
 
 export type CreateExperienceMutationFn = MutationFn<

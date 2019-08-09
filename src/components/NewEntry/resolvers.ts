@@ -3,7 +3,7 @@ import {
   MUTATION_NAME_createUnsavedEntry,
 } from "../../state/resolvers";
 import { makeUnsavedId } from "../../constants";
-import { CreateField } from "../../graphql/apollo-types/globalTypes";
+import { CreateDataObject } from "../../graphql/apollo-types/globalTypes";
 import gql from "graphql-tag";
 import { graphql, MutationFn } from "react-apollo";
 import { updateExperienceWithNewEntry } from "./update";
@@ -11,6 +11,7 @@ import { ENTRY_FRAGMENT } from "../../graphql/entry.fragment";
 import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragment";
 import { EntryFragment } from "../../graphql/apollo-types/EntryFragment";
 import { updateEntriesCountSavedAndUnsavedExperiencesInCache } from "../../state/resolvers/update-saved-and-unsaved-experiences-in-cache";
+import { CreateEntryMutation_createEntry } from "../../graphql/apollo-types/CreateEntryMutation";
 
 export const CREATE_UNSAVED_ENTRY_MUTATION = gql`
   mutation CreateUnsavedEntry($experience: Experience!, $fields: [Fields!]!) {
@@ -68,10 +69,11 @@ const createUnsavedEntryResolver: LocalResolverFn<
 
   const id = makeUnsavedId(today.getTime());
 
-  const fields = variables.fields.map(field => {
+  const dataObjects = variables.dataObjects.map((dataObject, index) => {
     return {
-      ...field,
-      __typename: "Field" as "Field",
+      ...dataObject,
+      __typename: "DataObject" as "DataObject",
+      id: `${id}--data-object-${index}`,
     };
   });
 
@@ -79,14 +81,14 @@ const createUnsavedEntryResolver: LocalResolverFn<
     __typename: "Entry",
     id,
     clientId: id,
-    expId: experienceId,
-    fields,
+    experienceId,
+    dataObjects,
     insertedAt: timestamps,
     updatedAt: timestamps,
   };
 
   experience = (await updateExperienceWithNewEntry(experience)(client, {
-    data: { createEntry: entry },
+    data: { createEntry: { entry } as CreateEntryMutation_createEntry },
   })) as ExperienceFragment;
 
   updateEntriesCountSavedAndUnsavedExperiencesInCache(client, experienceId);
@@ -95,7 +97,7 @@ const createUnsavedEntryResolver: LocalResolverFn<
 };
 
 export interface CreateUnsavedEntryVariables {
-  fields: CreateField[];
+  dataObjects: (CreateDataObject)[];
   experience: ExperienceFragment;
 }
 

@@ -25,7 +25,7 @@ import { updateExperienceWithNewEntry } from "./update";
 import { SidebarHeader } from "../SidebarHeader";
 import { setDocumentTitle, makeSiteTitle } from "../../constants";
 import { isConnected } from "../../state/connections";
-import { ExperienceFragment_fieldDefs } from "../../graphql/apollo-types/ExperienceFragment";
+import { ExperienceFragment_dataDefinitions } from "../../graphql/apollo-types/ExperienceFragment";
 import makeClassNames from "classnames";
 import { FormCtrlError } from "../FormCtrlError/component";
 import { makeScrollIntoViewId, scrollIntoView } from "../scroll-into-view";
@@ -33,6 +33,8 @@ import { FieldType } from "../../graphql/apollo-types/globalTypes";
 import { DateField } from "../DateField/component";
 import { DateTimeField } from "../DateTimeField/component";
 import dateFnFormat from "date-fns/format";
+import { CreateEntryMutation_createEntry } from "../../graphql/apollo-types/CreateEntryMutation";
+import { CreateUnsavedEntryMutationReturned } from "./resolvers";
 
 export function NewEntry(props: Props) {
   const { navigate, createEntry, createUnsavedEntry, experience } = props;
@@ -70,19 +72,21 @@ export function NewEntry(props: Props) {
     });
   }, [fieldErrors]);
 
-  function goToExp() {
+  function goToExperience() {
     (navigate as NavigateFn)(makeExperienceRoute(experience.id));
   }
 
   async function onSubmit() {
-    const fields = [];
-    const { fieldDefs, id: expId } = experience;
+    const dataObjects = [];
+    const { dataDefinitions, id: experienceId } = experience;
 
     for (const [stringIndex, val] of Object.entries(state.formObj)) {
       const index = Number(stringIndex);
-      const field = fieldDefs[index] as ExperienceFragment_fieldDefs;
+      const definition = dataDefinitions[
+        index
+      ] as ExperienceFragment_dataDefinitions;
 
-      const { type, id } = field;
+      const { type, id: definitionId } = definition;
 
       let toString;
 
@@ -118,35 +122,56 @@ export function NewEntry(props: Props) {
           break;
       }
 
-      fields.push({
-        defId: id,
+      dataObjects.push({
+        definitionId,
 
         data: `{"${type.toLowerCase()}":"${toString}"}`,
       });
     }
 
     try {
+      let createResult: CreateEntryMutation_createEntry;
+
       if (isConnected()) {
-        await (createEntry as CreateEntryMutationFn)({
+        const result = await (createEntry as CreateEntryMutationFn)({
           variables: {
             input: {
-              expId,
-              fields,
+              experienceId,
+              dataObjects,
             },
           },
 
-          update: updateExperienceWithNewEntry(expId),
+          update: updateExperienceWithNewEntry(experienceId),
         });
+
+        createResult = ((result && result.data && result.data.createEntry) ||
+          {}) as CreateEntryMutation_createEntry;
       } else {
-        await createUnsavedEntry({
+        const result = await createUnsavedEntry({
           variables: {
             experience,
-            fields,
+            dataObjects: dataObjects,
           },
         });
+
+        const { entry } = (result &&
+          result.data &&
+          result.data
+            .createUnsavedEntry) as CreateUnsavedEntryMutationReturned["createUnsavedEntry"];
+
+        createResult = { entry } as CreateEntryMutation_createEntry;
       }
 
-      goToExp();
+      const { entry, errors } = createResult;
+
+      if (errors) {
+        dispatch([ActionTypes.setCreateEntryErrors, errors]);
+        return;
+      }
+
+      if (entry) {
+        goToExperience();
+      }
     } catch (errors) {
       const parsedErrors = parseApolloErrors(errors);
 
@@ -159,11 +184,16 @@ export function NewEntry(props: Props) {
   }
 
   function renderMain() {
-    const { fieldDefs, title } = experience;
+    const { dataDefinitions, title } = experience;
 
     return (
       <div className="main">
-        <Button type="button" onClick={goToExp} className="title" basic={true}>
+        <Button
+          type="button"
+          onClick={goToExperience}
+          className="title"
+          basic={true}
+        >
           {title}
         </Button>
 
@@ -192,8 +222,8 @@ export function NewEntry(props: Props) {
         )}
 
         <Form onSubmit={onSubmit}>
-          {fieldDefs.map((obj, index) => {
-            const fieldDefinition = obj as ExperienceFragment_fieldDefs;
+          {dataDefinitions.map((obj, index) => {
+            const fieldDefinition = obj as ExperienceFragment_dataDefinitions;
 
             return (
               <FieldComponent
@@ -202,7 +232,7 @@ export function NewEntry(props: Props) {
                 index={index}
                 formValues={state.formObj}
                 dispatch={dispatch}
-                error={fieldErrors[fieldDefinition.id]}
+                error={fieldErrors[index]}
               />
             );
           })}
@@ -232,7 +262,7 @@ export function NewEntry(props: Props) {
 }
 
 interface FieldComponentProps {
-  field: ExperienceFragment_fieldDefs;
+  field: ExperienceFragment_dataDefinitions;
   index: number;
   formValues: FormObj;
   dispatch: DispatchType;

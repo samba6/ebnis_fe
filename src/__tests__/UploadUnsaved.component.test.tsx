@@ -17,7 +17,7 @@ import {
 import { makeUnsavedId } from "../constants";
 import {
   renderWithRouter,
-  makeFieldDefs,
+  makeDataDefinitions,
   makeEntryNode,
   closeMessage,
 } from "./test_utils";
@@ -64,6 +64,12 @@ import { deleteIdsFromCache } from "../state/resolvers/delete-references-from-ca
 import { deleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache } from "../state/resolvers/update-saved-and-unsaved-experiences-in-cache";
 import { EXPERIENCES_URL } from "../routes";
 import { isConnected } from "../state/connections";
+import { CreateEntryMutationVariables } from "../graphql/apollo-types/CreateEntryMutation";
+import {
+  UploadAllUnsavedsMutation,
+  UploadAllUnsavedsMutation_createEntries,
+  UploadAllUnsavedsMutation_saveOfflineExperiences,
+} from "../graphql/apollo-types/UploadAllUnsavedsMutation";
 
 const mockIsConnected = isConnected as jest.Mock;
 const mockScrollIntoView = scrollIntoView as jest.Mock;
@@ -130,7 +136,7 @@ it("shows only saved experiences, does not show saved entries and uploads unsave
   const { id: entryId, ...entry } = {
     ...makeEntryNode(makeUnsavedId("1")),
     clientId: "a",
-    expId: "1",
+    experienceId: "1",
   };
 
   const unsavedEntry = {
@@ -231,8 +237,8 @@ it("shows only saved experiences, does not show saved entries and uploads unsave
     expect(mockUploadSavedExperiencesEntries).toHaveBeenCalled();
   });
 
-  const uploadedEntry = (mockUploadSavedExperiencesEntries.mock
-    .calls[0][0] as any).variables.createEntries[0];
+  const uploadedEntry = ((mockUploadSavedExperiencesEntries.mock
+    .calls[0][0] as any).variables as CreateEntryMutationVariables).input[0];
 
   expect(uploadedEntry).toEqual(entry);
 
@@ -260,14 +266,14 @@ it("shows only 'unsaved experiences' data and uploading same succeeds", async ()
     title: "a",
     clientId: "1",
     description: "x",
-    fieldDefs: makeFieldDefs(),
+    dataDefinitions: makeDataDefinitions(),
     ...timeStamps,
   } as ExperienceFragment;
 
   const { id: entryId, ...entry } = {
     ...makeEntryNode(),
     clientId: "b",
-    expId: "1",
+    experienceId: "1",
     ...timeStamps,
   };
 
@@ -379,7 +385,9 @@ it("shows only 'unsaved experiences' data and uploading same succeeds", async ()
     ...otherExperienceFields
   } = (mockUploadUnsavedExperiences.mock.calls[0][0] as any).variables.input[0];
 
-  experience.fieldDefs = experience.fieldDefs.map(fieldDefToUnsavedData as any);
+  experience.dataDefinitions = experience.dataDefinitions.map(
+    fieldDefToUnsavedData as any,
+  );
 
   expect(otherExperienceFields).toEqual(experience);
 
@@ -433,7 +441,7 @@ it("toggles saved and 'unsaved experiences' and uploads data", async () => {
                 id: "1",
                 title: "a",
                 clientId: "1",
-                fieldDefs: makeFieldDefs(),
+                dataDefinitions: makeDataDefinitions(),
 
                 entries: {
                   edges: [
@@ -457,7 +465,7 @@ it("toggles saved and 'unsaved experiences' and uploads data", async () => {
               experience: {
                 id: "2",
                 title: "a",
-                fieldDefs: makeFieldDefs(),
+                dataDefinitions: makeDataDefinitions(),
 
                 entries: {
                   edges: [
@@ -485,23 +493,27 @@ it("toggles saved and 'unsaved experiences' and uploads data", async () => {
           errors: [
             {
               clientId: entryId,
-              error: `${entryId} error`,
+              errors: {
+                clientId: `${entryId} error`,
+              },
             },
           ],
 
           experienceId: "2",
         },
-      ],
+      ] as UploadAllUnsavedsMutation_createEntries[],
 
       saveOfflineExperiences: [
         {
-          experienceError: {
+          experienceErrors: {
             clientId: "1",
-            error: "experience error",
+            errors: {
+              title: "experience error",
+            },
           },
         },
-      ],
-    },
+      ] as UploadAllUnsavedsMutation_saveOfflineExperiences[],
+    } as UploadAllUnsavedsMutation,
   });
 
   render(ui);
