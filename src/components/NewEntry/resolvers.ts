@@ -14,8 +14,12 @@ import { updateEntriesCountSavedAndUnsavedExperiencesInCache } from "../../state
 import { CreateEntryMutation_createEntry } from "../../graphql/apollo-types/CreateEntryMutation";
 
 export const CREATE_UNSAVED_ENTRY_MUTATION = gql`
-  mutation CreateUnsavedEntry($experience: Experience!, $fields: [Fields!]!) {
-    createUnsavedEntry(experience: $experience, fields: $fields) @client {
+  mutation CreateUnsavedEntry(
+    $experience: Experience!
+    $dataObjects: [DataObjects!]!
+  ) {
+    createUnsavedEntry(experience: $experience, dataObjects: $dataObjects)
+      @client {
       entry {
         ...EntryFragment
       }
@@ -59,6 +63,13 @@ const createUnsavedEntryResolver: LocalResolverFn<
   Promise<CreateUnsavedEntryMutationReturned["createUnsavedEntry"]>
 > = async (root, variables, context) => {
   const { client } = context;
+
+  // tslint:disable-next-line:no-console
+  console.log(
+    `\n\t\tLogging start\n\n\n\n variables\n`,
+    variables,
+    `\n\n\n\n\t\tLogging ends\n`,
+  );
 
   let experience = variables.experience;
   experience.hasUnsaved = true;

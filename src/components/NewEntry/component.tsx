@@ -150,7 +150,7 @@ export function NewEntry(props: Props) {
         const result = await createUnsavedEntry({
           variables: {
             experience,
-            dataObjects: dataObjects,
+            dataObjects,
           },
         });
 
