@@ -26,15 +26,7 @@ export function buildClientCache(
     invalidateCache,
   }: BuildClientCache = {} as BuildClientCache,
 ) {
-  // we may invoke this function, `buildClientCache`,
-  // for the first time either from cypress or from
-  // our app (we really don't know which will come first and we really don't
-  // care). The idea is that if `buildClientCache` is invoked first from
-  // cypress, we make sure that subsequent invocation uses the cypress version.
-  // This should fix the problem whereby the cache used by some part of cypress
-  // is out of sync with other parts because some are using cypress version
-  // while others are using app version
-
+  // use cypress version of cache if it has been set by cypress
   let { cache, persistor } = clientCacheFromCypress(invalidateCache);
 
   if (!cache) {

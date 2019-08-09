@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-namespace */
 /* eslint-disable @typescript-eslint/no-use-before-define */
 
@@ -22,7 +23,13 @@ import { storeConnectionStatus } from "../../src/state/connections";
 const serverUrl = Cypress.env("API_URL") as string;
 
 function checkoutSession() {
-  Cypress.env(CYPRESS_APOLLO_KEY, null);
+  const { cache } = (Cypress.env(CYPRESS_APOLLO_KEY) || {}) as {
+    cache: any;
+  };
+
+  if (cache) {
+    cache.data.data = {};
+  }
 
   buildClientCache({
     uri: serverUrl,
