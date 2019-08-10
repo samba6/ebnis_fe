@@ -144,7 +144,7 @@ export const reducer: Reducer<State, Action> = (prevState, [type, payload]) => {
             } = field as CreateEntryMutation_createEntry_errors_dataObjectsErrors;
 
             acc[index] = Object.entries(errors).reduce((a, [k, v]) => {
-              if (v) {
+              if (v && k !== "__typename") {
                 a += `\n${k}: ${v}`;
               }
 

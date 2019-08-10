@@ -442,7 +442,11 @@ it("renders error when entry creation fails", async () => {
     dataObjectsErrors: [
       {
         index: 0,
-        errors: { data: "is invalid", definitionId: "f1" },
+        errors: {
+          data: "is invalid",
+          definitionId: "f1",
+          __typename: "DataObjectError",
+        },
       },
     ],
   } as CreateEntryMutation_createEntry_errors;
