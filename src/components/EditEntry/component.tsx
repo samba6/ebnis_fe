@@ -10,9 +10,9 @@ import {
   DefinitionState,
   DefaultDefinitionsMap,
   DefinitionsContextProvider,
-  definitionsContext,
+  DefinitionsContext,
 } from "./utils";
-import { Formik, FormikProps, FieldArray, Field } from "formik";
+import { Formik, FormikProps, FieldArray, Field, FieldProps } from "formik";
 import Form from "semantic-ui-react/dist/commonjs/collections/Form";
 import Button from "semantic-ui-react/dist/commonjs/elements/Button";
 import Input from "semantic-ui-react/dist/commonjs/elements/Input";
@@ -80,18 +80,13 @@ function DefinitionsComponent(props: DefinitionsComponentProps) {
     <FieldArray
       name="definitions"
       render={() => {
-        return formValues.map(definition => {
+        return formValues.map((definition, index) => {
           return (
-            <Field
+            <DefinitionComponent
               key={definition.id}
-              render={() => {
-                return (
-                  <DefinitionComponent
-                    formValue={definition}
-                    stateContext={state[definition.id]}
-                  />
-                );
-              }}
+              id={definition.id}
+              stateContext={state[definition.id]}
+              index={index}
             />
           );
         });
@@ -102,30 +97,57 @@ function DefinitionsComponent(props: DefinitionsComponentProps) {
 
 interface DefinitionComponentProps {
   stateContext: DefinitionState;
-  formValue: DefinitionFormValue;
+  id: string;
+  index: number;
 }
 
 function DefinitionComponent(props: DefinitionComponentProps) {
-  const { formValue, stateContext } = props;
+  const { id, stateContext, index } = props;
   const { state } = stateContext;
-  const { dispatch, defaultDefinitionsMap } = useContext(definitionsContext);
+  const { dispatch, defaultDefinitionsMap } = useContext(DefinitionsContext);
 
-  const { id, name: formNameValue } = formValue;
   const idPrefix = `edit-entry-definition-${id}`;
-  const { type } = defaultDefinitionsMap[id];
+  const { type, name: defaultFormValue } = defaultDefinitionsMap[id];
+  const fieldName = `definitions[${index}].name`;
 
   return (
     <div id={idPrefix}>
       <Form.Field>
         {type}
 
-        {state === "idle" && (
-          <span id={`${idPrefix}-name`}>{formNameValue}</span>
-        )}
+        <Field name={fieldName}>
+          {({
+            field: { value, ...rest },
+            form: { setFieldValue },
+          }: FieldProps<FormValues>) => {
+            return (
+              <>
+                {state === "idle" && (
+                  <span id={`${idPrefix}-name`}>{value}</span>
+                )}
 
-        {state === "pristine" && (
-          <Input id={`${idPrefix}-input`} value={formNameValue} />
-        )}
+                {(state === "pristine" || state === "dirty") && (
+                  <Input
+                    {...rest}
+                    id={`${idPrefix}-input`}
+                    value={value}
+                    onChange={(_, data) => {
+                      setFieldValue(fieldName, data.value);
+
+                      dispatch({
+                        type:
+                          data.value !== defaultFormValue
+                            ? ActionTypes.TITLE_CHANGED
+                            : ActionTypes.TITLE_RESET,
+                        id,
+                      });
+                    }}
+                  />
+                )}
+              </>
+            );
+          }}
+        </Field>
 
         {state === "idle" && (
           <Button
@@ -143,7 +165,31 @@ function DefinitionComponent(props: DefinitionComponentProps) {
         )}
 
         {state === "pristine" && (
-          <Button type="button" id={`${idPrefix}-dismiss`}>
+          <Button
+            type="button"
+            id={`${idPrefix}-dismiss`}
+            onClick={() => {
+              dispatch({
+                type: ActionTypes.TITLE_EDIT_DISMISS,
+                id,
+              });
+            }}
+          >
+            Dismiss
+          </Button>
+        )}
+
+        {state === "dirty" && (
+          <Button
+            type="submit"
+            id={`${idPrefix}-submit`}
+            onClick={() => {
+              dispatch({
+                type: ActionTypes.TITLE_EDIT_DISMISS,
+                id,
+              });
+            }}
+          >
             Submit
           </Button>
         )}

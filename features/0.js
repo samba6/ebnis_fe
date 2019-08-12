@@ -215,13 +215,13 @@ const definitionTitle = {
             ],
           },
 
-          DISMISS: "idle",
+          TITLE_EDIT_DISMISS: "idle",
         },
       },
 
       dirty: {
         on: {
-          RESET: "pristine",
+          TITLE_RESET: "pristine",
         },
 
         initial: "unknown",

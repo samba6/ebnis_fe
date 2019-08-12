@@ -5,6 +5,9 @@ import immer from "immer";
 
 export enum ActionTypes {
   EDIT_BTN_CLICKED = "@component/edit-entry/edit-btn-clicked",
+  TITLE_CHANGED = "@component/edit-entry/title-changed",
+  TITLE_RESET = "@component/edit-entry/title-reset",
+  TITLE_EDIT_DISMISS = "@component/edit-entry/title-dismi",
 }
 
 export const y = 1 + 1;
@@ -36,7 +39,7 @@ export const reducer: Reducer<State, Action> = (
     switch (type) {
       case ActionTypes.EDIT_BTN_CLICKED:
         {
-          const { id } = payload as EditBtnClickedPayload;
+          const { id } = payload as IdString;
 
           proxy.definitionsStates[id] = {
             state: "pristine",
@@ -44,24 +47,65 @@ export const reducer: Reducer<State, Action> = (
         }
 
         break;
+
+      case ActionTypes.TITLE_CHANGED:
+        {
+          const { id } = payload as IdString;
+          proxy.definitionsStates[id] = {
+            state: "dirty",
+          };
+        }
+
+        break;
+
+      case ActionTypes.TITLE_RESET:
+        {
+          const { id } = payload as IdString;
+          proxy.definitionsStates[id] = {
+            state: "pristine",
+          };
+        }
+
+        break;
+
+      case ActionTypes.TITLE_EDIT_DISMISS:
+        {
+          const { id } = payload as IdString;
+          proxy.definitionsStates[id].state = "idle";
+        }
+
+        break;
     }
   });
 };
 
-export const definitionsContext = createContext<DefinitionsContextValues>(
+export const DefinitionsContext = createContext<DefinitionsContextValues>(
   {} as DefinitionsContextValues,
 );
 
-export const DefinitionsContextProvider = definitionsContext.Provider;
+export const DefinitionsContextProvider = DefinitionsContext.Provider;
 
 export interface State {
   readonly definitionsStates: DefinitionsStates;
 }
 
-type Action = {
-  type: ActionTypes.EDIT_BTN_CLICKED;
-  id: string;
-};
+type Action =
+  | {
+      type: ActionTypes.EDIT_BTN_CLICKED;
+      id: string;
+    }
+  | {
+      type: ActionTypes.TITLE_CHANGED;
+      id: string;
+    }
+  | {
+      type: ActionTypes.TITLE_RESET;
+      id: string;
+    }
+  | {
+      type: ActionTypes.TITLE_EDIT_DISMISS;
+      id: string;
+    };
 
 export interface Props {
   entry: EntryFragment;
@@ -84,14 +128,14 @@ export interface FormValues {
 export type DispatchType = Dispatch<Action>;
 
 export interface DefinitionState {
-  state: "idle" | "pristine";
+  state: "idle" | "pristine" | "dirty";
 }
 
 export interface DefinitionsStates {
   [k: string]: DefinitionState;
 }
 
-interface EditBtnClickedPayload {
+interface IdString {
   id: string;
 }
 

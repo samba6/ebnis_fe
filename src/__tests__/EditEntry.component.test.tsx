@@ -2,19 +2,28 @@
 import React, { ComponentType } from "react";
 import "jest-dom/extend-expect";
 import "react-testing-library/cleanup-after-each";
-import { render } from "react-testing-library";
+import { render, waitForElement } from "react-testing-library";
 import { EditEntry } from "../components/EditEntry/component";
 import { Props } from "../components/EditEntry/utils";
 import { EntryFragment } from "../graphql/apollo-types/EntryFragment";
 import { DataDefinitionFragment } from "../graphql/apollo-types/DataDefinitionFragment";
 import { FieldType } from "../graphql/apollo-types/globalTypes";
+import { fillField } from "./test_utils";
 
 const EditEntryP = EditEntry as ComponentType<Partial<Props>>;
 
-test("definitions not editing data", () => {
+test("definitions not editing data", async () => {
   const { ui } = makeComp({
     props: {
-      entry: {} as EntryFragment,
+      entry: {
+        dataObjects: [
+          {
+            definitionId: "a",
+            data: `{"integer":1}`,
+          },
+        ],
+      } as EntryFragment,
+
       definitions: [
         {
           id: "a",
@@ -25,11 +34,11 @@ test("definitions not editing data", () => {
     },
   });
 
-  const {} = render(ui);
+  const { debug } = render(ui);
 
   // idle state
 
-  const $editBtn = document.getElementById(
+  let $editBtn = document.getElementById(
     "edit-entry-definition-a-edit-btn",
   ) as any;
 
@@ -49,15 +58,52 @@ test("definitions not editing data", () => {
     document.getElementById("edit-entry-definition-a-edit-btn"),
   ).toBeNull();
 
+  expect(document.getElementById("edit-entry-definition-a-name")).toBeNull();
+
+  let $input = document.getElementById("edit-entry-definition-a-input") as any;
+
+  const $dismiss = document.getElementById(
+    "edit-entry-definition-a-dismiss",
+  ) as any;
+
+  // back to idle
+  $dismiss.click();
+
+  expect(document.getElementById("edit-entry-definition-a-dismiss")).toBeNull();
+
+  // dirty state
+
+  $editBtn = document.getElementById("edit-entry-definition-a-edit-btn") as any;
+  $editBtn.click();
+
+  $input = document.getElementById("edit-entry-definition-a-input") as any;
+
+  fillField($input, "f2");
+
+  // debug();
+  expect(document.getElementById("edit-entry-definition-a-dismiss")).toBeNull();
+
+  // field filled with default value
+  fillField($input, "f1");
+
+  // back to pristine
+
   expect(
     document.getElementById("edit-entry-definition-a-dismiss"),
   ).not.toBeNull();
 
-  expect(document.getElementById("edit-entry-definition-a-name")).toBeNull();
+  // back to dirty
 
-  expect(
-    document.getElementById("edit-entry-definition-a-input"),
-  ).not.toBeNull();
+  fillField($input, "f2");
+
+  (document.getElementById("edit-entry-definition-a-submit") as any).click();
+
+  // submitting state
+
+  // idle.editSuccess
+  await waitForElement(() => {
+    return document.getElementById("edit-entry-definition-submit-success");
+  });
 });
 
 ////////////////////////// HELPER FUNCTIONS ///////////////////////////
