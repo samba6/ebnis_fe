@@ -110,7 +110,10 @@ type Action =
 export interface Props {
   entry: EntryFragment;
   definitions: DataDefinitionFragment[];
+  onDefinitionsEdit: () => {};
 }
+
+interface OnDefinitionsEdit {}
 
 export interface DefaultDefinitionsMap {
   [k: string]: DataDefinitionFragment;
