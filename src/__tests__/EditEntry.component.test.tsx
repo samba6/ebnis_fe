@@ -4,14 +4,14 @@ import "jest-dom/extend-expect";
 import "react-testing-library/cleanup-after-each";
 import { render } from "react-testing-library";
 import { EditEntry } from "../components/EditEntry/component";
-import { Props, FormValues } from ".../components/EditEntry/utils";
+import { Props } from "../components/EditEntry/utils";
 import { EntryFragment } from "../graphql/apollo-types/EntryFragment";
 import { DataDefinitionFragment } from "../graphql/apollo-types/DataDefinitionFragment";
 import { FieldType } from "../graphql/apollo-types/globalTypes";
 
 const EditEntryP = EditEntry as ComponentType<Partial<Props>>;
 
-it("renders form", () => {
+test("definitions idle", () => {
   const { ui } = makeComp({
     props: {
       entry: {} as EntryFragment,
@@ -21,14 +21,27 @@ it("renders form", () => {
           type: FieldType.INTEGER,
           name: "f1",
         },
-      ],
-    } as FormValues,
+      ] as DataDefinitionFragment[],
+    },
   });
 
   const {} = render(ui);
 
-  const $form = document.getElementsByClassName("form");
-  expect($form[0]).toBeDefined();
+  const $editBtn = document.getElementById(
+    "edit-entry-definition-a-edit-btn",
+  ) as any;
+
+  expect(document.getElementById("edit-entry-definition-a-submit")).toBeNull();
+
+  $editBtn.click();
+
+  expect(
+    document.getElementById("edit-entry-definition-a-edit-btn"),
+  ).toBeNull();
+
+  expect(
+    document.getElementById("edit-entry-definition-a-submit"),
+  ).not.toBeNull();
 });
 
 ////////////////////////// HELPER FUNCTIONS ///////////////////////////

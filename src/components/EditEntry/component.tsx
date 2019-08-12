@@ -1,40 +1,61 @@
-import React, { useMemo } from "react";
-import { Props, FormValues, DefinitionFormValue } from "./utils";
+import React, { useMemo, useReducer } from "react";
+import {
+  Props,
+  FormValues,
+  DefinitionFormValue,
+  ActionTypes,
+  DispatchType,
+  initialStateFromProps,
+  reducer,
+  State,
+  DefinitionState,
+} from "./utils";
 import { Formik, FormikProps, FieldArray, Field } from "formik";
 import Form from "semantic-ui-react/dist/commonjs/collections/Form";
+import Button from "semantic-ui-react/dist/commonjs/elements/Button";
+import { noop } from "../../constants";
 
 export function EditEntry(props: Props) {
-  const { entry, definitions } = props;
+  const { definitions } = props;
+
+  const [state, dispatch] = useReducer(reducer, props, initialStateFromProps);
 
   const initialDefinitionsValues = useMemo(() => {
     return definitions.map(definition => {
       return {
         name: definition.name,
         type: definition.type,
+        id: definition.id,
       };
     });
   }, []);
 
-  function renderForm(formProps: FormikProps<{}>) {
+  function renderForm(formProps: FormikProps<FormValues>) {
     return (
       <Form>
-        <DefinitionsComponent formProps={formProps} />
+        <DefinitionsComponent
+          state={state.definitionsStates}
+          dispatch={dispatch}
+          formProps={formProps}
+        />
       </Form>
     );
   }
-
   return (
     <Formik
       render={renderForm}
       initialValues={{
         definitions: initialDefinitionsValues,
       }}
+      onSubmit={noop}
     />
   );
 }
 
 interface DefinitionsComponentProps {
   formProps: FormikProps<FormValues>;
+  dispatch: DispatchType;
+  state: State["definitionsStates"];
 }
 
 function DefinitionsComponent(props: DefinitionsComponentProps) {
@@ -42,6 +63,8 @@ function DefinitionsComponent(props: DefinitionsComponentProps) {
     formProps: {
       values: { definitions },
     },
+    dispatch,
+    state,
   } = props;
 
   return (
@@ -51,9 +74,15 @@ function DefinitionsComponent(props: DefinitionsComponentProps) {
         return definitions.map(definition => {
           return (
             <Field
-              key={definition.name}
+              key={definition.id}
               render={() => {
-                return <DefinitionComponent definition={definition} />;
+                return (
+                  <DefinitionComponent
+                    dispatch={dispatch}
+                    definition={definition}
+                    stateContext={state[definition.id]}
+                  />
+                );
               }}
             />
           );
@@ -65,16 +94,41 @@ function DefinitionsComponent(props: DefinitionsComponentProps) {
 
 interface DefinitionComponentProps {
   definition: DefinitionFormValue;
+  dispatch: DispatchType;
+  stateContext: DefinitionState;
 }
 
-function DefinitionComponent(props: Props) {
-  const { definition } = props;
+function DefinitionComponent(props: DefinitionComponentProps) {
+  const { definition, dispatch, stateContext } = props;
+
   const { id } = definition;
-  const idPrefix = `definition-${id}`;
+  const idPrefix = `edit-entry-definition-${id}`;
 
   return (
     <div id={idPrefix}>
-      <Form.Field id={`${idPrefix}-name`}>{definition.name}</Form.Field>
+      <Form.Field id={`${idPrefix}-name`}>
+        {definition.name}
+        {definition.type}
+
+        {stateContext.state === "idle" ? (
+          <Button
+            type="button"
+            id={`${idPrefix}-edit-btn`}
+            onClick={() =>
+              dispatch({
+                type: ActionTypes.EDIT_BTN_CLICKED,
+                id,
+              })
+            }
+          >
+            Edit
+          </Button>
+        ) : (
+          <Button type="button" id={`${idPrefix}-submit`}>
+            Submit
+          </Button>
+        )}
+      </Form.Field>
     </div>
   );
 }

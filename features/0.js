@@ -6,7 +6,7 @@ const editEntry = {
   id: "editEntry",
   context: {
     entry: Entry,
-    definitions: DataDefinitions[],
+    definitions: [],
     dispatch: DispatchType,
     editFn: EditFn,
   },
@@ -163,8 +163,9 @@ const definitionTitle = {
         enter: [
           "display the definition data type", //
           "display an edit button",
+          "display name/title",
         ],
-        parallel: true,
+        compound: true,
         on: {
           "": [
             {
