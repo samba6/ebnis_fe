@@ -13,6 +13,7 @@
     "build-serve:staging": "yarn build:staging && yarn serve-local",
     "test": "env-cmd -e test yarn jest --runInBand ",
     "test:watch": "yarn test --watch",
+    "test:wc": "yarn test --watch --coverage",
     "test:coverage": "rimraf coverage && yarn test --coverage",
     "remove-folders": "rimraf public && rimraf .cache",
     "gen-gatsby-types": "apollo codegen:generate --endpoint=http://localhost:3022/___graphql --tagName=graphql --target=typescript --includes=src/components/**/*.ts* --outputFlat=src/graphql/gatsby-types",
