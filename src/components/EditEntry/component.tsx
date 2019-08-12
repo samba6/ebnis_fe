@@ -15,6 +15,8 @@ import Form from "semantic-ui-react/dist/commonjs/collections/Form";
 import Button from "semantic-ui-react/dist/commonjs/elements/Button";
 import { noop } from "../../constants";
 
+export const x = 1 + 1;
+
 export function EditEntry(props: Props) {
   const { definitions } = props;
 
@@ -110,7 +112,7 @@ function DefinitionComponent(props: DefinitionComponentProps) {
         {definition.name}
         {definition.type}
 
-        {stateContext.state === "idle" ? (
+        {stateContext.state === "idle" && (
           <Button
             type="button"
             id={`${idPrefix}-edit-btn`}
@@ -123,8 +125,10 @@ function DefinitionComponent(props: DefinitionComponentProps) {
           >
             Edit
           </Button>
-        ) : (
-          <Button type="button" id={`${idPrefix}-submit`}>
+        )}
+
+        {stateContext.state === "pristine" && (
+          <Button type="button" id={`${idPrefix}-dismiss`}>
             Submit
           </Button>
         )}

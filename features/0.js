@@ -194,6 +194,7 @@ const definitionTitle = {
           editSuccess: {
             enter: [
               "display new title", //
+              "visually indcate edit success",
             ],
           },
         },

@@ -7,6 +7,8 @@ export enum ActionTypes {
   EDIT_BTN_CLICKED = "@component/edit-entry/edit-btn-clicked",
 }
 
+export const y = 1 + 1;
+
 export const initialStateFromProps = (props: Props): State => {
   const { definitions } = props;
 

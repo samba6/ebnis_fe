@@ -11,7 +11,7 @@ import { FieldType } from "../graphql/apollo-types/globalTypes";
 
 const EditEntryP = EditEntry as ComponentType<Partial<Props>>;
 
-test("definitions idle", () => {
+test("definitions not editing data", () => {
   const { ui } = makeComp({
     props: {
       entry: {} as EntryFragment,
@@ -27,11 +27,13 @@ test("definitions idle", () => {
 
   const {} = render(ui);
 
+  // idle state
+
   const $editBtn = document.getElementById(
     "edit-entry-definition-a-edit-btn",
   ) as any;
 
-  expect(document.getElementById("edit-entry-definition-a-submit")).toBeNull();
+  expect(document.getElementById("edit-entry-definition-a-dismiss")).toBeNull();
 
   $editBtn.click();
 
@@ -40,8 +42,10 @@ test("definitions idle", () => {
   ).toBeNull();
 
   expect(
-    document.getElementById("edit-entry-definition-a-submit"),
+    document.getElementById("edit-entry-definition-a-dismiss"),
   ).not.toBeNull();
+
+  // pristine state
 });
 
 ////////////////////////// HELPER FUNCTIONS ///////////////////////////
