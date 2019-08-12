@@ -53,8 +53,6 @@ test("definitions not editing data", () => {
     document.getElementById("edit-entry-definition-a-dismiss"),
   ).not.toBeNull();
 
-
-
   expect(document.getElementById("edit-entry-definition-a-name")).toBeNull();
 
   expect(
