@@ -1,45 +1,59 @@
-import React, { useMemo, useReducer } from "react";
+import React, { useMemo, useReducer, useContext } from "react";
 import {
   Props,
   FormValues,
   DefinitionFormValue,
   ActionTypes,
-  DispatchType,
   initialStateFromProps,
   reducer,
   State,
   DefinitionState,
+  DefaultDefinitionsMap,
+  DefinitionsContextProvider,
+  definitionsContext,
 } from "./utils";
 import { Formik, FormikProps, FieldArray, Field } from "formik";
 import Form from "semantic-ui-react/dist/commonjs/collections/Form";
 import Button from "semantic-ui-react/dist/commonjs/elements/Button";
+import Input from "semantic-ui-react/dist/commonjs/elements/Input";
 import { noop } from "../../constants";
-
-export const x = 1 + 1;
 
 export function EditEntry(props: Props) {
   const { definitions } = props;
 
   const [state, dispatch] = useReducer(reducer, props, initialStateFromProps);
 
-  const initialDefinitionsValues = useMemo(() => {
-    return definitions.map(definition => {
-      return {
-        name: definition.name,
-        type: definition.type,
-        id: definition.id,
-      };
-    });
+  const [initialDefinitionsValues, defaultDefinitionsMap] = useMemo(() => {
+    return definitions.reduce(
+      ([formValues, map], definition) => {
+        const formValue = {
+          name: definition.name,
+          id: definition.id,
+        };
+
+        formValues.push(formValue);
+        map[definition.id] = definition;
+
+        return [formValues, map];
+      },
+      [[], {}] as [DefinitionFormValue[], DefaultDefinitionsMap],
+    );
   }, []);
 
   function renderForm(formProps: FormikProps<FormValues>) {
     return (
       <Form>
-        <DefinitionsComponent
-          state={state.definitionsStates}
-          dispatch={dispatch}
-          formProps={formProps}
-        />
+        <DefinitionsContextProvider
+          value={{
+            dispatch,
+            defaultDefinitionsMap,
+          }}
+        >
+          <DefinitionsComponent
+            state={state.definitionsStates}
+            formValues={formProps.values.definitions}
+          />
+        </DefinitionsContextProvider>
       </Form>
     );
   }
@@ -55,33 +69,25 @@ export function EditEntry(props: Props) {
 }
 
 interface DefinitionsComponentProps {
-  formProps: FormikProps<FormValues>;
-  dispatch: DispatchType;
+  formValues: FormValues["definitions"];
   state: State["definitionsStates"];
 }
 
 function DefinitionsComponent(props: DefinitionsComponentProps) {
-  const {
-    formProps: {
-      values: { definitions },
-    },
-    dispatch,
-    state,
-  } = props;
+  const { formValues, state } = props;
 
   return (
     <FieldArray
       name="definitions"
       render={() => {
-        return definitions.map(definition => {
+        return formValues.map(definition => {
           return (
             <Field
               key={definition.id}
               render={() => {
                 return (
                   <DefinitionComponent
-                    dispatch={dispatch}
-                    definition={definition}
+                    formValue={definition}
                     stateContext={state[definition.id]}
                   />
                 );
@@ -95,24 +101,33 @@ function DefinitionsComponent(props: DefinitionsComponentProps) {
 }
 
 interface DefinitionComponentProps {
-  definition: DefinitionFormValue;
-  dispatch: DispatchType;
   stateContext: DefinitionState;
+  formValue: DefinitionFormValue;
 }
 
 function DefinitionComponent(props: DefinitionComponentProps) {
-  const { definition, dispatch, stateContext } = props;
+  const { formValue, stateContext } = props;
+  const { state } = stateContext;
+  const { dispatch, defaultDefinitionsMap } = useContext(definitionsContext);
 
-  const { id } = definition;
+  const { id, name: formNameValue } = formValue;
   const idPrefix = `edit-entry-definition-${id}`;
+  const { type } = defaultDefinitionsMap[id];
 
   return (
     <div id={idPrefix}>
-      <Form.Field id={`${idPrefix}-name`}>
-        {definition.name}
-        {definition.type}
+      <Form.Field>
+        {type}
 
-        {stateContext.state === "idle" && (
+        {state === "idle" && (
+          <span id={`${idPrefix}-name`}>{formNameValue}</span>
+        )}
+
+        {state === "pristine" && (
+          <Input id={`${idPrefix}-input`} value={formNameValue} />
+        )}
+
+        {state === "idle" && (
           <Button
             type="button"
             id={`${idPrefix}-edit-btn`}
@@ -127,7 +142,7 @@ function DefinitionComponent(props: DefinitionComponentProps) {
           </Button>
         )}
 
-        {stateContext.state === "pristine" && (
+        {state === "pristine" && (
           <Button type="button" id={`${idPrefix}-dismiss`}>
             Submit
           </Button>

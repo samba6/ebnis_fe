@@ -35,7 +35,15 @@ test("definitions not editing data", () => {
 
   expect(document.getElementById("edit-entry-definition-a-dismiss")).toBeNull();
 
+  expect(document.getElementById("edit-entry-definition-a-input")).toBeNull();
+
+  expect(
+    document.getElementById("edit-entry-definition-a-name"),
+  ).not.toBeNull();
+
   $editBtn.click();
+
+  // pristine state
 
   expect(
     document.getElementById("edit-entry-definition-a-edit-btn"),
@@ -45,7 +53,13 @@ test("definitions not editing data", () => {
     document.getElementById("edit-entry-definition-a-dismiss"),
   ).not.toBeNull();
 
-  // pristine state
+
+
+  expect(document.getElementById("edit-entry-definition-a-name")).toBeNull();
+
+  expect(
+    document.getElementById("edit-entry-definition-a-input"),
+  ).not.toBeNull();
 });
 
 ////////////////////////// HELPER FUNCTIONS ///////////////////////////

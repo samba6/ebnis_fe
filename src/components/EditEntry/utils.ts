@@ -1,6 +1,6 @@
 import { EntryFragment } from "../../graphql/apollo-types/EntryFragment";
 import { DataDefinitionFragment } from "../../graphql/apollo-types/DataDefinitionFragment";
-import { Dispatch, Reducer } from "react";
+import { Dispatch, Reducer, createContext } from "react";
 import immer from "immer";
 
 export enum ActionTypes {
@@ -48,6 +48,12 @@ export const reducer: Reducer<State, Action> = (
   });
 };
 
+export const definitionsContext = createContext<DefinitionsContextValues>(
+  {} as DefinitionsContextValues,
+);
+
+export const DefinitionsContextProvider = definitionsContext.Provider;
+
 export interface State {
   readonly definitionsStates: DefinitionsStates;
 }
@@ -62,9 +68,13 @@ export interface Props {
   definitions: DataDefinitionFragment[];
 }
 
+export interface DefaultDefinitionsMap {
+  [k: string]: DataDefinitionFragment;
+}
+
 export type DefinitionFormValue = Pick<
   DataDefinitionFragment,
-  Exclude<keyof DataDefinitionFragment, "__typename" | "clientId">
+  Exclude<keyof DataDefinitionFragment, "__typename" | "clientId" | "type">
 >;
 
 export interface FormValues {
@@ -83,4 +93,9 @@ export interface DefinitionsStates {
 
 interface EditBtnClickedPayload {
   id: string;
+}
+
+interface DefinitionsContextValues {
+  defaultDefinitionsMap: DefaultDefinitionsMap;
+  dispatch: DispatchType;
 }
