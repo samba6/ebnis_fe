@@ -102,7 +102,7 @@ test("definitions not editing data", async () => {
 
   // idle.editSuccess
   await waitForElement(() => {
-    return document.getElementById("edit-entry-definition-submit-success");
+    return document.getElementById("edit-entry-submitting");
   });
 });
 

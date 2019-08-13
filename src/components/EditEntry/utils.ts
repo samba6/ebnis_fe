@@ -7,10 +7,9 @@ export enum ActionTypes {
   EDIT_BTN_CLICKED = "@component/edit-entry/edit-btn-clicked",
   TITLE_CHANGED = "@component/edit-entry/title-changed",
   TITLE_RESET = "@component/edit-entry/title-reset",
-  TITLE_EDIT_DISMISS = "@component/edit-entry/title-dismi",
+  TITLE_EDIT_DISMISS = "@component/edit-entry/title-dismiss",
+  TITLE_EDIT_SUBMIT = "@component/edit-entry/title-submit",
 }
-
-export const y = 1 + 1;
 
 export const initialStateFromProps = (props: Props): State => {
   const { definitions } = props;
@@ -19,6 +18,7 @@ export const initialStateFromProps = (props: Props): State => {
     (acc, definition) => {
       acc[definition.id] = {
         state: "idle",
+        formValue: definition.name,
       };
 
       return acc;
@@ -28,6 +28,7 @@ export const initialStateFromProps = (props: Props): State => {
 
   return {
     definitionsStates: initialDefinitionsStates,
+    state: "nothing",
   };
 };
 
@@ -38,32 +39,21 @@ export const reducer: Reducer<State, Action> = (
   return immer(prevState, proxy => {
     switch (type) {
       case ActionTypes.EDIT_BTN_CLICKED:
+      case ActionTypes.TITLE_RESET:
         {
           const { id } = payload as IdString;
 
-          proxy.definitionsStates[id] = {
-            state: "pristine",
-          };
+          proxy.definitionsStates[id].state = "pristine";
         }
 
         break;
 
       case ActionTypes.TITLE_CHANGED:
         {
-          const { id } = payload as IdString;
-          proxy.definitionsStates[id] = {
-            state: "dirty",
-          };
-        }
-
-        break;
-
-      case ActionTypes.TITLE_RESET:
-        {
-          const { id } = payload as IdString;
-          proxy.definitionsStates[id] = {
-            state: "pristine",
-          };
+          const { id, formValue } = payload as TitleChangedPayload;
+          const definition = proxy.definitionsStates[id];
+          definition.state = "dirty";
+          definition.formValue = formValue;
         }
 
         break;
@@ -72,6 +62,13 @@ export const reducer: Reducer<State, Action> = (
         {
           const { id } = payload as IdString;
           proxy.definitionsStates[id].state = "idle";
+        }
+
+        break;
+
+      case ActionTypes.TITLE_EDIT_SUBMIT:
+        {
+          proxy.state = "submitting";
         }
 
         break;
@@ -87,6 +84,7 @@ export const DefinitionsContextProvider = DefinitionsContext.Provider;
 
 export interface State {
   readonly definitionsStates: DefinitionsStates;
+  readonly state: "nothing" | "submitting";
 }
 
 type Action =
@@ -96,8 +94,7 @@ type Action =
     }
   | {
       type: ActionTypes.TITLE_CHANGED;
-      id: string;
-    }
+    } & TitleChangedPayload
   | {
       type: ActionTypes.TITLE_RESET;
       id: string;
@@ -105,15 +102,21 @@ type Action =
   | {
       type: ActionTypes.TITLE_EDIT_DISMISS;
       id: string;
+    }
+  | {
+      type: ActionTypes.TITLE_EDIT_SUBMIT;
     };
+
+type TitleChangedPayload = {
+  id: string;
+  formValue: string;
+};
 
 export interface Props {
   entry: EntryFragment;
   definitions: DataDefinitionFragment[];
   onDefinitionsEdit: () => {};
 }
-
-interface OnDefinitionsEdit {}
 
 export interface DefaultDefinitionsMap {
   [k: string]: DataDefinitionFragment;
@@ -132,6 +135,7 @@ export type DispatchType = Dispatch<Action>;
 
 export interface DefinitionState {
   state: "idle" | "pristine" | "dirty";
+  formValue: string;
 }
 
 export interface DefinitionsStates {
