@@ -100,6 +100,15 @@ export interface Registration {
 }
 
 /**
+ * fields required to update an experience data definition
+ */
+export interface UpdateDefinitionInput {
+  id: string;
+  name: string;
+  updatedAt?: any | null;
+}
+
+/**
  * Variables for updating an existing Experience
  */
 export interface UpdateExperienceInput {

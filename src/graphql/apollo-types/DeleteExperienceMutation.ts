@@ -22,7 +22,7 @@ export interface DeleteExperienceMutation_deleteExperience_dataDefinitions {
   /**
    * String that uniquely identifies this data definition has been
    *   created offline. If an associated entry is also created
-   *   offline, then `createField.definitionId` **MUST BE** the same as this
+   *   offline, then `dataDefinition.definitionId` **MUST BE** the same as this
    *   field and will be validated as such.
    */
   clientId: string | null;

@@ -11,12 +11,7 @@ import {
   EditExperienceAction,
   EditExperienceActionType,
 } from "../EditExperience/utils";
-import {
-  Props as EntryProps,
-  EntryAction,
-  EntryActionTypes,
-} from "../Entry/utils";
-import { EntryFragment } from "../../graphql/apollo-types/EntryFragment";
+import { Props as EntryProps, EntryAction } from "../Entry/utils";
 
 export interface IMenuOptions {
   newEntry?: boolean;
@@ -82,10 +77,9 @@ export function formatDatetime(date: string | Date) {
 export enum EditingState {
   editingExperience = "editing-experience",
   notEditing = "not-editing",
-  editingEntry = "editing-entry",
 }
 
-export const reducer: Reducer<State, Action> = (prevState, [type, payload]) => {
+export const reducer: Reducer<State, Action> = (prevState, [type]) => {
   switch (type) {
     case EditExperienceActionType.completed:
     case EditExperienceActionType.aborted: {
@@ -102,13 +96,6 @@ export const reducer: Reducer<State, Action> = (prevState, [type, payload]) => {
       };
     }
 
-    case EntryActionTypes.editClicked: {
-      return {
-        ...prevState,
-        editingState: [EditingState.editingEntry, payload as EntryFragment],
-      };
-    }
-
     default:
       return prevState;
   }
@@ -117,8 +104,7 @@ export const reducer: Reducer<State, Action> = (prevState, [type, payload]) => {
 export interface State {
   readonly editingState:
     | [EditingState.notEditing]
-    | [EditingState.editingExperience]
-    | [EditingState.editingEntry, EntryFragment];
+    | [EditingState.editingExperience];
 }
 
 type Action = EditExperienceAction | ["show-editor"] | EntryAction;

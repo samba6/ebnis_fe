@@ -152,11 +152,6 @@ test("reducer", () => {
   ).toEqual([EditingState.notEditing]);
 
   expect(reducer(prevState, ["" as any]).editingState).toEqual("0");
-
-  expect(
-    reducer(prevState, [EntryActionTypes.editClicked, {} as EntryFragment])
-      .editingState,
-  ).toEqual([EditingState.editingEntry, {}]);
 });
 
 test("getTitle", () => {

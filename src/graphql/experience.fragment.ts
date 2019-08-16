@@ -1,5 +1,5 @@
 import gql from "graphql-tag";
-import { DATA_DEFINITION_FRAGMENT } from "./data-definition.fragment";
+import { DEFINITION_FRAGMENT } from "./data-definition.fragment";
 import { ENTRY_CONNECTION_FRAGMENT } from "./entry-connection.fragment";
 
 // the minimum fields needed to quickly display an experience
@@ -28,7 +28,7 @@ export const EXPERIENCE_REST_FRAGMENT = gql`
     }
   }
 
-  ${DATA_DEFINITION_FRAGMENT}
+  ${DEFINITION_FRAGMENT}
   ${ENTRY_CONNECTION_FRAGMENT}
 `;
 
@@ -46,7 +46,7 @@ export const EXPERIENCE_FRAGMENT = gql`
   }
 
   ${EXPERIENCE_MINI_FRAGMENT}
-  ${DATA_DEFINITION_FRAGMENT}
+  ${DEFINITION_FRAGMENT}
   ${ENTRY_CONNECTION_FRAGMENT}
 `;
 
@@ -91,5 +91,5 @@ export const EXPERIENCE_NO_ENTRY_FRAGMENT = gql`
   }
 
   ${EXPERIENCE_MINI_FRAGMENT}
-  ${DATA_DEFINITION_FRAGMENT}
+  ${DEFINITION_FRAGMENT}
 `;

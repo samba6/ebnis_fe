@@ -115,6 +115,7 @@ function DefinitionComponent(props: DefinitionComponentProps) {
             Edit
           </Button>
         )}
+
         {state === "pristine" && (
           <Button
             type="button"
@@ -129,6 +130,7 @@ function DefinitionComponent(props: DefinitionComponentProps) {
             Dismiss
           </Button>
         )}
+
         {state === "dirty" && (
           <Button
             type="submit"
