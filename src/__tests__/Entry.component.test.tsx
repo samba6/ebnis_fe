@@ -4,16 +4,26 @@ import "jest-dom/extend-expect";
 import "react-testing-library/cleanup-after-each";
 import { render } from "react-testing-library";
 import { Entry } from "../components/Entry/component";
-import { Props, EntryActionTypes } from "../components/Entry/utils";
+import { Props, reducer, State } from "../components/Entry/utils";
 import { EntryFragment } from "../graphql/apollo-types/EntryFragment";
 import { ExperienceFragment_dataDefinitions } from "../graphql/apollo-types/ExperienceFragment";
 import { FieldType } from "../graphql/apollo-types/globalTypes";
+import {
+  Props as EditEntryProps,
+  ActionTypes as EditEntryActionTypes,
+} from "../components/EditEntry/utils";
+
+jest.mock("../components/EditEntry", () => ({
+  EditEntry: jest.fn(() => {
+    return <div id="edit-entry" />;
+  }),
+}));
+import { EditEntry } from "../components/EditEntry";
+const mockEditEntry = EditEntry as jest.Mock;
 
 const EntryP = Entry as ComponentType<Partial<Props>>;
 
 it("renders single line text", () => {
-  const mockDispatch = jest.fn();
-
   const entry = {
     id: "1",
     dataObjects: [
@@ -26,9 +36,6 @@ it("renders single line text", () => {
 
   const { ui } = makeComp({
     props: {
-      dispatch: mockDispatch,
-      editable: true,
-
       entry,
 
       entriesLen: 1,
@@ -47,10 +54,11 @@ it("renders single line text", () => {
 
   (document.getElementById(`entry-1-edit-trigger`) as HTMLElement).click();
 
-  expect(mockDispatch.mock.calls[0][0]).toEqual([
-    EntryActionTypes.editClicked,
-    entry,
-  ]);
+  const lastRender = mockEditEntry.mock.calls.length - 1;
+
+  expect(
+    (mockEditEntry.mock.calls[lastRender][0] as EditEntryProps).entry.id,
+  ).toEqual("1");
 });
 
 it("renders multi line text", () => {
@@ -66,8 +74,6 @@ it("renders multi line text", () => {
 
   const { ui } = makeComp({
     props: {
-      editable: true,
-
       entry,
 
       definitions: [
@@ -82,7 +88,9 @@ it("renders multi line text", () => {
 
   render(ui);
 
-  expect(document.getElementById(`entry-2-edit-trigger`)).toBeNull();
+  expect(
+    (document.getElementById(`entry-2-2-value`) as HTMLDivElement).textContent,
+  ).toContain("c2");
 });
 
 it("renders date field", () => {
@@ -98,8 +106,6 @@ it("renders date field", () => {
 
   const { ui } = makeComp({
     props: {
-      dispatch: jest.fn(),
-
       entry,
 
       definitions: [
@@ -114,7 +120,9 @@ it("renders date field", () => {
 
   render(ui);
 
-  expect(document.getElementById(`entry-3-edit-trigger`)).toBeNull();
+  expect(
+    (document.getElementById(`entry-3-3-value`) as HTMLDivElement).textContent,
+  ).toContain("2019");
 });
 
 it("renders datetime field", () => {
@@ -207,9 +215,23 @@ it("renders integer field and uses custom container id", () => {
   expect(document.getElementById("entry-container-6")).toBeNull();
 });
 
+test("reducer", () => {
+  let state: State = {
+    stateValue: "idle",
+  };
+
+  state = reducer(state, { type: EditEntryActionTypes.DESTROYED });
+  expect(state.stateValue).toEqual("idle");
+
+  state = reducer(state, { type: "bogus" } as any);
+  expect(state.stateValue).toEqual("idle");
+});
+
 ////////////////////////// HELPER FUNCTIONS ///////////////////////////
 
 function makeComp({ props = {} }: { props?: Partial<Props> } = {}) {
+  mockEditEntry.mockClear();
+
   return {
     ui: <EntryP {...props} />,
   };

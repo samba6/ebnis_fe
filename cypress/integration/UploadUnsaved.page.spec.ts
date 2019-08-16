@@ -32,7 +32,7 @@ context("Upload unsaved page", () => {
     }).then(experience => {
       const { id, dataDefinitions } = experience;
 
-      const saved = createExperienceEntries(id, [
+      const saved = createExperienceEntries([
         {
           dataObjects: [
             {
@@ -102,7 +102,7 @@ context("Upload unsaved page", () => {
       cy.visit(unsavedRoute);
 
       let uploadSuccessRegexp = /^upload-triggered-icon-success-(.+?)$/;
-      let savedId;
+      let savedId: string;
 
       cy.title().should("contain", unsavedExperienceTitle);
 

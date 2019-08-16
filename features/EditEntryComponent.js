@@ -2,8 +2,8 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
 /* eslint-disable no-unused-vars */
 
-const editEntry = {
-  id: "editEntry",
+const EditEntryComponent = {
+  id: "EditEntryComponent",
   context: {
     entry: Entry,
     definitions: [],
@@ -17,7 +17,10 @@ const editEntry = {
   ],
 
   on: {
-    DISMISS: "destroy",
+    DISMISS: {
+      cond: "weAreNotSubmitting",
+      target: "destroy",
+    },
   },
 
   initial: "nothing",

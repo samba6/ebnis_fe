@@ -88,7 +88,6 @@ export function Experience(props: Props) {
               entriesLen={nodesLen}
               index={index}
               {...entryProps}
-              dispatch={dispatch}
             />
           );
         })}

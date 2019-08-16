@@ -1,4 +1,4 @@
-import React, { useMemo, CSSProperties } from "react";
+import React, { useMemo, CSSProperties, useReducer } from "react";
 import { displayFieldType, formatDatetime } from "../Experience/utils";
 import "./styles.scss";
 import makeClassNames from "classnames";
@@ -8,14 +8,20 @@ import {
 } from "../../graphql/apollo-types/ExperienceFragment";
 import Icon from "semantic-ui-react/dist/commonjs/elements/Icon";
 import Dropdown from "semantic-ui-react/dist/commonjs/modules/Dropdown";
-import { Props, EntryActionTypes } from "./utils";
+import { Props, ActionTypes, reducer, DispatchType } from "./utils";
 import {
   EntryFragment_dataObjects,
   EntryFragment,
 } from "../../graphql/apollo-types/EntryFragment";
+import { EditEntry } from "../EditEntry";
 
 export function Entry(props: Props) {
   const { entry, definitions, className = "", ...fieldProps } = props;
+
+  const [state, dispatch] = useReducer(reducer, {
+    stateValue: "idle",
+  });
+
   const containerId = props.id || `entry-container-${entry.id}`;
 
   const dataObjects = entry.dataObjects as ExperienceFragment_entries_edges_node_dataObjects[];
@@ -39,6 +45,14 @@ export function Entry(props: Props) {
       })}
       id={containerId}
     >
+      {state.stateValue === "editing" && (
+        <EditEntry
+          entry={entry}
+          definitions={definitions}
+          dispatch={dispatch}
+        />
+      )}
+
       {dataObjects.map((dataObject, index) => {
         const definition = definitionsMap[dataObject.definitionId];
 
@@ -51,6 +65,7 @@ export function Entry(props: Props) {
             index={index}
             dataObjectsLen={dataObjectsLen}
             entry={entry}
+            dispatch={dispatch}
           />
         );
       })}
@@ -66,16 +81,15 @@ export function Entry(props: Props) {
   );
 }
 
-function DataComponent(
-  props: Pick<Props, "dispatch" | "editable"> & {
-    dataObject: EntryFragment_dataObjects;
-    definition: ExperienceFragment_dataDefinitions;
-    index: number;
-    dataObjectsLen: number;
-    entry: EntryFragment;
-  },
-) {
-  const { dataObject, definition, index, entry, editable, dispatch } = props;
+function DataComponent(props: {
+  dataObject: EntryFragment_dataObjects;
+  definition: ExperienceFragment_dataDefinitions;
+  index: number;
+  dataObjectsLen: number;
+  entry: EntryFragment;
+  dispatch: DispatchType;
+}) {
+  const { dataObject, definition, index, entry, dispatch } = props;
 
   const { definitionId, data } = dataObject;
 
@@ -84,6 +98,8 @@ function DataComponent(
   const [fieldData] = Object.values(JSON.parse(data));
   const text = displayFieldType[type](fieldData);
   const { id: entryId } = entry;
+  const entryIdPrefix = "entry-" + entryId;
+  const definitionIdPrefix = entryIdPrefix + "-" + definitionId;
 
   return (
     <div
@@ -105,11 +121,13 @@ function DataComponent(
               direction="left"
             >
               <Dropdown.Menu>
-                {editable && dispatch && (
+                {dispatch && (
                   <Dropdown.Header
-                    id={`entry-${entryId}-edit-trigger`}
+                    id={`${entryIdPrefix}-edit-trigger`}
                     onClick={() => {
-                      dispatch([EntryActionTypes.editClicked, entry]);
+                      dispatch({
+                        type: ActionTypes.editClicked,
+                      });
                     }}
                     style={
                       {
@@ -134,7 +152,7 @@ function DataComponent(
           )}
         </div>
 
-        <div className="field__value" id={`${entryId}-value-${definitionId}`}>
+        <div className="field__value" id={`${definitionIdPrefix}-value`}>
           {text}
         </div>
       </div>

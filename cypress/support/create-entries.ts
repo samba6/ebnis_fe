@@ -12,10 +12,7 @@ import {
   CREATE_UNSAVED_ENTRY_MUTATION,
 } from "../../src/components/NewEntry/resolvers";
 
-export function createExperienceEntries(
-  experienceId: string,
-  input: CreateEntriesInput[],
-) {
+export function createExperienceEntries(input: CreateEntriesInput[]) {
   return mutate<CreateEntriesMutation, CreateEntriesMutationVariables>({
     mutation: CREATE_ENTRIES_MUTATION,
     variables: {

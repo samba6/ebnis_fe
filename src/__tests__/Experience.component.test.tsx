@@ -18,7 +18,7 @@ import {
   ExperienceFragment_dataDefinitions,
 } from "../graphql/apollo-types/ExperienceFragment";
 import { EditExperienceActionType } from "../components/EditExperience/utils";
-import { EntryActionTypes } from "../components/Entry/utils";
+import { ActionTypes } from "../components/Entry/utils";
 import { EntryFragment } from "../graphql/apollo-types/EntryFragment";
 
 jest.mock("../components/Experience/loadables", () => ({

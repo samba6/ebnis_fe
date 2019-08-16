@@ -1,7 +1,52 @@
 import { EbnisComponentProps } from "../../types";
 import { ExperienceFragment_dataDefinitions } from "../../graphql/apollo-types/ExperienceFragment";
 import { EntryFragment } from "../../graphql/apollo-types/EntryFragment";
-import { Dispatch } from "react";
+import { Reducer, Dispatch } from "react";
+import {
+  ActionTypes as EditEntryActionTypes,
+  Action as EditEntryAction,
+} from "../EditEntry/utils";
+
+export enum ActionTypes {
+  editClicked = "@components/entry/edit-clicked",
+}
+
+export const reducer: Reducer<State, EntryAction> = (
+  previousState,
+  { type },
+) => {
+  switch (type) {
+    case ActionTypes.editClicked: {
+      return {
+        ...previousState,
+        stateValue: "editing",
+      };
+    }
+
+    case EditEntryActionTypes.DESTROYED: {
+      return {
+        ...previousState,
+        stateValue: "idle",
+      };
+    }
+
+    default: {
+      return previousState;
+    }
+  }
+};
+
+export interface State {
+  readonly stateValue: "idle" | "editing";
+}
+
+export type DispatchType = Dispatch<EntryAction>;
+
+export type EntryAction =
+  | EditEntryAction
+  | {
+      type: ActionTypes.editClicked;
+    };
 
 export interface Props extends EbnisComponentProps {
   entry: EntryFragment;
@@ -9,12 +54,4 @@ export interface Props extends EbnisComponentProps {
   entriesLen: number;
   index: number;
   className?: string;
-  editable?: boolean;
-  dispatch?: Dispatch<EntryAction>;
 }
-
-export enum EntryActionTypes {
-  editClicked = "@components/entry/edit-clicked",
-}
-
-export type EntryAction = [EntryActionTypes.editClicked, EntryFragment];

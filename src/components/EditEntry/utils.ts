@@ -2,6 +2,8 @@ import { EntryFragment } from "../../graphql/apollo-types/EntryFragment";
 import { DataDefinitionFragment } from "../../graphql/apollo-types/DataDefinitionFragment";
 import { Dispatch, Reducer, createContext } from "react";
 import immer from "immer";
+import { UpdateDefinitionsMutationProps } from "../../graphql/update-definitions.mutation";
+import { DataObjectFragment } from "../../graphql/apollo-types/DataObjectFragment";
 
 export enum ActionTypes {
   EDIT_BTN_CLICKED = "@component/edit-entry/edit-btn-clicked",
@@ -9,6 +11,7 @@ export enum ActionTypes {
   TITLE_RESET = "@component/edit-entry/title-reset",
   TITLE_EDIT_DISMISS = "@component/edit-entry/title-dismiss",
   TITLE_EDIT_SUBMIT = "@component/edit-entry/title-submit",
+  DESTROYED = "@component/edit-entry/destroy",
 }
 
 export const initialStateFromProps = (props: Props): State => {
@@ -87,7 +90,7 @@ export interface State {
   readonly state: "nothing" | "submitting";
 }
 
-type Action =
+export type Action =
   | {
       type: ActionTypes.EDIT_BTN_CLICKED;
       id: string;
@@ -105,6 +108,9 @@ type Action =
     }
   | {
       type: ActionTypes.TITLE_EDIT_SUBMIT;
+    }
+  | {
+      type: ActionTypes.DESTROYED;
     };
 
 type TitleChangedPayload = {
@@ -112,14 +118,20 @@ type TitleChangedPayload = {
   formValue: string;
 };
 
-export interface Props {
+export interface OwnProps {
   entry: EntryFragment;
   definitions: DataDefinitionFragment[];
-  onDefinitionsEdit: () => {};
+  dispatch: DispatchType;
 }
+
+export interface Props extends OwnProps, UpdateDefinitionsMutationProps {}
 
 export interface DefaultDefinitionsMap {
   [k: string]: DataDefinitionFragment;
+}
+
+export interface DefaultDataObjectsMap {
+  [k: string]: DataObjectFragment;
 }
 
 export type DefinitionFormValue = Pick<
@@ -146,7 +158,8 @@ interface IdString {
   id: string;
 }
 
-interface DefinitionsContextValues {
+interface DefinitionsContextValues extends UpdateDefinitionsMutationProps {
   defaultDefinitionsMap: DefaultDefinitionsMap;
   dispatch: DispatchType;
+  defaultDataObjectsMap: DefaultDataObjectsMap;
 }

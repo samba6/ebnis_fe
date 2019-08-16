@@ -19,6 +19,7 @@ import { allResolvers } from "../../src/state/all-resolvers";
 import { UserFragment } from "../../src/graphql/apollo-types/UserFragment";
 import { storeUser } from "../../src/state/users";
 import { storeConnectionStatus } from "../../src/state/connections";
+import { USER_REGISTRATION_OBJECT } from "./user-registration-object";
 
 const serverUrl = Cypress.env("API_URL") as string;
 
@@ -50,7 +51,7 @@ function createUser(userData: UserCreationObject) {
     });
 }
 
-function registerUser(userData: Registration) {
+async function registerUser(userData: Registration = USER_REGISTRATION_OBJECT) {
   return mutate<UserRegMutation, UserRegMutationVariables>({
     mutation: REG_USER_MUTATION,
     variables: {
@@ -102,7 +103,7 @@ declare global {
        *
        */
       registerUser: (
-        userData: Registration,
+        userData?: Registration,
       ) => Promise<UserRegMutation_registration>;
 
       /**

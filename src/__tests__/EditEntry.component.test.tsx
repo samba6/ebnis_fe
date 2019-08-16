@@ -2,18 +2,56 @@
 import React, { ComponentType } from "react";
 import "jest-dom/extend-expect";
 import "react-testing-library/cleanup-after-each";
-import { render, waitForElement } from "react-testing-library";
+import { render, wait } from "react-testing-library";
 import { EditEntry } from "../components/EditEntry/component";
 import { Props } from "../components/EditEntry/utils";
 import { EntryFragment } from "../graphql/apollo-types/EntryFragment";
 import { DataDefinitionFragment } from "../graphql/apollo-types/DataDefinitionFragment";
-import { FieldType } from "../graphql/apollo-types/globalTypes";
-import { fillField } from "./test_utils";
+import {
+  FieldType,
+  UpdateDefinitionInput,
+} from "../graphql/apollo-types/globalTypes";
+import { fillField, closeMessage, ToInputVariables } from "./test_utils";
+import { ActionTypes } from "../components/EditEntry/utils";
 
 const EditEntryP = EditEntry as ComponentType<Partial<Props>>;
 
+it("destroys the UI", () => {
+  const { ui, mockParentDispatch } = makeComp({
+    props: {
+      entry: {
+        dataObjects: [
+          {
+            definitionId: "a",
+            data: `{"integer":1}`,
+          },
+        ],
+      } as EntryFragment,
+
+      definitions: [
+        {
+          id: "a",
+          type: FieldType.INTEGER,
+          name: "f1",
+        },
+      ] as DataDefinitionFragment[],
+    },
+  });
+
+  render(ui);
+
+  const $element = document.getElementById("edit-entry-modal");
+  expect($element).not.toBeNull();
+
+  closeMessage($element);
+
+  expect((mockParentDispatch.mock.calls[0][0] as any).type).toEqual(
+    ActionTypes.DESTROYED,
+  );
+});
+
 test("definitions not editing data", async () => {
-  const { ui } = makeComp({
+  const { ui, mockUpdateDefinitionsOnline } = makeComp({
     props: {
       entry: {
         dataObjects: [
@@ -78,7 +116,7 @@ test("definitions not editing data", async () => {
 
   $input = document.getElementById("edit-entry-definition-a-input") as any;
 
-  fillField($input, "f2");
+  fillField($input, "g1");
 
   // debug();
   expect(document.getElementById("edit-entry-definition-a-dismiss")).toBeNull();
@@ -94,22 +132,39 @@ test("definitions not editing data", async () => {
 
   // back to dirty
 
-  fillField($input, "f2");
+  fillField($input, "g1");
 
   (document.getElementById("edit-entry-definition-a-submit") as any).click();
 
-  // submitting state
-
-  // idle.editSuccess
-  await waitForElement(() => {
-    return document.getElementById("edit-entry-submitting");
+  await wait(() => {
+    expect(
+      (mockUpdateDefinitionsOnline.mock.calls[0][0] as ToInputVariables<
+        UpdateDefinitionInput[]
+      >).variables.input,
+    ).toMatchObject([
+      {
+        id: "a",
+        name: "g1",
+      },
+    ]);
   });
 });
 
 ////////////////////////// HELPER FUNCTIONS ///////////////////////////
 
 function makeComp({ props = {} }: { props?: Partial<Props> } = {}) {
+  const mockUpdateDefinitionsOnline = jest.fn();
+  const mockParentDispatch = jest.fn();
+
   return {
-    ui: <EditEntryP {...props} />,
+    ui: (
+      <EditEntryP
+        updateDefinitionsOnline={mockUpdateDefinitionsOnline}
+        dispatch={mockParentDispatch}
+        {...props}
+      />
+    ),
+    mockUpdateDefinitionsOnline,
+    mockParentDispatch,
   };
 }

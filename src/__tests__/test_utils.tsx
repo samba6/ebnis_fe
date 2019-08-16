@@ -94,3 +94,9 @@ export interface ToVariables<T> {
 export interface ToData<T> {
   data: T;
 }
+
+export interface ToInputVariables<T> {
+  variables: {
+    input: T;
+  };
+}

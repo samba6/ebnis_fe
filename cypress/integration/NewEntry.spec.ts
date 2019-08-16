@@ -19,7 +19,7 @@ context("new entry page", () => {
     /**
      * Given there is an experience in the system with no entries
      */
-    const fieldName = "Total purchases";
+    const fieldName = "aa";
 
     let p = createSavedExperience(
       {

@@ -5,14 +5,14 @@ import { ExperienceFragment } from "../../src/graphql/apollo-types/ExperienceFra
 import { createSavedExperience } from "../support/create-experience";
 import { createExperienceEntries } from "../support/create-entries";
 
-const title = "My experience no. 1";
+const title = "ex";
 
-context("experience page", () => {
-  beforeEach(() => {
-    cy.checkoutSession();
-    cy.registerUser(USER_REGISTRATION_OBJECT);
-  });
+beforeEach(() => {
+  cy.checkoutSession();
+  cy.registerUser(USER_REGISTRATION_OBJECT);
+});
 
+context("ExperienceComponent", () => {
   it("shows that there are no entries", () => {
     /**
      * Given there is an experience in the system with no entries
@@ -51,33 +51,8 @@ context("experience page", () => {
     /**
      * Given there is an experience in the system with entries
      */
-    let p = createSavedExperience({
-      title,
-      dataDefinitions: [
-        {
-          name: "Field integer",
-          type: FieldType.INTEGER,
-        },
-      ],
-    }).then(experience => {
-      const id = experience.id;
-      const [fieldDefinition] = experience.dataDefinitions;
-      const { id: definitionId } = fieldDefinition;
-
-      return createExperienceEntries(id, [
-        {
-          experienceId: id,
-          clientId: "1",
-          dataObjects: [
-            {
-              definitionId,
-              data: `{"integer":1}`,
-            },
-          ],
-        },
-      ]).then(() => {
-        return experience;
-      });
+    let p = createEntry().then(([experience]) => {
+      return experience;
     });
 
     cy.wrap(p).then((experience: ExperienceFragment) => {
@@ -102,3 +77,45 @@ context("experience page", () => {
     });
   });
 });
+
+context.only("EditEntryComponent", () => {
+  it("edits definitions while online", () => {
+    let p = createEntry();
+
+    cy.wrap(p).then(([experience]) => {
+      cy.visit(makeExperienceRoute(experience.id));
+      expect(true).eq(true);
+    });
+  });
+});
+
+function createEntry() {
+  return createSavedExperience({
+    title,
+    dataDefinitions: [
+      {
+        name: "aa",
+        type: FieldType.INTEGER,
+      },
+    ],
+  }).then(experience => {
+    const id = experience.id;
+    const [fieldDefinition] = experience.dataDefinitions;
+    const { id: definitionId } = fieldDefinition;
+
+    return createExperienceEntries([
+      {
+        experienceId: id,
+        clientId: "1",
+        dataObjects: [
+          {
+            definitionId,
+            data: `{"integer":1}`,
+          },
+        ],
+      },
+    ]).then(entries => {
+      return [experience, entries[0]];
+    });
+  });
+}
