@@ -119,6 +119,7 @@ function DataComponent(props: {
               className="field__options"
               icon="ellipsis vertical"
               direction="left"
+              id={`${entryIdPrefix}-menu-trigger`}
             >
               <Dropdown.Menu>
                 {dispatch && (

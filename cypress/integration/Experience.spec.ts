@@ -82,8 +82,15 @@ context.only("EditEntryComponent", () => {
   it("edits definitions while online", () => {
     let p = createEntry();
 
-    cy.wrap(p).then(([experience]) => {
+    cy.wrap(p).then(([experience, entry]) => {
+      const dataObject = entry.dataObjects[0];
       cy.visit(makeExperienceRoute(experience.id));
+      const escapedEnryId = CSS.escape(entry.id);
+      cy.get(`#entry-${escapedEnryId}-menu-trigger`).click();
+      cy.get(`#entry-${escapedEnryId}-edit-trigger`).click();
+      cy.get(
+        `#edit-entry-definition-${dataObject.definitionId}-edit-btn`,
+      ).click();
       expect(true).eq(true);
     });
   });

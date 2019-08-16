@@ -8,7 +8,6 @@ import {
   DefaultDefinitionsMap,
   DefinitionsContextProvider,
   DefinitionsContext,
-  DefaultDataObjectsMap,
 } from "./utils";
 import Form from "semantic-ui-react/dist/commonjs/collections/Form";
 import Button from "semantic-ui-react/dist/commonjs/elements/Button";
@@ -26,31 +25,29 @@ export function EditEntry(props: Props) {
 
   const [state, dispatch] = useReducer(reducer, props, initialStateFromProps);
 
-  const [
-    definitionsIds,
-    defaultDefinitionsMap,
-    defaultDataObjectsMap,
-  ] = useMemo(() => {
+  const [definitionsIds, defaultDefinitionsMap] = useMemo(() => {
+    const objectsMap = (entry.dataObjects as DataObjectFragment[]).reduce(
+      (acc, dataObject) => {
+        acc[dataObject.definitionId] = dataObject;
+        return acc;
+      },
+      {} as { [k: string]: DataObjectFragment },
+    );
+
     const [ids, definitionsMap] = definitions.reduce(
       ([ids, map], definition) => {
         ids.push(definition.id);
-        map[definition.id] = definition;
+        map[definition.id] = {
+          definition,
+          dataObject: objectsMap[definition.id],
+        };
 
         return [ids, map];
       },
       [[], {}] as [string[], DefaultDefinitionsMap],
     );
 
-    const objectsMap = (entry.dataObjects as DataObjectFragment[]).reduce(
-      (acc, dataObject) => {
-        acc[dataObject.id] = dataObject;
-        acc[dataObject.definitionId] = dataObject;
-        return acc;
-      },
-      {} as DefaultDataObjectsMap,
-    );
-
-    return [ids, definitionsMap, objectsMap];
+    return [ids, definitionsMap];
   }, [definitions]);
 
   return (
@@ -77,7 +74,6 @@ export function EditEntry(props: Props) {
             dispatch,
             defaultDefinitionsMap,
             updateDefinitionsOnline,
-            defaultDataObjectsMap,
           }}
         >
           {definitionsIds.map(id => {
@@ -110,7 +106,9 @@ function DefinitionComponent(props: DefinitionComponentProps) {
   } = useContext(DefinitionsContext);
 
   const idPrefix = `edit-entry-definition-${id}`;
-  const { type, name: defaultFormValue } = defaultDefinitionsMap[id];
+  const {
+    definition: { type, name: defaultFormValue },
+  } = defaultDefinitionsMap[id];
   const typeText = `[${type}]`;
 
   return (

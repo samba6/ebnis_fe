@@ -39,11 +39,11 @@ export interface UpdateDefinitions_updateDefinitions_definitions_definition {
 
 export interface UpdateDefinitions_updateDefinitions_definitions_errors_errors {
   __typename: "DataDefinitionError";
-  name: string | null;
   /**
    * May be we can't find the definition during an update
    */
   definition: string | null;
+  name: string | null;
 }
 
 export interface UpdateDefinitions_updateDefinitions_definitions_errors {

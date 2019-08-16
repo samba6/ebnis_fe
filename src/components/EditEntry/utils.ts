@@ -127,11 +127,10 @@ export interface OwnProps {
 export interface Props extends OwnProps, UpdateDefinitionsMutationProps {}
 
 export interface DefaultDefinitionsMap {
-  [k: string]: DataDefinitionFragment;
-}
-
-export interface DefaultDataObjectsMap {
-  [k: string]: DataObjectFragment;
+  [k: string]: {
+    definition: DataDefinitionFragment;
+    dataObject: DataObjectFragment;
+  };
 }
 
 export type DefinitionFormValue = Pick<
@@ -161,5 +160,4 @@ interface IdString {
 interface DefinitionsContextValues extends UpdateDefinitionsMutationProps {
   defaultDefinitionsMap: DefaultDefinitionsMap;
   dispatch: DispatchType;
-  defaultDataObjectsMap: DefaultDataObjectsMap;
 }

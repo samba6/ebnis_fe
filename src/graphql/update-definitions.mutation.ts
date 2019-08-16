@@ -7,7 +7,7 @@ import {
 } from "./apollo-types/UpdateDefinitions";
 
 export const UPDATE_DEFINITIONS_MUTATION = gql`
-  mutation UpdateDefinitions($input: [UpdateDefinitionsInput!]!) {
+  mutation UpdateDefinitions($input: [UpdateDefinitionInput!]!) {
     updateDefinitions(input: $input) {
       experience {
         id
@@ -15,7 +15,10 @@ export const UPDATE_DEFINITIONS_MUTATION = gql`
       }
 
       definitions {
-        ...DefinitionFragment
+        definition {
+          ...DataDefinitionFragment
+        }
+
         errors {
           id
           errors {
