@@ -2,11 +2,11 @@
 
 import React, { ComponentType } from "react";
 import { render, fireEvent } from "react-testing-library";
-import { Header } from "../components/Header/component";
-import { Props } from "../components/Header/utils";
+import { Header } from "../components/Header/header.component";
+import { Props } from "../components/Header/header.utils";
 import { renderWithRouter } from "./test_utils";
 import { EXPERIENCES_URL, ROOT_URL } from "../routes";
-import { ILayoutContextContext } from "../components/Layout/utils";
+import { ILayoutContextContext } from "../components/Layout/layout.utils";
 import { UPLOAD_UNSAVED_PREVIEW_URL } from "../constants/upload-unsaved-routes";
 import { LayoutProvider } from "../components/Layout/layout-provider";
 

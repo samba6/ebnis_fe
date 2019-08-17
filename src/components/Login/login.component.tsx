@@ -14,8 +14,7 @@ import Message from "semantic-ui-react/dist/commonjs/collections/Message";
 import Input from "semantic-ui-react/dist/commonjs/elements/Input";
 import { Formik, FastField, FieldProps, FormikProps, Field } from "formik";
 import { WindowLocation, NavigateFn } from "@reach/router";
-
-import "./styles.scss";
+import "./login.styles.scss";
 import {
   Props,
   ValidationSchema,

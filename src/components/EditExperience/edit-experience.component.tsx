@@ -19,7 +19,7 @@ import { UpdateExperienceInput } from "../../graphql/apollo-types/globalTypes";
 import immer from "immer";
 import { ApolloError } from "apollo-client";
 import { FormCtrlError } from "../FormCtrlError/form-ctrl-error.component";
-import "./styles.scss";
+import "./edit-experience.styles.scss";
 
 const unwantedExperienceFields: (keyof ExperienceFragment)[] = [
   "__typename",

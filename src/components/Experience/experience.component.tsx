@@ -3,8 +3,7 @@ import Card from "semantic-ui-react/dist/commonjs/views/Card";
 import Icon from "semantic-ui-react/dist/commonjs/elements/Icon";
 import Dropdown from "semantic-ui-react/dist/commonjs/modules/Dropdown";
 import { Link } from "gatsby";
-
-import "./styles.scss";
+import "./experience.styles.scss";
 import {
   Props,
   IMenuOptions,

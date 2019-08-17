@@ -17,7 +17,7 @@ import Input from "semantic-ui-react/dist/commonjs/elements/Input";
 import Message from "semantic-ui-react/dist/commonjs/collections/Message";
 import TextArea from "semantic-ui-react/dist/commonjs/addons/TextArea";
 import { NavigateFn } from "@reach/router";
-import "./styles.scss";
+import "./experience-definition.styles.scss";
 import {
   Props,
   ValidationSchema,

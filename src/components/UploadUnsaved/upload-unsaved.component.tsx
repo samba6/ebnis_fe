@@ -19,7 +19,7 @@ import {
   ExperienceFragment_entries_edges_node_dataObjects,
   ExperienceFragment_dataDefinitions,
 } from "../../graphql/apollo-types/ExperienceFragment";
-import "./styles.scss";
+import "./upload-unsaved.styles.scss";
 import { CSSTransition, TransitionGroup } from "react-transition-group";
 import makeClassNames from "classnames";
 import Button from "semantic-ui-react/dist/commonjs/elements/Button";

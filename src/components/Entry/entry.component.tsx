@@ -1,6 +1,6 @@
 import React, { useMemo, CSSProperties, useReducer } from "react";
 import { displayFieldType, formatDatetime } from "../Experience/experience.utils";
-import "./styles.scss";
+import "./entry.styles.scss";
 import makeClassNames from "classnames";
 import {
   ExperienceFragment_dataDefinitions,

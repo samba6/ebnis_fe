@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import Dropdown from "semantic-ui-react/dist/commonjs/modules/Dropdown";
 import Form from "semantic-ui-react/dist/commonjs/collections/Form";
 import { Props } from "./utils";
-import "./styles.scss";
+import "./date-field.styles.scss";
 import getDaysInMonth from "date-fns/get_days_in_month";
 
 const MONTHS_DROP_DOWN_OPTIONS = [

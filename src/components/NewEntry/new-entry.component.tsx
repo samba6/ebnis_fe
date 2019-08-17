@@ -5,8 +5,7 @@ import Button from "semantic-ui-react/dist/commonjs/elements/Button";
 import Input from "semantic-ui-react/dist/commonjs/elements/Input";
 import TextArea from "semantic-ui-react/dist/commonjs/addons/TextArea";
 import { NavigateFn } from "@reach/router";
-
-import "./styles.scss";
+import "./new-entry.styles.scss";
 import {
   Props,
   FormObj,

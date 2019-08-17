@@ -2,9 +2,9 @@ import React, { useState, useMemo } from "react";
 import Dropdown from "semantic-ui-react/dist/commonjs/modules/Dropdown";
 import Form from "semantic-ui-react/dist/commonjs/collections/Form";
 import { DateField } from "../DateField/component";
-import { FormObjVal } from "../Experience/utils";
+import { FormObjVal } from "../Experience/experience.utils";
 import { Props } from "./utils";
-import "../DateField/styles.scss";
+import "../DateField/date-field.styles.scss";
 
 interface DropdownOptions {
   key: number;

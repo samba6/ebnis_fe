@@ -9,7 +9,7 @@ import {
   Props,
 } from "../components/SidebarHeader/sidebar-header.component";
 
-jest.mock("../components/Header", () => ({
+jest.mock("../components/Header/header", () => ({
   Header: jest.fn(() => null),
 }));
 

@@ -1,6 +1,5 @@
 import React, { PropsWithChildren, useRef, useState, useEffect } from "react";
-
-import "./styles.scss";
+import "./loading.styles.scss";
 import makeClassNames from "classnames";
 import { LoadingComponentProps } from "react-loadable";
 

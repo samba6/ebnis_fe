@@ -9,7 +9,7 @@ import { Formik, Field, FieldProps, FormikProps } from "formik";
 import loIsEmpty from "lodash/isEmpty";
 import { WindowLocation } from "@reach/router";
 import makeClassNames from "classnames";
-import "./styles.scss";
+import "./signup.styles.scss";
 import {
   Props,
   initialFormValues,

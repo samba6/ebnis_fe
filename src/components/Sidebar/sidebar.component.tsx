@@ -1,8 +1,7 @@
 import React, { Dispatch, MouseEventHandler, SetStateAction } from "react";
 import { RouteComponentProps, NavigateFn, WindowLocation } from "@reach/router";
 import makeClassNames from "classnames";
-
-import "./styles.scss";
+import "./sidebar.styles.scss";
 import {
   EXPERIENCE_DEFINITION_URL,
   EXPERIENCES_URL,

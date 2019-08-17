@@ -4,9 +4,8 @@ import Icon from "semantic-ui-react/dist/commonjs/elements/Icon";
 import makeClassnames from "classnames";
 import { WindowLocation, NavigateFn } from "@reach/router";
 import { Link } from "gatsby";
-
-import "./styles.scss";
-import { Props } from "./utils";
+import "./header.styles.scss";
+import { Props } from "./header.utils";
 import { EXPERIENCES_URL, ROOT_URL } from "../../routes";
 import { LayoutContext } from "../Layout/layout.utils";
 import {
