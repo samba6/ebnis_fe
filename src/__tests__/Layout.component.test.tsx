@@ -18,7 +18,7 @@ jest.mock("../state/connections");
 import { isConnected } from "../state/connections";
 const mockIsConnected = isConnected as jest.Mock;
 
-jest.mock("../components/Loading", () => ({
+jest.mock("../components/Loading/loading", () => ({
   Loading: () => <div id="o-o-1" />,
 }));
 

@@ -6,13 +6,13 @@ import { Props } from "../components/MyExperiences/my-experiences.utils";
 import { renderWithRouter } from "./test_utils";
 import { ExperienceConnectionFragment } from "../graphql/apollo-types/ExperienceConnectionFragment";
 import { LayoutProvider } from "../components/Layout/layout-provider";
-import { ILayoutContextContext } from "../components/Layout/utils";
+import { ILayoutContextContext } from "../components/Layout/layout.utils";
 
 jest.mock("../components/SidebarHeader/sidebar-header", () => ({
   SidebarHeader: jest.fn(() => null),
 }));
 
-jest.mock("../components/Loading", () => ({
+jest.mock("../components/Loading/loading", () => ({
   Loading: () => <div id="loading-a-a" />,
 }));
 

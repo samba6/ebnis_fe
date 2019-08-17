@@ -36,7 +36,7 @@ import {
 } from "../state/unsaved-resolvers";
 import { LayoutProvider } from "../components/Layout/layout-provider";
 
-jest.mock("../components/Loading", () => ({
+jest.mock("../components/Loading/loading", () => ({
   Loading: () => <div id="a-lo" />,
 }));
 

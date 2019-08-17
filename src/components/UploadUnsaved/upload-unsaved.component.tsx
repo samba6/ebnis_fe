@@ -12,7 +12,7 @@ import {
   SaveStatusType,
   onUploadResult,
 } from "./upload-unsaved.utils";
-import { Loading } from "../Loading";
+import { Loading } from "../Loading/loading";
 import { SidebarHeader } from "../SidebarHeader/sidebar-header";
 import {
   ExperienceFragment_entries_edges_node,

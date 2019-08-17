@@ -14,7 +14,7 @@ jest.mock("../components/ExperienceNewEntryParent/loadables", () => ({
   ExperienceRoute: () => <div id="experience-page" />,
 }));
 
-jest.mock("../components/Loading", () => ({
+jest.mock("../components/Loading/loading", () => ({
   Loading: () => <div id="a-a-l" />,
 }));
 

@@ -8,7 +8,7 @@ import { Layout } from "../../components/Layout/layout";
 import { EXPERIENCE_URL } from "../../constants/experience-route";
 import { NEW_ENTRY_URL } from "../../constants/new-entry-route";
 import Loadable from "react-loadable";
-import { LoadableLoading } from "../../components/Loading";
+import { LoadableLoading } from "../../components/Loading/loading";
 import { UPLOAD_UNSAVED_PREVIEW_URL } from "../../constants/upload-unsaved-routes";
 
 const ExperienceDefinition = Loadable({

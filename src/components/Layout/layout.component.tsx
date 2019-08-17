@@ -6,7 +6,7 @@ import React, {
   useReducer,
 } from "react";
 import { EbnisAppContext } from "../../context";
-import { Loading } from "../Loading";
+import { Loading } from "../Loading/loading";
 import {
   ILayoutContextContext,
   reducer,
