@@ -1,6 +1,6 @@
 import { compose, graphql } from "react-apollo";
-import { EditEntry as Comp } from "./component";
-import { OwnProps } from "./utils";
+import { EditEntry as Comp } from "./edit-entry-component";
+import { OwnProps } from "./edit-entry-utils";
 import {
   UpdateDefinitionsMutationProps,
   UPDATE_DEFINITIONS_MUTATION,

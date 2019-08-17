@@ -88,9 +88,19 @@ context.only("EditEntryComponent", () => {
       const escapedEnryId = CSS.escape(entry.id);
       cy.get(`#entry-${escapedEnryId}-menu-trigger`).click();
       cy.get(`#entry-${escapedEnryId}-edit-trigger`).click();
+
       cy.get(
         `#edit-entry-definition-${dataObject.definitionId}-edit-btn`,
       ).click();
+
+      cy.get(
+        `#edit-entry-definition-${dataObject.definitionId}-input`,
+      ).type('bb')
+
+      cy.get(
+        `#edit-entry-definition-${dataObject.definitionId}-submit`,
+      ).click();
+
       expect(true).eq(true);
     });
   });

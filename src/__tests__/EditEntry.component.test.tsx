@@ -3,8 +3,8 @@ import React, { ComponentType } from "react";
 import "jest-dom/extend-expect";
 import "react-testing-library/cleanup-after-each";
 import { render, wait } from "react-testing-library";
-import { EditEntry } from "../components/EditEntry/component";
-import { Props } from "../components/EditEntry/utils";
+import { EditEntry } from "../components/EditEntry/edit-entry-component";
+import { Props, ActionTypes } from "../components/EditEntry/edit-entry-utils";
 import { EntryFragment } from "../graphql/apollo-types/EntryFragment";
 import { DataDefinitionFragment } from "../graphql/apollo-types/DataDefinitionFragment";
 import {
@@ -12,7 +12,7 @@ import {
   UpdateDefinitionInput,
 } from "../graphql/apollo-types/globalTypes";
 import { fillField, closeMessage, ToInputVariables } from "./test_utils";
-import { ActionTypes } from "../components/EditEntry/utils";
+import { UpdateDefinitions } from "../graphql/apollo-types/UpdateDefinitions";
 
 const EditEntryP = EditEntry as ComponentType<Partial<Props>>;
 
@@ -70,6 +70,20 @@ test("definitions not editing data", async () => {
         },
       ] as DataDefinitionFragment[],
     },
+  });
+
+  mockUpdateDefinitionsOnline.mockResolvedValue({
+    data: {
+      updateDefinitions: {
+        definitions: [
+          {
+            definition: {
+              id: "a",
+            },
+          },
+        ],
+      },
+    } as UpdateDefinitions,
   });
 
   const { debug } = render(ui);
@@ -136,6 +150,8 @@ test("definitions not editing data", async () => {
 
   (document.getElementById("edit-entry-definition-a-submit") as any).click();
 
+  // submitting
+
   await wait(() => {
     expect(
       (mockUpdateDefinitionsOnline.mock.calls[0][0] as ToInputVariables<
@@ -148,6 +164,12 @@ test("definitions not editing data", async () => {
       },
     ]);
   });
+
+  // back to idle
+  expect(
+    (document.getElementById("edit-entry-definition-a") as HTMLElement)
+      .classList,
+  ).toContain("success");
 });
 
 ////////////////////////// HELPER FUNCTIONS ///////////////////////////

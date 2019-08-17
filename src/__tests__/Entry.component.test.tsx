@@ -11,14 +11,14 @@ import { FieldType } from "../graphql/apollo-types/globalTypes";
 import {
   Props as EditEntryProps,
   ActionTypes as EditEntryActionTypes,
-} from "../components/EditEntry/utils";
+} from "../components/EditEntry/edit-entry-utils";
 
-jest.mock("../components/EditEntry", () => ({
+jest.mock("../components/EditEntry/edit-entry", () => ({
   EditEntry: jest.fn(() => {
     return <div id="edit-entry" />;
   }),
 }));
-import { EditEntry } from "../components/EditEntry";
+import { EditEntry } from "../components/EditEntry/edit-entry";
 const mockEditEntry = EditEntry as jest.Mock;
 
 const EntryP = Entry as ComponentType<Partial<Props>>;

@@ -13,7 +13,7 @@ import {
   EntryFragment_dataObjects,
   EntryFragment,
 } from "../../graphql/apollo-types/EntryFragment";
-import { EditEntry } from "../EditEntry";
+import { EditEntry } from "../EditEntry/edit-entry";
 
 export function Entry(props: Props) {
   const { entry, definitions, className = "", ...fieldProps } = props;

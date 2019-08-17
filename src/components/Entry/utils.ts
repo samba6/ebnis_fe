@@ -5,7 +5,7 @@ import { Reducer, Dispatch } from "react";
 import {
   ActionTypes as EditEntryActionTypes,
   Action as EditEntryAction,
-} from "../EditEntry/utils";
+} from "../EditEntry/edit-entry-utils";
 
 export enum ActionTypes {
   editClicked = "@components/entry/edit-clicked",

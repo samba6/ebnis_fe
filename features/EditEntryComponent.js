@@ -172,12 +172,8 @@ const definitionTitle = {
         on: {
           "": [
             {
-              cond: "isEditSuccess",
-              target: "editSuccess",
-            },
-
-            {
-              target: "notEdited",
+              cond: "isAnyEditSuccess",
+              target: "edited",
             },
           ],
 
@@ -188,16 +184,9 @@ const definitionTitle = {
         },
 
         states: {
-          notEdited: {
+          edited: {
             enter: [
-              "display initial title", //
-            ],
-          },
-
-          editSuccess: {
-            enter: [
-              "display new title", //
-              "visually indcate edit success",
+              "visually indicate edit success", //
             ],
           },
         },
@@ -259,13 +248,11 @@ const definitionTitle = {
 
               submitting: {
                 entry: [
-                  "disable edit e.g. by showing an overlay", //
-                  "show loading indicator",
+                  "inform parent", //
                 ],
 
                 exit: [
-                  "enable editing e.g. by removing overlay",
-                  "remove loading indicator",
+                  "inform parent", //
                 ],
                 on: {
                   SUCCESS: {

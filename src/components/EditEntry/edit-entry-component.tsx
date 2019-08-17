@@ -8,12 +8,15 @@ import {
   DefaultDefinitionsMap,
   DefinitionsContextProvider,
   DefinitionsContext,
-} from "./utils";
+  DefinitionStateValue,
+} from "./edit-entry-utils";
 import Form from "semantic-ui-react/dist/commonjs/collections/Form";
 import Button from "semantic-ui-react/dist/commonjs/elements/Button";
 import Input from "semantic-ui-react/dist/commonjs/elements/Input";
 import Modal from "semantic-ui-react/dist/commonjs/modules/Modal";
 import { DataObjectFragment } from "../../graphql/apollo-types/DataObjectFragment";
+import makeClassNames from "classnames";
+import { UpdateDefinitions_updateDefinitions } from "../../graphql/apollo-types/UpdateDefinitions";
 
 export function EditEntry(props: Props) {
   const {
@@ -99,6 +102,7 @@ interface DefinitionComponentProps {
 function DefinitionComponent(props: DefinitionComponentProps) {
   const { id, stateContext } = props;
   const { state, formValue } = stateContext;
+  const stateValue = state as DefinitionStateValue;
   const {
     dispatch,
     defaultDefinitionsMap,
@@ -112,95 +116,105 @@ function DefinitionComponent(props: DefinitionComponentProps) {
   const typeText = `[${type}]`;
 
   return (
-    <div id={idPrefix}>
-      <Form.Field>
-        {state === "idle" && (
-          <div>
-            <span>{typeText}</span>
+    <Form.Field
+      id={idPrefix}
+      className={makeClassNames({
+        success: !!(stateValue.idle && stateValue.idle.success),
+      })}
+    >
+      {stateValue.idle && (
+        <div>
+          <span>{typeText}</span>
 
-            <span id={`${idPrefix}-name`}>{defaultFormValue}</span>
+          <span id={`${idPrefix}-name`}>{defaultFormValue}</span>
 
-            <Button
-              type="button"
-              id={`${idPrefix}-edit-btn`}
-              onClick={() =>
-                dispatch({
-                  type: ActionTypes.EDIT_BTN_CLICKED,
-                  id,
-                })
-              }
-            >
-              Edit
-            </Button>
-          </div>
-        )}
-
-        {(state === "pristine" || state === "dirty") && (
-          <div>
-            <label htmlFor={`${idPrefix}-input`}>{typeText}</label>
-
-            <Input
-              id={`${idPrefix}-input`}
-              name={`${idPrefix}-input`}
-              defaultValue={defaultFormValue}
-              onChange={(_, { value }) => {
-                if (value === defaultFormValue) {
-                  dispatch({
-                    type: ActionTypes.TITLE_RESET,
-                    id,
-                  });
-                } else {
-                  dispatch({
-                    type: ActionTypes.TITLE_CHANGED,
-                    id,
-                    formValue: value,
-                  });
-                }
-              }}
-            />
-          </div>
-        )}
-
-        {state === "pristine" && (
           <Button
             type="button"
-            id={`${idPrefix}-dismiss`}
-            onClick={() => {
+            id={`${idPrefix}-edit-btn`}
+            onClick={() =>
               dispatch({
-                type: ActionTypes.TITLE_EDIT_DISMISS,
+                type: ActionTypes.EDIT_BTN_CLICKED,
                 id,
-              });
-            }}
+              })
+            }
           >
-            Dismiss
+            Edit
           </Button>
-        )}
+        </div>
+      )}
+      {!stateValue.idle && (
+        <div>
+          <label htmlFor={`${idPrefix}-input`}>{typeText}</label>
 
-        {state === "dirty" && (
-          <Button
-            type="submit"
-            id={`${idPrefix}-submit`}
-            onClick={async () => {
-              dispatch({
-                type: ActionTypes.TITLE_EDIT_SUBMIT,
-              });
-
-              await updateDefinitionsOnline({
-                variables: {
-                  input: [
-                    {
-                      id,
-                      name: formValue,
-                    },
-                  ],
-                },
-              });
+          <Input
+            id={`${idPrefix}-input`}
+            name={`${idPrefix}-input`}
+            defaultValue={defaultFormValue}
+            onChange={(_, { value }) => {
+              if (value === defaultFormValue) {
+                dispatch({
+                  type: ActionTypes.TITLE_RESET,
+                  id,
+                });
+              } else {
+                dispatch({
+                  type: ActionTypes.TITLE_CHANGED,
+                  id,
+                  formValue: value,
+                });
+              }
             }}
-          >
-            Submit
-          </Button>
-        )}
-      </Form.Field>
-    </div>
+          />
+        </div>
+      )}
+      {stateValue.pristine && (
+        <Button
+          type="button"
+          id={`${idPrefix}-dismiss`}
+          onClick={() => {
+            dispatch({
+              type: ActionTypes.TITLE_EDIT_DISMISS,
+              id,
+            });
+          }}
+        >
+          Dismiss
+        </Button>
+      )}
+      {stateValue.dirty && (
+        <Button
+          type="submit"
+          id={`${idPrefix}-submit`}
+          onClick={async () => {
+            dispatch({
+              type: ActionTypes.TITLE_EDIT_SUBMIT,
+            });
+
+            const result = await updateDefinitionsOnline({
+              variables: {
+                input: [
+                  {
+                    id,
+                    name: formValue,
+                  },
+                ],
+              },
+            });
+
+            const d = (result &&
+              result.data &&
+              result.data
+                .updateDefinitions) as UpdateDefinitions_updateDefinitions;
+
+            dispatch({
+              type: ActionTypes.submissionResult,
+              ...d,
+            });
+          }}
+        >
+          Submit
+        </Button>
+      )}
+    </Form.Field>
   );
 }

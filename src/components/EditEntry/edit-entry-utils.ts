@@ -4,6 +4,10 @@ import { Dispatch, Reducer, createContext } from "react";
 import immer from "immer";
 import { UpdateDefinitionsMutationProps } from "../../graphql/update-definitions.mutation";
 import { DataObjectFragment } from "../../graphql/apollo-types/DataObjectFragment";
+import {
+  UpdateDefinitions_updateDefinitions,
+  UpdateDefinitions_updateDefinitions_definitions,
+} from "../../graphql/apollo-types/UpdateDefinitions";
 
 export enum ActionTypes {
   EDIT_BTN_CLICKED = "@component/edit-entry/edit-btn-clicked",
@@ -12,6 +16,7 @@ export enum ActionTypes {
   TITLE_EDIT_DISMISS = "@component/edit-entry/title-dismiss",
   TITLE_EDIT_SUBMIT = "@component/edit-entry/title-submit",
   DESTROYED = "@component/edit-entry/destroy",
+  submissionResult = "@component/edit-entry/submission-result",
 }
 
 export const initialStateFromProps = (props: Props): State => {
@@ -20,7 +25,9 @@ export const initialStateFromProps = (props: Props): State => {
   const initialDefinitionsStates = definitions.reduce(
     (acc, definition) => {
       acc[definition.id] = {
-        state: "idle",
+        state: {
+          idle: {},
+        },
         formValue: definition.name,
       };
 
@@ -46,7 +53,9 @@ export const reducer: Reducer<State, Action> = (
         {
           const { id } = payload as IdString;
 
-          proxy.definitionsStates[id].state = "pristine";
+          proxy.definitionsStates[id].state = {
+            pristine: {},
+          };
         }
 
         break;
@@ -55,7 +64,9 @@ export const reducer: Reducer<State, Action> = (
         {
           const { id, formValue } = payload as TitleChangedPayload;
           const definition = proxy.definitionsStates[id];
-          definition.state = "dirty";
+          definition.state = {
+            dirty: {},
+          };
           definition.formValue = formValue;
         }
 
@@ -64,7 +75,9 @@ export const reducer: Reducer<State, Action> = (
       case ActionTypes.TITLE_EDIT_DISMISS:
         {
           const { id } = payload as IdString;
-          proxy.definitionsStates[id].state = "idle";
+          proxy.definitionsStates[id].state = {
+            idle: {},
+          };
         }
 
         break;
@@ -74,6 +87,26 @@ export const reducer: Reducer<State, Action> = (
           proxy.state = "submitting";
         }
 
+        break;
+
+      case ActionTypes.submissionResult:
+        {
+          const {
+            definitions,
+          } = payload as UpdateDefinitions_updateDefinitions;
+
+          definitions.forEach(def => {
+            const {
+              definition,
+            } = def as UpdateDefinitions_updateDefinitions_definitions;
+
+            proxy.definitionsStates[definition.id].state = {
+              idle: {
+                success: true,
+              },
+            };
+          });
+        }
         break;
     }
   });
@@ -111,7 +144,10 @@ export type Action =
     }
   | {
       type: ActionTypes.DESTROYED;
-    };
+    }
+  | {
+      type: ActionTypes.submissionResult;
+    } & UpdateDefinitions_updateDefinitions;
 
 type TitleChangedPayload = {
   id: string;
@@ -144,8 +180,22 @@ export interface FormValues {
 
 export type DispatchType = Dispatch<Action>;
 
+export interface DefinitionStateValue {
+  idle: {
+    success?: true;
+  };
+
+  pristine: {};
+
+  dirty: {};
+}
+
 export interface DefinitionState {
-  state: "idle" | "pristine" | "dirty";
+  state:
+    | DefinitionStateValue["idle"]
+    | DefinitionStateValue["pristine"]
+    | DefinitionStateValue["dirty"];
+
   formValue: string;
 }
 
