@@ -10,7 +10,7 @@ jest.mock("../components/SidebarHeader/", () => ({
   SidebarHeader: () => null,
 }));
 
-jest.mock("../components/Experience/component", () => ({
+jest.mock("../components/Experience/experience.component", () => ({
   Experience: () => null,
 
   getTitle: jest.fn(() => "cool"),

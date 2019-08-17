@@ -1,5 +1,5 @@
 import React, { useMemo, CSSProperties, useReducer } from "react";
-import { displayFieldType, formatDatetime } from "../Experience/utils";
+import { displayFieldType, formatDatetime } from "../Experience/experience.utils";
 import "./styles.scss";
 import makeClassNames from "classnames";
 import {
@@ -8,7 +8,7 @@ import {
 } from "../../graphql/apollo-types/ExperienceFragment";
 import Icon from "semantic-ui-react/dist/commonjs/elements/Icon";
 import Dropdown from "semantic-ui-react/dist/commonjs/modules/Dropdown";
-import { Props, ActionTypes, reducer, DispatchType } from "./utils";
+import { Props, ActionTypes, reducer, DispatchType } from "./entry.utils";
 import {
   EntryFragment_dataObjects,
   EntryFragment,

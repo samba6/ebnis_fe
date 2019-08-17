@@ -1,7 +1,7 @@
 import { graphql, compose, withApollo } from "react-apollo";
 
-import { NewEntry as Comp } from "./component";
-import { OwnProps } from "./utils";
+import { NewEntry as Comp } from "./new-entry.component";
+import { OwnProps } from "./new-entry.utils";
 import {
   CreateEntryMutation,
   CreateEntryMutationVariables,

@@ -92,7 +92,8 @@ test("definitions not editing data - submission success", async () => {
     } as UpdateDefinitions,
   });
 
-  const { debug } = render(ui);
+  render(ui);
+  // const { debug } = render(ui);
 
   // idle state
 
@@ -138,7 +139,6 @@ test("definitions not editing data - submission success", async () => {
 
   fillField($input, "g1");
 
-  // debug();
   expect(document.getElementById("edit-entry-definition-a-dismiss")).toBeNull();
 
   // field filled with default value

@@ -27,7 +27,7 @@ import {
   UploadAllUnsavedsMutation_createEntries,
   UploadAllUnsavedsMutation_saveOfflineExperiences,
 } from "../graphql/apollo-types/UploadAllUnsavedsMutation";
-import { Props as EntryProps } from "../components/Entry/utils";
+import { Props as EntryProps } from "../components/Entry/entry.utils";
 import { DataObjectFragment } from "../graphql/apollo-types/DataObjectFragment";
 import { EXPERIENCES_URL } from "../routes";
 import {
@@ -47,12 +47,16 @@ jest.mock("../components/SidebarHeader", () => ({
 }));
 
 jest.mock("../state/connections");
+import { isConnected } from "../state/connections";
+const mockIsConnected = isConnected as jest.Mock;
 
-jest.mock("../components/Entry/component", () => ({
+jest.mock("../components/Entry/entry.component", () => ({
   Entry: jest.fn((props: any) => {
     return <div className={props.className} id={props.id} />;
   }),
 }));
+import { Entry } from "../components/Entry/entry.component";
+const mockEntry = Entry as jest.Mock;
 
 jest.mock("../components/Experience/loadables", () => ({
   EditExperience: () => <div className="js-editor" />,
@@ -61,34 +65,26 @@ jest.mock("../components/Experience/loadables", () => ({
 }));
 
 jest.mock("../components/scroll-into-view");
-jest.mock("../components/UploadUnsaved/update-cache");
-jest.mock("../state/resolvers/update-get-experiences-mini-query");
-jest.mock("../state/resolvers/delete-references-from-cache");
-jest.mock("../state/resolvers/update-saved-and-unsaved-experiences-in-cache");
-
-////////////////////////// MOCK IMPORT ////////////////////////////
-
 import { scrollIntoView } from "../components/scroll-into-view";
-import { updateCache } from "../components/UploadUnsaved/update-cache";
-import { replaceExperiencesInGetExperiencesMiniQuery } from "../state/resolvers/update-get-experiences-mini-query";
-import { deleteIdsFromCache } from "../state/resolvers/delete-references-from-cache";
-import { deleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache } from "../state/resolvers/update-saved-and-unsaved-experiences-in-cache";
-import { isConnected } from "../state/connections";
-import { Entry } from "../components/Entry/component";
-
-////////////////////////// END MOCK IMPORT ////////////////////////////
-
-const mockIsConnected = isConnected as jest.Mock;
 const mockScrollIntoView = scrollIntoView as jest.Mock;
+
+jest.mock("../components/UploadUnsaved/update-cache");
+import { updateCache } from "../components/UploadUnsaved/update-cache";
 const mockUpdateCache = updateCache as jest.Mock;
 
+jest.mock("../state/resolvers/update-get-experiences-mini-query");
+import { replaceExperiencesInGetExperiencesMiniQuery } from "../state/resolvers/update-get-experiences-mini-query";
 const mockReplaceExperiencesInGetExperiencesMiniQuery = replaceExperiencesInGetExperiencesMiniQuery as jest.Mock;
 
+jest.mock("../state/resolvers/delete-references-from-cache");
+import { deleteIdsFromCache } from "../state/resolvers/delete-references-from-cache";
 const mockDeleteIdsFromCache = deleteIdsFromCache as jest.Mock;
 
+jest.mock("../state/resolvers/update-saved-and-unsaved-experiences-in-cache");
+import { deleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache } from "../state/resolvers/update-saved-and-unsaved-experiences-in-cache";
 const mockDeleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache = deleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache as jest.Mock;
 
-const mockEntry = Entry as jest.Mock;
+////////////////////////// END MOCK ////////////////////////////
 
 const timeStamps = { insertedAt: "a", updatedAt: "a" };
 

@@ -78,7 +78,7 @@ context("ExperienceComponent", () => {
   });
 });
 
-context.only("EditEntryComponent", () => {
+context("EditEntryComponent", () => {
   it("edits definitions while online", () => {
     let p = createEntry();
 

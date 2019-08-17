@@ -11,7 +11,7 @@ import {
   EditExperienceAction,
   EditExperienceActionType,
 } from "../EditExperience/utils";
-import { Props as EntryProps, EntryAction } from "../Entry/utils";
+import { EntryAction } from "../Entry/entry.utils";
 
 export interface IMenuOptions {
   newEntry?: boolean;
@@ -24,7 +24,7 @@ export interface Props
     RouteComponentProps<NewEntryRouteParams>,
     PropsWithChildren<{}> {
   experience: ExperienceFragment;
-  entryProps?: EbnisComponentProps & Pick<EntryProps, "dispatch" | "editable">;
+  entryProps?: EbnisComponentProps;
   headerProps?: EbnisComponentProps;
   menuOptions: IMenuOptions;
   entriesJSX?: JSX.Element | JSX.Element[];

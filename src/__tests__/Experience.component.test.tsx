@@ -5,21 +5,19 @@ import "jest-dom/extend-expect";
 import "react-testing-library/cleanup-after-each";
 import { render, fireEvent } from "react-testing-library";
 
-import { Experience, getTitle } from "../components/Experience/component";
+import { Experience, getTitle } from "../components/Experience/experience.component";
 import {
   Props,
   State,
   reducer,
   EditingState,
-} from "../components/Experience/utils";
+} from "../components/Experience/experience.utils";
 import { renderWithRouter } from "./test_utils";
 import {
   ExperienceFragment_entries_edges,
   ExperienceFragment_dataDefinitions,
 } from "../graphql/apollo-types/ExperienceFragment";
 import { EditExperienceActionType } from "../components/EditExperience/utils";
-import { ActionTypes } from "../components/Entry/utils";
-import { EntryFragment } from "../graphql/apollo-types/EntryFragment";
 
 jest.mock("../components/Experience/loadables", () => ({
   EditExperience: () => <div id="js-editor" />,
@@ -27,7 +25,7 @@ jest.mock("../components/Experience/loadables", () => ({
   EditEntry: () => <div id="entry-edit-modal" />,
 }));
 
-jest.mock("../components/Entry/component", () => ({
+jest.mock("../components/Entry/entry.component", () => ({
   Entry: () => <div id="default-entry" />,
 }));
 

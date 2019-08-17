@@ -8,9 +8,8 @@ import addDays from "date-fns/add_days";
 import formatDate from "date-fns/format";
 import differenceInDays from "date-fns/difference_in_days";
 import differenceInHours from "date-fns/difference_in_hours";
-
-import { NewEntry } from "../components/NewEntry/component";
-import { Props } from "../components/NewEntry/utils";
+import { NewEntry } from "../components/NewEntry/new-entry.component";
+import { Props } from "../components/NewEntry/new-entry.utils";
 import {
   renderWithRouter,
   fillField,

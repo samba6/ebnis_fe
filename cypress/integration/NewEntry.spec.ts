@@ -21,18 +21,15 @@ context("new entry page", () => {
      */
     const fieldName = "aa";
 
-    let p = createSavedExperience(
-      {
-        title,
-        dataDefinitions: [
-          {
-            name: fieldName,
-            type: FieldType.INTEGER,
-          },
-        ],
-      },
-      // { persist: true },
-    );
+    let p = createSavedExperience({
+      title,
+      dataDefinitions: [
+        {
+          name: fieldName,
+          type: FieldType.INTEGER,
+        },
+      ],
+    });
 
     cy.wrap(p).then((experience: ExperienceFragment) => {
       /**
@@ -166,5 +163,5 @@ context("new entry page", () => {
 });
 
 function makeIdAttributeSelector(experience: ExperienceFragment) {
-  return `[id$="-value-${experience.dataDefinitions[0].id}"]`;
+  return `[id$="-${experience.dataDefinitions[0].id}-value"]`;
 }

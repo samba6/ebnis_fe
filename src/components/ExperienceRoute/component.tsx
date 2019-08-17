@@ -4,7 +4,7 @@ import "./styles.scss";
 import { Props } from "./utils";
 import { SidebarHeader } from "../SidebarHeader";
 import { setDocumentTitle, makeSiteTitle } from "../../constants";
-import { Experience, getTitle } from "../Experience/component";
+import { Experience, getTitle } from "../Experience/experience.component";
 
 export function ExperienceRoute(props: Props) {
   const { experience, updateExperience } = props;

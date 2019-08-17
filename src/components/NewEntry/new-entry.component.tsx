@@ -19,7 +19,7 @@ import {
   parseApolloErrors,
   initialStateFromProps,
   State,
-} from "./utils";
+} from "./new-entry.utils";
 import { makeExperienceRoute } from "../../constants/experience-route";
 import { CreateEntryMutationFn } from "../../graphql/create-entry.mutation";
 import { updateExperienceWithNewEntry } from "./update";
@@ -250,7 +250,7 @@ const DataComponent = React.memo(
               name={formFieldName}
               value={value}
               fluid={true}
-              onChange={(e, { value: inputVal }) => {
+              onChange={(_, { value: inputVal }) => {
                 dispatch([
                   ActionTypes.setFormObjField,
                   { formFieldName, value: Number(inputVal) },
@@ -270,7 +270,7 @@ const DataComponent = React.memo(
               name={formFieldName}
               value={value}
               fluid={true}
-              onChange={(e, { value: inputVal }) => {
+              onChange={(_, { value: inputVal }) => {
                 dispatch([
                   ActionTypes.setFormObjField,
                   { formFieldName, value: inputVal },
