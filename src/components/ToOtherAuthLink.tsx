@@ -2,7 +2,7 @@ import React from "react";
 import { Link } from "gatsby";
 import Button from "semantic-ui-react/dist/commonjs/elements/Button";
 import makeClassNames from "classnames";
-import { SIGN_UP_URL, LOGIN_URL } from "../../routes";
+import { SIGN_UP_URL, LOGIN_URL } from "../routes";
 
 export interface ToOtherAuthLinkProps {
   className?: string;

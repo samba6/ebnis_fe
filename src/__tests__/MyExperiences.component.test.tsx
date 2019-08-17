@@ -1,8 +1,8 @@
 import React, { ComponentType } from "react";
 import "react-testing-library/cleanup-after-each";
 import { render, fireEvent } from "react-testing-library";
-import { MyExperiences } from "../components/MyExperiences/component";
-import { Props } from "../components/MyExperiences/utils";
+import { MyExperiences } from "../components/MyExperiences/my-experiences.component";
+import { Props } from "../components/MyExperiences/my-experiences.utils";
 import { renderWithRouter } from "./test_utils";
 import { ExperienceConnectionFragment } from "../graphql/apollo-types/ExperienceConnectionFragment";
 import { LayoutProvider } from "../components/Layout/layout-provider";

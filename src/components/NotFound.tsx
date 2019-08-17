@@ -1,12 +1,12 @@
 import React, { useEffect } from "react";
 import { RouteComponentProps } from "@reach/router";
 
-import { Page404 } from "../Page404";
+import { Page404 } from "./Page404";
 import {
   setDocumentTitle,
   makeSiteTitle,
   PAGE_NOT_FOUND_TITLE,
-} from "../../constants";
+} from "../constants";
 
 export type Props = RouteComponentProps & { default: boolean };
 

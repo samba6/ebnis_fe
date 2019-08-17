@@ -27,7 +27,7 @@ import {
 } from "./login.utils";
 import { LoginUser as FormValues } from "../../graphql/apollo-types/globalTypes";
 import { refreshToHome } from "../../refresh-to-app";
-import { PasswordInput } from "../PasswordInput/component";
+import { PasswordInput } from "../PasswordInput/password-input.component";
 import { isConnected } from "../../state/connections";
 import { noop } from "../../constants";
 import { LoginMutationFn } from "../../graphql/login.mutation";

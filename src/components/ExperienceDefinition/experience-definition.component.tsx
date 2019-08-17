@@ -29,7 +29,7 @@ import {
   fieldTypeKeys,
   DispatchType,
   ServerDataDefinitionsErrorsMap,
-} from "./utils";
+} from "./experience-definition.utils";
 import {
   CreateExperienceInput as FormValues,
   CreateDataDefinition,
@@ -40,7 +40,7 @@ import { EXPERIENCE_DEFINITION_TITLE } from "../../constants/experience-definiti
 import { ExperienceDefinitionUpdate } from "./update";
 import { CreateExperienceMutationFn } from "../../graphql/create-experience.mutation";
 import { SidebarHeader } from "../SidebarHeader/sidebar-header";
-import { FormCtrlError } from "../FormCtrlError/component";
+import { FormCtrlError } from "../FormCtrlError/form-ctrl-error.component";
 import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragment";
 import { isConnected } from "../../state/connections";
 import { DropdownItemProps } from "semantic-ui-react";
@@ -383,7 +383,7 @@ function FieldDataTypeComponent({
         value={value}
         compact={true}
         options={FIELD_TYPES}
-        onChange={function fieldTypeChanged(evt, data) {
+        onChange={function fieldTypeChanged(_, data) {
           const val = data.value as string;
 
           setFieldValue(name, val);

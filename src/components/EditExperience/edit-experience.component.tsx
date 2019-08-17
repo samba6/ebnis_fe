@@ -6,7 +6,7 @@ import {
   Props,
   EditingState,
   UpdateErrors,
-} from "./utils";
+} from "./edit-experience.utils";
 import Form from "semantic-ui-react/dist/commonjs/collections/Form";
 import Message from "semantic-ui-react/dist/commonjs/collections/Message";
 import Button from "semantic-ui-react/dist/commonjs/elements/Button";
@@ -18,7 +18,7 @@ import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragmen
 import { UpdateExperienceInput } from "../../graphql/apollo-types/globalTypes";
 import immer from "immer";
 import { ApolloError } from "apollo-client";
-import { FormCtrlError } from "../FormCtrlError/component";
+import { FormCtrlError } from "../FormCtrlError/form-ctrl-error.component";
 import "./styles.scss";
 
 const unwantedExperienceFields: (keyof ExperienceFragment)[] = [

@@ -1,5 +1,5 @@
 import React from "react";
-import { Props, PasswordInputType } from "./utils";
+import { Props, PasswordInputType } from "./password-input.utils";
 import Icon from "semantic-ui-react/dist/commonjs/elements/Icon";
 import Input from "semantic-ui-react/dist/commonjs/elements/Input";
 import Form from "semantic-ui-react/dist/commonjs/collections/Form";

@@ -5,7 +5,10 @@ import "jest-dom/extend-expect";
 import "react-testing-library/cleanup-after-each";
 import { render, fireEvent } from "react-testing-library";
 
-import { Experience, getTitle } from "../components/Experience/experience.component";
+import {
+  Experience,
+  getTitle,
+} from "../components/Experience/experience.component";
 import {
   Props,
   State,
@@ -17,7 +20,7 @@ import {
   ExperienceFragment_entries_edges,
   ExperienceFragment_dataDefinitions,
 } from "../graphql/apollo-types/ExperienceFragment";
-import { EditExperienceActionType } from "../components/EditExperience/utils";
+import { EditExperienceActionType } from "../components/EditExperience/edit-experience.utils";
 
 jest.mock("../components/Experience/loadables", () => ({
   EditExperience: () => <div id="js-editor" />,

@@ -3,7 +3,7 @@ import React, { ComponentType } from "react";
 import "jest-dom/extend-expect";
 import "react-testing-library/cleanup-after-each";
 import { render } from "react-testing-library";
-import { NotFound, Props } from "../components/NotFound/index";
+import { NotFound, Props } from "../components/NotFound";
 
 jest.mock("../components/Page404", () => ({
   Page404: () => null,

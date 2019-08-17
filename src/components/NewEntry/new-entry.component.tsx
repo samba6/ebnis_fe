@@ -28,7 +28,7 @@ import { setDocumentTitle, makeSiteTitle } from "../../constants";
 import { isConnected } from "../../state/connections";
 import { ExperienceFragment_dataDefinitions } from "../../graphql/apollo-types/ExperienceFragment";
 import makeClassNames from "classnames";
-import { FormCtrlError } from "../FormCtrlError/component";
+import { FormCtrlError } from "../FormCtrlError/form-ctrl-error.component";
 import { makeScrollIntoViewId, scrollIntoView } from "../scroll-into-view";
 import {
   FieldType,

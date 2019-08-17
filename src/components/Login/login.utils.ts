@@ -6,7 +6,7 @@ import { ApolloError } from "apollo-client";
 import immer from "immer";
 import { LoginUser as FormValues } from "../../graphql/apollo-types/globalTypes";
 import { LoginMutationProps } from "../../graphql/login.mutation";
-import { PasswordInputAction, PasswordInputType } from "../PasswordInput/utils";
+import { PasswordInputAction, PasswordInputType } from "../PasswordInput/password-input.utils";
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface OwnProps extends RouteComponentProps<{}> {}

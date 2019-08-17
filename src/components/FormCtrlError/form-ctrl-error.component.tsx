@@ -1,7 +1,7 @@
 import React, { PropsWithChildren } from "react";
 import makeClassName from "classnames";
 
-import "./styles.scss";
+import "./form-ctrl-error.styles.scss";
 import { EbnisComponentProps } from "../../types";
 
 interface Props extends PropsWithChildren<{}>, EbnisComponentProps {

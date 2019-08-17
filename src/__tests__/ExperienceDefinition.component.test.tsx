@@ -4,12 +4,12 @@ import React, { ComponentType } from "react";
 import "react-testing-library/cleanup-after-each";
 import { render, fireEvent, wait } from "react-testing-library";
 import { waitForElement } from "dom-testing-library";
-import { ExperienceDefinition } from "../components/ExperienceDefinition/component";
+import { ExperienceDefinition } from "../components/ExperienceDefinition/experience-definition.component";
 import {
   CreateDataDefinition,
   FieldType,
 } from "../graphql/apollo-types/globalTypes";
-import { Props } from "../components/ExperienceDefinition/utils";
+import { Props } from "../components/ExperienceDefinition/experience-definition.utils";
 import { fillField, renderWithRouter, closeMessage } from "./test_utils";
 import { makeExperienceRoute } from "../constants/experience-route";
 import {

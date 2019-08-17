@@ -33,7 +33,7 @@ import Message from "semantic-ui-react/dist/commonjs/collections/Message";
 import { UploadAllUnsavedsMutationVariables } from "../../graphql/apollo-types/UploadAllUnsavedsMutation";
 import { Experience } from "../Experience/experience.component";
 import { scrollIntoView } from "../scroll-into-view";
-import { FormCtrlError } from "../FormCtrlError/component";
+import { FormCtrlError } from "../FormCtrlError/form-ctrl-error.component";
 import { Entry } from "../Entry/entry.component";
 import { GetAllUnSavedQueryData } from "../../state/unsaved-resolvers";
 import { LayoutContext, LayoutActionType } from "../Layout/utils";

@@ -5,18 +5,20 @@ import "react-testing-library/cleanup-after-each";
 import { render, fireEvent } from "react-testing-library";
 import { Formik, Field, FieldProps } from "formik";
 
-import { PasswordInput } from "../components/PasswordInput/component";
-import { Props } from "../components/PasswordInput/utils";
-import { makeId } from "../components/PasswordInput/component";
+import {
+  PasswordInput,
+  makeId,
+} from "../components/PasswordInput/password-input.component";
 import {
   PasswordInputAction,
   PasswordInputPayload,
-} from "../components/PasswordInput/utils";
+  Props,
+} from "../components/PasswordInput/password-input.utils";
 
 const reducer: Reducer<
   PasswordInputPayload | undefined,
   PasswordInputAction
-> = (prevState, [, payload]) => {
+> = (_, [, payload]) => {
   return payload;
 };
 

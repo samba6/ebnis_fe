@@ -3,11 +3,11 @@ import React, { ComponentType } from "react";
 import "jest-dom/extend-expect";
 import "react-testing-library/cleanup-after-each";
 import { render, act, wait, waitForElement } from "react-testing-library";
-import { EditExperience } from "../components/EditExperience/component";
+import { EditExperience } from "../components/EditExperience/edit-experience.component";
 import {
   Props,
   EditExperienceActionType,
-} from "../components/EditExperience/utils";
+} from "../components/EditExperience/edit-experience.utils";
 import { ExperienceFragment } from "../graphql/apollo-types/ExperienceFragment";
 import { fillField, closeMessage } from "./test_utils";
 import { ApolloError } from "apollo-client";

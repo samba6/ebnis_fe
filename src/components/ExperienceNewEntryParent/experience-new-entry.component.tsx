@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { Props } from "./utils";
+import { Props } from "./experience-new-entry.utils";
 import { Loading } from "../Loading";
 import { NEW_ENTRY_URL } from "../../constants/new-entry-route";
 import { GetExperienceFullData } from "../../graphql/get-experience-full.query";

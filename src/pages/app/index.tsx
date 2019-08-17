@@ -12,17 +12,19 @@ import { LoadableLoading } from "../../components/Loading";
 import { UPLOAD_UNSAVED_PREVIEW_URL } from "../../constants/upload-unsaved-routes";
 
 const ExperienceDefinition = Loadable({
-  loader: () => import("../../components/ExperienceDefinition"),
+  loader: () =>
+    import("../../components/ExperienceDefinition/experience-definition"),
   loading: LoadableLoading,
 });
 
 const ExperienceNewEntryParent = Loadable({
-  loader: () => import("../../components/ExperienceNewEntryParent"),
+  loader: () =>
+    import("../../components/ExperienceNewEntryParent/experience-new-entry"),
   loading: LoadableLoading,
 });
 
 const MyExperiences = Loadable({
-  loader: () => import("../../components/MyExperiences"),
+  loader: () => import("../../components/MyExperiences/my-experiences"),
   loading: LoadableLoading,
 });
 

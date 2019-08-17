@@ -3,6 +3,6 @@ import Loadable from "react-loadable";
 import { LoadableLoading } from "../Loading";
 
 export const EditExperience = Loadable({
-  loader: () => import("../EditExperience"),
+  loader: () => import("../EditExperience/edit-experience"),
   loading: LoadableLoading,
 }) as any;

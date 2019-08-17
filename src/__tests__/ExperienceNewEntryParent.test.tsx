@@ -3,8 +3,8 @@
 import React, { ComponentType } from "react";
 import "react-testing-library/cleanup-after-each";
 import { render } from "react-testing-library";
-import { ExperienceNewEntryParent } from "../components/ExperienceNewEntryParent/component";
-import { Props } from "../components/ExperienceNewEntryParent/utils";
+import { ExperienceNewEntryParent } from "../components/ExperienceNewEntryParent/experience-new-entry.component";
+import { Props } from "../components/ExperienceNewEntryParent/experience-new-entry.utils";
 import { renderWithRouter } from "./test_utils";
 import { NEW_ENTRY_URL } from "../constants/new-entry-route";
 

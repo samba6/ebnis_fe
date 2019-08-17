@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback, useContext } from "react";
 import Icon from "semantic-ui-react/dist/commonjs/elements/Icon";
 
 import "./styles.scss";
-import { Props } from "./utils";
+import { Props } from "./my-experiences.utils";
 import { EXPERIENCE_DEFINITION_URL } from "../../routes";
 import { makeExperienceRoute } from "../../constants/experience-route";
 import { Loading } from "../Loading";
