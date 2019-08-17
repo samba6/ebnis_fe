@@ -9,7 +9,6 @@ import { Formik, Field, FieldProps, FormikProps } from "formik";
 import loIsEmpty from "lodash/isEmpty";
 import { WindowLocation } from "@reach/router";
 import makeClassNames from "classnames";
-
 import "./styles.scss";
 import {
   Props,
@@ -32,7 +31,7 @@ import { UserRegMutationFn } from "../../graphql/user-reg.mutation";
 import { scrollToTop } from "./scrollToTop";
 import { SidebarHeader } from "../SidebarHeader/sidebar-header";
 import { ToOtherAuthLink } from "../ToOtherAuthLink";
-import { LayoutContext } from "../Layout/utils";
+import { LayoutContext } from "../Layout/layout.utils";
 import { storeUser } from "../../state/users";
 
 export function SignUp(props: Props) {

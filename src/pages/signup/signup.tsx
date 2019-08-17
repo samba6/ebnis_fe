@@ -3,7 +3,7 @@ import { RouteComponentProps } from "@reach/router";
 import { Helmet } from "react-helmet-async";
 
 import { SignUp } from "../../components/Signup/signup";
-import { Layout } from "../../components/Layout";
+import { Layout } from "../../components/Layout/layout";
 import { useIsLoggedIn } from "../../components/use-is-logged-in";
 import { makeSiteTitle } from "../../constants";
 

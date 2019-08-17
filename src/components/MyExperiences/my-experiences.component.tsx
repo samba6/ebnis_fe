@@ -20,7 +20,7 @@ import {
   GetExperienceConnectionMini_getExperiences,
   GetExperienceConnectionMini_getExperiences_edges,
 } from "../../graphql/apollo-types/GetExperienceConnectionMini";
-import { LayoutContext, LayoutActionType } from "../Layout/utils";
+import { LayoutContext, LayoutActionType } from "../Layout/layout.utils";
 import { ExperienceMiniFragment } from "../../graphql/apollo-types/ExperienceMiniFragment";
 
 export const MyExperiences = (props: Props) => {

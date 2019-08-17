@@ -8,7 +8,7 @@ import { Link } from "gatsby";
 import "./styles.scss";
 import { Props } from "./utils";
 import { EXPERIENCES_URL, ROOT_URL } from "../../routes";
-import { LayoutContext } from "../Layout/utils";
+import { LayoutContext } from "../Layout/layout.utils";
 import {
   UPLOAD_UNSAVED_PREVIEW_URL,
   UPLOAD_UNSAVED_URL_START,

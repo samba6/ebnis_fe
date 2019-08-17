@@ -4,7 +4,7 @@ import { Helmet } from "react-helmet-async";
 
 import { Login } from "../components/Login/login";
 
-import { Layout } from "../components/Layout";
+import { Layout } from "../components/Layout/layout";
 import { SITE_TITLE } from "../constants";
 
 export default function IndexPage(props: RouteComponentProps) {

@@ -35,7 +35,7 @@ import { LoginMutation_login } from "../../graphql/apollo-types/LoginMutation";
 import { SidebarHeader } from "../SidebarHeader/sidebar-header";
 import { ToOtherAuthLink } from "../ToOtherAuthLink";
 import { scrollToTop } from "./scroll-to-top";
-import { LayoutContext } from "../Layout/utils";
+import { LayoutContext } from "../Layout/layout.utils";
 import { EXPERIENCES_URL } from "../../routes";
 import { storeUser, getLoggedOutUser } from "../../state/users";
 import { useUser } from "../use-user";

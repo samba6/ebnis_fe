@@ -3,7 +3,7 @@ import { Helmet } from "react-helmet-async";
 
 import { Login } from "../../components/Login/login";
 import { RouteComponentProps } from "@reach/router";
-import { Layout } from "../../components/Layout";
+import { Layout } from "../../components/Layout/layout";
 import { makeSiteTitle } from "../../constants";
 
 export default function LoginPage(props: RouteComponentProps) {

@@ -4,7 +4,7 @@ import { Router, RouteComponentProps } from "@reach/router";
 import { AuthRequired } from "../../components/AuthRequired";
 import { EXPERIENCE_DEFINITION_URL, EXPERIENCES_URL } from "../../routes";
 import { NotFound } from "../../components/NotFound";
-import { Layout } from "../../components/Layout";
+import { Layout } from "../../components/Layout/layout";
 import { EXPERIENCE_URL } from "../../constants/experience-route";
 import { NEW_ENTRY_URL } from "../../constants/new-entry-route";
 import Loadable from "react-loadable";

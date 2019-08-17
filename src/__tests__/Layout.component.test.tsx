@@ -3,15 +3,28 @@
 import React, { ComponentType } from "react";
 import "react-testing-library/cleanup-after-each";
 import { render, waitForElement, wait } from "react-testing-library";
-import { Layout, Props } from "../components/Layout/component";
+import { Layout, Props } from "../components/Layout/layout.component";
 import { EbnisAppProvider, EbnisContextProps } from "../context";
+import { emitData, EmitAction } from "../setup-observable";
+import { ILayoutContextContext } from "../components/Layout/layout.utils";
+
+////////////////////////// MOCKS ////////////////////////////
 
 jest.mock("../state/unsaved-resolvers");
+import { getUnsavedCount } from "../state/unsaved-resolvers";
+const mockGetUnsavedCount = getUnsavedCount as jest.Mock;
+
 jest.mock("../state/connections");
+import { isConnected } from "../state/connections";
+const mockIsConnected = isConnected as jest.Mock;
+
 jest.mock("../components/Loading", () => ({
   Loading: () => <div id="o-o-1" />,
 }));
+
 jest.mock("../components/use-user");
+import { useUser } from "../components/use-user";
+const mockUseUser = useUser as jest.Mock;
 
 let layoutContextValue = (null as unknown) as ILayoutContextContext;
 
@@ -23,15 +36,7 @@ jest.mock("../components/Layout/layout-provider", () => ({
   },
 }));
 
-import { getUnsavedCount } from "../state/unsaved-resolvers";
-import { emitData, EmitAction } from "../setup-observable";
-import { ILayoutContextContext } from "../components/Layout/utils";
-import { useUser } from "../components/use-user";
-import { isConnected } from "../state/connections";
-
-const mockGetUnsavedCount = getUnsavedCount as jest.Mock;
-const mockIsConnected = isConnected as jest.Mock;
-const mockUseUser = useUser as jest.Mock;
+////////////////////////// END MOCKS ////////////////////////////
 
 const browserRenderedUiId = "layout-loaded";
 
