@@ -11,9 +11,9 @@ import {
   ExperienceObjectMap,
   SaveStatusType,
   onUploadResult,
-} from "./utils";
+} from "./upload-unsaved.utils";
 import { Loading } from "../Loading";
-import { SidebarHeader } from "../SidebarHeader";
+import { SidebarHeader } from "../SidebarHeader/sidebar-header";
 import {
   ExperienceFragment_entries_edges_node,
   ExperienceFragment_entries_edges_node_dataObjects,

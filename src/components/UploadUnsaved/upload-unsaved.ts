@@ -1,4 +1,4 @@
-import { UploadUnsaved as Comp } from "./component";
+import { UploadUnsaved as Comp } from "./upload-unsaved.component";
 import { compose, graphql, withApollo } from "react-apollo";
 import {
   getAllUnsavedGql,
@@ -26,7 +26,7 @@ import {
   UploadAllUnsavedsMutation,
   UploadAllUnsavedsMutationVariables,
 } from "../../graphql/apollo-types/UploadAllUnsavedsMutation";
-import { OwnProps } from "./utils";
+import { OwnProps } from "./upload-unsaved.utils";
 
 let resolversAdded = false;
 

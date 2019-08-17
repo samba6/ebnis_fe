@@ -3,7 +3,7 @@
 import React, { ComponentType } from "react";
 import "react-testing-library/cleanup-after-each";
 import { render, fireEvent } from "react-testing-library";
-import { Sidebar, Props } from "../components/Sidebar/component";
+import { Sidebar, Props } from "../components/Sidebar/sidebar.component";
 import { renderWithRouter } from "./test_utils";
 import { RouteComponentProps } from "@reach/router";
 import {

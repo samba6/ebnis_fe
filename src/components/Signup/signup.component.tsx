@@ -23,14 +23,14 @@ import {
   ErrorSummary,
   FormFieldErrors,
   FormErrors,
-} from "./utils";
+} from "./signup.utils";
 import { Registration } from "../../graphql/apollo-types/globalTypes";
 import { refreshToHome } from "../../refresh-to-app";
 import { isConnected } from "../../state/connections";
 import { noop } from "../../constants";
 import { UserRegMutationFn } from "../../graphql/user-reg.mutation";
 import { scrollToTop } from "./scrollToTop";
-import { SidebarHeader } from "../SidebarHeader";
+import { SidebarHeader } from "../SidebarHeader/sidebar-header";
 import { ToOtherAuthLink } from "../ToOtherAuthLink";
 import { LayoutContext } from "../Layout/utils";
 import { storeUser } from "../../state/users";

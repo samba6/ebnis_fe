@@ -4,13 +4,16 @@ import React, { ComponentType } from "react";
 import "jest-dom/extend-expect";
 import { render } from "react-testing-library";
 
-import { SidebarHeader, Props } from "../components/SidebarHeader/component";
+import {
+  SidebarHeader,
+  Props,
+} from "../components/SidebarHeader/sidebar-header.component";
 
 jest.mock("../components/Header", () => ({
   Header: jest.fn(() => null),
 }));
 
-jest.mock("../components/Sidebar", () => ({
+jest.mock("../components/Sidebar/sidebar", () => ({
   Sidebar: jest.fn(() => <div id="yo" />),
 }));
 

@@ -5,7 +5,7 @@ import "react-testing-library/cleanup-after-each";
 import { render } from "react-testing-library";
 import { Page404 } from "../components/Page404/index";
 
-jest.mock("../components/SidebarHeader", () => ({
+jest.mock("../components/SidebarHeader/sidebar-header", () => ({
   SidebarHeader: () => null,
 }));
 

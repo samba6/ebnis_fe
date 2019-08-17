@@ -4,15 +4,15 @@ import React, { ComponentType } from "react";
 import "react-testing-library/cleanup-after-each";
 import { render, fireEvent, wait, waitForElement } from "react-testing-library";
 
-import { Login } from "../components/Login/component";
-import { Props } from "../components/Login/utils";
+import { Login } from "../components/Login/login.component";
+import { Props } from "../components/Login/login.utils";
 import { renderWithRouter, fillField } from "./test_utils";
 import { ApolloError } from "apollo-client";
 import { GraphQLError } from "graphql";
 
 jest.mock("../state/connections");
 jest.mock("../refresh-to-app");
-jest.mock("../components/SidebarHeader", () => ({
+jest.mock("../components/SidebarHeader/sidebar-header", () => ({
   SidebarHeader: jest.fn(() => null),
 }));
 jest.mock("../components/Login/scroll-to-top");

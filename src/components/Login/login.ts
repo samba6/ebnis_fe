@@ -1,6 +1,6 @@
 import { graphql, compose } from "react-apollo";
 
-import { Login as Comp } from "./component";
+import { Login as Comp } from "./login.component";
 import {
   LoginMutation,
   LoginMutationVariables,

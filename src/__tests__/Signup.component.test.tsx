@@ -4,14 +4,14 @@ import React, { ComponentType } from "react";
 import "react-testing-library/cleanup-after-each";
 import { render, fireEvent, wait, waitForElement } from "react-testing-library";
 
-import { SignUp } from "../components/Signup/component";
-import { Props } from "../components/Signup/utils";
+import { SignUp } from "../components/Signup/signup.component";
+import { Props } from "../components/Signup/signup.utils";
 import { renderWithRouter, fillField } from "./test_utils";
 
 jest.mock("../state/connections");
 jest.mock("../refresh-to-app");
 jest.mock("../components/Signup/scrollToTop");
-jest.mock("../components/SidebarHeader", () => ({
+jest.mock("../components/SidebarHeader/sidebar-header", () => ({
   SidebarHeader: jest.fn(() => null),
 }));
 jest.mock("../state/users");

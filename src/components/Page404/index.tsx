@@ -2,7 +2,7 @@ import React from "react";
 import { Link } from "gatsby";
 import Button from "semantic-ui-react/dist/commonjs/elements/Button";
 
-import { SidebarHeader } from "../SidebarHeader";
+import { SidebarHeader } from "../SidebarHeader/sidebar-header";
 import { ROOT_URL } from "../../routes";
 import { RouteComponentProps } from "@reach/router";
 

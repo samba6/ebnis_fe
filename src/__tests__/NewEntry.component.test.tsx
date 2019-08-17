@@ -34,7 +34,7 @@ import {
 } from "../graphql/apollo-types/CreateEntryMutation";
 
 jest.mock("../components/NewEntry/update");
-jest.mock("../components/SidebarHeader", () => ({
+jest.mock("../components/SidebarHeader/sidebar-header", () => ({
   SidebarHeader: () => null,
 }));
 jest.mock("../state/connections");

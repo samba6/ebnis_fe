@@ -24,7 +24,7 @@ import {
   State,
   Action,
   initialState,
-} from "./utils";
+} from "./login.utils";
 import { LoginUser as FormValues } from "../../graphql/apollo-types/globalTypes";
 import { refreshToHome } from "../../refresh-to-app";
 import { PasswordInput } from "../PasswordInput/component";
@@ -32,7 +32,7 @@ import { isConnected } from "../../state/connections";
 import { noop } from "../../constants";
 import { LoginMutationFn } from "../../graphql/login.mutation";
 import { LoginMutation_login } from "../../graphql/apollo-types/LoginMutation";
-import { SidebarHeader } from "../SidebarHeader";
+import { SidebarHeader } from "../SidebarHeader/sidebar-header";
 import { ToOtherAuthLink } from "../ToOtherAuthLink";
 import { scrollToTop } from "./scroll-to-top";
 import { LayoutContext } from "../Layout/utils";

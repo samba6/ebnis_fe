@@ -1,6 +1,6 @@
 import React, { useState, ComponentType, PropsWithChildren } from "react";
 
-import { Sidebar } from "../Sidebar";
+import { Sidebar } from "../Sidebar/sidebar";
 import { Header } from "../Header";
 import { OwnProps as HeaderOwnProps } from "../Header/utils";
 

@@ -18,7 +18,7 @@ import {
 } from "../graphql/apollo-types/CreateExperienceMutation";
 
 jest.mock("../components/ExperienceDefinition/update");
-jest.mock("../components/SidebarHeader", () => ({
+jest.mock("../components/SidebarHeader/sidebar-header", () => ({
   SidebarHeader: jest.fn(() => null),
 }));
 jest.mock("../state/connections");

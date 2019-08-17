@@ -1,7 +1,7 @@
 import React from "react";
 import { Helmet } from "react-helmet-async";
 
-import { Login } from "../../components/Login";
+import { Login } from "../../components/Login/login";
 import { RouteComponentProps } from "@reach/router";
 import { Layout } from "../../components/Layout";
 import { makeSiteTitle } from "../../constants";

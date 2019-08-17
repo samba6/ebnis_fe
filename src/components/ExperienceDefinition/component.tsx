@@ -39,7 +39,7 @@ import { noop, setDocumentTitle, makeSiteTitle } from "../../constants";
 import { EXPERIENCE_DEFINITION_TITLE } from "../../constants/experience-definition-title";
 import { ExperienceDefinitionUpdate } from "./update";
 import { CreateExperienceMutationFn } from "../../graphql/create-experience.mutation";
-import { SidebarHeader } from "../SidebarHeader";
+import { SidebarHeader } from "../SidebarHeader/sidebar-header";
 import { FormCtrlError } from "../FormCtrlError/component";
 import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragment";
 import { isConnected } from "../../state/connections";

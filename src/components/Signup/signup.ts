@@ -8,7 +8,7 @@ import {
   UserRegMutationFn,
   RegMutationProps,
 } from "../../graphql/user-reg.mutation";
-import { SignUp as Comp } from "./component";
+import { SignUp as Comp } from "./signup.component";
 
 const regUserGql = graphql<
   {},

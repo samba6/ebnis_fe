@@ -1,8 +1,8 @@
 import React, { useEffect } from "react";
 import { navigate } from "gatsby";
 
-import { LOGIN_URL } from "../../routes";
-import { useUser } from "../use-user";
+import { LOGIN_URL } from "../routes";
+import { useUser } from "./use-user";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function AuthRequired(props: any) {

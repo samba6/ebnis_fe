@@ -4,12 +4,12 @@
 import React, { ComponentType } from "react";
 import "react-testing-library/cleanup-after-each";
 import { render, fireEvent, wait, waitForElement } from "react-testing-library";
-import { UploadUnsaved } from "../components/UploadUnsaved/component";
+import { UploadUnsaved } from "../components/UploadUnsaved/upload-unsaved.component";
 import {
   Props,
   definitionToUnsavedData,
   ExperiencesIdsToObjectMap,
-} from "../components/UploadUnsaved/utils";
+} from "../components/UploadUnsaved/upload-unsaved.utils";
 import {
   ExperienceFragment,
   ExperienceFragment_entries_edges_node,
@@ -40,7 +40,7 @@ jest.mock("../components/Loading", () => ({
   Loading: () => <div id="a-lo" />,
 }));
 
-jest.mock("../components/SidebarHeader", () => ({
+jest.mock("../components/SidebarHeader/sidebar-header", () => ({
   SidebarHeader: ({ children }: any) => {
     return <> {children} </>;
   },

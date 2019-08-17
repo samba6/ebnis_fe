@@ -23,7 +23,7 @@ import {
 import { makeExperienceRoute } from "../../constants/experience-route";
 import { CreateEntryMutationFn } from "../../graphql/create-entry.mutation";
 import { updateExperienceWithNewEntry } from "./update";
-import { SidebarHeader } from "../SidebarHeader";
+import { SidebarHeader } from "../SidebarHeader/sidebar-header";
 import { setDocumentTitle, makeSiteTitle } from "../../constants";
 import { isConnected } from "../../state/connections";
 import { ExperienceFragment_dataDefinitions } from "../../graphql/apollo-types/ExperienceFragment";
