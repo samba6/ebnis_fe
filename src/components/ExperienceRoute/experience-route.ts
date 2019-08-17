@@ -1,4 +1,4 @@
-import { ExperienceRoute as Comp } from "./component";
+import { ExperienceRoute as Comp } from "./experience-route.component";
 import { graphql, compose } from "react-apollo";
 import {
   UPDATE_EXPERIENCE_MUTATION,
@@ -8,7 +8,7 @@ import {
   UpdateExperienceMutation,
   UpdateExperienceMutationVariables,
 } from "../../graphql/apollo-types/UpdateExperienceMutation";
-import { OwnProps } from "./utils";
+import { OwnProps } from "./experience-route.utils";
 
 const updateExperienceGql = graphql<
   OwnProps,

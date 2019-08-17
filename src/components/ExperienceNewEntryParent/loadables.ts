@@ -8,6 +8,6 @@ export const NewEntry = Loadable({
 }) as any;
 
 export const ExperienceRoute = Loadable({
-  loader: () => import("../ExperienceRoute"),
+  loader: () => import("../ExperienceRoute/experience-route"),
   loading: LoadableLoading,
 }) as any;

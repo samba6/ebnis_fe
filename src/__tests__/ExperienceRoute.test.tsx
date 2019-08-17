@@ -3,8 +3,8 @@ import React, { ComponentType } from "react";
 import "jest-dom/extend-expect";
 import "react-testing-library/cleanup-after-each";
 import { render } from "react-testing-library";
-import { ExperienceRoute } from "../components/ExperienceRoute/component";
-import { Props } from "../components/ExperienceRoute/utils";
+import { ExperienceRoute } from "../components/ExperienceRoute/experience-route.component";
+import { Props } from "../components/ExperienceRoute/experience-route.utils";
 
 jest.mock("../components/SidebarHeader/", () => ({
   SidebarHeader: () => null,
