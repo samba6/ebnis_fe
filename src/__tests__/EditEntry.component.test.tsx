@@ -14,6 +14,12 @@ import {
 import { fillField, closeMessage, ToInputVariables } from "./test_utils";
 import { UpdateDefinitions } from "../graphql/apollo-types/UpdateDefinitions";
 
+////////////////////////// MOCKS ////////////////////////////
+
+jest.mock("../components/EditEntry/edit-entry.update.ts");
+import { editEntryUpdate } from "../components/EditEntry/edit-entry.update";
+const mockEditEntryUpdate = editEntryUpdate as jest.Mock;
+
 const EditEntryP = EditEntry as ComponentType<Partial<Props>>;
 
 it("destroys the UI", () => {
@@ -50,7 +56,7 @@ it("destroys the UI", () => {
   );
 });
 
-test("definitions not editing data", async () => {
+test("definitions not editing data - submission success", async () => {
   const { ui, mockUpdateDefinitionsOnline } = makeComp({
     props: {
       entry: {
@@ -153,16 +159,17 @@ test("definitions not editing data", async () => {
   // submitting
 
   await wait(() => {
-    expect(
-      (mockUpdateDefinitionsOnline.mock.calls[0][0] as ToInputVariables<
-        UpdateDefinitionInput[]
-      >).variables.input,
-    ).toMatchObject([
+    const mock = mockUpdateDefinitionsOnline.mock
+      .calls[0][0] as ToInputVariables<UpdateDefinitionInput[]>;
+
+    expect(mock.variables.input).toMatchObject([
       {
         id: "a",
         name: "g1",
       },
     ]);
+
+    expect(mock.update).toBe(mockEditEntryUpdate);
   });
 
   // back to idle
@@ -175,6 +182,7 @@ test("definitions not editing data", async () => {
 ////////////////////////// HELPER FUNCTIONS ///////////////////////////
 
 function makeComp({ props = {} }: { props?: Partial<Props> } = {}) {
+  mockEditEntryUpdate.mockReset();
   const mockUpdateDefinitionsOnline = jest.fn();
   const mockParentDispatch = jest.fn();
 

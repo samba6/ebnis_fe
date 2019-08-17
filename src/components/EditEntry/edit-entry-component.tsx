@@ -17,6 +17,7 @@ import Modal from "semantic-ui-react/dist/commonjs/modules/Modal";
 import { DataObjectFragment } from "../../graphql/apollo-types/DataObjectFragment";
 import makeClassNames from "classnames";
 import { UpdateDefinitions_updateDefinitions } from "../../graphql/apollo-types/UpdateDefinitions";
+import { editEntryUpdate } from "./edit-entry.update";
 
 export function EditEntry(props: Props) {
   const {
@@ -199,16 +200,17 @@ function DefinitionComponent(props: DefinitionComponentProps) {
                   },
                 ],
               },
+              update: editEntryUpdate,
             });
 
-            const d = (result &&
+            const data = (result &&
               result.data &&
               result.data
                 .updateDefinitions) as UpdateDefinitions_updateDefinitions;
 
             dispatch({
               type: ActionTypes.submissionResult,
-              ...d,
+              ...data,
             });
           }}
         >

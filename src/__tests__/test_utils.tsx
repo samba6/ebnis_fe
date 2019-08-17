@@ -89,6 +89,7 @@ export function closeMessage($element: any) {
 
 export interface ToVariables<T> {
   variables: T;
+  update: jest.Mock;
 }
 
 export interface ToData<T> {
@@ -99,4 +100,6 @@ export interface ToInputVariables<T> {
   variables: {
     input: T;
   };
+
+  update: jest.Mock;
 }
