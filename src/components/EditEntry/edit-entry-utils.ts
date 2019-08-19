@@ -17,6 +17,7 @@ export enum ActionTypes {
   TITLE_EDIT_SUBMIT = "@component/edit-entry/title-submit",
   DESTROYED = "@component/edit-entry/destroy",
   SUBMISSION_RESULT = "@component/edit-entry/submission-result",
+  DEFINITION_FORM_ERRORS = "@component/edit-entry/definition-form-errors",
 }
 
 function defaultsFromProps(props: Props) {
@@ -97,7 +98,7 @@ export const reducer: Reducer<State, Action> = (
 
       case ActionTypes.DEFINITION_NAME_CHANGED:
         {
-          const { id, formValue } = payload as TitleChangedPayload;
+          const { id, formValue } = payload as DefinitionNameChangedPayload;
           const definitionState = proxy.definitionsStates[id];
 
           const { definitionsDefaultsMap } = proxy;
@@ -179,6 +180,21 @@ export const reducer: Reducer<State, Action> = (
           });
         }
         break;
+
+      case ActionTypes.DEFINITION_FORM_ERRORS:
+        {
+          const { id, errors } = payload as DefinitionFormErrorsPayload;
+          const definitionState = proxy.definitionsStates[id];
+
+          (definitionState.state
+            .states as DefinitionChangedState).states.form = {
+            value: "formErrors",
+            context: {
+              errors,
+            },
+          };
+        }
+        break;
     }
   });
 };
@@ -188,6 +204,20 @@ export const DefinitionsContext = createContext<DefinitionsContextValues>(
 );
 
 export const DefinitionsContextProvider = DefinitionsContext.Provider;
+
+export function getDefinitionFormError(state: DefinitionState["state"]) {
+  if (
+    state.value === "editing" &&
+    state.states.value === "changed" &&
+    state.states.states.form.value === "formErrors"
+  ) {
+    return state.states.states.form.context.errors.name;
+  }
+
+  return null;
+}
+
+////////////////////////// TYPES ////////////////////////////
 
 export interface State {
   readonly definitionsStates: DefinitionsStates;
@@ -204,7 +234,7 @@ export type Action =
     }
   | {
       type: ActionTypes.DEFINITION_NAME_CHANGED;
-    } & TitleChangedPayload
+    } & DefinitionNameChangedPayload
   | {
       type: ActionTypes.UNDO_DEFINITION_EDITS;
       id: string;
@@ -221,12 +251,22 @@ export type Action =
     }
   | {
       type: ActionTypes.SUBMISSION_RESULT;
-    } & UpdateDefinitions_updateDefinitions;
+    } & UpdateDefinitions_updateDefinitions
+  | {
+      type: ActionTypes.DEFINITION_FORM_ERRORS;
+    } & DefinitionFormErrorsPayload;
 
-type TitleChangedPayload = {
+interface DefinitionNameChangedPayload {
   id: string;
   formValue: string;
-};
+}
+
+interface DefinitionFormErrorsPayload {
+  id: string;
+  errors: {
+    name: string;
+  };
+}
 
 export interface OwnProps {
   entry: EntryFragment;
@@ -288,7 +328,9 @@ interface DefinitionChangedState {
         }
       | {
           value: "formErrors";
-          context: {};
+          context: {
+            errors: DefinitionFormErrorsPayload["errors"];
+          };
         }
       | {
           value: "serverErrors";

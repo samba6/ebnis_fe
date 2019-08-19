@@ -221,7 +221,11 @@ const definition = {
                 ],
               },
 
+              initial: "regular",
+
               states: {
+                regular: {},
+
                 submitting: {
                   on: {
                     "": "editEntry.submitting",

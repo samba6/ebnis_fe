@@ -7,6 +7,7 @@ import {
   DefinitionState,
   DefinitionsContextProvider,
   DefinitionsContext,
+  getDefinitionFormError,
 } from "./edit-entry-utils";
 import Form from "semantic-ui-react/dist/commonjs/collections/Form";
 import Button from "semantic-ui-react/dist/commonjs/elements/Button";
@@ -15,6 +16,7 @@ import Modal from "semantic-ui-react/dist/commonjs/modules/Modal";
 import makeClassNames from "classnames";
 import { UpdateDefinitions_updateDefinitions } from "../../graphql/apollo-types/UpdateDefinitions";
 import { editEntryUpdate } from "./edit-entry.update";
+import { FormCtrlError } from "../FormCtrlError/form-ctrl-error.component";
 
 export function EditEntry(props: Props) {
   const { updateDefinitionsOnline, dispatch: parentDispatch } = props;
@@ -85,6 +87,8 @@ function DefinitionComponent(props: DefinitionComponentProps) {
   } = definitionsDefaultsMap[id];
   const typeText = `[${type}]`;
 
+  const error = getDefinitionFormError(state);
+
   return (
     <Form.Field
       id={idPrefix}
@@ -95,6 +99,7 @@ function DefinitionComponent(props: DefinitionComponentProps) {
           state.states.value === "anyEditSuccessful"
         ),
       })}
+      error={!!error}
     >
       {state.value === "idle" && (
         <div>
@@ -150,55 +155,76 @@ function DefinitionComponent(props: DefinitionComponentProps) {
           </Button>
 
           {state.states.value === "changed" && (
-            <Button
-              type="button"
-              id={`${idPrefix}-reset`}
-              onClick={() => {
-                dispatch({
-                  type: ActionTypes.UNDO_DEFINITION_EDITS,
-                  id,
-                });
-              }}
-            >
-              Reset
-            </Button>
-          )}
+            <>
+              <Button
+                type="button"
+                id={`${idPrefix}-reset`}
+                onClick={() => {
+                  dispatch({
+                    type: ActionTypes.UNDO_DEFINITION_EDITS,
+                    id,
+                  });
+                }}
+              >
+                Reset
+              </Button>
 
-          <Button
-            type="submit"
-            id={`${idPrefix}-submit`}
-            onClick={async () => {
-              dispatch({
-                type: ActionTypes.TITLE_EDIT_SUBMIT,
-              });
+              <Button
+                type="submit"
+                id={`${idPrefix}-submit`}
+                onClick={async () => {
+                  const name = formValue.trim();
 
-              const result = await updateDefinitionsOnline({
-                variables: {
-                  input: [
-                    {
+                  if (name.length < 2) {
+                    dispatch({
+                      type: ActionTypes.DEFINITION_FORM_ERRORS,
                       id,
-                      name: formValue.trim(),
+                      errors: {
+                        name: "should be at least 2 characters long.",
+                      },
+                    });
+
+                    return;
+                  }
+
+                  dispatch({
+                    type: ActionTypes.TITLE_EDIT_SUBMIT,
+                  });
+
+                  const result = await updateDefinitionsOnline({
+                    variables: {
+                      input: [
+                        {
+                          id,
+                          name: formValue.trim(),
+                        },
+                      ],
                     },
-                  ],
-                },
-                update: editEntryUpdate,
-              });
+                    update: editEntryUpdate,
+                  });
 
-              const data = (result &&
-                result.data &&
-                result.data
-                  .updateDefinitions) as UpdateDefinitions_updateDefinitions;
+                  const data = (result &&
+                    result.data &&
+                    result.data
+                      .updateDefinitions) as UpdateDefinitions_updateDefinitions;
 
-              dispatch({
-                type: ActionTypes.SUBMISSION_RESULT,
-                ...data,
-              });
-            }}
-          >
-            Submit
-          </Button>
+                  dispatch({
+                    type: ActionTypes.SUBMISSION_RESULT,
+                    ...data,
+                  });
+                }}
+              >
+                Submit
+              </Button>
+
+              {!!error && (
+                <FormCtrlError id={`${idPrefix}-error`}>{error}</FormCtrlError>
+              )}
+            </>
+          )}
         </>
       )}
     </Form.Field>
   );
 }
+

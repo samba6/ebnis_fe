@@ -185,16 +185,43 @@ test("definitions not editing data - submission success", async () => {
 
   // editing.unchanged
 
+  expect(document.getElementById("edit-entry-definition-a-submit")).toBeNull();
+
   expect(document.getElementById("edit-entry-definition-a-reset")).toBeNull();
+
+  fillField(
+    document.getElementById("edit-entry-definition-a-input") as any,
+    "g  ",
+  );
+
+  // editing.changed.form
+
+  const $submit = document.getElementById(
+    "edit-entry-definition-a-submit",
+  ) as any;
+
+  const $field = document.getElementById(
+    "edit-entry-definition-a",
+  ) as HTMLElement;
+
+  expect($field.classList).not.toContain("error");
+
+  $submit.click();
+
+  // editing.changed.formErrors
+
+  expect(
+    document.getElementById("edit-entry-definition-a-error"),
+  ).not.toBeNull();
+
+  expect($field.classList).toContain("error");
 
   fillField(
     document.getElementById("edit-entry-definition-a-input") as any,
     "g1  ",
   );
 
-  // editing.changed
-
-  (document.getElementById("edit-entry-definition-a-submit") as any).click();
+  $submit.click();
 
   // submitting
 
@@ -213,10 +240,7 @@ test("definitions not editing data - submission success", async () => {
   });
 
   // back to idle, with success
-  expect(
-    (document.getElementById("edit-entry-definition-a") as HTMLElement)
-      .classList,
-  ).toContain("success");
+  expect($field.classList).toContain("success");
 });
 
 ////////////////////////// HELPER FUNCTIONS ///////////////////////////
