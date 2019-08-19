@@ -2,8 +2,8 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
 /* eslint-disable no-unused-vars */
 
-const EditEntryComponent = {
-  id: "EditEntryComponent",
+const editEntryComponent = {
+  id: "editEntryComponent",
   context: {
     entry: Entry,
     definitions: [],
@@ -155,167 +155,138 @@ const errors = {
   },
 };
 
-const definitionTitle = {
-  definitionTitle: {
-    context: {
-      editingData: false,
-    },
-    initial: "idle",
-    states: {
-      idle: {
-        enter: [
-          "display the definition data type", //
-          "display an edit button",
-          "display name/title",
+const definition = {
+  id: "definition",
+
+  initial: "idle",
+
+  states: {
+    idle: {
+      enter: [`show default name, data type`],
+
+      on: {
+        "": [
+          {
+            cond: "isAnyEditSuccessful",
+            target: "hasSuccessfulEdit",
+          },
         ],
-        compound: true,
-        on: {
-          "": [
-            {
-              cond: "isAnyEditSuccess",
-              target: "edited",
-            },
+
+        EDIT_BTN_CLICKED: "editing",
+      },
+
+      states: {
+        hasSuccessfulEdit: {
+          enter: [
+            `visually show definition has been successfully
+            edited at least once`,
           ],
-
-          EDIT_BTN_CLICKED: {
-            cond: true,
-            target: "pristine",
-          },
-        },
-
-        states: {
-          edited: {
-            enter: [
-              "visually indicate edit success", //
-            ],
-          },
         },
       },
+    },
 
-      pristine: {
-        enter: [
-          "title placed in text box for editing", //
-          "show dismiss button",
-          "hide edit button",
-        ],
+    editing: {
+      enter: [`Place definition name in input form control`],
 
-        on: {
-          TITLE_CHANGED: {
-            target: "dirty",
-            actions: [
-              "remove dismiss button", //
-            ],
-          },
-
-          TITLE_EDIT_DISMISS: "idle",
-        },
+      on: {
+        STOP_DEFINITION_EDIT: "idle",
       },
 
-      dirty: {
-        on: {
-          TITLE_RESET: "pristine",
+      initial: "unchanged",
+
+      states: {
+        unchanged: {
+          on: {
+            DEFINITION_NAME_CHANGED: "changed.form",
+          },
         },
 
-        initial: "unknown",
+        changed: {
+          on: {
+            UNDO_DEFINITION_EDITS: "unchanged",
 
-        states: {
-          unknown: {
-            "": [
-              {
-                cond: "isEditingData",
-                target: "editingData",
-              },
-
-              {
-                target: "notEditingData",
-              },
-            ],
+            DEFINITION_NAME_CHANGED: "form",
           },
 
-          notEditingData: {
-            initial: "nothing",
-            states: {
-              nothing: {
-                on: {
-                  SUBMIT: {
-                    target: "submitting",
-                    actions: [
-                      "set submitting context", //
-                    ],
+          parallel: true,
+
+          states: {
+            form: {
+              on: {
+                "": [
+                  {
+                    cond: "isNotEditingData",
+                    target: "notEditingData",
+                  },
+                ],
+              },
+
+              states: {
+                submitting: {
+                  on: {
+                    "": "editEntry.submitting",
+
+                    SUCCESS: "idle.anyEditSuccessful",
+
+                    DEFINITION_FORM_ERRORS: "formErrors",
+
+                    DEFINITION_SERVER_ERRORS: "serverErrors",
                   },
                 },
+
+                formErrors: {
+                  ...errors,
+                },
+
+                serverErrors: {
+                  ...errors,
+                },
+              },
+            },
+
+            notEditingData: {
+              on: {
+                "": [
+                  {
+                    cond: "isEditingSiblings",
+                    target: "editingSiblings",
+                  },
+
+                  {
+                    cond: "isNotEditingSiblings",
+                    target: "notEditingSiblings",
+                  },
+                ],
               },
 
-              submitting: {
-                entry: [
-                  "inform parent", //
-                ],
-
-                exit: [
-                  "inform parent", //
-                ],
-                on: {
-                  SUCCESS: {
-                    target: "#definitionTitle.idle",
-                    actions: [
-                      "set success context", //
+              states: {
+                editingSiblings: {
+                  on: {
+                    "": [
+                      {
+                        cond: "isFirstEditableSibling",
+                        target: "firstEditableSibling",
+                      },
                     ],
                   },
 
-                  ERROR: {
-                    target: "#definitionTitle.errors",
-                    actions: [
-                      "set errors context", //
-                    ],
+                  states: {
+                    firstEditableSibling: {
+                      on: {
+                        SUBMIT_DEFINITION: "form.submitting",
+                      },
+                    },
+                  },
+                },
+
+                notEditingSiblings: {
+                  on: {
+                    SUBMIT_DEFINITION: "form.submitting",
                   },
                 },
               },
             },
           },
-
-          editingData: {
-            initial: "nothing",
-            states: {
-              initial: {
-                on: {
-                  ENTRY_FORM_SUBMIT: "submitting",
-                },
-              },
-
-              submitting: {
-                on: {
-                  SUCCESS: {
-                    target: "#definitionTitle.idle",
-                    actions: [
-                      "set success context", //
-                    ],
-                  },
-
-                  ERROR: {
-                    target: "#definitionTitle.errors",
-                    actions: [
-                      "set error context", //
-                    ],
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-
-      errors: {
-        ...errors,
-        entry: [
-          "show errors", //
-        ],
-
-        exit: [
-          "dismiss errors", //
-        ],
-
-        on: {
-          ENTRY_FORM_ERRORS_DISMISS: "dirty",
         },
       },
     },

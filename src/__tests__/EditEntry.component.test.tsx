@@ -47,8 +47,6 @@ it("destroys the UI", () => {
   render(ui);
 
   const $element = document.getElementById("edit-entry-modal");
-  expect($element).not.toBeNull();
-
   closeMessage($element);
 
   expect((mockParentDispatch.mock.calls[0][0] as any).type).toEqual(
@@ -95,7 +93,7 @@ test("definitions not editing data - submission success", async () => {
   render(ui);
   // const { debug } = render(ui);
 
-  // idle state
+  // idle
 
   let $editBtn = document.getElementById(
     "edit-entry-definition-a-edit-btn",
@@ -111,7 +109,7 @@ test("definitions not editing data - submission success", async () => {
 
   $editBtn.click();
 
-  // pristine state
+  // editing.unchanged
 
   expect(
     document.getElementById("edit-entry-definition-a-edit-btn"),
@@ -119,40 +117,82 @@ test("definitions not editing data - submission success", async () => {
 
   expect(document.getElementById("edit-entry-definition-a-name")).toBeNull();
 
-  let $input = document.getElementById("edit-entry-definition-a-input") as any;
-
-  const $dismiss = document.getElementById(
+  let $dismiss = document.getElementById(
     "edit-entry-definition-a-dismiss",
   ) as any;
 
-  // back to idle
   $dismiss.click();
 
-  expect(document.getElementById("edit-entry-definition-a-dismiss")).toBeNull();
+  // back to idle
 
-  // dirty state
+  expect(document.getElementById("edit-entry-definition-a-dismiss")).toBeNull();
 
   $editBtn = document.getElementById("edit-entry-definition-a-edit-btn") as any;
   $editBtn.click();
 
-  $input = document.getElementById("edit-entry-definition-a-input") as any;
+  // editing.unchanged
+
+  expect(document.getElementById("edit-entry-definition-a-reset")).toBeNull();
+
+  let $input = document.getElementById("edit-entry-definition-a-input") as any;
 
   fillField($input, "g1");
 
-  expect(document.getElementById("edit-entry-definition-a-dismiss")).toBeNull();
+  // editing.changed
+  // we can dismiss
 
-  // field filled with default value
-  fillField($input, "f1");
+  $dismiss = document.getElementById("edit-entry-definition-a-dismiss") as any;
 
-  // back to pristine
+  $dismiss.click();
 
-  expect(
-    document.getElementById("edit-entry-definition-a-dismiss"),
-  ).not.toBeNull();
+  // back to idle
 
-  // back to dirty
+  $editBtn = document.getElementById("edit-entry-definition-a-edit-btn") as any;
+  $editBtn.click();
 
-  fillField($input, "g1");
+  // editing.unchanged
+  // we can not reset
+
+  expect(document.getElementById("edit-entry-definition-a-reset")).toBeNull();
+
+  fillField(
+    document.getElementById("edit-entry-definition-a-input") as any,
+    "g1",
+  );
+
+  // editing.changed
+  // we can reset by clicking reset button
+  //debug();
+
+  (document.getElementById("edit-entry-definition-a-reset") as any).click();
+
+  // editing.unchanged
+
+  expect(document.getElementById("edit-entry-definition-a-reset")).toBeNull();
+
+  fillField(
+    document.getElementById("edit-entry-definition-a-input") as any,
+    "g1",
+  );
+
+  // editing.changed
+  // OR we can reset by changing to default value
+
+  fillField(
+    document.getElementById("edit-entry-definition-a-input") as any,
+    "f1  ",
+  );
+
+  // editing.unchanged
+
+  expect(document.getElementById("edit-entry-definition-a-reset")).toBeNull();
+
+  fillField(
+    document.getElementById("edit-entry-definition-a-input") as any,
+    "g1  ",
+  );
+
+  // editing.changed
 
   (document.getElementById("edit-entry-definition-a-submit") as any).click();
 
@@ -172,7 +212,7 @@ test("definitions not editing data - submission success", async () => {
     expect(mock.update).toBe(mockEditEntryUpdate);
   });
 
-  // back to idle
+  // back to idle, with success
   expect(
     (document.getElementById("edit-entry-definition-a") as HTMLElement)
       .classList,

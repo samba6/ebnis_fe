@@ -11,23 +11,54 @@ import {
 
 export enum ActionTypes {
   EDIT_BTN_CLICKED = "@component/edit-entry/edit-btn-clicked",
-  TITLE_CHANGED = "@component/edit-entry/title-changed",
-  TITLE_RESET = "@component/edit-entry/title-reset",
-  TITLE_EDIT_DISMISS = "@component/edit-entry/title-dismiss",
+  DEFINITION_NAME_CHANGED = "@component/edit-entry/definition-name-changed",
+  UNDO_DEFINITION_EDITS = "@component/edit-entry/undo-definition-edits",
+  STOP_DEFINITION_EDIT = "@component/edit-entry/stop-definition-edit",
   TITLE_EDIT_SUBMIT = "@component/edit-entry/title-submit",
   DESTROYED = "@component/edit-entry/destroy",
-  submissionResult = "@component/edit-entry/submission-result",
+  SUBMISSION_RESULT = "@component/edit-entry/submission-result",
 }
 
-export const initialStateFromProps = (props: Props): State => {
+function defaultsFromProps(props: Props) {
+  const { entry, definitions } = props;
+
+  const objectsMap = (entry.dataObjects as DataObjectFragment[]).reduce(
+    (acc, dataObject) => {
+      acc[dataObject.definitionId] = dataObject;
+      return acc;
+    },
+    {} as { [k: string]: DataObjectFragment },
+  );
+
+  const [definitionsIds, definitionsDefaultsMap] = definitions.reduce(
+    ([ids, map], definition) => {
+      ids.push(definition.id);
+      map[definition.id] = {
+        definition,
+        dataObject: objectsMap[definition.id],
+      };
+
+      return [ids, map];
+    },
+    [[], {}] as [string[], DefinitionsDefaultsMap],
+  );
+
+  return {
+    definitionsIds,
+    definitionsDefaultsMap,
+  };
+}
+
+export const initStateFromProps = (props: Props): State => {
   const { definitions } = props;
 
   const initialDefinitionsStates = definitions.reduce(
     (acc, definition) => {
       acc[definition.id] = {
         state: {
-          idle: {},
+          value: "idle",
         },
+
         formValue: definition.name,
       };
 
@@ -37,6 +68,7 @@ export const initialStateFromProps = (props: Props): State => {
   );
 
   return {
+    ...defaultsFromProps(props),
     definitionsStates: initialDefinitionsStates,
     state: "nothing",
   };
@@ -49,34 +81,72 @@ export const reducer: Reducer<State, Action> = (
   return immer(prevState, proxy => {
     switch (type) {
       case ActionTypes.EDIT_BTN_CLICKED:
-      case ActionTypes.TITLE_RESET:
+      case ActionTypes.UNDO_DEFINITION_EDITS:
         {
           const { id } = payload as IdString;
 
           proxy.definitionsStates[id].state = {
-            pristine: {},
+            value: "editing",
+            states: {
+              value: "unchanged",
+            },
           };
         }
 
         break;
 
-      case ActionTypes.TITLE_CHANGED:
+      case ActionTypes.DEFINITION_NAME_CHANGED:
         {
           const { id, formValue } = payload as TitleChangedPayload;
-          const definition = proxy.definitionsStates[id];
-          definition.state = {
-            dirty: {},
-          };
-          definition.formValue = formValue;
+          const definitionState = proxy.definitionsStates[id];
+
+          const { definitionsDefaultsMap } = proxy;
+          const { definition } = definitionsDefaultsMap[id];
+
+          let state: DefinitionState["state"];
+
+          if (definition.name === formValue.trim()) {
+            state = {
+              value: "editing",
+
+              states: {
+                value: "unchanged",
+              },
+            };
+          } else {
+            state = {
+              value: "editing",
+
+              states: {
+                value: "changed",
+
+                states: {
+                  form: {
+                    value: "regular",
+                  },
+                },
+              },
+            } as DefinitionState["state"];
+
+            //if (!proxy.editingData) {
+            (state.states as DefinitionChangedState).states.notEditingData = {
+              value: "notEditingSiblings",
+            };
+            //}
+          }
+
+          definitionState.state = state;
+
+          definitionState.formValue = formValue;
         }
 
         break;
 
-      case ActionTypes.TITLE_EDIT_DISMISS:
+      case ActionTypes.STOP_DEFINITION_EDIT:
         {
           const { id } = payload as IdString;
           proxy.definitionsStates[id].state = {
-            idle: {},
+            value: "idle",
           };
         }
 
@@ -89,7 +159,7 @@ export const reducer: Reducer<State, Action> = (
 
         break;
 
-      case ActionTypes.submissionResult:
+      case ActionTypes.SUBMISSION_RESULT:
         {
           const {
             definitions,
@@ -101,8 +171,9 @@ export const reducer: Reducer<State, Action> = (
             } = def as UpdateDefinitions_updateDefinitions_definitions;
 
             proxy.definitionsStates[definition.id].state = {
-              idle: {
-                success: true,
+              value: "idle",
+              states: {
+                value: "anyEditSuccessful",
               },
             };
           });
@@ -121,6 +192,9 @@ export const DefinitionsContextProvider = DefinitionsContext.Provider;
 export interface State {
   readonly definitionsStates: DefinitionsStates;
   readonly state: "nothing" | "submitting";
+  readonly editingData?: boolean;
+  readonly definitionsDefaultsMap: DefinitionsDefaultsMap;
+  readonly definitionsIds: string[];
 }
 
 export type Action =
@@ -129,14 +203,14 @@ export type Action =
       id: string;
     }
   | {
-      type: ActionTypes.TITLE_CHANGED;
+      type: ActionTypes.DEFINITION_NAME_CHANGED;
     } & TitleChangedPayload
   | {
-      type: ActionTypes.TITLE_RESET;
+      type: ActionTypes.UNDO_DEFINITION_EDITS;
       id: string;
     }
   | {
-      type: ActionTypes.TITLE_EDIT_DISMISS;
+      type: ActionTypes.STOP_DEFINITION_EDIT;
       id: string;
     }
   | {
@@ -146,7 +220,7 @@ export type Action =
       type: ActionTypes.DESTROYED;
     }
   | {
-      type: ActionTypes.submissionResult;
+      type: ActionTypes.SUBMISSION_RESULT;
     } & UpdateDefinitions_updateDefinitions;
 
 type TitleChangedPayload = {
@@ -162,7 +236,7 @@ export interface OwnProps {
 
 export interface Props extends OwnProps, UpdateDefinitionsMutationProps {}
 
-export interface DefaultDefinitionsMap {
+export interface DefinitionsDefaultsMap {
   [k: string]: {
     definition: DataDefinitionFragment;
     dataObject: DataObjectFragment;
@@ -180,23 +254,51 @@ export interface FormValues {
 
 export type DispatchType = Dispatch<Action>;
 
-export interface DefinitionStateValue {
-  idle: {
-    success?: true;
-  };
-
-  pristine: {};
-
-  dirty: {};
-}
-
 export interface DefinitionState {
   state:
-    | DefinitionStateValue["idle"]
-    | DefinitionStateValue["pristine"]
-    | DefinitionStateValue["dirty"];
+    | {
+        value: "idle";
+        states?: {
+          value: "anyEditSuccessful";
+        };
+      }
+    | {
+        value: "editing";
+
+        states:
+          | {
+              value: "unchanged";
+            }
+          | DefinitionChangedState;
+      };
 
   formValue: string;
+}
+
+interface DefinitionChangedState {
+  value: "changed";
+
+  states: {
+    form:
+      | {
+          value: "regular";
+        }
+      | {
+          value: "submitting";
+        }
+      | {
+          value: "formErrors";
+          context: {};
+        }
+      | {
+          value: "serverErrors";
+          context: {};
+        };
+
+    notEditingData?: {
+      value: "notEditingSiblings";
+    };
+  };
 }
 
 export interface DefinitionsStates {
@@ -208,6 +310,6 @@ interface IdString {
 }
 
 interface DefinitionsContextValues extends UpdateDefinitionsMutationProps {
-  defaultDefinitionsMap: DefaultDefinitionsMap;
+  definitionsDefaultsMap: DefinitionsDefaultsMap;
   dispatch: DispatchType;
 }
