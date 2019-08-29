@@ -71,7 +71,8 @@ export const initStateFromProps = (props: Props): State => {
   return {
     ...defaultsFromProps(props),
     definitionsStates: initialDefinitionsStates,
-    state: "nothing",
+    value: "nothing",
+    editingMultipleDefinitions: false,
   };
 };
 
@@ -137,8 +138,8 @@ export const reducer: Reducer<State, Action> = (
           }
 
           definitionState.state = state;
-
           definitionState.formValue = formValue;
+          setEditingMultipleDefinitions(proxy.definitionsStates);
         }
 
         break;
@@ -155,7 +156,7 @@ export const reducer: Reducer<State, Action> = (
 
       case ActionTypes.TITLE_EDIT_SUBMIT:
         {
-          proxy.state = "submitting";
+          proxy.value = "submitting";
         }
 
         break;
@@ -199,6 +200,43 @@ export const reducer: Reducer<State, Action> = (
   });
 };
 
+function setEditingMultipleDefinitions(definitionsStates: DefinitionsStates) {
+  let editCount = 0;
+  const statesToChange: DefinitionChangedState["states"][] = [];
+
+  for (const { state } of Object.values(definitionsStates)) {
+    if (state.value === "editing" && state.states.value === "changed") {
+      ++editCount;
+      statesToChange.push(state.states.states);
+    }
+  }
+
+  if (editCount === 1) {
+    const state = statesToChange[0];
+
+    state.notEditingData = {
+      value: "notEditingSiblings",
+    };
+  }
+
+  if (editCount > 1) {
+    for (let i = 0; i < editCount; i++) {
+      const state = statesToChange[i];
+
+      if (state.notEditingData) {
+        state.notEditingData = {
+          value: "editingSiblings",
+          states: {},
+        };
+
+        if (i === 0) {
+          state.notEditingData.states.firstEditableSibling = true;
+        }
+      }
+    }
+  }
+}
+
 export const DefinitionsContext = createContext<DefinitionsContextValues>(
   {} as DefinitionsContextValues,
 );
@@ -221,10 +259,11 @@ export function getDefinitionFormError(state: DefinitionState["state"]) {
 
 export interface State {
   readonly definitionsStates: DefinitionsStates;
-  readonly state: "nothing" | "submitting";
+  readonly value: "nothing" | "submitting";
   readonly editingData?: boolean;
   readonly definitionsDefaultsMap: DefinitionsDefaultsMap;
   readonly definitionsIds: string[];
+  readonly editingMultipleDefinitions: boolean;
 }
 
 export type Action =
@@ -315,7 +354,7 @@ export interface DefinitionState {
   formValue: string;
 }
 
-interface DefinitionChangedState {
+export interface DefinitionChangedState {
   value: "changed";
 
   states: {
@@ -337,9 +376,16 @@ interface DefinitionChangedState {
           context: {};
         };
 
-    notEditingData?: {
-      value: "notEditingSiblings";
-    };
+    notEditingData?:
+      | {
+          value: "notEditingSiblings";
+        }
+      | {
+          value: "editingSiblings";
+          states: {
+            firstEditableSibling?: true;
+          };
+        };
   };
 }
 

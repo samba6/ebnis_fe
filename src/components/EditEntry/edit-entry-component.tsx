@@ -8,6 +8,8 @@ import {
   DefinitionsContextProvider,
   DefinitionsContext,
   getDefinitionFormError,
+  DispatchType,
+  DefinitionChangedState,
 } from "./edit-entry-utils";
 import Form from "semantic-ui-react/dist/commonjs/collections/Form";
 import Button from "semantic-ui-react/dist/commonjs/elements/Button";
@@ -17,6 +19,7 @@ import makeClassNames from "classnames";
 import { UpdateDefinitions_updateDefinitions } from "../../graphql/apollo-types/UpdateDefinitions";
 import { editEntryUpdate } from "./edit-entry.update";
 import { FormCtrlError } from "../FormCtrlError/form-ctrl-error.component";
+import { UpdateDefinitionsMutationFn } from "../../graphql/update-definitions.mutation";
 
 export function EditEntry(props: Props) {
   const { updateDefinitionsOnline, dispatch: parentDispatch } = props;
@@ -38,7 +41,7 @@ export function EditEntry(props: Props) {
       closeOnDimmerClick={false}
     >
       <Modal.Header>Edit Entry</Modal.Header>
-      {state.state === "submitting" && (
+      {state.value === "submitting" && (
         <span id="edit-entry-submitting">Submitting</span>
       )}
 
@@ -169,53 +172,20 @@ function DefinitionComponent(props: DefinitionComponentProps) {
                 Reset
               </Button>
 
-              <Button
-                type="submit"
-                id={`${idPrefix}-submit`}
-                onClick={async () => {
-                  const name = formValue.trim();
-
-                  if (name.length < 2) {
-                    dispatch({
-                      type: ActionTypes.DEFINITION_FORM_ERRORS,
-                      id,
-                      errors: {
-                        name: "should be at least 2 characters long.",
-                      },
-                    });
-
-                    return;
-                  }
-
-                  dispatch({
-                    type: ActionTypes.TITLE_EDIT_SUBMIT,
-                  });
-
-                  const result = await updateDefinitionsOnline({
-                    variables: {
-                      input: [
-                        {
-                          id,
-                          name: formValue.trim(),
-                        },
-                      ],
-                    },
-                    update: editEntryUpdate,
-                  });
-
-                  const data = (result &&
-                    result.data &&
-                    result.data
-                      .updateDefinitions) as UpdateDefinitions_updateDefinitions;
-
-                  dispatch({
-                    type: ActionTypes.SUBMISSION_RESULT,
-                    ...data,
-                  });
-                }}
-              >
-                Submit
-              </Button>
+              {shouldShowDefinitionSubmitBtn(state.states.states) && (
+                <Button
+                  type="submit"
+                  id={`${idPrefix}-submit`}
+                  onClick={submitDefinition({
+                    id,
+                    dispatch,
+                    updateDefinitionsOnline,
+                    formValue,
+                  })}
+                >
+                  Submit
+                </Button>
+              )}
 
               {!!error && (
                 <FormCtrlError id={`${idPrefix}-error`}>{error}</FormCtrlError>
@@ -228,3 +198,78 @@ function DefinitionComponent(props: DefinitionComponentProps) {
   );
 }
 
+interface SubmitDefinitionArgs {
+  id: string;
+  formValue: string;
+  dispatch: DispatchType;
+  updateDefinitionsOnline: UpdateDefinitionsMutationFn;
+}
+
+function submitDefinition(props: SubmitDefinitionArgs) {
+  return async function submitDefinitionInner() {
+    const { formValue, id, dispatch, updateDefinitionsOnline } = props;
+
+    const name = formValue.trim();
+
+    if (name.length < 2) {
+      dispatch({
+        type: ActionTypes.DEFINITION_FORM_ERRORS,
+        id,
+        errors: {
+          name: "should be at least 2 characters long.",
+        },
+      });
+
+      return;
+    }
+
+    dispatch({
+      type: ActionTypes.TITLE_EDIT_SUBMIT,
+    });
+
+    const result = await updateDefinitionsOnline({
+      variables: {
+        input: [
+          {
+            id,
+            name: formValue.trim(),
+          },
+        ],
+      },
+      update: editEntryUpdate,
+    });
+
+    const data = (result &&
+      result.data &&
+      result.data.updateDefinitions) as UpdateDefinitions_updateDefinitions;
+
+    dispatch({
+      type: ActionTypes.SUBMISSION_RESULT,
+      ...data,
+    });
+  };
+}
+
+function shouldShowDefinitionSubmitBtn(
+  state: DefinitionChangedState["states"],
+) {
+  const { notEditingData } = state;
+
+  // istanbul ignore next: TODO: add when I edit data
+  if (!notEditingData) {
+    return false;
+  }
+
+  if (notEditingData.value === "notEditingSiblings") {
+    return true;
+  }
+
+  if (
+    notEditingData.value === "editingSiblings" &&
+    notEditingData.states.firstEditableSibling
+  ) {
+    return true;
+  }
+
+  return false;
+}

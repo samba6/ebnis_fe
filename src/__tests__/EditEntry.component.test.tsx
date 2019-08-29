@@ -12,12 +12,17 @@ import {
   UpdateDefinitionInput,
 } from "../graphql/apollo-types/globalTypes";
 import { fillField, closeMessage, ToInputVariables } from "./test_utils";
-import { UpdateDefinitions } from "../graphql/apollo-types/UpdateDefinitions";
+import {
+  UpdateDefinitions,
+  UpdateDefinitions_updateDefinitions,
+  UpdateDefinitions_updateDefinitions_definitions,
+} from "../graphql/apollo-types/UpdateDefinitions";
 
 ////////////////////////// MOCKS ////////////////////////////
 
 jest.mock("../components/EditEntry/edit-entry.update.ts");
 import { editEntryUpdate } from "../components/EditEntry/edit-entry.update";
+import { DataObjectFragment } from "../graphql/apollo-types/DataObjectFragment";
 const mockEditEntryUpdate = editEntryUpdate as jest.Mock;
 
 const EditEntryP = EditEntry as ComponentType<Partial<Props>>;
@@ -54,193 +59,234 @@ it("destroys the UI", () => {
   );
 });
 
-test("definitions not editing data - submission success", async () => {
-  const { ui, mockUpdateDefinitionsOnline } = makeComp({
-    props: {
-      entry: {
-        dataObjects: [
-          {
-            definitionId: "a",
-            data: `{"integer":1}`,
-          },
-        ],
-      } as EntryFragment,
+describe("editing definitions not editing data", () => {
+  test("no siblings, form errors, server success", async () => {
+    const { ui, mockUpdateDefinitionsOnline } = makeComp({
+      props: {
+        entry: {
+          dataObjects: [] as DataObjectFragment[],
+        } as EntryFragment,
 
-      definitions: [
-        {
-          id: "a",
-          type: FieldType.INTEGER,
-          name: "f1",
-        },
-      ] as DataDefinitionFragment[],
-    },
-  });
-
-  mockUpdateDefinitionsOnline.mockResolvedValue({
-    data: {
-      updateDefinitions: {
         definitions: [
           {
-            definition: {
-              id: "a",
-            },
+            id: "a",
+            type: FieldType.INTEGER,
+            name: "f1",
           },
-        ],
+        ] as DataDefinitionFragment[],
       },
-    } as UpdateDefinitions,
+    });
+
+    mockUpdateDefinitionsOnline.mockResolvedValue({
+      data: {
+        updateDefinitions: {
+          definitions: [
+            {
+              definition: {
+                id: "a",
+              },
+            },
+          ],
+        },
+      } as UpdateDefinitions,
+    });
+
+    render(ui);
+    // const { debug } = render(ui);
+
+    // idle
+
+    let $editBtn = makeDefinitionEdit("a");
+    expect(makeDefinitionDismiss("a")).toBeNull();
+    expect(makeDefinitionInput("a")).toBeNull();
+    expect(makeDefinitionName("a")).not.toBeNull();
+
+    $editBtn.click();
+
+    // editing.unchanged
+
+    expect(makeDefinitionEdit("a")).toBeNull();
+    expect(makeDefinitionEdit("a")).toBeNull();
+
+    let $dismiss = makeDefinitionDismiss("a");
+    $dismiss.click();
+
+    // back to idle
+
+    expect(makeDefinitionDismiss("a")).toBeNull();
+
+    $editBtn = makeDefinitionEdit("a");
+    $editBtn.click();
+
+    // editing.unchanged
+
+    expect(makeDefinitionReset("a")).toBeNull();
+
+    let $input = makeDefinitionInput("a");
+    fillField($input, "g1");
+
+    // editing.changed
+    // we can dismiss
+
+    $dismiss = makeDefinitionDismiss("a");
+    $dismiss.click();
+
+    // back to idle
+
+    $editBtn = makeDefinitionEdit("a");
+    $editBtn.click();
+
+    // editing.unchanged
+    // we can not reset
+
+    expect(makeDefinitionReset("a")).toBeNull();
+
+    fillField(makeDefinitionInput("a"), "g1");
+
+    // editing.changed
+    // we can reset by clicking reset button
+    //debug();
+
+    makeDefinitionReset("a").click();
+    // editing.unchanged
+
+    expect(makeDefinitionReset("a")).toBeNull();
+
+    fillField(makeDefinitionInput("a"), "g1");
+
+    // editing.changed
+    // OR we can reset by changing to default value
+
+    fillField(makeDefinitionInput("a"), "f1  ");
+
+    // editing.unchanged
+
+    expect(makeDefinitionSubmit("a")).toBeNull();
+    expect(makeDefinitionReset("a")).toBeNull();
+    fillField(makeDefinitionInput("a"), "g  ");
+
+    // editing.changed.form
+
+    const $submit = makeDefinitionSubmit("a");
+    const $field = makeDefinitionField("a");
+
+    expect($field.classList).not.toContain("error");
+
+    $submit.click();
+
+    // editing.changed.formErrors
+
+    expect(makeDefinitionError("a")).not.toBeNull();
+    expect($field.classList).toContain("error");
+    fillField(makeDefinitionInput("a"), "g1  ");
+    $submit.click();
+
+    // submitting
+
+    await wait(() => {
+      const mock = mockUpdateDefinitionsOnline.mock
+        .calls[0][0] as ToInputVariables<UpdateDefinitionInput[]>;
+
+      expect(mock.variables.input).toMatchObject([
+        {
+          id: "a",
+          name: "g1",
+        },
+      ]);
+
+      expect(mock.update).toBe(mockEditEntryUpdate);
+    });
+
+    // back to idle, with success
+    expect($field.classList).toContain("success");
   });
 
-  render(ui);
-  // const { debug } = render(ui);
+  test("editing siblings, server error", async () => {
+    const { ui, mockUpdateDefinitionsOnline } = makeComp({
+      props: {
+        entry: {
+          dataObjects: [] as DataObjectFragment[],
+        } as EntryFragment,
 
-  // idle
+        definitions: [
+          {
+            id: "a",
+            type: FieldType.INTEGER,
+            name: "f1",
+          },
 
-  let $editBtn = document.getElementById(
-    "edit-entry-definition-a-edit-btn",
-  ) as any;
+          {
+            id: "b",
+            type: FieldType.DECIMAL,
+            name: "f2",
+          },
 
-  expect(document.getElementById("edit-entry-definition-a-dismiss")).toBeNull();
-
-  expect(document.getElementById("edit-entry-definition-a-input")).toBeNull();
-
-  expect(
-    document.getElementById("edit-entry-definition-a-name"),
-  ).not.toBeNull();
-
-  $editBtn.click();
-
-  // editing.unchanged
-
-  expect(
-    document.getElementById("edit-entry-definition-a-edit-btn"),
-  ).toBeNull();
-
-  expect(document.getElementById("edit-entry-definition-a-name")).toBeNull();
-
-  let $dismiss = document.getElementById(
-    "edit-entry-definition-a-dismiss",
-  ) as any;
-
-  $dismiss.click();
-
-  // back to idle
-
-  expect(document.getElementById("edit-entry-definition-a-dismiss")).toBeNull();
-
-  $editBtn = document.getElementById("edit-entry-definition-a-edit-btn") as any;
-  $editBtn.click();
-
-  // editing.unchanged
-
-  expect(document.getElementById("edit-entry-definition-a-reset")).toBeNull();
-
-  let $input = document.getElementById("edit-entry-definition-a-input") as any;
-
-  fillField($input, "g1");
-
-  // editing.changed
-  // we can dismiss
-
-  $dismiss = document.getElementById("edit-entry-definition-a-dismiss") as any;
-
-  $dismiss.click();
-
-  // back to idle
-
-  $editBtn = document.getElementById("edit-entry-definition-a-edit-btn") as any;
-  $editBtn.click();
-
-  // editing.unchanged
-  // we can not reset
-
-  expect(document.getElementById("edit-entry-definition-a-reset")).toBeNull();
-
-  fillField(
-    document.getElementById("edit-entry-definition-a-input") as any,
-    "g1",
-  );
-
-  // editing.changed
-  // we can reset by clicking reset button
-  //debug();
-
-  (document.getElementById("edit-entry-definition-a-reset") as any).click();
-
-  // editing.unchanged
-
-  expect(document.getElementById("edit-entry-definition-a-reset")).toBeNull();
-
-  fillField(
-    document.getElementById("edit-entry-definition-a-input") as any,
-    "g1",
-  );
-
-  // editing.changed
-  // OR we can reset by changing to default value
-
-  fillField(
-    document.getElementById("edit-entry-definition-a-input") as any,
-    "f1  ",
-  );
-
-  // editing.unchanged
-
-  expect(document.getElementById("edit-entry-definition-a-submit")).toBeNull();
-
-  expect(document.getElementById("edit-entry-definition-a-reset")).toBeNull();
-
-  fillField(
-    document.getElementById("edit-entry-definition-a-input") as any,
-    "g  ",
-  );
-
-  // editing.changed.form
-
-  const $submit = document.getElementById(
-    "edit-entry-definition-a-submit",
-  ) as any;
-
-  const $field = document.getElementById(
-    "edit-entry-definition-a",
-  ) as HTMLElement;
-
-  expect($field.classList).not.toContain("error");
-
-  $submit.click();
-
-  // editing.changed.formErrors
-
-  expect(
-    document.getElementById("edit-entry-definition-a-error"),
-  ).not.toBeNull();
-
-  expect($field.classList).toContain("error");
-
-  fillField(
-    document.getElementById("edit-entry-definition-a-input") as any,
-    "g1  ",
-  );
-
-  $submit.click();
-
-  // submitting
-
-  await wait(() => {
-    const mock = mockUpdateDefinitionsOnline.mock
-      .calls[0][0] as ToInputVariables<UpdateDefinitionInput[]>;
-
-    expect(mock.variables.input).toMatchObject([
-      {
-        id: "a",
-        name: "g1",
+          {
+            id: "c",
+            type: FieldType.INTEGER,
+            name: "f3",
+          },
+        ] as DataDefinitionFragment[],
       },
-    ]);
+    });
 
-    expect(mock.update).toBe(mockEditEntryUpdate);
+    mockUpdateDefinitionsOnline.mockResolvedValue({
+      data: {
+        updateDefinitions: {
+          definitions: [
+            {
+              definition: {
+                id: "b",
+              },
+            } as UpdateDefinitions_updateDefinitions_definitions,
+
+            {
+              errors: {
+                id: "c",
+
+                errors: {
+                  name: "n",
+                  definition: "",
+                },
+              },
+            },
+          ] as UpdateDefinitions_updateDefinitions_definitions[],
+        } as UpdateDefinitions_updateDefinitions,
+      } as UpdateDefinitions,
+    });
+
+    render(ui);
+    // const { debug } = render(ui);
+
+    expect(makeDefinitionInput("a")).toBeNull();
+    expect(makeDefinitionInput("c")).toBeNull();
+    makeDefinitionEdit("a").click();
+
+    // a = editing.unchanged
+    expect(makeDefinitionSubmit("a")).toBeNull();
+    fillField(makeDefinitionInput("a"), "g1");
+    // a = editing.changed
+    expect(makeDefinitionSubmit("a")).not.toBeNull();
+
+    expect(makeDefinitionInput("b")).toBeNull();
+    makeDefinitionEdit("b").click();
+    // b = editing.unchanged
+    fillField(makeDefinitionInput("b"), "g2");
+    // b = editing.changed.editingSiblings
+    expect(makeDefinitionSubmit("b")).toBeNull();
+
+    // a = editing.changed.editingSiblings.firstEditableSibling
+    expect(makeDefinitionSubmit("a")).not.toBeNull();
+
+    expect(makeDefinitionReset("a")).not.toBeNull();
+    fillField(makeDefinitionInput("a"), "f1");
+
+    // a = editing.unchanged
+    expect(makeDefinitionReset("a")).toBeNull();
+
+    // b = editing.changed.notEditingSiblings
+    expect(makeDefinitionSubmit("b")).not.toBeNull();
   });
-
-  // back to idle, with success
-  expect($field.classList).toContain("success");
 });
 
 ////////////////////////// HELPER FUNCTIONS ///////////////////////////
@@ -261,4 +307,42 @@ function makeComp({ props = {} }: { props?: Partial<Props> } = {}) {
     mockUpdateDefinitionsOnline,
     mockParentDispatch,
   };
+}
+
+function makeDefinitionControl(id: string, control?: string) {
+  return document.getElementById(
+    `edit-entry-definition-${id}` + (control ? `-${control}` : ""),
+  ) as HTMLInputElement;
+}
+
+function makeDefinitionField(id: string) {
+  return makeDefinitionControl(id);
+}
+
+function makeDefinitionReset(id: string) {
+  return makeDefinitionControl(id, "reset");
+}
+
+function makeDefinitionInput(id: string) {
+  return makeDefinitionControl(id, "input");
+}
+
+function makeDefinitionSubmit(id: string) {
+  return makeDefinitionControl(id, "submit");
+}
+
+function makeDefinitionDismiss(id: string) {
+  return makeDefinitionControl(id, "dismiss");
+}
+
+function makeDefinitionEdit(id: string) {
+  return makeDefinitionControl(id, "edit-btn");
+}
+
+function makeDefinitionName(id: string) {
+  return makeDefinitionControl(id, "name");
+}
+
+function makeDefinitionError(id: string) {
+  return makeDefinitionControl(id, "error");
 }
