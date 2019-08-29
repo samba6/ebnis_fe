@@ -7,6 +7,7 @@ import { DataObjectFragment } from "../../graphql/apollo-types/DataObjectFragmen
 import {
   UpdateDefinitions_updateDefinitions,
   UpdateDefinitions_updateDefinitions_definitions,
+  UpdateDefinitions_updateDefinitions_definitions_errors_errors,
 } from "../../graphql/apollo-types/UpdateDefinitions";
 
 export enum ActionTypes {
@@ -89,7 +90,7 @@ export const reducer: Reducer<State, Action> = (
 
           proxy.definitionsStates[id].state = {
             value: "editing",
-            states: {
+            editing: {
               value: "unchanged",
             },
           };
@@ -111,7 +112,7 @@ export const reducer: Reducer<State, Action> = (
             state = {
               value: "editing",
 
-              states: {
+              editing: {
                 value: "unchanged",
               },
             };
@@ -119,10 +120,10 @@ export const reducer: Reducer<State, Action> = (
             state = {
               value: "editing",
 
-              states: {
+              editing: {
                 value: "changed",
 
-                states: {
+                changed: {
                   form: {
                     value: "regular",
                   },
@@ -131,7 +132,8 @@ export const reducer: Reducer<State, Action> = (
             } as DefinitionState["state"];
 
             //if (!proxy.editingData) {
-            (state.states as DefinitionChangedState).states.notEditingData = {
+            ((state as DefinitionEditingState)
+              .editing as DefinitionChangedState).changed.notEditingData = {
               value: "notEditingSiblings",
             };
             //}
@@ -171,33 +173,58 @@ export const reducer: Reducer<State, Action> = (
             definitions,
           } = payload as UpdateDefinitions_updateDefinitions;
 
+          const { definitionsStates } = proxy;
+
           definitions.forEach(def => {
             const {
               definition,
+              errors,
             } = def as UpdateDefinitions_updateDefinitions_definitions;
 
-            proxy.definitionsStates[definition.id].state = {
-              value: "idle",
-              states: {
-                value: "anyEditSuccessful",
-              },
-            };
+            if (definition) {
+              definitionsStates[definition.id].state = {
+                value: "idle",
+                idle: {
+                  value: "anyEditSuccessful",
+                },
+              };
+
+              return;
+            }
+
+            if (errors) {
+              const { id, ...errorsContext } = errors;
+              const state = definitionsStates[id]
+                .state as DefinitionEditingState;
+
+              (state.editing as DefinitionChangedState).changed.form = {
+                value: "serverErrors",
+                context: { ...errorsContext },
+              };
+            }
           });
         }
         break;
 
       case ActionTypes.DEFINITION_FORM_ERRORS:
         {
-          const { id, errors } = payload as DefinitionFormErrorsPayload;
-          const definitionState = proxy.definitionsStates[id];
+          const { ids } = payload as DefinitionFormErrorsPayload;
 
-          (definitionState.state
-            .states as DefinitionChangedState).states.form = {
-            value: "formErrors",
-            context: {
-              errors,
-            },
+          const errors = {
+            name: "should be at least 2 characters long.",
           };
+
+          for (const id of ids) {
+            const definitionState = proxy.definitionsStates[id];
+
+            ((definitionState.state as DefinitionEditingState)
+              .editing as DefinitionChangedState).changed.form = {
+              value: "formErrors",
+              context: {
+                errors,
+              },
+            };
+          }
         }
         break;
     }
@@ -208,12 +235,12 @@ function setEditingMultipleDefinitionsStates(
   definitionsStates: DefinitionsStates,
 ) {
   let editCount = 0;
-  const statesToChange: DefinitionChangedState["states"][] = [];
+  const statesToChange: DefinitionChangedState["changed"][] = [];
 
   for (const { state } of Object.values(definitionsStates)) {
-    if (state.value === "editing" && state.states.value === "changed") {
+    if (state.value === "editing" && state.editing.value === "changed") {
       ++editCount;
-      statesToChange.push(state.states.states);
+      statesToChange.push(state.editing.changed);
     }
   }
 
@@ -232,11 +259,11 @@ function setEditingMultipleDefinitionsStates(
       if (state.notEditingData) {
         state.notEditingData = {
           value: "editingSiblings",
-          states: {},
+          editingSiblings: {},
         };
 
         if (i === 0) {
-          state.notEditingData.states.firstEditableSibling = true;
+          state.notEditingData.editingSiblings.firstEditableSibling = true;
         }
       }
     }
@@ -248,18 +275,6 @@ export const DefinitionsContext = createContext<DefinitionsContextValues>(
 );
 
 export const DefinitionsContextProvider = DefinitionsContext.Provider;
-
-export function getDefinitionFormError(state: DefinitionState["state"]) {
-  if (
-    state.value === "editing" &&
-    state.states.value === "changed" &&
-    state.states.states.form.value === "formErrors"
-  ) {
-    return state.states.states.form.context.errors.name;
-  }
-
-  return null;
-}
 
 ////////////////////////// TYPES ////////////////////////////
 
@@ -307,10 +322,7 @@ interface DefinitionNameChangedPayload {
 }
 
 interface DefinitionFormErrorsPayload {
-  id: string;
-  errors: {
-    name: string;
-  };
+  ids: string[];
 }
 
 export interface OwnProps {
@@ -343,27 +355,29 @@ export interface DefinitionState {
   state:
     | {
         value: "idle";
-        states?: {
+        idle?: {
           value: "anyEditSuccessful";
         };
       }
-    | {
-        value: "editing";
-
-        states:
-          | {
-              value: "unchanged";
-            }
-          | DefinitionChangedState;
-      };
+    | DefinitionEditingState;
 
   formValue: string;
+}
+
+interface DefinitionEditingState {
+  value: "editing";
+
+  editing:
+    | {
+        value: "unchanged";
+      }
+    | DefinitionChangedState;
 }
 
 export interface DefinitionChangedState {
   value: "changed";
 
-  states: {
+  changed: {
     form:
       | {
           value: "regular";
@@ -374,12 +388,16 @@ export interface DefinitionChangedState {
       | {
           value: "formErrors";
           context: {
-            errors: DefinitionFormErrorsPayload["errors"];
+            errors: {
+              name: string;
+            };
           };
         }
       | {
           value: "serverErrors";
-          context: {};
+          context: {
+            errors: UpdateDefinitions_updateDefinitions_definitions_errors_errors;
+          };
         };
 
     notEditingData?:
@@ -388,7 +406,7 @@ export interface DefinitionChangedState {
         }
       | {
           value: "editingSiblings";
-          states: {
+          editingSiblings: {
             firstEditableSibling?: true;
           };
         };

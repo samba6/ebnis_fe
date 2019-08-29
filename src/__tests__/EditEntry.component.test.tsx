@@ -201,7 +201,7 @@ describe("editing definitions not editing data", () => {
     expect($field.classList).toContain("success");
   });
 
-  test.only("editing siblings, server error", async () => {
+  test("editing siblings, server error", async () => {
     const { ui, mockUpdateDefinitionsOnline } = makeComp({
       props: {
         entry: {
@@ -236,7 +236,7 @@ describe("editing definitions not editing data", () => {
           definitions: [
             {
               definition: {
-                id: "b",
+                id: "a",
               },
             } as UpdateDefinitions_updateDefinitions_definitions,
 
@@ -247,6 +247,7 @@ describe("editing definitions not editing data", () => {
                 errors: {
                   name: "n",
                   definition: "",
+                  __typename: "DataDefinitionError",
                 },
               },
             },
@@ -255,8 +256,8 @@ describe("editing definitions not editing data", () => {
       } as UpdateDefinitions,
     });
 
-    //render(ui);
-    const { debug } = render(ui);
+    render(ui);
+    // const { debug } = render(ui);
 
     expect(makeDefinitionInput("a")).toBeNull();
     makeDefinitionEdit("a").click();
@@ -300,16 +301,44 @@ describe("editing definitions not editing data", () => {
     // c = editing.changed.notEditingSiblings
     expect(makeDefinitionSubmit("c")).not.toBeNull();
 
-    fillField(makeDefinitionInput("a"), "g1");
+    fillField(makeDefinitionInput("a"), "g");
     // c = editing.changed.editingSiblings
     expect(makeDefinitionSubmit("c")).toBeNull();
 
     makeDefinitionEdit("b").click();
-    // b should be unchanged because it's just same name with extra whitespace
+    // b should be unchanged because adding only whitespace does not count
     fillField(makeDefinitionInput("b"), "f2     ");
+    // b = editing.unchanged
+    expect(makeDefinitionReset("b")).toBeNull();
+
+    const $fieldA = makeDefinitionField("a");
+    expect($fieldA.classList).not.toContain("error");
+
+    const $fieldC = makeDefinitionField("c");
 
     // a = editing.changed.editingSiblings.firstEditableSibling
-    // makeDefinitionSubmit("a").click();
+    const $submit = makeDefinitionSubmit("a");
+    $submit.click();
+
+    // a = editing.changed.form.formErrors
+    await wait(() => {
+      expect($fieldA.classList).toContain("error");
+    });
+
+    expect($fieldC.classList).not.toContain("error");
+    expect($fieldC.classList).not.toContain("success");
+    expect($fieldA.classList).not.toContain("success");
+
+    fillField(makeDefinitionInput("a"), "g1");
+    $submit.click();
+
+    await wait(() => {
+      expect($fieldA.classList).toContain("success");
+    });
+
+    expect($fieldA.classList).not.toContain("error");
+    expect($fieldC.classList).toContain("error");
+    expect($fieldC.classList).not.toContain("success");
   });
 });
 

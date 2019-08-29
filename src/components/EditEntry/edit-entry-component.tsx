@@ -7,7 +7,6 @@ import {
   DefinitionState,
   DefinitionsContextProvider,
   DefinitionsContext,
-  getDefinitionFormError,
   DispatchType,
   DefinitionChangedState,
   DefinitionsStates,
@@ -21,6 +20,7 @@ import { UpdateDefinitions_updateDefinitions } from "../../graphql/apollo-types/
 import { editEntryUpdate } from "./edit-entry.update";
 import { FormCtrlError } from "../FormCtrlError/form-ctrl-error.component";
 import { UpdateDefinitionsMutationFn } from "../../graphql/update-definitions.mutation";
+import { UpdateDefinitionInput } from "../../graphql/apollo-types/globalTypes";
 
 export function EditEntry(props: Props) {
   const { updateDefinitionsOnline, dispatch: parentDispatch } = props;
@@ -78,7 +78,7 @@ interface DefinitionComponentProps {
 
 function DefinitionComponent(props: DefinitionComponentProps) {
   const { id, stateContext } = props;
-  const { state, formValue } = stateContext;
+  const { state } = stateContext;
 
   const {
     dispatch,
@@ -101,8 +101,8 @@ function DefinitionComponent(props: DefinitionComponentProps) {
       className={makeClassNames({
         success: !!(
           state.value === "idle" &&
-          state.states &&
-          state.states.value === "anyEditSuccessful"
+          state.idle &&
+          state.idle.value === "anyEditSuccessful"
         ),
       })}
       error={!!error}
@@ -160,7 +160,7 @@ function DefinitionComponent(props: DefinitionComponentProps) {
             Dismiss
           </Button>
 
-          {state.states.value === "changed" && (
+          {state.editing.value === "changed" && (
             <>
               <Button
                 type="button"
@@ -175,15 +175,13 @@ function DefinitionComponent(props: DefinitionComponentProps) {
                 Reset
               </Button>
 
-              {shouldShowDefinitionSubmitBtn(state.states.states) && (
+              {shouldShowDefinitionSubmitBtn(state.editing.changed) && (
                 <Button
                   type="submit"
                   id={`${idPrefix}-submit`}
-                  onClick={submitDefinition({
-                    id,
+                  onClick={submitDefinitions({
                     dispatch,
                     updateDefinitionsOnline,
-                    formValue,
                     allDefinitionsStates: props.allDefinitionsStates,
                   })}
                 >
@@ -202,35 +200,39 @@ function DefinitionComponent(props: DefinitionComponentProps) {
   );
 }
 
-interface SubmitDefinitionArgs {
-  id: string;
-  formValue: string;
+interface SubmitDefinitionsArgs {
   dispatch: DispatchType;
   updateDefinitionsOnline: UpdateDefinitionsMutationFn;
   allDefinitionsStates: DefinitionsStates;
 }
 
-function submitDefinition(props: SubmitDefinitionArgs) {
+function submitDefinitions(props: SubmitDefinitionsArgs) {
   return async function submitDefinitionInner() {
-    const {
-      formValue,
-      id,
-      dispatch,
-      updateDefinitionsOnline,
-      allDefinitionsStates,
-    } = props;
+    const { dispatch, updateDefinitionsOnline, allDefinitionsStates } = props;
 
-    console.log(JSON.stringify(allDefinitionsStates, null, 2));
+    const input: UpdateDefinitionInput[] = [];
+    const withErrors: string[] = [];
 
-    const name = formValue.trim();
+    for (const [id, stateData] of Object.entries(allDefinitionsStates)) {
+      const { state, formValue } = stateData;
+      if (state.value === "editing" && state.editing.value === "changed") {
+        const name = formValue.trim();
 
-    if (name.length < 2) {
+        if (name.length < 2) {
+          withErrors.push(id);
+        } else {
+          input.push({
+            id,
+            name,
+          });
+        }
+      }
+    }
+
+    if (withErrors.length > 0) {
       dispatch({
         type: ActionTypes.DEFINITION_FORM_ERRORS,
-        id,
-        errors: {
-          name: "should be at least 2 characters long.",
-        },
+        ids: withErrors,
       });
 
       return;
@@ -242,12 +244,7 @@ function submitDefinition(props: SubmitDefinitionArgs) {
 
     const result = await updateDefinitionsOnline({
       variables: {
-        input: [
-          {
-            id,
-            name: formValue.trim(),
-          },
-        ],
+        input,
       },
       update: editEntryUpdate,
     });
@@ -264,7 +261,7 @@ function submitDefinition(props: SubmitDefinitionArgs) {
 }
 
 function shouldShowDefinitionSubmitBtn(
-  state: DefinitionChangedState["states"],
+  state: DefinitionChangedState["changed"],
 ) {
   const { notEditingData } = state;
 
@@ -279,10 +276,39 @@ function shouldShowDefinitionSubmitBtn(
 
   if (
     notEditingData.value === "editingSiblings" &&
-    notEditingData.states.firstEditableSibling
+    notEditingData.editingSiblings.firstEditableSibling
   ) {
     return true;
   }
 
   return false;
+}
+
+function getDefinitionFormError(state: DefinitionState["state"]) {
+  if (state.value === "editing" && state.editing.value === "changed") {
+    const { form } = state.editing.changed;
+
+    if (form.value === "formErrors" || form.value === "serverErrors") {
+      const {
+        context: { errors },
+      } = form;
+
+      return Object.entries(errors).reduce(
+        (acc, [k, v]) => {
+          if (k !== "__typename" && v) {
+            acc.push(
+              <span key={k}>
+                {k}: {v}
+              </span>,
+            );
+          }
+
+          return acc;
+        },
+        [] as JSX.Element[],
+      );
+    }
+  }
+
+  return null;
 }
