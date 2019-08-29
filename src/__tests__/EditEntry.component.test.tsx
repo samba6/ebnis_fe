@@ -201,7 +201,7 @@ describe("editing definitions not editing data", () => {
     expect($field.classList).toContain("success");
   });
 
-  test("editing siblings, server error", async () => {
+  test.only("editing siblings, server error", async () => {
     const { ui, mockUpdateDefinitionsOnline } = makeComp({
       props: {
         entry: {
@@ -255,11 +255,10 @@ describe("editing definitions not editing data", () => {
       } as UpdateDefinitions,
     });
 
-    render(ui);
-    // const { debug } = render(ui);
+    //render(ui);
+    const { debug } = render(ui);
 
     expect(makeDefinitionInput("a")).toBeNull();
-    expect(makeDefinitionInput("c")).toBeNull();
     makeDefinitionEdit("a").click();
 
     // a = editing.unchanged
@@ -286,6 +285,31 @@ describe("editing definitions not editing data", () => {
 
     // b = editing.changed.notEditingSiblings
     expect(makeDefinitionSubmit("b")).not.toBeNull();
+
+    expect(makeDefinitionInput("c")).toBeNull();
+    makeDefinitionEdit("c").click();
+    fillField(makeDefinitionInput("c"), "g3");
+    // c = editing.changed.editingSiblings
+    expect(makeDefinitionSubmit("c")).toBeNull();
+    // b = ediitng.changed.editingSiblings.firstEditableSiblings
+    expect(makeDefinitionSubmit("b")).not.toBeNull();
+
+    makeDefinitionDismiss("b").click();
+    // b = idle
+    expect(makeDefinitionInput("b")).toBeNull();
+    // c = editing.changed.notEditingSiblings
+    expect(makeDefinitionSubmit("c")).not.toBeNull();
+
+    fillField(makeDefinitionInput("a"), "g1");
+    // c = editing.changed.editingSiblings
+    expect(makeDefinitionSubmit("c")).toBeNull();
+
+    makeDefinitionEdit("b").click();
+    // b should be unchanged because it's just same name with extra whitespace
+    fillField(makeDefinitionInput("b"), "f2     ");
+
+    // a = editing.changed.editingSiblings.firstEditableSibling
+    // makeDefinitionSubmit("a").click();
   });
 });
 

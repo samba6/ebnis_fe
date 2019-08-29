@@ -139,7 +139,7 @@ export const reducer: Reducer<State, Action> = (
 
           definitionState.state = state;
           definitionState.formValue = formValue;
-          setEditingMultipleDefinitions(proxy.definitionsStates);
+          setEditingMultipleDefinitionsStates(proxy.definitionsStates);
         }
 
         break;
@@ -147,9 +147,13 @@ export const reducer: Reducer<State, Action> = (
       case ActionTypes.STOP_DEFINITION_EDIT:
         {
           const { id } = payload as IdString;
-          proxy.definitionsStates[id].state = {
+          const { definitionsStates } = proxy;
+
+          definitionsStates[id].state = {
             value: "idle",
           };
+
+          setEditingMultipleDefinitionsStates(definitionsStates);
         }
 
         break;
@@ -200,7 +204,9 @@ export const reducer: Reducer<State, Action> = (
   });
 };
 
-function setEditingMultipleDefinitions(definitionsStates: DefinitionsStates) {
+function setEditingMultipleDefinitionsStates(
+  definitionsStates: DefinitionsStates,
+) {
   let editCount = 0;
   const statesToChange: DefinitionChangedState["states"][] = [];
 

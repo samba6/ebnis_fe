@@ -10,6 +10,7 @@ import {
   getDefinitionFormError,
   DispatchType,
   DefinitionChangedState,
+  DefinitionsStates,
 } from "./edit-entry-utils";
 import Form from "semantic-ui-react/dist/commonjs/collections/Form";
 import Button from "semantic-ui-react/dist/commonjs/elements/Button";
@@ -59,6 +60,7 @@ export function EditEntry(props: Props) {
                 key={id}
                 id={id}
                 stateContext={state.definitionsStates[id]}
+                allDefinitionsStates={state.definitionsStates}
               />
             );
           })}
@@ -71,6 +73,7 @@ export function EditEntry(props: Props) {
 interface DefinitionComponentProps {
   stateContext: DefinitionState;
   id: string;
+  allDefinitionsStates: DefinitionsStates;
 }
 
 function DefinitionComponent(props: DefinitionComponentProps) {
@@ -181,6 +184,7 @@ function DefinitionComponent(props: DefinitionComponentProps) {
                     dispatch,
                     updateDefinitionsOnline,
                     formValue,
+                    allDefinitionsStates: props.allDefinitionsStates,
                   })}
                 >
                   Submit
@@ -203,11 +207,20 @@ interface SubmitDefinitionArgs {
   formValue: string;
   dispatch: DispatchType;
   updateDefinitionsOnline: UpdateDefinitionsMutationFn;
+  allDefinitionsStates: DefinitionsStates;
 }
 
 function submitDefinition(props: SubmitDefinitionArgs) {
   return async function submitDefinitionInner() {
-    const { formValue, id, dispatch, updateDefinitionsOnline } = props;
+    const {
+      formValue,
+      id,
+      dispatch,
+      updateDefinitionsOnline,
+      allDefinitionsStates,
+    } = props;
+
+    console.log(JSON.stringify(allDefinitionsStates, null, 2));
 
     const name = formValue.trim();
 
