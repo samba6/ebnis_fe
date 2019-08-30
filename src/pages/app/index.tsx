@@ -36,7 +36,7 @@ const UploadUnsaved = Loadable({
 export function App(props: RouteComponentProps) {
   return (
     <Layout {...props}>
-      <Router style={{ height: "100%" }}>
+      <Router id="global-router" >
         <AuthRequired
           path={EXPERIENCE_DEFINITION_URL}
           component={ExperienceDefinition}

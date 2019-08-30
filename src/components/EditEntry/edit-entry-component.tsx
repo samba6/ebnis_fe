@@ -144,6 +144,7 @@ function DefinitionComponent(props: DefinitionComponentProps) {
                   formValue: value,
                 });
               }}
+              autoComplete='off'
             />
           </div>
 

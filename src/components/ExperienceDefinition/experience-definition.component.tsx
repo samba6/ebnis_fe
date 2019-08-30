@@ -377,6 +377,7 @@ function FieldDataTypeComponent({
       <label htmlFor={name}>{`Field ${index + 1} Data Type`}</label>
 
       <Dropdown
+        search={true}
         id={idPrefix}
         fluid={true}
         selection={true}

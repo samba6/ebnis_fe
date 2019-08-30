@@ -45,3 +45,23 @@
 @negativeTextColor: saturate(darken(@appColor, 6), 20, relative);
 @negativeHeaderColor: saturate(darken(@appColor, 10), 20, relative);
 //@negativeBorderColor: saturate(darken(@appColor, 5), 20, relative);
+
+
+/*-------------------
+    Scroll Bars
+--------------------*/
+
+@useCustomScrollbars: true;
+
+@customScrollbarWidth: 4px;
+@customScrollbarHeight: 5px;
+
+
+/*-------------------
+       Fonts
+--------------------*/
+
+@fontName          : "Open Sans";
+
+@headerFont        : @fontName, Helvetica, Arial, sans-serif;
+@pageFont          : @fontName, Helvetica, Arial, sans-serif;

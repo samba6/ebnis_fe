@@ -173,7 +173,8 @@ export const reducer: Reducer<State, Action> = (
             definitions,
           } = payload as UpdateDefinitions_updateDefinitions;
 
-          const { definitionsStates } = proxy;
+          const { definitionsStates , definitionsDefaultsMap} = proxy;
+          proxy.value = "nothing";
 
           definitions.forEach(def => {
             const {
@@ -182,7 +183,11 @@ export const reducer: Reducer<State, Action> = (
             } = def as UpdateDefinitions_updateDefinitions_definitions;
 
             if (definition) {
-              definitionsStates[definition.id].state = {
+              const { id, name } = definition;
+              definitionsDefaultsMap[id].definition.name = name
+              const stateInfo = definitionsStates[id];
+
+              stateInfo.state = {
                 value: "idle",
                 idle: {
                   value: "anyEditSuccessful",

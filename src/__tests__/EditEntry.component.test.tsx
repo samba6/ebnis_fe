@@ -84,6 +84,7 @@ describe("editing definitions not editing data", () => {
             {
               definition: {
                 id: "a",
+                name: "g1",
               },
             },
           ],
@@ -179,8 +180,10 @@ describe("editing definitions not editing data", () => {
     expect(makeDefinitionError("a")).not.toBeNull();
     expect($field.classList).toContain("error");
     fillField(makeDefinitionInput("a"), "g1  ");
-    $submit.click();
+    expect($field.classList).not.toContain("success");
 
+    $submit.click();
+    expect(document.getElementById("edit-entry-submitting")).not.toBeNull();
     // submitting
 
     await wait(() => {
@@ -199,6 +202,9 @@ describe("editing definitions not editing data", () => {
 
     // back to idle, with success
     expect($field.classList).toContain("success");
+    expect($field.classList).not.toContain("error");
+    expect(document.getElementById("edit-entry-submitting")).toBeNull();
+    expect(makeDefinitionName("a").textContent).toEqual("g1");
   });
 
   test("editing siblings, server error", async () => {
