@@ -1,9 +1,9 @@
 import React, { useState, useMemo } from "react";
 import Dropdown from "semantic-ui-react/dist/commonjs/modules/Dropdown";
 import Form from "semantic-ui-react/dist/commonjs/collections/Form";
-import { DateField } from "../DateField/component";
+import { DateField } from "../DateField/date-field.component";
 import { FormObjVal } from "../Experience/experience.utils";
-import { Props } from "./utils";
+import { Props } from "./date-time-field.utils";
 import "../DateField/date-field.styles.scss";
 
 interface DropdownOptions {
@@ -95,6 +95,7 @@ export function DateTimeField(props: Props) {
           <label className="field_label">Hour</label>
 
           <Dropdown
+            search={true}
             fluid={true}
             selection={true}
             compact={true}
@@ -111,6 +112,7 @@ export function DateTimeField(props: Props) {
         <div>
           <label className="field_label">Minute</label>
           <Dropdown
+            search={true}
             fluid={true}
             selection={true}
             compact={true}

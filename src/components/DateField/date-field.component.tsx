@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from "react";
 import Dropdown from "semantic-ui-react/dist/commonjs/modules/Dropdown";
 import Form from "semantic-ui-react/dist/commonjs/collections/Form";
-import { Props } from "./utils";
+import { Props } from "./date-field.utils";
 import "./date-field.styles.scss";
 import getDaysInMonth from "date-fns/get_days_in_month";
 
@@ -35,15 +35,14 @@ export const DAYS = Array.from<
   }
 >({ length: 31 }, (_, index) => {
   const dayIndex = index + 1;
+  const text = (dayIndex + "").padStart(2, "0");
 
   return {
     key: dayIndex,
-    text: dayIndex + "",
+    text,
     value: dayIndex,
     content: (
-      <span className={`text js-date-field-input-day-${dayIndex}`}>
-        {dayIndex}
-      </span>
+      <span className={`text js-date-field-input-day-${dayIndex}`}>{dayIndex}</span>
     ),
   };
 });
@@ -101,6 +100,7 @@ export function DateField(props: Props) {
         <label className="field_label">{LABELS.day}</label>
 
         <Dropdown
+          search={true}
           fluid={true}
           selection={true}
           id={`date-field-input-${fieldNames.day}`}
@@ -125,6 +125,7 @@ export function DateField(props: Props) {
           {LABELS.month}
         </label>
         <Dropdown
+          search={true}
           fluid={true}
           selection={true}
           id={`date-field-input-${fieldNames.month}`}
@@ -148,6 +149,7 @@ export function DateField(props: Props) {
           {LABELS.year}
         </label>
         <Dropdown
+          search={true}
           fluid={true}
           selection={true}
           compact={true}

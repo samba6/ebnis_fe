@@ -10,8 +10,8 @@ import addMonths from "date-fns/add_months";
 import addMinutes from "date-fns/add_minutes";
 import addHours from "date-fns/add_hours";
 
-import { DateTimeField } from "../components/DateTimeField/component";
-import { Props } from "../components/DateTimeField/utils";
+import { DateTimeField } from "../components/DateTimeField/date-time-field.component";
+import { Props } from "../components/DateTimeField/date-time-field.utils";
 
 type P = ComponentType<Partial<Props>>;
 const DateTimeFieldP = DateTimeField as P;

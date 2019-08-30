@@ -7,8 +7,8 @@ import addDays from "date-fns/add_days";
 import addYears from "date-fns/add_years";
 import addMonths from "date-fns/add_months";
 
-import { DateField } from "../components/DateField/component";
-import { Props } from "../components/DateField/utils";
+import { DateField } from "../components/DateField/date-field.component";
+import { Props } from "../components/DateField/date-field.utils";
 
 type P = ComponentType<Partial<Props>>;
 const DateFieldP = DateField as P;

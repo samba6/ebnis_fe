@@ -33,8 +33,8 @@ import {
   FieldType,
   CreateDataObject,
 } from "../../graphql/apollo-types/globalTypes";
-import { DateField } from "../DateField/component";
-import { DateTimeField } from "../DateTimeField/component";
+import { DateField } from "../DateField/date-field.component";
+import { DateTimeField } from "../DateTimeField/date-time-field.component";
 import dateFnFormat from "date-fns/format";
 import { CreateEntryMutation_createEntry } from "../../graphql/apollo-types/CreateEntryMutation";
 import { CreateUnsavedEntryMutationReturned } from "./resolvers";
