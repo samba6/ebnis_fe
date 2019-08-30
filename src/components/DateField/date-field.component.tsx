@@ -42,7 +42,9 @@ export const DAYS = Array.from<
     text,
     value: dayIndex,
     content: (
-      <span className={`text js-date-field-input-day-${dayIndex}`}>{dayIndex}</span>
+      <span className={`text js-date-field-input-day-${dayIndex}`}>
+        {dayIndex}
+      </span>
     ),
   };
 });

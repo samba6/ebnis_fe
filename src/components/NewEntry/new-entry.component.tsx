@@ -288,7 +288,7 @@ const DataComponent = React.memo(
               id={inputId}
               name={formFieldName}
               value={value as string}
-              onChange={(e, { value: inputVal }) => {
+              onChange={(_, { value: inputVal }) => {
                 dispatch([
                   ActionTypes.setFormObjField,
                   { formFieldName, value: inputVal as string },
