@@ -1,4 +1,4 @@
-import { CreateExpUpdateFn } from "./utils";
+import { CreateExpUpdateFn } from "./experience-definition.utils";
 import { insertExperienceInGetExperiencesMiniQuery } from "../../state/resolvers/update-get-experiences-mini-query";
 
 // istanbul ignore next: trust apollo to act in good faith - will confirm

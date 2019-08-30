@@ -29,7 +29,7 @@ import {
   CreateEntriesErrorsFragment,
   CreateEntriesErrorsFragment_errors,
 } from "../../graphql/apollo-types/CreateEntriesErrorsFragment";
-import { LayoutDispatchType } from "../Layout/utils";
+import { LayoutDispatchType } from "../Layout/layout.utils";
 import { InMemoryCache } from "apollo-cache-inmemory";
 import { EntryFragment } from "../../graphql/apollo-types/EntryFragment";
 import { DataDefinitionFragment } from "../../graphql/apollo-types/DataDefinitionFragment";

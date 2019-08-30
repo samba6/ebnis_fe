@@ -1,7 +1,7 @@
 import React, { ComponentType } from "react";
 import { graphql, StaticQuery } from "gatsby";
 
-import { WithLogo } from "./utils";
+import { WithLogo } from "./header.utils";
 import {
   LogoImageQuery,
   LogoImageQuery_file_childImageSharp_fixed,

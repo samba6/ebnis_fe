@@ -17,7 +17,6 @@ import { SidebarHeader } from "../SidebarHeader/sidebar-header";
 import {
   ExperienceFragment_entries_edges_node,
   ExperienceFragment_entries_edges_node_dataObjects,
-  ExperienceFragment_dataDefinitions,
 } from "../../graphql/apollo-types/ExperienceFragment";
 import "./upload-unsaved.styles.scss";
 import { CSSTransition, TransitionGroup } from "react-transition-group";
@@ -367,9 +366,7 @@ function ExperienceComponent({
           <Entry
             key={entryId}
             entry={entry}
-            definitions={
-              experience.dataDefinitions as ExperienceFragment_dataDefinitions[]
-            }
+            experience={experience}
             entriesLen={unsavedEntries.length}
             index={index}
             id={`upload-unsaved-entry-${entryId}`}

@@ -28,7 +28,7 @@ export function updateCache({
   savedExperiencesMap,
   cache,
   client,
-}: Args) {
+}: UpdateCacheArgs) {
   const unsavedExperiences = handleUnsavedExperiences(unsavedExperiencesMap);
 
   const savedExperiences = handleSavedExperiences(savedExperiencesMap);
@@ -331,7 +331,7 @@ export interface SavedStatus {
   savedExperienceSavedEntries?: ExperienceFragment_entries_edges_node[];
 }
 
-interface Args {
+export interface UpdateCacheArgs {
   unsavedExperiencesMap: ExperiencesIdsToObjectMap;
   savedExperiencesMap: ExperiencesIdsToObjectMap;
   cache: InMemoryCache;

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { updateCache } from "../components/UploadUnsaved/update-cache";
-import { ExperiencesIdsToObjectMap } from "../components/UploadUnsaved/utils";
+import { ExperiencesIdsToObjectMap } from "../components/UploadUnsaved/upload-unsaved.utils";
 import {
   ExperienceFragment,
   ExperienceFragment_entries_edges_node,
@@ -24,6 +24,7 @@ import {
   QUERY_NAME_getExperience,
 } from "../state/resolvers";
 import { SAVED_AND_UNSAVED_EXPERIENCE_TYPENAME } from "../state/unsaved-resolvers";
+import { CreateEntriesErrorsFragment_errors } from "../graphql/apollo-types/CreateEntriesErrorsFragment";
 
 const mockDeleteIdsFromCache = deleteIdsFromCache as jest.Mock;
 
@@ -137,7 +138,9 @@ test("partially saved unsaved experience", () => {
         { id: "21" }, // did not save
         { id: "221" }, // saved, will be deleted from cache
       ] as ExperienceFragment_entries_edges_node[],
-      entriesErrors: { "21": "1" },
+      entriesErrors: {
+        "21": {} as CreateEntriesErrorsFragment_errors,
+      },
       savedEntries: [], // an unsaved experience never has savedEntries
       newlySavedEntries: [
         { id: "22" } as ExperienceFragment_entries_edges_node,
@@ -295,9 +298,11 @@ test("saved experience with unsaved entry not saved", () => {
       ],
       // so we have one entry we are unable to save,
       // outstanding unsaved count = 6
-      entriesErrors: { yy: "x" },
+      entriesErrors: {
+        yy: {} as CreateEntriesErrorsFragment_errors,
+      },
     },
-  } as ExperiencesIdsToObjectMap;
+  };
 
   const outstandingUnsavedCount = updateCache({
     unsavedExperiencesMap: {},

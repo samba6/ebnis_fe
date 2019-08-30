@@ -11,7 +11,6 @@ import {
   EditExperienceAction,
   EditExperienceActionType,
 } from "../EditExperience/edit-experience.utils";
-import { EntryAction } from "../Entry/entry.utils";
 
 export interface IMenuOptions {
   newEntry?: boolean;
@@ -107,6 +106,6 @@ export interface State {
     | [EditingState.editingExperience];
 }
 
-type Action = EditExperienceAction | ["show-editor"] | EntryAction;
+type Action = EditExperienceAction | ["show-editor"];
 
 export type DispatchType = Dispatch<Action>;

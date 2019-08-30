@@ -53,7 +53,7 @@ export function DateTimeField(props: Props) {
   const { className, name: compName, setValue, value } = props;
   const [datetime, setDatetime] = useState(value);
 
-  function setDateVal(a: string, date: FormObjVal) {
+  function setDateVal(_: string, date: FormObjVal) {
     const date1 = date as Date;
     setDateTimeVal({}, date1);
   }
@@ -102,7 +102,7 @@ export function DateTimeField(props: Props) {
             name={fieldNames.hr}
             options={HOUR_OPTIONS}
             defaultValue={datetime.getHours()}
-            onChange={function dropDownHrChanged(evt, data) {
+            onChange={function dropDownHrChanged(_, data) {
               setDateTimeVal({ h: data.value as number });
             }}
           />
@@ -118,7 +118,7 @@ export function DateTimeField(props: Props) {
             name={fieldNames.min}
             options={MINUTE_OPTIONS}
             defaultValue={datetime.getMinutes()}
-            onChange={function dropDownMinChanged(evt, data) {
+            onChange={function dropDownMinChanged(_, data) {
               setDateTimeVal({ m: data.value as number });
             }}
           />

@@ -109,7 +109,7 @@ export function DateField(props: Props) {
           basic={true}
           options={dayOptions}
           defaultValue={currDay}
-          onChange={async function(evt, data) {
+          onChange={async function(_, data) {
             const dataVal = data.value as number;
             setSelectedDay(dataVal);
             setDate({ d: dataVal });
@@ -132,7 +132,7 @@ export function DateField(props: Props) {
           compact={true}
           options={MONTHS_DROP_DOWN_OPTIONS}
           defaultValue={currMonth}
-          onChange={function(evt, data) {
+          onChange={function(_, data) {
             const dataVal = data.value as number;
             setSelectedMonth(dataVal);
             setDate({ m: dataVal });
@@ -155,7 +155,7 @@ export function DateField(props: Props) {
           name={fieldNames.year}
           options={years}
           defaultValue={currYr}
-          onChange={function(evt, data) {
+          onChange={function(_, data) {
             const dataVal = data.value as number;
             setSelectedYear(dataVal);
             setDate({ y: dataVal });

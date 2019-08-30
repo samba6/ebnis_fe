@@ -6,7 +6,10 @@ import { render } from "react-testing-library";
 import { Entry } from "../components/Entry/entry.component";
 import { Props, reducer, State } from "../components/Entry/entry.utils";
 import { EntryFragment } from "../graphql/apollo-types/EntryFragment";
-import { ExperienceFragment_dataDefinitions } from "../graphql/apollo-types/ExperienceFragment";
+import {
+  ExperienceFragment_dataDefinitions,
+  ExperienceFragment,
+} from "../graphql/apollo-types/ExperienceFragment";
 import { FieldType } from "../graphql/apollo-types/globalTypes";
 import {
   Props as EditEntryProps,
@@ -40,13 +43,15 @@ it("renders single line text", () => {
 
       entriesLen: 1,
 
-      definitions: [
-        {
-          id: "1",
-          name: "f1",
-          type: FieldType.SINGLE_LINE_TEXT,
-        },
-      ] as ExperienceFragment_dataDefinitions[],
+      experience: {
+        dataDefinitions: [
+          {
+            id: "1",
+            name: "f1",
+            type: FieldType.SINGLE_LINE_TEXT,
+          },
+        ] as ExperienceFragment_dataDefinitions[],
+      } as ExperienceFragment,
     },
   });
 
@@ -76,13 +81,15 @@ it("renders multi line text", () => {
     props: {
       entry,
 
-      definitions: [
-        {
-          id: "2",
-          name: "f2",
-          type: FieldType.MULTI_LINE_TEXT,
-        },
-      ] as ExperienceFragment_dataDefinitions[],
+      experience: {
+        dataDefinitions: [
+          {
+            id: "2",
+            name: "f2",
+            type: FieldType.MULTI_LINE_TEXT,
+          },
+        ] as ExperienceFragment_dataDefinitions[],
+      } as ExperienceFragment,
     },
   });
 
@@ -108,13 +115,15 @@ it("renders date field", () => {
     props: {
       entry,
 
-      definitions: [
-        {
-          id: "3",
-          name: "f3",
-          type: FieldType.DATE,
-        },
-      ] as ExperienceFragment_dataDefinitions[],
+      experience: {
+        dataDefinitions: [
+          {
+            id: "3",
+            name: "f3",
+            type: FieldType.DATE,
+          },
+        ] as ExperienceFragment_dataDefinitions[],
+      } as ExperienceFragment,
     },
   });
 
@@ -140,13 +149,15 @@ it("renders datetime field", () => {
     props: {
       entry,
 
-      definitions: [
-        {
-          id: "4",
-          name: "f4",
-          type: FieldType.DATETIME,
-        },
-      ] as ExperienceFragment_dataDefinitions[],
+      experience: {
+        dataDefinitions: [
+          {
+            id: "4",
+            name: "f4",
+            type: FieldType.DATETIME,
+          },
+        ] as ExperienceFragment_dataDefinitions[],
+      } as ExperienceFragment,
     },
   });
 
@@ -168,13 +179,15 @@ it("renders decimal field", () => {
     props: {
       entry,
 
-      definitions: [
-        {
-          id: "5",
-          name: "f5",
-          type: FieldType.DECIMAL,
-        },
-      ] as ExperienceFragment_dataDefinitions[],
+      experience: {
+        dataDefinitions: [
+          {
+            id: "5",
+            name: "f5",
+            type: FieldType.DECIMAL,
+          },
+        ] as ExperienceFragment_dataDefinitions[],
+      } as ExperienceFragment,
     },
   });
 
@@ -199,13 +212,15 @@ it("renders integer field and uses custom container id", () => {
       id: "custom",
       entry,
 
-      definitions: [
-        {
-          id: "6",
-          name: "f6",
-          type: FieldType.INTEGER,
-        },
-      ] as ExperienceFragment_dataDefinitions[],
+      experience: {
+        dataDefinitions: [
+          {
+            id: "6",
+            name: "f6",
+            type: FieldType.INTEGER,
+          },
+        ] as ExperienceFragment_dataDefinitions[],
+      } as ExperienceFragment,
     },
   });
 
