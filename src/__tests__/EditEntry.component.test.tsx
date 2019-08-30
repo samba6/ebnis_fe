@@ -23,6 +23,7 @@ import {
 jest.mock("../components/EditEntry/edit-entry.update.ts");
 import { editEntryUpdate } from "../components/EditEntry/edit-entry.update";
 import { DataObjectFragment } from "../graphql/apollo-types/DataObjectFragment";
+import { ExperienceFragment } from "../graphql/apollo-types/ExperienceFragment";
 const mockEditEntryUpdate = editEntryUpdate as jest.Mock;
 
 const EditEntryP = EditEntry as ComponentType<Partial<Props>>;
@@ -39,13 +40,15 @@ it("destroys the UI", () => {
         ],
       } as EntryFragment,
 
-      definitions: [
-        {
-          id: "a",
-          type: FieldType.INTEGER,
-          name: "f1",
-        },
-      ] as DataDefinitionFragment[],
+      experience: {
+        dataDefinitions: [
+          {
+            id: "a",
+            type: FieldType.INTEGER,
+            name: "f1",
+          },
+        ] as DataDefinitionFragment[],
+      } as ExperienceFragment,
     },
   });
 
@@ -67,13 +70,15 @@ describe("editing definitions not editing data", () => {
           dataObjects: [] as DataObjectFragment[],
         } as EntryFragment,
 
-        definitions: [
-          {
-            id: "a",
-            type: FieldType.INTEGER,
-            name: "f1",
-          },
-        ] as DataDefinitionFragment[],
+        experience: {
+          dataDefinitions: [
+            {
+              id: "a",
+              type: FieldType.INTEGER,
+              name: "f1",
+            },
+          ] as DataDefinitionFragment[],
+        } as ExperienceFragment,
       },
     });
 
@@ -93,7 +98,7 @@ describe("editing definitions not editing data", () => {
     });
 
     render(ui);
-    // const { debug } = render(ui);
+    //  const { debug } = render(ui);
 
     // idle
 
@@ -107,7 +112,9 @@ describe("editing definitions not editing data", () => {
     // editing.unchanged
 
     expect(makeDefinitionEdit("a")).toBeNull();
-    expect(makeDefinitionEdit("a")).toBeNull();
+    expect(makeDefinitionInput("a").classList).toContain(
+      "definition-input-unchanged",
+    );
 
     let $dismiss = makeDefinitionDismiss("a");
     $dismiss.click();
@@ -143,14 +150,16 @@ describe("editing definitions not editing data", () => {
     expect(makeDefinitionReset("a")).toBeNull();
 
     fillField(makeDefinitionInput("a"), "g1");
-
+    //debug();
     // editing.changed
     // we can reset by clicking reset button
-    //debug();
 
     makeDefinitionReset("a").click();
     // editing.unchanged
-
+    expect(makeDefinitionInput("a").classList).toContain(
+      "definition-input-unchanged",
+    );
+    expect(makeDefinitionInput("a").value).toEqual("f1");
     expect(makeDefinitionReset("a")).toBeNull();
 
     fillField(makeDefinitionInput("a"), "g1");
@@ -180,10 +189,10 @@ describe("editing definitions not editing data", () => {
     expect(makeDefinitionError("a")).not.toBeNull();
     expect($field.classList).toContain("error");
     fillField(makeDefinitionInput("a"), "g1  ");
-    expect($field.classList).not.toContain("success");
+    expect($field.classList).not.toContain("definition--success");
 
     $submit.click();
-    expect(document.getElementById("edit-entry-submitting")).not.toBeNull();
+    expect(document.getElementById("submitting-overlay")).not.toBeNull();
     // submitting
 
     await wait(() => {
@@ -201,10 +210,10 @@ describe("editing definitions not editing data", () => {
     });
 
     // back to idle, with success
-    expect($field.classList).toContain("success");
+    expect($field.classList).toContain("definition--success");
     expect($field.classList).not.toContain("error");
-    expect(document.getElementById("edit-entry-submitting")).toBeNull();
-    expect(makeDefinitionName("a").textContent).toEqual("g1");
+    expect(document.getElementById("submitting-overlay")).toBeNull();
+    expect(makeDefinitionName("a").value).toEqual("g1");
   });
 
   test("editing siblings, server error", async () => {
@@ -214,25 +223,27 @@ describe("editing definitions not editing data", () => {
           dataObjects: [] as DataObjectFragment[],
         } as EntryFragment,
 
-        definitions: [
-          {
-            id: "a",
-            type: FieldType.INTEGER,
-            name: "f1",
-          },
+        experience: {
+          dataDefinitions: [
+            {
+              id: "a",
+              type: FieldType.INTEGER,
+              name: "f1",
+            },
 
-          {
-            id: "b",
-            type: FieldType.DECIMAL,
-            name: "f2",
-          },
+            {
+              id: "b",
+              type: FieldType.DECIMAL,
+              name: "f2",
+            },
 
-          {
-            id: "c",
-            type: FieldType.INTEGER,
-            name: "f3",
-          },
-        ] as DataDefinitionFragment[],
+            {
+              id: "c",
+              type: FieldType.INTEGER,
+              name: "f3",
+            },
+          ] as DataDefinitionFragment[],
+        } as ExperienceFragment,
       },
     });
 
@@ -332,19 +343,18 @@ describe("editing definitions not editing data", () => {
     });
 
     expect($fieldC.classList).not.toContain("error");
-    expect($fieldC.classList).not.toContain("success");
-    expect($fieldA.classList).not.toContain("success");
+    expect($fieldA.classList).not.toContain("definition--success");
 
     fillField(makeDefinitionInput("a"), "g1");
     $submit.click();
 
     await wait(() => {
-      expect($fieldA.classList).toContain("success");
+      expect($fieldA.classList).toContain("definition--success");
     });
 
     expect($fieldA.classList).not.toContain("error");
     expect($fieldC.classList).toContain("error");
-    expect($fieldC.classList).not.toContain("success");
+    expect($fieldC.classList).not.toContain("definition--success");
   });
 });
 

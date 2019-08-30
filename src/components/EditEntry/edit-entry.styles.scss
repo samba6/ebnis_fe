@@ -1,0 +1,43 @@
+@import "../../styles/variables";
+@import "../../styles/extensions";
+
+.components-edit-entry {
+  .experience-title {
+    margin-bottom: -15px;
+    font-weight: 100;
+    font-size: 1rem;
+    margin-top: -5px;
+    max-width: 320px;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  .definition--success {
+    label,
+    input,
+    .input {
+      color: $success-color !important;
+      border-color: $success-color !important;
+    }
+
+    input,
+    .input {
+      opacity: 0.6 !important;
+    }
+  }
+
+  .idle-definition-name,
+  .definition-input {
+    margin-bottom: 10px;
+  }
+
+  .definition-dismiss,
+  .definition-reset {
+    margin-right: 3px !important;
+  }
+
+  .definition-input-unchanged {
+    opacity: 0.6;
+  }
+}

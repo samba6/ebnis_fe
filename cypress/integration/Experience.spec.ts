@@ -4,6 +4,7 @@ import { FieldType } from "../../src/graphql/apollo-types/globalTypes";
 import { ExperienceFragment } from "../../src/graphql/apollo-types/ExperienceFragment";
 import { createSavedExperience } from "../support/create-experience";
 import { createExperienceEntries } from "../support/create-entries";
+import { DataDefinitionFragment } from "../../src/graphql/apollo-types/DataDefinitionFragment";
 
 const title = "ex";
 
@@ -17,17 +18,8 @@ context("ExperienceComponent", () => {
     /**
      * Given there is an experience in the system with no entries
      */
-    let p = createSavedExperience({
-      title,
-      dataDefinitions: [
-        {
-          name: "Field integer",
-          type: FieldType.INTEGER,
-        },
-      ],
-    });
 
-    cy.wrap(p).then((experience: ExperienceFragment) => {
+    cy.wrap(createExperience()).then((experience: ExperienceFragment) => {
       cy.visit(makeExperienceRoute(experience.id));
 
       /**
@@ -51,7 +43,7 @@ context("ExperienceComponent", () => {
     /**
      * Given there is an experience in the system with entries
      */
-    let p = createEntry().then(([experience]) => {
+    let p = createEntry(createExperience()).then(([experience]) => {
       return experience;
     });
 
@@ -80,59 +72,81 @@ context("ExperienceComponent", () => {
 
 context.only("EditEntryComponent", () => {
   it("edits definitions while online", () => {
-    let p = createEntry();
+    let p = createEntry(createExperience(3));
 
     cy.wrap(p).then(([experience, entry]) => {
-      const dataObject = entry.dataObjects[0];
+      const [
+        definition1,
+        definition2,
+        definition3,
+      ] = experience.dataDefinitions.sort((a, b) => (a.name < b.name ? -1 : 1));
+
       cy.visit(makeExperienceRoute(experience.id));
-      const escapedEnryId = CSS.escape(entry.id);
-      cy.get(`#entry-${escapedEnryId}-menu-trigger`).click();
-      cy.get(`#entry-${escapedEnryId}-edit-trigger`).click();
+      const entryIdPrefix = `#entry-${CSS.escape(entry.id)}`;
+      cy.get(`${entryIdPrefix}-menu-trigger`).click();
+      cy.get(`${entryIdPrefix}-edit-trigger`).click();
 
-      cy.get(
-        `#edit-entry-definition-${dataObject.definitionId}-edit-btn`,
-      ).click();
+      cy.get("#edit-entry-experience-title").should(
+        "have.text",
+        experience.title,
+      );
 
-      cy.get(
-        `#edit-entry-definition-${dataObject.definitionId}-input`,
-      ).type('bb')
+      const definitionIdPrefix1 = `#edit-entry-definition-${definition1.id}`;
+      cy.get(definitionIdPrefix1).as("$field");
 
-      cy.get(
-        `#edit-entry-definition-${dataObject.definitionId}-submit`,
-      ).click();
+      cy.get(`${definitionIdPrefix1}-edit-btn`).click();
+      cy.get(`${definitionIdPrefix1}-input`).type("b");
+      cy.get(`${definitionIdPrefix1}-name`).should("not.exist");
 
-      expect(true).eq(true);
+      const definitionIdPrefix2 = `#edit-entry-definition-${definition2.id}`;
+
+      cy.get(`${definitionIdPrefix2}-edit-btn`).click();
+      cy.get(`${definitionIdPrefix2}-input`)
+        .clear()
+        .type(definition3.name);
+      cy.get(`${definitionIdPrefix2}-error`).should("not.exist");
+      cy.get(`.edit-entry-definition-submit`).click();
+
+      cy.get(`${definitionIdPrefix1}-name`).should("have.value", "a1b");
+      cy.get(`${definitionIdPrefix2}-error`).should("exist");
     });
   });
 });
 
-function createEntry() {
-  return createSavedExperience({
-    title,
-    dataDefinitions: [
-      {
-        name: "aa",
-        type: FieldType.INTEGER,
-      },
-    ],
-  }).then(experience => {
+function createEntry(experiencePromise: Promise<ExperienceFragment>) {
+  return experiencePromise.then(experience => {
     const id = experience.id;
-    const [fieldDefinition] = experience.dataDefinitions;
-    const { id: definitionId } = fieldDefinition;
+    const dataObjects = experience.dataDefinitions.map((d, index) => {
+      const { id: definitionId } = d as DataDefinitionFragment;
+      return {
+        definitionId,
+        data: `{"integer":${index + 1}}`,
+      };
+    });
 
     return createExperienceEntries([
       {
         experienceId: id,
         clientId: "1",
-        dataObjects: [
-          {
-            definitionId,
-            data: `{"integer":1}`,
-          },
-        ],
+        dataObjects,
       },
     ]).then(entries => {
       return [experience, entries[0]];
     });
+  });
+}
+
+function createExperience(howManyDefinitions: number = 1) {
+  const dataDefinitions = Array.from(
+    { length: howManyDefinitions },
+    (_, index) => ({
+      name: `a${index + 1}`,
+      type: FieldType.INTEGER,
+    }),
+  );
+
+  return createSavedExperience({
+    title,
+    dataDefinitions,
   });
 }

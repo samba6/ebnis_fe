@@ -1,67 +1,42 @@
 import { EntryFragment } from "../../graphql/apollo-types/EntryFragment";
 import { DataDefinitionFragment } from "../../graphql/apollo-types/DataDefinitionFragment";
-import { Dispatch, Reducer, createContext } from "react";
+import { Dispatch, Reducer } from "react";
 import immer from "immer";
 import { UpdateDefinitionsMutationProps } from "../../graphql/update-definitions.mutation";
-import { DataObjectFragment } from "../../graphql/apollo-types/DataObjectFragment";
 import {
   UpdateDefinitions_updateDefinitions,
   UpdateDefinitions_updateDefinitions_definitions,
   UpdateDefinitions_updateDefinitions_definitions_errors_errors,
 } from "../../graphql/apollo-types/UpdateDefinitions";
+import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragment";
 
 export enum ActionTypes {
   EDIT_BTN_CLICKED = "@component/edit-entry/edit-btn-clicked",
   DEFINITION_NAME_CHANGED = "@component/edit-entry/definition-name-changed",
   UNDO_DEFINITION_EDITS = "@component/edit-entry/undo-definition-edits",
   STOP_DEFINITION_EDIT = "@component/edit-entry/stop-definition-edit",
-  TITLE_EDIT_SUBMIT = "@component/edit-entry/title-submit",
+  DEFINITION_SUBMITTED = "@component/edit-entry/title-submit",
   DESTROYED = "@component/edit-entry/destroy",
   SUBMISSION_RESULT = "@component/edit-entry/submission-result",
   DEFINITION_FORM_ERRORS = "@component/edit-entry/definition-form-errors",
 }
 
-function defaultsFromProps(props: Props) {
-  const { entry, definitions } = props;
-
-  const objectsMap = (entry.dataObjects as DataObjectFragment[]).reduce(
-    (acc, dataObject) => {
-      acc[dataObject.definitionId] = dataObject;
-      return acc;
-    },
-    {} as { [k: string]: DataObjectFragment },
-  );
-
-  const [definitionsIds, definitionsDefaultsMap] = definitions.reduce(
-    ([ids, map], definition) => {
-      ids.push(definition.id);
-      map[definition.id] = {
-        definition,
-        dataObject: objectsMap[definition.id],
-      };
-
-      return [ids, map];
-    },
-    [[], {}] as [string[], DefinitionsDefaultsMap],
-  );
-
-  return {
-    definitionsIds,
-    definitionsDefaultsMap,
-  };
-}
-
 export const initStateFromProps = (props: Props): State => {
-  const { definitions } = props;
+  const definitions = props.experience
+    .dataDefinitions as DataDefinitionFragment[];
 
   const initialDefinitionsStates = definitions.reduce(
     (acc, definition) => {
       acc[definition.id] = {
-        state: {
-          value: "idle",
+        value: "idle",
+
+        idle: {
+          context: {},
         },
 
-        formValue: definition.name,
+        context: {
+          defaults: definition,
+        },
       };
 
       return acc;
@@ -70,7 +45,7 @@ export const initStateFromProps = (props: Props): State => {
   );
 
   return {
-    ...defaultsFromProps(props),
+    definitionsIds: definitions.map(def => (def as DataDefinitionFragment).id),
     definitionsStates: initialDefinitionsStates,
     value: "nothing",
     editingMultipleDefinitions: false,
@@ -84,63 +59,53 @@ export const reducer: Reducer<State, Action> = (
   return immer(prevState, proxy => {
     switch (type) {
       case ActionTypes.EDIT_BTN_CLICKED:
+        {
+          const { id } = payload as IdString;
+          setDefinitionEditingUnchangedState(proxy, id);
+        }
+        break;
+
       case ActionTypes.UNDO_DEFINITION_EDITS:
         {
           const { id } = payload as IdString;
-
-          proxy.definitionsStates[id].state = {
-            value: "editing",
-            editing: {
-              value: "unchanged",
-            },
-          };
+          setDefinitionEditingUnchangedState(proxy, id);
+          setEditingMultipleDefinitionsStates(proxy.definitionsStates);
         }
-
         break;
 
       case ActionTypes.DEFINITION_NAME_CHANGED:
         {
           const { id, formValue } = payload as DefinitionNameChangedPayload;
-          const definitionState = proxy.definitionsStates[id];
+          const state = proxy.definitionsStates[id];
+          const { name: defaultName } = state.context.defaults;
+          const editingState = state as DefinitionEditingState;
 
-          const { definitionsDefaultsMap } = proxy;
-          const { definition } = definitionsDefaultsMap[id];
-
-          let state: DefinitionState["state"];
-
-          if (definition.name === formValue.trim()) {
-            state = {
-              value: "editing",
-
-              editing: {
-                value: "unchanged",
-              },
-            };
+          if (defaultName === formValue.trim()) {
+            setDefinitionEditingUnchangedState(proxy, id);
           } else {
-            state = {
-              value: "editing",
+            state.value = "editing";
+            editingState.editing = {
+              value: "changed",
 
-              editing: {
-                value: "changed",
+              context: {
+                formValue,
+              },
 
-                changed: {
-                  form: {
-                    value: "regular",
-                  },
+              changed: {
+                form: {
+                  value: "regular",
                 },
               },
-            } as DefinitionState["state"];
+            };
 
             //if (!proxy.editingData) {
-            ((state as DefinitionEditingState)
-              .editing as DefinitionChangedState).changed.notEditingData = {
+            (editingState.editing as DefinitionChangedState).changed.notEditingData = {
               value: "notEditingSiblings",
             };
+
             //}
           }
 
-          definitionState.state = state;
-          definitionState.formValue = formValue;
           setEditingMultipleDefinitionsStates(proxy.definitionsStates);
         }
 
@@ -151,16 +116,14 @@ export const reducer: Reducer<State, Action> = (
           const { id } = payload as IdString;
           const { definitionsStates } = proxy;
 
-          definitionsStates[id].state = {
-            value: "idle",
-          };
+          definitionsStates[id].value = "idle";
 
           setEditingMultipleDefinitionsStates(definitionsStates);
         }
 
         break;
 
-      case ActionTypes.TITLE_EDIT_SUBMIT:
+      case ActionTypes.DEFINITION_SUBMITTED:
         {
           proxy.value = "submitting";
         }
@@ -173,7 +136,7 @@ export const reducer: Reducer<State, Action> = (
             definitions,
           } = payload as UpdateDefinitions_updateDefinitions;
 
-          const { definitionsStates , definitionsDefaultsMap} = proxy;
+          const { definitionsStates } = proxy;
           proxy.value = "nothing";
 
           definitions.forEach(def => {
@@ -184,23 +147,19 @@ export const reducer: Reducer<State, Action> = (
 
             if (definition) {
               const { id, name } = definition;
-              definitionsDefaultsMap[id].definition.name = name
-              const stateInfo = definitionsStates[id];
+              const state = definitionsStates[id];
+              state.context.defaults.name = name;
 
-              stateInfo.state = {
-                value: "idle",
-                idle: {
-                  value: "anyEditSuccessful",
-                },
-              };
+              state.value = "idle";
+
+              (state as DefinitionIdleState).idle.context.anyEditSuccess = true;
 
               return;
             }
 
             if (errors) {
               const { id, ...errorsContext } = errors;
-              const state = definitionsStates[id]
-                .state as DefinitionEditingState;
+              const state = definitionsStates[id] as DefinitionEditingState;
 
               (state.editing as DefinitionChangedState).changed.form = {
                 value: "serverErrors",
@@ -222,7 +181,7 @@ export const reducer: Reducer<State, Action> = (
           for (const id of ids) {
             const definitionState = proxy.definitionsStates[id];
 
-            ((definitionState.state as DefinitionEditingState)
+            ((definitionState as DefinitionEditingState)
               .editing as DefinitionChangedState).changed.form = {
               value: "formErrors",
               context: {
@@ -236,13 +195,27 @@ export const reducer: Reducer<State, Action> = (
   });
 };
 
+function setDefinitionEditingUnchangedState(proxy: State, id: string) {
+  const { definitionsStates } = proxy;
+  const state = definitionsStates[id];
+  state.value = "editing";
+  (state as DefinitionEditingState).editing = {
+    value: "unchanged",
+
+    context: {
+      formValue: state.context.defaults.name,
+    },
+  };
+  proxy.definitionsStates[id] = { ...definitionsStates[id], ...state };
+}
+
 function setEditingMultipleDefinitionsStates(
   definitionsStates: DefinitionsStates,
 ) {
   let editCount = 0;
   const statesToChange: DefinitionChangedState["changed"][] = [];
 
-  for (const { state } of Object.values(definitionsStates)) {
+  for (const state of Object.values(definitionsStates)) {
     if (state.value === "editing" && state.editing.value === "changed") {
       ++editCount;
       statesToChange.push(state.editing.changed);
@@ -275,19 +248,12 @@ function setEditingMultipleDefinitionsStates(
   }
 }
 
-export const DefinitionsContext = createContext<DefinitionsContextValues>(
-  {} as DefinitionsContextValues,
-);
-
-export const DefinitionsContextProvider = DefinitionsContext.Provider;
-
 ////////////////////////// TYPES ////////////////////////////
 
 export interface State {
   readonly definitionsStates: DefinitionsStates;
   readonly value: "nothing" | "submitting";
   readonly editingData?: boolean;
-  readonly definitionsDefaultsMap: DefinitionsDefaultsMap;
   readonly definitionsIds: string[];
   readonly editingMultipleDefinitions: boolean;
 }
@@ -309,7 +275,7 @@ export type Action =
       id: string;
     }
   | {
-      type: ActionTypes.TITLE_EDIT_SUBMIT;
+      type: ActionTypes.DEFINITION_SUBMITTED;
     }
   | {
       type: ActionTypes.DESTROYED;
@@ -332,18 +298,11 @@ interface DefinitionFormErrorsPayload {
 
 export interface OwnProps {
   entry: EntryFragment;
-  definitions: DataDefinitionFragment[];
+  experience: ExperienceFragment;
   dispatch: DispatchType;
 }
 
 export interface Props extends OwnProps, UpdateDefinitionsMutationProps {}
-
-export interface DefinitionsDefaultsMap {
-  [k: string]: {
-    definition: DataDefinitionFragment;
-    dataObject: DataObjectFragment;
-  };
-}
 
 export type DefinitionFormValue = Pick<
   DataDefinitionFragment,
@@ -356,27 +315,38 @@ export interface FormValues {
 
 export type DispatchType = Dispatch<Action>;
 
-export interface DefinitionState {
-  state:
-    | {
-        value: "idle";
-        idle?: {
-          value: "anyEditSuccessful";
-        };
-      }
-    | DefinitionEditingState;
+export interface DefinitionsStates {
+  [k: string]: DefinitionState;
+}
 
-  formValue: string;
+export type DefinitionState = {
+  context: {
+    defaults: DataDefinitionFragment;
+  };
+} & (DefinitionIdleState | DefinitionEditingState);
+
+interface DefinitionIdleState {
+  value: "idle";
+
+  idle: {
+    context: {
+      anyEditSuccess?: true;
+    };
+  };
 }
 
 interface DefinitionEditingState {
   value: "editing";
 
-  editing:
+  editing: (
     | {
         value: "unchanged";
       }
-    | DefinitionChangedState;
+    | DefinitionChangedState) & {
+    context: {
+      formValue: string;
+    };
+  };
 }
 
 export interface DefinitionChangedState {
@@ -418,15 +388,6 @@ export interface DefinitionChangedState {
   };
 }
 
-export interface DefinitionsStates {
-  [k: string]: DefinitionState;
-}
-
 interface IdString {
   id: string;
-}
-
-interface DefinitionsContextValues extends UpdateDefinitionsMutationProps {
-  definitionsDefaultsMap: DefinitionsDefaultsMap;
-  dispatch: DispatchType;
 }

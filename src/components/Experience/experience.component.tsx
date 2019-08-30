@@ -17,7 +17,6 @@ import {
   ExperienceFragment_entries,
   ExperienceFragment_entries_edges,
   ExperienceFragment_entries_edges_node,
-  ExperienceFragment_dataDefinitions,
   ExperienceFragment,
 } from "../../graphql/apollo-types/ExperienceFragment";
 import makeClassNames from "classnames";
@@ -81,9 +80,7 @@ export function Experience(props: Props) {
             <Entry
               key={entryNode.id}
               entry={entryNode}
-              definitions={
-                experience.dataDefinitions as ExperienceFragment_dataDefinitions[]
-              }
+              experience={experience}
               entriesLen={nodesLen}
               index={index}
               {...entryProps}

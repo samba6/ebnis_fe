@@ -1,12 +1,10 @@
-import React, { useReducer, useContext } from "react";
+import React, { useReducer } from "react";
 import {
   Props,
   ActionTypes,
   initStateFromProps,
   reducer,
   DefinitionState,
-  DefinitionsContextProvider,
-  DefinitionsContext,
   DispatchType,
   DefinitionChangedState,
   DefinitionsStates,
@@ -21,76 +19,80 @@ import { editEntryUpdate } from "./edit-entry.update";
 import { FormCtrlError } from "../FormCtrlError/form-ctrl-error.component";
 import { UpdateDefinitionsMutationFn } from "../../graphql/update-definitions.mutation";
 import { UpdateDefinitionInput } from "../../graphql/apollo-types/globalTypes";
+import "./edit-entry.styles.scss";
+import { SubmittingOverlay } from "../SubmittingOverlay/submitting-overlay";
 
 export function EditEntry(props: Props) {
-  const { updateDefinitionsOnline, dispatch: parentDispatch } = props;
+  const {
+    updateDefinitionsOnline,
+    dispatch: parentDispatch,
+    experience,
+  } = props;
 
   const [state, dispatch] = useReducer(reducer, props, initStateFromProps);
-  const { definitionsDefaultsMap, definitionsIds } = state;
+  const { definitionsIds } = state;
 
   return (
-    <Modal
-      id="edit-entry-modal"
-      open={true}
-      closeIcon={true}
-      onClose={() => {
-        parentDispatch({
-          type: ActionTypes.DESTROYED,
-        });
-      }}
-      dimmer="inverted"
-      closeOnDimmerClick={false}
-    >
-      <Modal.Header>Edit Entry</Modal.Header>
-      {state.value === "submitting" && (
-        <span id="edit-entry-submitting">Submitting</span>
-      )}
+    <>
+      {state.value === "submitting" && <SubmittingOverlay />}
 
-      <Form>
-        <DefinitionsContextProvider
-          value={{
-            dispatch,
-            definitionsDefaultsMap,
-            updateDefinitionsOnline,
-          }}
-        >
-          {definitionsIds.map(id => {
-            return (
-              <DefinitionComponent
-                key={id}
-                id={id}
-                stateContext={state.definitionsStates[id]}
-                allDefinitionsStates={state.definitionsStates}
-              />
-            );
-          })}
-        </DefinitionsContextProvider>
-      </Form>
-    </Modal>
+      <Modal
+        id="edit-entry-modal"
+        open={true}
+        closeIcon={true}
+        onClose={() => {
+          parentDispatch({
+            type: ActionTypes.DESTROYED,
+          });
+        }}
+        dimmer="inverted"
+        closeOnDimmerClick={false}
+        className="components-edit-entry"
+      >
+        <Modal.Header>
+          <div> Edit Entry </div>
+
+          <div className="experience-title" id="edit-entry-experience-title">
+            {experience.title}
+          </div>
+        </Modal.Header>
+
+        <Modal.Content>
+          <Form>
+            {definitionsIds.map(id => {
+              return (
+                <DefinitionComponent
+                  dispatch={dispatch}
+                  key={id}
+                  id={id}
+                  state={state.definitionsStates[id]}
+                  onSubmit={submitDefinitions({
+                    dispatch,
+                    updateDefinitionsOnline,
+                    allDefinitionsStates: state.definitionsStates,
+                  })}
+                />
+              );
+            })}
+          </Form>
+        </Modal.Content>
+      </Modal>
+    </>
   );
 }
 
 interface DefinitionComponentProps {
-  stateContext: DefinitionState;
+  state: DefinitionState;
   id: string;
-  allDefinitionsStates: DefinitionsStates;
+  onSubmit: () => void;
+  dispatch: DispatchType;
 }
 
 function DefinitionComponent(props: DefinitionComponentProps) {
-  const { id, stateContext } = props;
-  const { state } = stateContext;
-
-  const {
-    dispatch,
-    definitionsDefaultsMap,
-    updateDefinitionsOnline,
-  } = useContext(DefinitionsContext);
-
+  const { id, state, onSubmit, dispatch } = props;
   const idPrefix = `edit-entry-definition-${id}`;
 
-  const {
-    definition: { type, name: defaultFormValue },
-  } = definitionsDefaultsMap[id];
+  const { type, name: defaultFormValue } = state.context.defaults;
   const typeText = `[${type}]`;
 
   const error = getDefinitionFormError(state);
@@ -99,21 +101,26 @@ function DefinitionComponent(props: DefinitionComponentProps) {
     <Form.Field
       id={idPrefix}
       className={makeClassNames({
-        success: !!(
-          state.value === "idle" &&
-          state.idle &&
-          state.idle.value === "anyEditSuccessful"
+        "definition--success": !!(
+          state.value === "idle" && state.idle.context.anyEditSuccess
         ),
       })}
       error={!!error}
     >
       {state.value === "idle" && (
-        <div>
-          <span>{typeText}</span>
+        <>
+          <label>{typeText}</label>
 
-          <span id={`${idPrefix}-name`}>{defaultFormValue}</span>
+          <Input
+            id={`${idPrefix}-name`}
+            value={defaultFormValue}
+            disabled={true}
+            className="idle-definition-name"
+          />
 
           <Button
+            primary={true}
+            compact={true}
             type="button"
             id={`${idPrefix}-edit-btn`}
             onClick={() =>
@@ -125,75 +132,88 @@ function DefinitionComponent(props: DefinitionComponentProps) {
           >
             Edit
           </Button>
-        </div>
+        </>
       )}
 
       {state.value === "editing" && (
         <>
-          <div>
-            <label htmlFor={`${idPrefix}-input`}>{typeText}</label>
+          <label htmlFor={`${idPrefix}-input`}>{typeText}</label>
 
-            <Input
-              id={`${idPrefix}-input`}
-              name={`${idPrefix}-input`}
-              defaultValue={defaultFormValue}
-              onChange={(_, { value }) => {
-                dispatch({
-                  type: ActionTypes.DEFINITION_NAME_CHANGED,
-                  id,
-                  formValue: value,
-                });
-              }}
-              autoComplete='off'
-            />
-          </div>
-
-          <Button
-            type="button"
-            id={`${idPrefix}-dismiss`}
-            onClick={() => {
+          <Input
+            id={`${idPrefix}-input`}
+            name={`${idPrefix}-input`}
+            value={state.editing.context.formValue}
+            onChange={(_, { value }) => {
               dispatch({
-                type: ActionTypes.STOP_DEFINITION_EDIT,
+                type: ActionTypes.DEFINITION_NAME_CHANGED,
                 id,
+                formValue: value,
               });
             }}
+            autoComplete="off"
+            className="definition-input"
           >
-            Dismiss
-          </Button>
+            <input
+              className={makeClassNames({
+                "definition-input-unchanged":
+                  state.editing.value === "unchanged",
+              })}
+            />
+          </Input>
 
-          {state.editing.value === "changed" && (
-            <>
-              <Button
-                type="button"
-                id={`${idPrefix}-reset`}
-                onClick={() => {
-                  dispatch({
-                    type: ActionTypes.UNDO_DEFINITION_EDITS,
-                    id,
-                  });
-                }}
-              >
-                Reset
-              </Button>
+          <Button.Group>
+            <Button
+              primary={true}
+              compact={true}
+              type="button"
+              id={`${idPrefix}-dismiss`}
+              onClick={() => {
+                dispatch({
+                  type: ActionTypes.STOP_DEFINITION_EDIT,
+                  id,
+                });
+              }}
+              className="definition-dismiss"
+            >
+              Dismiss
+            </Button>
 
-              {shouldShowDefinitionSubmitBtn(state.editing.changed) && (
+            {state.editing.value === "changed" && (
+              <>
                 <Button
-                  type="submit"
-                  id={`${idPrefix}-submit`}
-                  onClick={submitDefinitions({
-                    dispatch,
-                    updateDefinitionsOnline,
-                    allDefinitionsStates: props.allDefinitionsStates,
-                  })}
+                  negative={true}
+                  compact={true}
+                  type="button"
+                  id={`${idPrefix}-reset`}
+                  onClick={() => {
+                    dispatch({
+                      type: ActionTypes.UNDO_DEFINITION_EDITS,
+                      id,
+                    });
+                  }}
+                  className="definition-reset"
                 >
-                  Submit
+                  Reset
                 </Button>
-              )}
 
-              {!!error && (
-                <FormCtrlError id={`${idPrefix}-error`}>{error}</FormCtrlError>
-              )}
-            </>
+                {shouldShowDefinitionSubmitBtn(state.editing.changed) && (
+                  <Button
+                    positive={true}
+                    compact={true}
+                    type="submit"
+                    id={`${idPrefix}-submit`}
+                    onClick={onSubmit}
+                    className="edit-entry-definition-submit"
+                  >
+                    Submit
+                  </Button>
+                )}
+              </>
+            )}
+          </Button.Group>
+
+          {!!error && (
+            <FormCtrlError id={`${idPrefix}-error`}>{error}</FormCtrlError>
           )}
         </>
       )}
@@ -214,10 +234,9 @@ function submitDefinitions(props: SubmitDefinitionsArgs) {
     const input: UpdateDefinitionInput[] = [];
     const withErrors: string[] = [];
 
-    for (const [id, stateData] of Object.entries(allDefinitionsStates)) {
-      const { state, formValue } = stateData;
+    for (const [id, state] of Object.entries(allDefinitionsStates)) {
       if (state.value === "editing" && state.editing.value === "changed") {
-        const name = formValue.trim();
+        const name = state.editing.context.formValue.trim();
 
         if (name.length < 2) {
           withErrors.push(id);
@@ -240,7 +259,7 @@ function submitDefinitions(props: SubmitDefinitionsArgs) {
     }
 
     dispatch({
-      type: ActionTypes.TITLE_EDIT_SUBMIT,
+      type: ActionTypes.DEFINITION_SUBMITTED,
     });
 
     const result = await updateDefinitionsOnline({
@@ -285,7 +304,7 @@ function shouldShowDefinitionSubmitBtn(
   return false;
 }
 
-function getDefinitionFormError(state: DefinitionState["state"]) {
+function getDefinitionFormError(state: DefinitionState) {
   if (state.value === "editing" && state.editing.value === "changed") {
     const { form } = state.editing.changed;
 

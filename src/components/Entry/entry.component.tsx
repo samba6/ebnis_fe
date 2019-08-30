@@ -1,5 +1,8 @@
 import React, { useMemo, CSSProperties, useReducer } from "react";
-import { displayFieldType, formatDatetime } from "../Experience/experience.utils";
+import {
+  displayFieldType,
+  formatDatetime,
+} from "../Experience/experience.utils";
 import "./entry.styles.scss";
 import makeClassNames from "classnames";
 import {
@@ -14,9 +17,11 @@ import {
   EntryFragment,
 } from "../../graphql/apollo-types/EntryFragment";
 import { EditEntry } from "../EditEntry/edit-entry";
+import { DataDefinitionFragment } from "../../graphql/apollo-types/DataDefinitionFragment";
 
 export function Entry(props: Props) {
-  const { entry, definitions, className = "", ...fieldProps } = props;
+  const { entry, experience, className = "", ...fieldProps } = props;
+  const definitions = experience.dataDefinitions as DataDefinitionFragment[];
 
   const [state, dispatch] = useReducer(reducer, {
     stateValue: "idle",
@@ -46,11 +51,7 @@ export function Entry(props: Props) {
       id={containerId}
     >
       {state.stateValue === "editing" && (
-        <EditEntry
-          entry={entry}
-          definitions={definitions}
-          dispatch={dispatch}
-        />
+        <EditEntry entry={entry} experience={experience} dispatch={dispatch} />
       )}
 
       {dataObjects.map((dataObject, index) => {
