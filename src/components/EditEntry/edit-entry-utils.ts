@@ -1,6 +1,6 @@
 import { EntryFragment } from "../../graphql/apollo-types/EntryFragment";
 import { DataDefinitionFragment } from "../../graphql/apollo-types/DataDefinitionFragment";
-import { Dispatch, Reducer } from "react";
+import { Dispatch, Reducer, createContext } from "react";
 import immer from "immer";
 import { UpdateDefinitionsMutationProps } from "../../graphql/update-definitions.mutation";
 import {
@@ -316,7 +316,14 @@ function toFormObj(val: string) {
   return v;
 }
 
+export const EditEnryContext = createContext<ContextValue>({} as ContextValue);
+
 ////////////////////////// TYPES ////////////////////////////
+
+interface ContextValue {
+  dispatch: DispatchType;
+  editEntryUpdate: () => void;
+}
 
 export interface State {
   readonly dataStates: DataStates;
@@ -396,6 +403,7 @@ export interface OwnProps {
   entry: EntryFragment;
   experience: ExperienceFragment;
   dispatch: DispatchType;
+  editEntryUpdate: () => void;
 }
 
 export interface Props extends OwnProps, UpdateDefinitionsMutationProps {}

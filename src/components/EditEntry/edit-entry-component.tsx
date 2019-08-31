@@ -1,4 +1,4 @@
-import React, { useReducer } from "react";
+import React, { useReducer, useContext } from "react";
 import {
   Props,
   ActionTypes,
@@ -9,6 +9,7 @@ import {
   DefinitionsStates,
   DataState,
   EditingMultipleDefinitionsState,
+  EditEnryContext,
 } from "./edit-entry-utils";
 import Form from "semantic-ui-react/dist/commonjs/collections/Form";
 import Button from "semantic-ui-react/dist/commonjs/elements/Button";
@@ -16,7 +17,6 @@ import Input from "semantic-ui-react/dist/commonjs/elements/Input";
 import Modal from "semantic-ui-react/dist/commonjs/modules/Modal";
 import makeClassNames from "classnames";
 import { UpdateDefinitions_updateDefinitions } from "../../graphql/apollo-types/UpdateDefinitions";
-import { editEntryUpdate } from "./edit-entry.update";
 import { FormCtrlError } from "../FormCtrlError/form-ctrl-error.component";
 import { UpdateDefinitionsMutationFn } from "../../graphql/update-definitions.mutation";
 import { UpdateDefinitionInput } from "../../graphql/apollo-types/globalTypes";
@@ -32,6 +32,7 @@ export function EditEntry(props: Props) {
     updateDefinitionsOnline,
     dispatch: parentDispatch,
     experience,
+    editEntryUpdate,
   } = props;
 
   const [state, dispatch] = useReducer(reducer, props, initStateFromProps);
@@ -45,7 +46,12 @@ export function EditEntry(props: Props) {
   } = state;
 
   return (
-    <>
+    <EditEnryContext.Provider
+      value={{
+        editEntryUpdate,
+        dispatch,
+      }}
+    >
       {commonState.value === "submitting" && <SubmittingOverlay />}
 
       <Modal
@@ -84,6 +90,7 @@ export function EditEntry(props: Props) {
                     dispatch,
                     updateDefinitionsOnline,
                     allDefinitionsStates: state.definitionsStates,
+                    editEntryUpdate,
                   })}
                   shouldSubmit={getIdOfSubmittingDefinition(
                     id,
@@ -97,14 +104,7 @@ export function EditEntry(props: Props) {
             {dataIds.map(id => {
               const dataState = state.dataStates[id];
 
-              return (
-                <DataComponent
-                  dispatch={dispatch}
-                  key={id}
-                  state={dataState}
-                  id={id}
-                />
-              );
+              return <DataComponent key={id} state={dataState} id={id} />;
             })}
 
             {editingData && (
@@ -121,12 +121,14 @@ export function EditEntry(props: Props) {
           </Form>
         </Modal.Content>
       </Modal>
-    </>
+    </EditEnryContext.Provider>
   );
 }
 
 function DataComponent(props: DataComponentProps) {
-  const { id, state, dispatch } = props;
+  const { id, state } = props;
+
+  const { dispatch } = useContext(EditEnryContext);
 
   const defautlVal = (state.value === "unchanged"
     ? state.context.defaults.formObj
@@ -318,7 +320,12 @@ function DefinitionComponent(props: DefinitionComponentProps) {
 
 function submitDefinitions(props: SubmitDefinitionsArgs) {
   return async function submitDefinitionInner() {
-    const { dispatch, updateDefinitionsOnline, allDefinitionsStates } = props;
+    const {
+      dispatch,
+      updateDefinitionsOnline,
+      allDefinitionsStates,
+      editEntryUpdate,
+    } = props;
 
     const input: UpdateDefinitionInput[] = [];
     const withErrors: string[] = [];
@@ -422,6 +429,7 @@ interface SubmitDefinitionsArgs {
   dispatch: DispatchType;
   updateDefinitionsOnline: UpdateDefinitionsMutationFn;
   allDefinitionsStates: DefinitionsStates;
+  editEntryUpdate: () => void;
 }
 
 interface DefinitionComponentProps {
@@ -433,7 +441,6 @@ interface DefinitionComponentProps {
 }
 
 interface DataComponentProps {
-  dispatch: DispatchType;
   id: string;
   state: DataState;
 }

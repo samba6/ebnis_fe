@@ -17,16 +17,19 @@ import {
   UpdateDefinitions_updateDefinitions,
   UpdateDefinitions_updateDefinitions_definitions,
 } from "../graphql/apollo-types/UpdateDefinitions";
+import { Props as DateTimeProps } from "../components/DateTimeField/date-time-field.utils";
+import { DataObjectFragment } from "../graphql/apollo-types/DataObjectFragment";
+import { ExperienceFragment } from "../graphql/apollo-types/ExperienceFragment";
 
 ////////////////////////// MOCKS ////////////////////////////
 
-jest.mock("../components/EditEntry/edit-entry.update.ts");
-import { editEntryUpdate } from "../components/EditEntry/edit-entry.update";
-import { DataObjectFragment } from "../graphql/apollo-types/DataObjectFragment";
-import { ExperienceFragment } from "../graphql/apollo-types/ExperienceFragment";
-const mockEditEntryUpdate = editEntryUpdate as jest.Mock;
+jest.mock("../components/DateTimeField/date-time-field.component", () => ({
+  DateTimeField: MockDateTimeField,
+}));
 
-const EditEntryP = EditEntry as ComponentType<Partial<Props>>;
+jest.mock("../components/DateField/date-field.component", () => ({
+  DateField: MockDateTimeField,
+}));
 
 it("destroys the UI", () => {
   const { ui, mockParentDispatch } = makeComp({
@@ -59,7 +62,7 @@ it("destroys the UI", () => {
 
 describe("editing definitions not editing data", () => {
   test("no siblings, form errors, server success", async () => {
-    const { ui, mockUpdateDefinitionsOnline } = makeComp({
+    const { ui, mockUpdateDefinitionsOnline, mockEditEntryUpdate } = makeComp({
       props: {
         entry: {
           dataObjects: [] as DataObjectFragment[],
@@ -352,44 +355,44 @@ describe("editing definitions not editing data", () => {
     expect($fieldC.classList).not.toContain("definition--success");
   });
 
-  test("editing data, editing definitions", async () => {
+  test.only("editing data, editing definitions", async () => {
     const { ui } = makeComp({
       props: {
         entry: {
           dataObjects: [
             {
-              id: "da",
-              definitionId: "a",
+              id: "int",
+              definitionId: "int",
               data: `{"integer":1}`,
             },
 
             {
-              id: "db",
-              definitionId: "b",
+              id: "dec",
+              definitionId: "dec",
               data: `{"decimal":0.1}`,
             },
 
             {
-              id: "dc",
-              definitionId: "c",
+              id: "date",
+              definitionId: "date",
               data: `{"date":"2017-01-05"}`,
             },
 
             {
-              id: "dd",
-              definitionId: "d",
+              id: "time",
+              definitionId: "time",
               data: `{"datetime":"2018-03-06"}`,
             },
 
             {
-              id: "de",
-              definitionId: "e",
+              id: "text",
+              definitionId: "text",
               data: `{"single_line_text":"e"}`,
             },
 
             {
-              id: "df",
-              definitionId: "f",
+              id: "multi",
+              definitionId: "multi",
               data: `{"multi_line_text":"f"}`,
             },
           ] as DataObjectFragment[],
@@ -398,37 +401,37 @@ describe("editing definitions not editing data", () => {
         experience: {
           dataDefinitions: [
             {
-              id: "a",
+              id: "int",
               type: FieldType.INTEGER,
               name: "f1",
             },
 
             {
-              id: "b",
+              id: "dec",
               type: FieldType.DECIMAL,
               name: "f2",
             },
 
             {
-              id: "c",
+              id: "date",
               type: FieldType.DATE,
               name: "f3",
             },
 
             {
-              id: "d",
+              id: "time",
               type: FieldType.DATETIME,
               name: "f4",
             },
 
             {
-              id: "e",
+              id: "text",
               type: FieldType.SINGLE_LINE_TEXT,
               name: "f5",
             },
 
             {
-              id: "f",
+              id: "multi",
               type: FieldType.MULTI_LINE_TEXT,
               name: "f6",
             },
@@ -439,36 +442,40 @@ describe("editing definitions not editing data", () => {
 
     const {} = render(ui);
 
-    makeDefinitionEdit("a").click();
-    fillField(makeDefinitionInput("a"), "g1");
+    makeDefinitionEdit("int").click();
+    fillField(makeDefinitionInput("int"), "g1");
     // global state.notEdiitngData
-    expect(makeDefinitionSubmit("a")).not.toBeNull();
+    expect(makeDefinitionSubmit("int")).not.toBeNull();
 
     expect(makeSubmit()).toBeNull();
-    fillField(makeDataInput("da"), "2");
+    fillField(makeDataInput("int"), "2");
     // global state editingData
-    expect(makeDefinitionSubmit("a")).toBeNull();
+    expect(makeDefinitionSubmit("int")).toBeNull();
     expect(makeSubmit()).not.toBeNull();
   });
 });
 
 ////////////////////////// HELPER FUNCTIONS ///////////////////////////
 
+const EditEntryP = EditEntry as ComponentType<Partial<Props>>;
+
 function makeComp({ props = {} }: { props?: Partial<Props> } = {}) {
-  mockEditEntryUpdate.mockReset();
   const mockUpdateDefinitionsOnline = jest.fn();
   const mockParentDispatch = jest.fn();
+  const mockEditEntryUpdate = jest.fn();
 
   return {
     ui: (
       <EditEntryP
         updateDefinitionsOnline={mockUpdateDefinitionsOnline}
         dispatch={mockParentDispatch}
+        editEntryUpdate={mockEditEntryUpdate}
         {...props}
       />
     ),
     mockUpdateDefinitionsOnline,
     mockParentDispatch,
+    mockEditEntryUpdate,
   };
 }
 
@@ -510,12 +517,29 @@ function makeDefinitionError(id: string) {
   return makeDefinitionControl(id, "error");
 }
 
-function makeDataInput(id: string) {
-  return document.getElementById(
+function makeDataInput(id: string, val?: string) {
+  const $input = document.getElementById(
     `edit-entry-data-${id}-input`,
   ) as HTMLInputElement;
+
+  if (val) {
+    fillField($input, val);
+  }
+
+  return $input;
 }
 
 function makeSubmit() {
   return document.getElementById("edit-entry-submit") as HTMLButtonElement;
+}
+
+function MockDateTimeField(props: DateTimeProps) {
+  const { name, onChange } = props;
+
+  return (
+    <input
+      id={name}
+      onClick={evt => onChange(name, new Date(evt.currentTarget.value))}
+    />
+  );
 }

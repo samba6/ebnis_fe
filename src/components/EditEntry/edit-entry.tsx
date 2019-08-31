@@ -1,6 +1,7 @@
+import React from "react";
 import { compose, graphql } from "react-apollo";
 import { EditEntry as Comp } from "./edit-entry-component";
-import { OwnProps } from "./edit-entry-utils";
+import { OwnProps, Props } from "./edit-entry-utils";
 import {
   UpdateDefinitionsMutationProps,
   UPDATE_DEFINITIONS_MUTATION,
@@ -9,6 +10,7 @@ import {
   UpdateDefinitions,
   UpdateDefinitionsVariables,
 } from "../../graphql/apollo-types/UpdateDefinitions";
+import { editEntryUpdate } from "./edit-entry.update";
 
 const updateDefinitonsGql = graphql<
   OwnProps,
@@ -22,4 +24,6 @@ const updateDefinitonsGql = graphql<
     },
 });
 
-export const EditEntry = compose(updateDefinitonsGql)(Comp);
+export const EditEntry = compose(updateDefinitonsGql)((props: Props) => (
+  <Comp editEntryUpdate={editEntryUpdate} {...props} />
+));
