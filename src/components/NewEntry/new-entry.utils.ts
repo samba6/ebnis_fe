@@ -49,9 +49,10 @@ export function initialStateFromProps(experience: ExperienceFragment) {
   const dataDefinitions = experience.dataDefinitions as ExperienceFragment_dataDefinitions[];
 
   const formObj = dataDefinitions.reduce(
-    function fieldDefReducer(acc, field, index) {
+    function fieldDefReducer(acc, definition, index) {
       const value =
-        field.type === FieldType.DATE || field.type === FieldType.DATETIME
+        definition.type === FieldType.DATE ||
+        definition.type === FieldType.DATETIME
           ? new Date()
           : "";
 

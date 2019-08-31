@@ -2,8 +2,6 @@ import React, { useEffect, useReducer } from "react";
 import Form from "semantic-ui-react/dist/commonjs/collections/Form";
 import Message from "semantic-ui-react/dist/commonjs/collections/Message";
 import Button from "semantic-ui-react/dist/commonjs/elements/Button";
-import Input from "semantic-ui-react/dist/commonjs/elements/Input";
-import TextArea from "semantic-ui-react/dist/commonjs/addons/TextArea";
 import { NavigateFn } from "@reach/router";
 import "./new-entry.styles.scss";
 import {
@@ -33,11 +31,11 @@ import {
   FieldType,
   CreateDataObject,
 } from "../../graphql/apollo-types/globalTypes";
-import { DateField } from "../DateField/date-field.component";
-import { DateTimeField } from "../DateTimeField/date-time-field.component";
 import dateFnFormat from "date-fns/format";
 import { CreateEntryMutation_createEntry } from "../../graphql/apollo-types/CreateEntryMutation";
 import { CreateUnsavedEntryMutationReturned } from "./resolvers";
+import { componentFromDataType } from "./component-from-data-type";
+import { InputOnChangeData } from "semantic-ui-react";
 
 export function NewEntry(props: Props) {
   const { navigate, createEntry, createUnsavedEntry, experience } = props;
@@ -186,7 +184,7 @@ export function NewEntry(props: Props) {
             return (
               <DataComponent
                 key={definition.id}
-                field={definition}
+                definition={definition}
                 index={index}
                 formValues={state.formObj}
                 dispatch={dispatch}
@@ -219,115 +217,38 @@ export function NewEntry(props: Props) {
   );
 }
 
-interface DataComponentProps {
-  field: ExperienceFragment_dataDefinitions;
-  index: number;
-  formValues: FormObj;
-  dispatch: DispatchType;
-  error?: string;
-}
-
 const DataComponent = React.memo(
   function FieldComponentFn(props: DataComponentProps) {
-    const { field, index, dispatch, formValues, error } = props;
+    const { definition, index, dispatch, formValues, error } = props;
 
-    const { name: fieldTitle, type, id } = field;
+    const { name: fieldTitle, type, id } = definition;
     const formFieldName = formFieldNameFromIndex(index);
     const value = formValues[index] as FormObjVal;
 
-    let component = null as React.ReactNode;
     let inputId = `new-entry-${type}-input`;
 
-    switch (type) {
-      case FieldType.DECIMAL:
-      case FieldType.INTEGER:
-        {
-          component = (
-            <Input
-              type="number"
-              id={inputId}
-              name={formFieldName}
-              value={value}
-              fluid={true}
-              onChange={(_, { value: inputVal }) => {
-                dispatch([
-                  ActionTypes.setFormObjField,
-                  { formFieldName, value: Number(inputVal) },
-                ]);
-              }}
-            />
-          );
-        }
+    const generic = {
+      id: inputId,
+      name: formFieldName,
+      value,
+      onChange:
+        type === FieldType.DATE || type === FieldType.DATETIME
+          ? makeDateChangedFn(dispatch)
+          : (_: E, { value: inputVal }: InputOnChangeData) => {
+              dispatch([
+                ActionTypes.setFormObjField,
+                {
+                  formFieldName,
+                  value:
+                    type === FieldType.DECIMAL || type === FieldType.INTEGER
+                      ? Number(inputVal)
+                      : inputVal,
+                },
+              ]);
+            },
+    };
 
-        break;
-
-      case FieldType.SINGLE_LINE_TEXT:
-        {
-          component = (
-            <Input
-              id={inputId}
-              name={formFieldName}
-              value={value}
-              fluid={true}
-              onChange={(_, { value: inputVal }) => {
-                dispatch([
-                  ActionTypes.setFormObjField,
-                  { formFieldName, value: inputVal },
-                ]);
-              }}
-            />
-          );
-        }
-
-        break;
-
-      case FieldType.MULTI_LINE_TEXT:
-        {
-          component = (
-            <TextArea
-              id={inputId}
-              name={formFieldName}
-              value={value as string}
-              onChange={(_, { value: inputVal }) => {
-                dispatch([
-                  ActionTypes.setFormObjField,
-                  { formFieldName, value: inputVal as string },
-                ]);
-              }}
-            />
-          );
-        }
-
-        break;
-
-      case FieldType.DATE:
-        {
-          component = (
-            <DateField
-              value={value as Date}
-              name={formFieldName}
-              setValue={makeSetValueFunc(dispatch)}
-              {...props}
-            />
-          );
-        }
-
-        break;
-
-      case FieldType.DATETIME:
-        {
-          component = (
-            <DateTimeField
-              value={value as Date}
-              name={formFieldName}
-              setValue={makeSetValueFunc(dispatch)}
-              {...props}
-            />
-          );
-        }
-
-        break;
-    }
+    const component = componentFromDataType(type, generic);
 
     return (
       <Form.Field
@@ -359,8 +280,8 @@ const DataComponent = React.memo(
   },
 );
 
-function makeSetValueFunc(dispatch: DispatchType) {
-  return function SetValue(fieldName: string, value: FormObjVal) {
+function makeDateChangedFn(dispatch: DispatchType) {
+  return function makeDateChangedFnInner(fieldName: string, value: FormObjVal) {
     dispatch([
       ActionTypes.setFormObjField,
       { formFieldName: fieldName, value },
@@ -426,3 +347,13 @@ function dataObjectsFromFormValues(
     [] as CreateDataObject[],
   );
 }
+
+interface DataComponentProps {
+  definition: ExperienceFragment_dataDefinitions;
+  index: number;
+  formValues: FormObj;
+  dispatch: DispatchType;
+  error?: string;
+}
+
+type E = React.ChangeEvent<HTMLInputElement>;

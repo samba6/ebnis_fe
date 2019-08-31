@@ -8,6 +8,7 @@ import {
   DispatchType,
   DefinitionChangedState,
   DefinitionsStates,
+  DataState,
 } from "./edit-entry-utils";
 import Form from "semantic-ui-react/dist/commonjs/collections/Form";
 import Button from "semantic-ui-react/dist/commonjs/elements/Button";
@@ -21,6 +22,10 @@ import { UpdateDefinitionsMutationFn } from "../../graphql/update-definitions.mu
 import { UpdateDefinitionInput } from "../../graphql/apollo-types/globalTypes";
 import "./edit-entry.styles.scss";
 import { SubmittingOverlay } from "../SubmittingOverlay/submitting-overlay";
+import { componentFromDataType } from "../NewEntry/component-from-data-type";
+import { FormObjVal } from "../Experience/experience.utils";
+import { InputOnChangeData } from "semantic-ui-react";
+import { FieldType } from "../../graphql/apollo-types/globalTypes";
 
 export function EditEntry(props: Props) {
   const {
@@ -60,18 +65,35 @@ export function EditEntry(props: Props) {
         <Modal.Content>
           <Form>
             {definitionsIds.map(id => {
+              const definitionState = state.definitionsStates[id];
+              const {
+                dataId,
+                defaults: { type },
+              } = definitionState.context;
+              const dataState = state.dataStates[dataId];
+
               return (
-                <DefinitionComponent
-                  dispatch={dispatch}
-                  key={id}
-                  id={id}
-                  state={state.definitionsStates[id]}
-                  onSubmit={submitDefinitions({
-                    dispatch,
-                    updateDefinitionsOnline,
-                    allDefinitionsStates: state.definitionsStates,
-                  })}
-                />
+                <>
+                  <DefinitionComponent
+                    dispatch={dispatch}
+                    key={id}
+                    id={id}
+                    state={definitionState}
+                    onSubmit={submitDefinitions({
+                      dispatch,
+                      updateDefinitionsOnline,
+                      allDefinitionsStates: state.definitionsStates,
+                    })}
+                  />
+
+                  <DataComponent
+                    dispatch={dispatch}
+                    key={dataId}
+                    state={dataState}
+                    id={dataId}
+                    type={type}
+                  />
+                </>
               );
             })}
           </Form>
@@ -81,11 +103,56 @@ export function EditEntry(props: Props) {
   );
 }
 
-interface DefinitionComponentProps {
-  state: DefinitionState;
-  id: string;
-  onSubmit: () => void;
-  dispatch: DispatchType;
+function DataComponent(props: DataComponentProps) {
+  const { type, id, state, dispatch } = props;
+
+  const defautlVal = (state.value === "unchanged"
+    ? state.context.defaults.formObj
+    : "") as FormObjVal;
+
+  const idPrefix = `edit-entry-data-${id}`;
+
+  const component = getDataComponent(type, id, dispatch, idPrefix, defautlVal);
+
+  return <div> {component} </div>;
+}
+
+function getDataComponent(
+  type: FieldType,
+  id: string,
+  dispatch: DispatchType,
+  fieldName: string,
+  fieldValue: FormObjVal,
+) {
+  const onChange =
+    type === FieldType.DATE || type === FieldType.DATETIME
+      ? (_: string, val: FormObjVal) => {
+          dispatch({
+            type: ActionTypes.DATA_CHANGED,
+            id,
+            rawFormVal: val,
+          });
+        }
+      : (_: E, { value: rawFormVal }: InputOnChangeData) => {
+          dispatch({
+            type: ActionTypes.DATA_CHANGED,
+            id,
+            rawFormVal,
+          });
+        };
+
+  const generic = {
+    id: `${fieldName}-input`,
+    value: fieldValue,
+    name: fieldName,
+    onChange,
+  };
+
+  const propsObject = {
+    ...generic,
+  };
+
+  return componentFromDataType(type, propsObject);
 }
 
 function DefinitionComponent(props: DefinitionComponentProps) {
@@ -221,12 +288,6 @@ function DefinitionComponent(props: DefinitionComponentProps) {
   );
 }
 
-interface SubmitDefinitionsArgs {
-  dispatch: DispatchType;
-  updateDefinitionsOnline: UpdateDefinitionsMutationFn;
-  allDefinitionsStates: DefinitionsStates;
-}
-
 function submitDefinitions(props: SubmitDefinitionsArgs) {
   return async function submitDefinitionInner() {
     const { dispatch, updateDefinitionsOnline, allDefinitionsStates } = props;
@@ -332,3 +393,25 @@ function getDefinitionFormError(state: DefinitionState) {
 
   return null;
 }
+
+interface SubmitDefinitionsArgs {
+  dispatch: DispatchType;
+  updateDefinitionsOnline: UpdateDefinitionsMutationFn;
+  allDefinitionsStates: DefinitionsStates;
+}
+
+interface DefinitionComponentProps {
+  state: DefinitionState;
+  id: string;
+  onSubmit: () => void;
+  dispatch: DispatchType;
+}
+
+interface DataComponentProps {
+  dispatch: DispatchType;
+  id: string;
+  type: FieldType;
+  state: DataState;
+}
+
+type E = React.ChangeEvent<HTMLInputElement>;

@@ -356,6 +356,105 @@ describe("editing definitions not editing data", () => {
     expect($fieldC.classList).toContain("error");
     expect($fieldC.classList).not.toContain("definition--success");
   });
+
+  test.only("editing data, editing definitions", async () => {
+    const { ui } = makeComp({
+      props: {
+        entry: {
+          dataObjects: [
+            {
+              id: "da",
+              definitionId: "a",
+              data: `{"integer":1}`,
+            },
+
+            {
+              id: "db",
+              definitionId: "b",
+              data: `{"decimal":0.1}`,
+            },
+
+            {
+              id: "dc",
+              definitionId: "c",
+              data: `{"date":"2017-01-05"}`,
+            },
+
+            {
+              id: "dd",
+              definitionId: "d",
+              data: `{"datetime":"2018-03-06"}`,
+            },
+
+            {
+              id: "de",
+              definitionId: "e",
+              data: `{"single_line_text":"e"}`,
+            },
+
+            {
+              id: "df",
+              definitionId: "f",
+              data: `{"multi_line_text":"f"}`,
+            },
+          ] as DataObjectFragment[],
+        } as EntryFragment,
+
+        experience: {
+          dataDefinitions: [
+            {
+              id: "a",
+              type: FieldType.INTEGER,
+              name: "f1",
+            },
+
+            {
+              id: "b",
+              type: FieldType.DECIMAL,
+              name: "f2",
+            },
+
+            {
+              id: "c",
+              type: FieldType.DATE,
+              name: "f3",
+            },
+
+            {
+              id: "d",
+              type: FieldType.DATETIME,
+              name: "f4",
+            },
+
+            {
+              id: "e",
+              type: FieldType.SINGLE_LINE_TEXT,
+              name: "f5",
+            },
+
+            {
+              id: "f",
+              type: FieldType.MULTI_LINE_TEXT,
+              name: "f6",
+            },
+          ] as DataDefinitionFragment[],
+        } as ExperienceFragment,
+      },
+    });
+
+    const {} = render(ui);
+
+    makeDefinitionEdit("a").click();
+    fillField(makeDefinitionInput("a"), "g1");
+    // global state.notEdiitngData
+    expect(makeDefinitionSubmit("a")).not.toBeNull();
+
+    expect(makeSubmit()).toBeNull();
+    fillField(makeDataInput("da"), "2");
+    // global state.editingData
+    expect(makeDefinitionSubmit("a")).toBeNull();
+    expect(makeSubmit()).not.toBeNull();
+  });
 });
 
 ////////////////////////// HELPER FUNCTIONS ///////////////////////////
@@ -414,4 +513,14 @@ function makeDefinitionName(id: string) {
 
 function makeDefinitionError(id: string) {
   return makeDefinitionControl(id, "error");
+}
+
+function makeDataInput(id: string) {
+  return document.getElementById(
+    `edit-entry-data-${id}-input`,
+  ) as HTMLInputElement;
+}
+
+function makeSubmit() {
+  return document.getElementById("edit-entry-submit") as HTMLButtonElement;
 }

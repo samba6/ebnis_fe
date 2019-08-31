@@ -24,7 +24,7 @@ it("renders ", () => {
   /**
    * Given that we want the component to render today's date
    */
-  render(<DateFieldP value={currentDate} setValue={mockSetValue} name="f" />);
+  render(<DateFieldP value={currentDate} onChange={mockSetValue} name="f" />);
 
   /**
    * Then today's date should be visible on the page

@@ -63,61 +63,76 @@ const editEntryComponent = {
   },
 };
 
-const dataObjects = {
-  dataObjects: {
-    initial: "pristine",
+const dataObject = {
+    initial: "unchanged",
     states: {
-      pristine: {
+      unchanged: {
+        context: {
+          anyEditSuccessful?: true
+        },
+
         enter: [
-          "disable submit button", //
-          "display initial data object",
+          "if nothing changed, disable submit button", //
+          "display default data object",
         ],
 
         on: {
-          DATA_CHANGED: "dirty",
+          DATA_CHANGED: "changed",
         },
       },
 
-      dirty: {
+      changed: {
+        context: {
+          formValue: {}
+        },
         enter: [
           "enable submit button", //
         ],
         on: {
-          RESET: "pristine",
+          DATA_RESET: "unchanged",
           SUBMIT: "submitting",
         },
       },
+
+      states: {
 
       submitting: {
         enter: [
           "hand edited data to parent", //
         ],
+
         on: {
           SUCCESS: {
-            target: "finish",
+            target: "unchanged",
             actions: [
               "show success UI e.g. green checkmark", //
             ],
           },
-          ERROR: {
-            target: "errors",
+
+          DATA_FORM_ERROR: {
+            target: "formErrors",
             actions: [
               "show errors", //
             ],
           },
+
+          DATA_SERVER_ERRORS: 'serverErrors'
         },
       },
 
-      errors: {
-        ...errors,
-        on: {
-          ENTRY_FORM_ERRORS_DISMISS: "dirty",
-        },
+      formErrors: {
+        context: {
+          errors: {}
+        }
       },
+        serverErrors: {
+          context: {
+            errors: {}
+          }
+        }
+    }
 
-      finish: {},
     },
-  },
 };
 
 const errors = {

@@ -29,14 +29,14 @@ export interface Props
   entriesJSX?: JSX.Element | JSX.Element[];
 }
 
-export type FormObjVal = Date | string;
+export type FormObjVal = number | Date | string;
 export interface FormObj {
   [k: string]: FormObjVal;
 }
 
 export interface FieldComponentProps {
   name: string;
-  setValue: (formName: string, value: FormObjVal) => void;
+  onChange: (formName: string, value: FormObjVal) => void;
 }
 
 export const displayFieldType = {

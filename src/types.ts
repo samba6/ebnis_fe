@@ -1,8 +1,12 @@
 import { PropsWithChildren } from "react";
 
-export interface EbnisComponentProps extends PropsWithChildren<{}> {
-  className?: string;
-  id?: string;
-}
+export type EbnisComponentProps = any &
+  PropsWithChildren<{}> & {
+    className?: string;
+    id?: string;
+    value?: any;
+    onChange?: any;
+    name?: string;
+  };
 
 export type IEnum<T extends object> = T[keyof T];

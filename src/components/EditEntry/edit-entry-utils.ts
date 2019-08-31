@@ -9,6 +9,8 @@ import {
   UpdateDefinitions_updateDefinitions_definitions_errors_errors,
 } from "../../graphql/apollo-types/UpdateDefinitions";
 import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragment";
+import { DataObjectFragment } from "../../graphql/apollo-types/DataObjectFragment";
+import { FormObjVal } from "../Experience/experience.utils";
 
 export enum ActionTypes {
   EDIT_BTN_CLICKED = "@component/edit-entry/edit-btn-clicked",
@@ -19,13 +21,36 @@ export enum ActionTypes {
   DESTROYED = "@component/edit-entry/destroy",
   SUBMISSION_RESULT = "@component/edit-entry/submission-result",
   DEFINITION_FORM_ERRORS = "@component/edit-entry/definition-form-errors",
+  DATA_CHANGED = "@component/edit-entry/data-changed",
 }
 
 export const initStateFromProps = (props: Props): State => {
+  const [dataStates, idsMap] = props.entry.dataObjects.reduce(
+    ([statesMap, idsMap], obj) => {
+      const data = obj as DataObjectFragment;
+      statesMap[data.id] = {
+        value: "unchanged",
+
+        unchanged: {
+          context: {},
+        },
+
+        context: {
+          defaults: { ...data, formObj: toFormObj(data.data) },
+        },
+      };
+
+      idsMap[data.definitionId] = data.id;
+
+      return [statesMap, idsMap];
+    },
+    [{} as DataStates, {} as { [k: string]: string }],
+  );
+
   const definitions = props.experience
     .dataDefinitions as DataDefinitionFragment[];
 
-  const initialDefinitionsStates = definitions.reduce(
+  const definitionsStates = definitions.reduce(
     (acc, definition) => {
       acc[definition.id] = {
         value: "idle",
@@ -36,6 +61,7 @@ export const initStateFromProps = (props: Props): State => {
 
         context: {
           defaults: definition,
+          dataId: idsMap[definition.id],
         },
       };
 
@@ -45,10 +71,21 @@ export const initStateFromProps = (props: Props): State => {
   );
 
   return {
-    definitionsIds: definitions.map(def => (def as DataDefinitionFragment).id),
-    definitionsStates: initialDefinitionsStates,
-    value: "nothing",
-    editingMultipleDefinitions: false,
+    primaryState: {
+      context: {
+        definitionsIds: definitions.map(
+          def => (def as DataDefinitionFragment).id,
+        ),
+      },
+
+      common: {
+        value: "editing",
+      },
+    },
+
+    definitionsStates,
+
+    dataStates,
   };
 };
 
@@ -125,7 +162,7 @@ export const reducer: Reducer<State, Action> = (
 
       case ActionTypes.DEFINITION_SUBMITTED:
         {
-          proxy.value = "submitting";
+          proxy.primaryState.common.value = "submitting";
         }
 
         break;
@@ -137,7 +174,7 @@ export const reducer: Reducer<State, Action> = (
           } = payload as UpdateDefinitions_updateDefinitions;
 
           const { definitionsStates } = proxy;
-          proxy.value = "nothing";
+          proxy.primaryState.common.value = "editing";
 
           definitions.forEach(def => {
             const {
@@ -248,14 +285,40 @@ function setEditingMultipleDefinitionsStates(
   }
 }
 
+function toFormObj(val: string) {
+  const [[k, v]] = Object.entries(JSON.parse(val));
+
+  if (k === "date" || k === "datetime") {
+    return new Date(v);
+  }
+
+  return v;
+}
+
 ////////////////////////// TYPES ////////////////////////////
 
 export interface State {
+  readonly dataStates: DataStates;
   readonly definitionsStates: DefinitionsStates;
-  readonly value: "nothing" | "submitting";
-  readonly editingData?: boolean;
-  readonly definitionsIds: string[];
-  readonly editingMultipleDefinitions: boolean;
+  readonly primaryState: PrimaryState;
+}
+
+interface PrimaryState {
+  context: {
+    definitionsIds: string[];
+  };
+
+  common: {
+    value: "editing" | "submitting";
+  };
+
+  editingData?: true;
+
+  editingMultipleDefinitions?: {
+    context: {
+      indexOfFirstChangedDefinition: number;
+    };
+  };
 }
 
 export type Action =
@@ -285,7 +348,15 @@ export type Action =
     } & UpdateDefinitions_updateDefinitions
   | {
       type: ActionTypes.DEFINITION_FORM_ERRORS;
-    } & DefinitionFormErrorsPayload;
+    } & DefinitionFormErrorsPayload
+  | {
+      type: ActionTypes.DATA_CHANGED;
+    } & DataChangedPayload;
+
+interface DataChangedPayload {
+  id: string;
+  rawFormVal: FormObjVal;
+}
 
 interface DefinitionNameChangedPayload {
   id: string;
@@ -322,6 +393,7 @@ export interface DefinitionsStates {
 export type DefinitionState = {
   context: {
     defaults: DataDefinitionFragment;
+    dataId: string;
   };
 } & (DefinitionIdleState | DefinitionEditingState);
 
@@ -390,4 +462,36 @@ export interface DefinitionChangedState {
 
 interface IdString {
   id: string;
+}
+
+interface DataStates {
+  [k: string]: DataState;
+}
+
+export type DataState = {
+  context: {
+    defaults: DataObjectFragment & {
+      formObj: FormObjVal;
+    };
+  };
+} & (DataUnchangedState | DataChangedState);
+
+interface DataUnchangedState {
+  value: "unchanged";
+
+  unchanged: {
+    context: {
+      anyEditSuccess?: true;
+    };
+  };
+}
+
+interface DataChangedState {
+  value: "changed";
+
+  changed: {
+    context: {
+      formValue: {};
+    };
+  };
 }

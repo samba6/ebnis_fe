@@ -50,7 +50,7 @@ export const MINUTE_OPTIONS = Array.from<void, DropdownOptions>(
 );
 
 export function DateTimeField(props: Props) {
-  const { className, name: compName, setValue, value } = props;
+  const { className, name: compName, onChange, value } = props;
   const [datetime, setDatetime] = useState(value);
 
   function setDateVal(_: string, date: FormObjVal) {
@@ -65,7 +65,7 @@ export function DateTimeField(props: Props) {
     date.setHours(h);
     date.setMinutes(m);
     setDatetime(date);
-    setValue(compName, date);
+    onChange(compName, date);
   }
 
   const fieldNames = useMemo(function getFieldNames() {
@@ -87,7 +87,7 @@ export function DateTimeField(props: Props) {
       <DateField
         name={fieldNames.date}
         value={datetime}
-        setValue={setDateVal}
+        onChange={setDateVal}
       />
 
       <div className="datetime-field-time">

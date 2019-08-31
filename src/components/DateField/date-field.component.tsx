@@ -56,7 +56,7 @@ const LABELS = {
 };
 
 export function DateField(props: Props) {
-  const { className, setValue, value, name: compName } = props;
+  const { className, onChange, value, name: compName } = props;
 
   const fieldNames = useMemo(() => {
     return Object.keys(LABELS).reduce(
@@ -90,7 +90,7 @@ export function DateField(props: Props) {
 
   function setDate({ y = selectedYear, m = selectedMonth, d = selectedDay }) {
     const updatedDate = new Date(y, m, d);
-    setValue(compName, updatedDate);
+    onChange(compName, updatedDate);
   }
 
   return (

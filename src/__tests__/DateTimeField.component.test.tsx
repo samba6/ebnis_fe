@@ -28,7 +28,7 @@ it("renders ", () => {
    * Given that we want the component to render a date
    */
   render(
-    <DateTimeFieldP value={currentDate} setValue={mockSetValue} name="f" />,
+    <DateTimeFieldP value={currentDate} onChange={mockSetValue} name="f" />,
   );
 
   /**
