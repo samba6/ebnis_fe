@@ -6,9 +6,9 @@ import {
   reducer,
   DefinitionState,
   DispatchType,
-  DefinitionChangedState,
   DefinitionsStates,
   DataState,
+  EditingMultipleDefinitionsState,
 } from "./edit-entry-utils";
 import Form from "semantic-ui-react/dist/commonjs/collections/Form";
 import Button from "semantic-ui-react/dist/commonjs/elements/Button";
@@ -35,11 +35,18 @@ export function EditEntry(props: Props) {
   } = props;
 
   const [state, dispatch] = useReducer(reducer, props, initStateFromProps);
-  const { definitionsIds } = state;
+  const {
+    primaryState: {
+      context: { definitionsIds, dataIds },
+      common: commonState,
+      editingData,
+      editingMultipleDefinitions,
+    },
+  } = state;
 
   return (
     <>
-      {state.value === "submitting" && <SubmittingOverlay />}
+      {commonState.value === "submitting" && <SubmittingOverlay />}
 
       <Modal
         id="edit-entry-modal"
@@ -66,36 +73,51 @@ export function EditEntry(props: Props) {
           <Form>
             {definitionsIds.map(id => {
               const definitionState = state.definitionsStates[id];
-              const {
-                dataId,
-                defaults: { type },
-              } = definitionState.context;
-              const dataState = state.dataStates[dataId];
 
               return (
-                <>
-                  <DefinitionComponent
-                    dispatch={dispatch}
-                    key={id}
-                    id={id}
-                    state={definitionState}
-                    onSubmit={submitDefinitions({
-                      dispatch,
-                      updateDefinitionsOnline,
-                      allDefinitionsStates: state.definitionsStates,
-                    })}
-                  />
-
-                  <DataComponent
-                    dispatch={dispatch}
-                    key={dataId}
-                    state={dataState}
-                    id={dataId}
-                    type={type}
-                  />
-                </>
+                <DefinitionComponent
+                  dispatch={dispatch}
+                  key={id}
+                  id={id}
+                  state={definitionState}
+                  onSubmit={submitDefinitions({
+                    dispatch,
+                    updateDefinitionsOnline,
+                    allDefinitionsStates: state.definitionsStates,
+                  })}
+                  shouldSubmit={getIdOfSubmittingDefinition(
+                    id,
+                    editingData,
+                    editingMultipleDefinitions,
+                  )}
+                />
               );
             })}
+
+            {dataIds.map(id => {
+              const dataState = state.dataStates[id];
+
+              return (
+                <DataComponent
+                  dispatch={dispatch}
+                  key={id}
+                  state={dataState}
+                  id={id}
+                />
+              );
+            })}
+
+            {editingData && (
+              <Button
+                positive={true}
+                compact={true}
+                type="submit"
+                id="edit-entry-submit"
+                className="edit-entry-definition-submit"
+              >
+                Submit
+              </Button>
+            )}
           </Form>
         </Modal.Content>
       </Modal>
@@ -104,7 +126,7 @@ export function EditEntry(props: Props) {
 }
 
 function DataComponent(props: DataComponentProps) {
-  const { type, id, state, dispatch } = props;
+  const { id, state, dispatch } = props;
 
   const defautlVal = (state.value === "unchanged"
     ? state.context.defaults.formObj
@@ -112,7 +134,13 @@ function DataComponent(props: DataComponentProps) {
 
   const idPrefix = `edit-entry-data-${id}`;
 
-  const component = getDataComponent(type, id, dispatch, idPrefix, defautlVal);
+  const component = getDataComponent(
+    state.context.defaults.type,
+    id,
+    dispatch,
+    idPrefix,
+    defautlVal,
+  );
 
   return <div> {component} </div>;
 }
@@ -156,7 +184,7 @@ function getDataComponent(
 }
 
 function DefinitionComponent(props: DefinitionComponentProps) {
-  const { id, state, onSubmit, dispatch } = props;
+  const { id, state, onSubmit, dispatch, shouldSubmit } = props;
   const idPrefix = `edit-entry-definition-${id}`;
 
   const { type, name: defaultFormValue } = state.context.defaults;
@@ -263,7 +291,7 @@ function DefinitionComponent(props: DefinitionComponentProps) {
                   Reset
                 </Button>
 
-                {shouldShowDefinitionSubmitBtn(state.editing.changed) && (
+                {shouldSubmit && (
                   <Button
                     positive={true}
                     compact={true}
@@ -341,38 +369,34 @@ function submitDefinitions(props: SubmitDefinitionsArgs) {
   };
 }
 
-function shouldShowDefinitionSubmitBtn(
-  state: DefinitionChangedState["changed"],
+function getIdOfSubmittingDefinition(
+  id: string,
+  editingData?: boolean,
+  editingMultipleDefinitionsState?: EditingMultipleDefinitionsState,
 ) {
-  const { notEditingData } = state;
-
-  // istanbul ignore next: TODO: add when I edit data
-  if (!notEditingData) {
+  if (editingData) {
     return false;
   }
 
-  if (notEditingData.value === "notEditingSiblings") {
+  if (!editingMultipleDefinitionsState) {
     return true;
   }
 
-  if (
-    notEditingData.value === "editingSiblings" &&
-    notEditingData.editingSiblings.firstEditableSibling
-  ) {
-    return true;
-  }
+  const {
+    context: { firstChangedDefinitionId },
+  } = editingMultipleDefinitionsState;
 
-  return false;
+  return id === firstChangedDefinitionId;
 }
 
 function getDefinitionFormError(state: DefinitionState) {
   if (state.value === "editing" && state.editing.value === "changed") {
-    const { form } = state.editing.changed;
+    const { changed } = state.editing;
 
-    if (form.value === "formErrors" || form.value === "serverErrors") {
+    if (changed.value === "formErrors" || changed.value === "serverErrors") {
       const {
         context: { errors },
-      } = form;
+      } = changed;
 
       return Object.entries(errors).reduce(
         (acc, [k, v]) => {
@@ -405,12 +429,12 @@ interface DefinitionComponentProps {
   id: string;
   onSubmit: () => void;
   dispatch: DispatchType;
+  shouldSubmit: boolean;
 }
 
 interface DataComponentProps {
   dispatch: DispatchType;
   id: string;
-  type: FieldType;
   state: DataState;
 }
 

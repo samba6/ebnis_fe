@@ -11,6 +11,7 @@ import {
 import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragment";
 import { DataObjectFragment } from "../../graphql/apollo-types/DataObjectFragment";
 import { FormObjVal } from "../Experience/experience.utils";
+import { FieldType } from "../../graphql/apollo-types/globalTypes";
 
 export enum ActionTypes {
   EDIT_BTN_CLICKED = "@component/edit-entry/edit-btn-clicked",
@@ -25,10 +26,13 @@ export enum ActionTypes {
 }
 
 export const initStateFromProps = (props: Props): State => {
-  const [dataStates, idsMap] = props.entry.dataObjects.reduce(
-    ([statesMap, idsMap], obj) => {
+  const [dataStates, idsMap, dataIds] = props.entry.dataObjects.reduce(
+    ([statesMap, idsMap, dataIds], obj) => {
       const data = obj as DataObjectFragment;
-      statesMap[data.id] = {
+      const { id } = data;
+      dataIds.push(id);
+
+      statesMap[id] = {
         value: "unchanged",
 
         unchanged: {
@@ -36,23 +40,33 @@ export const initStateFromProps = (props: Props): State => {
         },
 
         context: {
-          defaults: { ...data, formObj: toFormObj(data.data) },
+          defaults: {
+            ...data,
+            formObj: toFormObj(data.data),
+            type: FieldType.DATE, // make typescipt happy, correct value below
+          },
         },
       };
 
-      idsMap[data.definitionId] = data.id;
+      idsMap[data.definitionId] = id;
 
-      return [statesMap, idsMap];
+      return [statesMap, idsMap, dataIds];
     },
-    [{} as DataStates, {} as { [k: string]: string }],
+    [{} as DataStates, {} as { [k: string]: string }, [] as string[]],
   );
 
   const definitions = props.experience
     .dataDefinitions as DataDefinitionFragment[];
 
-  const definitionsStates = definitions.reduce(
-    (acc, definition) => {
-      acc[definition.id] = {
+  let lenDefinitions = 0;
+
+  const [definitionsStates, definitionsIds] = definitions.reduce(
+    ([acc, definitionsIds], definition) => {
+      const { id, type } = definition;
+      definitionsIds.push(id);
+      ++lenDefinitions;
+
+      acc[id] = {
         value: "idle",
 
         idle: {
@@ -61,21 +75,28 @@ export const initStateFromProps = (props: Props): State => {
 
         context: {
           defaults: definition,
-          dataId: idsMap[definition.id],
         },
       };
 
-      return acc;
+      const dataState = dataStates[idsMap[id]];
+
+      if (dataState) {
+        dataState.context.defaults.type = type;
+      }
+
+      return [acc, definitionsIds];
     },
-    {} as DefinitionsStates,
+    [{} as DefinitionsStates, [] as string[]],
   );
 
   return {
     primaryState: {
       context: {
-        definitionsIds: definitions.map(
-          def => (def as DataDefinitionFragment).id,
-        ),
+        lenDefinitions,
+
+        definitionsIds,
+
+        dataIds,
       },
 
       common: {
@@ -106,7 +127,7 @@ export const reducer: Reducer<State, Action> = (
         {
           const { id } = payload as IdString;
           setDefinitionEditingUnchangedState(proxy, id);
-          setEditingMultipleDefinitionsStates(proxy.definitionsStates);
+          setEditingMultipleDefinitionsState(proxy);
         }
         break;
 
@@ -114,13 +135,20 @@ export const reducer: Reducer<State, Action> = (
         {
           const { id, formValue } = payload as DefinitionNameChangedPayload;
           const state = proxy.definitionsStates[id];
+          state.value = "editing";
           const { name: defaultName } = state.context.defaults;
           const editingState = state as DefinitionEditingState;
 
           if (defaultName === formValue.trim()) {
+            editingState.editing = {
+              value: "unchanged",
+
+              context: {
+                formValue: defaultName,
+              },
+            };
             setDefinitionEditingUnchangedState(proxy, id);
           } else {
-            state.value = "editing";
             editingState.editing = {
               value: "changed",
 
@@ -129,21 +157,12 @@ export const reducer: Reducer<State, Action> = (
               },
 
               changed: {
-                form: {
-                  value: "regular",
-                },
+                value: "regular",
               },
             };
-
-            //if (!proxy.editingData) {
-            (editingState.editing as DefinitionChangedState).changed.notEditingData = {
-              value: "notEditingSiblings",
-            };
-
-            //}
           }
 
-          setEditingMultipleDefinitionsStates(proxy.definitionsStates);
+          setEditingMultipleDefinitionsState(proxy);
         }
 
         break;
@@ -155,7 +174,7 @@ export const reducer: Reducer<State, Action> = (
 
           definitionsStates[id].value = "idle";
 
-          setEditingMultipleDefinitionsStates(definitionsStates);
+          setEditingMultipleDefinitionsState(proxy);
         }
 
         break;
@@ -198,7 +217,7 @@ export const reducer: Reducer<State, Action> = (
               const { id, ...errorsContext } = errors;
               const state = definitionsStates[id] as DefinitionEditingState;
 
-              (state.editing as DefinitionChangedState).changed.form = {
+              (state.editing as DefinitionChangedState).changed = {
                 value: "serverErrors",
                 context: { ...errorsContext },
               };
@@ -219,13 +238,23 @@ export const reducer: Reducer<State, Action> = (
             const definitionState = proxy.definitionsStates[id];
 
             ((definitionState as DefinitionEditingState)
-              .editing as DefinitionChangedState).changed.form = {
+              .editing as DefinitionChangedState).changed = {
               value: "formErrors",
               context: {
                 errors,
               },
             };
           }
+        }
+        break;
+
+      case ActionTypes.DATA_CHANGED:
+        {
+          const { primaryState } = proxy;
+          // const { id } = payload as DataChangedPayload;
+          // const state = dataStates[id];
+
+          primaryState.editingData = true;
         }
         break;
     }
@@ -246,43 +275,35 @@ function setDefinitionEditingUnchangedState(proxy: State, id: string) {
   proxy.definitionsStates[id] = { ...definitionsStates[id], ...state };
 }
 
-function setEditingMultipleDefinitionsStates(
-  definitionsStates: DefinitionsStates,
-) {
-  let editCount = 0;
-  const statesToChange: DefinitionChangedState["changed"][] = [];
+function setEditingMultipleDefinitionsState(proxy: State) {
+  const { primaryState } = proxy;
+  const len = primaryState.context.lenDefinitions;
 
-  for (const state of Object.values(definitionsStates)) {
+  if (len < 2) {
+    return;
+  }
+
+  let firstChangedDefinitionId = "";
+  let changedDefinitionsCount = 0;
+
+  for (const [id, state] of Object.entries(proxy.definitionsStates)) {
     if (state.value === "editing" && state.editing.value === "changed") {
-      ++editCount;
-      statesToChange.push(state.editing.changed);
-    }
-  }
+      ++changedDefinitionsCount;
 
-  if (editCount === 1) {
-    const state = statesToChange[0];
-
-    state.notEditingData = {
-      value: "notEditingSiblings",
-    };
-  }
-
-  if (editCount > 1) {
-    for (let i = 0; i < editCount; i++) {
-      const state = statesToChange[i];
-
-      if (state.notEditingData) {
-        state.notEditingData = {
-          value: "editingSiblings",
-          editingSiblings: {},
-        };
-
-        if (i === 0) {
-          state.notEditingData.editingSiblings.firstEditableSibling = true;
-        }
+      if (firstChangedDefinitionId === "") {
+        firstChangedDefinitionId = id;
       }
     }
   }
+
+  primaryState.editingMultipleDefinitions =
+    changedDefinitionsCount < 2
+      ? undefined
+      : {
+          context: {
+            firstChangedDefinitionId,
+          },
+        };
 }
 
 function toFormObj(val: string) {
@@ -306,6 +327,8 @@ export interface State {
 interface PrimaryState {
   context: {
     definitionsIds: string[];
+    lenDefinitions: number;
+    dataIds: string[];
   };
 
   common: {
@@ -314,10 +337,12 @@ interface PrimaryState {
 
   editingData?: true;
 
-  editingMultipleDefinitions?: {
-    context: {
-      indexOfFirstChangedDefinition: number;
-    };
+  editingMultipleDefinitions?: EditingMultipleDefinitionsState;
+}
+
+export interface EditingMultipleDefinitionsState {
+  context: {
+    firstChangedDefinitionId: string;
   };
 }
 
@@ -393,7 +418,6 @@ export interface DefinitionsStates {
 export type DefinitionState = {
   context: {
     defaults: DataDefinitionFragment;
-    dataId: string;
   };
 } & (DefinitionIdleState | DefinitionEditingState);
 
@@ -424,40 +448,27 @@ interface DefinitionEditingState {
 export interface DefinitionChangedState {
   value: "changed";
 
-  changed: {
-    form:
-      | {
-          value: "regular";
-        }
-      | {
-          value: "submitting";
-        }
-      | {
-          value: "formErrors";
-          context: {
-            errors: {
-              name: string;
-            };
-          };
-        }
-      | {
-          value: "serverErrors";
-          context: {
-            errors: UpdateDefinitions_updateDefinitions_definitions_errors_errors;
+  changed:
+    | {
+        value: "regular";
+      }
+    | {
+        value: "submitting";
+      }
+    | {
+        value: "formErrors";
+        context: {
+          errors: {
+            name: string;
           };
         };
-
-    notEditingData?:
-      | {
-          value: "notEditingSiblings";
-        }
-      | {
-          value: "editingSiblings";
-          editingSiblings: {
-            firstEditableSibling?: true;
-          };
+      }
+    | {
+        value: "serverErrors";
+        context: {
+          errors: UpdateDefinitions_updateDefinitions_definitions_errors_errors;
         };
-  };
+      };
 }
 
 interface IdString {
@@ -472,6 +483,7 @@ export type DataState = {
   context: {
     defaults: DataObjectFragment & {
       formObj: FormObjVal;
+      type: FieldType;
     };
   };
 } & (DataUnchangedState | DataChangedState);

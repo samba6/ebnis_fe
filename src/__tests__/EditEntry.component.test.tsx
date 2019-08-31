@@ -32,12 +32,7 @@ it("destroys the UI", () => {
   const { ui, mockParentDispatch } = makeComp({
     props: {
       entry: {
-        dataObjects: [
-          {
-            definitionId: "a",
-            data: `{"integer":1}`,
-          },
-        ],
+        dataObjects: [] as DataObjectFragment[],
       } as EntryFragment,
 
       experience: {
@@ -357,7 +352,7 @@ describe("editing definitions not editing data", () => {
     expect($fieldC.classList).not.toContain("definition--success");
   });
 
-  test.only("editing data, editing definitions", async () => {
+  test("editing data, editing definitions", async () => {
     const { ui } = makeComp({
       props: {
         entry: {
@@ -451,7 +446,7 @@ describe("editing definitions not editing data", () => {
 
     expect(makeSubmit()).toBeNull();
     fillField(makeDataInput("da"), "2");
-    // global state.editingData
+    // global state editingData
     expect(makeDefinitionSubmit("a")).toBeNull();
     expect(makeSubmit()).not.toBeNull();
   });
