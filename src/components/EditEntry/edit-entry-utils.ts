@@ -13,13 +13,14 @@ import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragmen
 import { DataObjectFragment } from "../../graphql/apollo-types/DataObjectFragment";
 import { FormObjVal } from "../Experience/experience.utils";
 import { FieldType } from "../../graphql/apollo-types/globalTypes";
+import { UpdateDataObjectsOnlineMutationProps } from "../../graphql/update-data-objects.mutation";
 
 export enum ActionTypes {
   EDIT_BTN_CLICKED = "@component/edit-entry/edit-btn-clicked",
   DEFINITION_NAME_CHANGED = "@component/edit-entry/definition-name-changed",
   UNDO_DEFINITION_EDITS = "@component/edit-entry/undo-definition-edits",
   STOP_DEFINITION_EDIT = "@component/edit-entry/stop-definition-edit",
-  DEFINITION_SUBMITTED = "@component/edit-entry/title-submit",
+  DEFINITIONS_SUBMITTED = "@component/edit-entry/definitions-submitted",
   DESTROYED = "@component/edit-entry/destroy",
   SUBMISSION_RESULT = "@component/edit-entry/submission-result",
   DEFINITION_FORM_ERRORS = "@component/edit-entry/definition-form-errors",
@@ -180,7 +181,7 @@ export const reducer: Reducer<State, Action> = (
 
         break;
 
-      case ActionTypes.DEFINITION_SUBMITTED:
+      case ActionTypes.DEFINITIONS_SUBMITTED:
         {
           proxy.primaryState.common.value = "submitting";
         }
@@ -411,7 +412,7 @@ export type Action =
       id: string;
     }
   | {
-      type: ActionTypes.DEFINITION_SUBMITTED;
+      type: ActionTypes.DEFINITIONS_SUBMITTED;
     }
   | {
       type: ActionTypes.DESTROYED;
@@ -447,7 +448,10 @@ export interface OwnProps {
   editEntryUpdate: () => void;
 }
 
-export interface Props extends OwnProps, UpdateDefinitionsMutationProps {}
+export interface Props
+  extends OwnProps,
+    UpdateDefinitionsMutationProps,
+    UpdateDataObjectsOnlineMutationProps {}
 
 export type DefinitionFormValue = Pick<
   DataDefinitionFragment,

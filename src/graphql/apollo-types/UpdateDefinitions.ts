@@ -69,7 +69,7 @@ export interface UpdateDefinitions_updateDefinitions {
   /**
    * The definitions to be updated, successes/failures
    */
-  definitions: (UpdateDefinitions_updateDefinitions_definitions | null)[];
+  definitions: UpdateDefinitions_updateDefinitions_definitions[];
 }
 
 export interface UpdateDefinitions {

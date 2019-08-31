@@ -390,13 +390,13 @@ describe("editing definitions not editing data", () => {
             {
               id: "text",
               definitionId: "text",
-              data: `{"single_line_text":"e"}`,
+              data: `{"single_line_text":"1"}`,
             },
 
             {
               id: "multi",
               definitionId: "multi",
-              data: `{"multi_line_text":"f"}`,
+              data: `{"multi_line_text":"1"}`,
             },
           ] as DataObjectFragment[],
         } as EntryFragment,
@@ -406,37 +406,37 @@ describe("editing definitions not editing data", () => {
             {
               id: "int",
               type: FieldType.INTEGER,
-              name: "f1",
+              name: "int",
             },
 
             {
               id: "dec",
               type: FieldType.DECIMAL,
-              name: "f2",
+              name: "dec",
             },
 
             {
               id: "date",
               type: FieldType.DATE,
-              name: "f3",
+              name: "date",
             },
 
             {
               id: "time",
               type: FieldType.DATETIME,
-              name: "f4",
+              name: "time",
             },
 
             {
               id: "text",
               type: FieldType.SINGLE_LINE_TEXT,
-              name: "f5",
+              name: "text",
             },
 
             {
               id: "multi",
               type: FieldType.MULTI_LINE_TEXT,
-              name: "f6",
+              name: "multi",
             },
           ] as DataDefinitionFragment[],
         } as ExperienceFragment,
@@ -446,7 +446,7 @@ describe("editing definitions not editing data", () => {
     const { debug } = render(ui);
 
     makeDefinitionEdit("int").click();
-    makeDefinitionInput("int", "g1");
+    makeDefinitionInput("int", "in");
     // primary state.notEdiitngData
     expect(makeDefinitionSubmit("int")).not.toBeNull();
 
@@ -467,6 +467,20 @@ describe("editing definitions not editing data", () => {
     // primary state.notEditingData
     expect(makeSubmit()).toBeNull();
     expect(makeDefinitionSubmit("int")).not.toBeNull();
+
+    makeDefinitionInput("int", "int");
+    expect(makeDefinitionSubmit("int")).toBeNull();
+
+    makeDataInput("time", "2000-01-02T01:01:01.000Z");
+    expect(makeSubmit()).not.toBeNull();
+
+    makeDataInput("multi", "mu");
+    makeDataInput("text", "te");
+    makeDataInput("dec", "de");
+
+    makeSubmit().click();
+
+    expect(document.getElementById("submitting-overlay")).not.toBeNull();
   });
 });
 
@@ -542,8 +556,6 @@ function makeDataInput(id: string, val?: string) {
   const $input = document.getElementById(
     `edit-entry-data-${id}-input`,
   ) as HTMLInputElement;
-
-  console.log(val);
 
   if (val) {
     fillField($input, val);

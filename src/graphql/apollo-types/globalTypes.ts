@@ -99,6 +99,11 @@ export interface Registration {
   source: string;
 }
 
+export interface UpdateDataObjectInput {
+  data: any;
+  id: string;
+}
+
 /**
  * fields required to update an experience data definition
  */

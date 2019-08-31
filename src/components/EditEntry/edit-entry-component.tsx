@@ -10,6 +10,7 @@ import {
   DataState,
   EditingMultipleDefinitionsState,
   EditEnryContext,
+  State,
 } from "./edit-entry-utils";
 import Form from "semantic-ui-react/dist/commonjs/collections/Form";
 import Button from "semantic-ui-react/dist/commonjs/elements/Button";
@@ -114,6 +115,10 @@ export function EditEntry(props: Props) {
                 type="submit"
                 id="edit-entry-submit"
                 className="edit-entry-definition-submit"
+                onClick={submitAll({
+                  dispatch,
+                  globalState: state,
+                })}
               >
                 Submit
               </Button>
@@ -123,6 +128,16 @@ export function EditEntry(props: Props) {
       </Modal>
     </EditEnryContext.Provider>
   );
+}
+
+function submitAll(args: SubmitAllArgs) {
+  return async function submitAllInner() {
+    const { dispatch } = args;
+
+    dispatch({
+      type: ActionTypes.DEFINITIONS_SUBMITTED,
+    });
+  };
 }
 
 function DataComponent(props: DataComponentProps) {
@@ -358,7 +373,7 @@ function submitDefinitions(props: SubmitDefinitionsArgs) {
     }
 
     dispatch({
-      type: ActionTypes.DEFINITION_SUBMITTED,
+      type: ActionTypes.DEFINITIONS_SUBMITTED,
     });
 
     const result = await updateDefinitionsOnline({
@@ -449,3 +464,8 @@ interface DataComponentProps {
 }
 
 type E = React.ChangeEvent<HTMLInputElement>;
+
+interface SubmitAllArgs {
+  dispatch: DispatchType;
+  globalState: State;
+}
