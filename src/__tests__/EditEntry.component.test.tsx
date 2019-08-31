@@ -262,7 +262,6 @@ describe("editing definitions not editing data", () => {
                 errors: {
                   name: "n",
                   definition: "",
-                  __typename: "DataDefinitionError",
                 },
               },
             },
@@ -355,7 +354,11 @@ describe("editing definitions not editing data", () => {
     expect($fieldC.classList).not.toContain("definition--success");
   });
 
-  test.only("editing data, editing definitions", async () => {
+  test("editing data, editing definitions", async () => {
+    // NOTE: default date = 2000-01-01, time = 2000-01-01T01:01:01.000Z
+    const time = "2000-01-01T01:01:01.000Z";
+    const date = "2000-01-01";
+
     const { ui } = makeComp({
       props: {
         entry: {
@@ -375,13 +378,13 @@ describe("editing definitions not editing data", () => {
             {
               id: "date",
               definitionId: "date",
-              data: `{"date":"2017-01-05"}`,
+              data: `{"date":"${date}"}`,
             },
 
             {
               id: "time",
               definitionId: "time",
-              data: `{"datetime":"2018-03-06"}`,
+              data: `{"datetime":"${time}"}`,
             },
 
             {
@@ -440,18 +443,30 @@ describe("editing definitions not editing data", () => {
       },
     });
 
-    const {} = render(ui);
+    const { debug } = render(ui);
 
     makeDefinitionEdit("int").click();
-    fillField(makeDefinitionInput("int"), "g1");
-    // global state.notEdiitngData
+    makeDefinitionInput("int", "g1");
+    // primary state.notEdiitngData
     expect(makeDefinitionSubmit("int")).not.toBeNull();
 
     expect(makeSubmit()).toBeNull();
-    fillField(makeDataInput("int"), "2");
-    // global state editingData
+    const $int = makeDataInput("int", "2");
+    const $date = makeDataInput("date", "2000-01-02");
+    // primary state editingData
     expect(makeDefinitionSubmit("int")).toBeNull();
     expect(makeSubmit()).not.toBeNull();
+
+    // revert back to int default
+    fillField($int, "1");
+    expect(makeSubmit()).not.toBeNull();
+
+    // revert back to date default
+    fillField($date, date);
+
+    // primary state.notEditingData
+    expect(makeSubmit()).toBeNull();
+    expect(makeDefinitionSubmit("int")).not.toBeNull();
   });
 });
 
@@ -493,8 +508,14 @@ function makeDefinitionReset(id: string) {
   return makeDefinitionControl(id, "reset");
 }
 
-function makeDefinitionInput(id: string) {
-  return makeDefinitionControl(id, "input");
+function makeDefinitionInput(id: string, val?: string) {
+  const $input = makeDefinitionControl(id, "input");
+
+  if (val) {
+    fillField($input, val);
+  }
+
+  return $input;
 }
 
 function makeDefinitionSubmit(id: string) {
@@ -522,6 +543,8 @@ function makeDataInput(id: string, val?: string) {
     `edit-entry-data-${id}-input`,
   ) as HTMLInputElement;
 
+  console.log(val);
+
   if (val) {
     fillField($input, val);
   }
@@ -534,12 +557,18 @@ function makeSubmit() {
 }
 
 function MockDateTimeField(props: DateTimeProps) {
-  const { name, onChange } = props;
+  const { value, name, onChange } = props;
 
-  return (
+  const comp = (
     <input
+      value={(value as Date).toJSON()}
       id={name}
-      onClick={evt => onChange(name, new Date(evt.currentTarget.value))}
+      onChange={evt => {
+        const val = evt.currentTarget.value;
+        onChange(name, new Date(val));
+      }}
     />
   );
+
+  return comp;
 }

@@ -89,7 +89,6 @@ const dataObject = {
           "enable submit button", //
         ],
         on: {
-          DATA_RESET: "unchanged",
           SUBMIT: "submitting",
         },
       },

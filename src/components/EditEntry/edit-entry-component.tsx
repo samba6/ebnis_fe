@@ -130,9 +130,10 @@ function DataComponent(props: DataComponentProps) {
 
   const { dispatch } = useContext(EditEnryContext);
 
-  const defautlVal = (state.value === "unchanged"
-    ? state.context.defaults.formObj
-    : "") as FormObjVal;
+  const formValue =
+    state.value === "changed"
+      ? state.changed.context.formValue
+      : state.context.defaults.parsedVal;
 
   const idPrefix = `edit-entry-data-${id}`;
 
@@ -141,7 +142,7 @@ function DataComponent(props: DataComponentProps) {
     id,
     dispatch,
     idPrefix,
-    defautlVal,
+    formValue,
   );
 
   return <div> {component} </div>;
@@ -171,10 +172,12 @@ function getDataComponent(
           });
         };
 
+  const name = `${fieldName}-input`;
+
   const generic = {
-    id: `${fieldName}-input`,
+    id: name,
     value: fieldValue,
-    name: fieldName,
+    name,
     onChange,
   };
 

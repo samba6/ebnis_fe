@@ -7,6 +7,7 @@ import {
   UpdateDefinitions_updateDefinitions,
   UpdateDefinitions_updateDefinitions_definitions,
   UpdateDefinitions_updateDefinitions_definitions_errors_errors,
+  UpdateDefinitions_updateDefinitions_definitions_errors,
 } from "../../graphql/apollo-types/UpdateDefinitions";
 import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragment";
 import { DataObjectFragment } from "../../graphql/apollo-types/DataObjectFragment";
@@ -42,7 +43,7 @@ export const initStateFromProps = (props: Props): State => {
         context: {
           defaults: {
             ...data,
-            formObj: toFormObj(data.data),
+            parsedVal: toFormObj(data.data),
             type: FieldType.DATE, // make typescipt happy, correct value below
           },
         },
@@ -211,10 +212,11 @@ export const reducer: Reducer<State, Action> = (
               (state as DefinitionIdleState).idle.context.anyEditSuccess = true;
 
               return;
-            }
-
-            if (errors) {
-              const { id, ...errorsContext } = errors;
+            } else {
+              const {
+                id,
+                ...errorsContext
+              } = errors as UpdateDefinitions_updateDefinitions_definitions_errors;
               const state = definitionsStates[id] as DefinitionEditingState;
 
               (state.editing as DefinitionChangedState).changed = {
@@ -250,11 +252,25 @@ export const reducer: Reducer<State, Action> = (
 
       case ActionTypes.DATA_CHANGED:
         {
-          const { primaryState } = proxy;
-          // const { id } = payload as DataChangedPayload;
-          // const state = dataStates[id];
+          const { dataStates } = proxy;
+          const { id, rawFormVal } = payload as DataChangedPayload;
+          const state = dataStates[id];
+          let { parsedVal } = state.context.defaults;
+          const [original, stringed] = formObjToString(rawFormVal);
 
-          primaryState.editingData = true;
+          if (formObjToString(parsedVal)[1] === stringed) {
+            state.value = "unchanged";
+          } else {
+            state.value = "changed";
+            const changedState = state as DataChangedState;
+            changedState.changed = {
+              context: {
+                formValue: original,
+              },
+            };
+          }
+
+          setEditingData(proxy);
         }
         break;
     }
@@ -313,10 +329,35 @@ function toFormObj(val: string) {
     return new Date(v);
   }
 
-  return v;
+  return (("" + v) as string).trim();
+}
+
+function formObjToString(val: FormObjVal) {
+  if (val instanceof Date) {
+    return [val, (val as Date).toJSON()];
+  }
+
+  val = (val as string).trim();
+  return [val, val];
 }
 
 export const EditEnryContext = createContext<ContextValue>({} as ContextValue);
+
+function setEditingData(proxy: State) {
+  let dataChangedCount = 0;
+
+  for (const state of Object.values(proxy.dataStates)) {
+    if (state.value === "changed") {
+      ++dataChangedCount;
+    }
+  }
+
+  if (dataChangedCount !== 0) {
+    proxy.primaryState.editingData = true;
+  } else {
+    delete proxy.primaryState.editingData;
+  }
+}
 
 ////////////////////////// TYPES ////////////////////////////
 
@@ -490,7 +531,7 @@ interface DataStates {
 export type DataState = {
   context: {
     defaults: DataObjectFragment & {
-      formObj: FormObjVal;
+      parsedVal: FormObjVal;
       type: FieldType;
     };
   };
@@ -511,7 +552,7 @@ interface DataChangedState {
 
   changed: {
     context: {
-      formValue: {};
+      formValue: FormObjVal;
     };
   };
 }
