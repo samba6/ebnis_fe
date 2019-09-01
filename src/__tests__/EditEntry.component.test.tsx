@@ -20,6 +20,7 @@ import {
 import { Props as DateTimeProps } from "../components/DateTimeField/date-time-field.utils";
 import { DataObjectFragment } from "../graphql/apollo-types/DataObjectFragment";
 import { ExperienceFragment } from "../graphql/apollo-types/ExperienceFragment";
+import {editEntryUpdate} from '../components/EditEntry/edit-entry.update';
 
 ////////////////////////// MOCKS ////////////////////////////
 
@@ -483,6 +484,11 @@ describe("editing definitions not editing data", () => {
     expect(document.getElementById("submitting-overlay")).not.toBeNull();
   });
 });
+
+
+test('update function', () => {
+  expect(editEntryUpdate()).toBeNull()
+})
 
 ////////////////////////// HELPER FUNCTIONS ///////////////////////////
 

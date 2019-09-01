@@ -17,14 +17,14 @@ import {
   CreateExperienceMutation,
 } from "../graphql/apollo-types/CreateExperienceMutation";
 
-jest.mock("../components/ExperienceDefinition/update");
-jest.mock("../components/SidebarHeader/sidebar-header", () => ({
+jest.mock("../components/ExperienceDefinition/experience-definition.update");
+jest.mock("../components/SidebarHeader/sidebar-header.component", () => ({
   SidebarHeader: jest.fn(() => null),
 }));
 jest.mock("../state/connections");
 jest.mock("../components/scroll-into-view");
 
-import { ExperienceDefinitionUpdate } from "../components/ExperienceDefinition/update";
+import { ExperienceDefinitionUpdate } from "../components/ExperienceDefinition/experience-definition.update";
 import { isConnected } from "../state/connections";
 import { scrollIntoView } from "../components/scroll-into-view";
 import { CreateUnsavedExperienceMutationData } from "../components/ExperienceDefinition/resolvers";

@@ -4,7 +4,7 @@ import { Router, RouteComponentProps } from "@reach/router";
 import { AuthRequired } from "../../components/AuthRequired";
 import { EXPERIENCE_DEFINITION_URL, EXPERIENCES_URL } from "../../routes";
 import { NotFound } from "../../components/NotFound";
-import { Layout } from "../../components/Layout/layout";
+import { Layout } from "../../components/Layout/layout.component";
 import { EXPERIENCE_URL } from "../../constants/experience-route";
 import { NEW_ENTRY_URL } from "../../constants/new-entry-route";
 import Loadable from "react-loadable";
@@ -19,17 +19,17 @@ const ExperienceDefinition = Loadable({
 
 const ExperienceNewEntryParent = Loadable({
   loader: () =>
-    import("../../components/ExperienceNewEntryParent/experience-new-entry"),
+    import("../../components/ExperienceNewEntryParent/experience-new-entry-index"),
   loading: LoadableLoading,
 });
 
 const MyExperiences = Loadable({
-  loader: () => import("../../components/MyExperiences/my-experiences"),
+  loader: () => import("../../components/MyExperiences/my-experiences-index"),
   loading: LoadableLoading,
 });
 
 const UploadUnsaved = Loadable({
-  loader: () => import("../../components/UploadUnsaved/upload-unsaved"),
+  loader: () => import("../../components/UploadUnsaved/upload-unsaved-index"),
   loading: LoadableLoading,
 });
 

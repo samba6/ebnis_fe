@@ -6,12 +6,19 @@ import { ApolloError } from "apollo-client";
 import immer from "immer";
 import { LoginUser as FormValues } from "../../graphql/apollo-types/globalTypes";
 import { LoginMutationProps } from "../../graphql/login.mutation";
-import { PasswordInputAction, PasswordInputType } from "../PasswordInput/password-input.utils";
+import {
+  PasswordInputAction,
+  PasswordInputType,
+} from "../PasswordInput/password-input.utils";
+import { ScrollIntoView } from "../scroll-into-view";
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface OwnProps extends RouteComponentProps<{}> {}
 
-export type Props = OwnProps & LoginMutationProps;
+export type Props = OwnProps &
+  LoginMutationProps & {
+    scrollToTop: ScrollIntoView;
+  };
 
 export const ValidationSchema = Yup.object<FormValues>().shape({
   email: Yup.string()

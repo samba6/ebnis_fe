@@ -12,15 +12,13 @@ import { GraphQLError } from "graphql";
 
 jest.mock("../state/connections");
 jest.mock("../refresh-to-app");
-jest.mock("../components/SidebarHeader/sidebar-header", () => ({
+jest.mock("../components/SidebarHeader/sidebar-header.component", () => ({
   SidebarHeader: jest.fn(() => null),
 }));
-jest.mock("../components/Login/scroll-to-top");
 jest.mock("../state/users");
 jest.mock("../components/use-user");
 
 import { refreshToHome } from "../refresh-to-app";
-import { scrollToTop } from "../components/Login/scroll-to-top";
 import { EXPERIENCES_URL } from "../routes";
 import { getLoggedOutUser, storeUser } from "../state/users";
 import { useUser } from "../components/use-user";
@@ -28,7 +26,6 @@ import { isConnected } from "../state/connections";
 
 const mockRefreshToHome = refreshToHome as jest.Mock;
 const mockIsConnected = isConnected as jest.Mock;
-const mockScrollToTop = scrollToTop as jest.Mock;
 const mockGetLoggedOutUser = getLoggedOutUser as jest.Mock;
 const mockStoreUser = storeUser as jest.Mock;
 const mockUseUser = useUser as jest.Mock;
@@ -38,7 +35,7 @@ it("renders correctly and submits", async () => {
    * Given that server will return a valid user after form submission
    */
   const user = {};
-  const { ui, mockLogin } = makeComp();
+  const { ui, mockLogin, mockScrollToTop } = makeComp();
 
   mockLogin.mockResolvedValue({
     data: {
@@ -115,7 +112,7 @@ it("renders error if socket not connected", async () => {
   /**
    * Given that server is not connected
    */
-  const { ui } = makeComp({ isConnected: false });
+  const { ui, mockScrollToTop } = makeComp({ isConnected: false });
 
   /**
    * When we start using the login component
@@ -144,9 +141,7 @@ it("renders error if socket not connected", async () => {
   /**
    * And page should be scrolled to top
    */
-  expect((mockScrollToTop.mock.calls[0][0] as HTMLElement).id).toEqual(
-    "components-login-main",
-  );
+  expect(mockScrollToTop).toHaveBeenCalled();
 });
 
 it("renders error if email is invalid", async () => {
@@ -179,7 +174,7 @@ it("renders error if email is invalid", async () => {
 });
 
 it("renders error if password is invalid", async () => {
-  const { ui } = makeComp();
+  const { ui, mockScrollToTop } = makeComp();
 
   /**
    * Given that we are using the login component
@@ -212,7 +207,7 @@ it("renders error if server returns field errors", async () => {
   /**
    * Given that server will return field errors
    */
-  const { ui, mockLogin } = makeComp();
+  const { ui, mockLogin, mockScrollToTop } = makeComp();
 
   mockLogin.mockRejectedValue(
     new ApolloError({
@@ -260,7 +255,7 @@ it("renders error if server returns field errors", async () => {
 });
 
 it("renders error if server returns network errors", async () => {
-  const { ui, mockLogin } = makeComp();
+  const { ui, mockLogin, mockScrollToTop } = makeComp();
 
   /**
    * Given that server will return network error
@@ -356,7 +351,7 @@ function makeComp({
   isConnected = true,
   props = {},
 }: { isConnected?: boolean; props?: Partial<Props> } = {}) {
-  mockScrollToTop.mockReset();
+  const mockScrollToTop = jest.fn();
   mockIsConnected.mockReset();
   mockStoreUser.mockReset();
   mockGetLoggedOutUser.mockReset();
@@ -367,8 +362,9 @@ function makeComp({
   const { Ui, ...rest } = renderWithRouter(LoginP);
 
   return {
-    ui: <Ui login={mockLogin} {...props} />,
+    ui: <Ui login={mockLogin} scrollToTop={mockScrollToTop} {...props} />,
     ...rest,
     mockLogin,
+    mockScrollToTop,
   };
 }

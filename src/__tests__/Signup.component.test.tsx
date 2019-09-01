@@ -10,22 +10,19 @@ import { renderWithRouter, fillField } from "./test_utils";
 
 jest.mock("../state/connections");
 jest.mock("../refresh-to-app");
-jest.mock("../components/Signup/scrollToTop");
-jest.mock("../components/SidebarHeader/sidebar-header", () => ({
+jest.mock("../components/SidebarHeader/sidebar-header.component", () => ({
   SidebarHeader: jest.fn(() => null),
 }));
 jest.mock("../state/users");
 
 import { isConnected } from "../state/connections";
 import { refreshToHome } from "../refresh-to-app";
-import { scrollToTop } from "../components/Signup/scrollToTop";
 import { ApolloError } from "apollo-client";
 import { GraphQLError } from "graphql";
 import { storeUser } from "../state/users";
 
 const mockIsConnected = isConnected as jest.Mock;
 const mockRefreshToHome = refreshToHome as jest.Mock;
-const mockScrollToTop = scrollToTop as jest.Mock;
 const mockStoreUser = storeUser as jest.Mock;
 
 it("renders correctly and submits", async () => {
@@ -123,7 +120,7 @@ it("renders error if socket not connected", async () => {
   /**
    * Given that we are not connected to the server
    */
-  const { ui } = makeComp(false);
+  const { ui, mockScrollToTop } = makeComp(false);
 
   /**
    * And we are using the signup component
@@ -152,13 +149,11 @@ it("renders error if socket not connected", async () => {
   /**
    * And page should be automatically scrolled to the top of page
    */
-  expect((mockScrollToTop.mock.calls[0][0] as any).current.id).toBe(
-    "components-signup-main",
-  );
+  expect(mockScrollToTop).toBeCalled();
 });
 
 it("renders error if password and password confirm are not same", async () => {
-  const { ui } = makeComp();
+  const { ui, mockScrollToTop } = makeComp();
 
   /**
    * Given we are using signup component
@@ -220,7 +215,7 @@ it("renders error if password and password confirm are not same", async () => {
 });
 
 it("renders errors if server returns network errors", async () => {
-  const { ui, mockRegUser } = makeComp();
+  const { ui, mockRegUser, mockScrollToTop } = makeComp();
 
   /**
    * Given that our server will return network error on form submission
@@ -262,7 +257,7 @@ it("renders errors if server returns network errors", async () => {
 });
 
 it("renders errors if server returns field errors", async () => {
-  const { ui, mockRegUser } = makeComp();
+  const { ui, mockRegUser, mockScrollToTop } = makeComp();
 
   /**
    * Given that our server will return field errors on form submission
@@ -360,7 +355,7 @@ function fillForm() {
 const SignUpP = SignUp as ComponentType<Partial<Props>>;
 
 function makeComp(isServerConnected: boolean = true) {
-  mockScrollToTop.mockReset();
+  const mockScrollToTop = jest.fn();
   mockStoreUser.mockReset();
 
   mockIsConnected.mockReturnValue(isServerConnected);
@@ -369,8 +364,9 @@ function makeComp(isServerConnected: boolean = true) {
   const mockRegUser = jest.fn();
 
   return {
-    ui: <Ui regUser={mockRegUser} />,
+    ui: <Ui regUser={mockRegUser} scrollToTop={mockScrollToTop} />,
     mockRegUser,
+    mockScrollToTop,
     ...rest,
   };
 }

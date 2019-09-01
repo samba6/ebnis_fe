@@ -1,3 +1,4 @@
+import React from "react";
 import { graphql, compose } from "react-apollo";
 import {
   UserRegMutation,
@@ -9,6 +10,8 @@ import {
   RegMutationProps,
 } from "../../graphql/user-reg.mutation";
 import { SignUp as Comp } from "./signup.component";
+import { Props } from "./signup.utils";
+import { scrollIntoView } from "../scroll-into-view";
 
 const regUserGql = graphql<
   {},
@@ -25,4 +28,6 @@ const regUserGql = graphql<
   },
 });
 
-export const SignUp = compose(regUserGql)(Comp);
+export const SignUp = compose(regUserGql)((props: Props) => (
+  <Comp {...props} scrollToTop={scrollIntoView} />
+));

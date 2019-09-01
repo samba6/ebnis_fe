@@ -1,4 +1,4 @@
-import React, { useRef, useReducer, useContext } from "react";
+import React, { useReducer, useContext } from "react";
 import Card from "semantic-ui-react/dist/commonjs/views/Card";
 import Icon from "semantic-ui-react/dist/commonjs/elements/Icon";
 import Input from "semantic-ui-react/dist/commonjs/elements/Input";
@@ -28,15 +28,16 @@ import { refreshToHome } from "../../refresh-to-app";
 import { isConnected } from "../../state/connections";
 import { noop } from "../../constants";
 import { UserRegMutationFn } from "../../graphql/user-reg.mutation";
-import { scrollToTop } from "./scrollToTop";
-import { SidebarHeader } from "../SidebarHeader/sidebar-header";
+import { SidebarHeader } from "../SidebarHeader/sidebar-header.component";
 import { ToOtherAuthLink } from "../ToOtherAuthLink";
 import { LayoutContext } from "../Layout/layout.utils";
 import { storeUser } from "../../state/users";
+import { makeScrollIntoViewId } from "../scroll-into-view";
+
+const scrollToTopId = makeScrollIntoViewId("signup");
 
 export function SignUp(props: Props) {
-  const { regUser, location } = props;
-  const mainRef = useRef<HTMLDivElement | null>(null);
+  const { regUser, location, scrollToTop } = props;
   const [state, dispatch] = useReducer(reducer, {});
   const {
     otherErrors,
@@ -55,7 +56,7 @@ export function SignUp(props: Props) {
     ...formikBag
   }: FormikProps<Registration>) {
     return (
-      <Card>
+      <Card id={scrollToTopId}>
         <ErrorsSummary
           errors={{
             otherErrors,
@@ -75,7 +76,9 @@ export function SignUp(props: Props) {
               if (!isConnected()) {
                 formikBag.setSubmitting(false);
                 dispatch([ActionType.setOtherErrors, "You are not connected"]);
-                scrollToTop(mainRef);
+                scrollToTop(scrollToTopId, {
+                  behavior: "smooth",
+                });
                 return;
               }
 
@@ -85,7 +88,10 @@ export function SignUp(props: Props) {
               if (!loIsEmpty(errors)) {
                 formikBag.setSubmitting(false);
                 dispatch([ActionType.setFormErrors, errors]);
-                scrollToTop(mainRef);
+
+                scrollToTop(scrollToTopId, {
+                  behavior: "smooth",
+                });
 
                 return;
               }
@@ -102,7 +108,9 @@ export function SignUp(props: Props) {
               } catch (error) {
                 formikBag.setSubmitting(false);
                 dispatch([ActionType.setServerErrors, error]);
-                scrollToTop(mainRef);
+                scrollToTop(scrollToTopId, {
+                  behavior: "smooth",
+                });
               }
             }}
           >
@@ -154,7 +162,7 @@ export function SignUp(props: Props) {
     <div className="routes-sign-up-route">
       <SidebarHeader title="Sign up for Ebnis" />
 
-      <div className="main" ref={mainRef} id="components-signup-main">
+      <div className="main" id="components-signup-main">
         <Formik
           initialValues={initialFormValues}
           onSubmit={noop}

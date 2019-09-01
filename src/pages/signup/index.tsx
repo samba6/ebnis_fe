@@ -2,8 +2,8 @@ import React from "react";
 import { RouteComponentProps } from "@reach/router";
 import { Helmet } from "react-helmet-async";
 
-import { SignUp } from "../../components/Signup/signup";
-import { Layout } from "../../components/Layout/layout";
+import { SignUp } from "../../components/Signup/signup-index";
+import { Layout } from "../../components/Layout/layout.component";
 import { useIsLoggedIn } from "../../components/use-is-logged-in";
 import { makeSiteTitle } from "../../constants";
 

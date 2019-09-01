@@ -1,6 +1,6 @@
 import { graphql, compose } from "react-apollo";
-import { OwnProps } from "./experience-new-entry.utils";
-import { ExperienceNewEntryParent as Comp } from "./experience-new-entry.component";
+import { OwnProps } from "./experience-new-entry-parent-utils";
+import { ExperienceNewEntryParent as Comp } from "./experience-new-entry-parent.component";
 import {
   GET_EXPERIENCE_FULL_QUERY,
   GetExperienceFullProps,

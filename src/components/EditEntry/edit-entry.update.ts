@@ -1,1 +1,3 @@
-export function editEntryUpdate() {}
+export function editEntryUpdate() {
+  return null;
+}

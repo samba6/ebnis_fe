@@ -1,11 +1,17 @@
 import React, { useEffect, useState, useCallback, useContext } from "react";
 import Icon from "semantic-ui-react/dist/commonjs/elements/Icon";
 import "./my-experiences.styles.scss";
-import { Props } from "./my-experiences.utils";
+import {
+  Props,
+  DescriptionMap,
+  ExperienceProps,
+  ToggleDescription,
+  mapSavedExperiencesToIds,
+} from "./my-experiences.utils";
 import { EXPERIENCE_DEFINITION_URL } from "../../routes";
 import { makeExperienceRoute } from "../../constants/experience-route";
 import { Loading } from "../Loading/loading";
-import { SidebarHeader } from "../SidebarHeader/sidebar-header";
+import { SidebarHeader } from "../SidebarHeader/sidebar-header.component";
 import { setDocumentTitle, makeSiteTitle } from "../../constants";
 import { MY_EXPERIENCES_TITLE } from "../../constants/my-experiences-title";
 import { Link } from "gatsby";
@@ -144,11 +150,6 @@ export const MyExperiences = (props: Props) => {
   );
 };
 
-interface ExperienceProps extends ToggleDescription {
-  showingDescription: boolean;
-  experience: ExperienceConnectionFragment_edges_node;
-}
-
 const Experience = React.memo(
   function ExperienceFn({
     showingDescription,
@@ -224,31 +225,3 @@ const ShowDescriptionToggle = React.memo(
     return oldProps.showingDescription === newProps.showingDescription;
   },
 );
-
-function mapSavedExperiencesToIds(
-  experienceConnection: ExperienceConnectionFragment,
-) {
-  return (experienceConnection.edges as ExperienceConnectionFragment_edges[]).reduce(
-    (acc, edge: ExperienceConnectionFragment_edges) => {
-      const {
-        hasUnsaved,
-        id,
-      } = edge.node as ExperienceConnectionFragment_edges_node;
-
-      if (!hasUnsaved) {
-        acc.push(id);
-      }
-
-      return acc;
-    },
-    [] as string[],
-  );
-}
-
-interface DescriptionMap {
-  [k: string]: boolean;
-}
-
-interface ToggleDescription {
-  toggleDescription: (id: string) => void;
-}

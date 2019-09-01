@@ -2,7 +2,7 @@ import React from "react";
 import { Helmet } from "react-helmet-async";
 
 import { Page404 } from "../components/Page404";
-import { Layout } from "../components/Layout/layout";
+import { Layout } from "../components/Layout/layout.component";
 import { RouteComponentProps } from "@reach/router";
 import { makeSiteTitle, PAGE_NOT_FOUND_TITLE } from "../constants";
 

@@ -2,9 +2,9 @@ import React from "react";
 import { RouteComponentProps } from "@reach/router";
 import { Helmet } from "react-helmet-async";
 
-import { Login } from "../components/Login/login";
+import { Login } from "../components/Login/login-index";
 
-import { Layout } from "../components/Layout/layout";
+import { Layout } from "../components/Layout/layout.component";
 import { SITE_TITLE } from "../constants";
 
 export default function IndexPage(props: RouteComponentProps) {

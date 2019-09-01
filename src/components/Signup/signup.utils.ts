@@ -6,9 +6,15 @@ import { Reducer, Dispatch } from "react";
 import immer from "immer";
 import { RegMutationProps } from "../../graphql/user-reg.mutation";
 import { Registration } from "../../graphql/apollo-types/globalTypes";
-import { PasswordInputAction, PasswordInputType } from "../PasswordInput/password-input.utils";
+import {
+  PasswordInputAction,
+  PasswordInputType,
+} from "../PasswordInput/password-input.utils";
+import { ScrollIntoView } from "../scroll-into-view";
 
-export interface Props extends RouteComponentProps, RegMutationProps {}
+export interface Props extends RouteComponentProps, RegMutationProps {
+  scrollToTop: ScrollIntoView;
+}
 
 export type FormValuesKey = keyof Registration;
 

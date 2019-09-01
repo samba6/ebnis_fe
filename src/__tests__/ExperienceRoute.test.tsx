@@ -6,7 +6,7 @@ import { render } from "react-testing-library";
 import { ExperienceRoute } from "../components/ExperienceRoute/experience-route.component";
 import { Props } from "../components/ExperienceRoute/experience-route.utils";
 
-jest.mock("../components/SidebarHeader/sidebar-header", () => ({
+jest.mock("../components/SidebarHeader/sidebar-header.component", () => ({
   SidebarHeader: () => null,
 }));
 

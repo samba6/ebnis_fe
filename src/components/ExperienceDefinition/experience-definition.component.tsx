@@ -37,9 +37,9 @@ import {
 import { makeExperienceRoute } from "../../constants/experience-route";
 import { noop, setDocumentTitle, makeSiteTitle } from "../../constants";
 import { EXPERIENCE_DEFINITION_TITLE } from "../../constants/experience-definition-title";
-import { ExperienceDefinitionUpdate } from "./update";
+import { ExperienceDefinitionUpdate } from "./experience-definition.update";
 import { CreateExperienceMutationFn } from "../../graphql/create-experience.mutation";
-import { SidebarHeader } from "../SidebarHeader/sidebar-header";
+import { SidebarHeader } from "../SidebarHeader/sidebar-header.component";
 import { FormCtrlError } from "../FormCtrlError/form-ctrl-error.component";
 import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragment";
 import { isConnected } from "../../state/connections";

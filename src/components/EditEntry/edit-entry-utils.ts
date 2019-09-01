@@ -2,7 +2,6 @@ import { EntryFragment } from "../../graphql/apollo-types/EntryFragment";
 import { DataDefinitionFragment } from "../../graphql/apollo-types/DataDefinitionFragment";
 import { Dispatch, Reducer, createContext } from "react";
 import immer from "immer";
-import { UpdateDefinitionsMutationProps } from "../../graphql/update-definitions.mutation";
 import {
   UpdateDefinitions_updateDefinitions,
   UpdateDefinitions_updateDefinitions_definitions,
@@ -13,7 +12,10 @@ import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragmen
 import { DataObjectFragment } from "../../graphql/apollo-types/DataObjectFragment";
 import { FormObjVal } from "../Experience/experience.utils";
 import { FieldType } from "../../graphql/apollo-types/globalTypes";
-import { UpdateDataObjectsOnlineMutationProps } from "../../graphql/update-data-objects.mutation";
+import {
+  UpdateDataObjectsOnlineMutationProps,
+  UpdateDefinitionsMutationProps,
+} from "../../graphql/update-definition-and-data.mutation";
 
 export enum ActionTypes {
   EDIT_BTN_CLICKED = "@component/edit-entry/edit-btn-clicked",
@@ -45,7 +47,7 @@ export const initStateFromProps = (props: Props): State => {
           defaults: {
             ...data,
             parsedVal: toFormObj(data.data),
-            type: FieldType.DATE, // make typescipt happy, correct value below
+            type: FieldType.DATE, // make typescript happy, correct value below
           },
         },
       };

@@ -13,7 +13,7 @@ import {
   onUploadResult,
 } from "./upload-unsaved.utils";
 import { Loading } from "../Loading/loading";
-import { SidebarHeader } from "../SidebarHeader/sidebar-header";
+import { SidebarHeader } from "../SidebarHeader/sidebar-header.component";
 import {
   ExperienceFragment_entries_edges_node,
   ExperienceFragment_entries_edges_node_dataObjects,

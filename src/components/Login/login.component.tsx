@@ -31,16 +31,18 @@ import { isConnected } from "../../state/connections";
 import { noop } from "../../constants";
 import { LoginMutationFn } from "../../graphql/login.mutation";
 import { LoginMutation_login } from "../../graphql/apollo-types/LoginMutation";
-import { SidebarHeader } from "../SidebarHeader/sidebar-header";
+import { SidebarHeader } from "../SidebarHeader/sidebar-header.component";
 import { ToOtherAuthLink } from "../ToOtherAuthLink";
-import { scrollToTop } from "./scroll-to-top";
 import { LayoutContext } from "../Layout/layout.utils";
 import { EXPERIENCES_URL } from "../../routes";
 import { storeUser, getLoggedOutUser } from "../../state/users";
 import { useUser } from "../use-user";
+import { makeScrollIntoViewId } from "../scroll-into-view";
+
+const scrollToTopId = makeScrollIntoViewId("login");
 
 export function Login(props: Props) {
-  const { login, location, navigate } = props;
+  const { login, location, navigate, scrollToTop } = props;
 
   const [state, dispatch] = useReducer(reducer, initialState);
 
@@ -83,7 +85,7 @@ export function Login(props: Props) {
     ...formikBag
   }: FormikProps<FormValues>) {
     return (
-      <Card>
+      <Card id={scrollToTopId}>
         <Errors
           errors={{ otherErrors, formErrors, serverFieldErrors, networkError }}
           dispatch={dispatch}
@@ -95,7 +97,9 @@ export function Login(props: Props) {
               dispatch([ActionType.clearAllErrors]);
 
               if (!isConnected()) {
-                scrollToTop(mainRef.current);
+                scrollToTop(scrollToTopId, {
+                  behavior: "smooth",
+                });
 
                 formikBag.setSubmitting(false);
 
@@ -109,7 +113,10 @@ export function Login(props: Props) {
               const errors = await formikBag.validateForm(values);
 
               if (errors.email || errors.password) {
-                scrollToTop(mainRef.current);
+                scrollToTop(scrollToTopId, {
+                  behavior: "smooth",
+                });
+                // scrollToTop(mainRef.current);
 
                 formikBag.setSubmitting(false);
 
@@ -133,7 +140,9 @@ export function Login(props: Props) {
 
                 refreshToHome(persistor);
               } catch (error) {
-                scrollToTop(mainRef.current);
+                scrollToTop(scrollToTopId, {
+                  behavior: "smooth",
+                });
 
                 formikBag.setSubmitting(false);
 
@@ -185,7 +194,7 @@ export function Login(props: Props) {
     <div className="components-login">
       <SidebarHeader title="Login to Ebnis" />
 
-      <div className="main" ref={mainRef} id="components-login-main">
+      <div className="main" ref={mainRef} id={scrollToTopId}>
         <Formik
           initialValues={{
             email: initialFormValues.email,

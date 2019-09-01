@@ -5,7 +5,6 @@ import makeClassnames from "classnames";
 import { WindowLocation, NavigateFn } from "@reach/router";
 import { Link } from "gatsby";
 import "./header.styles.scss";
-import { Props } from "./header.utils";
 import { EXPERIENCES_URL, ROOT_URL } from "../../routes";
 import { LayoutContext } from "../Layout/layout.utils";
 import {
@@ -13,6 +12,9 @@ import {
   UPLOAD_UNSAVED_URL_START,
 } from "../../constants/upload-unsaved-routes";
 import { useUser } from "../use-user";
+import { SetStateAction, PropsWithChildren } from "react";
+import { RouteComponentProps } from "@reach/router";
+import { LogoImageQuery_file_childImageSharp_fixed } from "../../graphql/gatsby-types/LogoImageQuery";
 
 export const Header = (props: Props) => {
   const {
@@ -112,3 +114,22 @@ export const Header = (props: Props) => {
     </header>
   );
 };
+
+
+export interface OwnProps {
+  title?: string;
+  wide?: boolean;
+  sidebar?: boolean;
+  show?: boolean;
+  toggleShowSidebar?: React.Dispatch<SetStateAction<boolean>>;
+  className?: string;
+}
+
+export interface Props
+  extends WithLogo,
+    RouteComponentProps,
+    PropsWithChildren<OwnProps> {}
+
+export interface WithLogo {
+  logoAttrs: LogoImageQuery_file_childImageSharp_fixed;
+}

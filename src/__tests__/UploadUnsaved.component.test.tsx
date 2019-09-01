@@ -40,7 +40,7 @@ jest.mock("../components/Loading/loading", () => ({
   Loading: () => <div id="a-lo" />,
 }));
 
-jest.mock("../components/SidebarHeader/sidebar-header", () => ({
+jest.mock("../components/SidebarHeader/sidebar-header.component", () => ({
   SidebarHeader: ({ children }: any) => {
     return <> {children} </>;
   },

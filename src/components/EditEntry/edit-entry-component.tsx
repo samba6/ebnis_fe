@@ -19,7 +19,7 @@ import Modal from "semantic-ui-react/dist/commonjs/modules/Modal";
 import makeClassNames from "classnames";
 import { UpdateDefinitions_updateDefinitions } from "../../graphql/apollo-types/UpdateDefinitions";
 import { FormCtrlError } from "../FormCtrlError/form-ctrl-error.component";
-import { UpdateDefinitionsMutationFn } from "../../graphql/update-definitions.mutation";
+import { UpdateDefinitionsMutationFn } from "../../graphql/update-definition-and-data.mutation";
 import { UpdateDefinitionInput } from "../../graphql/apollo-types/globalTypes";
 import "./edit-entry.styles.scss";
 import { SubmittingOverlay } from "../SubmittingOverlay/submitting-overlay";

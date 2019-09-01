@@ -8,7 +8,7 @@ import { ExperienceConnectionFragment } from "../graphql/apollo-types/Experience
 import { LayoutProvider } from "../components/Layout/layout-provider";
 import { ILayoutContextContext } from "../components/Layout/layout.utils";
 
-jest.mock("../components/SidebarHeader/sidebar-header", () => ({
+jest.mock("../components/SidebarHeader/sidebar-header.component", () => ({
   SidebarHeader: jest.fn(() => null),
 }));
 

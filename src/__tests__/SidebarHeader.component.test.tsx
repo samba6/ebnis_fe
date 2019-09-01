@@ -9,11 +9,11 @@ import {
   Props,
 } from "../components/SidebarHeader/sidebar-header.component";
 
-jest.mock("../components/Header/header", () => ({
+jest.mock("../components/Header/header-index", () => ({
   Header: jest.fn(() => null),
 }));
 
-jest.mock("../components/Sidebar/sidebar", () => ({
+jest.mock("../components/Sidebar/sidebar-index", () => ({
   Sidebar: jest.fn(() => <div id="yo" />),
 }));
 

@@ -1,6 +1,7 @@
+import React from "react";
 import { graphql, compose } from "react-apollo";
-
 import { Login as Comp } from "./login.component";
+import { Props } from "./login.utils";
 import {
   LoginMutation,
   LoginMutationVariables,
@@ -9,6 +10,7 @@ import {
   LoginMutationProps,
   LOGIN_MUTATION,
 } from "../../graphql/login.mutation";
+import { scrollIntoView } from "../scroll-into-view";
 
 const loginGql = graphql<
   {},
@@ -25,4 +27,6 @@ const loginGql = graphql<
   },
 });
 
-export const Login = compose(loginGql)(Comp);
+export const Login = compose(loginGql)((props: Props) => (
+  <Comp scrollToTop={scrollIntoView} {...props} />
+));

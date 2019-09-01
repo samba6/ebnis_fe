@@ -2,13 +2,13 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
-import { UpdateDefinitionInput, FieldType } from "./globalTypes";
+import { FieldType } from "./globalTypes";
 
 // ====================================================
-// GraphQL mutation operation: UpdateDefinitions
+// GraphQL fragment: UpdateDefinitionsResponseFragment
 // ====================================================
 
-export interface UpdateDefinitions_updateDefinitions_experience {
+export interface UpdateDefinitionsResponseFragment_experience {
   __typename: "Experience";
   /**
    * The ID of an object
@@ -17,7 +17,7 @@ export interface UpdateDefinitions_updateDefinitions_experience {
   updatedAt: any;
 }
 
-export interface UpdateDefinitions_updateDefinitions_definitions_definition {
+export interface UpdateDefinitionsResponseFragment_definitions_definition {
   __typename: "DataDefinition";
   id: string;
   /**
@@ -37,7 +37,7 @@ export interface UpdateDefinitions_updateDefinitions_definitions_definition {
   clientId: string | null;
 }
 
-export interface UpdateDefinitions_updateDefinitions_definitions_errors_errors {
+export interface UpdateDefinitionsResponseFragment_definitions_errors_errors {
   __typename: "DataDefinitionError";
   /**
    * May be we can't find the definition during an update
@@ -46,39 +46,28 @@ export interface UpdateDefinitions_updateDefinitions_definitions_errors_errors {
   name: string | null;
 }
 
-export interface UpdateDefinitions_updateDefinitions_definitions_errors {
+export interface UpdateDefinitionsResponseFragment_definitions_errors {
   __typename: "UpdateDefinitionError";
   id: string;
-  errors: UpdateDefinitions_updateDefinitions_definitions_errors_errors;
+  errors: UpdateDefinitionsResponseFragment_definitions_errors_errors;
 }
 
-export interface UpdateDefinitions_updateDefinitions_definitions {
+export interface UpdateDefinitionsResponseFragment_definitions {
   __typename: "UpdateDefinitionResponse";
-  definition: UpdateDefinitions_updateDefinitions_definitions_definition | null;
-  errors: UpdateDefinitions_updateDefinitions_definitions_errors | null;
+  definition: UpdateDefinitionsResponseFragment_definitions_definition | null;
+  errors: UpdateDefinitionsResponseFragment_definitions_errors | null;
 }
 
-export interface UpdateDefinitions_updateDefinitions {
+export interface UpdateDefinitionsResponseFragment {
   __typename: "UpdateDefinitionsResponse";
   /**
    * The experience to which the definitions updated belong. The experience
    *   is always updated whenever a definition is updated with the most recent
    *   updatedAt field of the definitions to be updated.
    */
-  experience: UpdateDefinitions_updateDefinitions_experience;
+  experience: UpdateDefinitionsResponseFragment_experience;
   /**
    * The definitions to be updated, successes/failures
    */
-  definitions: UpdateDefinitions_updateDefinitions_definitions[];
-}
-
-export interface UpdateDefinitions {
-  /**
-   * Update several definitions
-   */
-  updateDefinitions: UpdateDefinitions_updateDefinitions | null;
-}
-
-export interface UpdateDefinitionsVariables {
-  input: UpdateDefinitionInput[];
+  definitions: UpdateDefinitionsResponseFragment_definitions[];
 }

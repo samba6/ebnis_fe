@@ -18,3 +18,8 @@ export function scrollIntoView(id: string, options?: ScrollIntoViewOptions) {
 
   $element.scrollIntoView(options);
 }
+
+export type ScrollIntoView = (
+  id: string,
+  options?: ScrollIntoViewOptions,
+) => void;

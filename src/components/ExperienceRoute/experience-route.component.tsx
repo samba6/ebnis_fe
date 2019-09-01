@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import "./experience-route.styles.scss";
 import { Props } from "./experience-route.utils";
-import { SidebarHeader } from "../SidebarHeader/sidebar-header";
+import { SidebarHeader } from "../SidebarHeader/sidebar-header.component";
 import { setDocumentTitle, makeSiteTitle } from "../../constants";
 import { Experience, getTitle } from "../Experience/experience.component";
 
