@@ -1,6 +1,5 @@
 import { RouteComponentProps } from "@reach/router";
 import { Reducer, Dispatch } from "react";
-
 import { NewEntryRouteParams } from "../../routes";
 import { CreateEntryMutationProps } from "../../graphql/create-entry.mutation";
 import { WithApolloClient } from "react-apollo";
@@ -16,6 +15,45 @@ import {
   CreateEntryMutation_createEntry_errors,
   CreateEntryMutation_createEntry_errors_dataObjectsErrors,
 } from "../../graphql/apollo-types/CreateEntryMutation";
+import dateFnFormat from "date-fns/format";
+
+export function formObjToString(type: FieldType, val: FormObjVal) {
+  let toString = val;
+
+  switch (type) {
+    case FieldType.DATE:
+      {
+        toString = dateFnFormat(val, "YYYY-MM-DD");
+      }
+
+      break;
+
+    case FieldType.DATETIME:
+      {
+        toString = (val as Date).toJSON();
+      }
+
+      break;
+
+    case FieldType.DECIMAL:
+    case FieldType.INTEGER:
+      {
+        toString = (val || 0) + "";
+      }
+
+      break;
+
+    case FieldType.SINGLE_LINE_TEXT:
+    case FieldType.MULTI_LINE_TEXT:
+      {
+        toString = val;
+      }
+
+      break;
+  }
+
+  return toString;
+}
 
 export interface OwnProps
   extends WithApolloClient<{}>,

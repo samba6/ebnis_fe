@@ -11,8 +11,11 @@ import {
   EditingMultipleDefinitionsState,
   EditEnryContext,
   State,
+  DataStates,
+  SubmissionResponseState,
 } from "./edit-entry-utils";
 import Form from "semantic-ui-react/dist/commonjs/collections/Form";
+import Message from "semantic-ui-react/dist/commonjs/collections/Message";
 import Button from "semantic-ui-react/dist/commonjs/elements/Button";
 import Input from "semantic-ui-react/dist/commonjs/elements/Input";
 import Modal from "semantic-ui-react/dist/commonjs/modules/Modal";
@@ -20,13 +23,22 @@ import makeClassNames from "classnames";
 import { UpdateDefinitions_updateDefinitions } from "../../graphql/apollo-types/UpdateDefinitions";
 import { FormCtrlError } from "../FormCtrlError/form-ctrl-error.component";
 import { UpdateDefinitionsMutationFn } from "../../graphql/update-definition-and-data.mutation";
-import { UpdateDefinitionInput } from "../../graphql/apollo-types/globalTypes";
+import {
+  UpdateDefinitionInput,
+  UpdateDataObjectInput,
+} from "../../graphql/apollo-types/globalTypes";
 import "./edit-entry.styles.scss";
 import { SubmittingOverlay } from "../SubmittingOverlay/submitting-overlay";
 import { componentFromDataType } from "../NewEntry/component-from-data-type";
 import { FormObjVal } from "../Experience/experience.utils";
 import { InputOnChangeData } from "semantic-ui-react";
 import { FieldType } from "../../graphql/apollo-types/globalTypes";
+import {
+  UpdateDataObjectsOnlineMutationProps,
+  UpdateDefinitionsMutationProps,
+  UpdateDefinitionAndDataOnlineMutationProps,
+} from "../../graphql/update-definition-and-data.mutation";
+import { formObjToString } from "../NewEntry/new-entry.utils";
 
 export function EditEntry(props: Props) {
   const {
@@ -34,6 +46,8 @@ export function EditEntry(props: Props) {
     dispatch: parentDispatch,
     experience,
     editEntryUpdate,
+    updateDataObjectsOnline,
+    updateDefinitionAndDataOnline,
   } = props;
 
   const [state, dispatch] = useReducer(reducer, props, initStateFromProps);
@@ -43,6 +57,7 @@ export function EditEntry(props: Props) {
       common: commonState,
       editingData,
       editingMultipleDefinitions,
+      submissionResponse,
     },
   } = state;
 
@@ -51,6 +66,8 @@ export function EditEntry(props: Props) {
       value={{
         editEntryUpdate,
         dispatch,
+        updateDataObjectsOnline,
+        updateDefinitionAndDataOnline,
       }}
     >
       {commonState.value === "submitting" && <SubmittingOverlay />}
@@ -60,6 +77,10 @@ export function EditEntry(props: Props) {
         open={true}
         closeIcon={true}
         onClose={() => {
+          if (commonState.value === "submitting") {
+            return;
+          }
+
           parentDispatch({
             type: ActionTypes.DESTROYED,
           });
@@ -75,6 +96,8 @@ export function EditEntry(props: Props) {
             {experience.title}
           </div>
         </Modal.Header>
+
+        <SuccessResponseComponent state={submissionResponse} />
 
         <Modal.Content>
           <Form>
@@ -118,6 +141,9 @@ export function EditEntry(props: Props) {
                 onClick={submitAll({
                   dispatch,
                   globalState: state,
+                  updateDataObjectsOnline,
+                  updateDefinitionAndDataOnline,
+                  updateDefinitionsOnline,
                 })}
               >
                 Submit
@@ -130,14 +156,45 @@ export function EditEntry(props: Props) {
   );
 }
 
-function submitAll(args: SubmitAllArgs) {
-  return async function submitAllInner() {
-    const { dispatch } = args;
+function SuccessResponseComponent({
+  state,
+}: {
+  state?: SubmissionResponseState;
+}) {
+  const { dispatch } = useContext(EditEnryContext);
 
-    dispatch({
-      type: ActionTypes.DEFINITIONS_SUBMITTED,
-    });
-  };
+  if (state && state.value === "submissionSuccess") {
+    const {
+      submissionSuccess: {
+        context: { validResponse, invalidResponse },
+      },
+    } = state;
+
+    return (
+      <Modal.Content id="edit-entry-submission-response-message">
+        <Message
+          onDismiss={() => {
+            dispatch({
+              type: ActionTypes.DISMISS_SUBMISSION_RESPONSE_MESSAGE,
+            });
+          }}
+        >
+          {validResponse && (
+            <div>
+              {validResponse.successes}
+              {validResponse.failures}
+            </div>
+          )}
+
+          {invalidResponse && (
+            <div> {invalidResponse.data || invalidResponse.definitions} </div>
+          )}
+        </Message>
+      </Modal.Content>
+    );
+  }
+
+  return null;
 }
 
 function DataComponent(props: DataComponentProps) {
@@ -160,7 +217,7 @@ function DataComponent(props: DataComponentProps) {
     formValue,
   );
 
-  return <div> {component} </div>;
+  return <Form.Field id={idPrefix}> {component} </Form.Field>;
 }
 
 function getDataComponent(
@@ -189,18 +246,14 @@ function getDataComponent(
 
   const name = `${fieldName}-input`;
 
-  const generic = {
+  const props = {
     id: name,
     value: fieldValue,
     name,
     onChange,
   };
 
-  const propsObject = {
-    ...generic,
-  };
-
-  return componentFromDataType(type, propsObject);
+  return componentFromDataType(type, props);
 }
 
 function DefinitionComponent(props: DefinitionComponentProps) {
@@ -345,23 +398,13 @@ function submitDefinitions(props: SubmitDefinitionsArgs) {
       editEntryUpdate,
     } = props;
 
-    const input: UpdateDefinitionInput[] = [];
-    const withErrors: string[] = [];
+    dispatch({
+      type: ActionTypes.SUBMITTING,
+    });
 
-    for (const [id, state] of Object.entries(allDefinitionsStates)) {
-      if (state.value === "editing" && state.editing.value === "changed") {
-        const name = state.editing.context.formValue.trim();
-
-        if (name.length < 2) {
-          withErrors.push(id);
-        } else {
-          input.push({
-            id,
-            name,
-          });
-        }
-      }
-    }
+    const [input, withErrors] = getDefinitionsToSubmit(
+      allDefinitionsStates,
+    ) as [UpdateDefinitionInput[], string[]];
 
     if (withErrors.length > 0) {
       dispatch({
@@ -371,10 +414,6 @@ function submitDefinitions(props: SubmitDefinitionsArgs) {
 
       return;
     }
-
-    dispatch({
-      type: ActionTypes.DEFINITIONS_SUBMITTED,
-    });
 
     const result = await updateDefinitionsOnline({
       variables: {
@@ -388,10 +427,87 @@ function submitDefinitions(props: SubmitDefinitionsArgs) {
       result.data.updateDefinitions) as UpdateDefinitions_updateDefinitions;
 
     dispatch({
-      type: ActionTypes.SUBMISSION_RESULT,
+      type: ActionTypes.DEFINITIONS_SUBMISSION_RESPONSE,
       ...data,
     });
   };
+}
+
+function getDefinitionsToSubmit(allDefinitionsStates: DefinitionsStates) {
+  const input: UpdateDefinitionInput[] = [];
+  const withErrors: string[] = [];
+
+  for (const [id, state] of Object.entries(allDefinitionsStates)) {
+    if (state.value === "editing" && state.editing.value === "changed") {
+      const name = state.editing.context.formValue.trim();
+
+      if (name.length < 2) {
+        withErrors.push(id);
+      } else {
+        input.push({
+          id,
+          name,
+        });
+      }
+    }
+  }
+
+  return [input, withErrors];
+}
+
+function submitAll(args: SubmitAllArgs) {
+  return async function submitAllInner() {
+    const { dispatch, globalState, updateDefinitionAndDataOnline } = args;
+
+    dispatch({
+      type: ActionTypes.SUBMITTING,
+    });
+
+    const [definitionsInput] = getDefinitionsToSubmit(
+      globalState.definitionsStates,
+    ) as [UpdateDefinitionInput[]];
+
+    const [dataInput] = getDataObjectsToSubmit(globalState.dataStates);
+
+    const result = await updateDefinitionAndDataOnline({
+      variables: {
+        definitionsInput,
+        dataInput,
+      },
+    });
+
+    const successResult = result && result.data;
+
+    if (successResult) {
+      dispatch({
+        type: ActionTypes.SUBMISSION_RESPONSE,
+        ...successResult,
+      });
+    }
+  };
+}
+
+function getDataObjectsToSubmit(states: DataStates) {
+  const inputs: UpdateDataObjectInput[] = [];
+
+  for (const [id, state] of Object.entries(states)) {
+    if (state.value === "changed") {
+      const {
+        context: {
+          defaults: { type },
+        },
+        changed: {
+          context: { formValue },
+        },
+      } = state;
+      inputs.push({
+        id,
+        data: `{"${type.toUpperCase()}":${formObjToString(type, formValue)}}`,
+      });
+    }
+  }
+
+  return [inputs];
 }
 
 function getIdOfSubmittingDefinition(
@@ -465,7 +581,10 @@ interface DataComponentProps {
 
 type E = React.ChangeEvent<HTMLInputElement>;
 
-interface SubmitAllArgs {
+interface SubmitAllArgs
+  extends UpdateDefinitionAndDataOnlineMutationProps,
+    UpdateDataObjectsOnlineMutationProps,
+    UpdateDefinitionsMutationProps {
   dispatch: DispatchType;
   globalState: State;
 }

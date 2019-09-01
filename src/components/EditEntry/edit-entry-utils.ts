@@ -15,18 +15,30 @@ import { FieldType } from "../../graphql/apollo-types/globalTypes";
 import {
   UpdateDataObjectsOnlineMutationProps,
   UpdateDefinitionsMutationProps,
+  UpdateDefinitionAndDataOnlineMutationProps,
 } from "../../graphql/update-definition-and-data.mutation";
+import {
+  UpdateDefinitionAndData,
+  UpdateDefinitionAndData_updateDefinitions,
+} from "../../graphql/apollo-types/UpdateDefinitionAndData";
+import {
+  UpdateDataObjects_updateDataObjects,
+  UpdateDataObjects_updateDataObjects_fieldErrors,
+} from "../../graphql/apollo-types/UpdateDataObjects";
+import { UpdateDataObjectsResponseFragment_fieldErrors } from "../../graphql/apollo-types/UpdateDataObjectsResponseFragment";
 
 export enum ActionTypes {
   EDIT_BTN_CLICKED = "@component/edit-entry/edit-btn-clicked",
   DEFINITION_NAME_CHANGED = "@component/edit-entry/definition-name-changed",
   UNDO_DEFINITION_EDITS = "@component/edit-entry/undo-definition-edits",
   STOP_DEFINITION_EDIT = "@component/edit-entry/stop-definition-edit",
-  DEFINITIONS_SUBMITTED = "@component/edit-entry/definitions-submitted",
+  SUBMITTING = "@component/edit-entry/definitions-submitted",
   DESTROYED = "@component/edit-entry/destroy",
-  SUBMISSION_RESULT = "@component/edit-entry/submission-result",
+  DEFINITIONS_SUBMISSION_RESPONSE = "@component/edit-entry/definitions-submission-response",
   DEFINITION_FORM_ERRORS = "@component/edit-entry/definition-form-errors",
   DATA_CHANGED = "@component/edit-entry/data-changed",
+  SUBMISSION_RESPONSE = "@component/edit-entry/submission-response",
+  DISMISS_SUBMISSION_RESPONSE_MESSAGE = "@component/edit-entry/dismiss-submission-response-message",
 }
 
 export const initStateFromProps = (props: Props): State => {
@@ -46,7 +58,7 @@ export const initStateFromProps = (props: Props): State => {
         context: {
           defaults: {
             ...data,
-            parsedVal: toFormObj(data.data),
+            parsedVal: formObjFromRawString(data.data),
             type: FieldType.DATE, // make typescript happy, correct value below
           },
         },
@@ -183,51 +195,21 @@ export const reducer: Reducer<State, Action> = (
 
         break;
 
-      case ActionTypes.DEFINITIONS_SUBMITTED:
+      case ActionTypes.SUBMITTING:
         {
           proxy.primaryState.common.value = "submitting";
         }
 
         break;
 
-      case ActionTypes.SUBMISSION_RESULT:
+      case ActionTypes.DEFINITIONS_SUBMISSION_RESPONSE:
         {
           const {
             definitions,
           } = payload as UpdateDefinitions_updateDefinitions;
 
-          const { definitionsStates } = proxy;
           proxy.primaryState.common.value = "editing";
-
-          definitions.forEach(def => {
-            const {
-              definition,
-              errors,
-            } = def as UpdateDefinitions_updateDefinitions_definitions;
-
-            if (definition) {
-              const { id, name } = definition;
-              const state = definitionsStates[id];
-              state.context.defaults.name = name;
-
-              state.value = "idle";
-
-              (state as DefinitionIdleState).idle.context.anyEditSuccess = true;
-
-              return;
-            } else {
-              const {
-                id,
-                ...errorsContext
-              } = errors as UpdateDefinitions_updateDefinitions_definitions_errors;
-              const state = definitionsStates[id] as DefinitionEditingState;
-
-              (state.editing as DefinitionChangedState).changed = {
-                value: "serverErrors",
-                context: { ...errorsContext },
-              };
-            }
-          });
+          handleDefinitionsSubmissionResponse(proxy, definitions);
         }
         break;
 
@@ -259,26 +241,115 @@ export const reducer: Reducer<State, Action> = (
           const { id, rawFormVal } = payload as DataChangedPayload;
           const state = dataStates[id];
           let { parsedVal } = state.context.defaults;
-          const [original, stringed] = formObjToString(rawFormVal);
+          const [original, stringed] = formObjToCompareString(rawFormVal);
 
-          if (formObjToString(parsedVal)[1] === stringed) {
+          if (formObjToCompareString(parsedVal)[1] === stringed) {
             state.value = "unchanged";
           } else {
             state.value = "changed";
             const changedState = state as DataChangedState;
+
             changedState.changed = {
               context: {
                 formValue: original,
               },
+
+              value: "normal",
             };
           }
 
           setEditingData(proxy);
         }
         break;
+
+      case ActionTypes.SUBMISSION_RESPONSE:
+        {
+          const { primaryState } = proxy;
+          primaryState.common.value = "editing";
+
+          const {
+            updateDataObjects,
+            updateDefinitions,
+          } = payload as UpdateDefinitionAndData;
+
+          const submissionResponse = {
+            value: "submissionSuccess",
+          } as SubmissionSuccessState;
+
+          const context = {
+            invalidResponse: {},
+          } as SubmissionSuccessStateContext;
+
+          let hasInvalidResponse = false;
+          let successCount = 0;
+          let failureCount = 0;
+
+          if (updateDataObjects) {
+            const [s, f] = handleDataSubmissionResponse(
+              proxy,
+              updateDataObjects as UpdateDataObjects_updateDataObjects[],
+            );
+            successCount += s;
+            failureCount += f;
+          } else {
+            hasInvalidResponse = true;
+
+            (context.invalidResponse as SubmissionInvalidResponse).data =
+              "unable to update data: unknown error occurred";
+          }
+
+          if (updateDefinitions) {
+            const {
+              definitions,
+            } = updateDefinitions as UpdateDefinitionAndData_updateDefinitions;
+
+            if (definitions) {
+              const [s, f] = handleDefinitionsSubmissionResponse(
+                proxy,
+                definitions,
+              );
+              successCount += s;
+              failureCount += f;
+            } else {
+              hasInvalidResponse = putDefinitionInvalidErrors(context);
+            }
+          } else {
+            hasInvalidResponse = putDefinitionInvalidErrors(context);
+          }
+
+          if (!hasInvalidResponse) {
+            delete context.invalidResponse;
+          }
+
+          if (successCount + failureCount !== 0) {
+            context.validResponse = {
+              successes: successCount,
+              failures: failureCount,
+            };
+          }
+
+          submissionResponse.submissionSuccess = {
+            context,
+          };
+
+          primaryState.submissionResponse = submissionResponse;
+        }
+        break;
+
+      case ActionTypes.DISMISS_SUBMISSION_RESPONSE_MESSAGE:
+        {
+          delete proxy.primaryState.submissionResponse;
+        }
+        break;
     }
   });
 };
+
+function putDefinitionInvalidErrors(context: SubmissionSuccessStateContext) {
+  (context.invalidResponse as SubmissionInvalidResponse).definitions =
+    "unable to change defintion names: unknown error occurred";
+  return true;
+}
 
 function setDefinitionEditingUnchangedState(proxy: State, id: string) {
   const { definitionsStates } = proxy;
@@ -325,7 +396,7 @@ function setEditingMultipleDefinitionsState(proxy: State) {
         };
 }
 
-function toFormObj(val: string) {
+function formObjFromRawString(val: string) {
   const [[k, v]] = Object.entries(JSON.parse(val));
 
   if (k === "date" || k === "datetime") {
@@ -335,7 +406,7 @@ function toFormObj(val: string) {
   return (("" + v) as string).trim();
 }
 
-function formObjToString(val: FormObjVal) {
+function formObjToCompareString(val: FormObjVal) {
   if (val instanceof Date) {
     return [val, (val as Date).toJSON()];
   }
@@ -362,9 +433,109 @@ function setEditingData(proxy: State) {
   }
 }
 
+function handleDefinitionsSubmissionResponse(
+  proxy: State,
+  definitions: UpdateDefinitions_updateDefinitions_definitions[],
+) {
+  const { definitionsStates } = proxy;
+  let successCount = 0;
+  let failureCount = 0;
+
+  definitions.forEach(def => {
+    const {
+      definition,
+      errors,
+    } = def as UpdateDefinitions_updateDefinitions_definitions;
+
+    if (definition) {
+      ++successCount;
+
+      const { id, name } = definition;
+      const state = definitionsStates[id];
+      state.context.defaults.name = name;
+
+      state.value = "idle";
+
+      (state as DefinitionIdleState).idle.context.anyEditSuccess = true;
+
+      return;
+    } else {
+      ++failureCount;
+
+      const {
+        id,
+        ...errorsContext
+      } = errors as UpdateDefinitions_updateDefinitions_definitions_errors;
+      const state = definitionsStates[id] as DefinitionEditingState;
+
+      (state.editing as DefinitionChangedState).changed = {
+        value: "serverErrors",
+        context: { ...errorsContext },
+      };
+    }
+  });
+
+  return [successCount, failureCount];
+}
+
+function handleDataSubmissionResponse(
+  proxy: State,
+  dataObjects: UpdateDataObjects_updateDataObjects[],
+) {
+  const { dataStates } = proxy;
+  let successCount = 0;
+  let failureCount = 0;
+
+  dataObjects.forEach(obj => {
+    const {
+      id,
+      dataObject,
+      stringError,
+      fieldErrors,
+    } = obj as UpdateDataObjects_updateDataObjects;
+
+    const state = dataStates[id] as DataChangedState;
+
+    if (dataObject) {
+      ++successCount;
+    } else if (stringError) {
+      ++failureCount;
+
+      putDataServerErrors(
+        state,
+
+        {
+          definition: stringError as string,
+        } as UpdateDataObjects_updateDataObjects_fieldErrors,
+      );
+    } else {
+      ++failureCount;
+      putDataServerErrors(
+        state,
+        fieldErrors as UpdateDataObjectsResponseFragment_fieldErrors,
+      );
+    }
+  });
+
+  return [successCount, failureCount];
+}
+
+function putDataServerErrors(
+  state: DataChangedState,
+  errors: UpdateDataObjectsResponseFragment_fieldErrors,
+) {
+  state.changed.value = "serverErrors";
+
+  (state.changed as DataServerErrorsState).serverErrors = {
+    context: { errors },
+  };
+}
+
 ////////////////////////// TYPES ////////////////////////////
 
-interface ContextValue {
+interface ContextValue
+  extends UpdateDefinitionAndDataOnlineMutationProps,
+    UpdateDataObjectsOnlineMutationProps {
   dispatch: DispatchType;
   editEntryUpdate: () => void;
 }
@@ -389,6 +560,50 @@ interface PrimaryState {
   editingData?: true;
 
   editingMultipleDefinitions?: EditingMultipleDefinitionsState;
+
+  submissionResponse?: SubmissionResponseState;
+}
+
+export type SubmissionResponseState =
+  | {
+      value: "apolloErrors";
+      apolloErrors: {
+        context: {
+          errors: string;
+        };
+      };
+    }
+  | SubmissionSuccessState
+  | {
+      value: "unknownSubmissionError";
+
+      unknownSubmissionError: {
+        context: {
+          errors: string;
+        };
+      };
+    };
+
+interface SubmissionSuccessState {
+  value: "submissionSuccess";
+
+  submissionSuccess: {
+    context: SubmissionSuccessStateContext;
+  };
+}
+
+interface SubmissionSuccessStateContext {
+  validResponse?: {
+    successes: number;
+    failures: number;
+  };
+
+  invalidResponse?: SubmissionInvalidResponse;
+}
+
+interface SubmissionInvalidResponse {
+  data?: string;
+  definitions?: string;
 }
 
 export interface EditingMultipleDefinitionsState {
@@ -414,20 +629,26 @@ export type Action =
       id: string;
     }
   | {
-      type: ActionTypes.DEFINITIONS_SUBMITTED;
+      type: ActionTypes.SUBMITTING;
     }
   | {
       type: ActionTypes.DESTROYED;
     }
   | {
-      type: ActionTypes.SUBMISSION_RESULT;
+      type: ActionTypes.DEFINITIONS_SUBMISSION_RESPONSE;
     } & UpdateDefinitions_updateDefinitions
   | {
       type: ActionTypes.DEFINITION_FORM_ERRORS;
     } & DefinitionFormErrorsPayload
   | {
       type: ActionTypes.DATA_CHANGED;
-    } & DataChangedPayload;
+    } & DataChangedPayload
+  | {
+      type: ActionTypes.SUBMISSION_RESPONSE;
+    } & UpdateDefinitionAndData
+  | {
+      type: ActionTypes.DISMISS_SUBMISSION_RESPONSE_MESSAGE;
+    };
 
 interface DataChangedPayload {
   id: string;
@@ -453,7 +674,8 @@ export interface OwnProps {
 export interface Props
   extends OwnProps,
     UpdateDefinitionsMutationProps,
-    UpdateDataObjectsOnlineMutationProps {}
+    UpdateDataObjectsOnlineMutationProps,
+    UpdateDefinitionAndDataOnlineMutationProps {}
 
 export type DefinitionFormValue = Pick<
   DataDefinitionFragment,
@@ -530,7 +752,7 @@ interface IdString {
   id: string;
 }
 
-interface DataStates {
+export interface DataStates {
   [k: string]: DataState;
 }
 
@@ -559,6 +781,26 @@ interface DataChangedState {
   changed: {
     context: {
       formValue: FormObjVal;
+    };
+  } & (
+    | {
+        value: "normal";
+      }
+    | {
+        value: "formErrors";
+        context: {
+          errors: {};
+        };
+      }
+    | DataServerErrorsState);
+}
+
+interface DataServerErrorsState {
+  value: "serverErrors";
+
+  serverErrors: {
+    context: {
+      errors: UpdateDataObjects_updateDataObjects_fieldErrors;
     };
   };
 }

@@ -2,7 +2,7 @@
 import React, { ComponentType } from "react";
 import "jest-dom/extend-expect";
 import "react-testing-library/cleanup-after-each";
-import { render, wait } from "react-testing-library";
+import { render, wait, waitForElement } from "react-testing-library";
 import { EditEntry } from "../components/EditEntry/edit-entry-component";
 import { Props, ActionTypes } from "../components/EditEntry/edit-entry-utils";
 import { EntryFragment } from "../graphql/apollo-types/EntryFragment";
@@ -20,7 +20,9 @@ import {
 import { Props as DateTimeProps } from "../components/DateTimeField/date-time-field.utils";
 import { DataObjectFragment } from "../graphql/apollo-types/DataObjectFragment";
 import { ExperienceFragment } from "../graphql/apollo-types/ExperienceFragment";
-import {editEntryUpdate} from '../components/EditEntry/edit-entry.update';
+import { editEntryUpdate } from "../components/EditEntry/edit-entry.update";
+import { UpdateDefinitionAndData } from "../graphql/apollo-types/UpdateDefinitionAndData";
+import { UpdateDataObjects_updateDataObjects } from "../graphql/apollo-types/UpdateDataObjects";
 
 ////////////////////////// MOCKS ////////////////////////////
 
@@ -53,8 +55,7 @@ it("destroys the UI", () => {
 
   render(ui);
 
-  const $element = document.getElementById("edit-entry-modal");
-  closeMessage($element);
+  destroyModal();
 
   expect((mockParentDispatch.mock.calls[0][0] as any).type).toEqual(
     ActionTypes.DESTROYED,
@@ -101,83 +102,83 @@ describe("editing definitions not editing data", () => {
 
     // idle
 
-    let $editBtn = makeDefinitionEdit("a");
-    expect(makeDefinitionDismiss("a")).toBeNull();
-    expect(makeDefinitionInput("a")).toBeNull();
-    expect(makeDefinitionName("a")).not.toBeNull();
+    let $editBtn = getDefinitionEdit("a");
+    expect(getDefinitionDismiss("a")).toBeNull();
+    expect(getDefinitionInput("a")).toBeNull();
+    expect(getDefinitionName("a")).not.toBeNull();
 
     $editBtn.click();
 
     // editing.unchanged
 
-    expect(makeDefinitionEdit("a")).toBeNull();
-    expect(makeDefinitionInput("a").classList).toContain(
+    expect(getDefinitionEdit("a")).toBeNull();
+    expect(getDefinitionInput("a").classList).toContain(
       "definition-input-unchanged",
     );
 
-    let $dismiss = makeDefinitionDismiss("a");
+    let $dismiss = getDefinitionDismiss("a");
     $dismiss.click();
 
     // back to idle
 
-    expect(makeDefinitionDismiss("a")).toBeNull();
+    expect(getDefinitionDismiss("a")).toBeNull();
 
-    $editBtn = makeDefinitionEdit("a");
+    $editBtn = getDefinitionEdit("a");
     $editBtn.click();
 
     // editing.unchanged
 
-    expect(makeDefinitionReset("a")).toBeNull();
+    expect(getDefinitionReset("a")).toBeNull();
 
-    let $input = makeDefinitionInput("a");
+    let $input = getDefinitionInput("a");
     fillField($input, "g1");
 
     // editing.changed
     // we can dismiss
 
-    $dismiss = makeDefinitionDismiss("a");
+    $dismiss = getDefinitionDismiss("a");
     $dismiss.click();
 
     // back to idle
 
-    $editBtn = makeDefinitionEdit("a");
+    $editBtn = getDefinitionEdit("a");
     $editBtn.click();
 
     // editing.unchanged
     // we can not reset
 
-    expect(makeDefinitionReset("a")).toBeNull();
+    expect(getDefinitionReset("a")).toBeNull();
 
-    fillField(makeDefinitionInput("a"), "g1");
+    fillField(getDefinitionInput("a"), "g1");
     //debug();
     // editing.changed
     // we can reset by clicking reset button
 
-    makeDefinitionReset("a").click();
+    getDefinitionReset("a").click();
     // editing.unchanged
-    expect(makeDefinitionInput("a").classList).toContain(
+    expect(getDefinitionInput("a").classList).toContain(
       "definition-input-unchanged",
     );
-    expect(makeDefinitionInput("a").value).toEqual("f1");
-    expect(makeDefinitionReset("a")).toBeNull();
+    expect(getDefinitionInput("a").value).toEqual("f1");
+    expect(getDefinitionReset("a")).toBeNull();
 
-    fillField(makeDefinitionInput("a"), "g1");
+    fillField(getDefinitionInput("a"), "g1");
 
     // editing.changed
     // OR we can reset by changing to default value
 
-    fillField(makeDefinitionInput("a"), "f1  ");
+    fillField(getDefinitionInput("a"), "f1  ");
 
     // editing.unchanged
 
-    expect(makeDefinitionSubmit("a")).toBeNull();
-    expect(makeDefinitionReset("a")).toBeNull();
-    fillField(makeDefinitionInput("a"), "g  ");
+    expect(getDefinitionSubmit("a")).toBeNull();
+    expect(getDefinitionReset("a")).toBeNull();
+    fillField(getDefinitionInput("a"), "g  ");
 
     // editing.changed.form
 
-    const $submit = makeDefinitionSubmit("a");
-    const $field = makeDefinitionField("a");
+    const $submit = getDefinitionSubmit("a");
+    const $field = getDefinitionField("a");
 
     expect($field.classList).not.toContain("error");
 
@@ -185,12 +186,13 @@ describe("editing definitions not editing data", () => {
 
     // editing.changed.formErrors
 
-    expect(makeDefinitionError("a")).not.toBeNull();
+    expect(getDefinitionError("a")).not.toBeNull();
     expect($field.classList).toContain("error");
-    fillField(makeDefinitionInput("a"), "g1  ");
+    fillField(getDefinitionInput("a"), "g1  ");
     expect($field.classList).not.toContain("definition--success");
 
     $submit.click();
+    destroyModal();
     expect(document.getElementById("submitting-overlay")).not.toBeNull();
     // submitting
 
@@ -212,7 +214,7 @@ describe("editing definitions not editing data", () => {
     expect($field.classList).toContain("definition--success");
     expect($field.classList).not.toContain("error");
     expect(document.getElementById("submitting-overlay")).toBeNull();
-    expect(makeDefinitionName("a").value).toEqual("g1");
+    expect(getDefinitionName("a").value).toEqual("g1");
   });
 
   test("editing siblings, server error", async () => {
@@ -274,65 +276,65 @@ describe("editing definitions not editing data", () => {
     render(ui);
     // const { debug } = render(ui);
 
-    expect(makeDefinitionInput("a")).toBeNull();
-    makeDefinitionEdit("a").click();
+    expect(getDefinitionInput("a")).toBeNull();
+    getDefinitionEdit("a").click();
 
     // a = editing.unchanged
-    expect(makeDefinitionSubmit("a")).toBeNull();
-    fillField(makeDefinitionInput("a"), "g1");
+    expect(getDefinitionSubmit("a")).toBeNull();
+    fillField(getDefinitionInput("a"), "g1");
     // a = editing.changed
-    expect(makeDefinitionSubmit("a")).not.toBeNull();
+    expect(getDefinitionSubmit("a")).not.toBeNull();
 
-    expect(makeDefinitionInput("b")).toBeNull();
-    makeDefinitionEdit("b").click();
+    expect(getDefinitionInput("b")).toBeNull();
+    getDefinitionEdit("b").click();
     // b = editing.unchanged
-    fillField(makeDefinitionInput("b"), "g2");
+    fillField(getDefinitionInput("b"), "g2");
     // b = editing.changed.editingSiblings
-    expect(makeDefinitionSubmit("b")).toBeNull();
+    expect(getDefinitionSubmit("b")).toBeNull();
 
     // a = editing.changed.editingSiblings.firstEditableSibling
-    expect(makeDefinitionSubmit("a")).not.toBeNull();
+    expect(getDefinitionSubmit("a")).not.toBeNull();
 
-    expect(makeDefinitionReset("a")).not.toBeNull();
-    fillField(makeDefinitionInput("a"), "f1");
+    expect(getDefinitionReset("a")).not.toBeNull();
+    fillField(getDefinitionInput("a"), "f1");
 
     // a = editing.unchanged
-    expect(makeDefinitionReset("a")).toBeNull();
+    expect(getDefinitionReset("a")).toBeNull();
 
     // b = editing.changed.notEditingSiblings
-    expect(makeDefinitionSubmit("b")).not.toBeNull();
+    expect(getDefinitionSubmit("b")).not.toBeNull();
 
-    expect(makeDefinitionInput("c")).toBeNull();
-    makeDefinitionEdit("c").click();
-    fillField(makeDefinitionInput("c"), "g3");
+    expect(getDefinitionInput("c")).toBeNull();
+    getDefinitionEdit("c").click();
+    fillField(getDefinitionInput("c"), "g3");
     // c = editing.changed.editingSiblings
-    expect(makeDefinitionSubmit("c")).toBeNull();
+    expect(getDefinitionSubmit("c")).toBeNull();
     // b = ediitng.changed.editingSiblings.firstEditableSiblings
-    expect(makeDefinitionSubmit("b")).not.toBeNull();
+    expect(getDefinitionSubmit("b")).not.toBeNull();
 
-    makeDefinitionDismiss("b").click();
+    getDefinitionDismiss("b").click();
     // b = idle
-    expect(makeDefinitionInput("b")).toBeNull();
+    expect(getDefinitionInput("b")).toBeNull();
     // c = editing.changed.notEditingSiblings
-    expect(makeDefinitionSubmit("c")).not.toBeNull();
+    expect(getDefinitionSubmit("c")).not.toBeNull();
 
-    fillField(makeDefinitionInput("a"), "g");
+    fillField(getDefinitionInput("a"), "g");
     // c = editing.changed.editingSiblings
-    expect(makeDefinitionSubmit("c")).toBeNull();
+    expect(getDefinitionSubmit("c")).toBeNull();
 
-    makeDefinitionEdit("b").click();
+    getDefinitionEdit("b").click();
     // b should be unchanged because adding only whitespace does not count
-    fillField(makeDefinitionInput("b"), "f2     ");
+    fillField(getDefinitionInput("b"), "f2     ");
     // b = editing.unchanged
-    expect(makeDefinitionReset("b")).toBeNull();
+    expect(getDefinitionReset("b")).toBeNull();
 
-    const $fieldA = makeDefinitionField("a");
+    const $fieldA = getDefinitionField("a");
     expect($fieldA.classList).not.toContain("error");
 
-    const $fieldC = makeDefinitionField("c");
+    const $fieldC = getDefinitionField("c");
 
     // a = editing.changed.editingSiblings.firstEditableSibling
-    const $submit = makeDefinitionSubmit("a");
+    const $submit = getDefinitionSubmit("a");
     $submit.click();
 
     // a = editing.changed.form.formErrors
@@ -343,7 +345,7 @@ describe("editing definitions not editing data", () => {
     expect($fieldC.classList).not.toContain("error");
     expect($fieldA.classList).not.toContain("definition--success");
 
-    fillField(makeDefinitionInput("a"), "g1");
+    fillField(getDefinitionInput("a"), "g1");
     $submit.click();
 
     await wait(() => {
@@ -355,12 +357,12 @@ describe("editing definitions not editing data", () => {
     expect($fieldC.classList).not.toContain("definition--success");
   });
 
-  test("editing data, editing definitions", async () => {
+  test.only("editing data, editing definitions", async () => {
     // NOTE: default date = 2000-01-01, time = 2000-01-01T01:01:01.000Z
     const time = "2000-01-01T01:01:01.000Z";
     const date = "2000-01-01";
 
-    const { ui } = makeComp({
+    const { ui, mockUpdateDefinitionsAndDataOnline } = makeComp({
       props: {
         entry: {
           dataObjects: [
@@ -444,18 +446,88 @@ describe("editing definitions not editing data", () => {
       },
     });
 
+    mockUpdateDefinitionsAndDataOnline.mockResolvedValue({
+      data: {
+        updateDefinitions: {
+          definitions: [
+            {
+              definition: {
+                id: "int",
+              },
+            } as UpdateDefinitions_updateDefinitions_definitions,
+
+            {
+              errors: {
+                id: "dec",
+
+                errors: {
+                  name: "n",
+                  definition: "",
+                },
+              },
+            },
+          ] as UpdateDefinitions_updateDefinitions_definitions[],
+        } as UpdateDefinitions_updateDefinitions,
+
+        updateDataObjects: [
+          {
+            id: "date",
+
+            dataObject: {
+              id: "date",
+              data: `{"date":"2000-01-03"}`,
+            },
+          },
+
+          {
+            id: "time",
+
+            dataObject: {
+              id: "time",
+              data: `{"datetime":"2000-01-03T01:01:01.000Z"}`,
+            },
+          },
+
+          {
+            id: "multi",
+
+            dataObject: {
+              id: "multi",
+              data: `{"multi_line_text":"mu"}`,
+            },
+          },
+
+          {
+            id: "text",
+
+            stringError: "n",
+          } as UpdateDataObjects_updateDataObjects,
+
+          {
+            id: "dec",
+
+            fieldErrors: {
+              __typename: "DataDefinitionError",
+              data: "d",
+              definition: "",
+            },
+          },
+        ] as UpdateDataObjects_updateDataObjects[],
+      } as UpdateDefinitionAndData,
+    });
+
     const { debug } = render(ui);
 
-    makeDefinitionEdit("int").click();
-    makeDefinitionInput("int", "in");
+    getDefinitionEdit("int").click();
+    getDefinitionInput("int", "in");
     // primary state.notEdiitngData
-    expect(makeDefinitionSubmit("int")).not.toBeNull();
+    expect(getDefinitionSubmit("int")).not.toBeNull();
 
     expect(makeSubmit()).toBeNull();
-    const $int = makeDataInput("int", "2");
-    const $date = makeDataInput("date", "2000-01-02");
+    const $int = getDataInput("int", "2");
+    const $date = getDataInput("date", "2000-01-02");
     // primary state editingData
-    expect(makeDefinitionSubmit("int")).toBeNull();
+    expect(getDefinitionSubmit("int")).toBeNull();
     expect(makeSubmit()).not.toBeNull();
 
     // revert back to int default
@@ -467,28 +539,79 @@ describe("editing definitions not editing data", () => {
 
     // primary state.notEditingData
     expect(makeSubmit()).toBeNull();
-    expect(makeDefinitionSubmit("int")).not.toBeNull();
+    expect(getDefinitionSubmit("int")).not.toBeNull();
 
-    makeDefinitionInput("int", "int");
-    expect(makeDefinitionSubmit("int")).toBeNull();
+    getDefinitionInput("int", "int");
+    // int state.editing.unchanged
+    expect(getDefinitionSubmit("int")).toBeNull();
 
-    makeDataInput("time", "2000-01-02T01:01:01.000Z");
+    getDataInput("time", "2000-01-02T01:01:01.000Z");
+    // primary.editingData
     expect(makeSubmit()).not.toBeNull();
 
-    makeDataInput("multi", "mu");
-    makeDataInput("text", "te");
-    makeDataInput("dec", "de");
+    getDataInput("multi", "mu");
+    getDataInput("text", "te");
+    getDataInput("dec", "de");
+    const $fieldDate = getDataField("date");
+    expect($fieldDate.classList).not.toContain("data--success");
+
+    const $fieldTime = getDataField("time");
+    expect($fieldTime.classList).not.toContain("data--success");
+
+    const $fieldMulti = getDataField("multi");
+    expect($fieldMulti.classList).not.toContain("data--success");
+
+    const $fieldText = getDataField("text");
+    expect($fieldText.classList).not.toContain("error");
+
+    const $fieldDec = getDataField("dec");
+    expect($fieldDec.classList).not.toContain("error");
+
+    getDefinitionInput("int", "45");
+    getDefinitionEdit("dec").click();
+    getDefinitionInput("dec", "0.4");
+    expect(getDefinitionError("dec")).toBeNull();
+    const $fieldInt = getDefinitionField("int");
+    expect($fieldInt.classList).not.toContain("definition--success");
 
     makeSubmit().click();
-
+    // primary.submitting
     expect(document.getElementById("submitting-overlay")).not.toBeNull();
+
+    const $responseMessage = (await waitForElement(
+      function getSubmissionResponseDom() {
+        return document.getElementById(
+          "edit-entry-submission-response-message",
+        );
+      },
+    )) as HTMLDivElement;
+
+    expect(document.getElementById("submitting-overlay")).toBeNull();
+
+    const submissionResponseMessage = $responseMessage.textContent;
+    expect(submissionResponseMessage).toContain("4");
+    expect(submissionResponseMessage).toContain("3");
+
+    closeMessage($responseMessage);
+
+    expect(
+      document.getElementById("edit-entry-submission-response-message"),
+    ).toBeNull();
+
+    expect(getDefinitionError("dec")).not.toBeNull();
+    expect($fieldInt.classList).toContain("definition--success");
+
+    expect($fieldDate.classList).toContain("data--success");
+    expect($fieldTime.classList).toContain("data--success");
+    expect($fieldMulti.classList).toContain("data--success");
+    expect($fieldText.classList).toContain("error");
+    expect($fieldDec.classList).toContain("error");
   });
 });
 
-
-test('update function', () => {
-  expect(editEntryUpdate()).toBeNull()
-})
+test("update function", () => {
+  expect(editEntryUpdate()).toBeNull();
+});
 
 ////////////////////////// HELPER FUNCTIONS ///////////////////////////
 
@@ -498,6 +621,7 @@ function makeComp({ props = {} }: { props?: Partial<Props> } = {}) {
   const mockUpdateDefinitionsOnline = jest.fn();
   const mockParentDispatch = jest.fn();
   const mockEditEntryUpdate = jest.fn();
+  const mockUpdateDefinitionsAndDataOnline = jest.fn();
 
   return {
     ui: (
@@ -505,31 +629,29 @@ function makeComp({ props = {} }: { props?: Partial<Props> } = {}) {
         updateDefinitionsOnline={mockUpdateDefinitionsOnline}
         dispatch={mockParentDispatch}
         editEntryUpdate={mockEditEntryUpdate}
+        updateDefinitionAndDataOnline={mockUpdateDefinitionsAndDataOnline}
         {...props}
       />
     ),
     mockUpdateDefinitionsOnline,
     mockParentDispatch,
     mockEditEntryUpdate,
+    mockUpdateDefinitionsAndDataOnline,
   };
 }
 
-function makeDefinitionControl(id: string, control?: string) {
+function getDefinitionField(id: string, control?: string) {
   return document.getElementById(
     `edit-entry-definition-${id}` + (control ? `-${control}` : ""),
   ) as HTMLInputElement;
 }
 
-function makeDefinitionField(id: string) {
-  return makeDefinitionControl(id);
+function getDefinitionReset(id: string) {
+  return getDefinitionField(id, "reset");
 }
 
-function makeDefinitionReset(id: string) {
-  return makeDefinitionControl(id, "reset");
-}
-
-function makeDefinitionInput(id: string, val?: string) {
-  const $input = makeDefinitionControl(id, "input");
+function getDefinitionInput(id: string, val?: string) {
+  const $input = getDefinitionField(id, "input");
 
   if (val) {
     fillField($input, val);
@@ -538,30 +660,34 @@ function makeDefinitionInput(id: string, val?: string) {
   return $input;
 }
 
-function makeDefinitionSubmit(id: string) {
-  return makeDefinitionControl(id, "submit");
+function getDefinitionSubmit(id: string) {
+  return getDefinitionField(id, "submit");
 }
 
-function makeDefinitionDismiss(id: string) {
-  return makeDefinitionControl(id, "dismiss");
+function getDefinitionDismiss(id: string) {
+  return getDefinitionField(id, "dismiss");
 }
 
-function makeDefinitionEdit(id: string) {
-  return makeDefinitionControl(id, "edit-btn");
+function getDefinitionEdit(id: string) {
+  return getDefinitionField(id, "edit-btn");
 }
 
-function makeDefinitionName(id: string) {
-  return makeDefinitionControl(id, "name");
+function getDefinitionName(id: string) {
+  return getDefinitionField(id, "name");
 }
 
-function makeDefinitionError(id: string) {
-  return makeDefinitionControl(id, "error");
+function getDefinitionError(id: string) {
+  return getDefinitionField(id, "error");
 }
 
-function makeDataInput(id: string, val?: string) {
-  const $input = document.getElementById(
-    `edit-entry-data-${id}-input`,
+function getDataField(id: string, suffix?: string) {
+  return document.getElementById(
+    `edit-entry-data-${id}` + (suffix ? `-${suffix}` : ""),
   ) as HTMLInputElement;
+}
+
+function getDataInput(id: string, val?: string) {
+  const $input = getDataField(id, "input");
 
   if (val) {
     fillField($input, val);
@@ -589,4 +715,9 @@ function MockDateTimeField(props: DateTimeProps) {
   );
 
   return comp;
+}
+
+function destroyModal() {
+  const $element = document.getElementById("edit-entry-modal");
+  closeMessage($element);
 }

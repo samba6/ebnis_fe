@@ -10,6 +10,10 @@ import {
   UpdateDefinitions,
   UpdateDefinitionsVariables,
 } from "./apollo-types/UpdateDefinitions";
+import {
+  UpdateDefinitionAndData,
+  UpdateDefinitionAndDataVariables,
+} from "./apollo-types/UpdateDefinitionAndData";
 
 export const UPDATE_DEFINITIONS_RESPONSE_FRAGMENT = gql`
   fragment UpdateDefinitionsResponseFragment on UpdateDefinitionsResponse {
@@ -108,3 +112,12 @@ export const UPDATE_DEFINITION_AND_DATA_ONLINE_MUTATION = gql`
   ${UPDATE_DATA_OBJECTS_RESPONSE_FRAGMENT}
   ${UPDATE_DEFINITIONS_RESPONSE_FRAGMENT}
 `;
+
+export type UpdateDefinitionAndDataOnlineMutationFn = MutationFn<
+  UpdateDefinitionAndData,
+  UpdateDefinitionAndDataVariables
+>;
+
+export interface UpdateDefinitionAndDataOnlineMutationProps {
+  updateDefinitionAndDataOnline: UpdateDefinitionAndDataOnlineMutationFn;
+}

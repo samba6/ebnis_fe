@@ -16,6 +16,7 @@ import {
   parseApolloErrors,
   initialStateFromProps,
   State,
+  formObjToString,
 } from "./new-entry.utils";
 import { makeExperienceRoute } from "../../constants/experience-route";
 import { CreateEntryMutationFn } from "../../graphql/create-entry.mutation";
@@ -31,7 +32,6 @@ import {
   FieldType,
   CreateDataObject,
 } from "../../graphql/apollo-types/globalTypes";
-import dateFnFormat from "date-fns/format";
 import { CreateEntryMutation_createEntry } from "../../graphql/apollo-types/CreateEntryMutation";
 import { CreateUnsavedEntryMutationReturned } from "./resolvers";
 import { componentFromDataType } from "./component-from-data-type";
@@ -302,44 +302,10 @@ function dataObjectsFromFormValues(
 
       const { type, id: definitionId } = definition;
 
-      let toString;
-
-      switch (type) {
-        case FieldType.DATE:
-          {
-            toString = dateFnFormat(val, "YYYY-MM-DD");
-          }
-
-          break;
-
-        case FieldType.DATETIME:
-          {
-            toString = (val as Date).toJSON();
-          }
-
-          break;
-
-        case FieldType.DECIMAL:
-        case FieldType.INTEGER:
-          {
-            toString = (val || 0) + "";
-          }
-
-          break;
-
-        case FieldType.SINGLE_LINE_TEXT:
-        case FieldType.MULTI_LINE_TEXT:
-          {
-            toString = val;
-          }
-
-          break;
-      }
-
       acc.push({
         definitionId,
 
-        data: `{"${type.toLowerCase()}":"${toString}"}`,
+        data: `{"${type.toLowerCase()}":"${formObjToString(type, val)}"}`,
       });
 
       return acc;
