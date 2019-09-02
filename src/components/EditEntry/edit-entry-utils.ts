@@ -17,10 +17,7 @@ import {
   UpdateDefinitionsMutationProps,
   UpdateDefinitionAndDataOnlineMutationProps,
 } from "../../graphql/update-definition-and-data.mutation";
-import {
-  UpdateDefinitionAndData,
-  UpdateDefinitionAndData_updateDefinitions,
-} from "../../graphql/apollo-types/UpdateDefinitionAndData";
+import { UpdateDefinitionAndData } from "../../graphql/apollo-types/UpdateDefinitionAndData";
 import {
   UpdateDataObjects_updateDataObjects,
   UpdateDataObjects_updateDataObjects_fieldErrors,
@@ -198,23 +195,48 @@ export const reducer: Reducer<State, Action> = (
       case ActionTypes.SUBMITTING:
         {
           proxy.primaryState.common.value = "submitting";
+
+          //console.log(JSON.stringify(proxy.primaryState, null, 2));
         }
 
         break;
 
       case ActionTypes.DEFINITIONS_SUBMISSION_RESPONSE:
         {
-          const {
-            definitions,
-          } = payload as UpdateDefinitions_updateDefinitions;
-
           proxy.primaryState.common.value = "editing";
-          handleDefinitionsSubmissionResponse(proxy, definitions);
+
+          const context = {
+            invalidResponse: {},
+          } as SubmissionSuccessStateContext;
+
+          handleDefinitionsSubmissionResponse(
+            proxy,
+            context,
+            payload as UpdateDefinitions_updateDefinitions,
+          );
         }
         break;
 
       case ActionTypes.DEFINITION_FORM_ERRORS:
         {
+          const { primaryState } = proxy;
+          primaryState.common.value = "editing";
+
+          const primaryStateFormErrors = {
+            isActive: true,
+            value: "formErrors",
+            formErrors: {
+              context: {
+                errors: "please correct the highlighted errors and resubmit",
+              },
+            },
+          } as SubmissionResponseState;
+
+          primaryState.submissionResponse = {
+            ...(primaryState.submissionResponse || {}),
+            ...primaryStateFormErrors,
+          };
+
           const { ids } = payload as DefinitionFormErrorsPayload;
 
           const errors = {
@@ -272,7 +294,7 @@ export const reducer: Reducer<State, Action> = (
             updateDefinitions,
           } = payload as UpdateDefinitionAndData;
 
-          const submissionResponse = {
+          const submissionSuccessResponse = {
             value: "submissionSuccess",
           } as SubmissionSuccessState;
 
@@ -280,44 +302,28 @@ export const reducer: Reducer<State, Action> = (
             invalidResponse: {},
           } as SubmissionSuccessStateContext;
 
-          let hasInvalidResponse = false;
           let successCount = 0;
           let failureCount = 0;
 
-          if (updateDataObjects) {
-            const [s, f] = handleDataSubmissionResponse(
-              proxy,
-              updateDataObjects as UpdateDataObjects_updateDataObjects[],
-            );
-            successCount += s;
-            failureCount += f;
-          } else {
-            hasInvalidResponse = true;
+          const [s, f, t] = handleDataSubmissionResponse(
+            proxy,
+            context,
+            updateDataObjects,
+          ) as [number, number, string];
 
-            (context.invalidResponse as SubmissionInvalidResponse).data =
-              "unable to update data: unknown error occurred";
-          }
+          successCount += s;
+          failureCount += f;
 
-          if (updateDefinitions) {
-            const {
-              definitions,
-            } = updateDefinitions as UpdateDefinitionAndData_updateDefinitions;
+          const [s1, f1, t1] = handleDefinitionsSubmissionResponse(
+            proxy,
+            context,
+            updateDefinitions,
+          ) as [number, number, string];
 
-            if (definitions) {
-              const [s, f] = handleDefinitionsSubmissionResponse(
-                proxy,
-                definitions,
-              );
-              successCount += s;
-              failureCount += f;
-            } else {
-              hasInvalidResponse = putDefinitionInvalidErrors(context);
-            }
-          } else {
-            hasInvalidResponse = putDefinitionInvalidErrors(context);
-          }
+          successCount += s1;
+          failureCount += f1;
 
-          if (!hasInvalidResponse) {
+          if (t === "valid" && t1 === "valid") {
             delete context.invalidResponse;
           }
 
@@ -328,17 +334,22 @@ export const reducer: Reducer<State, Action> = (
             };
           }
 
-          submissionResponse.submissionSuccess = {
+          submissionSuccessResponse.submissionSuccess = {
             context,
           };
 
-          primaryState.submissionResponse = submissionResponse;
+          primaryState.submissionResponse = {
+            ...(primaryState.submissionResponse || {}),
+            ...submissionSuccessResponse,
+            isActive: true,
+          };
         }
         break;
 
       case ActionTypes.DISMISS_SUBMISSION_RESPONSE_MESSAGE:
         {
-          delete proxy.primaryState.submissionResponse;
+          (proxy.primaryState
+            .submissionResponse as SubmissionResponseState).isActive = false;
         }
         break;
     }
@@ -435,8 +446,21 @@ function setEditingData(proxy: State) {
 
 function handleDefinitionsSubmissionResponse(
   proxy: State,
-  definitions: UpdateDefinitions_updateDefinitions_definitions[],
+  context: SubmissionSuccessStateContext,
+  updateDefinitions: UpdateDefinitionAndData["updateDefinitions"],
 ) {
+  if (!updateDefinitions) {
+    putDefinitionInvalidErrors(context);
+    return [0, 0];
+  }
+
+  const { definitions } = updateDefinitions;
+
+  if (!definitions) {
+    putDefinitionInvalidErrors(context);
+    return [0, 0];
+  }
+
   const { definitionsStates } = proxy;
   let successCount = 0;
   let failureCount = 0;
@@ -475,16 +499,24 @@ function handleDefinitionsSubmissionResponse(
     }
   });
 
-  return [successCount, failureCount];
+  return [successCount, failureCount, "valid"];
 }
 
 function handleDataSubmissionResponse(
   proxy: State,
-  dataObjects: UpdateDataObjects_updateDataObjects[],
+  context: SubmissionSuccessStateContext,
+  dataObjects: UpdateDefinitionAndData["updateDataObjects"],
 ) {
-  const { dataStates } = proxy;
+  if (!dataObjects) {
+    (context.invalidResponse as SubmissionInvalidResponse).data =
+      "unable to update data: unknown error occurred";
+
+    return [0, 0];
+  }
+
   let successCount = 0;
   let failureCount = 0;
+  const { dataStates } = proxy;
 
   dataObjects.forEach(obj => {
     const {
@@ -494,15 +526,29 @@ function handleDataSubmissionResponse(
       fieldErrors,
     } = obj as UpdateDataObjects_updateDataObjects;
 
-    const state = dataStates[id] as DataChangedState;
+    const state = dataStates[id];
+
+    if (state.value !== "changed") {
+      return;
+    }
 
     if (dataObject) {
+      state.context.defaults = {
+        ...state.context.defaults,
+        ...dataObject,
+      };
+
+      state.context.defaults.parsedVal = formObjFromRawString(dataObject.data);
+
+      const unchangedState = (state as unknown) as DataUnchangedState;
+      unchangedState.value = "unchanged";
+      unchangedState.unchanged.context.anyEditSuccess = true;
       ++successCount;
     } else if (stringError) {
       ++failureCount;
 
       putDataServerErrors(
-        state,
+        state as DataChangedState,
 
         {
           definition: stringError as string,
@@ -511,13 +557,14 @@ function handleDataSubmissionResponse(
     } else {
       ++failureCount;
       putDataServerErrors(
-        state,
+        state as DataChangedState,
         fieldErrors as UpdateDataObjectsResponseFragment_fieldErrors,
       );
     }
+    //console.log(JSON.stringify(state, null, 2));
   });
 
-  return [successCount, failureCount];
+  return [successCount, failureCount, "valid"];
 }
 
 function putDataServerErrors(
@@ -553,9 +600,11 @@ interface PrimaryState {
     dataIds: string[];
   };
 
-  common: {
-    value: "editing" | "submitting";
-  };
+  common:
+    | PrimaryStateEditing
+    | {
+        value: "submitting";
+      };
 
   editingData?: true;
 
@@ -564,7 +613,13 @@ interface PrimaryState {
   submissionResponse?: SubmissionResponseState;
 }
 
-export type SubmissionResponseState =
+interface PrimaryStateEditing {
+  value: "editing";
+}
+
+export type SubmissionResponseState = {
+  isActive: boolean;
+} & (
   | {
       value: "apolloErrors";
       apolloErrors: {
@@ -582,7 +637,18 @@ export type SubmissionResponseState =
           errors: string;
         };
       };
+    }
+  | SubmissionFormErrorsState);
+
+interface SubmissionFormErrorsState {
+  value: "formErrors";
+
+  formErrors: {
+    context: {
+      errors: string;
     };
+  };
+}
 
 interface SubmissionSuccessState {
   value: "submissionSuccess";

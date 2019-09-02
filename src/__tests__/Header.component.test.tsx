@@ -2,8 +2,7 @@
 
 import React, { ComponentType } from "react";
 import { render, fireEvent } from "react-testing-library";
-import { Header } from "../components/Header/header.component";
-import { Props } from "../components/Header/header.utils";
+import { Header, Props } from "../components/Header/header.component";
 import { renderWithRouter } from "./test_utils";
 import { EXPERIENCES_URL, ROOT_URL } from "../routes";
 import { ILayoutContextContext } from "../components/Layout/layout.utils";

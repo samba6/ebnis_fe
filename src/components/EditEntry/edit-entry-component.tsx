@@ -39,6 +39,7 @@ import {
   UpdateDefinitionAndDataOnlineMutationProps,
 } from "../../graphql/update-definition-and-data.mutation";
 import { formObjToString } from "../NewEntry/new-entry.utils";
+import { UpdateDataObjectsResponseFragment_fieldErrors } from "../../graphql/apollo-types/UpdateDataObjectsResponseFragment";
 
 export function EditEntry(props: Props) {
   const {
@@ -60,6 +61,10 @@ export function EditEntry(props: Props) {
       submissionResponse,
     },
   } = state;
+
+  window.state = state;
+
+  //console.log(JSON.stringify(state, null, 2));
 
   return (
     <EditEnryContext.Provider
@@ -97,7 +102,8 @@ export function EditEntry(props: Props) {
           </div>
         </Modal.Header>
 
-        <SuccessResponseComponent state={submissionResponse} />
+        <SubmissionSuccessResponseComponent state={submissionResponse} />
+        <SubmissionFormErrorsComponent state={submissionResponse} />
 
         <Modal.Content>
           <Form>
@@ -144,6 +150,7 @@ export function EditEntry(props: Props) {
                   updateDataObjectsOnline,
                   updateDefinitionAndDataOnline,
                   updateDefinitionsOnline,
+                  editEntryUpdate,
                 })}
               >
                 Submit
@@ -156,14 +163,14 @@ export function EditEntry(props: Props) {
   );
 }
 
-function SuccessResponseComponent({
+function SubmissionSuccessResponseComponent({
   state,
 }: {
   state?: SubmissionResponseState;
 }) {
   const { dispatch } = useContext(EditEnryContext);
 
-  if (state && state.value === "submissionSuccess") {
+  if (state && state.isActive && state.value === "submissionSuccess") {
     const {
       submissionSuccess: {
         context: { validResponse, invalidResponse },
@@ -217,7 +224,24 @@ function DataComponent(props: DataComponentProps) {
     formValue,
   );
 
-  return <Form.Field id={idPrefix}> {component} </Form.Field>;
+  const errors = getDataFormErrors(state);
+
+  return (
+    <Form.Field
+      id={idPrefix}
+      className={makeClassNames({
+        "data--success":
+          state.value === "unchanged" && state.unchanged.context.anyEditSuccess,
+      })}
+      error={!!errors}
+    >
+      {component}
+
+      {!!errors && (
+        <FormCtrlError id={`${idPrefix}-error`}>{errors}</FormCtrlError>
+      )}
+    </Form.Field>
+  );
 }
 
 function getDataComponent(
@@ -389,6 +413,38 @@ function DefinitionComponent(props: DefinitionComponentProps) {
   );
 }
 
+function SubmissionFormErrorsComponent({
+  state,
+}: {
+  state?: SubmissionResponseState;
+}) {
+  const { dispatch } = useContext(EditEnryContext);
+
+  if (state && state.isActive && state.value === "formErrors") {
+    const {
+      formErrors: {
+        context: { errors },
+      },
+    } = state;
+
+    return (
+      <Modal.Content id="edit-entry-form-errors-message">
+        <Message
+          onDismiss={() => {
+            dispatch({
+              type: ActionTypes.DISMISS_SUBMISSION_RESPONSE_MESSAGE,
+            });
+          }}
+        >
+          {errors}
+        </Message>
+      </Modal.Content>
+    );
+  }
+
+  return null;
+}
+
 function submitDefinitions(props: SubmitDefinitionsArgs) {
   return async function submitDefinitionInner() {
     const {
@@ -457,15 +513,33 @@ function getDefinitionsToSubmit(allDefinitionsStates: DefinitionsStates) {
 
 function submitAll(args: SubmitAllArgs) {
   return async function submitAllInner() {
-    const { dispatch, globalState, updateDefinitionAndDataOnline } = args;
+    const {
+      dispatch,
+      globalState,
+      updateDefinitionAndDataOnline,
+      editEntryUpdate,
+    } = args;
+
+    const [
+      definitionsInput,
+      definitionsWithFormErrors,
+    ] = getDefinitionsToSubmit(globalState.definitionsStates) as [
+      UpdateDefinitionInput[],
+      string[],
+    ];
+
+    if (definitionsWithFormErrors.length !== 0) {
+      dispatch({
+        type: ActionTypes.DEFINITION_FORM_ERRORS,
+        ids: definitionsWithFormErrors,
+      });
+
+      return;
+    }
 
     dispatch({
       type: ActionTypes.SUBMITTING,
     });
-
-    const [definitionsInput] = getDefinitionsToSubmit(
-      globalState.definitionsStates,
-    ) as [UpdateDefinitionInput[]];
 
     const [dataInput] = getDataObjectsToSubmit(globalState.dataStates);
 
@@ -474,6 +548,8 @@ function submitAll(args: SubmitAllArgs) {
         definitionsInput,
         dataInput,
       },
+
+      update: editEntryUpdate,
     });
 
     const successResult = result && result.data;
@@ -502,7 +578,7 @@ function getDataObjectsToSubmit(states: DataStates) {
       } = state;
       inputs.push({
         id,
-        data: `{"${type.toUpperCase()}":${formObjToString(type, formValue)}}`,
+        data: `{"${type.toLowerCase()}":"${formObjToString(type, formValue)}"}`,
       });
     }
   }
@@ -539,24 +615,44 @@ function getDefinitionFormError(state: DefinitionState) {
         context: { errors },
       } = changed;
 
-      return Object.entries(errors).reduce(
-        (acc, [k, v]) => {
-          if (k !== "__typename" && v) {
-            acc.push(
-              <span key={k}>
-                {k}: {v}
-              </span>,
-            );
-          }
-
-          return acc;
-        },
-        [] as JSX.Element[],
-      );
+      return getNodesFromObject(errors as { [k: string]: string });
     }
   }
 
   return null;
+}
+
+function getDataFormErrors(state: DataState) {
+  if (state.value === "changed") {
+    const { changed } = state;
+
+    let errors = {} as UpdateDataObjectsResponseFragment_fieldErrors;
+
+    if (changed.value === "serverErrors") {
+      errors = changed.serverErrors.context.errors;
+
+      return getNodesFromObject((errors as unknown) as { [k: string]: string });
+    }
+  }
+
+  return null;
+}
+
+function getNodesFromObject(obj: { [k: string]: string }) {
+  return Object.entries(obj).reduce(
+    (acc, [k, v]) => {
+      if (k !== "__typename" && v) {
+        acc.push(
+          <span key={k}>
+            {k}: {v}
+          </span>,
+        );
+      }
+
+      return acc;
+    },
+    [] as JSX.Element[],
+  );
 }
 
 interface SubmitDefinitionsArgs {
@@ -587,4 +683,5 @@ interface SubmitAllArgs
     UpdateDefinitionsMutationProps {
   dispatch: DispatchType;
   globalState: State;
+  editEntryUpdate: () => void;
 }

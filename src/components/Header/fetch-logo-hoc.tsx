@@ -1,11 +1,10 @@
 import React, { ComponentType } from "react";
 import { graphql, StaticQuery } from "gatsby";
-
-import { WithLogo } from "./header.utils";
 import {
   LogoImageQuery,
   LogoImageQuery_file_childImageSharp_fixed,
 } from "../../graphql/gatsby-types/LogoImageQuery";
+import { WithLogo } from "./header.component";
 
 export function fetchLogoHOC<TProps>(
   Component: ComponentType<TProps & WithLogo>,
