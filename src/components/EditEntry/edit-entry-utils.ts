@@ -118,6 +118,10 @@ export const initStateFromProps = (props: Props): State => {
       common: {
         value: "editing",
       },
+
+      editingData: {
+        isActive: false,
+      },
     },
 
     definitionsStates,
@@ -499,9 +503,9 @@ function setEditingData(proxy: State) {
   }
 
   if (dataChangedCount !== 0) {
-    proxy.primaryState.editingData = true;
+    proxy.primaryState.editingData.isActive = true;
   } else {
-    delete proxy.primaryState.editingData;
+    proxy.primaryState.editingData.isActive = false;
   }
 }
 
@@ -589,10 +593,6 @@ function handleDataSubmissionResponse(
 
     const state = dataStates[id];
 
-    if (state.value !== "changed") {
-      return;
-    }
-
     if (dataObject) {
       state.context.defaults = {
         ...state.context.defaults,
@@ -653,7 +653,7 @@ export interface State {
   readonly primaryState: PrimaryState;
 }
 
-interface PrimaryState {
+export interface PrimaryState {
   context: {
     definitionsIds: string[];
     lenDefinitions: number;
@@ -666,7 +666,9 @@ interface PrimaryState {
         value: "submitting";
       };
 
-  editingData?: true;
+  editingData: {
+    isActive: boolean;
+  };
 
   editingMultipleDefinitions?: EditingMultipleDefinitionsState;
 

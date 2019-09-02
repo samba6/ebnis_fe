@@ -13,6 +13,7 @@ import {
   State,
   DataStates,
   SubmissionResponseState,
+  PrimaryState,
 } from "./edit-entry-utils";
 import Form from "semantic-ui-react/dist/commonjs/collections/Form";
 import Message from "semantic-ui-react/dist/commonjs/collections/Message";
@@ -61,8 +62,6 @@ export function EditEntry(props: Props) {
       submissionResponse,
     },
   } = state;
-
-  window.state = state;
 
   return (
     <EditEnryContext.Provider
@@ -136,7 +135,7 @@ export function EditEntry(props: Props) {
                 return <DataComponent key={id} state={dataState} id={id} />;
               })}
 
-              {editingData && (
+              {editingData.isActive && (
                 <Button
                   positive={true}
                   compact={true}
@@ -638,10 +637,10 @@ function getDataObjectsToSubmit(states: DataStates) {
 
 function getIdOfSubmittingDefinition(
   id: string,
-  editingData?: boolean,
+  editingData: PrimaryState["editingData"],
   editingMultipleDefinitionsState?: EditingMultipleDefinitionsState,
 ) {
-  if (editingData) {
+  if (editingData.isActive) {
     return false;
   }
 
