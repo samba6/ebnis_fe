@@ -1,15 +1,85 @@
+import { Reducer } from "react";
+import lodashIsEqual from "lodash/isEqual";
+
+const isDev = process.env.NODE_ENV === "development";
+
 // tslint:disable-next-line:no-any
 export const logger = async (prefix: string, tag: string, ...data: any) => {
-  if (process.env.NODE_ENV === "development") {
+  if (isDev) {
     // tslint:disable-next-line:no-console
     console[prefix](
       "\n\n     =======logging starts======\n",
       tag,
       "\n",
       ...data,
-      "\n     =======logging ends======\n"
+      "\n     =======logging ends======\n",
     );
   }
 };
 
-export default logger;
+export function wrapReducer<State, Action>(
+  prevState: State,
+  action: Action,
+  reducer: Reducer<State, Action>,
+  shouldWrap?: boolean,
+) {
+  if (shouldWrap === false) {
+    return reducer(prevState, action);
+  }
+
+  if (shouldWrap === true || isDev) {
+    console.log(
+      "previous state = \n\t",
+      JSON.stringify(prevState, null, 2),
+
+      "\n\n\nupdate with = \n\t",
+      JSON.stringify(action, null, 2),
+    );
+
+    const nextState = reducer(prevState, action);
+
+    console.log(
+      "next state = \n\t",
+      JSON.stringify(nextState, null, 2),
+
+      "\n\n\nDifferences = \n\t",
+      JSON.stringify(deepObjectDifference(nextState, prevState), null, 2),
+    );
+
+    return nextState;
+  }
+
+  return reducer(prevState, action);
+}
+
+function deepObjectDifference(
+  compareObject: { [k: string]: any },
+  baseObject: { [k: string]: any },
+) {
+  function differences(
+    newObject: { [k: string]: any },
+    baseObjectDiff: { [k: string]: any },
+  ) {
+    return Object.entries(newObject).reduce(
+      (acc, [key, value]) => {
+        const baseValue = baseObjectDiff[key];
+
+        if (!lodashIsEqual(value, baseValue)) {
+          acc[key] =
+            isPlainObject(baseValue) && isPlainObject(value)
+              ? differences(value, baseValue)
+              : value;
+        }
+
+        return acc;
+      },
+      {} as { [k: string]: any },
+    );
+  }
+
+  return differences(compareObject, baseObject);
+}
+
+function isPlainObject(obj: object) {
+  return Object.prototype.toString.call(obj).includes("Object");
+}

@@ -520,6 +520,10 @@ function submitAll(args: SubmitAllArgs) {
       editEntryUpdate,
     } = args;
 
+    dispatch({
+      type: ActionTypes.SUBMITTING,
+    });
+
     const [
       definitionsInput,
       definitionsWithFormErrors,
@@ -536,10 +540,6 @@ function submitAll(args: SubmitAllArgs) {
 
       return;
     }
-
-    dispatch({
-      type: ActionTypes.SUBMITTING,
-    });
 
     const [dataInput] = getDataObjectsToSubmit(globalState.dataStates);
 

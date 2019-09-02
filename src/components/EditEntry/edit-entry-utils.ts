@@ -23,6 +23,7 @@ import {
   UpdateDataObjects_updateDataObjects_fieldErrors,
 } from "../../graphql/apollo-types/UpdateDataObjects";
 import { UpdateDataObjectsResponseFragment_fieldErrors } from "../../graphql/apollo-types/UpdateDataObjectsResponseFragment";
+import { wrapReducer } from "../../logger";
 
 export enum ActionTypes {
   EDIT_BTN_CLICKED = "@component/edit-entry/edit-btn-clicked",
@@ -123,238 +124,241 @@ export const initStateFromProps = (props: Props): State => {
   };
 };
 
-export const reducer: Reducer<State, Action> = (
-  prevState,
-  { type, ...payload },
-) => {
-  return immer(prevState, proxy => {
-    switch (type) {
-      case ActionTypes.EDIT_BTN_CLICKED:
-        {
-          const { id } = payload as IdString;
-          setDefinitionEditingUnchangedState(proxy, id);
+export const reducer: Reducer<State, Action> = (state, action) =>
+  wrapReducer<State, Action>(
+    state,
+    action,
+    (prevState, { type, ...payload }) => {
+      return immer(prevState, proxy => {
+        switch (type) {
+          case ActionTypes.EDIT_BTN_CLICKED:
+            {
+              const { id } = payload as IdString;
+              setDefinitionEditingUnchangedState(proxy, id);
+            }
+            break;
+
+          case ActionTypes.UNDO_DEFINITION_EDITS:
+            {
+              const { id } = payload as IdString;
+              setDefinitionEditingUnchangedState(proxy, id);
+              setEditingMultipleDefinitionsState(proxy);
+            }
+            break;
+
+          case ActionTypes.DEFINITION_NAME_CHANGED:
+            {
+              const { id, formValue } = payload as DefinitionNameChangedPayload;
+              const state = proxy.definitionsStates[id];
+              state.value = "editing";
+              const { name: defaultName } = state.context.defaults;
+              const editingState = state as DefinitionEditingState;
+
+              if (defaultName === formValue.trim()) {
+                editingState.editing = {
+                  value: "unchanged",
+
+                  context: {
+                    formValue: defaultName,
+                  },
+                };
+                setDefinitionEditingUnchangedState(proxy, id);
+              } else {
+                editingState.editing = {
+                  value: "changed",
+
+                  context: {
+                    formValue,
+                  },
+
+                  changed: {
+                    value: "regular",
+                  },
+                };
+              }
+
+              setEditingMultipleDefinitionsState(proxy);
+            }
+
+            break;
+
+          case ActionTypes.STOP_DEFINITION_EDIT:
+            {
+              const { id } = payload as IdString;
+              const { definitionsStates } = proxy;
+
+              definitionsStates[id].value = "idle";
+
+              setEditingMultipleDefinitionsState(proxy);
+            }
+
+            break;
+
+          case ActionTypes.SUBMITTING:
+            {
+              proxy.primaryState.common.value = "submitting";
+
+              //console.log(JSON.stringify(proxy.primaryState, null, 2));
+            }
+
+            break;
+
+          case ActionTypes.DEFINITIONS_SUBMISSION_RESPONSE:
+            {
+              proxy.primaryState.common.value = "editing";
+
+              const context = {
+                invalidResponse: {},
+              } as SubmissionSuccessStateContext;
+
+              handleDefinitionsSubmissionResponse(
+                proxy,
+                context,
+                payload as UpdateDefinitions_updateDefinitions,
+              );
+            }
+            break;
+
+          case ActionTypes.DEFINITION_FORM_ERRORS:
+            {
+              const { primaryState } = proxy;
+              primaryState.common.value = "editing";
+
+              const primaryStateFormErrors = {
+                isActive: true,
+                value: "formErrors",
+                formErrors: {
+                  context: {
+                    errors:
+                      "please correct the highlighted errors and resubmit",
+                  },
+                },
+              } as SubmissionResponseState;
+
+              primaryState.submissionResponse = {
+                ...(primaryState.submissionResponse || {}),
+                ...primaryStateFormErrors,
+              };
+
+              const { ids } = payload as DefinitionFormErrorsPayload;
+
+              const errors = {
+                name: "should be at least 2 characters long.",
+              };
+
+              for (const id of ids) {
+                const definitionState = proxy.definitionsStates[id];
+
+                ((definitionState as DefinitionEditingState)
+                  .editing as DefinitionChangedState).changed = {
+                  value: "formErrors",
+                  context: {
+                    errors,
+                  },
+                };
+              }
+            }
+            break;
+
+          case ActionTypes.DATA_CHANGED:
+            {
+              const { dataStates } = proxy;
+              const { id, rawFormVal } = payload as DataChangedPayload;
+              const state = dataStates[id];
+              let { parsedVal } = state.context.defaults;
+              const [original, stringed] = formObjToCompareString(rawFormVal);
+
+              if (formObjToCompareString(parsedVal)[1] === stringed) {
+                state.value = "unchanged";
+              } else {
+                state.value = "changed";
+                const changedState = state as DataChangedState;
+
+                changedState.changed = {
+                  context: {
+                    formValue: original,
+                  },
+
+                  value: "normal",
+                };
+              }
+
+              setEditingData(proxy);
+            }
+            break;
+
+          case ActionTypes.SUBMISSION_RESPONSE:
+            {
+              const { primaryState } = proxy;
+              primaryState.common.value = "editing";
+
+              const {
+                updateDataObjects,
+                updateDefinitions,
+              } = payload as UpdateDefinitionAndData;
+
+              const submissionSuccessResponse = {
+                value: "submissionSuccess",
+              } as SubmissionSuccessState;
+
+              const context = {
+                invalidResponse: {},
+              } as SubmissionSuccessStateContext;
+
+              let successCount = 0;
+              let failureCount = 0;
+
+              const [s, f, t] = handleDataSubmissionResponse(
+                proxy,
+                context,
+                updateDataObjects,
+              ) as [number, number, string];
+
+              successCount += s;
+              failureCount += f;
+
+              const [s1, f1, t1] = handleDefinitionsSubmissionResponse(
+                proxy,
+                context,
+                updateDefinitions,
+              ) as [number, number, string];
+
+              successCount += s1;
+              failureCount += f1;
+
+              if (t === "valid" && t1 === "valid") {
+                delete context.invalidResponse;
+              }
+
+              if (successCount + failureCount !== 0) {
+                context.validResponse = {
+                  successes: successCount,
+                  failures: failureCount,
+                };
+              }
+
+              submissionSuccessResponse.submissionSuccess = {
+                context,
+              };
+
+              primaryState.submissionResponse = {
+                ...(primaryState.submissionResponse || {}),
+                ...submissionSuccessResponse,
+                isActive: true,
+              };
+            }
+            break;
+
+          case ActionTypes.DISMISS_SUBMISSION_RESPONSE_MESSAGE:
+            {
+              (proxy.primaryState
+                .submissionResponse as SubmissionResponseState).isActive = false;
+            }
+            break;
         }
-        break;
-
-      case ActionTypes.UNDO_DEFINITION_EDITS:
-        {
-          const { id } = payload as IdString;
-          setDefinitionEditingUnchangedState(proxy, id);
-          setEditingMultipleDefinitionsState(proxy);
-        }
-        break;
-
-      case ActionTypes.DEFINITION_NAME_CHANGED:
-        {
-          const { id, formValue } = payload as DefinitionNameChangedPayload;
-          const state = proxy.definitionsStates[id];
-          state.value = "editing";
-          const { name: defaultName } = state.context.defaults;
-          const editingState = state as DefinitionEditingState;
-
-          if (defaultName === formValue.trim()) {
-            editingState.editing = {
-              value: "unchanged",
-
-              context: {
-                formValue: defaultName,
-              },
-            };
-            setDefinitionEditingUnchangedState(proxy, id);
-          } else {
-            editingState.editing = {
-              value: "changed",
-
-              context: {
-                formValue,
-              },
-
-              changed: {
-                value: "regular",
-              },
-            };
-          }
-
-          setEditingMultipleDefinitionsState(proxy);
-        }
-
-        break;
-
-      case ActionTypes.STOP_DEFINITION_EDIT:
-        {
-          const { id } = payload as IdString;
-          const { definitionsStates } = proxy;
-
-          definitionsStates[id].value = "idle";
-
-          setEditingMultipleDefinitionsState(proxy);
-        }
-
-        break;
-
-      case ActionTypes.SUBMITTING:
-        {
-          proxy.primaryState.common.value = "submitting";
-
-          //console.log(JSON.stringify(proxy.primaryState, null, 2));
-        }
-
-        break;
-
-      case ActionTypes.DEFINITIONS_SUBMISSION_RESPONSE:
-        {
-          proxy.primaryState.common.value = "editing";
-
-          const context = {
-            invalidResponse: {},
-          } as SubmissionSuccessStateContext;
-
-          handleDefinitionsSubmissionResponse(
-            proxy,
-            context,
-            payload as UpdateDefinitions_updateDefinitions,
-          );
-        }
-        break;
-
-      case ActionTypes.DEFINITION_FORM_ERRORS:
-        {
-          const { primaryState } = proxy;
-          primaryState.common.value = "editing";
-
-          const primaryStateFormErrors = {
-            isActive: true,
-            value: "formErrors",
-            formErrors: {
-              context: {
-                errors: "please correct the highlighted errors and resubmit",
-              },
-            },
-          } as SubmissionResponseState;
-
-          primaryState.submissionResponse = {
-            ...(primaryState.submissionResponse || {}),
-            ...primaryStateFormErrors,
-          };
-
-          const { ids } = payload as DefinitionFormErrorsPayload;
-
-          const errors = {
-            name: "should be at least 2 characters long.",
-          };
-
-          for (const id of ids) {
-            const definitionState = proxy.definitionsStates[id];
-
-            ((definitionState as DefinitionEditingState)
-              .editing as DefinitionChangedState).changed = {
-              value: "formErrors",
-              context: {
-                errors,
-              },
-            };
-          }
-        }
-        break;
-
-      case ActionTypes.DATA_CHANGED:
-        {
-          const { dataStates } = proxy;
-          const { id, rawFormVal } = payload as DataChangedPayload;
-          const state = dataStates[id];
-          let { parsedVal } = state.context.defaults;
-          const [original, stringed] = formObjToCompareString(rawFormVal);
-
-          if (formObjToCompareString(parsedVal)[1] === stringed) {
-            state.value = "unchanged";
-          } else {
-            state.value = "changed";
-            const changedState = state as DataChangedState;
-
-            changedState.changed = {
-              context: {
-                formValue: original,
-              },
-
-              value: "normal",
-            };
-          }
-
-          setEditingData(proxy);
-        }
-        break;
-
-      case ActionTypes.SUBMISSION_RESPONSE:
-        {
-          const { primaryState } = proxy;
-          primaryState.common.value = "editing";
-
-          const {
-            updateDataObjects,
-            updateDefinitions,
-          } = payload as UpdateDefinitionAndData;
-
-          const submissionSuccessResponse = {
-            value: "submissionSuccess",
-          } as SubmissionSuccessState;
-
-          const context = {
-            invalidResponse: {},
-          } as SubmissionSuccessStateContext;
-
-          let successCount = 0;
-          let failureCount = 0;
-
-          const [s, f, t] = handleDataSubmissionResponse(
-            proxy,
-            context,
-            updateDataObjects,
-          ) as [number, number, string];
-
-          successCount += s;
-          failureCount += f;
-
-          const [s1, f1, t1] = handleDefinitionsSubmissionResponse(
-            proxy,
-            context,
-            updateDefinitions,
-          ) as [number, number, string];
-
-          successCount += s1;
-          failureCount += f1;
-
-          if (t === "valid" && t1 === "valid") {
-            delete context.invalidResponse;
-          }
-
-          if (successCount + failureCount !== 0) {
-            context.validResponse = {
-              successes: successCount,
-              failures: failureCount,
-            };
-          }
-
-          submissionSuccessResponse.submissionSuccess = {
-            context,
-          };
-
-          primaryState.submissionResponse = {
-            ...(primaryState.submissionResponse || {}),
-            ...submissionSuccessResponse,
-            isActive: true,
-          };
-        }
-        break;
-
-      case ActionTypes.DISMISS_SUBMISSION_RESPONSE_MESSAGE:
-        {
-          (proxy.primaryState
-            .submissionResponse as SubmissionResponseState).isActive = false;
-        }
-        break;
-    }
-  });
-};
+      });
+    },
+  );
 
 function putDefinitionInvalidErrors(context: SubmissionSuccessStateContext) {
   (context.invalidResponse as SubmissionInvalidResponse).definitions =

@@ -364,7 +364,7 @@ test("not editing data, editing siblings, server error", async () => {
   expect($fieldC.classList).not.toContain("definition--success");
 });
 
-test.only("editing data, editing definitions", async () => {
+test("editing data, editing definitions", async () => {
   // NOTE: default date = 2000-01-01, time = 2000-01-01T01:01:01.000Z
   const time = "2000-01-01T01:01:01.000Z";
   const date = "2000-01-01";
@@ -685,8 +685,7 @@ test.only("editing data, editing definitions", async () => {
   expect(getDataInput("time").value).toEqual("2000-01-02T01:01:01.000Z");
   expect(getDataInput("multi").value).toEqual("mu");
 
-
-  console.log(JSON.stringify(window.state, null, 2));
+  //consol.log(JSON.stringify(window.state, null, 2));
 });
 
 test("update function", () => {
