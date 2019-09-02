@@ -20,7 +20,6 @@ import Button from "semantic-ui-react/dist/commonjs/elements/Button";
 import Input from "semantic-ui-react/dist/commonjs/elements/Input";
 import Modal from "semantic-ui-react/dist/commonjs/modules/Modal";
 import makeClassNames from "classnames";
-import { UpdateDefinitions_updateDefinitions } from "../../graphql/apollo-types/UpdateDefinitions";
 import { FormCtrlError } from "../FormCtrlError/form-ctrl-error.component";
 import { UpdateDefinitionsMutationFn } from "../../graphql/update-definition-and-data.mutation";
 import {
@@ -40,6 +39,7 @@ import {
 } from "../../graphql/update-definition-and-data.mutation";
 import { formObjToString } from "../NewEntry/new-entry.utils";
 import { UpdateDataObjectsResponseFragment_fieldErrors } from "../../graphql/apollo-types/UpdateDataObjectsResponseFragment";
+import { ErrorBoundary } from "../ErrorBoundary/error-boundary.component";
 
 export function EditEntry(props: Props) {
   const {
@@ -61,6 +61,8 @@ export function EditEntry(props: Props) {
       submissionResponse,
     },
   } = state;
+
+  window.state = state;
 
   return (
     <EditEnryContext.Provider
@@ -90,72 +92,88 @@ export function EditEntry(props: Props) {
         closeOnDimmerClick={false}
         className="components-edit-entry"
       >
-        <Modal.Header>
-          <div> Edit Entry </div>
+        <ErrorBoundary fallback={ErrorBoundaryFallBack}>
+          <Modal.Header>
+            <div> Edit Entry </div>
 
-          <div className="experience-title" id="edit-entry-experience-title">
-            {experience.title}
-          </div>
-        </Modal.Header>
+            <div className="experience-title" id="edit-entry-experience-title">
+              {experience.title}
+            </div>
+          </Modal.Header>
 
-        <SubmissionSuccessResponseComponent state={submissionResponse} />
-        <SubmissionFormErrorsComponent state={submissionResponse} />
+          <SubmissionSuccessResponseComponent state={submissionResponse} />
+          <SubmissionErrorsComponent state={submissionResponse} />
 
-        <Modal.Content>
-          <Form>
-            {definitionsIds.map(id => {
-              const definitionState = state.definitionsStates[id];
+          <Modal.Content>
+            <Form>
+              {definitionsIds.map(id => {
+                const definitionState = state.definitionsStates[id];
 
-              return (
-                <DefinitionComponent
-                  dispatch={dispatch}
-                  key={id}
-                  id={id}
-                  state={definitionState}
-                  onSubmit={submitDefinitions({
+                return (
+                  <DefinitionComponent
+                    dispatch={dispatch}
+                    key={id}
+                    id={id}
+                    state={definitionState}
+                    onSubmit={submitDefinitions({
+                      dispatch,
+                      updateDefinitionsOnline,
+                      allDefinitionsStates: state.definitionsStates,
+                      editEntryUpdate,
+                    })}
+                    shouldSubmit={getIdOfSubmittingDefinition(
+                      id,
+                      editingData,
+                      editingMultipleDefinitions,
+                    )}
+                  />
+                );
+              })}
+
+              {dataIds.map(id => {
+                const dataState = state.dataStates[id];
+
+                return <DataComponent key={id} state={dataState} id={id} />;
+              })}
+
+              {editingData && (
+                <Button
+                  positive={true}
+                  compact={true}
+                  type="submit"
+                  id="edit-entry-submit"
+                  className="edit-entry-definition-submit"
+                  onClick={submitAll({
                     dispatch,
+                    globalState: state,
+                    updateDataObjectsOnline,
+                    updateDefinitionAndDataOnline,
                     updateDefinitionsOnline,
-                    allDefinitionsStates: state.definitionsStates,
                     editEntryUpdate,
                   })}
-                  shouldSubmit={getIdOfSubmittingDefinition(
-                    id,
-                    editingData,
-                    editingMultipleDefinitions,
-                  )}
-                />
-              );
-            })}
-
-            {dataIds.map(id => {
-              const dataState = state.dataStates[id];
-
-              return <DataComponent key={id} state={dataState} id={id} />;
-            })}
-
-            {editingData && (
-              <Button
-                positive={true}
-                compact={true}
-                type="submit"
-                id="edit-entry-submit"
-                className="edit-entry-definition-submit"
-                onClick={submitAll({
-                  dispatch,
-                  globalState: state,
-                  updateDataObjectsOnline,
-                  updateDefinitionAndDataOnline,
-                  updateDefinitionsOnline,
-                  editEntryUpdate,
-                })}
-              >
-                Submit
-              </Button>
-            )}
-          </Form>
-        </Modal.Content>
+                >
+                  Submit
+                </Button>
+              )}
+            </Form>
+          </Modal.Content>
+        </ErrorBoundary>
       </Modal>
     </EditEnryContext.Provider>
+  );
+}
+
+function ErrorBoundaryFallBack() {
+  return (
+    <>
+      <Modal.Header id="edit-entry-error-fallback">
+        <div>Edit Entry</div>
+      </Modal.Header>
+
+      <Modal.Content>
+        We are sorry something's gone wrong. Please try again at a later time.
+      </Modal.Content>
+    </>
   );
 }
 
@@ -409,36 +427,38 @@ function DefinitionComponent(props: DefinitionComponentProps) {
   );
 }
 
-function SubmissionFormErrorsComponent({
+function SubmissionErrorsComponent({
   state,
 }: {
   state?: SubmissionResponseState;
 }) {
   const { dispatch } = useContext(EditEnryContext);
+  let errors: string | null = null;
+  let id = "";
 
-  if (state && state.isActive && state.value === "formErrors") {
-    const {
-      formErrors: {
-        context: { errors },
-      },
-    } = state;
-
-    return (
-      <Modal.Content id="edit-entry-form-errors-message">
-        <Message
-          onDismiss={() => {
-            dispatch({
-              type: ActionTypes.DISMISS_SUBMISSION_RESPONSE_MESSAGE,
-            });
-          }}
-        >
-          {errors}
-        </Message>
-      </Modal.Content>
-    );
+  if (state && state.isActive) {
+    if (state.value === "formErrors") {
+      errors = state.formErrors.context.errors;
+      id = "edit-entry-form-errors-message";
+    } else if (state.value === "otherErrors") {
+      errors = state.otherErrors.context.errors;
+      id = "edit-entry-other-errors-message";
+    }
   }
 
-  return null;
+  return errors ? (
+    <Modal.Content id={id}>
+      <Message
+        onDismiss={() => {
+          dispatch({
+            type: ActionTypes.DISMISS_SUBMISSION_RESPONSE_MESSAGE,
+          });
+        }}
+      >
+        {errors}
+      </Message>
+    </Modal.Content>
+  ) : null;
 }
 
 function submitDefinitions(props: SubmitDefinitionsArgs) {
@@ -474,14 +494,18 @@ function submitDefinitions(props: SubmitDefinitionsArgs) {
       update: editEntryUpdate,
     });
 
-    const data = (result &&
-      result.data &&
-      result.data.updateDefinitions) as UpdateDefinitions_updateDefinitions;
+    const data = result && result.data;
 
-    dispatch({
-      type: ActionTypes.DEFINITIONS_SUBMISSION_RESPONSE,
-      ...data,
-    });
+    if (data) {
+      dispatch({
+        type: ActionTypes.DEFINITIONS_SUBMISSION_RESPONSE,
+        ...data,
+      });
+    } else {
+      dispatch({
+        type: ActionTypes.OTHER_ERRORS,
+      });
+    }
   };
 }
 
@@ -514,6 +538,7 @@ function submitAll(args: SubmitAllArgs) {
       globalState,
       updateDefinitionAndDataOnline,
       editEntryUpdate,
+      updateDataObjectsOnline,
     } = args;
 
     dispatch({
@@ -539,6 +564,31 @@ function submitAll(args: SubmitAllArgs) {
 
     const [dataInput] = getDataObjectsToSubmit(globalState.dataStates);
 
+    if (definitionsInput.length === 0) {
+      const result1 = await updateDataObjectsOnline({
+        variables: {
+          input: dataInput,
+        },
+
+        update: editEntryUpdate,
+      });
+
+      const successResult1 = result1 && result1.data;
+
+      if (successResult1) {
+        dispatch({
+          type: ActionTypes.DATA_OBJECTS_SUBMISSION_RESPONSE,
+          ...successResult1,
+        });
+      } else {
+        dispatch({
+          type: ActionTypes.OTHER_ERRORS,
+        });
+      }
+
+      return;
+    }
+
     const result = await updateDefinitionAndDataOnline({
       variables: {
         definitionsInput,
@@ -554,6 +604,10 @@ function submitAll(args: SubmitAllArgs) {
       dispatch({
         type: ActionTypes.SUBMISSION_RESPONSE,
         ...successResult,
+      });
+    } else {
+      dispatch({
+        type: ActionTypes.OTHER_ERRORS,
       });
     }
   };

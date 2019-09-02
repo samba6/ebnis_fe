@@ -3,10 +3,10 @@ import { DataDefinitionFragment } from "../../graphql/apollo-types/DataDefinitio
 import { Dispatch, Reducer, createContext } from "react";
 import immer from "immer";
 import {
-  UpdateDefinitions_updateDefinitions,
   UpdateDefinitions_updateDefinitions_definitions,
   UpdateDefinitions_updateDefinitions_definitions_errors_errors,
   UpdateDefinitions_updateDefinitions_definitions_errors,
+  UpdateDefinitions,
 } from "../../graphql/apollo-types/UpdateDefinitions";
 import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragment";
 import { DataObjectFragment } from "../../graphql/apollo-types/DataObjectFragment";
@@ -21,6 +21,7 @@ import { UpdateDefinitionAndData } from "../../graphql/apollo-types/UpdateDefini
 import {
   UpdateDataObjects_updateDataObjects,
   UpdateDataObjects_updateDataObjects_fieldErrors,
+  UpdateDataObjects,
 } from "../../graphql/apollo-types/UpdateDataObjects";
 import { UpdateDataObjectsResponseFragment_fieldErrors } from "../../graphql/apollo-types/UpdateDataObjectsResponseFragment";
 import { wrapReducer } from "../../logger";
@@ -33,10 +34,12 @@ export enum ActionTypes {
   SUBMITTING = "@component/edit-entry/definitions-submitted",
   DESTROYED = "@component/edit-entry/destroy",
   DEFINITIONS_SUBMISSION_RESPONSE = "@component/edit-entry/definitions-submission-response",
+  DATA_OBJECTS_SUBMISSION_RESPONSE = "@component/edit-entry/data-objects-submission-response",
   DEFINITION_FORM_ERRORS = "@component/edit-entry/definition-form-errors",
   DATA_CHANGED = "@component/edit-entry/data-changed",
   SUBMISSION_RESPONSE = "@component/edit-entry/submission-response",
   DISMISS_SUBMISSION_RESPONSE_MESSAGE = "@component/edit-entry/dismiss-submission-response-message",
+  OTHER_ERRORS = "@component/edit-entry/other-errors",
 }
 
 export const initStateFromProps = (props: Props): State => {
@@ -202,16 +205,10 @@ export const reducer: Reducer<State, Action> = (state, action) =>
 
           case ActionTypes.DEFINITIONS_SUBMISSION_RESPONSE:
             {
-              proxy.primaryState.common.value = "editing";
-
-              const context = {
-                invalidResponse: {},
-              } as SubmissionSuccessStateContext;
-
-              handleDefinitionsSubmissionResponse(
+              prepareSubmissionResponse(
                 proxy,
-                context,
-                payload as UpdateDefinitions_updateDefinitions,
+                payload as UpdateDefinitionAndData,
+                "updateDefinitions",
               );
             }
             break;
@@ -257,6 +254,29 @@ export const reducer: Reducer<State, Action> = (state, action) =>
             }
             break;
 
+          case ActionTypes.OTHER_ERRORS:
+            {
+              const { primaryState } = proxy;
+              primaryState.common.value = "editing";
+
+              const otherErrorsState = {
+                isActive: true,
+                value: "otherErrors",
+                otherErrors: {
+                  context: {
+                    errors:
+                      "We apologize, we are unable to fulfill your request this time",
+                  },
+                },
+              } as SubmissionResponseState;
+
+              primaryState.submissionResponse = {
+                ...(primaryState.submissionResponse || {}),
+                ...otherErrorsState,
+              };
+            }
+            break;
+
           case ActionTypes.DATA_CHANGED:
             {
               const { dataStates } = proxy;
@@ -286,63 +306,19 @@ export const reducer: Reducer<State, Action> = (state, action) =>
 
           case ActionTypes.SUBMISSION_RESPONSE:
             {
-              const { primaryState } = proxy;
-              primaryState.common.value = "editing";
-
               const {
-                updateDataObjects,
                 updateDefinitions,
+                updateDataObjects,
               } = payload as UpdateDefinitionAndData;
 
-              const submissionSuccessResponse = {
-                value: "submissionSuccess",
-              } as SubmissionSuccessState;
-
-              const context = {
-                invalidResponse: {},
-              } as SubmissionSuccessStateContext;
-
-              let successCount = 0;
-              let failureCount = 0;
-
-              const [s, f, t] = handleDataSubmissionResponse(
+              prepareSubmissionResponse(
                 proxy,
-                context,
-                updateDataObjects,
-              ) as [number, number, string];
-
-              successCount += s;
-              failureCount += f;
-
-              const [s1, f1, t1] = handleDefinitionsSubmissionResponse(
-                proxy,
-                context,
-                updateDefinitions,
-              ) as [number, number, string];
-
-              successCount += s1;
-              failureCount += f1;
-
-              if (t === "valid" && t1 === "valid") {
-                delete context.invalidResponse;
-              }
-
-              if (successCount + failureCount !== 0) {
-                context.validResponse = {
-                  successes: successCount,
-                  failures: failureCount,
-                };
-              }
-
-              submissionSuccessResponse.submissionSuccess = {
-                context,
-              };
-
-              primaryState.submissionResponse = {
-                ...(primaryState.submissionResponse || {}),
-                ...submissionSuccessResponse,
-                isActive: true,
-              };
+                {
+                  updateDefinitions,
+                  updateDataObjects,
+                },
+                "both",
+              );
             }
             break;
 
@@ -352,10 +328,94 @@ export const reducer: Reducer<State, Action> = (state, action) =>
                 .submissionResponse as SubmissionResponseState).isActive = false;
             }
             break;
+
+          case ActionTypes.DATA_OBJECTS_SUBMISSION_RESPONSE:
+            {
+              prepareSubmissionResponse(
+                proxy,
+                payload as UpdateDefinitionAndData,
+                "updateDataObjects",
+              );
+            }
+
+            break;
         }
       });
     },
   );
+
+function prepareSubmissionResponse(
+  proxy: State,
+  props: {
+    updateDataObjects: UpdateDefinitionAndData["updateDataObjects"];
+    updateDefinitions: UpdateDefinitionAndData["updateDefinitions"];
+  },
+  updating: "updateDataObjects" | "updateDefinitions" | "both",
+) {
+  const { primaryState } = proxy;
+  primaryState.common.value = "editing";
+  const submissionSuccessResponse = {
+    value: "submissionSuccess",
+  } as SubmissionSuccessState;
+
+  const context = {
+    invalidResponse: {},
+  } as SubmissionSuccessStateContext;
+
+  let successCount = 0;
+  let failureCount = 0;
+
+  const { updateDataObjects, updateDefinitions } = props;
+  let t1 = "valid";
+  let t2 = "valid";
+
+  if (updating === "updateDataObjects" || updating === "both") {
+    let [s, f, t] = handleDataSubmissionResponse(
+      proxy,
+      context,
+      updateDataObjects,
+    ) as [number, number, string];
+
+    successCount += s;
+    failureCount += f;
+    t1 = t;
+  }
+
+  if (updating === "updateDefinitions" || updating === "both") {
+    const [s, f, t] = handleDefinitionsSubmissionResponse(
+      proxy,
+      context,
+      updateDefinitions,
+    ) as [number, number, string];
+
+    successCount += s;
+    failureCount += f;
+    t2 = t;
+  }
+
+  if (t2 === "valid" && t1 === "valid") {
+    delete context.invalidResponse;
+  }
+
+  if (successCount + failureCount !== 0) {
+    context.validResponse = {
+      successes: successCount,
+      failures: failureCount,
+    };
+  }
+
+  submissionSuccessResponse.submissionSuccess = {
+    context,
+  };
+
+  primaryState.submissionResponse = {
+    ...(primaryState.submissionResponse || {}),
+    ...submissionSuccessResponse,
+    isActive: true,
+  };
+
+  return { primaryState, submissionSuccessResponse, context };
+}
 
 function putDefinitionInvalidErrors(context: SubmissionSuccessStateContext) {
   (context.invalidResponse as SubmissionInvalidResponse).definitions =
@@ -630,9 +690,9 @@ export type SubmissionResponseState = {
     }
   | SubmissionSuccessState
   | {
-      value: "unknownSubmissionError";
+      value: "otherErrors";
 
-      unknownSubmissionError: {
+      otherErrors: {
         context: {
           errors: string;
         };
@@ -702,7 +762,7 @@ export type Action =
     }
   | {
       type: ActionTypes.DEFINITIONS_SUBMISSION_RESPONSE;
-    } & UpdateDefinitions_updateDefinitions
+    } & UpdateDefinitions
   | {
       type: ActionTypes.DEFINITION_FORM_ERRORS;
     } & DefinitionFormErrorsPayload
@@ -714,6 +774,12 @@ export type Action =
     } & UpdateDefinitionAndData
   | {
       type: ActionTypes.DISMISS_SUBMISSION_RESPONSE_MESSAGE;
+    }
+  | {
+      type: ActionTypes.DATA_OBJECTS_SUBMISSION_RESPONSE;
+    } & UpdateDataObjects
+  | {
+      type: ActionTypes.OTHER_ERRORS;
     };
 
 interface DataChangedPayload {

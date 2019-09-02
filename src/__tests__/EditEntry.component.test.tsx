@@ -10,6 +10,7 @@ import { DataDefinitionFragment } from "../graphql/apollo-types/DataDefinitionFr
 import {
   FieldType,
   UpdateDefinitionInput,
+  UpdateDataObjectInput,
 } from "../graphql/apollo-types/globalTypes";
 import {
   fillField,
@@ -41,6 +42,16 @@ jest.mock("../components/DateTimeField/date-time-field.component", () => ({
 jest.mock("../components/DateField/date-field.component", () => ({
   DateField: MockDateTimeField,
 }));
+
+let errorConsoleSpy: jest.SpyInstance;
+
+beforeAll(() => {
+  errorConsoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+});
+
+afterAll(() => {
+  errorConsoleSpy.mockReset();
+});
 
 it("destroys the UI", () => {
   const { ui, mockParentDispatch } = makeComp({
@@ -87,21 +98,6 @@ test("not editing data, no siblings, form errors, server success", async () => {
         ] as DataDefinitionFragment[],
       } as ExperienceFragment,
     },
-  });
-
-  mockUpdateDefinitionsOnline.mockResolvedValue({
-    data: {
-      updateDefinitions: {
-        definitions: [
-          {
-            definition: {
-              id: "a",
-              name: "g1",
-            },
-          },
-        ],
-      },
-    } as UpdateDefinitions,
   });
 
   render(ui);
@@ -180,47 +176,90 @@ test("not editing data, no siblings, form errors, server success", async () => {
 
   expect(getDefinitionSubmit("a")).toBeNull();
   expect(getDefinitionReset("a")).toBeNull();
-  fillField(getDefinitionInput("a"), "g  ");
+  fillField(getDefinitionInput("a"), "g1  "); // will be trimmed on submit
 
   // editing.changed.form
 
   const $submit = getDefinitionSubmit("a");
-  const $field = getDefinitionField("a");
+  // invalid server response
+  mockUpdateDefinitionsOnline.mockResolvedValue({
+    data: {} as UpdateDefinitions,
+  });
 
-  expect($field.classList).not.toContain("error");
+  expect(getSubmittingOverlay()).toBeNull();
+  $submit.click();
+  expect(getSubmittingOverlay()).not.toBeNull();
+  await waitForElement(getSubmissionSuccessResponseDom);
+
+  const mock = mockUpdateDefinitionsOnline.mock.calls[0][0] as ToInputVariables<
+    UpdateDefinitionInput[]
+  >;
+
+  expect(mock.variables.input).toMatchObject([
+    {
+      id: "a",
+      name: "g1",
+    },
+  ]);
+
+  expect(mock.update).toBe(mockEditEntryUpdate);
+
+  // let's try to submit again so we get another type of invalid server
+  // response
+  mockUpdateDefinitionsOnline.mockResolvedValue({
+    data: {
+      updateDefinitions: {},
+    } as UpdateDefinitions,
+  });
 
   $submit.click();
+  await waitForElement(getSubmissionSuccessResponseDom);
 
+  // yet another unexpected server response
+  mockUpdateDefinitionsOnline.mockResolvedValue({});
+  $submit.click();
+  await waitForElement(getOtherErrorsResponseDom);
+
+  // we submit again
+  /** will error cos less than 2 chars **/ fillField(
+    getDefinitionInput("a"),
+    "g  ",
+  );
+  const $field = getDefinitionField("a");
+  expect($field.classList).not.toContain("error");
+  $submit.click();
   // editing.changed.formErrors
-
   expect(getDefinitionError("a")).not.toBeNull();
   expect($field.classList).toContain("error");
+  // leading and trailing white space don't count towards char lenght
   fillField(getDefinitionInput("a"), "g1  ");
   expect($field.classList).not.toContain("definition--success");
 
+  mockUpdateDefinitionsOnline.mockResolvedValue({
+    data: {
+      updateDefinitions: {
+        definitions: [
+          {
+            definition: {
+              id: "a",
+              name: "g1",
+            },
+          },
+        ],
+      },
+    } as UpdateDefinitions,
+  });
+
   $submit.click();
   destroyModal();
-  expect(document.getElementById("submitting-overlay")).not.toBeNull();
+  expect(getSubmittingOverlay()).not.toBeNull();
   // submitting
-
-  await wait(() => {
-    const mock = mockUpdateDefinitionsOnline.mock
-      .calls[0][0] as ToInputVariables<UpdateDefinitionInput[]>;
-
-    expect(mock.variables.input).toMatchObject([
-      {
-        id: "a",
-        name: "g1",
-      },
-    ]);
-
-    expect(mock.update).toBe(mockEditEntryUpdate);
-  });
+  await waitForElement(getSubmissionSuccessResponseDom);
 
   // back to idle, with success
   expect($field.classList).toContain("definition--success");
   expect($field.classList).not.toContain("error");
-  expect(document.getElementById("submitting-overlay")).toBeNull();
+  expect(getSubmittingOverlay()).toBeNull();
   expect(getDefinitionName("a").value).toEqual("g1");
 });
 
@@ -365,6 +404,74 @@ test("not editing data, editing siblings, server error", async () => {
 });
 
 test("editing data, editing definitions", async () => {
+  const serverResponse = {
+    updateDefinitions: {
+      definitions: [
+        {
+          definition: {
+            id: "int",
+          },
+        } as UpdateDefinitions_updateDefinitions_definitions,
+
+        {
+          errors: {
+            id: "dec",
+
+            errors: {
+              name: "n",
+              definition: "",
+            },
+          },
+        },
+      ] as UpdateDefinitions_updateDefinitions_definitions[],
+    } as UpdateDefinitions_updateDefinitions,
+
+    updateDataObjects: [
+      {
+        id: "date",
+
+        dataObject: {
+          id: "date",
+          data: `{"date":"2000-01-02"}`,
+        },
+      },
+
+      {
+        id: "time",
+
+        dataObject: {
+          id: "time",
+          data: `{"datetime":"2000-01-02T01:01:01.000Z"}`,
+        },
+      },
+
+      {
+        id: "multi",
+
+        dataObject: {
+          id: "multi",
+          data: `{"multi_line_text":"mu"}`,
+        },
+      },
+
+      {
+        id: "text",
+
+        stringError: "n",
+      } as UpdateDataObjects_updateDataObjects,
+
+      {
+        id: "dec",
+
+        fieldErrors: {
+          __typename: "DataDefinitionError",
+          data: "d",
+          definition: "",
+        },
+      },
+    ] as UpdateDataObjects_updateDataObjects[],
+  } as UpdateDefinitionAndData;
+
   // NOTE: default date = 2000-01-01, time = 2000-01-01T01:01:01.000Z
   const time = "2000-01-01T01:01:01.000Z";
   const date = "2000-01-01";
@@ -457,76 +564,6 @@ test("editing data, editing definitions", async () => {
     },
   });
 
-  mockUpdateDefinitionsAndDataOnline.mockResolvedValue({
-    data: {
-      updateDefinitions: {
-        definitions: [
-          {
-            definition: {
-              id: "int",
-            },
-          } as UpdateDefinitions_updateDefinitions_definitions,
-
-          {
-            errors: {
-              id: "dec",
-
-              errors: {
-                name: "n",
-                definition: "",
-              },
-            },
-          },
-        ] as UpdateDefinitions_updateDefinitions_definitions[],
-      } as UpdateDefinitions_updateDefinitions,
-
-      updateDataObjects: [
-        {
-          id: "date",
-
-          dataObject: {
-            id: "date",
-            data: `{"date":"2000-01-02"}`,
-          },
-        },
-
-        {
-          id: "time",
-
-          dataObject: {
-            id: "time",
-            data: `{"datetime":"2000-01-02T01:01:01.000Z"}`,
-          },
-        },
-
-        {
-          id: "multi",
-
-          dataObject: {
-            id: "multi",
-            data: `{"multi_line_text":"mu"}`,
-          },
-        },
-
-        {
-          id: "text",
-
-          stringError: "n",
-        } as UpdateDataObjects_updateDataObjects,
-
-        {
-          id: "dec",
-
-          fieldErrors: {
-            __typename: "DataDefinitionError",
-            data: "d",
-            definition: "",
-          },
-        },
-      ] as UpdateDataObjects_updateDataObjects[],
-    } as UpdateDefinitionAndData,
-  });
-
   render(ui);
 
   getDefinitionEdit("int").click();
@@ -534,22 +571,22 @@ test("editing data, editing definitions", async () => {
   // primary state.notEdiitngData
   expect(getDefinitionSubmit("int")).not.toBeNull();
 
-  expect(makeSubmit()).toBeNull();
+  expect(getSubmit()).toBeNull();
   const $int = getDataInput("int", "2");
   const $date = getDataInput("date", "2000-01-02");
   // primary state editingData
   expect(getDefinitionSubmit("int")).toBeNull();
-  expect(makeSubmit()).not.toBeNull();
+  expect(getSubmit()).not.toBeNull();
 
   // revert back to int default
   fillField($int, "1");
-  expect(makeSubmit()).not.toBeNull();
+  expect(getSubmit()).not.toBeNull();
 
   // revert back to date default
   fillField($date, date);
 
   // primary state.notEditingData
-  expect(makeSubmit()).toBeNull();
+  expect(getSubmit()).toBeNull();
   expect(getDefinitionSubmit("int")).not.toBeNull();
 
   getDefinitionInput("int", "int");
@@ -558,53 +595,64 @@ test("editing data, editing definitions", async () => {
 
   getDataInput("time", "2000-01-02T01:01:01.000Z");
   // primary.editingData
-  expect(makeSubmit()).not.toBeNull();
-
-  getDefinitionInput("int", "n");
-  // int definition form errors
-  expect(getDefinitionError("int")).toBeNull();
-
-  makeSubmit().click();
-  // the overlay will not be rendered exepct while awaiting server response
-  // expect(document.getElementById("submitting-overlay")).not.toBeNull();
-  let $responseMessage = await waitForElement(getFormErrorsDom);
-
-  expect($responseMessage).not.toBeNull();
-  expect(getDefinitionError("int")).not.toBeNull();
+  const $submit = getSubmit();
 
   fillField($date, "2000-01-02");
   getDataInput("multi", "mu");
   getDataInput("text", "te");
   getDataInput("dec", "0.9");
   const $fieldDate = getDataField("date");
-  expect($fieldDate.classList).not.toContain("data--success");
-
   const $fieldTime = getDataField("time");
-  expect($fieldTime.classList).not.toContain("data--success");
-
   const $fieldMulti = getDataField("multi");
-  expect($fieldMulti.classList).not.toContain("data--success");
-
   const $fieldText = getDataField("text");
-  expect($fieldText.classList).not.toContain("error");
-  expect(getDataError("text")).toBeNull();
-
   const $fieldDec = getDataField("dec");
-  expect($fieldDec.classList).not.toContain("error");
-  expect(getDataError("dec")).toBeNull();
-
   getDefinitionInput("int", "in");
   getDefinitionEdit("dec").click();
   getDefinitionInput("dec", "de");
-  expect(getDefinitionError("dec")).toBeNull();
+
+  // let's simulate an unexpected server response
+  mockUpdateDefinitionsAndDataOnline.mockResolvedValue({});
+  expect(getOtherErrorsResponseDom()).toBeNull();
+  $submit.click();
+  await waitForElement(getOtherErrorsResponseDom);
+
   const $fieldInt = getDefinitionField("int");
+  expect(getDefinitionError("dec")).toBeNull();
+  expect(getDataError("dec")).toBeNull();
+  expect($fieldDate.classList).not.toContain("data--success");
+  expect($fieldTime.classList).not.toContain("data--success");
   expect($fieldInt.classList).not.toContain("definition--success");
+  expect($fieldMulti.classList).not.toContain("data--success");
+  expect($fieldDec.classList).not.toContain("error");
+  expect($fieldText.classList).not.toContain("error");
+  expect(getDataError("text")).toBeNull();
 
-  makeSubmit().click();
+  // let's simulate form error
+  getDefinitionInput("int", "n"); // should be at least one char
+  // int definition form errors
+  expect(getDefinitionError("int")).toBeNull();
+  $submit.click();
+  // the overlay will not be rendered except while awaiting server response
+  // expect(document.getElementById("submitting-overlay")).not.toBeNull();
+  let $responseMessage = await waitForElement(getFormErrorsResponseDom);
+
+  expect($responseMessage).not.toBeNull();
+  expect(getDefinitionError("int")).not.toBeNull();
+  closeMessage($responseMessage);
+  expect(getFormErrorsResponseDom()).toBeNull();
+
+  // we give the right input now, so no form error
+  getDefinitionInput("int", "in");
+
+  mockUpdateDefinitionsAndDataOnline.mockResolvedValue({
+    data: serverResponse,
+  });
+
+  $submit.click();
   // primary.submitting
-  expect(document.getElementById("submitting-overlay")).not.toBeNull();
+  expect(getSubmittingOverlay()).not.toBeNull();
 
-  $responseMessage = await waitForElement(getSubmissionResponseDom);
+  $responseMessage = await waitForElement(getSubmissionSuccessResponseDom);
 
   const mock = mockUpdateDefinitionsAndDataOnline.mock
     .calls[0][0] as ToVariables<UpdateDefinitionAndDataVariables>;
@@ -652,7 +700,7 @@ test("editing data, editing definitions", async () => {
 
   expect(mock.update).toBe(mockEditEntryUpdate);
 
-  expect(document.getElementById("submitting-overlay")).toBeNull();
+  expect(getSubmittingOverlay()).toBeNull();
 
   const submissionResponseMessage = $responseMessage.textContent;
   expect(submissionResponseMessage).toContain("4");
@@ -688,8 +736,8 @@ test("editing data, editing definitions", async () => {
   //consol.log(JSON.stringify(window.state, null, 2));
 });
 
-test.only("editing data only", async () => {
-  const { ui } = makeComp({
+test("renders error boundary", () => {
+  const { ui, mockParentDispatch } = makeComp({
     props: {
       entry: {
         dataObjects: [
@@ -708,6 +756,71 @@ test.only("editing data only", async () => {
   });
 
   render(ui);
+
+  expect(document.getElementById("edit-entry-error-fallback")).not.toBeNull();
+  closeMessage(document.getElementById("edit-entry-modal"));
+  expect(mockParentDispatch).toHaveBeenCalled();
+});
+
+test("submitting only data objects", async () => {
+  const { ui, mockUpdateDataOnline, mockEditEntryUpdate } = makeComp({
+    props: {
+      entry: {
+        dataObjects: [
+          {
+            id: "int",
+            definitionId: "int",
+            data: `{"integer":1}`,
+          },
+        ],
+      } as EntryFragment,
+
+      experience: {
+        dataDefinitions: [
+          {
+            id: "int",
+            name: "int",
+            type: FieldType.INTEGER,
+          },
+        ] as DataDefinitionFragment[],
+      } as ExperienceFragment,
+    },
+  });
+
+  render(ui);
+  getDataInput("int", "5");
+
+  // we received empty data
+  mockUpdateDataOnline.mockResolvedValue({
+    data: {},
+  });
+
+  expect(getSubmittingOverlay()).toBeNull();
+  getSubmit().click();
+  expect(getSubmittingOverlay()).not.toBeNull();
+
+  let $response = await waitForElement(getSubmissionSuccessResponseDom);
+
+  const mock = mockUpdateDataOnline.mock.calls[0][0] as ToInputVariables<
+    UpdateDataObjectInput
+  >;
+  expect(mock.update).toBe(mockEditEntryUpdate);
+
+  expect(mock.variables.input).toMatchObject([
+    {
+      id: "int",
+      data: `{"integer":"5"}`,
+    },
+  ]);
+
+  mockUpdateDataOnline.mockResolvedValue({});
+
+  closeMessage($response);
+  expect(getSubmissionSuccessResponseDom()).toBeNull();
+  expect(getSubmittingOverlay()).toBeNull();
+  getSubmit().click();
+  expect(getSubmittingOverlay()).not.toBeNull();
+  $response = await waitForElement(getOtherErrorsResponseDom);
 });
 
 test("update function", () => {
@@ -723,6 +836,7 @@ function makeComp({ props = {} }: { props?: Partial<Props> } = {}) {
   const mockParentDispatch = jest.fn();
   const mockEditEntryUpdate = jest.fn();
   const mockUpdateDefinitionsAndDataOnline = jest.fn();
+  const mockUpdateDataOnline = jest.fn();
 
   return {
     ui: (
@@ -731,6 +845,7 @@ function makeComp({ props = {} }: { props?: Partial<Props> } = {}) {
         dispatch={mockParentDispatch}
         editEntryUpdate={mockEditEntryUpdate}
         updateDefinitionAndDataOnline={mockUpdateDefinitionsAndDataOnline}
+        updateDataObjectsOnline={mockUpdateDataOnline}
         {...props}
       />
     ),
@@ -738,6 +853,7 @@ function makeComp({ props = {} }: { props?: Partial<Props> } = {}) {
     mockParentDispatch,
     mockEditEntryUpdate,
     mockUpdateDefinitionsAndDataOnline,
+    mockUpdateDataOnline,
   };
 }
 
@@ -801,7 +917,7 @@ function getDataError(id: string) {
   return getDataField(id, "error");
 }
 
-function makeSubmit() {
+function getSubmit() {
   return document.getElementById("edit-entry-submit") as HTMLButtonElement;
 }
 
@@ -828,14 +944,24 @@ function destroyModal() {
   closeMessage($element);
 }
 
-function getSubmissionResponseDom() {
+function getSubmissionSuccessResponseDom() {
   return document.getElementById(
     "edit-entry-submission-response-message",
   ) as HTMLDivElement;
 }
 
-function getFormErrorsDom() {
+function getFormErrorsResponseDom() {
   return document.getElementById(
     "edit-entry-form-errors-message",
+  ) as HTMLDivElement;
+}
+
+function getSubmittingOverlay() {
+  return document.getElementById("submitting-overlay");
+}
+
+function getOtherErrorsResponseDom() {
+  return document.getElementById(
+    "edit-entry-other-errors-message",
   ) as HTMLDivElement;
 }

@@ -56,7 +56,7 @@ function DefaultFallback() {
 
 export interface Props {
   fallback?: (props: FallbackProps) => ReactNode;
-  onError: (args: FallbackProps) => void;
+  onError?: (args: FallbackProps) => void;
   children?: ReactNode;
 }
 
