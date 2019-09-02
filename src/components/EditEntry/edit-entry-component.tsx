@@ -62,10 +62,6 @@ export function EditEntry(props: Props) {
     },
   } = state;
 
-  window.state = state;
-
-  //console.log(JSON.stringify(state, null, 2));
-
   return (
     <EditEnryContext.Provider
       value={{

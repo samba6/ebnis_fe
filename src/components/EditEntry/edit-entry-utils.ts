@@ -57,8 +57,7 @@ export const initStateFromProps = (props: Props): State => {
           defaults: {
             ...data,
             parsedVal: formObjFromRawString(data.data),
-            type: FieldType.DATE, // make typescript happy, correct value below
-          },
+          } as DataState["context"]["defaults"],
         },
       };
 
@@ -197,8 +196,6 @@ export const reducer: Reducer<State, Action> = (state, action) =>
           case ActionTypes.SUBMITTING:
             {
               proxy.primaryState.common.value = "submitting";
-
-              //console.log(JSON.stringify(proxy.primaryState, null, 2));
             }
 
             break;
@@ -565,7 +562,6 @@ function handleDataSubmissionResponse(
         fieldErrors as UpdateDataObjectsResponseFragment_fieldErrors,
       );
     }
-    //console.log(JSON.stringify(state, null, 2));
   });
 
   return [successCount, failureCount, "valid"];

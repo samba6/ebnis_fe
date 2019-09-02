@@ -527,7 +527,7 @@ test("editing data, editing definitions", async () => {
     } as UpdateDefinitionAndData,
   });
 
-  const { debug } = render(ui);
+  render(ui);
 
   getDefinitionEdit("int").click();
   getDefinitionInput("int", "in");
@@ -686,6 +686,28 @@ test("editing data, editing definitions", async () => {
   expect(getDataInput("multi").value).toEqual("mu");
 
   //consol.log(JSON.stringify(window.state, null, 2));
+});
+
+test.only("editing data only", async () => {
+  const { ui } = makeComp({
+    props: {
+      entry: {
+        dataObjects: [
+          {
+            id: "int",
+            definitionId: "int",
+            data: `{"integer":1}`,
+          },
+        ],
+      } as EntryFragment,
+
+      experience: {
+        dataDefinitions: [] as DataDefinitionFragment[],
+      } as ExperienceFragment,
+    },
+  });
+
+  render(ui);
 });
 
 test("update function", () => {
