@@ -17,6 +17,8 @@ import {
 } from "../../graphql/apollo-types/CreateEntryMutation";
 import dateFnFormat from "date-fns/format";
 
+const NEW_LINE_REGEX = /\n/g;
+
 export function formObjToString(type: FieldType, val: FormObjVal) {
   let toString = val;
 
@@ -44,15 +46,20 @@ export function formObjToString(type: FieldType, val: FormObjVal) {
       break;
 
     case FieldType.SINGLE_LINE_TEXT:
-    case FieldType.MULTI_LINE_TEXT:
       {
         toString = val;
+      }
+      break;
+
+    case FieldType.MULTI_LINE_TEXT:
+      {
+        toString = (val as string).replace(NEW_LINE_REGEX, "\\\\n");
       }
 
       break;
   }
 
-  return toString;
+  return (toString as string).trim();
 }
 
 export interface OwnProps

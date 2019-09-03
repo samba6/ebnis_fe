@@ -26,6 +26,7 @@ import {
 import { UpdateDataObjectsResponseFragment_fieldErrors } from "../../graphql/apollo-types/UpdateDataObjectsResponseFragment";
 import { wrapReducer } from "../../logger";
 import { ApolloError } from "apollo-client";
+import { formObjToString } from "../NewEntry/new-entry.utils";
 
 export enum ActionTypes {
   EDIT_BTN_CLICKED = "@component/edit-entry/edit-btn-clicked",
@@ -45,8 +46,8 @@ export enum ActionTypes {
 }
 
 export const initStateFromProps = (props: Props): State => {
-  const [dataStates, idsMap, dataIds] = props.entry.dataObjects.reduce(
-    ([statesMap, idsMap, dataIds], obj) => {
+  const [dataStates, dataIdsMap, dataIds] = props.entry.dataObjects.reduce(
+    ([statesMap, dataIdsMap, dataIds], obj) => {
       const data = obj as DataObjectFragment;
       const { id } = data;
       dataIds.push(id);
@@ -66,9 +67,9 @@ export const initStateFromProps = (props: Props): State => {
         },
       };
 
-      idsMap[data.definitionId] = id;
+      dataIdsMap[data.definitionId] = id;
 
-      return [statesMap, idsMap, dataIds];
+      return [statesMap, dataIdsMap, dataIds];
     },
     [{} as DataStates, {} as { [k: string]: string }, [] as string[]],
   );
@@ -77,14 +78,14 @@ export const initStateFromProps = (props: Props): State => {
     .dataDefinitions as DataDefinitionFragment[];
 
   let lenDefinitions = 0;
+  const definitionAndDataIdsMapList: DefinitionAndDataIds[] = [];
 
-  const [definitionsStates, definitionsIds] = definitions.reduce(
-    ([acc, definitionsIds], definition) => {
-      const { id, type } = definition;
-      definitionsIds.push(id);
+  const definitionsStates = definitions.reduce(
+    (acc, definition) => {
+      const { id: definitionId, type } = definition;
       ++lenDefinitions;
 
-      acc[id] = {
+      acc[definitionId] = {
         value: "idle",
 
         idle: {
@@ -96,29 +97,41 @@ export const initStateFromProps = (props: Props): State => {
         },
       };
 
-      const dataState = dataStates[idsMap[id]];
+      const definitionAndDataIdsMap = {
+        definitionId,
+      } as DefinitionAndDataIds;
+      definitionAndDataIdsMapList.push(definitionAndDataIdsMap);
 
-      if (dataState) {
+      const dataId = dataIdsMap[definitionId];
+
+      if (dataId) {
+        definitionAndDataIdsMap.dataId = dataId;
+        const dataState = dataStates[dataId];
         dataState.context.defaults.type = type;
       }
 
-      return [acc, definitionsIds];
+      return acc;
     },
-    [{} as DefinitionsStates, [] as string[]],
+    {} as DefinitionsStates,
   );
 
-  return {
+  if (definitionAndDataIdsMapList.length === 0) {
+    dataIds.forEach(id =>
+      definitionAndDataIdsMapList.push({
+        dataId: id,
+      } as DefinitionAndDataIds),
+    );
+  }
+
+  const state = {
     primaryState: {
       context: {
         lenDefinitions,
-
-        definitionsIds,
-
-        dataIds,
+        definitionAndDataIdsMapList,
       },
 
       common: {
-        value: "editing",
+        value: "editing" as "editing",
       },
 
       editingData: {
@@ -130,6 +143,8 @@ export const initStateFromProps = (props: Props): State => {
 
     dataStates,
   };
+
+  return state;
 };
 
 export const reducer: Reducer<State, Action> = (state, action) =>
@@ -315,10 +330,13 @@ export const reducer: Reducer<State, Action> = (state, action) =>
               const { dataStates } = proxy;
               const { id, rawFormVal } = payload as DataChangedPayload;
               const state = dataStates[id];
-              let { parsedVal } = state.context.defaults;
-              const [original, stringed] = formObjToCompareString(rawFormVal);
+              let { parsedVal, type } = state.context.defaults;
+              const [original, stringed] = formObjToCompareString(
+                type,
+                rawFormVal,
+              );
 
-              if (formObjToCompareString(parsedVal)[1] === stringed) {
+              if (formObjToCompareString(type, parsedVal)[1] === stringed) {
                 state.value = "unchanged";
               } else {
                 state.value = "changed";
@@ -327,6 +345,7 @@ export const reducer: Reducer<State, Action> = (state, action) =>
                 changedState.changed = {
                   context: {
                     formValue: original,
+                    formValueString: stringed as string,
                   },
 
                   value: "normal",
@@ -511,13 +530,13 @@ function formObjFromRawString(val: string) {
   return (("" + v) as string).trim();
 }
 
-function formObjToCompareString(val: FormObjVal) {
+function formObjToCompareString(type: FieldType, val: FormObjVal) {
+  const stringVal = formObjToString(type, val);
   if (val instanceof Date) {
-    return [val, (val as Date).toJSON()];
+    return [val, stringVal];
   }
 
-  val = (val as string).trim();
-  return [val, val];
+  return [val, stringVal];
 }
 
 export const EditEnryContext = createContext<ContextValue>({} as ContextValue);
@@ -682,11 +701,15 @@ export interface State {
   readonly primaryState: PrimaryState;
 }
 
+interface DefinitionAndDataIds {
+  definitionId: string;
+  dataId: string;
+}
+
 export interface PrimaryState {
   context: {
-    definitionsIds: string[];
     lenDefinitions: number;
-    dataIds: string[];
+    definitionAndDataIdsMapList: DefinitionAndDataIds[];
   };
 
   common:
@@ -951,6 +974,7 @@ interface DataChangedState {
   changed: {
     context: {
       formValue: FormObjVal;
+      formValueString: string;
     };
   } & (
     | {

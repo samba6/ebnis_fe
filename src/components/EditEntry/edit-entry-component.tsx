@@ -1,4 +1,4 @@
-import React, { useReducer, useContext } from "react";
+import React, { useReducer, useContext, Fragment } from "react";
 import {
   Props,
   ActionTypes,
@@ -56,12 +56,14 @@ export function EditEntry(props: Props) {
   const [state, dispatch] = useReducer(reducer, props, initStateFromProps);
   const {
     primaryState: {
-      context: { definitionsIds, dataIds },
+      context: { definitionAndDataIdsMapList },
       common: commonState,
       editingData,
       editingMultipleDefinitions,
       submissionResponse,
     },
+    definitionsStates,
+    dataStates,
   } = state;
 
   return (
@@ -106,36 +108,42 @@ export function EditEntry(props: Props) {
 
           <Modal.Content>
             <Form>
-              {definitionsIds.map(id => {
-                const definitionState = state.definitionsStates[id];
+              {definitionAndDataIdsMapList.map((map, index) => {
+                const { definitionId, dataId } = map;
 
                 return (
-                  <DefinitionComponent
-                    dispatch={dispatch}
-                    key={id}
-                    id={id}
-                    state={definitionState}
-                    shouldSubmit={getIdOfSubmittingDefinition(
-                      id,
-                      editingData,
-                      editingMultipleDefinitions,
+                  <Fragment key={index}>
+                    {!!definitionId && (
+                      <DefinitionComponent
+                        dispatch={dispatch}
+                        key={definitionId}
+                        id={definitionId}
+                        state={definitionsStates[definitionId]}
+                        shouldSubmit={getIdOfSubmittingDefinition(
+                          definitionId,
+                          editingData,
+                          editingMultipleDefinitions,
+                        )}
+                        onSubmit={submitAll({
+                          dispatch,
+                          globalState: state,
+                          updateDataObjectsOnline,
+                          updateDefinitionAndDataOnline,
+                          updateDefinitionsOnline,
+                          editEntryUpdate,
+                        })}
+                      />
                     )}
-                    onSubmit={submitAll({
-                      dispatch,
-                      globalState: state,
-                      updateDataObjectsOnline,
-                      updateDefinitionAndDataOnline,
-                      updateDefinitionsOnline,
-                      editEntryUpdate,
-                    })}
-                  />
+
+                    {!!dataId && (
+                      <DataComponent
+                        key={dataId}
+                        state={dataStates[dataId]}
+                        id={dataId}
+                      />
+                    )}
+                  </Fragment>
                 );
-              })}
-
-              {dataIds.map(id => {
-                const dataState = state.dataStates[id];
-
-                return <DataComponent key={id} state={dataState} id={id} />;
               })}
 
               {editingData.isActive && (

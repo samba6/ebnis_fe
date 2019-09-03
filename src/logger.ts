@@ -1,11 +1,12 @@
 import { Reducer } from "react";
 import lodashIsEqual from "lodash/isEqual";
 
-const isDev = process.env.NODE_ENV === "development";
+const isDevEnv = process.env.NODE_ENV === "development";
+const isTestEnv = process.env.NODE_ENV === "test";
 
 // tslint:disable-next-line:no-any
 export const logger = async (prefix: string, tag: string, ...data: any) => {
-  if (isDev) {
+  if (isDevEnv) {
     // tslint:disable-next-line:no-console
     console[prefix](
       "\n\n     =======logging starts======\n",
@@ -27,23 +28,23 @@ export function wrapReducer<State, Action>(
     return reducer(prevState, action);
   }
 
-  if (shouldWrap === true || isDev) {
+  if (shouldWrap === true || isDevEnv) {
     console.log(
-      "previous state = \n\t",
-      JSON.stringify(prevState, null, 2),
+      "\nprevious state = \n\t",
+      objectForEnv(prevState),
 
       "\n\n\nupdate with = \n\t",
-      JSON.stringify(action, null, 2),
+      objectForEnv(action),
     );
 
     const nextState = reducer(prevState, action);
 
     console.log(
-      "next state = \n\t",
-      JSON.stringify(nextState, null, 2),
+      "\nnext state = \n\t",
+      objectForEnv(nextState),
 
       "\n\n\nDifferences = \n\t",
-      JSON.stringify(deepObjectDifference(nextState, prevState), null, 2),
+      objectForEnv(deepObjectDifference(nextState, prevState)),
     );
 
     return nextState;
@@ -82,4 +83,8 @@ function deepObjectDifference(
 
 function isPlainObject(obj: object) {
   return Object.prototype.toString.call(obj).includes("Object");
+}
+
+function objectForEnv(obj: any) {
+  return isTestEnv ? JSON.stringify(obj, null, 2) : obj;
 }
