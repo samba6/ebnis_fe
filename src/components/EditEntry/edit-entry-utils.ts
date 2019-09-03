@@ -25,6 +25,7 @@ import {
 } from "../../graphql/apollo-types/UpdateDataObjects";
 import { UpdateDataObjectsResponseFragment_fieldErrors } from "../../graphql/apollo-types/UpdateDataObjectsResponseFragment";
 import { wrapReducer } from "../../logger";
+import { ApolloError } from "apollo-client";
 
 export enum ActionTypes {
   EDIT_BTN_CLICKED = "@component/edit-entry/edit-btn-clicked",
@@ -40,6 +41,7 @@ export enum ActionTypes {
   SUBMISSION_RESPONSE = "@component/edit-entry/submission-response",
   DISMISS_SUBMISSION_RESPONSE_MESSAGE = "@component/edit-entry/dismiss-submission-response-message",
   OTHER_ERRORS = "@component/edit-entry/other-errors",
+  APOLLO_ERRORS = "@component/edit-entry/apollo-errors",
 }
 
 export const initStateFromProps = (props: Props): State => {
@@ -277,6 +279,33 @@ export const reducer: Reducer<State, Action> = (state, action) =>
               primaryState.submissionResponse = {
                 ...(primaryState.submissionResponse || {}),
                 ...otherErrorsState,
+              };
+            }
+            break;
+
+          case ActionTypes.APOLLO_ERRORS:
+            {
+              const { primaryState } = proxy;
+              primaryState.common.value = "editing";
+              const {
+                errors: { graphQLErrors, networkError },
+              } = payload as ApolloErrorsPayload;
+
+              const apolloErrorsState = {
+                isActive: true,
+                value: "apolloErrors",
+                apolloErrors: {
+                  context: {
+                    errors: networkError
+                      ? networkError.message
+                      : graphQLErrors[0].message,
+                  },
+                },
+              } as SubmissionResponseState;
+
+              primaryState.submissionResponse = {
+                ...(primaryState.submissionResponse || {}),
+                ...apolloErrorsState,
               };
             }
             break;
@@ -782,7 +811,14 @@ export type Action =
     } & UpdateDataObjects
   | {
       type: ActionTypes.OTHER_ERRORS;
-    };
+    }
+  | {
+      type: ActionTypes.APOLLO_ERRORS;
+    } & ApolloErrorsPayload;
+
+interface ApolloErrorsPayload {
+  errors: ApolloError;
+}
 
 interface DataChangedPayload {
   id: string;

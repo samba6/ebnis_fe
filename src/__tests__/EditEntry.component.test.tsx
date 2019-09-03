@@ -32,6 +32,8 @@ import {
   UpdateDefinitionAndDataVariables,
 } from "../graphql/apollo-types/UpdateDefinitionAndData";
 import { UpdateDataObjects_updateDataObjects } from "../graphql/apollo-types/UpdateDataObjects";
+import { ApolloError } from "apollo-client";
+import { GraphQLError } from "graphql";
 
 ////////////////////////// MOCKS ////////////////////////////
 
@@ -762,7 +764,7 @@ test("renders error boundary", () => {
   expect(mockParentDispatch).toHaveBeenCalled();
 });
 
-test("submitting only data objects", async () => {
+test("submitting only data objects, apollo errors, runtime errors", async () => {
   const { ui, mockUpdateDataOnline, mockEditEntryUpdate } = makeComp({
     props: {
       entry: {
@@ -795,8 +797,9 @@ test("submitting only data objects", async () => {
     data: {},
   });
 
+  const $submit = getSubmit();
   expect(getSubmittingOverlay()).toBeNull();
-  getSubmit().click();
+  $submit.click();
   expect(getSubmittingOverlay()).not.toBeNull();
 
   let $response = await waitForElement(getSubmissionSuccessResponseDom);
@@ -818,9 +821,74 @@ test("submitting only data objects", async () => {
   closeMessage($response);
   expect(getSubmissionSuccessResponseDom()).toBeNull();
   expect(getSubmittingOverlay()).toBeNull();
-  getSubmit().click();
+  $submit.click();
   expect(getSubmittingOverlay()).not.toBeNull();
   $response = await waitForElement(getOtherErrorsResponseDom);
+  expect(getSubmittingOverlay()).toBeNull();
+
+  // graphQLErrors
+  mockUpdateDataOnline.mockRejectedValue(
+    new ApolloError({
+      graphQLErrors: [new GraphQLError("holla")],
+    }),
+  );
+
+  expect(getApolloErrorsResponseDom()).toBeNull();
+  $submit.click();
+  $response = await waitForElement(getApolloErrorsResponseDom);
+  expect($response).not.toBeNull();
+  closeMessage($response);
+
+  //newtork errors
+  expect(getApolloErrorsResponseDom()).toBeNull();
+  mockUpdateDataOnline.mockRejectedValue(
+    new ApolloError({
+      networkError: new Error("a"),
+    }),
+  );
+
+  $submit.click();
+  await waitForElement(getApolloErrorsResponseDom);
+
+  //other exception errors
+  expect(getOtherErrorsResponseDom()).toBeNull();
+  mockUpdateDataOnline.mockRejectedValue(new Error("t"));
+  $submit.click();
+  await waitForElement(getOtherErrorsResponseDom);
+});
+
+test("not editing data apollo errors", async () => {
+  const { ui, mockUpdateDefinitionsOnline } = makeComp({
+    props: {
+      entry: {
+        dataObjects: [] as DataObjectFragment[],
+      } as EntryFragment,
+
+      experience: {
+        dataDefinitions: [
+          {
+            id: "a",
+            type: FieldType.INTEGER,
+            name: "f1",
+          },
+        ] as DataDefinitionFragment[],
+      } as ExperienceFragment,
+    },
+  });
+
+  mockUpdateDefinitionsOnline.mockRejectedValue(
+    new ApolloError({
+      networkError: new Error("a"),
+    }),
+  );
+
+  render(ui);
+  getDefinitionEdit("a").click();
+  getDefinitionInput("a", "g1");
+  expect(getApolloErrorsResponseDom()).toBeNull();
+  getDefinitionSubmit("a").click();
+  const $response = await waitForElement(getApolloErrorsResponseDom);
+  expect($response).not.toBeNull();
 });
 
 test("update function", () => {
@@ -963,5 +1031,11 @@ function getSubmittingOverlay() {
 function getOtherErrorsResponseDom() {
   return document.getElementById(
     "edit-entry-other-errors-message",
+  ) as HTMLDivElement;
+}
+
+function getApolloErrorsResponseDom() {
+  return document.getElementById(
+    "edit-entry-apollo-errors-message",
   ) as HTMLDivElement;
 }

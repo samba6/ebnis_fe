@@ -41,6 +41,7 @@ import {
 import { formObjToString } from "../NewEntry/new-entry.utils";
 import { UpdateDataObjectsResponseFragment_fieldErrors } from "../../graphql/apollo-types/UpdateDataObjectsResponseFragment";
 import { ErrorBoundary } from "../ErrorBoundary/error-boundary.component";
+import { ApolloError } from "apollo-client";
 
 export function EditEntry(props: Props) {
   const {
@@ -114,17 +115,19 @@ export function EditEntry(props: Props) {
                     key={id}
                     id={id}
                     state={definitionState}
-                    onSubmit={submitDefinitions({
-                      dispatch,
-                      updateDefinitionsOnline,
-                      allDefinitionsStates: state.definitionsStates,
-                      editEntryUpdate,
-                    })}
                     shouldSubmit={getIdOfSubmittingDefinition(
                       id,
                       editingData,
                       editingMultipleDefinitions,
                     )}
+                    onSubmit={submitAll({
+                      dispatch,
+                      globalState: state,
+                      updateDataObjectsOnline,
+                      updateDefinitionAndDataOnline,
+                      updateDefinitionsOnline,
+                      editEntryUpdate,
+                    })}
                   />
                 );
               })}
@@ -442,6 +445,9 @@ function SubmissionErrorsComponent({
     } else if (state.value === "otherErrors") {
       errors = state.otherErrors.context.errors;
       id = "edit-entry-other-errors-message";
+    } else if (state.value === "apolloErrors") {
+      errors = state.apolloErrors.context.errors;
+      id = "edit-entry-apollo-errors-message";
     }
   }
 
@@ -458,54 +464,6 @@ function SubmissionErrorsComponent({
       </Message>
     </Modal.Content>
   ) : null;
-}
-
-function submitDefinitions(props: SubmitDefinitionsArgs) {
-  return async function submitDefinitionInner() {
-    const {
-      dispatch,
-      updateDefinitionsOnline,
-      allDefinitionsStates,
-      editEntryUpdate,
-    } = props;
-
-    dispatch({
-      type: ActionTypes.SUBMITTING,
-    });
-
-    const [input, withErrors] = getDefinitionsToSubmit(
-      allDefinitionsStates,
-    ) as [UpdateDefinitionInput[], string[]];
-
-    if (withErrors.length > 0) {
-      dispatch({
-        type: ActionTypes.DEFINITION_FORM_ERRORS,
-        ids: withErrors,
-      });
-
-      return;
-    }
-
-    const result = await updateDefinitionsOnline({
-      variables: {
-        input,
-      },
-      update: editEntryUpdate,
-    });
-
-    const data = result && result.data;
-
-    if (data) {
-      dispatch({
-        type: ActionTypes.DEFINITIONS_SUBMISSION_RESPONSE,
-        ...data,
-      });
-    } else {
-      dispatch({
-        type: ActionTypes.OTHER_ERRORS,
-      });
-    }
-  };
 }
 
 function getDefinitionsToSubmit(allDefinitionsStates: DefinitionsStates) {
@@ -538,6 +496,7 @@ function submitAll(args: SubmitAllArgs) {
       updateDefinitionAndDataOnline,
       editEntryUpdate,
       updateDataObjectsOnline,
+      updateDefinitionsOnline,
     } = args;
 
     dispatch({
@@ -562,52 +521,81 @@ function submitAll(args: SubmitAllArgs) {
     }
 
     const [dataInput] = getDataObjectsToSubmit(globalState.dataStates);
+    let success = false;
 
-    if (definitionsInput.length === 0) {
-      const result1 = await updateDataObjectsOnline({
-        variables: {
-          input: dataInput,
-        },
+    try {
+      if (dataInput.length === 0) {
+        const result = await updateDefinitionsOnline({
+          variables: {
+            input: definitionsInput,
+          },
+          update: editEntryUpdate,
+        });
 
-        update: editEntryUpdate,
-      });
+        const data = result && result.data;
 
-      const successResult1 = result1 && result1.data;
+        if (data) {
+          success = true;
+          dispatch({
+            type: ActionTypes.DEFINITIONS_SUBMISSION_RESPONSE,
+            ...data,
+          });
+        }
+      } else if (definitionsInput.length === 0) {
+        const result1 = await updateDataObjectsOnline({
+          variables: {
+            input: dataInput,
+          },
 
-      if (successResult1) {
+          update: editEntryUpdate,
+        });
+
+        const successResult = result1 && result1.data;
+
+        if (successResult) {
+          success = true;
+          dispatch({
+            type: ActionTypes.DATA_OBJECTS_SUBMISSION_RESPONSE,
+            ...successResult,
+          });
+        }
+      } else {
+        const result = await updateDefinitionAndDataOnline({
+          variables: {
+            definitionsInput,
+            dataInput,
+          },
+
+          update: editEntryUpdate,
+        });
+
+        const successResult = result && result.data;
+
+        if (successResult) {
+          success = true;
+          dispatch({
+            type: ActionTypes.SUBMISSION_RESPONSE,
+            ...successResult,
+          });
+        }
+      }
+
+      if (success === false) {
         dispatch({
-          type: ActionTypes.DATA_OBJECTS_SUBMISSION_RESPONSE,
-          ...successResult1,
+          type: ActionTypes.OTHER_ERRORS,
+        });
+      }
+    } catch (errors) {
+      if (errors instanceof ApolloError) {
+        dispatch({
+          type: ActionTypes.APOLLO_ERRORS,
+          errors,
         });
       } else {
         dispatch({
           type: ActionTypes.OTHER_ERRORS,
         });
       }
-
-      return;
-    }
-
-    const result = await updateDefinitionAndDataOnline({
-      variables: {
-        definitionsInput,
-        dataInput,
-      },
-
-      update: editEntryUpdate,
-    });
-
-    const successResult = result && result.data;
-
-    if (successResult) {
-      dispatch({
-        type: ActionTypes.SUBMISSION_RESPONSE,
-        ...successResult,
-      });
-    } else {
-      dispatch({
-        type: ActionTypes.OTHER_ERRORS,
-      });
     }
   };
 }
