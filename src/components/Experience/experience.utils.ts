@@ -1,6 +1,6 @@
 import { RouteComponentProps } from "@reach/router";
-import dateFnParse from "date-fns/parse";
 import dateFnFormat from "date-fns/format";
+import parseISO from "date-fns/parseISO";
 import { FieldType } from "../../graphql/apollo-types/globalTypes";
 import { NewEntryRouteParams } from "../../routes";
 import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragment";
@@ -49,13 +49,11 @@ export const displayFieldType = {
   },
 
   [FieldType.DATE](text: string) {
-    const date = dateFnParse(text);
-
-    return dateFnFormat(date, "DD/MM/YYYY");
+    return dateFnFormat(new Date(text), "dd/MM/yyyy");
   },
 
   [FieldType.DATETIME](text: string) {
-    const date = dateFnParse(text);
+    const date = parseISO(text);
 
     return formatDatetime(date);
   },
@@ -69,8 +67,9 @@ export const displayFieldType = {
   },
 };
 
-export function formatDatetime(date: string | Date) {
-  return dateFnFormat(date, "DD/MM/YYYY HH:mm:ss");
+export function formatDatetime(date: Date | string) {
+  date = typeof date === "string" ? parseISO(date) : date;
+  return dateFnFormat(date, "dd/MM/yyyy HH:mm:ss");
 }
 
 export enum EditingState {

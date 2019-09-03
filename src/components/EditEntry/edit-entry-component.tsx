@@ -124,7 +124,7 @@ export function EditEntry(props: Props) {
                           editingData,
                           editingMultipleDefinitions,
                         )}
-                        onSubmit={submitAll({
+                        onSubmit={submit({
                           dispatch,
                           globalState: state,
                           updateDataObjectsOnline,
@@ -153,7 +153,7 @@ export function EditEntry(props: Props) {
                   type="submit"
                   id="edit-entry-submit"
                   className="edit-entry-definition-submit"
-                  onClick={submitAll({
+                  onClick={submit({
                     dispatch,
                     globalState: state,
                     updateDataObjectsOnline,
@@ -496,7 +496,7 @@ function getDefinitionsToSubmit(allDefinitionsStates: DefinitionsStates) {
   return [input, withErrors];
 }
 
-function submitAll(args: SubmitAllArgs) {
+function submit(args: SubmitArgs) {
   return async function submitAllInner() {
     const {
       dispatch,
@@ -722,7 +722,7 @@ interface DataComponentProps {
 
 type E = React.ChangeEvent<HTMLInputElement>;
 
-interface SubmitAllArgs
+interface SubmitArgs
   extends UpdateDefinitionAndDataOnlineMutationProps,
     UpdateDataObjectsOnlineMutationProps,
     UpdateDefinitionsMutationProps {

@@ -3,7 +3,7 @@ import Dropdown from "semantic-ui-react/dist/commonjs/modules/Dropdown";
 import Form from "semantic-ui-react/dist/commonjs/collections/Form";
 import { Props } from "./date-field.utils";
 import "./date-field.styles.scss";
-import getDaysInMonth from "date-fns/get_days_in_month";
+import getDaysInMonth from "date-fns/getDaysInMonth";
 
 const MONTHS_DROP_DOWN_OPTIONS = [
   "Jan",

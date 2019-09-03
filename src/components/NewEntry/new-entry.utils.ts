@@ -16,8 +16,20 @@ import {
   CreateEntryMutation_createEntry_errors_dataObjectsErrors,
 } from "../../graphql/apollo-types/CreateEntryMutation";
 import dateFnFormat from "date-fns/format";
+import parseISO from 'date-fns/parseISO'
 
 const NEW_LINE_REGEX = /\n/g;
+export const ISO_DATE_FORMAT = "yyyy-MM-dd";
+const ISO_DATE_TIME_FORMAT = ISO_DATE_FORMAT + "'T'HH:mm:ssXXX";
+
+export function toISODateString(date: Date) {
+  return dateFnFormat(date, ISO_DATE_FORMAT);
+}
+
+export function toISODatetimeString(date: Date | string) {
+  date = typeof date === 'string' ? parseISO(date) : date
+  return dateFnFormat(date, ISO_DATE_TIME_FORMAT);
+}
 
 export function formObjToString(type: FieldType, val: FormObjVal) {
   let toString = val;
@@ -25,14 +37,14 @@ export function formObjToString(type: FieldType, val: FormObjVal) {
   switch (type) {
     case FieldType.DATE:
       {
-        toString = dateFnFormat(val, "YYYY-MM-DD");
+        toString = toISODateString(val as Date);
       }
 
       break;
 
     case FieldType.DATETIME:
       {
-        toString = (val as Date).toJSON();
+        toString = toISODatetimeString(val as Date);
       }
 
       break;

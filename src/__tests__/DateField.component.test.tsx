@@ -3,9 +3,9 @@ import React, { ComponentType } from "react";
 import "react-testing-library/cleanup-after-each";
 import { render } from "react-testing-library";
 import formatDate from "date-fns/format";
-import addDays from "date-fns/add_days";
-import addYears from "date-fns/add_years";
-import addMonths from "date-fns/add_months";
+import addDays from "date-fns/addDays";
+import addYears from "date-fns/addYears";
+import addMonths from "date-fns/addMonths";
 
 import { DateField } from "../components/DateField/date-field.component";
 import { Props } from "../components/DateField/date-field.utils";
@@ -29,7 +29,7 @@ it("renders ", () => {
   /**
    * Then today's date should be visible on the page
    */
-  const [y, m, d] = formatDate(currentDate, "YYYY MMM D").split(" ");
+  const [y, m, d] = formatDate(currentDate, "yyyy MMM d").split(" ");
 
   const $day = document.getElementById(
     "date-field-input-f.day",
@@ -59,7 +59,7 @@ it("renders ", () => {
    * When we change the date to two years, 3 months and 5 days ago
    */
   const newDate = addMonths(addDays(addYears(currentDate, -2), -5), -3);
-  const [y1, m1, d1] = formatDate(newDate, "YYYY MMM D").split(" ");
+  const [y1, m1, d1] = formatDate(newDate, "yyyy MMM d").split(" ");
 
   (document.getElementById(`date-field-input-f.year-${y1}`) as any).click();
 

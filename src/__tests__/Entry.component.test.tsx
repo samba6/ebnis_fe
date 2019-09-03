@@ -24,8 +24,6 @@ jest.mock("../components/EditEntry/edit-entry-index", () => ({
 import { EditEntry } from "../components/EditEntry/edit-entry-index";
 const mockEditEntry = EditEntry as jest.Mock;
 
-const EntryP = Entry as ComponentType<Partial<Props>>;
-
 it("renders single line text", () => {
   const entry = {
     id: "1",
@@ -106,7 +104,7 @@ it("renders date field", () => {
     dataObjects: [
       {
         definitionId: "3",
-        data: `{"DATE":"2019-05-01"}`,
+        data: `{"date":"2019-05-01"}`,
       },
     ],
   } as EntryFragment;
@@ -244,8 +242,19 @@ test("reducer", () => {
 
 ////////////////////////// HELPER FUNCTIONS ///////////////////////////
 
+const EntryP = Entry as ComponentType<Partial<Props>>;
+const timestamp = "2000-01-01T01:01:01.000Z";
+
 function makeComp({ props = {} }: { props?: Partial<Props> } = {}) {
   mockEditEntry.mockClear();
+
+  const { entry } = props;
+
+  if (entry) {
+    entry.insertedAt = timestamp;
+    entry.updatedAt = timestamp;
+    props.entry = entry;
+  }
 
   return {
     ui: <EntryP {...props} />,

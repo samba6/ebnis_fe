@@ -34,7 +34,7 @@
     "apollo-boost": "0.3.1",
     "apollo-cache-persist": "0.1.1",
     "classnames": "2.2.6",
-    "date-fns": "1.29.0",
+    "date-fns": "2.0.1",
     "formik": "1.5.4",
     "gatsby": "2.4.2",
     "graphql": "14.2.1",

@@ -3,11 +3,12 @@
 import React, { ComponentType } from "react";
 import "react-testing-library/cleanup-after-each";
 import { render, fireEvent, wait, waitForElement } from "react-testing-library";
-import addHours from "date-fns/add_hours";
-import addDays from "date-fns/add_days";
+import addHours from "date-fns/addHours";
+import addDays from "date-fns/addDays";
 import formatDate from "date-fns/format";
-import differenceInDays from "date-fns/difference_in_days";
-import differenceInHours from "date-fns/difference_in_hours";
+import differenceInDays from "date-fns/differenceInDays";
+import differenceInHours from "date-fns/differenceInHours";
+import parseISO from "date-fns/parseISO";
 import { NewEntry } from "../components/NewEntry/new-entry.component";
 import { Props } from "../components/NewEntry/new-entry.utils";
 import {
@@ -252,7 +253,7 @@ it("sets values of date and datetime fields", async () => {
    */
   const datetime = addHours(now, -2);
 
-  const [y, m, d, h, mi] = formatDate(datetime, "YYYY MMM D HH mm").split(" ");
+  const [y, m, d, h, mi] = formatDate(datetime, "yyyy MMM d HH mm").split(" ");
 
   const $datetimeField = document.getElementById(
     "datetime-field-input-fields[1]",
@@ -282,7 +283,7 @@ it("sets values of date and datetime fields", async () => {
    * And we change date to 2 days ago
    */
   const date = addDays(now, -2);
-  const [y1, m1, d1] = formatDate(date, "YYYY MMM D").split(" ");
+  const [y1, m1, d1] = formatDate(date, "yyyy MMM d").split(" ");
 
   const $dateField = document.getElementById(
     `date-field-input-fields[0]`,
@@ -323,10 +324,10 @@ it("sets values of date and datetime fields", async () => {
 
     expect(f2.definitionId).toBe("f2");
 
-    expect(differenceInDays(now, JSON.parse(f1.data).date)).toBe(2);
+    expect(differenceInDays(now, parseISO(JSON.parse(f1.data).date))).toBe(2);
 
     expect(
-      differenceInHours(now, JSON.parse(f2.data).datetime),
+      differenceInHours(now, parseISO(JSON.parse(f2.data).datetime)),
     ).toBeGreaterThanOrEqual(1);
   });
 });

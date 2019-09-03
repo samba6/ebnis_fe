@@ -4,11 +4,11 @@ import React, { ComponentType } from "react";
 import "react-testing-library/cleanup-after-each";
 import { render } from "react-testing-library";
 import formatDate from "date-fns/format";
-import addDays from "date-fns/add_days";
-import addYears from "date-fns/add_years";
-import addMonths from "date-fns/add_months";
-import addMinutes from "date-fns/add_minutes";
-import addHours from "date-fns/add_hours";
+import addDays from "date-fns/addDays";
+import addYears from "date-fns/addYears";
+import addMonths from "date-fns/addMonths";
+import addMinutes from "date-fns/addMinutes";
+import addHours from "date-fns/addHours";
 
 import { DateTimeField } from "../components/DateTimeField/date-time-field.component";
 import { Props } from "../components/DateTimeField/date-time-field.utils";
@@ -34,7 +34,7 @@ it("renders ", () => {
   /**
    * Then the date should be visible on the page
    */
-  const [y, m, d, h, mi] = formatDate(currentDate, "YYYY MMM D HH mm").split(
+  const [y, m, d, h, mi] = formatDate(currentDate, "yyyy MMM d HH mm").split(
     " ",
   );
 
@@ -87,7 +87,7 @@ it("renders ", () => {
     -4,
   );
 
-  const [y1, m1, d1, h1, mi1] = formatDate(newDate, "YYYY MMM D HH mm").split(
+  const [y1, m1, d1, h1, mi1] = formatDate(newDate, "yyyy MMM d HH mm").split(
     " ",
   );
 

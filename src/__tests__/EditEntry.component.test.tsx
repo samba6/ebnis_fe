@@ -34,6 +34,7 @@ import {
 import { UpdateDataObjects_updateDataObjects } from "../graphql/apollo-types/UpdateDataObjects";
 import { ApolloError } from "apollo-client";
 import { GraphQLError } from "graphql";
+import { toISODatetimeString } from "../components/NewEntry/new-entry.utils";
 
 ////////////////////////// MOCKS ////////////////////////////
 
@@ -685,7 +686,10 @@ test("editing data, editing definitions", async () => {
 
       {
         id: "time",
-        data: `{"datetime":"2000-01-02T01:01:01.000Z"}`,
+
+        data: `{"datetime":"${toISODatetimeString(
+          "2000-01-02T01:01:01.000Z",
+        )}"}`,
       },
 
       {
