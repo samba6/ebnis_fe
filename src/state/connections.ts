@@ -2,6 +2,10 @@ import { emitData, EmitAction } from "../setup-observable";
 
 const CONNECTION_KEY = "8XLRWshU/ziLL0CY/JCzEVvjylVe2";
 
+export function removeConnectionKey() {
+  localStorage.removeItem(CONNECTION_KEY);
+}
+
 export function storeConnectionStatus(
   isConnected: boolean,
   mode: "auto" | "manual" = "auto",

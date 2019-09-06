@@ -12,6 +12,9 @@ import {
 } from "./src/state/apollo-setup";
 import { EbnisAppProvider } from "./src/context";
 import { RootHelmet } from "./src/components/RootHelmet";
+import { removeConnectionKey } from "./src/state/connections";
+
+removeConnectionKey();
 
 export const wrapRootElement = ({ element }) => {
   const { client, cache, persistor } = buildClientCache();
