@@ -2,8 +2,28 @@ import { emitData, EmitAction } from "../setup-observable";
 
 const CONNECTION_KEY = "8XLRWshU/ziLL0CY/JCzEVvjylVe2";
 
-export function removeConnectionKey() {
-  localStorage.removeItem(CONNECTION_KEY);
+export function makeConnectionObject() {
+  let connectionStatus = window.____ebnis.connectionStatus;
+
+  if (!connectionStatus) {
+    connectionStatus = {} as ConnectionStatus;
+    window.____ebnis.connectionStatus = connectionStatus;
+  }
+
+  // tslint:disable-next-line:no-console
+  console.log(
+    `\n\t\tLogging start\n\n\n\n label\n`,
+    new Error().stack,
+    { ...window.____ebnis },
+    `\n\n\n\n\t\tLogging ends\n`,
+  );
+
+  return connectionStatus;
+}
+
+export function resetConnectionObject() {
+  delete window.____ebnis.connectionStatus;
+  return makeConnectionObject();
 }
 
 export function storeConnectionStatus(
@@ -53,7 +73,7 @@ function getConnectionStatus() {
   return JSON.parse(connectionStatus) as ConnectionStatus;
 }
 
-interface ConnectionStatus {
+export interface ConnectionStatus {
   isConnected: boolean;
   mode: "auto" | "manual";
 }

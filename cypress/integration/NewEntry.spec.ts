@@ -107,7 +107,7 @@ context("new entry page", () => {
     });
   });
 
-  it("creates entry for unsaved experience successfully when user offline", () => {
+  it.only("creates entry for unsaved experience successfully when user offline", () => {
     /**
      * Given there is an unsaved experience in the system
      */

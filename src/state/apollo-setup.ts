@@ -18,6 +18,11 @@ import {
   middlewareAuthLink,
 } from "./apollo-middlewares";
 import { CUSTOM_QUERY_RESOLVERS } from "./custom-query-resolvers";
+import {
+  ConnectionStatus,
+  makeConnectionObject,
+  resetConnectionObject,
+} from "./connections";
 
 export function buildClientCache(
   {
@@ -27,7 +32,7 @@ export function buildClientCache(
   }: BuildClientCache = {} as BuildClientCache,
 ) {
   // use cypress version of cache if it has been set by cypress
-  let { cache, persistor } = clientCacheFromCypress(invalidateCache);
+  let { cache, persistor } = fromGlobals(invalidateCache);
 
   if (!cache) {
     cache = new InMemoryCache({
@@ -73,7 +78,7 @@ export function buildClientCache(
     client.addResolvers(resolvers);
   }
 
-  setupCypressApollo({ client, cache, persistor });
+  addToGlobals({ client, cache, persistor });
 
   return { client, cache, persistor };
 }
@@ -140,55 +145,68 @@ interface BuildClientCache {
 
 export const CYPRESS_APOLLO_KEY = "ebnis-cypress-apollo";
 
-function clientCacheFromCypress(invalidateCache?: boolean) {
-  const result: {
-    cache?: InMemoryCache;
-    persistor?: CachePersistor<{}>;
-    client?: ApolloClient<{}>;
-  } = {};
+function fromGlobals(invalidateCache?: boolean) {
+  if (!window.____ebnis) {
+    window.____ebnis = {} as E2EWindowObject;
+  }
 
+  if (!window.Cypress) {
+    makeConnectionObject();
+    return window.____ebnis;
+  }
+
+  let cypressApollo = window.Cypress.env(CYPRESS_APOLLO_KEY) as E2EWindowObject;
+
+  // we are running a new e2e test
   if (invalidateCache) {
     // We need to set up local storage for local state management
     // so that whatever we persist in e2e tests will be picked up by apollo
     // when app starts. Otherwise, apollo will always clear out the local
     // storage when the app starts if it can not read the schema version.
     localStorage.setItem(SCHEMA_VERSION_KEY, SCHEMA_VERSION);
-
-    return result;
+    cypressApollo = {} as E2EWindowObject;
+    cypressApollo.connectionStatus = resetConnectionObject();
   }
 
-  if (typeof window === "undefined" || !window.Cypress) {
-    return result;
-  }
+  window.____ebnis = cypressApollo;
+  window.Cypress.env(CYPRESS_APOLLO_KEY, cypressApollo);
 
-  const cypressApollo = window.Cypress.env(
-    CYPRESS_APOLLO_KEY,
-  ) as E2EWindowObject;
+  // tslint:disable-next-line:no-console
+  console.log(
+    `\n\t\tLogging start\n\n\n\n label\n`,
+    new Error().stack,
+    "\n",
+    { ...(cypressApollo || {}) },
+    "\n",
+    { ...(window.____ebnis || {}) },
+    `\n\n\n\n\t\tLogging ends\n`,
+  );
 
-  if (!cypressApollo) {
-    return result;
-  }
-
-  // some how if I use the client from cypress, /app/ route fails to render
-  // client = cypressApollo.client;
-
-  return {
-    cache: cypressApollo.cache,
-    persistor: cypressApollo.persistor,
-  };
+  return cypressApollo;
 }
 
-export function setupCypressApollo(args: {
+export function addToGlobals(args: {
   client: ApolloClient<{}>;
   cache: InMemoryCache;
   persistor: CachePersistor<{}>;
 }) {
   if (window.Cypress) {
-    window.Cypress.env(CYPRESS_APOLLO_KEY, {
-      cache: args.cache,
-      client: args.client,
-      persistor: args.persistor,
-    });
+    let cypressApollo = window.Cypress.env(
+      CYPRESS_APOLLO_KEY,
+    ) as E2EWindowObject;
+
+    cypressApollo.client = args.client;
+    cypressApollo.cache = args.cache;
+    cypressApollo.persistor = args.persistor;
+
+    window.Cypress.env(CYPRESS_APOLLO_KEY, cypressApollo);
+
+    window.____ebnis = cypressApollo;
+  } else {
+    const globals = window.____ebnis;
+    globals.persistor = args.persistor;
+    globals.cache = args.cache;
+    globals.client = args.client;
   }
 }
 
@@ -196,6 +214,7 @@ export interface E2EWindowObject {
   cache: InMemoryCache;
   client: ApolloClient<{}>;
   persistor: CachePersistor<{}>;
+  connectionStatus: ConnectionStatus;
 }
 
 declare global {
