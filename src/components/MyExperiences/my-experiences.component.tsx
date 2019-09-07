@@ -64,7 +64,10 @@ export const MyExperiences = (props: Props) => {
         return;
       }
 
-      layoutDispatch([LayoutActionType.setExperiencesToPreFetch, ids]);
+      layoutDispatch({
+        type: LayoutActionType.EXPERIENCES_TO_PREFETCH,
+        ids,
+      });
     }, 1000);
 
     // eslint-disable-next-line react-hooks/exhaustive-deps

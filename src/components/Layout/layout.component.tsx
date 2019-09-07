@@ -1,27 +1,19 @@
-import React, {
-  useContext,
-  PropsWithChildren,
-  useEffect,
-  useRef,
-  useReducer,
-} from "react";
+import React, { useContext, useEffect, useRef, useReducer } from "react";
 import { EbnisAppContext } from "../../context";
 import { Loading } from "../Loading/loading";
 import {
   ILayoutContextContext,
   reducer,
   LayoutActionType,
+  Props,
 } from "./layout.utils";
 import { getObservable, EmitAction } from "../../setup-observable";
 import { ZenObservable } from "zen-observable-ts";
 import { getUnsavedCount } from "../../state/unsaved-resolvers";
 import { LayoutProvider } from "./layout-provider";
-import { RouteComponentProps } from "@reach/router";
 import { preFetchExperiences } from "./pre-fetch-experiences";
 import { useUser } from "../use-user";
 import { isConnected } from "../../state/connections";
-
-export interface Props extends PropsWithChildren<{}>, RouteComponentProps {}
 
 export function Layout(props: Props) {
   const { children } = props;
@@ -55,7 +47,10 @@ export function Layout(props: Props) {
               client,
               cache,
               onDone: () => {
-                dispatch([LayoutActionType.setExperiencesToPreFetch, null]);
+                dispatch({
+                  type: LayoutActionType.EXPERIENCES_TO_PREFETCH,
+                  ids: experiencesToPreFetch,
+                });
               },
             });
           }
@@ -68,7 +63,10 @@ export function Layout(props: Props) {
         (async function() {
           if (await isConnected()) {
             const newUnsavedCount = await getUnsavedCount(client);
-            dispatch([LayoutActionType.setUnsavedCount, newUnsavedCount]);
+            dispatch({
+              type: LayoutActionType.SET_UNSAVED_COUNT,
+              count: newUnsavedCount,
+            });
           }
         })();
       }
@@ -81,7 +79,10 @@ export function Layout(props: Props) {
 
               if (isConnected) {
                 getUnsavedCount(client).then(newUnsavedCount => {
-                  dispatch([LayoutActionType.setUnsavedCount, newUnsavedCount]);
+                  dispatch({
+                    type: LayoutActionType.SET_UNSAVED_COUNT,
+                    count: newUnsavedCount,
+                  });
                 });
 
                 if (experiencesToPreFetch) {
@@ -91,17 +92,20 @@ export function Layout(props: Props) {
                       client,
                       cache,
                       onDone: () => {
-                        dispatch([
-                          LayoutActionType.setExperiencesToPreFetch,
-                          null,
-                        ]);
+                        dispatch({
+                          type: LayoutActionType.EXPERIENCES_TO_PREFETCH,
+                          ids: null,
+                        });
                       },
                     });
                   }, 500);
                 }
-              } else if (isConnected === false) {
+              } else {
                 // if we are disconnected, then we don't display unsaved UI
-                dispatch([LayoutActionType.setUnsavedCount, 0]);
+                dispatch({
+                  type: LayoutActionType.SET_UNSAVED_COUNT,
+                  count: 0,
+                });
               }
             }
           },
@@ -131,7 +135,10 @@ export function Layout(props: Props) {
           await restoreCacheOrPurgeStorage(persistor);
         } catch (error) {}
 
-        dispatch([LayoutActionType.shouldRenderChildren, true]);
+        dispatch({
+          type: LayoutActionType.RENDER_CHILDREN,
+          shouldRender: true,
+        });
       })();
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -134,7 +134,7 @@ it("loads full experiences in the background when experiences are loaded", async
 
   jest.runAllTimers();
 
-  expect(mockLayoutDispatch.mock.calls[0][0][1] as any).toEqual(["1"]);
+  expect((mockLayoutDispatch.mock.calls[0][0] as any).ids).toEqual(["1"]);
 
   done();
 });

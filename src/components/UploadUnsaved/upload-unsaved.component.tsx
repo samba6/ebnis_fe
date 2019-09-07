@@ -113,7 +113,10 @@ export function UploadUnsaved(props: Props) {
 
   useEffect(() => {
     if (shouldRedirect) {
-      layoutDispatch([LayoutActionType.setUnsavedCount, 0]);
+      layoutDispatch({
+        type: LayoutActionType.SET_UNSAVED_COUNT,
+        count: 0,
+      });
 
       (navigate as NavigateFn)(EXPERIENCES_URL);
     }
@@ -180,10 +183,10 @@ export function UploadUnsaved(props: Props) {
       dispatch([ActionType.onUploadResult, newState]);
 
       if (outstandingUnsavedCount !== null) {
-        layoutDispatch([
-          LayoutActionType.setUnsavedCount,
-          outstandingUnsavedCount,
-        ]);
+        layoutDispatch({
+          type: LayoutActionType.SET_UNSAVED_COUNT,
+          count: outstandingUnsavedCount,
+        });
       }
     } catch (error) {
       dispatch([ActionType.setServerError, error]);

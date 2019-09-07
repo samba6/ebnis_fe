@@ -1,8 +1,9 @@
-import { createContext, Reducer, Dispatch } from "react";
+import { createContext, Reducer, Dispatch, PropsWithChildren } from "react";
 import { CachePersistor } from "apollo-cache-persist";
 import { InMemoryCache } from "apollo-cache-inmemory";
 import immer from "immer";
 import ApolloClient from "apollo-client";
+import { RouteComponentProps } from "@reach/router";
 
 export interface ILayoutContextContext {
   persistor: CachePersistor<{}>;
@@ -17,15 +18,24 @@ export const LayoutContext = createContext<ILayoutContextContext>({
 } as ILayoutContextContext);
 
 export enum LayoutActionType {
-  setUnsavedCount = "@components/layout/set-unsaved-count",
-  shouldRenderChildren = "@components/layout/should-render-children",
-  setExperiencesToPreFetch = "@components/layout/set-experiences-to-pre-fetch",
+  SET_UNSAVED_COUNT = "@layout/set-unsaved-count",
+  RENDER_CHILDREN = "@layout/render-children",
+  EXPERIENCES_TO_PREFETCH = "@layout/experiences-to-pre-fetch",
 }
 
 type Action =
-  | [LayoutActionType.setUnsavedCount, number]
-  | [LayoutActionType.shouldRenderChildren, boolean]
-  | [LayoutActionType.setExperiencesToPreFetch, string[] | null];
+  | {
+      type: LayoutActionType.SET_UNSAVED_COUNT;
+      count: number;
+    }
+  | {
+      type: LayoutActionType.RENDER_CHILDREN;
+      shouldRender: boolean;
+    }
+  | {
+      type: LayoutActionType.EXPERIENCES_TO_PREFETCH;
+      ids: string[] | null;
+    };
 
 interface State {
   unsavedCount: number | null;
@@ -33,27 +43,34 @@ interface State {
   experiencesToPreFetch?: string[] | null;
 }
 
-export const reducer: Reducer<State, Action> = (prevState, [type, payload]) => {
+export const reducer: Reducer<State, Action> = (
+  prevState,
+  { type, ...payload },
+) => {
   return immer(prevState, proxy => {
     switch (type) {
-      case LayoutActionType.setUnsavedCount:
+      case LayoutActionType.SET_UNSAVED_COUNT:
         {
-          proxy.unsavedCount = payload as number;
+          proxy.unsavedCount = (payload as { count: number }).count;
         }
 
         break;
 
-      case LayoutActionType.shouldRenderChildren:
+      case LayoutActionType.RENDER_CHILDREN:
         {
-          proxy.renderChildren = payload as boolean;
+          proxy.renderChildren = (payload as {
+            shouldRender: boolean;
+          }).shouldRender;
         }
 
         break;
 
       // istanbul ignore next:tested in MyExperiences component
-      case LayoutActionType.setExperiencesToPreFetch:
+      case LayoutActionType.EXPERIENCES_TO_PREFETCH:
         {
-          proxy.experiencesToPreFetch = payload as string[];
+          proxy.experiencesToPreFetch = (payload as {
+            ids: string[] | null;
+          }).ids;
         }
 
         break;
@@ -62,3 +79,5 @@ export const reducer: Reducer<State, Action> = (prevState, [type, payload]) => {
 };
 
 export type LayoutDispatchType = Dispatch<Action>;
+
+export interface Props extends PropsWithChildren<{}>, RouteComponentProps {}

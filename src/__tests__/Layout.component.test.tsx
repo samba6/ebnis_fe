@@ -3,10 +3,13 @@
 import React, { ComponentType } from "react";
 import "react-testing-library/cleanup-after-each";
 import { render, waitForElement, wait } from "react-testing-library";
-import { Layout, Props } from "../components/Layout/layout.component";
+import { Layout } from "../components/Layout/layout.component";
 import { EbnisAppProvider, EbnisContextProps } from "../context";
 import { emitData, EmitAction } from "../setup-observable";
-import { ILayoutContextContext } from "../components/Layout/layout.utils";
+import {
+  ILayoutContextContext,
+  Props,
+} from "../components/Layout/layout.utils";
 
 ////////////////////////// MOCKS ////////////////////////////
 
