@@ -24,7 +24,7 @@ function checkoutSession() {
   buildClientCache({
     uri: serverUrl,
     resolvers: allResolvers,
-    invalidateCache: true,
+    newE2eTest: true,
   });
 
   cy.request("GET", serverUrl + "/reset_db").then(response => {

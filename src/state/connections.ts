@@ -10,14 +10,6 @@ export function makeConnectionObject() {
     window.____ebnis.connectionStatus = connectionStatus;
   }
 
-  // tslint:disable-next-line:no-console
-  console.log(
-    `\n\t\tLogging start\n\n\n\n label\n`,
-    new Error().stack,
-    { ...window.____ebnis },
-    `\n\n\n\n\t\tLogging ends\n`,
-  );
-
   return connectionStatus;
 }
 
@@ -45,12 +37,16 @@ export function storeConnectionStatus(
     return;
   }
 
-  const connectionStatus: ConnectionStatus = {
+  let connectionStatus: ConnectionStatus = {
     isConnected,
     mode,
   };
 
-  localStorage.setItem(CONNECTION_KEY, JSON.stringify(connectionStatus));
+  connectionStatus = window.____ebnis.connectionStatus
+  connectionStatus.mode = mode
+  connectionStatus.isConnected = isConnected
+
+  // localStorage.setItem(CONNECTION_KEY, JSON.stringify(connectionStatus));
 
   emitData([EmitAction.connectionChanged, isConnected]);
 
@@ -63,7 +59,7 @@ export function isConnected() {
   return connectionStatus ? connectionStatus.isConnected : null;
 }
 
-function getConnectionStatus() {
+export function getConnectionStatus1() {
   const connectionStatus = localStorage.getItem(CONNECTION_KEY);
 
   if (!connectionStatus) {
@@ -71,6 +67,10 @@ function getConnectionStatus() {
   }
 
   return JSON.parse(connectionStatus) as ConnectionStatus;
+}
+
+function getConnectionStatus() {
+  return window.____ebnis.connectionStatus;
 }
 
 export interface ConnectionStatus {

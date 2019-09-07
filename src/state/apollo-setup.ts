@@ -25,14 +25,10 @@ import {
 } from "./connections";
 
 export function buildClientCache(
-  {
-    uri,
-    resolvers,
-    invalidateCache,
-  }: BuildClientCache = {} as BuildClientCache,
+  { uri, resolvers, newE2eTest }: BuildClientCache = {} as BuildClientCache,
 ) {
   // use cypress version of cache if it has been set by cypress
-  let { cache, persistor } = fromGlobals(invalidateCache);
+  let { cache, persistor } = fromGlobals(newE2eTest);
 
   if (!cache) {
     cache = new InMemoryCache({
@@ -138,14 +134,14 @@ interface BuildClientCache {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   resolvers: any;
 
-  invalidateCache?: boolean;
+  newE2eTest?: boolean;
 }
 
 ///////////////////// END TO END TESTS THINGS ///////////////////////
 
 export const CYPRESS_APOLLO_KEY = "ebnis-cypress-apollo";
 
-function fromGlobals(invalidateCache?: boolean) {
+function fromGlobals(newE2eTest?: boolean) {
   if (!window.____ebnis) {
     window.____ebnis = {} as E2EWindowObject;
   }
@@ -157,8 +153,7 @@ function fromGlobals(invalidateCache?: boolean) {
 
   let cypressApollo = window.Cypress.env(CYPRESS_APOLLO_KEY) as E2EWindowObject;
 
-  // we are running a new e2e test
-  if (invalidateCache) {
+  if (newE2eTest) {
     // We need to set up local storage for local state management
     // so that whatever we persist in e2e tests will be picked up by apollo
     // when app starts. Otherwise, apollo will always clear out the local
@@ -170,17 +165,6 @@ function fromGlobals(invalidateCache?: boolean) {
 
   window.____ebnis = cypressApollo;
   window.Cypress.env(CYPRESS_APOLLO_KEY, cypressApollo);
-
-  // tslint:disable-next-line:no-console
-  console.log(
-    `\n\t\tLogging start\n\n\n\n label\n`,
-    new Error().stack,
-    "\n",
-    { ...(cypressApollo || {}) },
-    "\n",
-    { ...(window.____ebnis || {}) },
-    `\n\n\n\n\t\tLogging ends\n`,
-  );
 
   return cypressApollo;
 }

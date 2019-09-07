@@ -6,6 +6,7 @@ import {
   createUnsavedExperience,
 } from "../support/create-experience";
 import { ExperienceFragment } from "../../src/graphql/apollo-types/ExperienceFragment";
+import { UNSAVED_ID_PREFIX } from "../../src/constants";
 
 context("new entry page", () => {
   beforeEach(() => {
@@ -102,12 +103,13 @@ context("new entry page", () => {
        * Then data user just created should exist on page
        */
       cy.get(makeIdAttributeSelector(experience)).then($element => {
-        expect($element[0].textContent).eq("4");
+        expect($element.text()).eq("4");
+        expect($element.attr("id")).to.include(UNSAVED_ID_PREFIX);
       });
     });
   });
 
-  it.only("creates entry for unsaved experience successfully when user offline", () => {
+  it("creates entry for unsaved experience successfully when user offline", () => {
     /**
      * Given there is an unsaved experience in the system
      */
@@ -156,7 +158,8 @@ context("new entry page", () => {
        * Then data user just created should exist on page
        */
       cy.get(makeIdAttributeSelector(experience)).then($element => {
-        expect($element[0].textContent).eq("2");
+        expect($element.text()).eq("2");
+        expect($element.attr("id")).to.include(UNSAVED_ID_PREFIX);
       });
     });
   });
