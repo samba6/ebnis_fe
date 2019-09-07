@@ -21,6 +21,8 @@ import { USER_REGISTRATION_OBJECT } from "./user-registration-object";
 const serverUrl = Cypress.env("API_URL") as string;
 
 function checkoutSession() {
+  window.localStorage.clear();
+
   buildClientCache({
     uri: serverUrl,
     resolvers: allResolvers,

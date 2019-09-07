@@ -14,7 +14,9 @@ import { EbnisAppProvider } from "./src/context";
 import { RootHelmet } from "./src/components/RootHelmet";
 
 export const wrapRootElement = ({ element }) => {
-  const { client, cache, persistor } = buildClientCache();
+  const { client, cache, persistor } = buildClientCache({
+    appHydrated: true,
+  });
 
   return (
     <ApolloProvider client={client}>

@@ -1,7 +1,5 @@
 import { emitData, EmitAction } from "../setup-observable";
 
-const CONNECTION_KEY = "8XLRWshU/ziLL0CY/JCzEVvjylVe2";
-
 export function makeConnectionObject() {
   let connectionStatus = window.____ebnis.connectionStatus;
 
@@ -37,16 +35,9 @@ export function storeConnectionStatus(
     return;
   }
 
-  let connectionStatus: ConnectionStatus = {
-    isConnected,
-    mode,
-  };
-
-  connectionStatus = window.____ebnis.connectionStatus
-  connectionStatus.mode = mode
-  connectionStatus.isConnected = isConnected
-
-  // localStorage.setItem(CONNECTION_KEY, JSON.stringify(connectionStatus));
+  let connectionStatus = window.____ebnis.connectionStatus;
+  connectionStatus.mode = mode;
+  connectionStatus.isConnected = isConnected;
 
   emitData([EmitAction.connectionChanged, isConnected]);
 
@@ -57,16 +48,6 @@ export function isConnected() {
   const connectionStatus = getConnectionStatus();
 
   return connectionStatus ? connectionStatus.isConnected : null;
-}
-
-export function getConnectionStatus1() {
-  const connectionStatus = localStorage.getItem(CONNECTION_KEY);
-
-  if (!connectionStatus) {
-    return null;
-  }
-
-  return JSON.parse(connectionStatus) as ConnectionStatus;
 }
 
 function getConnectionStatus() {

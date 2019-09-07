@@ -22,13 +22,28 @@ import {
   ConnectionStatus,
   makeConnectionObject,
   resetConnectionObject,
+  storeConnectionStatus,
 } from "./connections";
 
 export function buildClientCache(
-  { uri, resolvers, newE2eTest }: BuildClientCache = {} as BuildClientCache,
+  {
+    uri,
+    resolvers,
+    newE2eTest,
+    appHydrated,
+  }: BuildClientCache = {} as BuildClientCache,
 ) {
   // use cypress version of cache if it has been set by cypress
-  let { cache, persistor } = fromGlobals(newE2eTest);
+  const globalVars = fromGlobals(newE2eTest);
+  let { cache, persistor } = globalVars;
+
+  // cache has been set by e2e test
+  if (cache) {
+    if (appHydrated) {
+      storeConnectionStatus(true);
+    }
+    return globalVars;
+  }
 
   if (!cache) {
     cache = new InMemoryCache({
@@ -102,6 +117,10 @@ function makePersistor(
 export async function restoreCacheOrPurgeStorage(
   persistor: CachePersistor<{}>,
 ) {
+  if (persistor === getGlobals().persistor) {
+    return persistor;
+  }
+
   const currentVersion = localStorage.getItem(SCHEMA_VERSION_KEY);
 
   if (currentVersion === SCHEMA_VERSION) {
@@ -135,6 +154,7 @@ interface BuildClientCache {
   resolvers: any;
 
   newE2eTest?: boolean;
+  appHydrated?: boolean;
 }
 
 ///////////////////// END TO END TESTS THINGS ///////////////////////
@@ -151,7 +171,7 @@ function fromGlobals(newE2eTest?: boolean) {
     return window.____ebnis;
   }
 
-  let cypressApollo = window.Cypress.env(CYPRESS_APOLLO_KEY) as E2EWindowObject;
+  let cypressApollo = getGlobals();
 
   if (newE2eTest) {
     // We need to set up local storage for local state management
@@ -169,15 +189,13 @@ function fromGlobals(newE2eTest?: boolean) {
   return cypressApollo;
 }
 
-export function addToGlobals(args: {
+function addToGlobals(args: {
   client: ApolloClient<{}>;
   cache: InMemoryCache;
   persistor: CachePersistor<{}>;
 }) {
   if (window.Cypress) {
-    let cypressApollo = window.Cypress.env(
-      CYPRESS_APOLLO_KEY,
-    ) as E2EWindowObject;
+    let cypressApollo = getGlobals();
 
     cypressApollo.client = args.client;
     cypressApollo.cache = args.cache;
@@ -192,6 +210,17 @@ export function addToGlobals(args: {
     globals.cache = args.cache;
     globals.client = args.client;
   }
+}
+
+function getGlobals() {
+  let globalVars = {} as E2EWindowObject;
+
+  if (window.Cypress) {
+    globalVars = (window.Cypress.env(CYPRESS_APOLLO_KEY) ||
+      {}) as E2EWindowObject;
+  }
+
+  return globalVars;
 }
 
 export interface E2EWindowObject {
