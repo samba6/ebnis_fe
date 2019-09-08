@@ -1,4 +1,4 @@
-import { emitData, EmitAction } from "../setup-observable";
+import { EmitAction } from "../setup-observable";
 
 export function makeConnectionObject() {
   let connectionStatus = window.____ebnis.connectionStatus;
@@ -35,7 +35,7 @@ export function storeConnectionStatus(
     return;
   }
 
-  let connectionStatus = window.____ebnis.connectionStatus;
+  let { emitData, connectionStatus } = window.____ebnis;
   connectionStatus.mode = mode;
   connectionStatus.isConnected = isConnected;
 

@@ -5,7 +5,7 @@ import "react-testing-library/cleanup-after-each";
 import { render, waitForElement, wait } from "react-testing-library";
 import { Layout } from "../components/Layout/layout.component";
 import { EbnisAppProvider, EbnisContextProps } from "../context";
-import { emitData, EmitAction } from "../setup-observable";
+import { EmitAction, makeObservable } from "../setup-observable";
 import {
   ILayoutContextContext,
   Props,
@@ -27,6 +27,7 @@ jest.mock("../components/Loading/loading", () => ({
 
 jest.mock("../components/use-user");
 import { useUser } from "../components/use-user";
+import { E2EWindowObject } from "../state/apollo-setup";
 const mockUseUser = useUser as jest.Mock;
 
 let layoutContextValue: null | ILayoutContextContext;
@@ -161,7 +162,7 @@ it("queries unsaved when connection returns", async () => {
   /**
    * Given there is user in the system and initially there is no connection
    */
-  const { ui } = makeComp({
+  const { ui, emitData } = makeComp({
     context: {
       connectionStatus: {
         isConnected: false,
@@ -203,7 +204,7 @@ it("queries unsaved when connection returns", async () => {
 });
 
 test("loses connection", async () => {
-  const { ui } = makeComp();
+  const { ui, emitData } = makeComp();
   mockUseUser.mockReturnValue({});
   mockIsConnected.mockResolvedValue(true);
   mockGetUnsavedCount.mockResolvedValue(2);
@@ -249,7 +250,9 @@ function makeComp({
     },
   };
 
-  context = { ...defaultContext, ...context };
+  const globals = {} as E2EWindowObject;
+  const observableUtils = makeObservable(globals);
+  context = { ...defaultContext, ...observableUtils, ...context };
 
   return {
     ui: (
@@ -260,5 +263,6 @@ function makeComp({
       </EbnisAppProvider>
     ),
     mockRestoreCacheOrPurgeStorage,
+    emitData: observableUtils.emitData,
   };
 }

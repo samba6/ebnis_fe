@@ -1,37 +1,33 @@
-import { Observable, ZenObservable } from "zen-observable-ts";
+import { Observable } from "zen-observable-ts";
+import { E2EWindowObject } from "./state/apollo-setup";
 
 export enum EmitAction {
   connectionChanged = "@emit-action/connection-changed",
 }
 
-type EmitPayload = [EmitAction.connectionChanged, boolean];
-
-let observable: Observable<EmitPayload>;
-
-let emitter: ZenObservable.SubscriptionObserver<EmitPayload>;
-
-function makeObservable() {
-  observable = new Observable<EmitPayload>(observer => {
-    emitter = observer;
+export function makeObservable(globals: E2EWindowObject) {
+  globals.observable = new Observable<EmitPayload>(emitter => {
+    globals.emitter = emitter;
   });
+
+  globals.emitData = function emitData(params: EmitPayload) {
+    const { emitter } = globals;
+
+    if (emitter) {
+      emitter.next(params);
+    }
+  };
+
+  return globals;
 }
 
-export function emitData(params: EmitPayload) {
-  if (!observable) {
-    makeObservable();
-  }
+////////////////////////// TYPES ////////////////////////////
 
-  if (emitter) {
-    emitter.next(params);
-  }
-}
+export type EmitData = (params: EmitPayload) => void;
 
-export function getObservable() {
-  if (observable) {
-    return observable;
-  }
+export type EmitPayload = [EmitAction.connectionChanged, boolean];
 
-  makeObservable();
-
-  return observable;
+export interface ObservableUtils {
+  emitData: EmitData;
+  observable: Observable<EmitPayload>;
 }

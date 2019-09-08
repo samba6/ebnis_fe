@@ -346,7 +346,7 @@ it("renders only title if there are title and children", () => {
 it("sets class name", () => {
   const { ui } = setup({
     props: {
-      className: "yahoo",
+      className: "a",
     },
   });
 
@@ -354,7 +354,7 @@ it("sets class name", () => {
     container: { firstChild },
   } = render(ui);
 
-  expect((firstChild as any).classList).toContain("yahoo");
+  expect((firstChild as any).classList).toContain("a");
 });
 
 ////////////////////////// HELPER FUNCTIONS ///////////////////////////

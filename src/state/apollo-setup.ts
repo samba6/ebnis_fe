@@ -24,6 +24,11 @@ import {
   resetConnectionObject,
   storeConnectionStatus,
 } from "./connections";
+import {
+  makeObservable,
+  ObservableUtils,
+  EmitPayload,
+} from "../setup-observable";
 
 export function buildClientCache(
   {
@@ -34,7 +39,7 @@ export function buildClientCache(
   }: BuildClientCache = {} as BuildClientCache,
 ) {
   // use cypress version of cache if it has been set by cypress
-  const globalVars = fromGlobals(newE2eTest);
+  const globalVars = getOrMakeGlobals(newE2eTest);
   let { cache, persistor } = globalVars;
 
   // cache has been set by e2e test
@@ -117,7 +122,7 @@ function makePersistor(
 export async function restoreCacheOrPurgeStorage(
   persistor: CachePersistor<{}>,
 ) {
-  if (persistor === getGlobals().persistor) {
+  if (persistor === getGlobalsFromCypress().persistor) {
     return persistor;
   }
 
@@ -161,7 +166,7 @@ interface BuildClientCache {
 
 export const CYPRESS_APOLLO_KEY = "ebnis-cypress-apollo";
 
-function fromGlobals(newE2eTest?: boolean) {
+function getOrMakeGlobals(newE2eTest?: boolean) {
   if (!window.____ebnis) {
     window.____ebnis = {} as E2EWindowObject;
   }
@@ -171,7 +176,7 @@ function fromGlobals(newE2eTest?: boolean) {
     return window.____ebnis;
   }
 
-  let cypressApollo = getGlobals();
+  let cypressApollo = getGlobalsFromCypress();
 
   if (newE2eTest) {
     // We need to set up local storage for local state management
@@ -179,7 +184,11 @@ function fromGlobals(newE2eTest?: boolean) {
     // when app starts. Otherwise, apollo will always clear out the local
     // storage when the app starts if it can not read the schema version.
     localStorage.setItem(SCHEMA_VERSION_KEY, SCHEMA_VERSION);
+
+    // reset globals
     cypressApollo = {} as E2EWindowObject;
+
+    // reset connections
     cypressApollo.connectionStatus = resetConnectionObject();
   }
 
@@ -194,25 +203,22 @@ function addToGlobals(args: {
   cache: InMemoryCache;
   persistor: CachePersistor<{}>;
 }) {
+  const keys: (keyof typeof args)[] = ["client", "cache", "persistor"];
+  let globals = window.Cypress ? getGlobalsFromCypress() : window.____ebnis;
+  globals = makeObservable(globals);
+
+  keys.forEach(key => {
+    const k = key as KeyOfE2EWindowObject;
+    globals[k] = args[k];
+  });
+
   if (window.Cypress) {
-    let cypressApollo = getGlobals();
-
-    cypressApollo.client = args.client;
-    cypressApollo.cache = args.cache;
-    cypressApollo.persistor = args.persistor;
-
-    window.Cypress.env(CYPRESS_APOLLO_KEY, cypressApollo);
-
-    window.____ebnis = cypressApollo;
-  } else {
-    const globals = window.____ebnis;
-    globals.persistor = args.persistor;
-    globals.cache = args.cache;
-    globals.client = args.client;
+    window.Cypress.env(CYPRESS_APOLLO_KEY, globals);
+    window.____ebnis = globals;
   }
 }
 
-function getGlobals() {
+function getGlobalsFromCypress() {
   let globalVars = {} as E2EWindowObject;
 
   if (window.Cypress) {
@@ -223,12 +229,15 @@ function getGlobals() {
   return globalVars;
 }
 
-export interface E2EWindowObject {
+export interface E2EWindowObject extends ObservableUtils {
   cache: InMemoryCache;
   client: ApolloClient<{}>;
   persistor: CachePersistor<{}>;
   connectionStatus: ConnectionStatus;
+  emitter: ZenObservable.SubscriptionObserver<EmitPayload>;
 }
+
+type KeyOfE2EWindowObject = keyof E2EWindowObject;
 
 declare global {
   interface Window {

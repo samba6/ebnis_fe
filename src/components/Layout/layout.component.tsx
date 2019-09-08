@@ -8,7 +8,7 @@ import {
   Props,
   initState,
 } from "./layout.utils";
-import { getObservable, EmitAction } from "../../setup-observable";
+import { EmitAction } from "../../setup-observable";
 import { ZenObservable } from "zen-observable-ts";
 import { getUnsavedCount } from "../../state/unsaved-resolvers";
 import { LayoutProvider } from "./layout-provider";
@@ -25,6 +25,7 @@ export function Layout(props: Props) {
     client,
     persistor,
     connectionStatus,
+    observable,
   } = useContext(EbnisAppContext);
 
   const subscriptionRef = useRef<ZenObservable.Subscription | null>(null);
@@ -78,7 +79,7 @@ export function Layout(props: Props) {
       }
 
       if (!subscriptionRef.current) {
-        subscriptionRef.current = getObservable().subscribe({
+        subscriptionRef.current = observable.subscribe({
           next([type, data]) {
             if (type === EmitAction.connectionChanged) {
               const isConnected = data as boolean;
