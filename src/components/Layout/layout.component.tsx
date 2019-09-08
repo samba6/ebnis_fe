@@ -8,7 +8,10 @@ import {
   Props,
   initState,
 } from "./layout.utils";
-import { EmitAction } from "../../setup-observable";
+import {
+  EmitActionType,
+  ConnectionChangedPayload,
+} from "../../setup-observable";
 import { ZenObservable } from "zen-observable-ts";
 import { getUnsavedCount } from "../../state/unsaved-resolvers";
 import { LayoutProvider } from "./layout-provider";
@@ -29,97 +32,70 @@ export function Layout(props: Props) {
   } = useContext(EbnisAppContext);
 
   const subscriptionRef = useRef<ZenObservable.Subscription | null>(null);
+  const user = useUser();
 
-  const [state, dispatch] = useReducer(
+  const [machine, dispatch] = useReducer(
     reducer,
-    { connectionStatus },
+    { connectionStatus, user },
     initState,
   );
 
-  const user = useUser();
+  const {
+    unsavedCount,
+    renderChildren,
+    hasConnection: hasConnection,
+  } = machine.context;
 
-  const { unsavedCount, renderChildren, experiencesToPreFetch } = state;
+  const {
+    states: { prefetchExperiences },
+  } = machine;
 
   useEffect(() => {
-    if (!(cache && restoreCacheOrPurgeStorage && client)) {
+    if (!user) {
       return;
     }
 
-    if (user) {
-      if (experiencesToPreFetch) {
-        setTimeout(async () => {
-          if (await isConnected()) {
-            preFetchExperiences({
-              ids: experiencesToPreFetch,
-              client,
-              cache,
-              onDone: () => {
-                dispatch({
-                  type: LayoutActionType.EXPERIENCES_TO_PREFETCH,
-                  ids: experiencesToPreFetch,
-                });
-              },
-            });
-          }
-        });
-      }
+    // by now we are done persisting cache so let's see if user has unsaved
+    // data
+    if (renderChildren && unsavedCount === null) {
+      (async function() {
+        if (await isConnected()) {
+          const newUnsavedCount = await getUnsavedCount(client);
+          dispatch({
+            type: LayoutActionType.SET_UNSAVED_COUNT,
+            count: newUnsavedCount,
+          });
+        }
+      })();
+    }
 
-      // by now we are done persisting cache so let's see if user has unsaved
-      // data
-      if (renderChildren && unsavedCount === null) {
-        (async function() {
-          if (await isConnected()) {
-            const newUnsavedCount = await getUnsavedCount(client);
-            dispatch({
-              type: LayoutActionType.SET_UNSAVED_COUNT,
-              count: newUnsavedCount,
-            });
-          }
-        })();
-      }
+    if (!subscriptionRef.current) {
+      subscriptionRef.current = observable.subscribe({
+        next({ type, ...payload }) {
+          if (type === EmitActionType.connectionChanged) {
+            const {
+              hasConnection: isConnected,
+            } = payload as ConnectionChangedPayload;
 
-      if (!subscriptionRef.current) {
-        subscriptionRef.current = observable.subscribe({
-          next([type, data]) {
-            if (type === EmitAction.connectionChanged) {
-              const isConnected = data as boolean;
-
-              if (isConnected) {
-                getUnsavedCount(client).then(newUnsavedCount => {
-                  dispatch({
-                    type: LayoutActionType.CONNECTION_CHANGED,
-                    unsavedCount: newUnsavedCount,
-                    isConnected,
-                  });
-                });
-
-                if (experiencesToPreFetch) {
-                  setTimeout(() => {
-                    preFetchExperiences({
-                      ids: experiencesToPreFetch,
-                      client,
-                      cache,
-                      onDone: () => {
-                        dispatch({
-                          type: LayoutActionType.EXPERIENCES_TO_PREFETCH,
-                          ids: null,
-                        });
-                      },
-                    });
-                  }, 500);
-                }
-              } else {
-                // if we are disconnected, then we don't display unsaved UI
+            if (isConnected) {
+              getUnsavedCount(client).then(newUnsavedCount => {
                 dispatch({
                   type: LayoutActionType.CONNECTION_CHANGED,
-                  unsavedCount: 0,
+                  unsavedCount: newUnsavedCount,
                   isConnected,
                 });
-              }
+              });
+            } else {
+              // if we are disconnected, then we don't display unsaved UI
+              dispatch({
+                type: LayoutActionType.CONNECTION_CHANGED,
+                unsavedCount: 0,
+                isConnected,
+              });
             }
-          },
-        });
-      }
+          }
+        },
+      });
     }
 
     return () => {
@@ -131,7 +107,7 @@ export function Layout(props: Props) {
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [renderChildren, experiencesToPreFetch]);
+  }, [renderChildren]);
 
   useEffect(
     function PersistCache() {
@@ -150,8 +126,28 @@ export function Layout(props: Props) {
         });
       })();
     },
-    [cache, restoreCacheOrPurgeStorage, dispatch],
+    [cache, restoreCacheOrPurgeStorage, dispatch, persistor],
   );
+
+  useEffect(() => {
+    if (prefetchExperiences.value === "fetch-now") {
+      const {
+        context: { ids },
+      } = prefetchExperiences;
+      setTimeout(() => {
+        preFetchExperiences({
+          ids,
+          client,
+          cache,
+          onDone: () => {
+            dispatch({
+              type: LayoutActionType.DONE_FETCHING_EXPERIENCES,
+            });
+          },
+        });
+      }, 500);
+    }
+  }, [prefetchExperiences, cache, client]);
 
   // this will be true if we are server rendering in gatsby build
   if (!(cache && restoreCacheOrPurgeStorage && client)) {
@@ -171,7 +167,7 @@ export function Layout(props: Props) {
           cache,
           layoutDispatch: dispatch,
           client,
-          isConnected: state.connection.value === "connected",
+          isConnected: hasConnection,
         } as ILayoutContextContext
       }
     >

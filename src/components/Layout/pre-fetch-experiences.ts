@@ -12,12 +12,7 @@ export function preFetchExperiences({
   client,
   onDone,
   cache,
-}: {
-  ids: string[];
-  client: ApolloClient<{}>;
-  onDone: () => void;
-  cache: InMemoryCache;
-}) {
+}: PreFetchExperiencesFnArgs) {
   const entriesPagination = {
     first: 20000,
   };
@@ -45,4 +40,11 @@ export function preFetchExperiences({
         ]);
       }, 500);
     });
+}
+
+export interface PreFetchExperiencesFnArgs {
+  ids: string[];
+  client: ApolloClient<{}>;
+  onDone: () => void;
+  cache: InMemoryCache;
 }

@@ -1,8 +1,9 @@
 import { Observable } from "zen-observable-ts";
 import { E2EWindowObject } from "./state/apollo-setup";
 
-export enum EmitAction {
+export enum EmitActionType {
   connectionChanged = "@emit-action/connection-changed",
+  nothing = "@emit-action/nothing",
 }
 
 export function makeObservable(globals: E2EWindowObject) {
@@ -25,7 +26,17 @@ export function makeObservable(globals: E2EWindowObject) {
 
 export type EmitData = (params: EmitPayload) => void;
 
-export type EmitPayload = [EmitAction.connectionChanged, boolean];
+export type EmitPayload =
+  | {
+      type: EmitActionType.connectionChanged;
+    } & ConnectionChangedPayload
+  | {
+      type: EmitActionType.nothing;
+    };
+
+export interface ConnectionChangedPayload {
+  hasConnection: boolean;
+}
 
 export interface ObservableUtils {
   emitData: EmitData;
