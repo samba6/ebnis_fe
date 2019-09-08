@@ -6,6 +6,7 @@ import {
   reducer,
   LayoutActionType,
   Props,
+  initState,
 } from "./layout.utils";
 import { getObservable, EmitAction } from "../../setup-observable";
 import { ZenObservable } from "zen-observable-ts";
@@ -18,16 +19,21 @@ import { isConnected } from "../../state/connections";
 export function Layout(props: Props) {
   const { children } = props;
 
-  const { cache, restoreCacheOrPurgeStorage, client, persistor } = useContext(
-    EbnisAppContext,
-  );
+  const {
+    cache,
+    restoreCacheOrPurgeStorage,
+    client,
+    persistor,
+    connectionStatus,
+  } = useContext(EbnisAppContext);
 
   const subscriptionRef = useRef<ZenObservable.Subscription | null>(null);
 
-  const [state, dispatch] = useReducer(reducer, {
-    unsavedCount: null,
-    renderChildren: false,
-  });
+  const [state, dispatch] = useReducer(
+    reducer,
+    { connectionStatus },
+    initState,
+  );
 
   const user = useUser();
 
@@ -80,8 +86,9 @@ export function Layout(props: Props) {
               if (isConnected) {
                 getUnsavedCount(client).then(newUnsavedCount => {
                   dispatch({
-                    type: LayoutActionType.SET_UNSAVED_COUNT,
-                    count: newUnsavedCount,
+                    type: LayoutActionType.CONNECTION_CHANGED,
+                    unsavedCount: newUnsavedCount,
+                    isConnected,
                   });
                 });
 
@@ -103,8 +110,9 @@ export function Layout(props: Props) {
               } else {
                 // if we are disconnected, then we don't display unsaved UI
                 dispatch({
-                  type: LayoutActionType.SET_UNSAVED_COUNT,
-                  count: 0,
+                  type: LayoutActionType.CONNECTION_CHANGED,
+                  unsavedCount: 0,
+                  isConnected,
                 });
               }
             }
@@ -141,8 +149,7 @@ export function Layout(props: Props) {
         });
       })();
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
+    [cache, restoreCacheOrPurgeStorage, dispatch],
   );
 
   // this will be true if we are server rendering in gatsby build
@@ -163,6 +170,7 @@ export function Layout(props: Props) {
           cache,
           layoutDispatch: dispatch,
           client,
+          isConnected: state.connection.value === "connected",
         } as ILayoutContextContext
       }
     >

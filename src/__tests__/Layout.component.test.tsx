@@ -29,7 +29,7 @@ jest.mock("../components/use-user");
 import { useUser } from "../components/use-user";
 const mockUseUser = useUser as jest.Mock;
 
-let layoutContextValue = (null as unknown) as ILayoutContextContext;
+let layoutContextValue: null | ILayoutContextContext;
 
 jest.mock("../components/Layout/layout-provider", () => ({
   LayoutProvider: ({ children, ...props }: any) => {
@@ -48,7 +48,14 @@ it("renders children in ssr", () => {
    * Given component was rendered with empty context
    */
   const testId = "ssr-loaded";
-  const { ui } = makeComp({ context: {}, testId });
+  const { ui } = makeComp({
+    context: {
+      cache: null,
+      restoreCacheOrPurgeStorage: null,
+      client: null,
+    },
+    testId,
+  });
 
   render(ui);
 
@@ -154,10 +161,19 @@ it("queries unsaved when connection returns", async () => {
   /**
    * Given there is user in the system and initially there is no connection
    */
-  const { ui } = makeComp();
+  const { ui } = makeComp({
+    context: {
+      connectionStatus: {
+        isConnected: false,
+      },
+    },
+  });
   mockUseUser.mockReturnValue({});
   mockGetUnsavedCount.mockResolvedValue(5);
   mockIsConnected.mockResolvedValue(false);
+
+  expect(layoutContextValue).toBeNull();
+  let contextValue = {} as ILayoutContextContext;
 
   render(ui);
 
@@ -166,7 +182,9 @@ it("queries unsaved when connection returns", async () => {
    */
   await waitForElement(() => document.getElementById(browserRenderedUiId));
 
-  expect(layoutContextValue.unsavedCount).toBe(null);
+  contextValue = layoutContextValue as ILayoutContextContext;
+  expect(contextValue.unsavedCount).toBe(null);
+  expect(contextValue.isConnected).toBe(false);
 
   /**
    * And connection returns and we are reconnecting
@@ -177,25 +195,30 @@ it("queries unsaved when connection returns", async () => {
    * Then component should query for unsaved data
    */
   await wait(() => {
-    expect(layoutContextValue.unsavedCount).toBe(5);
+    contextValue = layoutContextValue as ILayoutContextContext;
+    expect(contextValue.unsavedCount).toBe(5);
   });
+
+  expect(contextValue.isConnected).toBe(true);
 });
 
-it("resets unsaved count when we lose connection", async () => {
+test("loses connection", async () => {
   const { ui } = makeComp();
   mockUseUser.mockReturnValue({});
   mockIsConnected.mockResolvedValue(true);
   mockGetUnsavedCount.mockResolvedValue(2);
 
+  expect(layoutContextValue).toBeNull();
+
   render(ui);
 
   await waitForElement(() => document.getElementById(browserRenderedUiId));
 
-  expect(layoutContextValue.unsavedCount).toBe(2);
+  expect((layoutContextValue as ILayoutContextContext).unsavedCount).toBe(2);
 
   emitData([EmitAction.connectionChanged, false]);
 
-  expect(layoutContextValue.unsavedCount).toBe(0);
+  expect((layoutContextValue as ILayoutContextContext).unsavedCount).toBe(0);
 });
 
 ////////////////////////// HELPER FUNCTIONS ///////////////////////////////////
@@ -203,10 +226,10 @@ it("resets unsaved count when we lose connection", async () => {
 const LayoutP = Layout as ComponentType<Partial<Props>>;
 
 function makeComp({
-  context,
+  context = {},
   testId = browserRenderedUiId,
 }: { context?: {}; testId?: string } = {}) {
-  layoutContextValue = (null as unknown) as ILayoutContextContext;
+  layoutContextValue = null;
   mockGetUnsavedCount.mockReset();
   mockUseUser.mockReset();
   mockIsConnected.mockReset();
@@ -216,13 +239,17 @@ function makeComp({
   const mockQuery = jest.fn();
   const client = { query: mockQuery };
 
-  context = context
-    ? context
-    : {
-        restoreCacheOrPurgeStorage: mockRestoreCacheOrPurgeStorage,
-        cache,
-        client,
-      };
+  const defaultContext = {
+    restoreCacheOrPurgeStorage: mockRestoreCacheOrPurgeStorage,
+    cache,
+    client,
+    connectionStatus: {
+      isConnected: true,
+      mode: "auto",
+    },
+  };
+
+  context = { ...defaultContext, ...context };
 
   return {
     ui: (

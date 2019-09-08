@@ -1,11 +1,11 @@
-import { Reducer } from "react";
+import { Reducer, useEffect } from "react";
 import lodashIsEqual from "lodash/isEqual";
 
 const isDevEnv = process.env.NODE_ENV === "development";
 const isTestEnv = process.env.NODE_ENV === "test";
 
 // tslint:disable-next-line:no-any
-export const logger = async (prefix: string, tag: string, ...data: any) => {
+export const logger = async (prefix: keyof Console, tag: any, ...data: any) => {
   if (isDevEnv) {
     // tslint:disable-next-line:no-console
     console[prefix](
@@ -87,4 +87,14 @@ function isPlainObject(obj: object) {
 
 function objectForEnv(obj: any) {
   return isTestEnv ? JSON.stringify(obj, null, 2) : obj;
+}
+
+export function useLogger(data: any, tag: string = "") {
+  useEffect(() => {
+    if (!isDevEnv) {
+      return;
+    }
+
+    logger("log", tag, data);
+  });
 }

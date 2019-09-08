@@ -26,6 +26,7 @@ export const wrapRootElement = ({ element }) => {
           cache,
           restoreCacheOrPurgeStorage,
           persistor,
+          ...window.____ebnis,
         }}
       >
         <HelmetProvider>
