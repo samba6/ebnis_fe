@@ -28,6 +28,7 @@ export const wrapRootElement = ({ element }) => {
       <EbnisAppProvider
         value={{
           client,
+          connectionStatus: {},
         }}
       >
         <HelmetProvider context={helmetContext}>
