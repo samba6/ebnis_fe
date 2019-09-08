@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { ComponentType } from "react";
 import "react-testing-library/cleanup-after-each";
 import { render, fireEvent } from "react-testing-library";
@@ -6,7 +7,7 @@ import { Props } from "../components/MyExperiences/my-experiences.utils";
 import { renderWithRouter } from "./test_utils";
 import { ExperienceConnectionFragment } from "../graphql/apollo-types/ExperienceConnectionFragment";
 import { LayoutProvider } from "../components/Layout/layout-provider";
-import { ILayoutContextContext } from "../components/Layout/layout.utils";
+import { ILayoutContextContextValue } from "../components/Layout/layout.utils";
 
 jest.mock("../components/SidebarHeader/sidebar-header.component", () => ({
   SidebarHeader: jest.fn(() => null),
@@ -185,7 +186,7 @@ function makeComp(props: Partial<Props> = {}) {
         value={
           {
             layoutDispatch: mockLayoutDispatch as any,
-          } as ILayoutContextContext
+          } as ILayoutContextContextValue
         }
       >
         <Ui {...props} />

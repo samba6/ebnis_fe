@@ -24,7 +24,7 @@ export const Header = (props: Props) => {
     show,
     location,
     navigate,
-    logoAttrs: { src, height, width },
+    logoAttrs,
     children,
     className = "",
   } = props;
@@ -34,7 +34,7 @@ export const Header = (props: Props) => {
   const pathname = (location as WindowLocation).pathname;
   const isHome = pathname === EXPERIENCES_URL || pathname === ROOT_URL;
 
-  const { unsavedCount } = useContext(LayoutContext);
+  const { unsavedCount, hasConnection } = useContext(LayoutContext);
 
   const asUrlProps = isHome
     ? {}
@@ -48,12 +48,12 @@ export const Header = (props: Props) => {
       className={makeClassnames({
         "components-header": true,
         [className]: true,
+        "header--connected": hasConnection,
+        "header--disconnected": !hasConnection,
       })}
     >
       <Menu secondary={true}>
-        <style>
-          {`#components-header-logo{ background: url(${src}) no-repeat 0 !important; background-size: ${width}px ${height}px !important; min-width: ${width}px; min-height: ${height}px;}`}
-        </style>
+        <style>{getLogoStyle(logoAttrs)}</style>
 
         <Menu.Item
           id="header-logo-container"
@@ -115,6 +115,12 @@ export const Header = (props: Props) => {
   );
 };
 
+function getLogoStyle(logoAttrs: LogoImageQuery_file_childImageSharp_fixed) {
+  const { src, width, height } = logoAttrs;
+  return `#components-header-logo{ background: url(${src}) no-repeat 0 !important; background-size: ${width}px ${height}px !important; min-width: ${width}px; min-height: ${height}px;}`;
+}
+
+////////////////////////// TYPES ////////////////////////////
 
 export interface OwnProps {
   title?: string;

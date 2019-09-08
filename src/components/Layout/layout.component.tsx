@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useRef, useReducer } from "react";
 import { EbnisAppContext } from "../../context";
 import { Loading } from "../Loading/loading";
 import {
-  ILayoutContextContext,
+  ILayoutContextContextValue,
   reducer,
   LayoutActionType,
   Props,
@@ -152,7 +152,7 @@ export function Layout(props: Props) {
   // this will be true if we are server rendering in gatsby build
   if (!(cache && restoreCacheOrPurgeStorage && client)) {
     return (
-      <LayoutProvider value={{ unsavedCount: 0 } as ILayoutContextContext}>
+      <LayoutProvider value={{ unsavedCount: 0 } as ILayoutContextContextValue}>
         {children}
       </LayoutProvider>
     );
@@ -167,8 +167,8 @@ export function Layout(props: Props) {
           cache,
           layoutDispatch: dispatch,
           client,
-          isConnected: hasConnection,
-        } as ILayoutContextContext
+          hasConnection: hasConnection,
+        } as ILayoutContextContextValue
       }
     >
       {children}

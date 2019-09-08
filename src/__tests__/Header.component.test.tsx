@@ -5,7 +5,7 @@ import { render, fireEvent } from "react-testing-library";
 import { Header, Props } from "../components/Header/header.component";
 import { renderWithRouter } from "./test_utils";
 import { EXPERIENCES_URL, ROOT_URL } from "../routes";
-import { ILayoutContextContext } from "../components/Layout/layout.utils";
+import { ILayoutContextContextValue } from "../components/Layout/layout.utils";
 import { UPLOAD_UNSAVED_PREVIEW_URL } from "../constants/upload-unsaved-routes";
 import { LayoutProvider } from "../components/Layout/layout-provider";
 
@@ -283,12 +283,21 @@ it("renders unsaved count when not in 'upload unsaved' route", () => {
   render(ui);
 
   expect(document.getElementById("header-unsaved-count-label")).not.toBeNull();
+
+  expect(document.getElementsByClassName(
+    "header--disconnected",
+  )[0] as HTMLElement).toBeDefined();
+
+  expect(
+    document.getElementsByClassName("header--connected")[0],
+  ).toBeUndefined();
 });
 
 it("does not render unsaved count in 'upload unsaved' route", () => {
   const { ui } = setup({
     context: {
       unsavedCount: 1,
+      hasConnection: true,
     },
 
     props: {
@@ -299,6 +308,12 @@ it("does not render unsaved count in 'upload unsaved' route", () => {
   render(ui);
 
   expect(document.getElementById("header-unsaved-count-label")).toBeNull();
+
+  expect(document.getElementsByClassName(
+    "header--disconnected",
+  )[0] as HTMLElement).toBeUndefined();
+
+  expect(document.getElementsByClassName("header--connected")[0]).toBeDefined();
 });
 
 it("does not render title when there is none to render", () => {
@@ -331,7 +346,7 @@ it("renders children", () => {
 it("renders only title if there are title and children", () => {
   const { ui } = setup({
     props: {
-      title: "cool title",
+      title: "tt",
       children: <div id="c" />,
     },
   });
@@ -350,11 +365,9 @@ it("sets class name", () => {
     },
   });
 
-  const {
-    container: { firstChild },
-  } = render(ui);
+  render(ui);
 
-  expect((firstChild as any).classList).toContain("a");
+  expect(document.getElementsByClassName("a")[0]).toBeDefined();
 });
 
 ////////////////////////// HELPER FUNCTIONS ///////////////////////////
@@ -364,7 +377,10 @@ const HeaderP = Header as ComponentType<Partial<Props>>;
 function setup({
   props = {},
   context = {},
-}: { props?: Partial<Props>; context?: Partial<ILayoutContextContext> } = {}) {
+}: {
+  props?: Partial<Props>;
+  context?: Partial<ILayoutContextContextValue>;
+} = {}) {
   mockUseUser.mockReset();
 
   const { Ui, ...rest } = renderWithRouter(
@@ -373,6 +389,8 @@ function setup({
 
     { logoAttrs: {} as any, ...props },
   );
+
+  context = context as ILayoutContextContextValue;
 
   return {
     ui: (

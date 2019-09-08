@@ -7,7 +7,7 @@ import { Layout } from "../components/Layout/layout.component";
 import { EbnisAppProvider, EbnisContextProps } from "../context";
 import { EmitActionType, makeObservable } from "../setup-observable";
 import {
-  ILayoutContextContext,
+  ILayoutContextContextValue,
   Props,
   LayoutActionType,
   StateMachine,
@@ -34,7 +34,7 @@ import { useUser } from "../components/use-user";
 import { E2EWindowObject } from "../state/apollo-setup";
 const mockUseUser = useUser as jest.Mock;
 
-let layoutContextValue: null | ILayoutContextContext;
+let layoutContextValue: null | ILayoutContextContextValue;
 
 jest.mock("../components/Layout/layout-provider", () => ({
   LayoutProvider: ({ children, ...props }: any) => {
@@ -200,7 +200,7 @@ describe("components", () => {
     mockIsConnected.mockReturnValue(false);
 
     expect(layoutContextValue).toBeNull();
-    let contextValue = {} as ILayoutContextContext;
+    let contextValue = {} as ILayoutContextContextValue;
 
     render(ui);
 
@@ -209,9 +209,9 @@ describe("components", () => {
      */
     await waitForElement(() => document.getElementById(browserRenderedUiId));
 
-    contextValue = layoutContextValue as ILayoutContextContext;
+    contextValue = layoutContextValue as ILayoutContextContextValue;
     expect(contextValue.unsavedCount).toBe(null);
-    expect(contextValue.isConnected).toBe(false);
+    expect(contextValue.hasConnection).toBe(false);
 
     /**
      * And connection returns and we are reconnecting
@@ -225,19 +225,19 @@ describe("components", () => {
      * Then component should query for unsaved data
      */
     await wait(() => {
-      contextValue = layoutContextValue as ILayoutContextContext;
+      contextValue = layoutContextValue as ILayoutContextContextValue;
       expect(contextValue.unsavedCount).toBe(5);
     });
 
-    expect(contextValue.isConnected).toBe(true);
+    expect(contextValue.hasConnection).toBe(true);
 
     emitData({
       type: EmitActionType.nothing,
     });
 
     await wait(() => {
-      contextValue = layoutContextValue as ILayoutContextContext;
-      expect(contextValue.isConnected).toBe(true);
+      contextValue = layoutContextValue as ILayoutContextContextValue;
+      expect(contextValue.hasConnection).toBe(true);
     });
   });
 
@@ -253,7 +253,7 @@ describe("components", () => {
 
     await waitForElement(() => document.getElementById(browserRenderedUiId));
 
-    let context = layoutContextValue as ILayoutContextContext;
+    let context = layoutContextValue as ILayoutContextContextValue;
     expect(context.unsavedCount).toBe(2);
 
     context.layoutDispatch({
@@ -266,7 +266,7 @@ describe("components", () => {
       hasConnection: false,
     });
 
-    context = layoutContextValue as ILayoutContextContext;
+    context = layoutContextValue as ILayoutContextContextValue;
     expect(context.unsavedCount).toBe(0);
   });
 
@@ -286,7 +286,7 @@ describe("components", () => {
 
     await waitForElement(() => document.getElementById(browserRenderedUiId));
 
-    let context = layoutContextValue as ILayoutContextContext;
+    let context = layoutContextValue as ILayoutContextContextValue;
 
     childProps.onClick = () => {
       context.layoutDispatch({
@@ -331,7 +331,7 @@ describe("components", () => {
 
     await waitForElement(() => document.getElementById(browserRenderedUiId));
 
-    let context = layoutContextValue as ILayoutContextContext;
+    let context = layoutContextValue as ILayoutContextContextValue;
 
     childProps.onClick = () => {
       context.layoutDispatch({

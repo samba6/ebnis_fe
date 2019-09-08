@@ -120,9 +120,9 @@ export function initState(args: {
   };
 }
 
-export const LayoutContext = createContext<ILayoutContextContext>({
+export const LayoutContext = createContext<ILayoutContextContextValue>({
   unsavedCount: 0,
-} as ILayoutContextContext);
+} as ILayoutContextContextValue);
 
 ////////////////////////// TYPES ////////////////////////////
 
@@ -182,11 +182,11 @@ export type LayoutDispatchType = Dispatch<LayoutAction>;
 
 export interface Props extends PropsWithChildren<{}>, RouteComponentProps {}
 
-export interface ILayoutContextContext {
+export interface ILayoutContextContextValue {
   persistor: CachePersistor<{}>;
   unsavedCount: number;
   cache: InMemoryCache;
   layoutDispatch: LayoutDispatchType;
   client: ApolloClient<{}>;
-  isConnected: boolean;
+  hasConnection: boolean;
 }
