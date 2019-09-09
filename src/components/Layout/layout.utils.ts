@@ -109,7 +109,7 @@ export function initState(args: {
     context: {
       unsavedCount: null,
       renderChildren: false,
-      hasConnection: isConnected,
+      hasConnection: !!isConnected,
       user,
     },
     states: {

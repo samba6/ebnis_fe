@@ -1,8 +1,3 @@
-import {
-  connectionResolvers,
-  ConnectionQueryData,
-  DEFAULT_CONNECTION_STATUS,
-} from "./connection.resolver";
 import { DEFAULT_UNSAVED_STATES } from "./unsaved-resolvers";
 import ApolloClient from "apollo-client";
 import { InMemoryCache } from "apollo-cache-inmemory";
@@ -29,16 +24,15 @@ export type LocalResolverFn<TVariables = {}, TReturnedValue = void> = (
   context: CacheContext,
 ) => TReturnedValue;
 
-export type LocalState = ConnectionQueryData & {
+export interface LocalState {
   staleToken: string | null;
   loggedOutUser: null;
-};
+}
 
 export function initState() {
   return {
-    resolvers: [connectionResolvers],
+    resolvers: [],
     defaults: {
-      connected: DEFAULT_CONNECTION_STATUS,
       staleToken: null,
       loggedOutUser: null,
       ...DEFAULT_UNSAVED_STATES,

@@ -1,11 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
 import React, { ComponentType } from "react";
 import "react-testing-library/cleanup-after-each";
 import { render, waitForElement, wait } from "react-testing-library";
 import { Layout } from "../components/Layout/layout.component";
 import { EbnisAppProvider, EbnisContextProps } from "../context";
-import { EmitActionType, makeObservable } from "../setup-observable";
+import { EmitActionType, makeObservable } from "../state/setup-observable";
 import {
   ILayoutContextContextValue,
   Props,

@@ -28,7 +28,7 @@ import {
   makeObservable,
   ObservableUtils,
   EmitPayload,
-} from "../setup-observable";
+} from "./setup-observable";
 
 export function buildClientCache(
   {
@@ -235,6 +235,7 @@ export interface E2EWindowObject extends ObservableUtils {
   persistor: CachePersistor<{}>;
   connectionStatus: ConnectionStatus;
   emitter: ZenObservable.SubscriptionObserver<EmitPayload>;
+  emitting: boolean;
 }
 
 type KeyOfE2EWindowObject = keyof E2EWindowObject;

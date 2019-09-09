@@ -11,7 +11,7 @@ import {
 import {
   EmitActionType,
   ConnectionChangedPayload,
-} from "../../setup-observable";
+} from "../../state/setup-observable";
 import { ZenObservable } from "zen-observable-ts";
 import { getUnsavedCount } from "../../state/unsaved-resolvers";
 import { LayoutProvider } from "./layout-provider";

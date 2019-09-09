@@ -1,4 +1,4 @@
-// tslint:disable: no-any
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { ComponentType } from "react";
 import "jest-dom/extend-expect";
 import "react-testing-library/cleanup-after-each";
@@ -735,8 +735,8 @@ test("editing data, editing definitions", async () => {
   expect(getDataError("dec")).not.toBeNull();
 
   expect(getDataInput("dec").value).toEqual("0.9");
-  expect(getDataInput("date").value).toEqual("2000-01-02T00:00:00.000Z");
-  expect(getDataInput("time").value).toEqual("2000-01-02T01:01:01.000Z");
+  expect(getDataInput("date").value).toEqual("2000-01-02T00:00:00+01:00");
+  expect(getDataInput("time").value).toEqual("2000-01-02T02:01:01+01:00");
   expect(getDataInput("multi").value).toEqual("mu");
 
   //consol.log(JSON.stringify(window.state, null, 2));
@@ -998,7 +998,7 @@ function MockDateTimeField(props: DateTimeProps) {
 
   const comp = (
     <input
-      value={(value as Date).toJSON()}
+      value={toISODatetimeString(value as Date)}
       id={name}
       onChange={evt => {
         const val = evt.currentTarget.value;

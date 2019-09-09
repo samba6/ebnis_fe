@@ -26,7 +26,9 @@ import {
 import { UpdateDataObjectsResponseFragment_fieldErrors } from "../../graphql/apollo-types/UpdateDataObjectsResponseFragment";
 import { wrapReducer } from "../../logger";
 import { ApolloError } from "apollo-client";
-import { formObjToString } from "../NewEntry/new-entry.utils";
+import { formObjToString, ISO_DATE_FORMAT } from "../NewEntry/new-entry.utils";
+import parseISO from "date-fns/parseISO";
+import parse from "date-fns/parse";
 
 export enum ActionTypes {
   EDIT_BTN_CLICKED = "@component/edit-entry/edit-btn-clicked",
@@ -331,6 +333,7 @@ export const reducer: Reducer<State, Action> = (state, action) =>
               const { id, rawFormVal } = payload as DataChangedPayload;
               const state = dataStates[id];
               let { parsedVal, type } = state.context.defaults;
+
               const [original, stringed] = formObjToCompareString(
                 type,
                 rawFormVal,
@@ -520,21 +523,23 @@ function setEditingMultipleDefinitionsState(proxy: State) {
         };
 }
 
-function formObjFromRawString(val: string) {
+function formObjFromRawString(val: string): FormObjVal {
   const [[k, v]] = Object.entries(JSON.parse(val));
 
-  if (k === "date" || k === "datetime") {
-    return new Date(v);
-  }
+  switch (k) {
+    case "datetime":
+      return parseISO(v);
 
-  return (("" + v) as string).trim();
+    case "date":
+      return parse(v, ISO_DATE_FORMAT, new Date());
+
+    default:
+      return (("" + v) as string).trim();
+  }
 }
 
 function formObjToCompareString(type: FieldType, val: FormObjVal) {
   const stringVal = formObjToString(type, val);
-  if (val instanceof Date) {
-    return [val, stringVal];
-  }
 
   return [val, stringVal];
 }

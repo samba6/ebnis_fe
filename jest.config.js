@@ -30,7 +30,8 @@ module.exports = {
     "!src/components/EditEntry/edit-entry.ts*",
     "!src/components/ExperienceDefinition/experience-definition.ts",
     "!src/components/ExperienceDefinition/experience-definition.update.ts",
-    "!src/components/ExperienceNewEntryParent/experience-new-entry-parent-utils.ts"
+    "!src/components/ExperienceNewEntryParent/experience-new-entry-parent-utils.ts",
+    "!src/state/setup-observable.ts"
   ],
   setupFiles: [
     "<rootDir>/config/jest/loadershim.js",

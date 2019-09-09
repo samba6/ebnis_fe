@@ -62,6 +62,7 @@ export function DateTimeField(props: Props) {
     { h = datetime.getHours(), m = datetime.getMinutes() },
     date = datetime,
   ) {
+    date = new Date(date);
     date.setHours(h);
     date.setMinutes(m);
     setDatetime(date);
@@ -74,7 +75,11 @@ export function DateTimeField(props: Props) {
         acc[l] = getFieldName(compName, l);
         return acc;
       },
-      { date: "", hr: "", min: "" },
+      {} as {
+        date: string;
+        hr: string;
+        min: string;
+      },
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
