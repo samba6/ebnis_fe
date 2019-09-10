@@ -23,12 +23,9 @@ export interface GetExperienceConnectionMini_getExperiences_pageInfo {
 export interface GetExperienceConnectionMini_getExperiences_edges_node {
   __typename: "Experience";
   /**
-   * The ID of an object
-   */
-  id: string;
-  /**
    * The title of the experience
    */
+  id: string;
   title: string;
   /**
    * The description of the experience

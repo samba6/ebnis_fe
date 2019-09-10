@@ -11,7 +11,7 @@ import { FieldType } from "./globalTypes";
 export interface UpdateDefinitionsResponseFragment_experience {
   __typename: "Experience";
   /**
-   * The ID of an object
+   * The title of the experience
    */
   id: string;
   updatedAt: any;

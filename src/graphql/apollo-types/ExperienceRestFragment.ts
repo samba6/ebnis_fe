@@ -50,7 +50,7 @@ export interface ExperienceRestFragment_entries_edges_node_dataObjects {
 export interface ExperienceRestFragment_entries_edges_node {
   __typename: "Entry";
   /**
-   * The ID of an object
+   * Entry ID
    */
   id: string;
   /**
@@ -67,7 +67,7 @@ export interface ExperienceRestFragment_entries_edges_node {
   insertedAt: any;
   updatedAt: any;
   /**
-   * The list of data belonging to this entry
+   * The list of data belonging to this entry.
    */
   dataObjects: (ExperienceRestFragment_entries_edges_node_dataObjects | null)[];
 }
@@ -93,7 +93,7 @@ export interface ExperienceRestFragment_entries {
 export interface ExperienceRestFragment {
   __typename: "Experience";
   /**
-   * The ID of an object
+   * The title of the experience
    */
   id: string;
   /**

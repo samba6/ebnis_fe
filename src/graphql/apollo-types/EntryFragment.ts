@@ -16,7 +16,7 @@ export interface EntryFragment_dataObjects {
 export interface EntryFragment {
   __typename: "Entry";
   /**
-   * The ID of an object
+   * Entry ID
    */
   id: string;
   /**
@@ -33,7 +33,7 @@ export interface EntryFragment {
   insertedAt: any;
   updatedAt: any;
   /**
-   * The list of data belonging to this entry
+   * The list of data belonging to this entry.
    */
   dataObjects: (EntryFragment_dataObjects | null)[];
 }

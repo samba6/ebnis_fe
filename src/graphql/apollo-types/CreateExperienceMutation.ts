@@ -50,7 +50,7 @@ export interface CreateExperienceMutation_createExperience_experience_entries_ed
 export interface CreateExperienceMutation_createExperience_experience_entries_edges_node {
   __typename: "Entry";
   /**
-   * The ID of an object
+   * Entry ID
    */
   id: string;
   /**
@@ -67,7 +67,7 @@ export interface CreateExperienceMutation_createExperience_experience_entries_ed
   insertedAt: any;
   updatedAt: any;
   /**
-   * The list of data belonging to this entry
+   * The list of data belonging to this entry.
    */
   dataObjects: (CreateExperienceMutation_createExperience_experience_entries_edges_node_dataObjects | null)[];
 }
@@ -93,12 +93,9 @@ export interface CreateExperienceMutation_createExperience_experience_entries {
 export interface CreateExperienceMutation_createExperience_experience {
   __typename: "Experience";
   /**
-   * The ID of an object
-   */
-  id: string;
-  /**
    * The title of the experience
    */
+  id: string;
   title: string;
   /**
    * The description of the experience

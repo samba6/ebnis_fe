@@ -28,7 +28,7 @@ export interface EntryConnectionFragment_edges_node_dataObjects {
 export interface EntryConnectionFragment_edges_node {
   __typename: "Entry";
   /**
-   * The ID of an object
+   * Entry ID
    */
   id: string;
   /**
@@ -45,7 +45,7 @@ export interface EntryConnectionFragment_edges_node {
   insertedAt: any;
   updatedAt: any;
   /**
-   * The list of data belonging to this entry
+   * The list of data belonging to this entry.
    */
   dataObjects: (EntryConnectionFragment_edges_node_dataObjects | null)[];
 }

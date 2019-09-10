@@ -9,12 +9,9 @@
 export interface ExperienceMiniFragment {
   __typename: "Experience";
   /**
-   * The ID of an object
-   */
-  id: string;
-  /**
    * The title of the experience
    */
+  id: string;
   title: string;
   /**
    * The description of the experience

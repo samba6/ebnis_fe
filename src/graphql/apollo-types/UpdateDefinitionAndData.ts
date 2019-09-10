@@ -51,7 +51,7 @@ export interface UpdateDefinitionAndData_updateDataObjects {
 export interface UpdateDefinitionAndData_updateDefinitions_experience {
   __typename: "Experience";
   /**
-   * The ID of an object
+   * The title of the experience
    */
   id: string;
   updatedAt: any;

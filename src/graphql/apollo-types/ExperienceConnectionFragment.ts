@@ -62,7 +62,7 @@ export interface ExperienceConnectionFragment_edges_node_entries_edges_node_data
 export interface ExperienceConnectionFragment_edges_node_entries_edges_node {
   __typename: "Entry";
   /**
-   * The ID of an object
+   * Entry ID
    */
   id: string;
   /**
@@ -79,7 +79,7 @@ export interface ExperienceConnectionFragment_edges_node_entries_edges_node {
   insertedAt: any;
   updatedAt: any;
   /**
-   * The list of data belonging to this entry
+   * The list of data belonging to this entry.
    */
   dataObjects: (ExperienceConnectionFragment_edges_node_entries_edges_node_dataObjects | null)[];
 }
@@ -105,12 +105,9 @@ export interface ExperienceConnectionFragment_edges_node_entries {
 export interface ExperienceConnectionFragment_edges_node {
   __typename: "Experience";
   /**
-   * The ID of an object
-   */
-  id: string;
-  /**
    * The title of the experience
    */
+  id: string;
   title: string;
   /**
    * The description of the experience

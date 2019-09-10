@@ -18,7 +18,7 @@ export interface CreateEntriesMutation_createEntries_entries_dataObjects {
 export interface CreateEntriesMutation_createEntries_entries {
   __typename: "Entry";
   /**
-   * The ID of an object
+   * Entry ID
    */
   id: string;
   /**
@@ -35,7 +35,7 @@ export interface CreateEntriesMutation_createEntries_entries {
   insertedAt: any;
   updatedAt: any;
   /**
-   * The list of data belonging to this entry
+   * The list of data belonging to this entry.
    */
   dataObjects: (CreateEntriesMutation_createEntries_entries_dataObjects | null)[];
 }

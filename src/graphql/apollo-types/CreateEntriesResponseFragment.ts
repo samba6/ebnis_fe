@@ -16,7 +16,7 @@ export interface CreateEntriesResponseFragment_entries_dataObjects {
 export interface CreateEntriesResponseFragment_entries {
   __typename: "Entry";
   /**
-   * The ID of an object
+   * Entry ID
    */
   id: string;
   /**
@@ -33,7 +33,7 @@ export interface CreateEntriesResponseFragment_entries {
   insertedAt: any;
   updatedAt: any;
   /**
-   * The list of data belonging to this entry
+   * The list of data belonging to this entry.
    */
   dataObjects: (CreateEntriesResponseFragment_entries_dataObjects | null)[];
 }

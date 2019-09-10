@@ -50,7 +50,7 @@ export interface UploadAllUnsavedsMutation_saveOfflineExperiences_experience_ent
 export interface UploadAllUnsavedsMutation_saveOfflineExperiences_experience_entries_edges_node {
   __typename: "Entry";
   /**
-   * The ID of an object
+   * Entry ID
    */
   id: string;
   /**
@@ -67,7 +67,7 @@ export interface UploadAllUnsavedsMutation_saveOfflineExperiences_experience_ent
   insertedAt: any;
   updatedAt: any;
   /**
-   * The list of data belonging to this entry
+   * The list of data belonging to this entry.
    */
   dataObjects: (UploadAllUnsavedsMutation_saveOfflineExperiences_experience_entries_edges_node_dataObjects | null)[];
 }
@@ -93,12 +93,9 @@ export interface UploadAllUnsavedsMutation_saveOfflineExperiences_experience_ent
 export interface UploadAllUnsavedsMutation_saveOfflineExperiences_experience {
   __typename: "Experience";
   /**
-   * The ID of an object
-   */
-  id: string;
-  /**
    * The title of the experience
    */
+  id: string;
   title: string;
   /**
    * The description of the experience
@@ -241,7 +238,7 @@ export interface UploadAllUnsavedsMutation_createEntries_entries_dataObjects {
 export interface UploadAllUnsavedsMutation_createEntries_entries {
   __typename: "Entry";
   /**
-   * The ID of an object
+   * Entry ID
    */
   id: string;
   /**
@@ -258,7 +255,7 @@ export interface UploadAllUnsavedsMutation_createEntries_entries {
   insertedAt: any;
   updatedAt: any;
   /**
-   * The list of data belonging to this entry
+   * The list of data belonging to this entry.
    */
   dataObjects: (UploadAllUnsavedsMutation_createEntries_entries_dataObjects | null)[];
 }

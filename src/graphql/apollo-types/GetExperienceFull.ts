@@ -50,7 +50,7 @@ export interface GetExperienceFull_getExperience_entries_edges_node_dataObjects 
 export interface GetExperienceFull_getExperience_entries_edges_node {
   __typename: "Entry";
   /**
-   * The ID of an object
+   * Entry ID
    */
   id: string;
   /**
@@ -67,7 +67,7 @@ export interface GetExperienceFull_getExperience_entries_edges_node {
   insertedAt: any;
   updatedAt: any;
   /**
-   * The list of data belonging to this entry
+   * The list of data belonging to this entry.
    */
   dataObjects: (GetExperienceFull_getExperience_entries_edges_node_dataObjects | null)[];
 }
@@ -93,12 +93,9 @@ export interface GetExperienceFull_getExperience_entries {
 export interface GetExperienceFull_getExperience {
   __typename: "Experience";
   /**
-   * The ID of an object
-   */
-  id: string;
-  /**
    * The title of the experience
    */
+  id: string;
   title: string;
   /**
    * The description of the experience

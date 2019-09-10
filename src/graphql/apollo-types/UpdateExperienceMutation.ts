@@ -31,12 +31,9 @@ export interface UpdateExperienceMutation_updateExperience_experience_dataDefini
 export interface UpdateExperienceMutation_updateExperience_experience {
   __typename: "Experience";
   /**
-   * The ID of an object
-   */
-  id: string;
-  /**
    * The title of the experience
    */
+  id: string;
   title: string;
   /**
    * The description of the experience
