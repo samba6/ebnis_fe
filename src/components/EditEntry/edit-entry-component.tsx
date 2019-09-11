@@ -8,9 +8,8 @@ import {
   DispatchType,
   DefinitionsStates,
   DataState,
-  EditingMultipleDefinitionsState,
   EditEnryContext,
-  State,
+  StateMachine,
   DataStates,
   SubmissionResponseState,
   PrimaryState,
@@ -146,7 +145,7 @@ export function EditEntry(props: Props) {
                 );
               })}
 
-              {editingData.isActive && (
+              {editingData.value === "active" && (
                 <Button
                   positive={true}
                   compact={true}
@@ -181,7 +180,8 @@ function ErrorBoundaryFallBack() {
       </Modal.Header>
 
       <Modal.Content>
-        We are sorry something's gone wrong. Please try again at a later time.
+        We are sorry something&apos;s gone wrong. Please try again at a later
+        time.
       </Modal.Content>
     </>
   );
@@ -190,11 +190,11 @@ function ErrorBoundaryFallBack() {
 function SubmissionSuccessResponseComponent({
   state,
 }: {
-  state?: SubmissionResponseState;
+  state: SubmissionResponseState;
 }) {
   const { dispatch } = useContext(EditEnryContext);
 
-  if (state && state.isActive && state.value === "submissionSuccess") {
+  if (state.value === "submissionSuccess") {
     const {
       submissionSuccess: {
         context: { validResponse, invalidResponse },
@@ -211,10 +211,21 @@ function SubmissionSuccessResponseComponent({
           }}
         >
           {validResponse && (
-            <div>
-              {validResponse.successes}
-              {validResponse.failures}
-            </div>
+            <>
+              {!!validResponse.successes && (
+                <div>
+                  <span>{validResponse.successes} </span>
+                  <span>succeeded</span>
+                </div>
+              )}
+
+              {!!validResponse.failures && (
+                <div>
+                  <span> {validResponse.failures} </span>
+                  <span>failed</span>
+                </div>
+              )}
+            </>
           )}
 
           {invalidResponse && (
@@ -312,14 +323,14 @@ function DefinitionComponent(props: DefinitionComponentProps) {
   const typeText = `[${type}]`;
 
   const error = getDefinitionFormError(state);
+  const hasSuccess =
+    state.value === "idle" && state.idle.context.anyEditSuccess;
 
   return (
     <Form.Field
       id={idPrefix}
       className={makeClassNames({
-        "definition--success": !!(
-          state.value === "idle" && state.idle.context.anyEditSuccess
-        ),
+        "definition--success": hasSuccess,
       })}
       error={!!error}
     >
@@ -327,27 +338,32 @@ function DefinitionComponent(props: DefinitionComponentProps) {
         <>
           <label>{typeText}</label>
 
-          <Input
-            id={`${idPrefix}-name`}
-            value={defaultFormValue}
-            disabled={true}
-            className="idle-definition-name"
-          />
+          <Input className="idle-definition-name">
+            <input
+              id={`${idPrefix}-name`}
+              value={defaultFormValue}
+              disabled={true}
+            />
 
-          <Button
-            primary={true}
-            compact={true}
-            type="button"
-            id={`${idPrefix}-edit-btn`}
-            onClick={() =>
-              dispatch({
-                type: ActionTypes.EDIT_BTN_CLICKED,
-                id,
-              })
-            }
-          >
-            Edit
-          </Button>
+            <Button
+              className={makeClassNames({
+                "definition-edit": true,
+                "definition-edit--success": hasSuccess,
+              })}
+              primary={true}
+              compact={true}
+              type="button"
+              id={`${idPrefix}-edit-btn`}
+              onClick={() =>
+                dispatch({
+                  type: ActionTypes.EDIT_BTN_CLICKED,
+                  id,
+                })
+              }
+            >
+              Edit
+            </Button>
+          </Input>
         </>
       )}
 
@@ -356,9 +372,6 @@ function DefinitionComponent(props: DefinitionComponentProps) {
           <label htmlFor={`${idPrefix}-input`}>{typeText}</label>
 
           <Input
-            id={`${idPrefix}-input`}
-            name={`${idPrefix}-input`}
-            value={state.editing.context.formValue}
             onChange={(_, { value }) => {
               dispatch({
                 type: ActionTypes.DEFINITION_NAME_CHANGED,
@@ -366,18 +379,19 @@ function DefinitionComponent(props: DefinitionComponentProps) {
                 formValue: value,
               });
             }}
-            autoComplete="off"
             className="definition-input"
           >
             <input
+              id={`${idPrefix}-input`}
+              name={`${idPrefix}-input`}
+              value={state.editing.context.formValue}
+              autoComplete="off"
               className={makeClassNames({
                 "definition-input-unchanged":
                   state.editing.value === "unchanged",
               })}
             />
-          </Input>
 
-          <Button.Group>
             <Button
               primary={true}
               compact={true}
@@ -393,40 +407,40 @@ function DefinitionComponent(props: DefinitionComponentProps) {
             >
               Dismiss
             </Button>
+          </Input>
 
-            {state.editing.value === "changed" && (
-              <>
+          {state.editing.value === "changed" && (
+            <Button.Group>
+              <Button
+                negative={true}
+                compact={true}
+                type="button"
+                id={`${idPrefix}-reset`}
+                onClick={() => {
+                  dispatch({
+                    type: ActionTypes.UNDO_DEFINITION_EDITS,
+                    id,
+                  });
+                }}
+                className="definition-reset"
+              >
+                Reset
+              </Button>
+
+              {shouldSubmit && (
                 <Button
-                  negative={true}
+                  positive={true}
                   compact={true}
-                  type="button"
-                  id={`${idPrefix}-reset`}
-                  onClick={() => {
-                    dispatch({
-                      type: ActionTypes.UNDO_DEFINITION_EDITS,
-                      id,
-                    });
-                  }}
-                  className="definition-reset"
+                  type="submit"
+                  id={`${idPrefix}-submit`}
+                  onClick={onSubmit}
+                  className="edit-entry-definition-submit"
                 >
-                  Reset
+                  Submit
                 </Button>
-
-                {shouldSubmit && (
-                  <Button
-                    positive={true}
-                    compact={true}
-                    type="submit"
-                    id={`${idPrefix}-submit`}
-                    onClick={onSubmit}
-                    className="edit-entry-definition-submit"
-                  >
-                    Submit
-                  </Button>
-                )}
-              </>
-            )}
-          </Button.Group>
+              )}
+            </Button.Group>
+          )}
 
           {!!error && (
             <FormCtrlError id={`${idPrefix}-error`}>{error}</FormCtrlError>
@@ -440,23 +454,21 @@ function DefinitionComponent(props: DefinitionComponentProps) {
 function SubmissionErrorsComponent({
   state,
 }: {
-  state?: SubmissionResponseState;
+  state: SubmissionResponseState;
 }) {
   const { dispatch } = useContext(EditEnryContext);
   let errors: string | null = null;
   let id = "";
 
-  if (state && state.isActive) {
-    if (state.value === "formErrors") {
-      errors = state.formErrors.context.errors;
-      id = "edit-entry-form-errors-message";
-    } else if (state.value === "otherErrors") {
-      errors = state.otherErrors.context.errors;
-      id = "edit-entry-other-errors-message";
-    } else if (state.value === "apolloErrors") {
-      errors = state.apolloErrors.context.errors;
-      id = "edit-entry-apollo-errors-message";
-    }
+  if (state.value === "formErrors") {
+    errors = state.formErrors.context.errors;
+    id = "edit-entry-form-errors-message";
+  } else if (state.value === "otherErrors") {
+    errors = state.otherErrors.context.errors;
+    id = "edit-entry-other-errors-message";
+  } else if (state.value === "apolloErrors") {
+    errors = state.apolloErrors.context.errors;
+    id = "edit-entry-apollo-errors-message";
   }
 
   return errors ? (
@@ -507,10 +519,6 @@ function submit(args: SubmitArgs) {
       updateDefinitionsOnline,
     } = args;
 
-    dispatch({
-      type: ActionTypes.SUBMITTING,
-    });
-
     const [
       definitionsInput,
       definitionsWithFormErrors,
@@ -518,6 +526,16 @@ function submit(args: SubmitArgs) {
       UpdateDefinitionInput[],
       string[],
     ];
+
+    const [dataInput] = getDataObjectsToSubmit(globalState.dataStates);
+
+    dispatch({
+      type: ActionTypes.SUBMITTING,
+      submittedCount:
+        definitionsInput.length +
+        definitionsWithFormErrors.length +
+        dataInput.length,
+    });
 
     if (definitionsWithFormErrors.length !== 0) {
       dispatch({
@@ -528,7 +546,6 @@ function submit(args: SubmitArgs) {
       return;
     }
 
-    const [dataInput] = getDataObjectsToSubmit(globalState.dataStates);
     let success = false;
 
     try {
@@ -634,19 +651,19 @@ function getDataObjectsToSubmit(states: DataStates) {
 function getIdOfSubmittingDefinition(
   id: string,
   editingData: PrimaryState["editingData"],
-  editingMultipleDefinitionsState?: EditingMultipleDefinitionsState,
+  editingMultipleDefinitions: StateMachine["primaryState"]["editingMultipleDefinitions"],
 ) {
-  if (editingData.isActive) {
+  if (editingData.value === "active") {
     return false;
   }
 
-  if (!editingMultipleDefinitionsState) {
+  if (editingMultipleDefinitions.value === "inactive") {
     return true;
   }
 
   const {
     context: { firstChangedDefinitionId },
-  } = editingMultipleDefinitionsState;
+  } = editingMultipleDefinitions;
 
   return id === firstChangedDefinitionId;
 }
@@ -727,6 +744,6 @@ interface SubmitArgs
     UpdateDataObjectsOnlineMutationProps,
     UpdateDefinitionsMutationProps {
   dispatch: DispatchType;
-  globalState: State;
+  globalState: StateMachine;
   editEntryUpdate: () => void;
 }

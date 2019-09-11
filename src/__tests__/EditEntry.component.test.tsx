@@ -31,7 +31,10 @@ import {
   UpdateDefinitionAndData,
   UpdateDefinitionAndDataVariables,
 } from "../graphql/apollo-types/UpdateDefinitionAndData";
-import { UpdateDataObjects_updateDataObjects } from "../graphql/apollo-types/UpdateDataObjects";
+import {
+  UpdateDataObjects_updateDataObjects,
+  UpdateDataObjects,
+} from "../graphql/apollo-types/UpdateDataObjects";
 import { ApolloError } from "apollo-client";
 import { GraphQLError } from "graphql";
 import { toISODatetimeString } from "../components/NewEntry/new-entry.utils";
@@ -738,8 +741,6 @@ test("editing data, editing definitions", async () => {
   expect(getDataInput("date").value).toEqual("2000-01-02T00:00:00+01:00");
   expect(getDataInput("time").value).toEqual("2000-01-02T02:01:01+01:00");
   expect(getDataInput("multi").value).toEqual("mu");
-
-  //consol.log(JSON.stringify(window.state, null, 2));
 });
 
 test("renders error boundary", () => {
@@ -820,10 +821,11 @@ test("submitting only data objects, apollo errors, runtime errors", async () => 
     },
   ]);
 
-  mockUpdateDataOnline.mockResolvedValue({});
-
   closeMessage($response);
   expect(getSubmissionSuccessResponseDom()).toBeNull();
+
+  // another type of empty response from server.
+  mockUpdateDataOnline.mockResolvedValue({});
   expect(getSubmittingOverlay()).toBeNull();
   $submit.click();
   expect(getSubmittingOverlay()).not.toBeNull();
@@ -854,11 +856,49 @@ test("submitting only data objects, apollo errors, runtime errors", async () => 
   $submit.click();
   await waitForElement(getApolloErrorsResponseDom);
 
-  //other exception errors
+  //javascript exceptions apart from apollo errors
   expect(getOtherErrorsResponseDom()).toBeNull();
   mockUpdateDataOnline.mockRejectedValue(new Error("t"));
   $submit.click();
   await waitForElement(getOtherErrorsResponseDom);
+
+  // we received success
+  mockUpdateDataOnline.mockResolvedValue({
+    data: {
+      updateDataObjects: [
+        {
+          id: "int",
+          dataObject: {
+            id: "int",
+            data: `{"int":10}`,
+          },
+        },
+      ],
+    } as UpdateDataObjects,
+  });
+
+  $submit.click();
+
+  /**
+   * Then the submit response UI should be visible
+   */
+  await waitForElement(getSubmissionSuccessResponseDom);
+
+  /**
+   * And global submit button should not be visible
+   */
+  expect(getSubmit()).toBeNull();
+
+  /**
+   * When we enter a new value for the int field
+   */
+  getDataInput("int", "500");
+
+  /**
+   * Then global submit button should be visible again
+   */
+
+  expect(getSubmit()).not.toBeNull();
 });
 
 test("not editing data apollo errors", async () => {

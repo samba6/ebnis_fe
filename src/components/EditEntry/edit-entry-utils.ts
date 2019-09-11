@@ -35,7 +35,7 @@ export enum ActionTypes {
   DEFINITION_NAME_CHANGED = "@component/edit-entry/definition-name-changed",
   UNDO_DEFINITION_EDITS = "@component/edit-entry/undo-definition-edits",
   STOP_DEFINITION_EDIT = "@component/edit-entry/stop-definition-edit",
-  SUBMITTING = "@component/edit-entry/definitions-submitted",
+  SUBMITTING = "@component/edit-entry/submitting",
   DESTROYED = "@component/edit-entry/destroy",
   DEFINITIONS_SUBMISSION_RESPONSE = "@component/edit-entry/definitions-submission-response",
   DATA_OBJECTS_SUBMISSION_RESPONSE = "@component/edit-entry/data-objects-submission-response",
@@ -47,7 +47,7 @@ export enum ActionTypes {
   APOLLO_ERRORS = "@component/edit-entry/apollo-errors",
 }
 
-export const initStateFromProps = (props: Props): State => {
+export const initStateFromProps = (props: Props): StateMachine => {
   const [dataStates, dataIdsMap, dataIds] = props.entry.dataObjects.reduce(
     ([statesMap, dataIdsMap, dataIds], obj) => {
       const data = obj as DataObjectFragment;
@@ -137,7 +137,15 @@ export const initStateFromProps = (props: Props): State => {
       },
 
       editingData: {
-        isActive: false,
+        value: "inactive" as "inactive",
+      },
+
+      editingMultipleDefinitions: {
+        value: "inactive" as "inactive",
+      },
+
+      submissionResponse: {
+        value: "inactive" as "inactive",
       },
     },
 
@@ -149,8 +157,8 @@ export const initStateFromProps = (props: Props): State => {
   return state;
 };
 
-export const reducer: Reducer<State, Action> = (state, action) =>
-  wrapReducer<State, Action>(
+export const reducer: Reducer<StateMachine, Action> = (state, action) =>
+  wrapReducer<StateMachine, Action>(
     state,
     action,
     (prevState, { type, ...payload }) => {
@@ -222,6 +230,15 @@ export const reducer: Reducer<State, Action> = (state, action) =>
           case ActionTypes.SUBMITTING:
             {
               proxy.primaryState.common.value = "submitting";
+
+              (proxy.primaryState
+                .common as PrimaryStateSubmitting).submitting = {
+                context: {
+                  submittedCount: (payload as {
+                    submittedCount: number;
+                  }).submittedCount,
+                },
+              };
             }
 
             break;
@@ -253,7 +270,7 @@ export const reducer: Reducer<State, Action> = (state, action) =>
               } as SubmissionResponseState;
 
               primaryState.submissionResponse = {
-                ...(primaryState.submissionResponse || {}),
+                ...primaryState.submissionResponse,
                 ...primaryStateFormErrors,
               };
 
@@ -294,7 +311,7 @@ export const reducer: Reducer<State, Action> = (state, action) =>
               } as SubmissionResponseState;
 
               primaryState.submissionResponse = {
-                ...(primaryState.submissionResponse || {}),
+                ...primaryState.submissionResponse,
                 ...otherErrorsState,
               };
             }
@@ -321,7 +338,7 @@ export const reducer: Reducer<State, Action> = (state, action) =>
               } as SubmissionResponseState;
 
               primaryState.submissionResponse = {
-                ...(primaryState.submissionResponse || {}),
+                ...primaryState.submissionResponse,
                 ...apolloErrorsState,
               };
             }
@@ -380,7 +397,8 @@ export const reducer: Reducer<State, Action> = (state, action) =>
           case ActionTypes.DISMISS_SUBMISSION_RESPONSE_MESSAGE:
             {
               (proxy.primaryState
-                .submissionResponse as SubmissionResponseState).isActive = false;
+                .submissionResponse as SubmissionResponseState).value =
+                "inactive";
             }
             break;
 
@@ -400,7 +418,7 @@ export const reducer: Reducer<State, Action> = (state, action) =>
   );
 
 function prepareSubmissionResponse(
-  proxy: State,
+  proxy: StateMachine,
   props: {
     updateDataObjects: UpdateDefinitionAndData["updateDataObjects"];
     updateDefinitions: UpdateDefinitionAndData["updateDefinitions"];
@@ -409,6 +427,7 @@ function prepareSubmissionResponse(
 ) {
   const { primaryState } = proxy;
   primaryState.common.value = "editing";
+
   const submissionSuccessResponse = {
     value: "submissionSuccess",
   } as SubmissionSuccessState;
@@ -464,10 +483,20 @@ function prepareSubmissionResponse(
   };
 
   primaryState.submissionResponse = {
-    ...(primaryState.submissionResponse || {}),
+    ...primaryState.submissionResponse,
     ...submissionSuccessResponse,
-    isActive: true,
+    value: "submissionSuccess",
   };
+
+  const {
+    submitting: {
+      context: { submittedCount },
+    },
+  } = primaryState.common as PrimaryStateSubmitting;
+
+  if (submittedCount === successCount) {
+    primaryState.editingData.value = "inactive";
+  }
 
   return { primaryState, submissionSuccessResponse, context };
 }
@@ -478,7 +507,7 @@ function putDefinitionInvalidErrors(context: SubmissionSuccessStateContext) {
   return true;
 }
 
-function setDefinitionEditingUnchangedState(proxy: State, id: string) {
+function setDefinitionEditingUnchangedState(proxy: StateMachine, id: string) {
   const { definitionsStates } = proxy;
   const state = definitionsStates[id];
   state.value = "editing";
@@ -492,7 +521,7 @@ function setDefinitionEditingUnchangedState(proxy: State, id: string) {
   proxy.definitionsStates[id] = { ...definitionsStates[id], ...state };
 }
 
-function setEditingMultipleDefinitionsState(proxy: State) {
+function setEditingMultipleDefinitionsState(proxy: StateMachine) {
   const { primaryState } = proxy;
   const len = primaryState.context.lenDefinitions;
 
@@ -513,14 +542,17 @@ function setEditingMultipleDefinitionsState(proxy: State) {
     }
   }
 
-  primaryState.editingMultipleDefinitions =
-    changedDefinitionsCount < 2
-      ? undefined
-      : {
-          context: {
-            firstChangedDefinitionId,
-          },
-        };
+  const { editingMultipleDefinitions } = primaryState;
+
+  if (changedDefinitionsCount < 2) {
+    editingMultipleDefinitions.value = "inactive";
+  } else {
+    editingMultipleDefinitions.value = "active";
+
+    (editingMultipleDefinitions as EditingMultipleDefinitionsActiveState).context = {
+      firstChangedDefinitionId,
+    };
+  }
 }
 
 function formObjFromRawString(val: string): FormObjVal {
@@ -546,7 +578,7 @@ function formObjToCompareString(type: FieldType, val: FormObjVal) {
 
 export const EditEnryContext = createContext<ContextValue>({} as ContextValue);
 
-function setEditingData(proxy: State) {
+function setEditingData(proxy: StateMachine) {
   let dataChangedCount = 0;
 
   for (const state of Object.values(proxy.dataStates)) {
@@ -556,14 +588,14 @@ function setEditingData(proxy: State) {
   }
 
   if (dataChangedCount !== 0) {
-    proxy.primaryState.editingData.isActive = true;
+    proxy.primaryState.editingData.value = "active";
   } else {
-    proxy.primaryState.editingData.isActive = false;
+    proxy.primaryState.editingData.value = "inactive";
   }
 }
 
 function handleDefinitionsSubmissionResponse(
-  proxy: State,
+  proxy: StateMachine,
   context: SubmissionSuccessStateContext,
   updateDefinitions: UpdateDefinitionAndData["updateDefinitions"],
 ) {
@@ -621,7 +653,7 @@ function handleDefinitionsSubmissionResponse(
 }
 
 function handleDataSubmissionResponse(
-  proxy: State,
+  proxy: StateMachine,
   context: SubmissionSuccessStateContext,
   dataObjects: UpdateDefinitionAndData["updateDataObjects"],
 ) {
@@ -700,7 +732,7 @@ interface ContextValue
   editEntryUpdate: () => void;
 }
 
-export interface State {
+export interface StateMachine {
   readonly dataStates: DataStates;
   readonly definitionsStates: DefinitionsStates;
   readonly primaryState: PrimaryState;
@@ -717,47 +749,59 @@ export interface PrimaryState {
     definitionAndDataIdsMapList: DefinitionAndDataIds[];
   };
 
-  common:
-    | PrimaryStateEditing
-    | {
-        value: "submitting";
-      };
+  common: PrimaryStateEditing | PrimaryStateSubmitting;
 
   editingData: {
-    isActive: boolean;
+    value: "active" | "inactive";
   };
 
-  editingMultipleDefinitions?: EditingMultipleDefinitionsState;
+  editingMultipleDefinitions:
+    | {
+        value: "inactive";
+      }
+    | EditingMultipleDefinitionsActiveState;
 
-  submissionResponse?: SubmissionResponseState;
+  submissionResponse: SubmissionResponseState;
 }
 
 interface PrimaryStateEditing {
   value: "editing";
 }
 
-export type SubmissionResponseState = {
-  isActive: boolean;
-} & (
-  | {
-      value: "apolloErrors";
-      apolloErrors: {
-        context: {
-          errors: string;
-        };
-      };
-    }
-  | SubmissionSuccessState
-  | {
-      value: "otherErrors";
+interface PrimaryStateSubmitting {
+  value: "submitting";
 
-      otherErrors: {
-        context: {
-          errors: string;
-        };
-      };
+  submitting: {
+    context: {
+      submittedCount: number;
+    };
+  };
+}
+
+export type SubmissionResponseState =
+  | {
+      value: "inactive";
     }
-  | SubmissionFormErrorsState);
+  | (
+      | {
+          value: "apolloErrors";
+          apolloErrors: {
+            context: {
+              errors: string;
+            };
+          };
+        }
+      | SubmissionSuccessState
+      | {
+          value: "otherErrors";
+
+          otherErrors: {
+            context: {
+              errors: string;
+            };
+          };
+        }
+      | SubmissionFormErrorsState);
 
 interface SubmissionFormErrorsState {
   value: "formErrors";
@@ -791,7 +835,9 @@ interface SubmissionInvalidResponse {
   definitions?: string;
 }
 
-export interface EditingMultipleDefinitionsState {
+export interface EditingMultipleDefinitionsActiveState {
+  value: "active";
+
   context: {
     firstChangedDefinitionId: string;
   };
@@ -815,6 +861,7 @@ export type Action =
     }
   | {
       type: ActionTypes.SUBMITTING;
+      submittedCount: number;
     }
   | {
       type: ActionTypes.DESTROYED;
