@@ -11,6 +11,12 @@ export interface UpdateDataObjectsResponseFragment_dataObject {
   id: string;
   data: any;
   definitionId: string;
+  /**
+   * Client ID indicates that data object was created offline
+   */
+  clientId: string | null;
+  insertedAt: any;
+  updatedAt: any;
 }
 
 export interface UpdateDataObjectsResponseFragment_fieldErrors {

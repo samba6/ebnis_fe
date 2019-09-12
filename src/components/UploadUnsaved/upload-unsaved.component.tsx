@@ -14,10 +14,7 @@ import {
 } from "./upload-unsaved.utils";
 import { Loading } from "../Loading/loading";
 import { SidebarHeader } from "../SidebarHeader/sidebar-header.component";
-import {
-  ExperienceFragment_entries_edges_node,
-  ExperienceFragment_entries_edges_node_dataObjects,
-} from "../../graphql/apollo-types/ExperienceFragment";
+import { ExperienceFragment_entries_edges_node } from "../../graphql/apollo-types/ExperienceFragment";
 import "./upload-unsaved.styles.scss";
 import { CSSTransition, TransitionGroup } from "react-transition-group";
 import makeClassNames from "classnames";
@@ -45,8 +42,11 @@ import { useDeleteMutationsOnExit } from "../use-delete-mutations-on-exit";
 import { makeSiteTitle, setDocumentTitle } from "../../constants";
 import { UPLOAD_UNSAVED_TITLE } from "../../constants/upload-unsaved-title";
 import { IconProps } from "semantic-ui-react";
+import { DataObjectFragment } from "../../graphql/apollo-types/DataObjectFragment";
+import { MY_EXPERIENCES_TITLE } from "../../constants/my-experiences-title";
 
 const timeoutMs = 500;
+const REDIRECT_ROUTE = makeSiteTitle(MY_EXPERIENCES_TITLE);
 
 export function UploadUnsaved(props: Props) {
   const {
@@ -85,7 +85,7 @@ export function UploadUnsaved(props: Props) {
 
   useEffect(function setCompTitle() {
     if (!isConnected()) {
-      (navigate as NavigateFn)("/404");
+      (navigate as NavigateFn)(REDIRECT_ROUTE);
       return;
     }
 
@@ -102,7 +102,7 @@ export function UploadUnsaved(props: Props) {
         getAllUnsaved.savedExperiencesLen + getAllUnsaved.unsavedExperiencesLen;
 
       if (count === 0) {
-        (navigate as NavigateFn)("/404");
+        (navigate as NavigateFn)(REDIRECT_ROUTE);
         return;
       }
 
@@ -568,12 +568,24 @@ function ServerError(props: {
 
 function toUploadableEntry(entry: ExperienceFragment_entries_edges_node) {
   const dataObjects = entry.dataObjects.map(value => {
-    const dataObject = value as ExperienceFragment_entries_edges_node_dataObjects;
+    const dataObject = value as DataObjectFragment;
 
-    return {
-      data: dataObject.data,
-      definitionId: dataObject.definitionId,
-    };
+    const keys: (keyof DataObjectFragment)[] = [
+      "data",
+      "definitionId",
+      "clientId",
+      "insertedAt",
+      "updatedAt",
+    ];
+
+    return keys.reduce(
+      (acc, k) => {
+        acc[k as keyof DataObjectFragment] =
+          dataObject[k as keyof DataObjectFragment];
+        return acc;
+      },
+      {} as DataObjectFragment,
+    );
   });
 
   return {

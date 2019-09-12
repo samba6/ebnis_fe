@@ -5,5 +5,8 @@ export const DATA_OBJECT_FRAGMENT = gql`
     id
     data
     definitionId
+    clientId
+    insertedAt
+    updatedAt
   }
 `;

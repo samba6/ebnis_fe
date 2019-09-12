@@ -11,4 +11,10 @@ export interface DataObjectFragment {
   id: string;
   data: any;
   definitionId: string;
+  /**
+   * Client ID indicates that data object was created offline
+   */
+  clientId: string | null;
+  insertedAt: any;
+  updatedAt: any;
 }

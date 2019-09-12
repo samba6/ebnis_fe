@@ -31,8 +31,11 @@ export interface CreateDataDefinition {
  * Variables for creating an entry field
  */
 export interface CreateDataObject {
+  clientId?: string | null;
   data: any;
   definitionId: string;
+  insertedAt?: any | null;
+  updatedAt?: any | null;
 }
 
 export interface CreateEntriesInput {

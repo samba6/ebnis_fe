@@ -25,6 +25,8 @@ import {
 } from "../state/resolvers";
 import { SAVED_AND_UNSAVED_EXPERIENCE_TYPENAME } from "../state/unsaved-resolvers";
 import { CreateEntriesErrorsFragment_errors } from "../graphql/apollo-types/CreateEntriesErrorsFragment";
+import { EntryFragment_dataObjects } from "../graphql/apollo-types/EntryFragment";
+import { DataObjectFragment } from "../graphql/apollo-types/DataObjectFragment";
 
 const mockDeleteIdsFromCache = deleteIdsFromCache as jest.Mock;
 
@@ -124,6 +126,7 @@ test("partially saved unsaved experience", () => {
             id: "1",
           },
         ] as ExperienceFragment_dataDefinitions[],
+
         entries: {
           edges: [
             {
@@ -135,16 +138,21 @@ test("partially saved unsaved experience", () => {
       // one of these entries (21) failed to save -hence this experience is
       // partially saved
       unsavedEntries: [
-        { id: "21" }, // did not save
-        { id: "221" }, // saved, will be deleted from cache
+        {
+          id: "unsaved-entry",
+        }, // did not save - notice it has same ID as entriesErrors
+
+        {
+          id: "saved-entry",
+        }, // saved, will be deleted from cache
       ] as ExperienceFragment_entries_edges_node[],
+
       entriesErrors: {
-        "21": {} as CreateEntriesErrorsFragment_errors,
+        "unsaved-entry": {} as CreateEntriesErrorsFragment_errors,
       },
+
       savedEntries: [], // an unsaved experience never has savedEntries
-      newlySavedEntries: [
-        { id: "22" } as ExperienceFragment_entries_edges_node,
-      ],
+
       newlySavedExperience: {
         id: "2s",
         clientId: "2",
@@ -152,7 +160,13 @@ test("partially saved unsaved experience", () => {
           edges: [
             {
               node: {
-                clientId: "221",
+                clientId: "saved-entry",
+
+                dataObjects: [
+                  {
+                    clientId: "saved-data-object",
+                  },
+                ] as EntryFragment_dataObjects[],
               },
             },
           ] as ExperienceFragment_entries_edges[],
@@ -173,11 +187,17 @@ test("partially saved unsaved experience", () => {
 
   expect(mockDeleteIdsFromCache).toHaveBeenCalledWith(
     {},
-    ["Experience:2", "DataDefinition:1", "Entry:221"],
+    [
+      "Experience:2",
+      "DataDefinition:1",
+      "Entry:saved-entry",
+      "DataObject:saved-data-object",
+    ],
     {
       mutations: [
         [MUTATION_NAME_createUnsavedExperience, "Experience:2"],
-        [MUTATION_NAME_createUnsavedEntry, "Entry:221"],
+        [MUTATION_NAME_createUnsavedEntry, "Entry:saved-entry"],
+        [MUTATION_NAME_createUnsavedEntry, "Entry:unsaved-entry"],
       ],
 
       queries: [[QUERY_NAME_getExperience, "Experience:2"]],
@@ -195,7 +215,13 @@ test("partially saved unsaved experience", () => {
         edges: [
           {
             node: {
-              clientId: "221",
+              clientId: "saved-entry",
+
+              dataObjects: [
+                {
+                  clientId: "saved-data-object",
+                },
+              ],
             },
           },
 
@@ -203,7 +229,7 @@ test("partially saved unsaved experience", () => {
             __typename: "EntryEdge",
             cursor: "",
             node: {
-              id: "21",
+              id: "unsaved-entry",
             },
           },
         ],
@@ -294,6 +320,8 @@ test("saved experience with unsaved entry not saved", () => {
         {
           id: "22s",
           clientId: "22-c",
+
+          dataObjects: [] as DataObjectFragment[],
         } as ExperienceFragment_entries_edges_node,
       ],
       // so we have one entry we are unable to save,
@@ -311,13 +339,28 @@ test("saved experience with unsaved entry not saved", () => {
     client: {} as any,
   });
 
+  const finalEdges = [
+    {
+      node: {
+        clientId: "22-c",
+        id: "22s",
+
+        dataObjects: [],
+      },
+    },
+
+    {
+      node: {
+        clientId: "23-c",
+        id: "23",
+      },
+    },
+  ];
+
   expect(mockWriteGetExperienceFullQueryToCache.mock.calls[0][1]).toEqual({
     id: "6",
     entries: {
-      edges: [
-        { node: { clientId: "22-c", id: "22s" } },
-        { node: { clientId: "23-c", id: "23" } },
-      ],
+      edges: finalEdges,
     },
   });
 
@@ -335,10 +378,7 @@ test("saved experience with unsaved entry not saved", () => {
     "6": {
       id: "6",
       entries: {
-        edges: [
-          { node: { clientId: "22-c", id: "22s" } },
-          { node: { clientId: "23-c", id: "23" } },
-        ],
+        edges: finalEdges,
       },
     },
   });
@@ -436,7 +476,15 @@ test("saved experience completely saved", () => {
       unsavedEntries: [],
       savedEntries: [],
       newlySavedEntries: [
-        { clientId: "71-c" },
+        {
+          clientId: "71-c",
+
+          dataObjects: [
+            {
+              clientId: "1",
+            },
+          ],
+        },
       ] as ExperienceFragment_entries_edges_node[],
     },
   } as ExperiencesIdsToObjectMap;
@@ -458,7 +506,11 @@ test("saved experience completely saved", () => {
 
   expect(mockDeleteIdsFromCache).toHaveBeenCalledWith(
     {},
-    ["Entry:71-c", `${SAVED_AND_UNSAVED_EXPERIENCE_TYPENAME}:7`],
+    [
+      "Entry:71-c",
+      "DataObject:1",
+      `${SAVED_AND_UNSAVED_EXPERIENCE_TYPENAME}:7`,
+    ],
     {
       mutations: [[MUTATION_NAME_createUnsavedEntry, "Entry:71-c"]],
 

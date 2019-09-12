@@ -61,7 +61,7 @@ export interface CreateUnsavedEntryMutationReturned {
 const createUnsavedEntryResolver: LocalResolverFn<
   CreateUnsavedEntryVariables,
   Promise<CreateUnsavedEntryMutationReturned["createUnsavedEntry"]>
-> = async (root, variables, context) => {
+> = async (_, variables, context) => {
   const { client } = context;
 
   let experience = variables.experience;
@@ -74,10 +74,15 @@ const createUnsavedEntryResolver: LocalResolverFn<
   const id = makeUnsavedId(today.getTime());
 
   const dataObjects = variables.dataObjects.map((dataObject, index) => {
+    const dataObjectId = `${id}--data-object-${index}`;
+
     return {
       ...dataObject,
       __typename: "DataObject" as "DataObject",
-      id: `${id}--data-object-${index}`,
+      id: dataObjectId,
+      clientId: dataObjectId,
+      insertedAt: timestamps,
+      updatedAt: timestamps,
     };
   });
 

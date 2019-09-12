@@ -22,6 +22,8 @@ import {
   MUTATION_NAME_createUnsavedEntry,
   QUERY_NAME_getExperience,
 } from "../../state/resolvers";
+import { DataObjectFragment } from "../../graphql/apollo-types/DataObjectFragment";
+import { EntryFragment } from "../../graphql/apollo-types/EntryFragment";
 
 export function updateCache({
   unsavedExperiencesMap,
@@ -162,8 +164,9 @@ function handleUnsavedExperiences(
 
         // we will delete the unsaved version from cache.
         toDeletes.push(`Entry:${clientId}`);
-
         mutations.push([MUTATION_NAME_createUnsavedEntry, `Entry:${clientId}`]);
+
+        deleteDataObjectsFromEntry(entry, toDeletes);
       }
 
       // The experience from server will only have saved entries -
@@ -184,8 +187,13 @@ function handleUnsavedExperiences(
 
         // we merge unsaved entries into saved entries received from server.
         unsavedEntries.forEach(entry => {
-          if (entriesErrorsIds.includes(entry.id)) {
+          // it is unsaved so id === clientId
+          const { id } = entry;
+
+          if (entriesErrorsIds.includes(id)) {
             edges.push(entryToEdge(entry));
+
+            mutations.push([MUTATION_NAME_createUnsavedEntry, `Entry:${id}`]);
           }
         });
       } else {
@@ -250,6 +258,7 @@ function handleSavedExperiences(
 
           // we will delete unsaved entries now saved from cache
           toDeletes.push(`Entry:${clientId}`);
+          deleteDataObjectsFromEntry(entry, toDeletes);
 
           mutations.push([
             MUTATION_NAME_createUnsavedEntry,
@@ -263,9 +272,10 @@ function handleSavedExperiences(
         },
       );
 
-      swapUnsavedEntriesWithNewlySaved(edges, newlySavedEntriesMap);
-
-      entries.edges = edges;
+      entries.edges = swapUnsavedEntriesWithNewlySaved(
+        edges,
+        newlySavedEntriesMap,
+      );
       proxy.entries = entries;
 
       if (!entriesErrors) {
@@ -306,7 +316,7 @@ function swapUnsavedEntriesWithNewlySaved(
     [k: string]: ExperienceFragment_entries_edges_node;
   },
 ) {
-  for (const edge of edges) {
+  return edges.map(edge => {
     const entry = edge.node as ExperienceFragment_entries_edges_node;
 
     const mayBeNewlySavedEntryNode =
@@ -316,7 +326,16 @@ function swapUnsavedEntriesWithNewlySaved(
       // swap
       edge.node = mayBeNewlySavedEntryNode;
     }
-  }
+
+    return edge;
+  });
+}
+
+function deleteDataObjectsFromEntry(entry: EntryFragment, toDeletes: string[]) {
+  entry.dataObjects.forEach(obj => {
+    const clientId = (obj as DataObjectFragment).clientId as string;
+    toDeletes.push(`DataObject:${clientId}`);
+  });
 }
 
 export interface SavedStatuses {

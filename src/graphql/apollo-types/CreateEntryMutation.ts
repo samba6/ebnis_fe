@@ -13,6 +13,12 @@ export interface CreateEntryMutation_createEntry_entry_dataObjects {
   id: string;
   data: any;
   definitionId: string;
+  /**
+   * Client ID indicates that data object was created offline
+   */
+  clientId: string | null;
+  insertedAt: any;
+  updatedAt: any;
 }
 
 export interface CreateEntryMutation_createEntry_entry {
@@ -28,7 +34,7 @@ export interface CreateEntryMutation_createEntry_entry {
   /**
    * The client ID which indicates that an entry has been created while server
    *   is offline and is to be saved. The client ID uniquely
-   *   identifies this entry and will be used prevent conflict while saving entry
+   *   identifies this entry and will be used to prevent conflict while saving entry
    *   created offline and must thus be non null in this situation.
    */
   clientId: string | null;
