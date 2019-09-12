@@ -1,12 +1,16 @@
-import React, { useEffect, useState, useCallback, useContext } from "react";
+import React, { useEffect, useContext, useReducer, useMemo } from "react";
 import Icon from "semantic-ui-react/dist/commonjs/elements/Icon";
 import "./my-experiences.styles.scss";
 import {
   Props,
-  DescriptionMap,
   ExperienceProps,
-  ToggleDescription,
   mapSavedExperiencesToIds,
+  DispatchProvider,
+  reducer,
+  dispatchContext,
+  ActionTypes,
+  initState,
+  SearchActive,
 } from "./my-experiences.utils";
 import { EXPERIENCE_DEFINITION_URL } from "../../routes";
 import { makeExperienceRoute } from "../../constants/experience-route";
@@ -21,12 +25,10 @@ import {
   ExperienceConnectionFragment_edges,
   ExperienceConnectionFragment_edges_node,
 } from "../../graphql/apollo-types/ExperienceConnectionFragment";
-import {
-  GetExperienceConnectionMini_getExperiences,
-  GetExperienceConnectionMini_getExperiences_edges,
-} from "../../graphql/apollo-types/GetExperienceConnectionMini";
 import { LayoutContext, LayoutActionType } from "../Layout/layout.utils";
 import { ExperienceMiniFragment } from "../../graphql/apollo-types/ExperienceMiniFragment";
+import SemanticSearch from "semantic-ui-react/dist/commonjs/modules/Search";
+import { SearchResultProps } from "semantic-ui-react/dist/commonjs/modules/Search/SearchResult";
 
 export const MyExperiences = (props: Props) => {
   const {
@@ -36,9 +38,26 @@ export const MyExperiences = (props: Props) => {
     } = {} as GetExperienceConnectionMiniData,
   } = props;
 
-  const [descriptionToggleMap, toggleDescription] = useState<DescriptionMap>(
-    {},
+  const experiences = useMemo(() => {
+    if (!getExperiences) {
+      return [];
+    }
+
+    return (getExperiences.edges as ExperienceConnectionFragment_edges[]).map(
+      edge => edge.node as ExperienceConnectionFragment_edges_node,
+    );
+  }, [getExperiences]);
+
+  const [stateMachine, dispatch] = useReducer(
+    reducer,
+    { experiences },
+    initState,
   );
+
+  const {
+    context: { descriptionMap },
+    states,
+  } = stateMachine;
 
   // make sure we are only loading entries in the background and only once
   // on app boot.
@@ -69,25 +88,10 @@ export const MyExperiences = (props: Props) => {
         ids,
       });
     }, 1000);
+  }, [getExperiences, layoutDispatch]);
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [getExperiences]);
-
-  const toggleDescriptionFn = useCallback(
-    (id: string) => {
-      toggleDescription(currentSate => {
-        return { ...currentSate, [id]: !currentSate[id] };
-      });
-    },
-    [toggleDescription],
-  );
-
-  function renderExperiences(
-    experiencesForDisplay: GetExperienceConnectionMini_getExperiences,
-  ) {
-    const edges = experiencesForDisplay.edges as GetExperienceConnectionMini_getExperiences_edges[];
-
-    if (edges.length === 0) {
+  function renderExperiences() {
+    if (experiences.length === 0) {
       return (
         <Link
           to={EXPERIENCE_DEFINITION_URL}
@@ -101,17 +105,13 @@ export const MyExperiences = (props: Props) => {
 
     return (
       <div id="experiences-container" className="experiences-container">
-        {edges.map(edge => {
-          const experience = (edge as ExperienceConnectionFragment_edges)
-            .node as ExperienceConnectionFragment_edges_node;
-
+        {experiences.map(experience => {
           const { id } = experience;
 
           return (
             <Experience
               key={id}
-              showingDescription={descriptionToggleMap[id]}
-              toggleDescription={toggleDescriptionFn}
+              showingDescription={descriptionMap[id]}
               experience={experience}
             />
           );
@@ -131,7 +131,7 @@ export const MyExperiences = (props: Props) => {
 
     return (
       <>
-        {renderExperiences(getExperiences)}
+        {renderExperiences()}
 
         <Link
           className="new-experience-button"
@@ -148,17 +148,17 @@ export const MyExperiences = (props: Props) => {
     <div className="components-experiences">
       <SidebarHeader title="My Experiences" sidebar={true} />
 
-      <div className="main">{renderMain()}</div>
+      <DispatchProvider value={{ dispatch }}>
+        <SearchComponent {...(states.searching as SearchActive)} />
+
+        <div className="main">{renderMain()}</div>
+      </DispatchProvider>
     </div>
   );
 };
 
 const Experience = React.memo(
-  function ExperienceFn({
-    showingDescription,
-    toggleDescription,
-    experience,
-  }: ExperienceProps) {
+  function ExperienceFn({ showingDescription, experience }: ExperienceProps) {
     const { title, description, id } = experience;
 
     return (
@@ -166,7 +166,6 @@ const Experience = React.memo(
         <ShowDescriptionToggle
           showingDescription={showingDescription}
           experience={experience}
-          toggleDescription={toggleDescription}
         />
 
         <Link
@@ -200,11 +199,12 @@ const ShowDescriptionToggle = React.memo(
   function ShowDescriptionToggleFn({
     showingDescription,
     experience: { id, description },
-    toggleDescription,
-  }: ToggleDescription & {
+  }: {
     experience: ExperienceMiniFragment;
     showingDescription: boolean;
   }) {
+    const { dispatch } = useContext(dispatchContext);
+
     if (!description) {
       return null;
     }
@@ -214,7 +214,11 @@ const ShowDescriptionToggle = React.memo(
 
       id: `experience-description-toggle-${id}`,
 
-      onClick: () => toggleDescription(id),
+      onClick: () =>
+        dispatch({
+          type: ActionTypes.TOGGLE_DESCRIPTION,
+          id,
+        }),
     };
 
     return showingDescription ? (
@@ -228,3 +232,53 @@ const ShowDescriptionToggle = React.memo(
     return oldProps.showingDescription === newProps.showingDescription;
   },
 );
+
+const defaultSearchActiveContext = {
+  searchText: "",
+  results: [],
+} as SearchActive["active"]["context"];
+
+const searchResultRenderer = (props: SearchResultProps) => {
+  const { price: experienceId, title } = props;
+  return (
+    <Link
+      className="search-result"
+      id={`search-result-${experienceId}`}
+      to={makeExperienceRoute(experienceId)}
+    >
+      {title}
+    </Link>
+  );
+};
+
+function SearchComponent(props: SearchActive) {
+  const { dispatch } = useContext(dispatchContext);
+  const activeSearch = props.active || ({} as SearchActive["active"]);
+
+  const { context = defaultSearchActiveContext } = activeSearch;
+
+  return (
+    <SemanticSearch
+      id="my-experiences-search"
+      value={context.searchText}
+      className="my-search"
+      loading={props.value === "active"}
+      results={context.results}
+      resultRenderer={searchResultRenderer}
+      onSearchChange={(_, { value }) => {
+        dispatch({
+          type: ActionTypes.SEARCH_STARTED,
+        });
+
+        const searchText = value as string;
+
+        setTimeout(() => {
+          dispatch({
+            type: ActionTypes.SEARCH_TEXT_SET,
+            searchText,
+          });
+        });
+      }}
+    />
+  );
+}

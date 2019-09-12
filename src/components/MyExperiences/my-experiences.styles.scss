@@ -65,7 +65,7 @@
   }
 
   .new-experience-button {
-    position: absolute;
+    position: fixed;
     border: 1px solid darken($color: $app-color, $amount: 10);
     border-radius: 50%;
     width: 50px;
@@ -80,5 +80,14 @@
     bottom: 10px;
     right: 15px;
     cursor: pointer;
+  }
+
+  .my-search {
+    padding: 5px;
+  }
+
+  .results {
+    overflow-y: auto;
+    max-height: 300px;
   }
 }

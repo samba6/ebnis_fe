@@ -4,7 +4,7 @@ import "react-testing-library/cleanup-after-each";
 import { render, fireEvent } from "react-testing-library";
 import { MyExperiences } from "../components/MyExperiences/my-experiences.component";
 import { Props } from "../components/MyExperiences/my-experiences.utils";
-import { renderWithRouter } from "./test_utils";
+import { renderWithRouter, fillField } from "./test_utils";
 import { ExperienceConnectionFragment } from "../graphql/apollo-types/ExperienceConnectionFragment";
 import { LayoutProvider } from "../components/Layout/layout-provider";
 import { ILayoutContextContextValue } from "../components/Layout/layout.utils";
@@ -51,20 +51,24 @@ it("does not render empty experiences", () => {
 });
 
 it("renders experiences from server", () => {
+  /**
+   * Given there are experiences in the system
+   */
+
   const getExperiences = {
     edges: [
       {
         node: {
           id: "1",
-          description: "lovely experience description 1",
-          title: "love experience title 1",
+          description: "d1",
+          title: "t1",
         },
       },
 
       {
         node: {
           id: "2",
-          title: "love experience title 2",
+          title: "t2",
           description: null,
         },
       },
@@ -75,17 +79,53 @@ it("renders experiences from server", () => {
     getExperiencesMiniProps: { getExperiences } as any,
   });
 
+  /**
+   * When we use the component
+   */
+
   render(ui);
 
+  /**
+   * Then experience 2 should not have UI to toggle description
+   */
+
   expect(document.getElementById(`experience-description-toggle-2`)).toBeNull();
+
+  /**
+   * And experience 2 description should not be visible
+   */
+
   expect(document.getElementById(`experience-description-2`)).toBeNull();
+
+  /**
+   * But experience 1 description toggle UI should be visible
+   */
 
   let $expToggle = document.getElementById(
     "experience-description-toggle-1",
   ) as HTMLElement;
 
+  /**
+   * And the toggle UI should have right caret
+   */
+
   expect($expToggle.classList).toContain("right");
+
+  /**
+   * And experience 1 description should not be visible
+   */
+
+  expect(document.getElementById(`experience-description-1`)).toBeNull();
+
+  /**
+   * And the toggle UI should not have down caret
+   */
+
   expect($expToggle.classList).not.toContain("down");
+
+  /**
+   * When the toggle UI is clicked
+   */
 
   fireEvent.click($expToggle);
 
@@ -93,14 +133,45 @@ it("renders experiences from server", () => {
     "experience-description-toggle-1",
   ) as HTMLElement;
 
+  /**
+   * Then toggle UI should have down caret
+   */
+
   expect($expToggle.classList).toContain("down");
+
+  /**
+   * And toggle UI should not have a right caret
+   */
+
   expect($expToggle.classList).not.toContain("right");
+
+  /**
+   * And experience 1 description should be visible
+   */
 
   expect(document.getElementById("experience-description-1")).not.toBeNull();
 
+  /**
+   * When the toggle UI is clicked again
+   */
+
   fireEvent.click($expToggle);
+
+  /**
+   * Then the toggle UI should contain right caret
+   */
+
   expect($expToggle.classList).toContain("right");
+
+  /**
+   * And the toggle UI should not contain down
+   */
+
   expect($expToggle.classList).not.toContain("down");
+
+  /**
+   * And experience 1 description should not be visible
+   */
 
   expect(document.getElementById("experience-description-1")).toBeNull();
 });
@@ -169,6 +240,68 @@ it("renders error ui if we are unable to get experiences", () => {
    */
 
   expect(document.getElementById("no-experiences-error")).not.toBeNull();
+});
+
+it("goes to detailed experience page on search", () => {
+  /**
+   * Given there are experiences in the system
+   */
+
+  const getExperiences = {
+    edges: [
+      {
+        node: {
+          id: "id1",
+          description: "d1",
+          title: "t1",
+        },
+      },
+
+      {
+        node: {
+          id: "id2",
+          title: "t2",
+          description: null,
+        },
+      },
+    ],
+  } as ExperienceConnectionFragment;
+
+  const { ui } = makeComp({
+    getExperiencesMiniProps: { getExperiences } as any,
+  });
+
+  /**
+   * When we use the component
+   */
+
+  render(ui);
+
+  /**
+   * Then we should not see title 1 search result
+   */
+
+  expect(document.getElementById("search-result-id1")).toBeNull();
+
+  /**
+   * When we search for title 1
+   */
+
+  const $search = document.getElementById(
+    "my-experiences-search",
+  ) as HTMLInputElement;
+
+  fillField($search, "t1");
+
+  /**
+   * Then experience 1 result should be a link to experience 1 detailed page.
+   */
+
+  jest.runAllTimers();
+
+  let $result = document.getElementById("search-result-id1") as HTMLElement;
+
+  expect($result.getAttribute("href")).toContain("id1");
 });
 
 ////////////////////////// helper funcs ////////////////////////////

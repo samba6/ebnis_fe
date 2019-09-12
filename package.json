@@ -36,6 +36,7 @@
     "classnames": "2.2.6",
     "date-fns": "2.0.1",
     "formik": "1.5.4",
+    "fuzzysort": "1.1.4",
     "gatsby": "2.4.2",
     "graphql": "14.2.1",
     "graphql-tag": "2.10.1",
@@ -49,8 +50,8 @@
     "react-helmet-async": "1.0.2",
     "react-loadable": "5.5.0",
     "react-transition-group": "4.1.1",
-    "semantic-ui-less": "2.4.1",
-    "semantic-ui-react": "0.87.2",
+    "semantic-ui-less": "^2.4.1",
+    "semantic-ui-react": "0.88.1",
     "yup": "0.27.0",
     "zen-observable-ts": "0.8.18"
   },
