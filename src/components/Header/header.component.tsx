@@ -6,7 +6,7 @@ import { WindowLocation, NavigateFn } from "@reach/router";
 import { Link } from "gatsby";
 import "./header.styles.scss";
 import { EXPERIENCES_URL, ROOT_URL } from "../../routes";
-import { LayoutContext } from "../Layout/layout.utils";
+import { LayoutContextHeader } from "../Layout/layout.utils";
 import {
   UPLOAD_UNSAVED_PREVIEW_URL,
   UPLOAD_UNSAVED_URL_START,
@@ -34,7 +34,7 @@ export const Header = (props: Props) => {
   const pathname = (location as WindowLocation).pathname;
   const isHome = pathname === EXPERIENCES_URL || pathname === ROOT_URL;
 
-  const { unsavedCount, hasConnection } = useContext(LayoutContext);
+  const { unsavedCount, hasConnection } = useContext(LayoutContextHeader);
 
   const asUrlProps = isHome
     ? {}

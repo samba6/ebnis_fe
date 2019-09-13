@@ -32,7 +32,11 @@ import {
   ExperienceConnectionFragment_edges,
   ExperienceConnectionFragment_edges_node,
 } from "../../graphql/apollo-types/ExperienceConnectionFragment";
-import { LayoutContext, LayoutActionType } from "../Layout/layout.utils";
+import {
+  LayoutUnchangingContext,
+  LayoutActionType,
+  LayoutContextExperience,
+} from "../Layout/layout.utils";
 import { ExperienceMiniFragment } from "../../graphql/apollo-types/ExperienceMiniFragment";
 import SemanticSearch from "semantic-ui-react/dist/commonjs/modules/Search";
 import { SearchResultProps, SearchProps } from "semantic-ui-react";
@@ -68,9 +72,8 @@ export const MyExperiences = (props: Props) => {
     states,
   } = stateMachine;
 
-  // make sure we are only loading entries in the background and only once
-  // on app boot.
-  const { layoutDispatch } = useContext(LayoutContext);
+  const { layoutDispatch } = useContext(LayoutUnchangingContext);
+  const { fetchExperience } = useContext(LayoutContextExperience);
 
   useEffect(() => {
     setDocumentTitle(makeSiteTitle(MY_EXPERIENCES_TITLE));
@@ -79,7 +82,7 @@ export const MyExperiences = (props: Props) => {
   }, []);
 
   useEffect(() => {
-    if (!getExperiences) {
+    if (!getExperiences || fetchExperience !== "never-fetched") {
       return;
     }
 

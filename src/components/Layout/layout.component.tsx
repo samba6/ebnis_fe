@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useRef, useReducer } from "react";
 import { EbnisAppContext } from "../../context";
 import { Loading } from "../Loading/loading";
 import {
-  ILayoutContextContextValue,
+  ILayoutContextHeaderValue,
   reducer,
   LayoutActionType,
   Props,
@@ -14,7 +14,11 @@ import {
 } from "../../state/setup-observable";
 import { ZenObservable } from "zen-observable-ts";
 import { getUnsavedCount } from "../../state/unsaved-resolvers";
-import { LayoutProvider } from "./layout-provider";
+import {
+  LayoutProvider,
+  LayoutUnchangingProvider,
+  LayoutExperienceProvider,
+} from "./layout-providers";
 import { preFetchExperiences } from "./pre-fetch-experiences";
 import { useUser } from "../use-user";
 import { isConnected } from "../../state/connections";
@@ -34,7 +38,7 @@ export function Layout(props: Props) {
   const subscriptionRef = useRef<ZenObservable.Subscription | null>(null);
   const user = useUser();
 
-  const [machine, dispatch] = useReducer(
+  const [stateMachine, dispatch] = useReducer(
     reducer,
     { connectionStatus, user },
     initState,
@@ -44,23 +48,20 @@ export function Layout(props: Props) {
     unsavedCount,
     renderChildren,
     hasConnection: hasConnection,
-  } = machine.context;
+  } = stateMachine.context;
 
   const {
     states: { prefetchExperiences },
-  } = machine;
+  } = stateMachine;
 
   useEffect(() => {
-    if (!user) {
-      return;
-    }
-
     // by now we are done persisting cache so let's see if user has unsaved
     // data
-    if (renderChildren && unsavedCount === null) {
+    if (user && renderChildren && unsavedCount === null) {
       (async function() {
         if (await isConnected()) {
           const newUnsavedCount = await getUnsavedCount(client);
+
           dispatch({
             type: LayoutActionType.SET_UNSAVED_COUNT,
             count: newUnsavedCount,
@@ -77,22 +78,13 @@ export function Layout(props: Props) {
               hasConnection: isConnected,
             } = payload as ConnectionChangedPayload;
 
-            if (isConnected) {
-              getUnsavedCount(client).then(newUnsavedCount => {
-                dispatch({
-                  type: LayoutActionType.CONNECTION_CHANGED,
-                  unsavedCount: newUnsavedCount,
-                  isConnected,
-                });
-              });
-            } else {
-              // if we are disconnected, then we don't display unsaved UI
+            getUnsavedCount(client).then(newUnsavedCount => {
               dispatch({
                 type: LayoutActionType.CONNECTION_CHANGED,
-                unsavedCount: 0,
+                unsavedCount: newUnsavedCount,
                 isConnected,
               });
-            }
+            });
           }
         },
       });
@@ -106,11 +98,10 @@ export function Layout(props: Props) {
         subscriptionRef.current = null;
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [renderChildren]);
+  }, [renderChildren, client, observable, user, unsavedCount]);
 
   useEffect(
-    function PersistCache() {
+    function persistCacheEffect() {
       if (!(cache && restoreCacheOrPurgeStorage)) {
         return;
       }
@@ -122,7 +113,6 @@ export function Layout(props: Props) {
 
         dispatch({
           type: LayoutActionType.RENDER_CHILDREN,
-          shouldRender: true,
         });
       })();
     },
@@ -152,27 +142,31 @@ export function Layout(props: Props) {
   // this will be true if we are server rendering in gatsby build
   if (!(cache && restoreCacheOrPurgeStorage && client)) {
     return (
-      <LayoutProvider value={{ unsavedCount: 0 } as ILayoutContextContextValue}>
+      <LayoutProvider value={{ unsavedCount: 0 } as ILayoutContextHeaderValue}>
         {children}
       </LayoutProvider>
     );
   }
 
   return renderChildren ? (
-    <LayoutProvider
-      value={
-        {
-          persistor,
-          unsavedCount,
-          cache,
-          layoutDispatch: dispatch,
-          client,
-          hasConnection: hasConnection,
-        } as ILayoutContextContextValue
-      }
-    >
-      {children}
-    </LayoutProvider>
+    <LayoutUnchangingProvider value={{ layoutDispatch: dispatch }}>
+      <LayoutExperienceProvider
+        value={{
+          fetchExperience: prefetchExperiences.value,
+        }}
+      >
+        <LayoutProvider
+          value={
+            {
+              unsavedCount,
+              hasConnection: hasConnection,
+            } as ILayoutContextHeaderValue
+          }
+        >
+          {children}
+        </LayoutProvider>
+      </LayoutExperienceProvider>
+    </LayoutUnchangingProvider>
   ) : (
     <Loading />
   );

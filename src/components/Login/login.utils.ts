@@ -11,14 +11,7 @@ import {
   PasswordInputType,
 } from "../PasswordInput/password-input.utils";
 import { ScrollIntoView } from "../scroll-into-view";
-
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface OwnProps extends RouteComponentProps<{}> {}
-
-export type Props = OwnProps &
-  LoginMutationProps & {
-    scrollToTop: ScrollIntoView;
-  };
+import { wrapReducer } from "../../logger";
 
 export const ValidationSchema = Yup.object<FormValues>().shape({
   email: Yup.string()
@@ -34,11 +27,11 @@ export const RouterThings = {
 };
 
 export enum ActionType {
-  setOtherErrors = "@components/login/set_other_errors",
-  setFormError = "@components/login/set_form_error",
-  setServerErrors = "@components/login/set_server_errors",
-  clearAllErrors = "@components/login/clear_all_errors",
-  setShowPage = "@components/login/showPage",
+  OTHER_ERRORS = "@/login/set_other_errors",
+  FORM_ERRORS = "@/login/set_form_error",
+  SERVER_ERRORS = "@/login/set_server_errors",
+  CLEAR_ALL_ERRORS = "@/login/clear_all_errors",
+  SHOW_PAGE = "@/login/showPage",
 }
 
 export interface State {
@@ -50,73 +43,84 @@ export interface State {
   readonly showPage?: boolean;
 }
 
-export type Action =
-  | [ActionType.clearAllErrors]
-  | [ActionType.setOtherErrors, string]
-  | [ActionType.setFormError, FormikErrors<FormValues>]
-  | [ActionType.setServerErrors, string]
-  | PasswordInputAction
-  | [ActionType.setShowPage, boolean];
-
 export const initialState = {} as State;
 
-export const reducer: Reducer<State, Action> = (prevState, [type, payload]) => {
-  return immer(prevState, proxy => {
-    switch (type) {
-      case ActionType.setOtherErrors:
-        {
-          proxy.otherErrors = payload as string;
-        }
-
-        break;
-
-      case ActionType.setFormError:
-        {
-          proxy.formErrors = payload as FormikErrors<FormValues>;
-        }
-
-        break;
-
-      case ActionType.setServerErrors:
-        {
-          const { graphQLErrors, networkError } = payload as ApolloError;
-
-          let error = null;
-
-          if (graphQLErrors && graphQLErrors[0]) {
-            error = JSON.parse(graphQLErrors[0].message).error;
+export const reducer: Reducer<State, Action> = (state, action) =>
+  wrapReducer(state, action, (prevState, [type, payload]) => {
+    return immer(prevState, proxy => {
+      switch (type) {
+        case ActionType.OTHER_ERRORS:
+          {
+            proxy.otherErrors = payload as string;
           }
 
-          proxy.serverFieldErrors = error;
-          proxy.networkError = networkError ? networkError.message : null;
-        }
+          break;
 
-        break;
+        case ActionType.FORM_ERRORS:
+          {
+            proxy.formErrors = payload as FormikErrors<FormValues>;
+          }
 
-      case ActionType.clearAllErrors:
-        {
-          proxy.otherErrors = null;
-          proxy.serverFieldErrors = null;
-          proxy.formErrors = null;
-          proxy.networkError = null;
-        }
+          break;
 
-        break;
+        case ActionType.SERVER_ERRORS:
+          {
+            const { graphQLErrors, networkError } = payload as ApolloError;
 
-      // istanbul ignore next: test covered in Password Component
-      case PasswordInputType:
-        {
-          proxy.pwdType = payload as "password" | "text";
-        }
+            let error = null;
 
-        break;
+            if (graphQLErrors && graphQLErrors[0]) {
+              error = JSON.parse(graphQLErrors[0].message).error;
+            }
 
-      case ActionType.setShowPage:
-        {
-          proxy.showPage = payload as boolean;
-        }
+            proxy.serverFieldErrors = error;
+            proxy.networkError = networkError ? networkError.message : null;
+          }
 
-        break;
-    }
+          break;
+
+        case ActionType.CLEAR_ALL_ERRORS:
+          {
+            proxy.otherErrors = null;
+            proxy.serverFieldErrors = null;
+            proxy.formErrors = null;
+            proxy.networkError = null;
+          }
+
+          break;
+
+        // istanbul ignore next: test covered in Password Component
+        case PasswordInputType:
+          {
+            proxy.pwdType = payload as "password" | "text";
+          }
+
+          break;
+
+        case ActionType.SHOW_PAGE:
+          {
+            proxy.showPage = payload as boolean;
+          }
+
+          break;
+      }
+    });
   });
-};
+
+////////////////////////// TYPES ////////////////////////////
+
+export type Action =
+  | [ActionType.CLEAR_ALL_ERRORS]
+  | [ActionType.OTHER_ERRORS, string]
+  | [ActionType.FORM_ERRORS, FormikErrors<FormValues>]
+  | [ActionType.SERVER_ERRORS, string]
+  | PasswordInputAction
+  | [ActionType.SHOW_PAGE, boolean];
+
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface OwnProps extends RouteComponentProps<{}> {}
+
+export type Props = OwnProps &
+  LoginMutationProps & {
+    scrollToTop: ScrollIntoView;
+  };

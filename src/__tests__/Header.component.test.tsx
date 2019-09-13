@@ -5,9 +5,9 @@ import { render, fireEvent } from "react-testing-library";
 import { Header, Props } from "../components/Header/header.component";
 import { renderWithRouter } from "./test_utils";
 import { EXPERIENCES_URL, ROOT_URL } from "../routes";
-import { ILayoutContextContextValue } from "../components/Layout/layout.utils";
+import { ILayoutContextHeaderValue } from "../components/Layout/layout.utils";
 import { UPLOAD_UNSAVED_PREVIEW_URL } from "../constants/upload-unsaved-routes";
-import { LayoutProvider } from "../components/Layout/layout-provider";
+import { LayoutProvider } from "../components/Layout/layout-providers";
 
 jest.mock("../components/use-user");
 
@@ -379,7 +379,7 @@ function setup({
   context = {},
 }: {
   props?: Partial<Props>;
-  context?: Partial<ILayoutContextContextValue>;
+  context?: Partial<ILayoutContextHeaderValue>;
 } = {}) {
   mockUseUser.mockReset();
 
@@ -390,7 +390,7 @@ function setup({
     { logoAttrs: {} as any, ...props },
   );
 
-  context = context as ILayoutContextContextValue;
+  context = context as ILayoutContextHeaderValue;
 
   return {
     ui: (

@@ -172,6 +172,7 @@ function getOrMakeGlobals(newE2eTest?: boolean) {
   }
 
   if (!window.Cypress) {
+    makeObservable(window.____ebnis);
     makeConnectionObject();
     return window.____ebnis;
   }
@@ -187,6 +188,7 @@ function getOrMakeGlobals(newE2eTest?: boolean) {
 
     // reset globals
     cypressApollo = {} as E2EWindowObject;
+    makeObservable(cypressApollo);
 
     // reset connections
     cypressApollo.connectionStatus = resetConnectionObject();
@@ -205,7 +207,6 @@ function addToGlobals(args: {
 }) {
   const keys: (keyof typeof args)[] = ["client", "cache", "persistor"];
   let globals = window.Cypress ? getGlobalsFromCypress() : window.____ebnis;
-  globals = makeObservable(globals);
 
   keys.forEach(key => {
     const k = key as KeyOfE2EWindowObject;

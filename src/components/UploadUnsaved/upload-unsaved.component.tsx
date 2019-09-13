@@ -32,7 +32,10 @@ import { scrollIntoView } from "../scroll-into-view";
 import { FormCtrlError } from "../FormCtrlError/form-ctrl-error.component";
 import { Entry } from "../Entry/entry.component";
 import { GetAllUnSavedQueryData } from "../../state/unsaved-resolvers";
-import { LayoutContext, LayoutActionType } from "../Layout/layout.utils";
+import {
+  LayoutActionType,
+  LayoutUnchangingContext,
+} from "../Layout/layout.utils";
 import { replaceExperiencesInGetExperiencesMiniQuery } from "../../state/resolvers/update-get-experiences-mini-query";
 import { deleteIdsFromCache } from "../../state/resolvers/delete-references-from-cache";
 import { deleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache } from "../../state/resolvers/update-saved-and-unsaved-experiences-in-cache";
@@ -44,6 +47,7 @@ import { UPLOAD_UNSAVED_TITLE } from "../../constants/upload-unsaved-title";
 import { IconProps } from "semantic-ui-react";
 import { DataObjectFragment } from "../../graphql/apollo-types/DataObjectFragment";
 import { MY_EXPERIENCES_TITLE } from "../../constants/my-experiences-title";
+import { EbnisAppContext } from "../../context";
 
 const timeoutMs = 500;
 const REDIRECT_ROUTE = makeSiteTitle(MY_EXPERIENCES_TITLE);
@@ -79,9 +83,8 @@ export function UploadUnsaved(props: Props) {
     shouldRedirect,
   } = state;
 
-  const { cache, layoutDispatch, client, persistor } = useContext(
-    LayoutContext,
-  );
+  const { cache, client, persistor } = useContext(EbnisAppContext);
+  const { layoutDispatch } = useContext(LayoutUnchangingContext);
 
   useEffect(function setCompTitle() {
     if (!isConnected()) {
@@ -284,7 +287,7 @@ function ExperienceComponent({
   type: SaveStatusType;
   dispatch: DispatchType;
 }) {
-  const { client, cache } = useContext(LayoutContext);
+  const { client, cache } = useContext(EbnisAppContext);
 
   let {
     experience,

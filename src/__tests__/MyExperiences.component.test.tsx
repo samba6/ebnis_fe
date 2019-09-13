@@ -6,8 +6,14 @@ import { MyExperiences } from "../components/MyExperiences/my-experiences.compon
 import { Props } from "../components/MyExperiences/my-experiences.utils";
 import { renderWithRouter, fillField } from "./test_utils";
 import { ExperienceConnectionFragment } from "../graphql/apollo-types/ExperienceConnectionFragment";
-import { LayoutProvider } from "../components/Layout/layout-provider";
-import { ILayoutContextContextValue } from "../components/Layout/layout.utils";
+import {
+  LayoutUnchangingProvider,
+  LayoutExperienceProvider,
+} from "../components/Layout/layout-providers";
+import {
+  ILayoutUnchaningContextValue,
+  ILayoutContextExperienceValue,
+} from "../components/Layout/layout.utils";
 
 jest.mock("../components/SidebarHeader/sidebar-header.component", () => ({
   SidebarHeader: jest.fn(() => null),
@@ -176,8 +182,10 @@ it("renders experiences from server", () => {
   expect(document.getElementById("experience-description-1")).toBeNull();
 });
 
-it("loads full experiences in the background when experiences are loaded", async done => {
-  jest.useFakeTimers();
+it("loads full experiences in the background when experiences are loaded", () => {
+  /**
+   * Given there is one saved and one unsaved experience in the system
+   */
 
   const getExperiences = {
     edges: [
@@ -202,13 +210,29 @@ it("loads full experiences in the background when experiences are loaded", async
     getExperiencesMiniProps: { getExperiences } as any,
   });
 
+  /**
+   * When we use the component
+   */
+
   render(ui);
+
+  /**
+   * Then no experience should be fetched
+   */
+
+  expect(mockLayoutDispatch).not.toHaveBeenCalled();
+
+  /**
+   * After wait time to load experiences in background has elapsed
+   */
 
   jest.runAllTimers();
 
-  expect((mockLayoutDispatch.mock.calls[0][0] as any).ids).toEqual(["1"]);
+  /**
+   * Then the saved experience should have been pre fetched
+   */
 
-  done();
+  expect((mockLayoutDispatch.mock.calls[0][0] as any).ids).toEqual(["1"]);
 });
 
 it("does not load entries in background when experiences are loaded but empty", () => {
@@ -332,11 +356,72 @@ it("goes to detailed experience page on search", () => {
   expect(mockCleanUpOnSearchExit).toHaveBeenCalled();
 });
 
+it("does not load any experience in the background if background experiences previously loaded", () => {
+  /**
+   * Given there is saved experience in the system
+   */
+
+  const getExperiences = {
+    edges: [
+      {
+        node: {
+          id: "1",
+          title: "1",
+        },
+      },
+    ],
+  } as ExperienceConnectionFragment;
+
+  const { ui, mockLayoutDispatch } = makeComp(
+    {
+      getExperiencesMiniProps: { getExperiences } as any,
+    },
+    {
+      layoutContextMyExpriencesValue: {
+        fetchExperience: "already-fetched",
+      },
+    },
+  );
+
+  /**
+   * When we use the component
+   */
+
+  render(ui);
+
+  /**
+   * Then no experience should be fetched
+   */
+
+  expect(mockLayoutDispatch).not.toHaveBeenCalled();
+
+  /**
+   * After wait time to load experiences in background has elapsed
+   */
+
+  jest.runAllTimers();
+
+  /**
+   * Then the saved experience should never be pre fetched
+   */
+
+  expect(mockLayoutDispatch).not.toHaveBeenCalled();
+});
+
 ////////////////////////// helper funcs ////////////////////////////
 
 const MyExperiencesP = MyExperiences as ComponentType<Partial<Props>>;
 
-function makeComp(props: Partial<Props> = {}) {
+function makeComp(
+  props: Partial<Props> = {},
+  contexts: {
+    layoutContextMyExpriencesValue?: ILayoutContextExperienceValue;
+  } = {
+    layoutContextMyExpriencesValue: {
+      fetchExperience: "never-fetched",
+    },
+  },
+) {
   const { Ui, ...rest } = renderWithRouter(MyExperiencesP);
 
   const mockLayoutDispatch = jest.fn();
@@ -344,19 +429,25 @@ function makeComp(props: Partial<Props> = {}) {
 
   return {
     ui: (
-      <LayoutProvider
+      <LayoutUnchangingProvider
         value={
           {
             layoutDispatch: mockLayoutDispatch as any,
-          } as ILayoutContextContextValue
+          } as ILayoutUnchaningContextValue
         }
       >
-        <Ui
-          searchDebounceTimeoutMs={0}
-          cleanUpOnSearchExit={mockCleanUpOnSearchExit}
-          {...props}
-        />
-      </LayoutProvider>
+        <LayoutExperienceProvider
+          value={
+            contexts.layoutContextMyExpriencesValue as ILayoutContextExperienceValue
+          }
+        >
+          <Ui
+            searchDebounceTimeoutMs={0}
+            cleanUpOnSearchExit={mockCleanUpOnSearchExit}
+            {...props}
+          />
+        </LayoutExperienceProvider>
+      </LayoutUnchangingProvider>
     ),
 
     mockLayoutDispatch,

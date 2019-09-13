@@ -1,4 +1,4 @@
-import React, { useReducer, useContext } from "react";
+import React, { useReducer } from "react";
 import Card from "semantic-ui-react/dist/commonjs/views/Card";
 import Icon from "semantic-ui-react/dist/commonjs/elements/Icon";
 import Input from "semantic-ui-react/dist/commonjs/elements/Input";
@@ -30,7 +30,6 @@ import { noop } from "../../constants";
 import { UserRegMutationFn } from "../../graphql/user-reg.mutation";
 import { SidebarHeader } from "../SidebarHeader/sidebar-header.component";
 import { ToOtherAuthLink } from "../ToOtherAuthLink";
-import { LayoutContext } from "../Layout/layout.utils";
 import { storeUser } from "../../state/users";
 import { makeScrollIntoViewId } from "../scroll-into-view";
 
@@ -46,8 +45,6 @@ export function SignUp(props: Props) {
     networkError,
     serverFieldsErrors,
   } = state;
-
-  const { persistor } = useContext(LayoutContext);
 
   function renderForm({
     dirty,
@@ -104,7 +101,7 @@ export function SignUp(props: Props) {
                 const user = result && result.data && result.data.registration;
 
                 storeUser(user);
-                refreshToHome(persistor);
+                refreshToHome();
               } catch (error) {
                 formikBag.setSubmitting(false);
                 dispatch([ActionType.setServerErrors, error]);

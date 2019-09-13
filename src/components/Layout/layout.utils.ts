@@ -1,8 +1,5 @@
 import { createContext, Reducer, Dispatch, PropsWithChildren } from "react";
-import { CachePersistor } from "apollo-cache-persist";
-import { InMemoryCache } from "apollo-cache-inmemory";
 import immer from "immer";
-import ApolloClient from "apollo-client";
 import { RouteComponentProps } from "@reach/router";
 import { wrapReducer } from "../../logger";
 import { ConnectionStatus, isConnected } from "../../state/connections";
@@ -16,7 +13,7 @@ export enum LayoutActionType {
   DONE_FETCHING_EXPERIENCES = "@layout/experiences-already-fetched",
 }
 
-export const reducer: Reducer<StateMachine, LayoutAction> = (state, action) =>
+export const reducer: Reducer<IStateMachine, LayoutAction> = (state, action) =>
   wrapReducer(state, action, (prevState, { type, ...payload }) => {
     return immer(prevState, proxy => {
       switch (type) {
@@ -28,10 +25,20 @@ export const reducer: Reducer<StateMachine, LayoutAction> = (state, action) =>
             } = payload as ConnectionChangedPayload;
 
             const { context, states } = proxy;
-            const yesPrefetch = states.prefetchExperiences as YesPrefechtExperiences;
-
-            context.unsavedCount = unsavedCount;
+            const { user } = context;
             context.hasConnection = isConnected;
+
+            if (!isConnected) {
+              context.unsavedCount = 0;
+            } else if (user) {
+              context.unsavedCount = unsavedCount;
+            }
+
+            if (!user) {
+              return;
+            }
+
+            const yesPrefetch = states.prefetchExperiences as YesPrefechtExperiences;
 
             if (
               isConnected &&
@@ -48,28 +55,28 @@ export const reducer: Reducer<StateMachine, LayoutAction> = (state, action) =>
         case LayoutActionType.SET_UNSAVED_COUNT:
           {
             proxy.context.unsavedCount = (payload as { count: number }).count;
+            proxy.context.hasConnection = !!isConnected();
           }
           break;
 
         case LayoutActionType.RENDER_CHILDREN:
           {
-            proxy.context.renderChildren = (payload as {
-              shouldRender: boolean;
-            }).shouldRender;
+            proxy.context.renderChildren = true;
+            proxy.context.hasConnection = !!isConnected();
           }
 
           break;
 
         case LayoutActionType.EXPERIENCES_TO_PREFETCH:
           {
-            const ids = (payload as {
-              ids: string[] | null;
-            }).ids;
-
             const {
               states: { prefetchExperiences },
               context: { user },
             } = proxy;
+
+            const ids = (payload as {
+              ids: string[] | null;
+            }).ids;
 
             if (!user || !ids || ids.length === 0) {
               prefetchExperiences.value = "never-fetched";
@@ -99,7 +106,7 @@ export const reducer: Reducer<StateMachine, LayoutAction> = (state, action) =>
 export function initState(args: {
   connectionStatus: ConnectionStatus;
   user: UserFragment | null;
-}): StateMachine {
+}): IStateMachine {
   const {
     connectionStatus: { isConnected },
     user,
@@ -120,9 +127,17 @@ export function initState(args: {
   };
 }
 
-export const LayoutContext = createContext<ILayoutContextContextValue>({
+export const LayoutContextHeader = createContext<ILayoutContextHeaderValue>({
   unsavedCount: 0,
-} as ILayoutContextContextValue);
+} as ILayoutContextHeaderValue);
+
+export const LayoutUnchangingContext = createContext<
+  ILayoutUnchaningContextValue
+>({} as ILayoutUnchaningContextValue);
+
+export const LayoutContextExperience = createContext<
+  ILayoutContextExperienceValue
+>({} as ILayoutContextExperienceValue);
 
 ////////////////////////// TYPES ////////////////////////////
 
@@ -133,7 +148,6 @@ export type LayoutAction =
     }
   | {
       type: LayoutActionType.RENDER_CHILDREN;
-      shouldRender: boolean;
     }
   | {
       type: LayoutActionType.EXPERIENCES_TO_PREFETCH;
@@ -151,7 +165,7 @@ interface ConnectionChangedPayload {
   unsavedCount: number;
 }
 
-export interface StateMachine {
+export interface IStateMachine {
   context: {
     hasConnection: boolean;
     unsavedCount: number | null;
@@ -160,16 +174,18 @@ export interface StateMachine {
   };
 
   states: {
-    prefetchExperiences:
-      | {
-          value: "never-fetched";
-        }
-      | {
-          value: "already-fetched";
-        }
-      | YesPrefechtExperiences;
+    prefetchExperiences: IPrefetchExperiencesState;
   };
 }
+
+type IPrefetchExperiencesState =
+  | {
+      value: "never-fetched";
+    }
+  | {
+      value: "already-fetched";
+    }
+  | YesPrefechtExperiences;
 
 interface YesPrefechtExperiences {
   value: "fetch-now";
@@ -182,11 +198,15 @@ export type LayoutDispatchType = Dispatch<LayoutAction>;
 
 export interface Props extends PropsWithChildren<{}>, RouteComponentProps {}
 
-export interface ILayoutContextContextValue {
-  persistor: CachePersistor<{}>;
+export interface ILayoutContextHeaderValue {
   unsavedCount: number;
-  cache: InMemoryCache;
-  layoutDispatch: LayoutDispatchType;
-  client: ApolloClient<{}>;
   hasConnection: boolean;
+}
+
+export interface ILayoutUnchaningContextValue {
+  layoutDispatch: LayoutDispatchType;
+}
+
+export interface ILayoutContextExperienceValue {
+  fetchExperience: IPrefetchExperiencesState["value"];
 }

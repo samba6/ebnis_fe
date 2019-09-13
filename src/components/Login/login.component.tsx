@@ -1,11 +1,4 @@
-import React, {
-  useReducer,
-  Dispatch,
-  useRef,
-  useContext,
-  useEffect,
-  useMemo,
-} from "react";
+import React, { useReducer, Dispatch, useRef, useEffect, useMemo } from "react";
 import Card from "semantic-ui-react/dist/commonjs/views/Card";
 import Button from "semantic-ui-react/dist/commonjs/elements/Button";
 import Form from "semantic-ui-react/dist/commonjs/collections/Form";
@@ -33,7 +26,6 @@ import { LoginMutationFn } from "../../graphql/login.mutation";
 import { LoginMutation_login } from "../../graphql/apollo-types/LoginMutation";
 import { SidebarHeader } from "../SidebarHeader/sidebar-header.component";
 import { ToOtherAuthLink } from "../ToOtherAuthLink";
-import { LayoutContext } from "../Layout/layout.utils";
 import { EXPERIENCES_URL } from "../../routes";
 import { storeUser, getLoggedOutUser } from "../../state/users";
 import { useUser } from "../use-user";
@@ -47,8 +39,6 @@ export function Login(props: Props) {
   const [state, dispatch] = useReducer(reducer, initialState);
 
   const mainRef = useRef<HTMLDivElement>(null);
-
-  const { persistor } = useContext(LayoutContext);
 
   const user = useUser();
 
@@ -64,7 +54,7 @@ export function Login(props: Props) {
     if (user) {
       (navigate as NavigateFn)(EXPERIENCES_URL);
     } else {
-      dispatch([ActionType.setShowPage, true]);
+      dispatch([ActionType.SHOW_PAGE, true]);
     }
   }, [user, navigate]);
 
@@ -94,7 +84,7 @@ export function Login(props: Props) {
         <Card.Content>
           <Form
             onSubmit={async function onSubmit() {
-              dispatch([ActionType.clearAllErrors]);
+              dispatch([ActionType.CLEAR_ALL_ERRORS]);
 
               if (!isConnected()) {
                 scrollToTop(scrollToTopId, {
@@ -103,7 +93,7 @@ export function Login(props: Props) {
 
                 formikBag.setSubmitting(false);
 
-                dispatch([ActionType.setOtherErrors, "You are not connected"]);
+                dispatch([ActionType.OTHER_ERRORS, "You are not connected"]);
 
                 return;
               }
@@ -116,11 +106,10 @@ export function Login(props: Props) {
                 scrollToTop(scrollToTopId, {
                   behavior: "smooth",
                 });
-                // scrollToTop(mainRef.current);
 
                 formikBag.setSubmitting(false);
 
-                dispatch([ActionType.setFormError, errors]);
+                dispatch([ActionType.FORM_ERRORS, errors]);
 
                 return;
               }
@@ -138,7 +127,7 @@ export function Login(props: Props) {
 
                 storeUser(user);
 
-                refreshToHome(persistor);
+                refreshToHome();
               } catch (error) {
                 scrollToTop(scrollToTopId, {
                   behavior: "smooth",
@@ -146,7 +135,7 @@ export function Login(props: Props) {
 
                 formikBag.setSubmitting(false);
 
-                dispatch([ActionType.setServerErrors, error]);
+                dispatch([ActionType.SERVER_ERRORS, error]);
               }
             }}
           >
@@ -274,7 +263,7 @@ function Errors(props: {
       <Message
         error={true}
         onDismiss={function onDismiss() {
-          dispatch([ActionType.clearAllErrors]);
+          dispatch([ActionType.CLEAR_ALL_ERRORS]);
         }}
       >
         <Message.Content>{content}</Message.Content>

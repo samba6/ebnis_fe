@@ -6,12 +6,15 @@ import { Layout } from "../components/Layout/layout.component";
 import { EbnisAppProvider, EbnisContextProps } from "../context";
 import { EmitActionType, makeObservable } from "../state/setup-observable";
 import {
-  ILayoutContextContextValue,
+  ILayoutContextHeaderValue,
   Props,
   LayoutActionType,
-  StateMachine,
+  IStateMachine,
   reducer,
   LayoutAction,
+  LayoutDispatchType,
+  ILayoutUnchaningContextValue,
+  ILayoutContextExperienceValue,
 } from "../components/Layout/layout.utils";
 
 ////////////////////////// MOCKS ////////////////////////////
@@ -33,13 +36,27 @@ import { useUser } from "../components/use-user";
 import { E2EWindowObject } from "../state/apollo-setup";
 const mockUseUser = useUser as jest.Mock;
 
-let layoutContextValue: null | ILayoutContextContextValue;
+let layoutContextValue: null | ILayoutContextHeaderValue;
+let layoutDispatch: LayoutDispatchType;
+let layoutExperienceContextValue: null | ILayoutContextExperienceValue;
 
-jest.mock("../components/Layout/layout-provider", () => ({
-  LayoutProvider: ({ children, ...props }: any) => {
-    layoutContextValue = props.value;
+jest.mock("../components/Layout/layout-providers", () => ({
+  LayoutProvider: ({ children, value }: any) => {
+    layoutContextValue = value;
 
     return <>{children}</>;
+    return children;
+  },
+
+  LayoutUnchangingProvider: ({ children, value }: any) => {
+    layoutDispatch = (value as ILayoutUnchaningContextValue).layoutDispatch;
+
+    return children;
+  },
+
+  LayoutExperienceProvider: ({ children, value }: any) => {
+    layoutExperienceContextValue = value;
+    return children;
   },
 }));
 
@@ -199,7 +216,7 @@ describe("components", () => {
     mockIsConnected.mockReturnValue(false);
 
     expect(layoutContextValue).toBeNull();
-    let contextValue = {} as ILayoutContextContextValue;
+    let contextValue = {} as ILayoutContextHeaderValue;
 
     render(ui);
 
@@ -208,7 +225,7 @@ describe("components", () => {
      */
     await waitForElement(() => document.getElementById(browserRenderedUiId));
 
-    contextValue = layoutContextValue as ILayoutContextContextValue;
+    contextValue = layoutContextValue as ILayoutContextHeaderValue;
     expect(contextValue.unsavedCount).toBe(null);
     expect(contextValue.hasConnection).toBe(false);
 
@@ -224,7 +241,7 @@ describe("components", () => {
      * Then component should query for unsaved data
      */
     await wait(() => {
-      contextValue = layoutContextValue as ILayoutContextContextValue;
+      contextValue = layoutContextValue as ILayoutContextHeaderValue;
       expect(contextValue.unsavedCount).toBe(5);
     });
 
@@ -235,7 +252,7 @@ describe("components", () => {
     });
 
     await wait(() => {
-      contextValue = layoutContextValue as ILayoutContextContextValue;
+      contextValue = layoutContextValue as ILayoutContextHeaderValue;
       expect(contextValue.hasConnection).toBe(true);
     });
   });
@@ -252,10 +269,10 @@ describe("components", () => {
 
     await waitForElement(() => document.getElementById(browserRenderedUiId));
 
-    let context = layoutContextValue as ILayoutContextContextValue;
+    let context = layoutContextValue as ILayoutContextHeaderValue;
     expect(context.unsavedCount).toBe(2);
 
-    context.layoutDispatch({
+    layoutDispatch({
       type: LayoutActionType.EXPERIENCES_TO_PREFETCH,
       ids: ["1"],
     });
@@ -265,8 +282,10 @@ describe("components", () => {
       hasConnection: false,
     });
 
-    context = layoutContextValue as ILayoutContextContextValue;
-    expect(context.unsavedCount).toBe(0);
+    await wait(() => {
+      context = layoutContextValue as ILayoutContextHeaderValue;
+      expect(context.unsavedCount).toBe(0);
+    });
   });
 
   test("pre-fetches experiences - initially connected", async () => {
@@ -278,33 +297,82 @@ describe("components", () => {
       },
     });
 
+    let myExperiencesContextValue = layoutExperienceContextValue as ILayoutContextExperienceValue;
+
+    expect(myExperiencesContextValue).toBeNull();
+
+    /**
+     * Given there is user is logged in
+     */
+
     mockUseUser.mockReturnValue({});
+
+    /**
+     * And there are experiences to prefetch in the system
+     */
+
+    const ids = ["1"];
+
+    /**
+     * And we are connected
+     */
+
     mockIsConnected.mockReturnValue(true);
+
+    /**
+     * And we are using the component
+     */
 
     render(ui);
 
     await waitForElement(() => document.getElementById(browserRenderedUiId));
 
-    let context = layoutContextValue as ILayoutContextContextValue;
-
     childProps.onClick = () => {
-      context.layoutDispatch({
+      layoutDispatch({
         type: LayoutActionType.EXPERIENCES_TO_PREFETCH,
-        ids: ["1"],
+        ids,
       });
     };
+
+    /**
+     * Then we should not fetch experiences immediately
+     */
 
     expect(mockPrefetchExperiences).not.toHaveBeenCalled();
 
     const $child = document.getElementById("layout-child") as HTMLDivElement;
     $child.click();
+
+    /**
+     * After a little while
+     */
+
     jest.runAllTimers();
+
+    /**
+     * Then we should have pre fetched experiences
+     */
 
     const preFetchExperiencesArgs = mockPrefetchExperiences.mock
       .calls[0][0] as PreFetchExperiencesFnArgs;
 
     expect(preFetchExperiencesArgs.ids[0]).toEqual("1");
+
+    /**
+     * When we are done pre fetching experiences
+     */
+
     preFetchExperiencesArgs.onDone();
+
+    /**
+     * Then we should indicate so
+     */
+
+    myExperiencesContextValue = layoutExperienceContextValue as ILayoutContextExperienceValue;
+
+    expect(myExperiencesContextValue.fetchExperience).toEqual(
+      "already-fetched",
+    );
   });
 
   test("pre-fetches experiences - initially disconnected", async () => {
@@ -330,10 +398,8 @@ describe("components", () => {
 
     await waitForElement(() => document.getElementById(browserRenderedUiId));
 
-    let context = layoutContextValue as ILayoutContextContextValue;
-
     childProps.onClick = () => {
-      context.layoutDispatch({
+      layoutDispatch({
         type: LayoutActionType.EXPERIENCES_TO_PREFETCH,
         ids: ["1"],
       });
@@ -373,7 +439,7 @@ describe("reducer", () => {
       context: {
         user: null,
       },
-    } as StateMachine;
+    } as IStateMachine;
 
     const action = {
       type: LayoutActionType.EXPERIENCES_TO_PREFETCH,
@@ -395,7 +461,7 @@ describe("reducer", () => {
       context: {
         user: {},
       },
-    } as StateMachine;
+    } as IStateMachine;
 
     const action = {
       type: LayoutActionType.EXPERIENCES_TO_PREFETCH,
@@ -417,7 +483,7 @@ describe("reducer", () => {
       context: {
         user: {},
       },
-    } as StateMachine;
+    } as IStateMachine;
 
     const action = {
       type: LayoutActionType.EXPERIENCES_TO_PREFETCH,
@@ -425,6 +491,40 @@ describe("reducer", () => {
     } as LayoutAction;
 
     const nextState = reducer(state, action);
+    expect(nextState.states.prefetchExperiences.value).toEqual("never-fetched");
+  });
+
+  test("experiences to prefetch - don't touch on connection changed if no user", () => {
+    /**
+     * Given we have never fetched experiences and there is no user
+     */
+
+    const state = {
+      states: {
+        prefetchExperiences: {
+          value: "never-fetched",
+        },
+      },
+
+      context: {},
+    } as IStateMachine;
+
+    /**
+     * When connection changes
+     */
+
+    const action = {
+      type: LayoutActionType.CONNECTION_CHANGED,
+      isConnected: true,
+      unsavedCount: 5,
+    } as LayoutAction;
+
+    const nextState = reducer(state, action);
+
+    /**
+     * Then experiences is still never fetched
+     */
+
     expect(nextState.states.prefetchExperiences.value).toEqual("never-fetched");
   });
 });
@@ -443,6 +543,7 @@ function makeComp({
   props?: Partial<Props>;
 } = {}) {
   layoutContextValue = null;
+  layoutExperienceContextValue = null;
   mockGetUnsavedCount.mockReset();
   mockUseUser.mockReset();
   mockIsConnected.mockReset();
@@ -450,8 +551,7 @@ function makeComp({
 
   const mockRestoreCacheOrPurgeStorage = jest.fn();
   const cache = jest.fn();
-  const mockQuery = jest.fn();
-  const client = { query: mockQuery };
+  const client = { query: jest.fn };
 
   const defaultContext = {
     restoreCacheOrPurgeStorage: mockRestoreCacheOrPurgeStorage,

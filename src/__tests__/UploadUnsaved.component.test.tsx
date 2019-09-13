@@ -34,7 +34,15 @@ import {
   GetAllUnSavedQueryData,
   GetUnsavedSummary,
 } from "../state/unsaved-resolvers";
-import { LayoutProvider } from "../components/Layout/layout-provider";
+import { LayoutUnchangingProvider } from "../components/Layout/layout-providers";
+import { isConnected } from "../state/connections";
+import { Entry } from "../components/Entry/entry.component";
+import { scrollIntoView } from "../components/scroll-into-view";
+import { updateCache } from "../components/UploadUnsaved/update-cache";
+import { replaceExperiencesInGetExperiencesMiniQuery } from "../state/resolvers/update-get-experiences-mini-query";
+import { deleteIdsFromCache } from "../state/resolvers/delete-references-from-cache";
+import { deleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache } from "../state/resolvers/update-saved-and-unsaved-experiences-in-cache";
+import { EbnisAppProvider } from "../context";
 
 jest.mock("../components/Loading/loading", () => ({
   Loading: () => <div id="a-lo" />,
@@ -47,7 +55,6 @@ jest.mock("../components/SidebarHeader/sidebar-header.component", () => ({
 }));
 
 jest.mock("../state/connections");
-import { isConnected } from "../state/connections";
 const mockIsConnected = isConnected as jest.Mock;
 
 jest.mock("../components/Entry/entry.component", () => ({
@@ -55,7 +62,6 @@ jest.mock("../components/Entry/entry.component", () => ({
     return <div className={props.className} id={props.id} />;
   }),
 }));
-import { Entry } from "../components/Entry/entry.component";
 const mockEntry = Entry as jest.Mock;
 
 jest.mock("../components/Experience/loadables", () => ({
@@ -65,23 +71,18 @@ jest.mock("../components/Experience/loadables", () => ({
 }));
 
 jest.mock("../components/scroll-into-view");
-import { scrollIntoView } from "../components/scroll-into-view";
 const mockScrollIntoView = scrollIntoView as jest.Mock;
 
 jest.mock("../components/UploadUnsaved/update-cache");
-import { updateCache } from "../components/UploadUnsaved/update-cache";
 const mockUpdateCache = updateCache as jest.Mock;
 
 jest.mock("../state/resolvers/update-get-experiences-mini-query");
-import { replaceExperiencesInGetExperiencesMiniQuery } from "../state/resolvers/update-get-experiences-mini-query";
 const mockReplaceExperiencesInGetExperiencesMiniQuery = replaceExperiencesInGetExperiencesMiniQuery as jest.Mock;
 
 jest.mock("../state/resolvers/delete-references-from-cache");
-import { deleteIdsFromCache } from "../state/resolvers/delete-references-from-cache";
 const mockDeleteIdsFromCache = deleteIdsFromCache as jest.Mock;
 
 jest.mock("../state/resolvers/update-saved-and-unsaved-experiences-in-cache");
-import { deleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache } from "../state/resolvers/update-saved-and-unsaved-experiences-in-cache";
 const mockDeleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache = deleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache as jest.Mock;
 
 ////////////////////////// END MOCK ////////////////////////////
@@ -1056,10 +1057,9 @@ function makeComp({
 
   return {
     ui: (
-      <LayoutProvider
+      <EbnisAppProvider
         value={
           {
-            layoutDispatch: mockLayoutDispatch,
             client: {},
             cache: {},
             persistor: {
@@ -1068,13 +1068,19 @@ function makeComp({
           } as any
         }
       >
-        <Ui
-          uploadUnsavedExperiences={mockUploadUnsavedExperiences}
-          createEntries={mockUploadSavedExperiencesEntries}
-          uploadAllUnsaveds={mockUploadAllUnsaveds}
-          {...props}
-        />
-      </LayoutProvider>
+        <LayoutUnchangingProvider
+          value={{
+            layoutDispatch: mockLayoutDispatch,
+          }}
+        >
+          <Ui
+            uploadUnsavedExperiences={mockUploadUnsavedExperiences}
+            createEntries={mockUploadSavedExperiencesEntries}
+            uploadAllUnsaveds={mockUploadAllUnsaveds}
+            {...props}
+          />
+        </LayoutUnchangingProvider>
+      </EbnisAppProvider>
     ),
 
     mockUploadUnsavedExperiences,
