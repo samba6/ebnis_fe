@@ -16,13 +16,18 @@ const linkTexts = {
     "Don't have an account? Sign Up",
     "to-other-auth-sign-up-link",
   ],
+
   [LOGIN_URL]: ["Already have an account? Login", "to-other-auth-login-link"],
 };
 
 export function ToOtherAuthLink(props: ToOtherAuthLinkProps) {
   const { isSubmitting, pathname, className = "" } = props;
 
-  const path = pathname === LOGIN_URL ? SIGN_UP_URL : LOGIN_URL;
+  let path = LOGIN_URL;
+
+  if (pathname !== SIGN_UP_URL) {
+    path = SIGN_UP_URL;
+  }
 
   const [text, id] = linkTexts[path];
 

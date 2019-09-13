@@ -3,15 +3,15 @@
 import React, { ComponentType } from "react";
 import "react-testing-library/cleanup-after-each";
 import { render } from "react-testing-library";
-
 import {
   ToOtherAuthLink,
   ToOtherAuthLinkProps,
 } from "../components/ToOtherAuthLink";
-import { LOGIN_URL, SIGN_UP_URL } from "../routes";
+import { LOGIN_URL, SIGN_UP_URL, ROOT_URL } from "../routes";
 
-type P = ComponentType<Partial<ToOtherAuthLinkProps>>;
-const ToOtherAuthLinkP = ToOtherAuthLink as P;
+const ToOtherAuthLinkP = ToOtherAuthLink as ComponentType<
+  Partial<ToOtherAuthLinkProps>
+>;
 
 it("renders sign up link when in login route", () => {
   /**
@@ -75,4 +75,23 @@ it("does not disable the component", () => {
     (document.getElementById("to-other-auth-sign-up-link") as HTMLButtonElement)
       .classList,
   ).not.toContain("disabled");
+});
+
+
+
+it("renders sign up link when in root route", () => {
+  /**
+   * Given we using the component while on login route
+   */
+  render(<ToOtherAuthLinkP pathname={ROOT_URL} />);
+
+  /**
+   * Then we should a link text telling us we can go to sign up route
+   */
+  expect(document.getElementById("to-other-auth-sign-up-link")).not.toBeNull();
+
+  /**
+   * But the link should not tell us to go to login route
+   */
+  expect(document.getElementById("to-other-auth-login-link")).toBeNull();
 });
