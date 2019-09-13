@@ -1,4 +1,4 @@
-import { RouteComponentProps } from "@reach/router";
+import { RouteComponentProps, NavigateFn } from "@reach/router";
 import { WithApolloClient } from "react-apollo";
 import { GetExperienceConnectionMiniProps } from "../../graphql/get-experience-connection-mini.query";
 import {
@@ -10,6 +10,7 @@ import { Reducer, Dispatch, createContext } from "react";
 import { wrapReducer } from "../../logger";
 import immer from "immer";
 import fuzzysort from "fuzzysort";
+import { Cancelable } from "lodash";
 
 export enum ActionTypes {
   TOGGLE_DESCRIPTION = "@my-experiences/toggle-description",
@@ -126,8 +127,8 @@ export function mapSavedExperiencesToIds(
   );
 }
 
-export const dispatchContext = createContext<MyExperiencesDispatchContextValue>(
-  {} as MyExperiencesDispatchContextValue,
+export const dispatchContext = createContext<NoneStateContextValue>(
+  {} as NoneStateContextValue,
 );
 
 export const DispatchProvider = dispatchContext.Provider;
@@ -188,13 +189,14 @@ type Action =
       type: ActionTypes.SEARCH_STARTED;
     };
 
-type MyExperiencesDispatch = Dispatch<Action>;
-
 export interface OwnProps
   extends RouteComponentProps<{}>,
     WithApolloClient<{}> {}
 
-export interface Props extends OwnProps, GetExperienceConnectionMiniProps {}
+export interface Props extends OwnProps, GetExperienceConnectionMiniProps {
+  searchDebounceTimeoutMs: number;
+  cleanUpOnSearchExit: (arg: Cancelable) => void;
+}
 
 export interface DescriptionMap {
   [k: string]: boolean;
@@ -205,6 +207,9 @@ export interface ExperienceProps {
   experience: ExperienceConnectionFragment_edges_node;
 }
 
-interface MyExperiencesDispatchContextValue {
-  dispatch: MyExperiencesDispatch;
+interface NoneStateContextValue {
+  dispatch: Dispatch<Action>;
+  navigate: NavigateFn;
+  searchDebounceTimeoutMs: number;
+  cleanUpOnSearchExit: (arg: Cancelable) => void;
 }

@@ -267,7 +267,7 @@ it("goes to detailed experience page on search", () => {
     ],
   } as ExperienceConnectionFragment;
 
-  const { ui } = makeComp({
+  const { ui, mockNavigate, mockCleanUpOnSearchExit } = makeComp({
     getExperiencesMiniProps: { getExperiences } as any,
   });
 
@@ -275,7 +275,7 @@ it("goes to detailed experience page on search", () => {
    * When we use the component
    */
 
-  render(ui);
+  const { unmount } = render(ui);
 
   /**
    * Then we should not see title 1 search result
@@ -293,15 +293,43 @@ it("goes to detailed experience page on search", () => {
 
   fillField($search, "t1");
 
-  /**
-   * Then experience 1 result should be a link to experience 1 detailed page.
-   */
-
   jest.runAllTimers();
+
+  /**
+   * Then search result for experience 1 should be visible
+   */
 
   let $result = document.getElementById("search-result-id1") as HTMLElement;
 
-  expect($result.getAttribute("href")).toContain("id1");
+  /**
+   * When we click on the search result
+   */
+
+  $result.click();
+
+  /**
+   * Then we should be redirected to detailed page of experience 1
+   */
+
+  expect((mockNavigate as jest.Mock).mock.calls[0][0]).toContain("id1");
+
+  /**
+   * And search clean function should not be called
+   */
+
+  expect(mockCleanUpOnSearchExit).not.toHaveBeenCalled();
+
+  /**
+   * When the component is unmounted
+   */
+
+  unmount();
+
+  /**
+   * Then search clean function should be called
+   */
+
+  expect(mockCleanUpOnSearchExit).toHaveBeenCalled();
 });
 
 ////////////////////////// helper funcs ////////////////////////////
@@ -312,6 +340,7 @@ function makeComp(props: Partial<Props> = {}) {
   const { Ui, ...rest } = renderWithRouter(MyExperiencesP);
 
   const mockLayoutDispatch = jest.fn();
+  const mockCleanUpOnSearchExit = jest.fn();
 
   return {
     ui: (
@@ -322,11 +351,16 @@ function makeComp(props: Partial<Props> = {}) {
           } as ILayoutContextContextValue
         }
       >
-        <Ui {...props} />
+        <Ui
+          searchDebounceTimeoutMs={0}
+          cleanUpOnSearchExit={mockCleanUpOnSearchExit}
+          {...props}
+        />
       </LayoutProvider>
     ),
 
     mockLayoutDispatch,
+    mockCleanUpOnSearchExit,
 
     ...rest,
   };

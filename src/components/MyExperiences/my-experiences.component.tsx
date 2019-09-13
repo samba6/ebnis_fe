@@ -1,4 +1,11 @@
-import React, { useEffect, useContext, useReducer, useMemo } from "react";
+import React, {
+  useEffect,
+  useContext,
+  useReducer,
+  useMemo,
+  useRef,
+  useCallback,
+} from "react";
 import Icon from "semantic-ui-react/dist/commonjs/elements/Icon";
 import "./my-experiences.styles.scss";
 import {
@@ -28,7 +35,9 @@ import {
 import { LayoutContext, LayoutActionType } from "../Layout/layout.utils";
 import { ExperienceMiniFragment } from "../../graphql/apollo-types/ExperienceMiniFragment";
 import SemanticSearch from "semantic-ui-react/dist/commonjs/modules/Search";
-import { SearchResultProps } from "semantic-ui-react/dist/commonjs/modules/Search/SearchResult";
+import { SearchResultProps, SearchProps } from "semantic-ui-react";
+import { NavigateFn } from "@reach/router";
+import lodashDebounce from "lodash/debounce";
 
 export const MyExperiences = (props: Props) => {
   const {
@@ -105,6 +114,8 @@ export const MyExperiences = (props: Props) => {
 
     return (
       <div id="experiences-container" className="experiences-container">
+        <SearchComponent {...(states.searching as SearchActive)} />
+
         {experiences.map(experience => {
           const { id } = experience;
 
@@ -148,9 +159,14 @@ export const MyExperiences = (props: Props) => {
     <div className="components-experiences">
       <SidebarHeader title="My Experiences" sidebar={true} />
 
-      <DispatchProvider value={{ dispatch }}>
-        <SearchComponent {...(states.searching as SearchActive)} />
-
+      <DispatchProvider
+        value={{
+          dispatch,
+          navigate: props.navigate as NavigateFn,
+          searchDebounceTimeoutMs: props.searchDebounceTimeoutMs,
+          cleanUpOnSearchExit: props.cleanUpOnSearchExit,
+        }}
+      >
         <div className="main">{renderMain()}</div>
       </DispatchProvider>
     </div>
@@ -241,21 +257,54 @@ const defaultSearchActiveContext = {
 const searchResultRenderer = (props: SearchResultProps) => {
   const { price: experienceId, title } = props;
   return (
-    <Link
-      className="search-result"
-      id={`search-result-${experienceId}`}
-      to={makeExperienceRoute(experienceId)}
-    >
+    <div className="search-result" id={`search-result-${experienceId}`}>
       {title}
-    </Link>
+    </div>
   );
 };
 
 function SearchComponent(props: SearchActive) {
-  const { dispatch } = useContext(dispatchContext);
+  const {
+    dispatch,
+    navigate,
+    searchDebounceTimeoutMs,
+    cleanUpOnSearchExit,
+  } = useContext(dispatchContext);
   const activeSearch = props.active || ({} as SearchActive["active"]);
 
+  const searchFn = useCallback(
+    (_, { value }: SearchProps) => {
+      dispatch({
+        type: ActionTypes.SEARCH_STARTED,
+      });
+
+      const searchText = value as string;
+
+      setTimeout(() => {
+        dispatch({
+          type: ActionTypes.SEARCH_TEXT_SET,
+          searchText,
+        });
+      });
+    },
+    [dispatch],
+  );
+
+  const searchFnDebouncedRef = useRef(
+    lodashDebounce(searchFn, searchDebounceTimeoutMs, {
+      leading: true,
+    }),
+  );
+
   const { context = defaultSearchActiveContext } = activeSearch;
+
+  useEffect(() => {
+    const debounced = searchFnDebouncedRef.current;
+
+    return () => {
+      cleanUpOnSearchExit(debounced);
+    };
+  }, [cleanUpOnSearchExit]);
 
   return (
     <SemanticSearch
@@ -265,19 +314,10 @@ function SearchComponent(props: SearchActive) {
       loading={props.value === "active"}
       results={context.results}
       resultRenderer={searchResultRenderer}
-      onSearchChange={(_, { value }) => {
-        dispatch({
-          type: ActionTypes.SEARCH_STARTED,
-        });
-
-        const searchText = value as string;
-
-        setTimeout(() => {
-          dispatch({
-            type: ActionTypes.SEARCH_TEXT_SET,
-            searchText,
-          });
-        });
+      onSearchChange={searchFnDebouncedRef.current}
+      onResultSelect={(_, { result }) => {
+        const { price: experienceId } = result;
+        navigate(makeExperienceRoute(experienceId));
       }}
     />
   );

@@ -9,7 +9,8 @@
   }
 
   .experiences-container {
-    padding: 10px 5px 60px 5px;
+    padding: 5px 5px 60px 5px;
+    position: relative;
   }
 
   .exp-container-main {
@@ -83,7 +84,10 @@
   }
 
   .my-search {
-    padding: 5px;
+    margin-bottom: 15px;
+    position: sticky;
+    top: 0;
+    padding-top: 10px;
   }
 
   .results {
