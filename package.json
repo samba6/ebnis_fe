@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "start": "env-cmd -e dev gatsby develop --port 3022",
-    "start:e2e": "env-cmd -e e2e gatsby develop --port 3022",
+    "start:d": "env-cmd -e dev gatsby develop --port 3022",
+    "start:e": "env-cmd -e e2e gatsby develop --port 3022",
     "build": "gatsby build",
     "build:prod": "yarn remove-folders && env-cmd -e prod yarn build",
     "build:e2e": "yarn env-cmd -e e2e yarn build",

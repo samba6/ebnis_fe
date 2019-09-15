@@ -10,7 +10,7 @@ import {
 } from "../../graphql/apollo-types/ExperienceFragment";
 import immer from "immer";
 import { ApolloError } from "apollo-client";
-import { FieldType } from "../../graphql/apollo-types/globalTypes";
+import { DataTypes } from "../../graphql/apollo-types/globalTypes";
 import {
   CreateEntryMutation_createEntry_errors,
   CreateEntryMutation_createEntry_errors_dataObjectsErrors,
@@ -31,39 +31,39 @@ export function toISODatetimeString(date: Date | string) {
   return dateFnFormat(date, ISO_DATE_TIME_FORMAT);
 }
 
-export function formObjToString(type: FieldType, val: FormObjVal) {
+export function formObjToString(type: DataTypes, val: FormObjVal) {
   let toString = val;
 
   switch (type) {
-    case FieldType.DATE:
+    case DataTypes.DATE:
       {
         toString = toISODateString(val as Date);
       }
 
       break;
 
-    case FieldType.DATETIME:
+    case DataTypes.DATETIME:
       {
         toString = toISODatetimeString(val as Date);
       }
 
       break;
 
-    case FieldType.DECIMAL:
-    case FieldType.INTEGER:
+    case DataTypes.DECIMAL:
+    case DataTypes.INTEGER:
       {
         toString = (val || 0) + "";
       }
 
       break;
 
-    case FieldType.SINGLE_LINE_TEXT:
+    case DataTypes.SINGLE_LINE_TEXT:
       {
         toString = val;
       }
       break;
 
-    case FieldType.MULTI_LINE_TEXT:
+    case DataTypes.MULTI_LINE_TEXT:
       {
         toString = (val as string).replace(NEW_LINE_REGEX, "\\\\n");
       }
@@ -108,8 +108,8 @@ export function initialStateFromProps(experience: ExperienceFragment) {
   const formObj = dataDefinitions.reduce(
     function fieldDefReducer(acc, definition, index) {
       const value =
-        definition.type === FieldType.DATE ||
-        definition.type === FieldType.DATETIME
+        definition.type === DataTypes.DATE ||
+        definition.type === DataTypes.DATETIME
           ? new Date()
           : "";
 

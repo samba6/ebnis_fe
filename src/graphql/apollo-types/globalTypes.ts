@@ -7,9 +7,9 @@
 //==============================================================
 
 /**
- * The possible field type that can be defined for an experience
+ * The possible data type that can be defined for an experience
  */
-export enum FieldType {
+export enum DataTypes {
   DATE = "DATE",
   DATETIME = "DATETIME",
   DECIMAL = "DECIMAL",
@@ -24,7 +24,7 @@ export enum FieldType {
 export interface CreateDataDefinition {
   clientId?: string | null;
   name: string;
-  type: FieldType;
+  type: DataTypes;
 }
 
 /**
@@ -113,6 +113,15 @@ export interface UpdateDefinitionInput {
   id: string;
   name: string;
   updatedAt?: any | null;
+}
+
+/**
+ * fields required to update a collection of data definitions belonging to an
+ * experience
+ */
+export interface UpdateDefinitionsInput {
+  definitions: UpdateDefinitionInput[];
+  experienceId: string;
 }
 
 /**

@@ -1,6 +1,6 @@
 import { USER_REGISTRATION_OBJECT } from "../support/user-registration-object";
 import { makeExperienceRoute } from "../../src/constants/experience-route";
-import { FieldType } from "../../src/graphql/apollo-types/globalTypes";
+import { DataTypes } from "../../src/graphql/apollo-types/globalTypes";
 import { ExperienceFragment } from "../../src/graphql/apollo-types/ExperienceFragment";
 import { createSavedExperience } from "../support/create-experience";
 import { createExperienceEntries } from "../support/create-entries";
@@ -141,7 +141,7 @@ function createExperience(howManyDefinitions: number = 1) {
     { length: howManyDefinitions },
     (_, index) => ({
       name: `a${index + 1}`,
-      type: FieldType.INTEGER,
+      type: DataTypes.INTEGER,
     }),
   );
 

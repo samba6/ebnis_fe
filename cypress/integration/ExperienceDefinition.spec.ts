@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { USER_REGISTRATION_OBJECT } from "../support/user-registration-object";
-import { FieldType } from "../../src/graphql/apollo-types/globalTypes";
+import { DataTypes } from "../../src/graphql/apollo-types/globalTypes";
 import { EXPERIENCE_DEFINITION_URL } from "../../src/routes";
 import { EXPERIENCE_DEFINITION_TITLE } from "../../src/constants/experience-definition-title";
 import { createSavedExperience } from "../support/create-experience";
@@ -71,7 +71,7 @@ context("experience definition page", () => {
       title,
       dataDefinitions: [
         {
-          type: FieldType.DATE,
+          type: DataTypes.DATE,
           name: "Some random field",
         },
       ],

@@ -2,7 +2,7 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
-import { CreateExperienceInput, CreateEntriesInput, FieldType } from "./globalTypes";
+import { CreateExperienceInput, CreateEntriesInput, DataTypes } from "./globalTypes";
 
 // ====================================================
 // GraphQL mutation operation: UploadAllUnsavedsMutation
@@ -16,9 +16,9 @@ export interface UploadAllUnsavedsMutation_saveOfflineExperiences_experience_dat
    */
   name: string;
   /**
-   * The data type of the field
+   * The data type
    */
-  type: FieldType;
+  type: DataTypes;
   /**
    * String that uniquely identifies this data definition has been
    *   created offline. If an associated entry is also created

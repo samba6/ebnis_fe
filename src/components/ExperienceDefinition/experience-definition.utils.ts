@@ -8,7 +8,7 @@ import { CreateExperienceMutationProps } from "../../graphql/create-experience.m
 import {
   CreateExperienceInput as FormValues,
   CreateDataDefinition,
-  FieldType,
+  DataTypes,
 } from "../../graphql/apollo-types/globalTypes";
 import {
   CreateExperienceMutation,
@@ -31,7 +31,7 @@ export interface Props
     CreateExperienceMutationProps,
     CreateUnsavedExperienceMutationProps {}
 
-export const fieldTypeKeys = Object.values(FieldType);
+export const fieldTypeKeys = Object.values(DataTypes);
 
 export const ValidationSchema = Yup.object().shape<FormValues>({
   title: Yup.string()
@@ -131,7 +131,7 @@ export const reducer: Reducer<State, Action> = (prevState, [type, payload]) => {
   });
 };
 
-export const EMPTY_FIELD = { name: "", type: "" as FieldType };
+export const EMPTY_FIELD = { name: "", type: "" as DataTypes };
 
 function normalizeServerFieldsErrors(
   serverFieldErrors: CreateExperienceMutation_createExperience_errors,

@@ -9,7 +9,7 @@ import {
   DefinitionsStates,
   DataState,
   EditEnryContext,
-  StateMachine,
+  IStateMachine,
   DataStates,
   SubmissionResponseState,
   PrimaryState,
@@ -31,7 +31,7 @@ import { SubmittingOverlay } from "../SubmittingOverlay/submitting-overlay";
 import { componentFromDataType } from "../NewEntry/component-from-data-type";
 import { FormObjVal } from "../Experience/experience.utils";
 import { InputOnChangeData } from "semantic-ui-react";
-import { FieldType } from "../../graphql/apollo-types/globalTypes";
+import { DataTypes } from "../../graphql/apollo-types/globalTypes";
 import {
   UpdateDataObjectsOnlineMutationProps,
   UpdateDefinitionsMutationProps,
@@ -280,14 +280,14 @@ function DataComponent(props: DataComponentProps) {
 }
 
 function getDataComponent(
-  type: FieldType,
+  type: DataTypes,
   id: string,
   dispatch: DispatchType,
   fieldName: string,
   fieldValue: FormObjVal,
 ) {
   const onChange =
-    type === FieldType.DATE || type === FieldType.DATETIME
+    type === DataTypes.DATE || type === DataTypes.DATETIME
       ? (_: string, val: FormObjVal) => {
           dispatch({
             type: ActionTypes.DATA_CHANGED,
@@ -549,10 +549,15 @@ function submit(args: SubmitArgs) {
     let success = false;
 
     try {
+      const { experienceId } = globalState.primaryState.context;
+
       if (dataInput.length === 0) {
         const result = await updateDefinitionsOnline({
           variables: {
-            input: definitionsInput,
+            input: {
+              experienceId,
+              definitions: definitionsInput,
+            },
           },
           update: editEntryUpdate,
         });
@@ -587,7 +592,11 @@ function submit(args: SubmitArgs) {
       } else {
         const result = await updateDefinitionAndDataOnline({
           variables: {
-            definitionsInput,
+            definitionsInput: {
+              experienceId,
+
+              definitions: definitionsInput,
+            },
             dataInput,
           },
 
@@ -651,7 +660,7 @@ function getDataObjectsToSubmit(states: DataStates) {
 function getIdOfSubmittingDefinition(
   id: string,
   editingData: PrimaryState["editingData"],
-  editingMultipleDefinitions: StateMachine["primaryState"]["editingMultipleDefinitions"],
+  editingMultipleDefinitions: IStateMachine["primaryState"]["editingMultipleDefinitions"],
 ) {
   if (editingData.value === "active") {
     return false;
@@ -744,6 +753,6 @@ interface SubmitArgs
     UpdateDataObjectsOnlineMutationProps,
     UpdateDefinitionsMutationProps {
   dispatch: DispatchType;
-  globalState: StateMachine;
+  globalState: IStateMachine;
   editEntryUpdate: () => void;
 }

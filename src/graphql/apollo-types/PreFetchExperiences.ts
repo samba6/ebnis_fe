@@ -2,7 +2,7 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
-import { GetExperiencesInput, PaginationInput, FieldType } from "./globalTypes";
+import { GetExperiencesInput, PaginationInput, DataTypes } from "./globalTypes";
 
 // ====================================================
 // GraphQL query operation: PreFetchExperiences
@@ -16,9 +16,9 @@ export interface PreFetchExperiences_getExperiences_edges_node_dataDefinitions {
    */
   name: string;
   /**
-   * The data type of the field
+   * The data type
    */
-  type: FieldType;
+  type: DataTypes;
   /**
    * String that uniquely identifies this data definition has been
    *   created offline. If an associated entry is also created

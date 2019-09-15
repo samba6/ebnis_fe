@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { USER_REGISTRATION_OBJECT } from "../support/user-registration-object";
-import { FieldType } from "../../src/graphql/apollo-types/globalTypes";
+import { DataTypes } from "../../src/graphql/apollo-types/globalTypes";
 import { makeExperienceRoute } from "../../src/constants/experience-route";
 import {
   createSavedExperience,
@@ -26,7 +26,7 @@ context("Upload unsaved page", () => {
       dataDefinitions: [
         {
           name: "f1",
-          type: FieldType.INTEGER,
+          type: DataTypes.INTEGER,
         },
       ],
     }).then(experience => {
@@ -67,7 +67,7 @@ context("Upload unsaved page", () => {
       dataDefinitions: [
         {
           name: "f2",
-          type: FieldType.INTEGER,
+          type: DataTypes.INTEGER,
         },
       ],
     }).then(unsavedExperience => {

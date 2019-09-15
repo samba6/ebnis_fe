@@ -11,7 +11,7 @@ import {
 import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragment";
 import { DataObjectFragment } from "../../graphql/apollo-types/DataObjectFragment";
 import { FormObjVal } from "../Experience/experience.utils";
-import { FieldType } from "../../graphql/apollo-types/globalTypes";
+import { DataTypes } from "../../graphql/apollo-types/globalTypes";
 import {
   UpdateDataObjectsOnlineMutationProps,
   UpdateDefinitionsMutationProps,
@@ -47,8 +47,10 @@ export enum ActionTypes {
   APOLLO_ERRORS = "@component/edit-entry/apollo-errors",
 }
 
-export const initStateFromProps = (props: Props): StateMachine => {
-  const [dataStates, dataIdsMap, dataIds] = props.entry.dataObjects.reduce(
+export const initStateFromProps = (props: Props): IStateMachine => {
+  const { entry, experience } = props;
+
+  const [dataStates, dataIdsMap, dataIds] = entry.dataObjects.reduce(
     ([statesMap, dataIdsMap, dataIds], obj) => {
       const data = obj as DataObjectFragment;
       const { id } = data;
@@ -76,8 +78,7 @@ export const initStateFromProps = (props: Props): StateMachine => {
     [{} as DataStates, {} as { [k: string]: string }, [] as string[]],
   );
 
-  const definitions = props.experience
-    .dataDefinitions as DataDefinitionFragment[];
+  const definitions = experience.dataDefinitions as DataDefinitionFragment[];
 
   let lenDefinitions = 0;
   const definitionAndDataIdsMapList: DefinitionAndDataIds[] = [];
@@ -130,6 +131,7 @@ export const initStateFromProps = (props: Props): StateMachine => {
       context: {
         lenDefinitions,
         definitionAndDataIdsMapList,
+        experienceId: experience.id,
       },
 
       common: {
@@ -157,8 +159,8 @@ export const initStateFromProps = (props: Props): StateMachine => {
   return state;
 };
 
-export const reducer: Reducer<StateMachine, Action> = (state, action) =>
-  wrapReducer<StateMachine, Action>(
+export const reducer: Reducer<IStateMachine, Action> = (state, action) =>
+  wrapReducer<IStateMachine, Action>(
     state,
     action,
     (prevState, { type, ...payload }) => {
@@ -418,7 +420,7 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
   );
 
 function prepareSubmissionResponse(
-  proxy: StateMachine,
+  proxy: IStateMachine,
   props: {
     updateDataObjects: UpdateDefinitionAndData["updateDataObjects"];
     updateDefinitions: UpdateDefinitionAndData["updateDefinitions"];
@@ -507,7 +509,7 @@ function putDefinitionInvalidErrors(context: SubmissionSuccessStateContext) {
   return true;
 }
 
-function setDefinitionEditingUnchangedState(proxy: StateMachine, id: string) {
+function setDefinitionEditingUnchangedState(proxy: IStateMachine, id: string) {
   const { definitionsStates } = proxy;
   const state = definitionsStates[id];
   state.value = "editing";
@@ -521,7 +523,7 @@ function setDefinitionEditingUnchangedState(proxy: StateMachine, id: string) {
   proxy.definitionsStates[id] = { ...definitionsStates[id], ...state };
 }
 
-function setEditingMultipleDefinitionsState(proxy: StateMachine) {
+function setEditingMultipleDefinitionsState(proxy: IStateMachine) {
   const { primaryState } = proxy;
   const len = primaryState.context.lenDefinitions;
 
@@ -570,7 +572,7 @@ function formObjFromRawString(val: string): FormObjVal {
   }
 }
 
-function formObjToCompareString(type: FieldType, val: FormObjVal) {
+function formObjToCompareString(type: DataTypes, val: FormObjVal) {
   const stringVal = formObjToString(type, val);
 
   return [val, stringVal];
@@ -578,7 +580,7 @@ function formObjToCompareString(type: FieldType, val: FormObjVal) {
 
 export const EditEnryContext = createContext<ContextValue>({} as ContextValue);
 
-function setEditingData(proxy: StateMachine) {
+function setEditingData(proxy: IStateMachine) {
   let dataChangedCount = 0;
 
   for (const state of Object.values(proxy.dataStates)) {
@@ -595,7 +597,7 @@ function setEditingData(proxy: StateMachine) {
 }
 
 function handleDefinitionsSubmissionResponse(
-  proxy: StateMachine,
+  proxy: IStateMachine,
   context: SubmissionSuccessStateContext,
   updateDefinitions: UpdateDefinitionAndData["updateDefinitions"],
 ) {
@@ -653,7 +655,7 @@ function handleDefinitionsSubmissionResponse(
 }
 
 function handleDataSubmissionResponse(
-  proxy: StateMachine,
+  proxy: IStateMachine,
   context: SubmissionSuccessStateContext,
   dataObjects: UpdateDefinitionAndData["updateDataObjects"],
 ) {
@@ -732,7 +734,7 @@ interface ContextValue
   editEntryUpdate: () => void;
 }
 
-export interface StateMachine {
+export interface IStateMachine {
   readonly dataStates: DataStates;
   readonly definitionsStates: DefinitionsStates;
   readonly primaryState: PrimaryState;
@@ -747,6 +749,7 @@ export interface PrimaryState {
   context: {
     lenDefinitions: number;
     definitionAndDataIdsMapList: DefinitionAndDataIds[];
+    experienceId: string;
   };
 
   common: PrimaryStateEditing | PrimaryStateSubmitting;
@@ -1005,7 +1008,7 @@ export type DataState = {
   context: {
     defaults: DataObjectFragment & {
       parsedVal: FormObjVal;
-      type: FieldType;
+      type: DataTypes;
     };
   };
 } & (DataUnchangedState | DataChangedState);

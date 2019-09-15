@@ -2,7 +2,7 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
-import { UpdateDefinitionInput, FieldType } from "./globalTypes";
+import { UpdateDefinitionsInput, DataTypes } from "./globalTypes";
 
 // ====================================================
 // GraphQL mutation operation: UpdateDefinitions
@@ -25,9 +25,9 @@ export interface UpdateDefinitions_updateDefinitions_definitions_definition {
    */
   name: string;
   /**
-   * The data type of the field
+   * The data type
    */
-  type: FieldType;
+  type: DataTypes;
   /**
    * String that uniquely identifies this data definition has been
    *   created offline. If an associated entry is also created
@@ -80,5 +80,5 @@ export interface UpdateDefinitions {
 }
 
 export interface UpdateDefinitionsVariables {
-  input: UpdateDefinitionInput[];
+  input: UpdateDefinitionsInput;
 }

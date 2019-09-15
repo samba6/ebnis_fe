@@ -1,5 +1,5 @@
 import { USER_REGISTRATION_OBJECT } from "../support/user-registration-object";
-import { FieldType } from "../../src/graphql/apollo-types/globalTypes";
+import { DataTypes } from "../../src/graphql/apollo-types/globalTypes";
 import { EXPERIENCES_URL } from "../../src/routes";
 import { EXPERIENCE_DEFINITION_TITLE } from "../../src/constants/experience-definition-title";
 import { MY_EXPERIENCES_TITLE } from "../../src/constants/my-experiences-title";
@@ -64,7 +64,7 @@ context("my experiences page", () => {
       dataDefinitions: [
         {
           name: "Field integer",
-          type: FieldType.INTEGER,
+          type: DataTypes.INTEGER,
         },
       ],
     }).then(experience => {

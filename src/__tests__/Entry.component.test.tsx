@@ -10,7 +10,7 @@ import {
   ExperienceFragment_dataDefinitions,
   ExperienceFragment,
 } from "../graphql/apollo-types/ExperienceFragment";
-import { FieldType } from "../graphql/apollo-types/globalTypes";
+import { DataTypes } from "../graphql/apollo-types/globalTypes";
 import {
   Props as EditEntryProps,
   ActionTypes as EditEntryActionTypes,
@@ -46,7 +46,7 @@ it("renders single line text", () => {
           {
             id: "1",
             name: "f1",
-            type: FieldType.SINGLE_LINE_TEXT,
+            type: DataTypes.SINGLE_LINE_TEXT,
           },
         ] as ExperienceFragment_dataDefinitions[],
       } as ExperienceFragment,
@@ -84,7 +84,7 @@ it("renders multi line text", () => {
           {
             id: "2",
             name: "f2",
-            type: FieldType.MULTI_LINE_TEXT,
+            type: DataTypes.MULTI_LINE_TEXT,
           },
         ] as ExperienceFragment_dataDefinitions[],
       } as ExperienceFragment,
@@ -118,7 +118,7 @@ it("renders date field", () => {
           {
             id: "3",
             name: "f3",
-            type: FieldType.DATE,
+            type: DataTypes.DATE,
           },
         ] as ExperienceFragment_dataDefinitions[],
       } as ExperienceFragment,
@@ -152,7 +152,7 @@ it("renders datetime field", () => {
           {
             id: "4",
             name: "f4",
-            type: FieldType.DATETIME,
+            type: DataTypes.DATETIME,
           },
         ] as ExperienceFragment_dataDefinitions[],
       } as ExperienceFragment,
@@ -182,7 +182,7 @@ it("renders decimal field", () => {
           {
             id: "5",
             name: "f5",
-            type: FieldType.DECIMAL,
+            type: DataTypes.DECIMAL,
           },
         ] as ExperienceFragment_dataDefinitions[],
       } as ExperienceFragment,
@@ -215,7 +215,7 @@ it("renders integer field and uses custom container id", () => {
           {
             id: "6",
             name: "f6",
-            type: FieldType.INTEGER,
+            type: DataTypes.INTEGER,
           },
         ] as ExperienceFragment_dataDefinitions[],
       } as ExperienceFragment,

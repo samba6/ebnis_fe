@@ -29,7 +29,7 @@ import makeClassNames from "classnames";
 import { FormCtrlError } from "../FormCtrlError/form-ctrl-error.component";
 import { makeScrollIntoViewId, scrollIntoView } from "../scroll-into-view";
 import {
-  FieldType,
+  DataTypes,
   CreateDataObject,
 } from "../../graphql/apollo-types/globalTypes";
 import { CreateEntryMutation_createEntry } from "../../graphql/apollo-types/CreateEntryMutation";
@@ -232,7 +232,7 @@ const DataComponent = React.memo(
       name: formFieldName,
       value,
       onChange:
-        type === FieldType.DATE || type === FieldType.DATETIME
+        type === DataTypes.DATE || type === DataTypes.DATETIME
           ? makeDateChangedFn(dispatch)
           : (_: E, { value: inputVal }: InputOnChangeData) => {
               dispatch([
@@ -240,7 +240,7 @@ const DataComponent = React.memo(
                 {
                   formFieldName,
                   value:
-                    type === FieldType.DECIMAL || type === FieldType.INTEGER
+                    type === DataTypes.DECIMAL || type === DataTypes.INTEGER
                       ? Number(inputVal)
                       : inputVal,
                 },

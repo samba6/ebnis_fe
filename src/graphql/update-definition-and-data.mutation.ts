@@ -40,7 +40,7 @@ export const UPDATE_DEFINITIONS_RESPONSE_FRAGMENT = gql`
 `;
 
 export const UPDATE_DEFINITIONS_ONLINE_MUTATION = gql`
-  mutation UpdateDefinitions($input: [UpdateDefinitionInput!]!) {
+  mutation UpdateDefinitions($input: UpdateDefinitionsInput!) {
     updateDefinitions(input: $input) {
       ...UpdateDefinitionsResponseFragment
     }
@@ -98,7 +98,7 @@ export interface UpdateDataObjectsOnlineMutationProps {
 export const UPDATE_DEFINITION_AND_DATA_ONLINE_MUTATION = gql`
   mutation UpdateDefinitionAndData(
     $dataInput: [UpdateDataObjectInput!]!
-    $definitionsInput: [UpdateDefinitionInput!]!
+    $definitionsInput: UpdateDefinitionsInput!
   ) {
     updateDataObjects(input: $dataInput) {
       ...UpdateDataObjectsResponseFragment

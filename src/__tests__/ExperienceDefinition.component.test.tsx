@@ -7,7 +7,7 @@ import { waitForElement } from "dom-testing-library";
 import { ExperienceDefinition } from "../components/ExperienceDefinition/experience-definition.component";
 import {
   CreateDataDefinition,
-  FieldType,
+  DataTypes,
 } from "../graphql/apollo-types/globalTypes";
 import { Props } from "../components/ExperienceDefinition/experience-definition.utils";
 import { fillField, renderWithRouter, closeMessage } from "./test_utils";
@@ -48,12 +48,12 @@ it("adds field from top", async () => {
   const dataDefinitions: CreateDataDefinition[] = [
     {
       name: "f0",
-      type: FieldType.SINGLE_LINE_TEXT,
+      type: DataTypes.SINGLE_LINE_TEXT,
     },
 
     {
       name: "f1",
-      type: FieldType.DATETIME,
+      type: DataTypes.DATETIME,
     },
   ];
 
@@ -224,17 +224,17 @@ it("adds field in middle", async () => {
   const dataDefinitions: CreateDataDefinition[] = [
     {
       name: "f0",
-      type: FieldType.SINGLE_LINE_TEXT,
+      type: DataTypes.SINGLE_LINE_TEXT,
     },
 
     {
       name: "f1",
-      type: FieldType.DATETIME,
+      type: DataTypes.DATETIME,
     },
 
     {
       name: "f2",
-      type: FieldType.INTEGER,
+      type: DataTypes.INTEGER,
     },
   ];
 
@@ -278,7 +278,7 @@ it("adds field in middle", async () => {
   /**
    * When we complete the new field and submit the form
    */
-  fillFieldDefinition("f3", FieldType.DECIMAL, 2);
+  fillFieldDefinition("f3", DataTypes.DECIMAL, 2);
 
   fireEvent.click(document.getElementById(
     "experience-definition-submit-btn",
@@ -300,7 +300,7 @@ it("adds field in middle", async () => {
             dataDefinitions[1],
             {
               name: "f3",
-              type: FieldType.DECIMAL,
+              type: DataTypes.DECIMAL,
             },
             dataDefinitions[2],
           ],
@@ -321,12 +321,12 @@ it("adds field at bottom", async () => {
   const dataDefinitions: CreateDataDefinition[] = [
     {
       name: "f0",
-      type: FieldType.SINGLE_LINE_TEXT,
+      type: DataTypes.SINGLE_LINE_TEXT,
     },
 
     {
       name: "f1",
-      type: FieldType.DATETIME,
+      type: DataTypes.DATETIME,
     },
   ];
 
@@ -363,7 +363,7 @@ it("adds field at bottom", async () => {
    * When we complete the new field and submit the form
    */
 
-  fillFieldDefinition("f2", FieldType.DECIMAL, 2);
+  fillFieldDefinition("f2", DataTypes.DECIMAL, 2);
 
   fireEvent.click(document.getElementById(
     "experience-definition-submit-btn",
@@ -383,7 +383,7 @@ it("adds field at bottom", async () => {
           dataDefinitions: [
             dataDefinitions[0],
             dataDefinitions[1],
-            { name: "f2", type: FieldType.DECIMAL },
+            { name: "f2", type: DataTypes.DECIMAL },
           ],
           description: "",
         },
@@ -402,12 +402,12 @@ it("removes field from top", async () => {
   const dataDefinitions: CreateDataDefinition[] = [
     {
       name: "f0",
-      type: FieldType.SINGLE_LINE_TEXT,
+      type: DataTypes.SINGLE_LINE_TEXT,
     },
 
     {
       name: "f1",
-      type: FieldType.DATETIME,
+      type: DataTypes.DATETIME,
     },
   ];
 
@@ -486,12 +486,12 @@ it("removes field from bottom", async () => {
   const dataDefinitions: CreateDataDefinition[] = [
     {
       name: "f0",
-      type: FieldType.SINGLE_LINE_TEXT,
+      type: DataTypes.SINGLE_LINE_TEXT,
     },
 
     {
       name: "f1",
-      type: FieldType.DATETIME,
+      type: DataTypes.DATETIME,
     },
   ];
 
@@ -571,17 +571,17 @@ it("removes field from middle", async () => {
   const dataDefinitions: CreateDataDefinition[] = [
     {
       name: "f0",
-      type: FieldType.SINGLE_LINE_TEXT,
+      type: DataTypes.SINGLE_LINE_TEXT,
     },
 
     {
       name: "f1",
-      type: FieldType.DATETIME,
+      type: DataTypes.DATETIME,
     },
 
     {
       name: "f2",
-      type: FieldType.DECIMAL,
+      type: DataTypes.DECIMAL,
     },
   ];
 
@@ -648,12 +648,12 @@ it("moves field up from bottom", async () => {
   const dataDefinitions: CreateDataDefinition[] = [
     {
       name: "f0",
-      type: FieldType.SINGLE_LINE_TEXT,
+      type: DataTypes.SINGLE_LINE_TEXT,
     },
 
     {
       name: "f1",
-      type: FieldType.DATETIME,
+      type: DataTypes.DATETIME,
     },
   ];
 
@@ -732,17 +732,17 @@ it("moves field up from middle", async () => {
   const dataDefinitions: CreateDataDefinition[] = [
     {
       name: "f0",
-      type: FieldType.SINGLE_LINE_TEXT,
+      type: DataTypes.SINGLE_LINE_TEXT,
     },
 
     {
       name: "f1",
-      type: FieldType.DATETIME,
+      type: DataTypes.DATETIME,
     },
 
     {
       name: "f2",
-      type: FieldType.DATETIME,
+      type: DataTypes.DATETIME,
     },
   ];
 
@@ -825,12 +825,12 @@ it("moves field down from top", async () => {
   const dataDefinitions: CreateDataDefinition[] = [
     {
       name: "f0",
-      type: FieldType.SINGLE_LINE_TEXT,
+      type: DataTypes.SINGLE_LINE_TEXT,
     },
 
     {
       name: "f1",
-      type: FieldType.DATETIME,
+      type: DataTypes.DATETIME,
     },
   ];
 
@@ -909,17 +909,17 @@ it("moves field down from middle", async () => {
   const dataDefinitions: CreateDataDefinition[] = [
     {
       name: "f0",
-      type: FieldType.SINGLE_LINE_TEXT,
+      type: DataTypes.SINGLE_LINE_TEXT,
     },
 
     {
       name: "f1",
-      type: FieldType.DATETIME,
+      type: DataTypes.DATETIME,
     },
 
     {
       name: "f2",
-      type: FieldType.DATETIME,
+      type: DataTypes.DATETIME,
     },
   ];
 
@@ -1068,12 +1068,12 @@ it("renders errors if we get field errors", async () => {
   const dataDefinitions: CreateDataDefinition[] = [
     {
       name: "nf",
-      type: FieldType.SINGLE_LINE_TEXT,
+      type: DataTypes.SINGLE_LINE_TEXT,
     },
 
     {
       name: "nf",
-      type: FieldType.DATETIME,
+      type: DataTypes.DATETIME,
     },
   ];
 
@@ -1174,12 +1174,12 @@ it("renders error if all fields not completely filled on submission", async () =
   const dataDefinitions: CreateDataDefinition[] = [
     {
       name: "nf",
-      type: FieldType.SINGLE_LINE_TEXT,
+      type: DataTypes.SINGLE_LINE_TEXT,
     },
 
     {
       name: "",
-      type: FieldType.DATETIME,
+      type: DataTypes.DATETIME,
     },
   ];
 
@@ -1214,12 +1214,12 @@ it("saves experience when we are not connected", async () => {
   const dataDefinitions: CreateDataDefinition[] = [
     {
       name: "f0",
-      type: FieldType.SINGLE_LINE_TEXT,
+      type: DataTypes.SINGLE_LINE_TEXT,
     },
 
     {
       name: "f1",
-      type: FieldType.DATETIME,
+      type: DataTypes.DATETIME,
     },
   ];
 
@@ -1279,7 +1279,7 @@ it("renders error even if there are no fields error", async () => {
   const dataDefinitions: CreateDataDefinition[] = [
     {
       name: "12",
-      type: FieldType.SINGLE_LINE_TEXT,
+      type: DataTypes.SINGLE_LINE_TEXT,
     },
   ];
 
@@ -1340,7 +1340,7 @@ it("renders network error", async () => {
   fillFields([
     {
       name: "f0",
-      type: FieldType.SINGLE_LINE_TEXT,
+      type: DataTypes.SINGLE_LINE_TEXT,
     },
   ]);
 
@@ -1385,7 +1385,7 @@ it("renders graphql error", async () => {
   fillFields([
     {
       name: "f0",
-      type: FieldType.SINGLE_LINE_TEXT,
+      type: DataTypes.SINGLE_LINE_TEXT,
     },
   ]);
 
@@ -1426,7 +1426,7 @@ it("renders errors if exception is thrown during submit", async () => {
   fillFields([
     {
       name: "f0",
-      type: FieldType.SINGLE_LINE_TEXT,
+      type: DataTypes.SINGLE_LINE_TEXT,
     },
   ]);
 
@@ -1467,7 +1467,7 @@ it("renders errors if server's response is out of shape", async () => {
   fillFields([
     {
       name: "f0",
-      type: FieldType.SINGLE_LINE_TEXT,
+      type: DataTypes.SINGLE_LINE_TEXT,
     },
   ]);
 

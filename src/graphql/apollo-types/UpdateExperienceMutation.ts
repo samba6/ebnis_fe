@@ -2,7 +2,7 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
-import { UpdateExperienceInput, FieldType } from "./globalTypes";
+import { UpdateExperienceInput, DataTypes } from "./globalTypes";
 
 // ====================================================
 // GraphQL mutation operation: UpdateExperienceMutation
@@ -16,9 +16,9 @@ export interface UpdateExperienceMutation_updateExperience_experience_dataDefini
    */
   name: string;
   /**
-   * The data type of the field
+   * The data type
    */
-  type: FieldType;
+  type: DataTypes;
   /**
    * String that uniquely identifies this data definition has been
    *   created offline. If an associated entry is also created

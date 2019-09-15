@@ -1,5 +1,5 @@
 import { USER_REGISTRATION_OBJECT } from "../support/user-registration-object";
-import { FieldType } from "../../src/graphql/apollo-types/globalTypes";
+import { DataTypes } from "../../src/graphql/apollo-types/globalTypes";
 import { makeNewEntryRoute } from "../../src/constants/new-entry-route";
 import {
   createSavedExperience,
@@ -27,7 +27,7 @@ context("new entry page", () => {
       dataDefinitions: [
         {
           name: fieldName,
-          type: FieldType.INTEGER,
+          type: DataTypes.INTEGER,
         },
       ],
     });
@@ -75,7 +75,7 @@ context("new entry page", () => {
       dataDefinitions: [
         {
           name: fieldName,
-          type: FieldType.INTEGER,
+          type: DataTypes.INTEGER,
         },
       ],
     });
@@ -121,7 +121,7 @@ context("new entry page", () => {
         dataDefinitions: [
           {
             name: fieldName,
-            type: FieldType.INTEGER,
+            type: DataTypes.INTEGER,
           },
         ],
       },

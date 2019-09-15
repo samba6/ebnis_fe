@@ -19,7 +19,7 @@ import {
   ToData,
 } from "./test_utils";
 import {
-  FieldType,
+  DataTypes,
   CreateDataObject,
 } from "../graphql/apollo-types/globalTypes";
 import {
@@ -69,13 +69,13 @@ it("creates new experience entry when online", async () => {
       {
         id: "f3",
         name: "f3",
-        type: FieldType.DECIMAL,
+        type: DataTypes.DECIMAL,
       },
 
       {
         id: "f4",
         name: "f4",
-        type: FieldType.INTEGER,
+        type: DataTypes.INTEGER,
       },
     ] as ExperienceFragment_dataDefinitions[],
 
@@ -153,13 +153,13 @@ it("sets decimal and integer fields to default to 0", async () => {
       {
         id: "f1",
         name: "f3",
-        type: FieldType.DECIMAL,
+        type: DataTypes.DECIMAL,
       },
 
       {
         id: "f2",
         name: "f4",
-        type: FieldType.INTEGER,
+        type: DataTypes.INTEGER,
       },
     ] as ExperienceFragment_dataDefinitions[],
   } as ExperienceFragment;
@@ -224,13 +224,13 @@ it("sets values of date and datetime fields", async () => {
       {
         id: "f1",
         name: "f1",
-        type: FieldType.DATE,
+        type: DataTypes.DATE,
       },
 
       {
         id: "f2",
         name: "f2",
-        type: FieldType.DATETIME,
+        type: DataTypes.DATETIME,
       },
     ] as ExperienceFragment_dataDefinitions[],
 
@@ -345,7 +345,7 @@ it("creates new entry when offline", async () => {
       {
         id: "f1",
         name: "f1",
-        type: FieldType.SINGLE_LINE_TEXT,
+        type: DataTypes.SINGLE_LINE_TEXT,
       },
     ],
 
@@ -427,7 +427,7 @@ it("renders error when entry creation fails", async () => {
       {
         id: "f1",
         name: "f1",
-        type: FieldType.MULTI_LINE_TEXT,
+        type: DataTypes.MULTI_LINE_TEXT,
       },
     ],
 
@@ -505,7 +505,7 @@ it("renders network error", async () => {
       {
         id: "f1",
         name: "f1",
-        type: FieldType.SINGLE_LINE_TEXT,
+        type: DataTypes.SINGLE_LINE_TEXT,
       },
     ],
 
@@ -555,7 +555,7 @@ it("treats non field graphql errors as network error", async () => {
       {
         id: "f1",
         name: "f1",
-        type: FieldType.SINGLE_LINE_TEXT,
+        type: DataTypes.SINGLE_LINE_TEXT,
       },
     ],
 

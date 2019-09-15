@@ -1,7 +1,7 @@
 import { RouteComponentProps } from "@reach/router";
 import dateFnFormat from "date-fns/format";
 import parseISO from "date-fns/parseISO";
-import { FieldType } from "../../graphql/apollo-types/globalTypes";
+import { DataTypes } from "../../graphql/apollo-types/globalTypes";
 import { NewEntryRouteParams } from "../../routes";
 import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragment";
 import { EbnisComponentProps } from "../../types";
@@ -40,29 +40,29 @@ export interface FieldComponentProps {
 }
 
 export const displayFieldType = {
-  [FieldType.SINGLE_LINE_TEXT](text: string) {
+  [DataTypes.SINGLE_LINE_TEXT](text: string) {
     return text;
   },
 
-  [FieldType.MULTI_LINE_TEXT](text: string) {
+  [DataTypes.MULTI_LINE_TEXT](text: string) {
     return text;
   },
 
-  [FieldType.DATE](text: string) {
+  [DataTypes.DATE](text: string) {
     return dateFnFormat(new Date(text), "dd/MM/yyyy");
   },
 
-  [FieldType.DATETIME](text: string) {
+  [DataTypes.DATETIME](text: string) {
     const date = parseISO(text);
 
     return formatDatetime(date);
   },
 
-  [FieldType.DECIMAL](text: string) {
+  [DataTypes.DECIMAL](text: string) {
     return Number(text);
   },
 
-  [FieldType.INTEGER](text: string) {
+  [DataTypes.INTEGER](text: string) {
     return Number(text);
   },
 };

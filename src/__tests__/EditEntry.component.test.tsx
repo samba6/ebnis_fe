@@ -8,7 +8,7 @@ import { Props, ActionTypes } from "../components/EditEntry/edit-entry-utils";
 import { EntryFragment } from "../graphql/apollo-types/EntryFragment";
 import { DataDefinitionFragment } from "../graphql/apollo-types/DataDefinitionFragment";
 import {
-  FieldType,
+  DataTypes,
   UpdateDefinitionInput,
   UpdateDataObjectInput,
 } from "../graphql/apollo-types/globalTypes";
@@ -70,7 +70,7 @@ it("destroys the UI", () => {
         dataDefinitions: [
           {
             id: "a",
-            type: FieldType.INTEGER,
+            type: DataTypes.INTEGER,
             name: "f1",
           },
         ] as DataDefinitionFragment[],
@@ -95,10 +95,12 @@ test("not editing data, no siblings, form errors, server success", async () => {
       } as EntryFragment,
 
       experience: {
+        id: "e",
+
         dataDefinitions: [
           {
             id: "a",
-            type: FieldType.INTEGER,
+            type: DataTypes.INTEGER,
             name: "f1",
           },
         ] as DataDefinitionFragment[],
@@ -201,12 +203,16 @@ test("not editing data, no siblings, form errors, server success", async () => {
     UpdateDefinitionInput[]
   >;
 
-  expect(mock.variables.input).toMatchObject([
-    {
-      id: "a",
-      name: "g1",
-    },
-  ]);
+  expect(mock.variables.input).toMatchObject({
+    experienceId: "e",
+
+    definitions: [
+      {
+        id: "a",
+        name: "g1",
+      },
+    ],
+  });
 
   expect(mock.update).toBe(mockEditEntryUpdate);
 
@@ -280,19 +286,19 @@ test("not editing data, editing siblings, server error", async () => {
         dataDefinitions: [
           {
             id: "a",
-            type: FieldType.INTEGER,
+            type: DataTypes.INTEGER,
             name: "f1",
           },
 
           {
             id: "b",
-            type: FieldType.DECIMAL,
+            type: DataTypes.DECIMAL,
             name: "f2",
           },
 
           {
             id: "c",
-            type: FieldType.INTEGER,
+            type: DataTypes.INTEGER,
             name: "f3",
           },
         ] as DataDefinitionFragment[],
@@ -529,40 +535,42 @@ test("editing data, editing definitions", async () => {
       } as EntryFragment,
 
       experience: {
+        id: "ex",
+
         dataDefinitions: [
           {
             id: "int",
-            type: FieldType.INTEGER,
+            type: DataTypes.INTEGER,
             name: "int",
           },
 
           {
             id: "dec",
-            type: FieldType.DECIMAL,
+            type: DataTypes.DECIMAL,
             name: "dec",
           },
 
           {
             id: "date",
-            type: FieldType.DATE,
+            type: DataTypes.DATE,
             name: "date",
           },
 
           {
             id: "time",
-            type: FieldType.DATETIME,
+            type: DataTypes.DATETIME,
             name: "time",
           },
 
           {
             id: "text",
-            type: FieldType.SINGLE_LINE_TEXT,
+            type: DataTypes.SINGLE_LINE_TEXT,
             name: "text",
           },
 
           {
             id: "multi",
-            type: FieldType.MULTI_LINE_TEXT,
+            type: DataTypes.MULTI_LINE_TEXT,
             name: "multi",
           },
         ] as DataDefinitionFragment[],
@@ -664,17 +672,21 @@ test("editing data, editing definitions", async () => {
     .calls[0][0] as ToVariables<UpdateDefinitionAndDataVariables>;
 
   expect(mock.variables).toEqual({
-    definitionsInput: [
-      {
-        id: "int",
-        name: "in",
-      },
+    definitionsInput: {
+      experienceId: "ex",
 
-      {
-        id: "dec",
-        name: "de",
-      },
-    ],
+      definitions: [
+        {
+          id: "int",
+          name: "in",
+        },
+
+        {
+          id: "dec",
+          name: "de",
+        },
+      ],
+    },
 
     dataInput: [
       {
@@ -787,7 +799,7 @@ test("submitting only data objects, apollo errors, runtime errors", async () => 
           {
             id: "int",
             name: "int",
-            type: FieldType.INTEGER,
+            type: DataTypes.INTEGER,
           },
         ] as DataDefinitionFragment[],
       } as ExperienceFragment,
@@ -912,7 +924,7 @@ test("not editing data apollo errors", async () => {
         dataDefinitions: [
           {
             id: "a",
-            type: FieldType.INTEGER,
+            type: DataTypes.INTEGER,
             name: "f1",
           },
         ] as DataDefinitionFragment[],
