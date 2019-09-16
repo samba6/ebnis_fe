@@ -4,9 +4,20 @@ import { Props } from "./experience-route.utils";
 import { SidebarHeader } from "../SidebarHeader/sidebar-header.component";
 import { setDocumentTitle, makeSiteTitle } from "../../constants";
 import { Experience, getTitle } from "../Experience/experience.component";
+import { UPDATE_EXPERIENCE_MUTATION } from "../../graphql/update-experience.mutation";
+import {
+  UpdateExperienceMutation,
+  UpdateExperienceMutationVariables,
+} from "../../graphql/apollo-types/UpdateExperienceMutation";
+import { useMutation } from "react-apollo";
 
 export function ExperienceRoute(props: Props) {
-  const { experience, updateExperience } = props;
+  const { experience } = props;
+
+  const [updateExperience] = useMutation<
+    UpdateExperienceMutation,
+    UpdateExperienceMutationVariables
+  >(UPDATE_EXPERIENCE_MUTATION);
 
   const title = getTitle(experience);
 
@@ -35,3 +46,5 @@ export function ExperienceRoute(props: Props) {
     </div>
   );
 }
+
+export default ExperienceRoute;

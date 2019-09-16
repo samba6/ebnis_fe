@@ -25,7 +25,6 @@ import {
 import { Props as DateTimeProps } from "../components/DateTimeField/date-time-field.utils";
 import { DataObjectFragment } from "../graphql/apollo-types/DataObjectFragment";
 import { ExperienceFragment } from "../graphql/apollo-types/ExperienceFragment";
-import { editEntryUpdate } from "../components/EditEntry/edit-entry.update";
 import {
   UpdateDefinitionAndData,
   UpdateDefinitionAndDataVariables,
@@ -37,6 +36,12 @@ import {
 import { ApolloError } from "apollo-client";
 import { GraphQLError } from "graphql";
 import { toISODatetimeString } from "../components/NewEntry/new-entry.utils";
+import {
+  editEntryUpdate,
+  useUpdateDataObjectsOnline,
+  useUpdateDefinitionsOnline,
+  useUpdateDefinitionAndDataOnline,
+} from "../components/EditEntry/edit-entry.injectables";
 
 ////////////////////////// MOCKS ////////////////////////////
 
@@ -48,9 +53,20 @@ jest.mock("../components/DateField/date-field.component", () => ({
   DateField: MockDateTimeField,
 }));
 
+jest.mock("../components/EditEntry/edit-entry.injectables");
+
+const mockEditEntryUpdate = editEntryUpdate as jest.Mock;
+const mockUseUpdateDataObjectsOnline = useUpdateDataObjectsOnline as jest.Mock;
+const mockUseUpdateDefinitionsOnline = useUpdateDefinitionsOnline as jest.Mock;
+const mockUseUpdateDefinitionAndDataOnline = useUpdateDefinitionAndDataOnline as jest.Mock;
+
 let errorConsoleSpy: jest.SpyInstance;
 
 beforeAll(() => {
+  mockEditEntryUpdate.mockReset();
+  mockUseUpdateDataObjectsOnline.mockReset();
+  mockUseUpdateDefinitionsOnline.mockReset();
+  mockUseUpdateDefinitionAndDataOnline.mockReset();
   errorConsoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
 });
 
@@ -87,7 +103,7 @@ it("destroys the UI", () => {
 });
 
 test("not editing data, no siblings, form errors, server success", async () => {
-  const { ui, mockUpdateDefinitionsOnline, mockEditEntryUpdate } = makeComp({
+  const { ui, mockUpdateDefinitionsOnline } = makeComp({
     props: {
       entry: {
         dataObjects: [] as DataObjectFragment[],
@@ -487,11 +503,7 @@ test("editing data, editing definitions", async () => {
   const time = "2000-01-01T01:01:01.000Z";
   const date = "2000-01-01";
 
-  const {
-    ui,
-    mockUpdateDefinitionsAndDataOnline,
-    mockEditEntryUpdate,
-  } = makeComp({
+  const { ui, mockUpdateDefinitionsAndDataOnline } = makeComp({
     props: {
       entry: {
         dataObjects: [
@@ -781,7 +793,7 @@ test("renders error boundary", () => {
 });
 
 test("submitting only data objects, apollo errors, runtime errors", async () => {
-  const { ui, mockUpdateDataOnline, mockEditEntryUpdate } = makeComp({
+  const { ui, mockUpdateDataOnline } = makeComp({
     props: {
       entry: {
         dataObjects: [
@@ -946,10 +958,6 @@ test("not editing data apollo errors", async () => {
   expect($response).not.toBeNull();
 });
 
-test("update function", () => {
-  expect(editEntryUpdate()).toBeNull();
-});
-
 ////////////////////////// HELPER FUNCTIONS ///////////////////////////
 
 const EditEntryP = EditEntry as ComponentType<Partial<Props>>;
@@ -957,7 +965,6 @@ const EditEntryP = EditEntry as ComponentType<Partial<Props>>;
 function makeComp({ props = {} }: { props?: Partial<Props> } = {}) {
   const mockUpdateDefinitionsOnline = jest.fn();
   const mockParentDispatch = jest.fn();
-  const mockEditEntryUpdate = jest.fn();
   const mockUpdateDefinitionsAndDataOnline = jest.fn();
   const mockUpdateDataOnline = jest.fn();
 
@@ -966,7 +973,6 @@ function makeComp({ props = {} }: { props?: Partial<Props> } = {}) {
       <EditEntryP
         updateDefinitionsOnline={mockUpdateDefinitionsOnline}
         dispatch={mockParentDispatch}
-        editEntryUpdate={mockEditEntryUpdate}
         updateDefinitionAndDataOnline={mockUpdateDefinitionsAndDataOnline}
         updateDataObjectsOnline={mockUpdateDataOnline}
         {...props}
@@ -974,7 +980,6 @@ function makeComp({ props = {} }: { props?: Partial<Props> } = {}) {
     ),
     mockUpdateDefinitionsOnline,
     mockParentDispatch,
-    mockEditEntryUpdate,
     mockUpdateDefinitionsAndDataOnline,
     mockUpdateDataOnline,
   };

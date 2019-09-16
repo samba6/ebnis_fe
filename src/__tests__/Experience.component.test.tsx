@@ -2,7 +2,6 @@
 import React, { ComponentType } from "react";
 import "@marko/testing-library/cleanup-after-each";
 import { render, fireEvent } from "@testing-library/react";
-
 import {
   Experience,
   getTitle,
@@ -34,7 +33,7 @@ beforeEach(() => {
   jest.useFakeTimers();
 });
 
-it("renders ui to show empty entries", () => {
+it.only("renders ui to show empty entries", () => {
   const mockOnDelete = jest.fn();
 
   const { ui } = makeComp({

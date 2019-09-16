@@ -41,16 +41,19 @@ import { formObjToString } from "../NewEntry/new-entry.utils";
 import { UpdateDataObjectsResponseFragment_fieldErrors } from "../../graphql/apollo-types/UpdateDataObjectsResponseFragment";
 import { ErrorBoundary } from "../ErrorBoundary/error-boundary.component";
 import { ApolloError } from "apollo-client";
+import {
+  editEntryUpdate,
+  useUpdateDataObjectsOnline,
+  useUpdateDefinitionsOnline,
+  useUpdateDefinitionAndDataOnline,
+} from "./edit-entry.injectables";
 
 export function EditEntry(props: Props) {
-  const {
-    updateDefinitionsOnline,
-    dispatch: parentDispatch,
-    experience,
-    editEntryUpdate,
-    updateDataObjectsOnline,
-    updateDefinitionAndDataOnline,
-  } = props;
+  const { dispatch: parentDispatch, experience } = props;
+
+  const [updateDefinitionsOnline] = useUpdateDefinitionsOnline();
+  const [updateDataObjectsOnline] = useUpdateDataObjectsOnline();
+  const [updateDefinitionAndDataOnline] = useUpdateDefinitionAndDataOnline();
 
   const [state, dispatch] = useReducer(reducer, props, initStateFromProps);
   const {

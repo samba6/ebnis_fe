@@ -14,7 +14,6 @@ import { FormObjVal } from "../Experience/experience.utils";
 import { DataTypes } from "../../graphql/apollo-types/globalTypes";
 import {
   UpdateDataObjectsOnlineMutationProps,
-  UpdateDefinitionsMutationProps,
   UpdateDefinitionAndDataOnlineMutationProps,
 } from "../../graphql/update-definition-and-data.mutation";
 import { UpdateDefinitionAndData } from "../../graphql/apollo-types/UpdateDefinitionAndData";
@@ -912,18 +911,12 @@ interface DefinitionFormErrorsPayload {
   ids: string[];
 }
 
-export interface OwnProps {
+export interface Props {
   entry: EntryFragment;
   experience: ExperienceFragment;
   dispatch: DispatchType;
-  editEntryUpdate: () => void;
 }
 
-export interface Props
-  extends OwnProps,
-    UpdateDefinitionsMutationProps,
-    UpdateDataObjectsOnlineMutationProps,
-    UpdateDefinitionAndDataOnlineMutationProps {}
 
 export type DefinitionFormValue = Pick<
   DataDefinitionFragment,

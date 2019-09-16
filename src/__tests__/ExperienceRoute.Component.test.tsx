@@ -15,6 +15,10 @@ jest.mock("../components/Experience/experience.component", () => ({
   getTitle: jest.fn(() => "cool"),
 }));
 
+jest.mock("react-apollo", () => ({
+  useMutation: () => [],
+}));
+
 it("renders correctly", () => {
   const { ui } = makeComp({
     props: {},
