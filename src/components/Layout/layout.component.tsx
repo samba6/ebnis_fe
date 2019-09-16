@@ -131,8 +131,6 @@ export function Layout(props: Props) {
     );
   }
 
-  // console.log(JSON.stringify(stateMachine, null, 2));
-
   return renderChildren ? (
     <LayoutUnchangingProvider value={{ layoutDispatch: dispatch }}>
       <LayoutExperienceProvider

@@ -17,7 +17,8 @@ import {
   dispatchContext,
   ActionTypes,
   initState,
-  SearchActive,
+  SearchResults,
+  StateMachine,
 } from "./my-experiences.utils";
 import { EXPERIENCE_DEFINITION_URL } from "../../routes";
 import { makeExperienceRoute } from "../../constants/experience-route";
@@ -117,7 +118,7 @@ export const MyExperiences = (props: Props) => {
 
     return (
       <div id="experiences-container" className="experiences-container">
-        <SearchComponent {...(states.searching as SearchActive)} />
+        <SearchComponent {...states.search} />
 
         {experiences.map(experience => {
           const { id } = experience;
@@ -255,7 +256,7 @@ const ShowDescriptionToggle = React.memo(
 const defaultSearchActiveContext = {
   searchText: "",
   results: [],
-} as SearchActive["active"]["context"];
+} as SearchResults["results"]["context"];
 
 const searchResultRenderer = (props: SearchResultProps) => {
   const { price: experienceId, title } = props;
@@ -266,14 +267,15 @@ const searchResultRenderer = (props: SearchResultProps) => {
   );
 };
 
-function SearchComponent(props: SearchActive) {
+function SearchComponent(props: StateMachine["states"]["search"]) {
   const {
     dispatch,
     navigate,
     searchDebounceTimeoutMs,
     cleanUpOnSearchExit,
   } = useContext(dispatchContext);
-  const activeSearch = props.active || ({} as SearchActive["active"]);
+  const activeSearch =
+    (props as SearchResults).results || ({} as SearchResults["results"]);
 
   const searchFn = useCallback(
     (_, { value }: SearchProps) => {
@@ -314,7 +316,7 @@ function SearchComponent(props: SearchActive) {
       id="my-experiences-search"
       value={context.searchText}
       className="my-search"
-      loading={props.value === "active"}
+      loading={props.value === "searching"}
       results={context.results}
       resultRenderer={searchResultRenderer}
       onSearchChange={searchFnDebouncedRef.current}

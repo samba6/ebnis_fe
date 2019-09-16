@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { ComponentType } from "react";
 import "@marko/testing-library/cleanup-after-each";
-import { render, fireEvent } from "@testing-library/react";
+import { render, fireEvent, wait, act } from "@testing-library/react";
 import { MyExperiences } from "../components/MyExperiences/my-experiences.component";
 import { Props } from "../components/MyExperiences/my-experiences.utils";
 import { renderWithRouter, fillField } from "./test_utils";
@@ -266,7 +266,7 @@ it("renders error ui if we are unable to get experiences", () => {
   expect(document.getElementById("no-experiences-error")).not.toBeNull();
 });
 
-it("goes to detailed experience page on search", () => {
+it("goes to detailed experience page on search", async () => {
   /**
    * Given there are experiences in the system
    */
@@ -296,7 +296,7 @@ it("goes to detailed experience page on search", () => {
   });
 
   /**
-   * When we use the component
+   * And component is rendered
    */
 
   const { unmount } = render(ui);
@@ -306,6 +306,16 @@ it("goes to detailed experience page on search", () => {
    */
 
   expect(document.getElementById("search-result-id1")).toBeNull();
+
+  let $searchContainer = document.getElementsByClassName(
+    "my-search",
+  )[0] as HTMLDivElement;
+
+  /**
+   * And we should not see loading indicator
+   */
+
+  expect($searchContainer.classList).not.toContain("loading");
 
   /**
    * When we search for title 1
@@ -317,7 +327,25 @@ it("goes to detailed experience page on search", () => {
 
   fillField($search, "t1");
 
-  jest.runAllTimers();
+  /**
+   * Then we should see loading indicator
+   */
+
+  expect($searchContainer.classList).toContain("loading");
+
+  /**
+   * When search is completed
+   */
+
+  act(() => {
+    jest.runAllTimers();
+  });
+
+  /**
+   * Then loading indicator should no longer be visible;
+   */
+
+  expect($searchContainer.classList).not.toContain("loading");
 
   /**
    * Then search result for experience 1 should be visible

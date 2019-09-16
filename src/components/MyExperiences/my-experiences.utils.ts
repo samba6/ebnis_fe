@@ -29,7 +29,7 @@ export function initState({
     },
 
     states: {
-      searching: {
+      search: {
         value: "inactive",
 
         context: {
@@ -61,7 +61,7 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
 
         case ActionTypes.SEARCH_STARTED:
           {
-            proxy.states.searching.value = "active";
+            proxy.states.search.value = "searching";
           }
           break;
 
@@ -69,19 +69,20 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
           {
             const { searchText } = payload as { searchText: string };
 
-            let searching = proxy.states.searching as SearchActive;
+            let searching = proxy.states.search as SearchResults;
 
-            const activeSearch =
-              searching.active || ({} as SearchActive["active"]);
+            const searchResultsState =
+              searching.results || ({} as SearchResults["results"]);
 
             const context =
-              activeSearch.context || ({} as SearchActive["active"]["context"]);
+              searchResultsState.context ||
+              ({} as SearchResults["results"]["context"]);
 
             context.searchText = searchText;
-            activeSearch.context = context;
-            searching.active = activeSearch;
+            searchResultsState.context = context;
+            searching.results = searchResultsState;
 
-            const genericSearch = searching as StateMachine["states"]["searching"];
+            const genericSearch = searching as StateMachine["states"]["search"];
             genericSearch.value = "inactive";
 
             const searchResults = fuzzysort.go(
@@ -141,13 +142,16 @@ export interface StateMachine {
   };
 
   readonly states: {
-    searching: {
+    search: {
       context: SearchContext;
     } & (
       | {
           value: "inactive";
         }
-      | SearchActive);
+      | {
+          value: "searching";
+        }
+      | SearchResults);
   };
 }
 
@@ -159,10 +163,10 @@ interface SearchContext {
   })[];
 }
 
-export interface SearchActive {
-  value: "active";
+export interface SearchResults {
+  value: "results";
 
-  active: {
+  results: {
     context: {
       searchText: string;
 

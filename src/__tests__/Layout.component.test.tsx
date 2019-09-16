@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { ComponentType } from "react";
 import "@marko/testing-library/cleanup-after-each";
-import { act, render, waitForElement, wait } from "@testing-library/react";
+import { render, waitForElement, wait } from "@testing-library/react";
 import { Layout } from "../components/Layout/layout.component";
 import { EbnisAppProvider, EbnisContextProps } from "../context";
 import { EmitActionType, makeObservable } from "../state/setup-observable";
