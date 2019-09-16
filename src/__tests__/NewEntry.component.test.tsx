@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import React, { ComponentType } from "react";
-import "react-testing-library/cleanup-after-each";
-import { render, fireEvent, wait, waitForElement } from "react-testing-library";
+import "@marko/testing-library/cleanup-after-each";
+import { render, fireEvent, wait, waitForElement } from "@testing-library/react";
 import addHours from "date-fns/addHours";
 import addDays from "date-fns/addDays";
 import formatDate from "date-fns/format";

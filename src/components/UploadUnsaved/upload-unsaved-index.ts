@@ -1,5 +1,6 @@
 import { UploadUnsaved as Comp } from "./upload-unsaved.component";
-import { compose, graphql, withApollo } from "react-apollo";
+import { graphql, withApollo } from "react-apollo";
+import compose from "lodash/flowRight";
 import {
   getAllUnsavedGql,
   unsavedResolvers,

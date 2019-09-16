@@ -5,7 +5,7 @@ import {
 import { makeUnsavedId } from "../../constants";
 import { CreateDataObject } from "../../graphql/apollo-types/globalTypes";
 import gql from "graphql-tag";
-import { graphql, MutationFn } from "react-apollo";
+import { graphql, MutationFunction } from "react-apollo";
 import { updateExperienceWithNewEntry } from "./update";
 import { ENTRY_FRAGMENT } from "../../graphql/entry.fragment";
 import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragment";
@@ -43,7 +43,7 @@ export const createUnsavedEntryGql = graphql<
 });
 
 export interface CreateUnsavedEntryMutationProps {
-  createUnsavedEntry: MutationFn<
+  createUnsavedEntry: MutationFunction<
     CreateUnsavedEntryMutationReturned,
     CreateUnsavedEntryVariables
   >;

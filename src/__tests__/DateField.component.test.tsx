@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { ComponentType } from "react";
-import "react-testing-library/cleanup-after-each";
-import { render } from "react-testing-library";
+import "@marko/testing-library/cleanup-after-each";
+import { render } from "@testing-library/react";
 import formatDate from "date-fns/format";
 import addDays from "date-fns/addDays";
 import addYears from "date-fns/addYears";

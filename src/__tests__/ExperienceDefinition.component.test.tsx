@@ -1,9 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import React, { ComponentType } from "react";
-import "react-testing-library/cleanup-after-each";
-import { render, fireEvent, wait } from "react-testing-library";
-import { waitForElement } from "dom-testing-library";
+import "@marko/testing-library/cleanup-after-each";
+import {
+  render,
+  fireEvent,
+  wait,
+  waitForElement,
+} from "@testing-library/react";
 import { ExperienceDefinition } from "../components/ExperienceDefinition/experience-definition.component";
 import {
   CreateDataDefinition,

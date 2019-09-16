@@ -1,5 +1,6 @@
 import React from "react";
-import { graphql, compose } from "react-apollo";
+import { graphql } from "react-apollo";
+import compose from "lodash/flowRight";
 import { Login as Comp } from "./login.component";
 import { Props } from "./login.utils";
 import {

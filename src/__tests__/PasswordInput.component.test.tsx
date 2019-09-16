@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import React, { useReducer, Reducer } from "react";
-import "react-testing-library/cleanup-after-each";
-import { render, fireEvent } from "react-testing-library";
+import "@marko/testing-library/cleanup-after-each";
+import { render, fireEvent } from "@testing-library/react";
 import { Formik, Field, FieldProps } from "formik";
 
 import {

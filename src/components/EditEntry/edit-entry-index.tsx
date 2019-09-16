@@ -1,5 +1,6 @@
 import React from "react";
-import { compose, graphql } from "react-apollo";
+import { graphql } from "react-apollo";
+import compose from "lodash/flowRight";
 import { EditEntry as Comp } from "./edit-entry-component";
 import { OwnProps, Props } from "./edit-entry-utils";
 import {

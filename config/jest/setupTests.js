@@ -1,1 +1,1 @@
-import "react-testing-library/cleanup-after-each";
+import "@marko/testing-library/cleanup-after-each";

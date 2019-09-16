@@ -3,7 +3,7 @@ import { E2EWindowObject } from "./apollo-setup";
 
 export enum EmitActionType {
   connectionChanged = "@emit-action/connection-changed",
-  nothing = "@emit-action/nothing",
+  random = "@emit-action/nothing",
 }
 
 export function makeObservable(globals: E2EWindowObject) {
@@ -31,7 +31,7 @@ export type EmitPayload =
       type: EmitActionType.connectionChanged;
     } & ConnectionChangedPayload
   | {
-      type: EmitActionType.nothing;
+      type: EmitActionType.random;
     };
 
 export interface ConnectionChangedPayload {

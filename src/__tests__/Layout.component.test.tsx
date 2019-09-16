@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { ComponentType } from "react";
-import "react-testing-library/cleanup-after-each";
-import { render, waitForElement, wait } from "react-testing-library";
+import "@marko/testing-library/cleanup-after-each";
+import { act, render, waitForElement, wait } from "@testing-library/react";
 import { Layout } from "../components/Layout/layout.component";
 import { EbnisAppProvider, EbnisContextProps } from "../context";
 import { EmitActionType, makeObservable } from "../state/setup-observable";
@@ -16,15 +16,21 @@ import {
   ILayoutUnchaningContextValue,
   ILayoutContextExperienceValue,
 } from "../components/Layout/layout.utils";
+import { getUnsavedCount } from "../state/unsaved-resolvers";
+import { isConnected } from "../state/connections";
+import { useUser } from "../components/use-user";
+import { E2EWindowObject } from "../state/apollo-setup";
+import {
+  preFetchExperiences,
+  PreFetchExperiencesFnArgs,
+} from "../components/Layout/pre-fetch-experiences";
 
 ////////////////////////// MOCKS ////////////////////////////
 
 jest.mock("../state/unsaved-resolvers");
-import { getUnsavedCount } from "../state/unsaved-resolvers";
 const mockGetUnsavedCount = getUnsavedCount as jest.Mock;
 
 jest.mock("../state/connections");
-import { isConnected } from "../state/connections";
 const mockIsConnected = isConnected as jest.Mock;
 
 jest.mock("../components/Loading/loading", () => ({
@@ -32,8 +38,6 @@ jest.mock("../components/Loading/loading", () => ({
 }));
 
 jest.mock("../components/use-user");
-import { useUser } from "../components/use-user";
-import { E2EWindowObject } from "../state/apollo-setup";
 const mockUseUser = useUser as jest.Mock;
 
 let layoutContextValue: null | ILayoutContextHeaderValue;
@@ -65,12 +69,6 @@ jest.mock("../components/Layout/pre-fetch-experiences", () => ({
     onDone();
   }),
 }));
-
-import {
-  preFetchExperiences,
-  PreFetchExperiencesFnArgs,
-} from "../components/Layout/pre-fetch-experiences";
-
 const mockPrefetchExperiences = preFetchExperiences as jest.Mock;
 
 ////////////////////////// END MOCKS ////////////////////////////
@@ -80,6 +78,11 @@ const browserRenderedUiId = "layout-loaded";
 describe("components", () => {
   beforeEach(() => {
     jest.useFakeTimers();
+
+    mockGetUnsavedCount.mockReset();
+    mockUseUser.mockReset();
+    mockIsConnected.mockReset();
+    mockPrefetchExperiences.mockReset();
   });
 
   afterEach(() => {
@@ -113,23 +116,43 @@ describe("components", () => {
     expect(document.getElementById(browserRenderedUiId)).toBeNull();
   });
 
-  it("renders loading", () => {
+  it("renders loading and then main component", async () => {
+    const { ui } = makeComp();
+
     /**
      * Given component was rendered with all context props
      */
-    const { ui } = makeComp();
-
     render(ui);
 
     /**
-     * Then we should see loading indicator
+     * Then we should not see component's children
+     */
+
+    expect(document.getElementById(browserRenderedUiId)).toBeNull();
+
+    /**
+     * But we should see loading indicator
      */
     expect(document.getElementById("o-o-1")).not.toBeNull();
 
     /**
-     * And we should not see component's children
+     * After some pause
      */
-    expect(document.getElementById(browserRenderedUiId)).toBeNull();
+
+    const $elm = await waitForElement(() => {
+      return document.getElementById(browserRenderedUiId);
+    });
+
+    /**
+     * Then we should no longer see component's children
+     */
+
+    expect($elm).not.toBeNull();
+
+    /**
+     * And we should not see loading indicator
+     */
+    expect(document.getElementById("o-o-1")).toBeNull();
   });
 
   it("renders browser hydrated children if cache persist succeeds", async () => {
@@ -211,12 +234,13 @@ describe("components", () => {
         },
       },
     });
+
     mockUseUser.mockReturnValue({});
     mockGetUnsavedCount.mockResolvedValue(5);
     mockIsConnected.mockReturnValue(false);
 
     expect(layoutContextValue).toBeNull();
-    let contextValue = {} as ILayoutContextHeaderValue;
+    let context1: ILayoutContextHeaderValue;
 
     render(ui);
 
@@ -225,12 +249,21 @@ describe("components", () => {
      */
     await waitForElement(() => document.getElementById(browserRenderedUiId));
 
-    contextValue = layoutContextValue as ILayoutContextHeaderValue;
-    expect(contextValue.unsavedCount).toBe(null);
-    expect(contextValue.hasConnection).toBe(false);
+    /**
+     * Then we should not have a connection
+     */
+
+    context1 = layoutContextValue as ILayoutContextHeaderValue;
+    expect(context1.hasConnection).toBe(false);
 
     /**
-     * And connection returns and we are reconnecting
+     * And we should not have queried for unsaved data
+     */
+
+    expect(context1.unsavedCount).toBe(null);
+
+    /**
+     * When connection event occurs
      */
     emitData({
       type: EmitActionType.connectionChanged,
@@ -238,23 +271,40 @@ describe("components", () => {
     });
 
     /**
-     * Then component should query for unsaved data
+     * Then component should query for unsaved data after some pause
      */
     await wait(() => {
-      contextValue = layoutContextValue as ILayoutContextHeaderValue;
-      expect(contextValue.unsavedCount).toBe(5);
+      context1 = layoutContextValue as ILayoutContextHeaderValue;
     });
 
-    expect(contextValue.hasConnection).toBe(true);
+    expect(context1.unsavedCount).toBe(5);
+
+    /**
+     * And set connection status to true
+     */
+
+    expect(context1.hasConnection).toBe(true);
+
+    /**
+     * When a random event occurs
+     */
+
+    let context2 = {} as ILayoutContextHeaderValue;
 
     emitData({
-      type: EmitActionType.nothing,
+      type: EmitActionType.random,
     });
 
+    /**
+     * Then nothing should have changed
+     */
+
     await wait(() => {
-      contextValue = layoutContextValue as ILayoutContextHeaderValue;
-      expect(contextValue.hasConnection).toBe(true);
+      context2 = layoutContextValue as ILayoutContextHeaderValue;
     });
+
+    expect(context2).toBe(context1);
+    expect(context2.unsavedCount).toBe(5);
   });
 
   test("sets unsaved count to 0 if we lose connection", async () => {
@@ -263,19 +313,39 @@ describe("components", () => {
     mockIsConnected.mockReturnValue(true);
     mockGetUnsavedCount.mockResolvedValue(2);
 
-    expect(layoutContextValue).toBeNull();
+    /**
+     * Given the component is rendered
+     */
 
     render(ui);
 
-    await waitForElement(() => document.getElementById(browserRenderedUiId));
-
     let context = layoutContextValue as ILayoutContextHeaderValue;
+
+    /**
+     * Then we should not query for unsaved data in the beginning
+     */
+
+    expect(context).toBeNull();
+
+    /**
+     * When main component is rendered
+     */
+
+    await waitForElement(() => {
+      return document.getElementById(browserRenderedUiId);
+    });
+
+    context = layoutContextValue as ILayoutContextHeaderValue;
+
+    /**
+     * Then we should query for unsaved data
+     */
+
     expect(context.unsavedCount).toBe(2);
 
-    layoutDispatch({
-      type: LayoutActionType.EXPERIENCES_TO_PREFETCH,
-      ids: ["1"],
-    });
+    /**
+     * When disconnect event occurs
+     */
 
     emitData({
       type: EmitActionType.connectionChanged,
@@ -284,25 +354,30 @@ describe("components", () => {
 
     await wait(() => {
       context = layoutContextValue as ILayoutContextHeaderValue;
-      expect(context.unsavedCount).toBe(0);
     });
+
+    /**
+     * Then we should reset unsaved data count
+     */
+
+    expect(context.unsavedCount).toBe(0);
   });
 
   test("pre-fetches experiences - initially connected", async () => {
-    const childProps = {} as LayoutChildProps["props"];
+    const childProps = {} as FetchExperienceInstructorProps["props"];
 
     const { ui } = makeComp({
       props: {
-        children: <LayoutChild props={childProps} />,
+        children: <FecthExperienceInstructorComponent props={childProps} />,
       },
     });
 
-    let myExperiencesContextValue = layoutExperienceContextValue as ILayoutContextExperienceValue;
+    let context = layoutExperienceContextValue as ILayoutContextExperienceValue;
 
-    expect(myExperiencesContextValue).toBeNull();
+    expect(context).toBeNull();
 
     /**
-     * Given there is user is logged in
+     * Given there is logged in user
      */
 
     mockUseUser.mockReturnValue({});
@@ -320,12 +395,27 @@ describe("components", () => {
     mockIsConnected.mockReturnValue(true);
 
     /**
-     * And we are using the component
+     * And component is rendered
      */
 
     render(ui);
 
+    /**
+     * And child component is rendered
+     */
+
     await waitForElement(() => document.getElementById(browserRenderedUiId));
+
+    /**
+     * Then we should not fetch experiences because child component has not
+     * issued instruction
+     */
+
+    expect(mockPrefetchExperiences).not.toHaveBeenCalled();
+
+    /**
+     * When child component signals it wishes to pre fetch experiences
+     */
 
     childProps.onClick = () => {
       layoutDispatch({
@@ -334,19 +424,9 @@ describe("components", () => {
       });
     };
 
-    /**
-     * Then we should not fetch experiences immediately
-     */
-
-    expect(mockPrefetchExperiences).not.toHaveBeenCalled();
-
     const $child = document.getElementById("layout-child") as HTMLDivElement;
     $child.click();
-
-    /**
-     * After a little while
-     */
-
+    await wait(() => true);
     jest.runAllTimers();
 
     /**
@@ -362,41 +442,78 @@ describe("components", () => {
      * When we are done pre fetching experiences
      */
 
-    preFetchExperiencesArgs.onDone();
-
+    await wait(() => {
+      preFetchExperiencesArgs.onDone();
+    });
     /**
      * Then we should indicate so
      */
 
-    myExperiencesContextValue = layoutExperienceContextValue as ILayoutContextExperienceValue;
+    context = layoutExperienceContextValue as ILayoutContextExperienceValue;
 
-    expect(myExperiencesContextValue.fetchExperience).toEqual(
-      "already-fetched",
-    );
+    expect(context.fetchExperience).toEqual("already-fetched");
   });
 
   test("pre-fetches experiences - initially disconnected", async () => {
-    const childProps = {} as LayoutChildProps["props"];
+    /**
+     * Given component has a child that wishes to pre fetch experiences
+     */
+
+    const childProps = {} as FetchExperienceInstructorProps["props"];
+    const children = <FecthExperienceInstructorComponent props={childProps} />;
+
+    /**
+     * And we are initially disconnected
+     */
+    mockIsConnected.mockReturnValue(false);
+
+    const connectionStatus = {
+      isConnected: false,
+    };
+
+    /**
+     * And user is logged in
+     */
+
+    mockUseUser.mockReturnValue({});
+
+    /**
+     * And there unsaved data in the system
+     */
+
+    mockGetUnsavedCount.mockResolvedValue(2);
 
     const { ui, emitData } = makeComp({
       props: {
-        children: <LayoutChild props={childProps} />,
+        children,
       },
 
       context: {
-        connectionStatus: {
-          isConnected: false,
-        },
+        connectionStatus,
       },
     });
 
-    mockUseUser.mockReturnValue({});
-    mockIsConnected.mockReturnValue(false);
-    mockGetUnsavedCount.mockResolvedValue(2);
+    /**
+     * When component is rendered
+     */
 
     render(ui);
 
+    /**
+     * And component's children have rendered
+     */
+
     await waitForElement(() => document.getElementById(browserRenderedUiId));
+
+    /**
+     * Then we should not have pre fetched experiences
+     */
+
+    expect(mockPrefetchExperiences).not.toHaveBeenCalled();
+
+    /**
+     * When child gives instruction to fetch experiences
+     */
 
     childProps.onClick = () => {
       layoutDispatch({
@@ -405,25 +522,35 @@ describe("components", () => {
       });
     };
 
-    expect(mockPrefetchExperiences).not.toHaveBeenCalled();
-
     const $child = document.getElementById("layout-child") as HTMLDivElement;
     $child.click();
-    jest.runAllTimers();
+
+    /**
+     * Then we should still not fetch experiences - because we not connected
+     */
 
     expect(mockPrefetchExperiences).not.toHaveBeenCalled();
+
+    /**
+     * When connection event occurs
+     */
+
     emitData({
       type: EmitActionType.connectionChanged,
       hasConnection: true,
     });
 
-    await wait(() => {
-      jest.runAllTimers();
-      const preFetchExperiencesArgs = mockPrefetchExperiences.mock
-        .calls[0][0] as PreFetchExperiencesFnArgs;
+    /**
+     * Then we should fetch experiences
+     */
 
-      expect(preFetchExperiencesArgs.ids[0]).toEqual("1");
-    });
+    await wait(() => true);
+    jest.runAllTimers();
+
+    const preFetchExperiencesArgs = mockPrefetchExperiences.mock
+      .calls[0][0] as PreFetchExperiencesFnArgs;
+
+    expect(preFetchExperiencesArgs.ids[0]).toEqual("1");
   });
 });
 
@@ -544,10 +671,6 @@ function makeComp({
 } = {}) {
   layoutContextValue = null;
   layoutExperienceContextValue = null;
-  mockGetUnsavedCount.mockReset();
-  mockUseUser.mockReset();
-  mockIsConnected.mockReset();
-  mockPrefetchExperiences.mockReset();
 
   const mockRestoreCacheOrPurgeStorage = jest.fn();
   const cache = jest.fn();
@@ -576,12 +699,15 @@ function makeComp({
         </LayoutP>
       </EbnisAppProvider>
     ),
+
     mockRestoreCacheOrPurgeStorage,
     emitData: observableUtils.emitData,
   };
 }
 
-function LayoutChild(props: LayoutChildProps) {
+function FecthExperienceInstructorComponent(
+  props: FetchExperienceInstructorProps,
+) {
   return (
     <div>
       <span
@@ -596,7 +722,7 @@ function LayoutChild(props: LayoutChildProps) {
   );
 }
 
-interface LayoutChildProps {
+interface FetchExperienceInstructorProps {
   props: {
     onClick: () => void;
   };

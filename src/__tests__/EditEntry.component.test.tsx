@@ -1,8 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { ComponentType } from "react";
-import "jest-dom/extend-expect";
-import "react-testing-library/cleanup-after-each";
-import { render, wait, waitForElement } from "react-testing-library";
+import "@marko/testing-library/cleanup-after-each";
+import { render, wait, waitForElement } from "@testing-library/react";
 import { EditEntry } from "../components/EditEntry/edit-entry-component";
 import { Props, ActionTypes } from "../components/EditEntry/edit-entry-utils";
 import { EntryFragment } from "../graphql/apollo-types/EntryFragment";

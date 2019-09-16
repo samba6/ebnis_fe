@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { ComponentType } from "react";
-import "react-testing-library/cleanup-after-each";
-import { render, fireEvent } from "react-testing-library";
+import "@marko/testing-library/cleanup-after-each";
+import { render, fireEvent } from "@testing-library/react";
 import { MyExperiences } from "../components/MyExperiences/my-experiences.component";
 import { Props } from "../components/MyExperiences/my-experiences.utils";
 import { renderWithRouter, fillField } from "./test_utils";

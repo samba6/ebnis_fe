@@ -1,4 +1,5 @@
-import { graphql, compose } from "react-apollo";
+import { graphql } from "react-apollo";
+import compose from "lodash/flowRight";
 import { OwnProps } from "./experience-new-entry-parent-utils";
 import { ExperienceNewEntryParent as Comp } from "./experience-new-entry-parent.component";
 import {

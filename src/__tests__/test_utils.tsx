@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import React, { ComponentType } from "react";
-import { fireEvent } from "react-testing-library";
+import { fireEvent } from "@testing-library/react";
 import { RouteComponentProps, WindowLocation } from "@reach/router";
 
 export function renderWithRouter<TProps extends RouteComponentProps>(
@@ -103,3 +103,4 @@ export interface ToInputVariables<T> {
 
   update: jest.Mock;
 }
+

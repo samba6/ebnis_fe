@@ -1,5 +1,5 @@
-import { graphql, compose, withApollo } from "react-apollo";
-
+import { graphql, withApollo } from "react-apollo";
+import compose from "lodash/flowRight";
 import { NewEntry as Comp } from "./new-entry.component";
 import { OwnProps } from "./new-entry.utils";
 import {

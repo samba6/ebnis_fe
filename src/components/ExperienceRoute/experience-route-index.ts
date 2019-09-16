@@ -1,5 +1,6 @@
 import { ExperienceRoute as Comp } from "./experience-route.component";
-import { graphql, compose } from "react-apollo";
+import { graphql } from "react-apollo";
+import compose from "lodash/flowRight";
 import {
   UPDATE_EXPERIENCE_MUTATION,
   UpdateExperienceMutationProps,

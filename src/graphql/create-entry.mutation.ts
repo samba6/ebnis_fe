@@ -1,12 +1,11 @@
 import gql from "graphql-tag";
-import { MutationFn } from "react-apollo";
-
 import {
   CreateEntryMutation,
   CreateEntryMutationVariables,
 } from "./apollo-types/CreateEntryMutation";
 import { ENTRY_FRAGMENT } from "./entry.fragment";
 import { DATA_OBJECTS_ERRORS } from "./data-objects-errors-fragment";
+import { MutationFunction } from "react-apollo";
 
 const CREATE_ENTRY_ERRORS_FRAGMENT = gql`
   fragment CreateEntryErrorsFragment on CreateEntryErrors {
@@ -40,7 +39,7 @@ export const CREATE_ENTRY_MUTATION = gql`
   ${CREATE_ENTRY_ERRORS_FRAGMENT}
 `;
 
-export type CreateEntryMutationFn = MutationFn<
+export type CreateEntryMutationFn = MutationFunction<
   CreateEntryMutation,
   CreateEntryMutationVariables
 >;

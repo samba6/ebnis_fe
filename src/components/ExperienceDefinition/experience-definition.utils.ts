@@ -1,6 +1,5 @@
 import { RouteComponentProps } from "@reach/router";
 import * as Yup from "yup";
-import { MutationUpdaterFn } from "react-apollo";
 import { Reducer, Dispatch } from "react";
 import { FormikErrors } from "formik";
 import immer from "immer";
@@ -18,7 +17,7 @@ import {
 } from "../../graphql/apollo-types/CreateExperienceMutation";
 import { CreateUnsavedExperienceMutationProps } from "./resolvers";
 import { WithApolloClient } from "react-apollo";
-import { ApolloError } from "apollo-client";
+import { ApolloError, MutationUpdaterFn } from "apollo-client";
 
 export type CreateExpUpdateFn = MutationUpdaterFn<CreateExperienceMutation>;
 

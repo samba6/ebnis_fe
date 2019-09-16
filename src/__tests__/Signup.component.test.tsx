@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import React, { ComponentType } from "react";
-import "react-testing-library/cleanup-after-each";
-import { render, fireEvent, wait, waitForElement } from "react-testing-library";
+import "@marko/testing-library/cleanup-after-each";
+import { render, fireEvent, wait, waitForElement } from "@testing-library/react";
 
 import { SignUp } from "../components/Signup/signup.component";
 import { Props } from "../components/Signup/signup.utils";

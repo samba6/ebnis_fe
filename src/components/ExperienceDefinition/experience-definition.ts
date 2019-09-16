@@ -1,5 +1,5 @@
-import { graphql, compose, withApollo } from "react-apollo";
-
+import { graphql, withApollo } from "react-apollo";
+import compose from "lodash/flowRight";
 import { ExperienceDefinition as Comp } from "./experience-definition.component";
 import { OwnProps } from "./experience-definition.utils";
 import {

@@ -1,5 +1,6 @@
 import React from "react";
-import { graphql, compose, withApollo } from "react-apollo";
+import { graphql, withApollo } from "react-apollo";
+import compose from "lodash/flowRight";
 import { MyExperiences as Comp } from "./my-experiences.component";
 import {
   GetExperienceConnectionMini,

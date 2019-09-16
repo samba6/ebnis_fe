@@ -1,9 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
 import React, { ComponentType } from "react";
-import "jest-dom/extend-expect";
-import "react-testing-library/cleanup-after-each";
-import { render, fireEvent } from "react-testing-library";
+import "@marko/testing-library/cleanup-after-each";
+import { render, fireEvent } from "@testing-library/react";
 
 import {
   Experience,

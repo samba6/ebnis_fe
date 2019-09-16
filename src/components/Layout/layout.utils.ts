@@ -7,7 +7,7 @@ import { UserFragment } from "../../graphql/apollo-types/UserFragment";
 
 export enum LayoutActionType {
   SET_UNSAVED_COUNT = "@layout/set-unsaved-count",
-  RENDER_CHILDREN = "@layout/render-children",
+  CACHE_PERSISTED = "@layout/render-children",
   EXPERIENCES_TO_PREFETCH = "@layout/experiences-to-pre-fetch",
   CONNECTION_CHANGED = "@layout/connection-changed",
   DONE_FETCHING_EXPERIENCES = "@layout/experiences-already-fetched",
@@ -52,17 +52,22 @@ export const reducer: Reducer<IStateMachine, LayoutAction> = (state, action) =>
 
           break;
 
-        case LayoutActionType.SET_UNSAVED_COUNT:
-          {
-            proxy.context.unsavedCount = (payload as { count: number }).count;
-            proxy.context.hasConnection = !!isConnected();
-          }
-          break;
-
-        case LayoutActionType.RENDER_CHILDREN:
+        case LayoutActionType.CACHE_PERSISTED:
           {
             proxy.context.renderChildren = true;
-            proxy.context.hasConnection = !!isConnected();
+
+            const { hasConnection, unsavedCount } = payload as {
+              unsavedCount: number;
+              hasConnection: boolean;
+            };
+
+            proxy.context.hasConnection = hasConnection;
+
+            if (!hasConnection) {
+              return;
+            }
+
+            proxy.context.unsavedCount = unsavedCount;
           }
 
           break;
@@ -147,7 +152,9 @@ export type LayoutAction =
       count: number;
     }
   | {
-      type: LayoutActionType.RENDER_CHILDREN;
+      type: LayoutActionType.CACHE_PERSISTED;
+      unsavedCount: number | null;
+      hasConnection: boolean;
     }
   | {
       type: LayoutActionType.EXPERIENCES_TO_PREFETCH;

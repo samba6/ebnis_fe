@@ -1,8 +1,7 @@
-// tslint:disable: no-any
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { ComponentType } from "react";
-import "jest-dom/extend-expect";
-import "react-testing-library/cleanup-after-each";
-import { render } from "react-testing-library";
+import "@marko/testing-library/cleanup-after-each";
+import { render } from "@testing-library/react";
 import {
   ErrorBoundary,
   Props,
@@ -86,7 +85,9 @@ it("renders by calling fallback prop", () => {
   });
 
   const {} = render(ui);
-  expect(document.getElementById("aa")).toHaveTextContent("boom");
+  expect(
+    (document.getElementById("aa") as HTMLDivElement).textContent,
+  ).toContain("boom");
   expect(getFallbackDom()).toBeNull();
 });
 

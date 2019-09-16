@@ -1,8 +1,7 @@
-// tslint:disable: no-any
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { ComponentType } from "react";
-import "jest-dom/extend-expect";
-import "react-testing-library/cleanup-after-each";
-import { render } from "react-testing-library";
+import "@marko/testing-library/cleanup-after-each";
+import { render } from "@testing-library/react";
 import { Entry } from "../components/Entry/entry.component";
 import { Props, reducer, State } from "../components/Entry/entry.utils";
 import { EntryFragment } from "../graphql/apollo-types/EntryFragment";
