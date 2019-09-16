@@ -3,7 +3,6 @@ import * as Yup from "yup";
 import { Reducer, Dispatch } from "react";
 import { FormikErrors } from "formik";
 import immer from "immer";
-import { CreateExperienceMutationProps } from "../../graphql/create-experience.mutation";
 import {
   CreateExperienceInput as FormValues,
   CreateDataDefinition,
@@ -15,20 +14,11 @@ import {
   CreateExperienceMutation_createExperience_errors_dataDefinitionsErrors_errors,
   CreateExperienceMutation_createExperience_errors_dataDefinitionsErrors,
 } from "../../graphql/apollo-types/CreateExperienceMutation";
-import { CreateUnsavedExperienceMutationProps } from "./resolvers";
-import { WithApolloClient } from "react-apollo";
 import { ApolloError, MutationUpdaterFn } from "apollo-client";
 
 export type CreateExpUpdateFn = MutationUpdaterFn<CreateExperienceMutation>;
 
-export interface OwnProps
-  extends RouteComponentProps<{}>,
-    WithApolloClient<{}> {}
-
-export interface Props
-  extends OwnProps,
-    CreateExperienceMutationProps,
-    CreateUnsavedExperienceMutationProps {}
+export type Props = RouteComponentProps<{}>;
 
 export const fieldTypeKeys = Object.values(DataTypes);
 

@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
 import React, { ComponentType } from "react";
 import "@marko/testing-library/cleanup-after-each";
 import {
@@ -20,6 +19,18 @@ import {
   CreateExperienceMutationVariables,
   CreateExperienceMutation,
 } from "../graphql/apollo-types/CreateExperienceMutation";
+import { ExperienceDefinitionUpdate } from "../components/ExperienceDefinition/experience-definition.update";
+import { isConnected } from "../state/connections";
+import { scrollIntoView } from "../components/scroll-into-view";
+import { CreateUnsavedExperienceMutationData } from "../components/ExperienceDefinition/resolvers";
+import { ApolloError } from "apollo-client";
+import { GraphQLError } from "graphql";
+import { EbnisAppProvider } from "../context";
+import {
+  useCreateExperience,
+  addResolvers,
+  useCreateUnsavedExperience,
+} from "../components/ExperienceDefinition/experience-definition.injectables";
 
 jest.mock("../components/ExperienceDefinition/experience-definition.update");
 jest.mock("../components/SidebarHeader/sidebar-header.component", () => ({
@@ -27,16 +38,24 @@ jest.mock("../components/SidebarHeader/sidebar-header.component", () => ({
 }));
 jest.mock("../state/connections");
 jest.mock("../components/scroll-into-view");
-
-import { ExperienceDefinitionUpdate } from "../components/ExperienceDefinition/experience-definition.update";
-import { isConnected } from "../state/connections";
-import { scrollIntoView } from "../components/scroll-into-view";
-import { CreateUnsavedExperienceMutationData } from "../components/ExperienceDefinition/resolvers";
-import { ApolloError } from "apollo-client";
-import { GraphQLError } from "graphql";
+jest.mock(
+  "../components/ExperienceDefinition/experience-definition.injectables",
+);
+jest.mock("react-apollo");
 
 const mockIsConnected = isConnected as jest.Mock;
 const mockScrollIntoView = scrollIntoView as jest.Mock;
+const mockUseCreateExperience = useCreateExperience as jest.Mock;
+const mockUseCreateUnsavedExperience = useCreateUnsavedExperience as jest.Mock;
+const mockAddResolvers = addResolvers as jest.Mock;
+
+beforeEach(() => {
+  mockIsConnected.mockReset();
+  mockScrollIntoView.mockReset();
+  mockUseCreateExperience.mockReset();
+  mockAddResolvers.mockReset();
+  mockUseCreateUnsavedExperience.mockReset();
+});
 
 const title = "ab";
 
@@ -48,7 +67,7 @@ const resolvedVal = {
   } as CreateExperienceMutation,
 };
 
-it("adds field from top", async () => {
+it("adds field from top, creates online experience definition", async () => {
   const dataDefinitions: CreateDataDefinition[] = [
     {
       name: "f0",
@@ -61,14 +80,14 @@ it("adds field from top", async () => {
     },
   ];
 
-  const { Ui, mockNavigate, mockCreateExperience } = makeComp();
+  const { ui, mockNavigate, mockCreateExperience } = makeComp();
 
   mockCreateExperience.mockResolvedValue(resolvedVal);
 
   /**
    * Given we are using new experience component
    */
-  render(<Ui />);
+  render(ui);
 
   /**
    * And we complete the title field
@@ -242,14 +261,14 @@ it("adds field in middle", async () => {
     },
   ];
 
-  const { Ui, mockNavigate, mockCreateExperience } = makeComp();
+  const { ui, mockNavigate, mockCreateExperience } = makeComp();
 
   mockCreateExperience.mockResolvedValue(resolvedVal);
 
   /**
    * Given we are using new experience component
    */
-  render(<Ui />);
+  render(ui);
 
   /**
    * And we create and complete 3 field definitions
@@ -334,14 +353,14 @@ it("adds field at bottom", async () => {
     },
   ];
 
-  const { Ui, mockNavigate, mockCreateExperience } = makeComp();
+  const { ui, mockNavigate, mockCreateExperience } = makeComp();
 
   mockCreateExperience.mockResolvedValue(resolvedVal);
 
   /**
    * Given we are using new experience component
    */
-  render(<Ui />);
+  render(ui);
 
   /**
    * And we create and complete 2 field definitions
@@ -415,14 +434,14 @@ it("removes field from top", async () => {
     },
   ];
 
-  const { Ui, mockNavigate, mockCreateExperience } = makeComp();
+  const { ui, mockNavigate, mockCreateExperience } = makeComp();
 
   mockCreateExperience.mockResolvedValue(resolvedVal);
 
   /**
    * Given we are using new experience component
    */
-  render(<Ui />);
+  render(ui);
 
   /**
    * And we complete the two fields on screen
@@ -499,14 +518,14 @@ it("removes field from bottom", async () => {
     },
   ];
 
-  const { Ui, mockCreateExperience } = makeComp();
+  const { ui, mockCreateExperience } = makeComp();
 
   mockCreateExperience.mockResolvedValue(resolvedVal);
 
   /**
    * Given we are using new experience component
    */
-  render(<Ui />);
+  render(ui);
 
   /**
    * And we complete the two fields on screen
@@ -589,14 +608,14 @@ it("removes field from middle", async () => {
     },
   ];
 
-  const { Ui, mockCreateExperience } = makeComp();
+  const { ui, mockCreateExperience } = makeComp();
 
   mockCreateExperience.mockResolvedValue(resolvedVal);
 
   /**
    * Given we are using new experience component
    */
-  render(<Ui />);
+  render(ui);
 
   /**
    * And we complete the 3 fields on screen
@@ -661,14 +680,14 @@ it("moves field up from bottom", async () => {
     },
   ];
 
-  const { Ui, mockCreateExperience } = makeComp();
+  const { ui, mockCreateExperience } = makeComp();
 
   mockCreateExperience.mockResolvedValue(resolvedVal);
 
   /**
    * Given we are using new experience component
    */
-  render(<Ui />);
+  render(ui);
 
   /**
    * And we complete the two fields on screen
@@ -750,14 +769,14 @@ it("moves field up from middle", async () => {
     },
   ];
 
-  const { Ui, mockCreateExperience } = makeComp();
+  const { ui, mockCreateExperience } = makeComp();
 
   mockCreateExperience.mockResolvedValue(resolvedVal);
 
   /**
    * Given we are using new experience component
    */
-  render(<Ui />);
+  render(ui);
 
   /**
    * And we complete the two fields on screen
@@ -838,14 +857,14 @@ it("moves field down from top", async () => {
     },
   ];
 
-  const { Ui, mockCreateExperience } = makeComp();
+  const { ui, mockCreateExperience } = makeComp();
 
   mockCreateExperience.mockResolvedValue(resolvedVal);
 
   /**
    * Given we are using new experience component
    */
-  render(<Ui />);
+  render(ui);
 
   /**
    * And we complete the two fields on screen
@@ -927,14 +946,14 @@ it("moves field down from middle", async () => {
     },
   ];
 
-  const { Ui, mockCreateExperience } = makeComp();
+  const { ui, mockCreateExperience } = makeComp();
 
   mockCreateExperience.mockResolvedValue(resolvedVal);
 
   /**
    * Given we are using new experience component
    */
-  render(<Ui />);
+  render(ui);
 
   /**
    * And we complete the 3 fields on screen
@@ -1003,12 +1022,12 @@ it("moves field down from middle", async () => {
 });
 
 it("toggles description field", () => {
-  const { Ui } = makeComp();
+  const { ui } = makeComp();
 
   /**
    * Given we are using new experience component
    */
-  render(<Ui />);
+  render(ui);
 
   /**
    * Then description input box should be visible on the page
@@ -1081,7 +1100,7 @@ it("renders errors if we get field errors", async () => {
     },
   ];
 
-  const { Ui, mockCreateExperience } = makeComp();
+  const { ui, mockCreateExperience } = makeComp();
 
   mockCreateExperience.mockResolvedValue({
     data: {
@@ -1106,7 +1125,7 @@ it("renders errors if we get field errors", async () => {
   /**
    * Given we are using new exp component
    */
-  render(<Ui />);
+  render(ui);
 
   /**
    * When we complete two fields, giving them same name
@@ -1187,9 +1206,9 @@ it("renders error if all fields not completely filled on submission", async () =
     },
   ];
 
-  const { Ui } = makeComp();
+  const { ui } = makeComp();
 
-  render(<Ui />);
+  render(ui);
 
   fillFields(dataDefinitions);
 
@@ -1230,7 +1249,7 @@ it("saves experience when we are not connected", async () => {
   /**
    * Given server is not connected
    */
-  const { Ui, mockNavigate, mockCreateUnsavedExperience } = makeComp(
+  const { ui, mockNavigate, mockCreateUnsavedExperience } = makeComp(
     {},
     {
       isConnected: false,
@@ -1248,7 +1267,7 @@ it("saves experience when we are not connected", async () => {
   /**
    * While we are using new experience component
    */
-  render(<Ui />);
+  render(ui);
 
   /**
    * When we complete and submit the form
@@ -1287,9 +1306,9 @@ it("renders error even if there are no fields error", async () => {
     },
   ];
 
-  const { Ui } = makeComp();
+  const { ui } = makeComp();
 
-  render(<Ui />);
+  render(ui);
 
   // title must be of min length  2
   fillFields(dataDefinitions, { title: "a" });
@@ -1325,7 +1344,7 @@ it("renders network error", async () => {
   /**
    * Given server is not connected
    */
-  const { Ui, mockCreateExperience } = makeComp();
+  const { ui, mockCreateExperience } = makeComp();
 
   mockCreateExperience.mockRejectedValue(
     new ApolloError({
@@ -1336,7 +1355,7 @@ it("renders network error", async () => {
   /**
    * While we are using new experience component
    */
-  render(<Ui />);
+  render(ui);
 
   /**
    * When we complete and submit the form
@@ -1370,7 +1389,7 @@ it("renders graphql error", async () => {
   /**
    * Given server is not connected
    */
-  const { Ui, mockCreateExperience } = makeComp();
+  const { ui, mockCreateExperience } = makeComp();
 
   mockCreateExperience.mockRejectedValue(
     new ApolloError({
@@ -1381,7 +1400,7 @@ it("renders graphql error", async () => {
   /**
    * While we are using new experience component
    */
-  render(<Ui />);
+  render(ui);
 
   /**
    * When we complete and submit the form
@@ -1415,14 +1434,14 @@ it("renders errors if exception is thrown during submit", async () => {
   /**
    * Given server is not connected
    */
-  const { Ui, mockCreateExperience } = makeComp();
+  const { ui, mockCreateExperience } = makeComp();
 
   mockCreateExperience.mockRejectedValue(new Error("a"));
 
   /**
    * While we are using new experience component
    */
-  render(<Ui />);
+  render(ui);
 
   /**
    * When we complete and submit the form
@@ -1456,14 +1475,14 @@ it("renders errors if server's response is out of shape", async () => {
   /**
    * Given server is not connected
    */
-  const { Ui, mockCreateExperience } = makeComp();
+  const { ui, mockCreateExperience } = makeComp();
 
   mockCreateExperience.mockResolvedValue({});
 
   /**
    * While we are using new experience component
    */
-  render(<Ui />);
+  render(ui);
 
   /**
    * When we complete and submit the form
@@ -1503,24 +1522,30 @@ function makeComp(
   props: Partial<Props> = {},
   { isConnected = true }: { isConnected?: boolean } = {},
 ) {
-  const mockCreateExperience = jest.fn();
-  mockIsConnected.mockReset();
-  mockScrollIntoView.mockReset();
   mockIsConnected.mockReturnValue(isConnected);
+
+  const mockCreateExperience = jest.fn();
   const mockCreateUnsavedExperience = jest.fn();
 
-  const { Ui, ...rest } = renderWithRouter(
-    ExperienceDefinitionP,
-    {},
-    {
-      createExperience: mockCreateExperience,
-      createUnsavedExperience: mockCreateUnsavedExperience,
-      ...props,
-    },
-  );
+  mockUseCreateExperience.mockReturnValue([mockCreateExperience]);
+  mockUseCreateUnsavedExperience.mockReturnValue([mockCreateUnsavedExperience]);
+
+  const { Ui, ...rest } = renderWithRouter(ExperienceDefinitionP);
+
+  const client = {
+    addResolvers: jest.fn(),
+  };
+
+  const ebnisAppContext = {
+    client,
+  } as any;
 
   return {
-    Ui,
+    ui: (
+      <EbnisAppProvider value={ebnisAppContext}>
+        <Ui {...props} />
+      </EbnisAppProvider>
+    ),
     mockCreateExperience,
     mockCreateUnsavedExperience,
     ...rest,

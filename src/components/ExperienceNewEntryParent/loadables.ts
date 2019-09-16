@@ -3,7 +3,7 @@ import Loadable from "react-loadable";
 import { LoadableLoading } from "../Loading/loading";
 
 export const NewEntry = Loadable({
-  loader: () => import("../NewEntry/new-entry-index"),
+  loader: () => import("../NewEntry/new-entry.component"),
   loading: LoadableLoading,
 }) as any;
 

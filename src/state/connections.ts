@@ -1,4 +1,4 @@
-import { EmitActionType } from "./setup-observable";
+import { EmitActionType } from "./observable-manager";
 
 export function makeConnectionObject() {
   let connectionStatus = window.____ebnis.connectionStatus;

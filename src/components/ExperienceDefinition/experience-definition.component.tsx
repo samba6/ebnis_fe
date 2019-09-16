@@ -1,4 +1,4 @@
-import React, { useEffect, Dispatch, useReducer } from "react";
+import React, { useEffect, Dispatch, useReducer, useContext } from "react";
 import {
   Formik,
   FastField,
@@ -38,7 +38,6 @@ import { makeExperienceRoute } from "../../constants/experience-route";
 import { noop, setDocumentTitle, makeSiteTitle } from "../../constants";
 import { EXPERIENCE_DEFINITION_TITLE } from "../../constants/experience-definition-title";
 import { ExperienceDefinitionUpdate } from "./experience-definition.update";
-import { CreateExperienceMutationFn } from "../../graphql/create-experience.mutation";
 import { SidebarHeader } from "../SidebarHeader/sidebar-header.component";
 import { FormCtrlError } from "../FormCtrlError/form-ctrl-error.component";
 import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragment";
@@ -52,14 +51,29 @@ import {
 import makeClassNames from "classnames";
 import { scrollIntoView } from "../scroll-into-view";
 import { ApolloError } from "apollo-client";
+import { EbnisAppContext } from "../../context";
+import {
+  useCreateExperience,
+  addResolvers,
+  useCreateUnsavedExperience,
+} from "./experience-definition.injectables";
 
 const mainComponentId = "components-experience-definition";
 
 export function ExperienceDefinition(props: Props) {
-  const { createExperience, navigate, createUnsavedExperience } = props;
+  const { navigate } = props;
+  const { client } = useContext(EbnisAppContext);
+
+  const [createExperience] = useCreateExperience();
+  const [createUnsavedExperience] = useCreateUnsavedExperience();
+
   const [state, dispatch] = useReducer(reducer, {
     showDescriptionInput: true,
   } as State);
+
+  useEffect(() => {
+    addResolvers(client);
+  }, [client]);
 
   useEffect(function setCompTitle() {
     setDocumentTitle(makeSiteTitle(EXPERIENCE_DEFINITION_TITLE));
@@ -116,7 +130,7 @@ export function ExperienceDefinition(props: Props) {
         let fieldErrors: CreateExperienceMutation_createExperience_errors | null = null;
 
         if (isConnected()) {
-          result = await (createExperience as CreateExperienceMutationFn)({
+          result = await createExperience({
             variables: {
               createExperienceInput: values,
               entriesPagination,
@@ -260,6 +274,8 @@ export function ExperienceDefinition(props: Props) {
     </div>
   );
 }
+
+export default ExperienceDefinition;
 
 interface DataDefinitionComponentProps {
   values: FormValues;

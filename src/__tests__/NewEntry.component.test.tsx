@@ -1,8 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
 import React, { ComponentType } from "react";
 import "@marko/testing-library/cleanup-after-each";
-import { render, fireEvent, wait, waitForElement } from "@testing-library/react";
+import {
+  render,
+  fireEvent,
+  wait,
+  waitForElement,
+} from "@testing-library/react";
 import addHours from "date-fns/addHours";
 import addDays from "date-fns/addDays";
 import formatDate from "date-fns/format";
@@ -33,14 +37,6 @@ import {
   CreateEntryMutation,
   CreateEntryMutationVariables,
 } from "../graphql/apollo-types/CreateEntryMutation";
-
-jest.mock("../components/NewEntry/update");
-jest.mock("../components/SidebarHeader/sidebar-header.component", () => ({
-  SidebarHeader: () => null,
-}));
-jest.mock("../state/connections");
-jest.mock("../components/scroll-into-view");
-
 import { updateExperienceWithNewEntry } from "../components/NewEntry/update";
 import { isConnected } from "../state/connections";
 import { scrollIntoView } from "../components/scroll-into-view";
@@ -49,10 +45,32 @@ import {
   CreateUnsavedEntryMutationReturned,
 } from "../components/NewEntry/resolvers";
 import { GraphQLError } from "graphql";
+import {
+  useCreateOnlineEntry,
+  useCreateUnsavedEntry,
+} from "../components/NewEntry/new-entry.injectables";
+
+jest.mock("../components/NewEntry/update");
+jest.mock("../components/SidebarHeader/sidebar-header.component", () => ({
+  SidebarHeader: () => null,
+}));
+jest.mock("../state/connections");
+jest.mock("../components/scroll-into-view");
+jest.mock("../components/NewEntry/new-entry.injectables");
 
 const mockIsConnected = isConnected as jest.Mock;
 const mockUpdate = updateExperienceWithNewEntry as jest.Mock;
 const mockScrollIntoView = scrollIntoView as jest.Mock;
+const mockUseCreateOnlineEntry = useCreateOnlineEntry as jest.Mock;
+const mockUseCreateUnsavedEntry = useCreateUnsavedEntry as jest.Mock;
+
+beforeEach(() => {
+  mockScrollIntoView.mockReset();
+  mockIsConnected.mockReset();
+  mockUpdate.mockReset();
+  mockUseCreateOnlineEntry.mockReset();
+  mockUseCreateUnsavedEntry.mockReset();
+});
 
 const title = "ww";
 
@@ -600,23 +618,16 @@ it("treats non field graphql errors as network error", async () => {
 const NewEntryP = NewEntry as ComponentType<Partial<Props>>;
 
 function makeComp(props: Partial<Props>, connectionStatus: boolean = true) {
-  mockScrollIntoView.mockReset();
-  mockIsConnected.mockReset();
   mockIsConnected.mockReturnValue(connectionStatus);
-  mockUpdate.mockReset();
   const mockCreateEntry = jest.fn();
   const mockCreateUnsavedEntry = jest.fn();
+  mockUseCreateOnlineEntry.mockReturnValue([mockCreateEntry]);
+  mockUseCreateUnsavedEntry.mockReturnValue([mockCreateUnsavedEntry]);
 
   const { Ui, ...rest } = renderWithRouter(NewEntryP);
 
   return {
-    ui: (
-      <Ui
-        createEntry={mockCreateEntry}
-        createUnsavedEntry={mockCreateUnsavedEntry}
-        {...props}
-      />
-    ),
+    ui: <Ui {...props} />,
     mockCreateEntry,
     mockCreateUnsavedEntry,
     ...rest,

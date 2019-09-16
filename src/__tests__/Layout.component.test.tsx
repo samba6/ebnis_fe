@@ -4,7 +4,7 @@ import "@marko/testing-library/cleanup-after-each";
 import { render, waitForElement, wait } from "@testing-library/react";
 import { Layout } from "../components/Layout/layout.component";
 import { EbnisAppProvider, EbnisContextProps } from "../context";
-import { EmitActionType, makeObservable } from "../state/setup-observable";
+import { EmitActionType, makeObservable } from "../state/observable-manager";
 import {
   ILayoutContextHeaderValue,
   Props,
