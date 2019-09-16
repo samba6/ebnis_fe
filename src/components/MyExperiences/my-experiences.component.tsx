@@ -27,7 +27,6 @@ import { SidebarHeader } from "../SidebarHeader/sidebar-header.component";
 import { setDocumentTitle, makeSiteTitle } from "../../constants";
 import { MY_EXPERIENCES_TITLE } from "../../constants/my-experiences-title";
 import { Link } from "gatsby";
-import { GetExperienceConnectionMiniData } from "../../graphql/get-experience-connection-mini.query";
 import {
   ExperienceConnectionFragment,
   ExperienceConnectionFragment_edges,
@@ -43,14 +42,32 @@ import SemanticSearch from "semantic-ui-react/dist/commonjs/modules/Search";
 import { SearchResultProps, SearchProps } from "semantic-ui-react";
 import { NavigateFn } from "@reach/router";
 import lodashDebounce from "lodash/debounce";
+import {
+  GetExperienceConnectionMini,
+  GetExperienceConnectionMiniVariables,
+} from "../../graphql/apollo-types/GetExperienceConnectionMini";
+import { GET_EXPERIENCES_MINI_QUERY } from "../../graphql/get-experience-connection-mini.query";
+import { useQuery } from "react-apollo";
+import {
+  searchDebounceTimeoutMs,
+  cleanUpOnSearchExit,
+} from "./my-experiences.injectables";
 
 export const MyExperiences = (props: Props) => {
-  const {
-    getExperiencesMiniProps: {
-      loading,
-      getExperiences,
-    } = {} as GetExperienceConnectionMiniData,
-  } = props;
+  const { data, loading } = useQuery<
+    GetExperienceConnectionMini,
+    GetExperienceConnectionMiniVariables
+  >(GET_EXPERIENCES_MINI_QUERY, {
+    variables: {
+      input: {
+        pagination: {
+          first: 2000,
+        },
+      },
+    },
+  });
+
+  const getExperiences = data && data.getExperiences;
 
   const experiences = useMemo(() => {
     if (!getExperiences) {
@@ -167,8 +184,8 @@ export const MyExperiences = (props: Props) => {
         value={{
           dispatch,
           navigate: props.navigate as NavigateFn,
-          searchDebounceTimeoutMs: props.searchDebounceTimeoutMs,
-          cleanUpOnSearchExit: props.cleanUpOnSearchExit,
+          searchDebounceTimeoutMs: searchDebounceTimeoutMs,
+          cleanUpOnSearchExit: cleanUpOnSearchExit,
         }}
       >
         <div className="main">{renderMain()}</div>
@@ -176,6 +193,8 @@ export const MyExperiences = (props: Props) => {
     </div>
   );
 };
+
+export default MyExperiences;
 
 const Experience = React.memo(
   function ExperienceFn({ showingDescription, experience }: ExperienceProps) {

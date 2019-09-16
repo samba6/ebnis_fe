@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { ComponentType } from "react";
 import "@marko/testing-library/cleanup-after-each";
-import { render, fireEvent, wait, act } from "@testing-library/react";
+import { render, fireEvent, act } from "@testing-library/react";
 import { MyExperiences } from "../components/MyExperiences/my-experiences.component";
 import { Props } from "../components/MyExperiences/my-experiences.utils";
 import { renderWithRouter, fillField } from "./test_utils";
@@ -14,6 +14,13 @@ import {
   ILayoutUnchaningContextValue,
   ILayoutContextExperienceValue,
 } from "../components/Layout/layout.utils";
+import { cleanUpOnSearchExit } from "../components/MyExperiences/my-experiences.injectables";
+import {
+  GetExperienceConnectionMini_getExperiences,
+  GetExperienceConnectionMini_getExperiences_edges,
+} from "../graphql/apollo-types/GetExperienceConnectionMini";
+import { useQuery } from "react-apollo";
+import { GetExperienceConnectionMiniQueryResult } from "../graphql/get-experience-connection-mini.query";
 
 jest.mock("../components/SidebarHeader/sidebar-header.component", () => ({
   SidebarHeader: jest.fn(() => null),
@@ -23,8 +30,20 @@ jest.mock("../components/Loading/loading", () => ({
   Loading: () => <div id="loading-a-a" />,
 }));
 
+jest.mock("../components/MyExperiences/my-experiences.injectables", () => ({
+  cleanUpOnSearchExit: jest.fn(),
+  searchDebounceTimeoutMs: 0,
+}));
+
+jest.mock("react-apollo");
+
+const mockCleanUpOnSearchExit = cleanUpOnSearchExit as jest.Mock;
+const mockUseQuery = useQuery as jest.Mock;
+
 beforeEach(() => {
   jest.useFakeTimers();
+  mockCleanUpOnSearchExit.mockClear();
+  mockUseQuery.mockReset();
 });
 
 afterEach(() => {
@@ -33,7 +52,7 @@ afterEach(() => {
 
 it("renders loading state and not main", () => {
   const { ui } = makeComp({
-    getExperiencesMiniProps: { loading: true } as any,
+    queryResults: { loading: true },
   });
 
   render(ui);
@@ -44,7 +63,11 @@ it("renders loading state and not main", () => {
 
 it("does not render empty experiences", () => {
   const { ui } = makeComp({
-    getExperiencesMiniProps: { getExperiences: { edges: [] } } as any,
+    queryResults: {
+      getExperiences: {
+        edges: [] as GetExperienceConnectionMini_getExperiences_edges[],
+      } as GetExperienceConnectionMini_getExperiences,
+    },
   });
 
   render(ui);
@@ -82,7 +105,9 @@ it("renders experiences from server", () => {
   } as ExperienceConnectionFragment;
 
   const { ui } = makeComp({
-    getExperiencesMiniProps: { getExperiences } as any,
+    queryResults: {
+      getExperiences,
+    },
   });
 
   /**
@@ -207,7 +232,9 @@ it("loads full experiences in the background when experiences are loaded", () =>
   } as ExperienceConnectionFragment;
 
   const { ui, mockLayoutDispatch } = makeComp({
-    getExperiencesMiniProps: { getExperiences } as any,
+    queryResults: {
+      getExperiences,
+    },
   });
 
   /**
@@ -237,11 +264,11 @@ it("loads full experiences in the background when experiences are loaded", () =>
 
 it("does not load entries in background when experiences are loaded but empty", () => {
   const { ui, mockLayoutDispatch } = makeComp({
-    getExperiencesMiniProps: {
+    queryResults: {
       getExperiences: {
-        edges: [],
-      },
-    } as any,
+        edges: [] as GetExperienceConnectionMini_getExperiences_edges[],
+      } as GetExperienceConnectionMini_getExperiences,
+    },
   });
 
   render(ui);
@@ -291,8 +318,10 @@ it("goes to detailed experience page on search", async () => {
     ],
   } as ExperienceConnectionFragment;
 
-  const { ui, mockNavigate, mockCleanUpOnSearchExit } = makeComp({
-    getExperiencesMiniProps: { getExperiences } as any,
+  const { ui, mockNavigate } = makeComp({
+    queryResults: {
+      getExperiences,
+    },
   });
 
   /**
@@ -400,16 +429,17 @@ it("does not load any experience in the background if background experiences pre
     ],
   } as ExperienceConnectionFragment;
 
-  const { ui, mockLayoutDispatch } = makeComp(
-    {
-      getExperiencesMiniProps: { getExperiences } as any,
+  const { ui, mockLayoutDispatch } = makeComp({
+    queryResults: {
+      getExperiences,
     },
-    {
+
+    contexts: {
       layoutContextMyExpriencesValue: {
         fetchExperience: "already-fetched",
       },
     },
-  );
+  });
 
   /**
    * When we use the component
@@ -440,20 +470,34 @@ it("does not load any experience in the background if background experiences pre
 
 const MyExperiencesP = MyExperiences as ComponentType<Partial<Props>>;
 
-function makeComp(
-  props: Partial<Props> = {},
+const defaultArgs: Args = {
   contexts: {
-    layoutContextMyExpriencesValue?: ILayoutContextExperienceValue;
-  } = {
     layoutContextMyExpriencesValue: {
       fetchExperience: "never-fetched",
     },
   },
-) {
+
+  queryResults: {},
+};
+
+function makeComp(args: Args = {} as Args) {
+  args = { ...defaultArgs, ...args };
   const { Ui, ...rest } = renderWithRouter(MyExperiencesP);
 
   const mockLayoutDispatch = jest.fn();
-  const mockCleanUpOnSearchExit = jest.fn();
+
+  const queryResults = args.queryResults as GetExperiencesQueryResult;
+  const results = {
+    loading: queryResults.loading,
+  } as GetExperienceConnectionMiniQueryResult;
+
+  if (queryResults.getExperiences) {
+    results.data = {
+      getExperiences: queryResults.getExperiences,
+    };
+  }
+
+  mockUseQuery.mockReturnValue(results);
 
   return {
     ui: (
@@ -466,21 +510,32 @@ function makeComp(
       >
         <LayoutExperienceProvider
           value={
-            contexts.layoutContextMyExpriencesValue as ILayoutContextExperienceValue
+            (args.contexts as Contexts)
+              .layoutContextMyExpriencesValue as ILayoutContextExperienceValue
           }
         >
-          <Ui
-            searchDebounceTimeoutMs={0}
-            cleanUpOnSearchExit={mockCleanUpOnSearchExit}
-            {...props}
-          />
+          <Ui />
         </LayoutExperienceProvider>
       </LayoutUnchangingProvider>
     ),
 
     mockLayoutDispatch,
-    mockCleanUpOnSearchExit,
 
     ...rest,
   };
+}
+
+interface Contexts {
+  layoutContextMyExpriencesValue?: ILayoutContextExperienceValue;
+}
+
+interface Args {
+  contexts?: Contexts;
+
+  queryResults?: GetExperiencesQueryResult;
+}
+
+interface GetExperiencesQueryResult {
+  loading?: boolean;
+  getExperiences?: GetExperienceConnectionMini_getExperiences;
 }

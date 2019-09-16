@@ -24,7 +24,7 @@ const ExperienceNewEntryParent = Loadable({
 });
 
 const MyExperiences = Loadable({
-  loader: () => import("../../components/MyExperiences/my-experiences-index"),
+  loader: () => import("../../components/MyExperiences/my-experiences.component"),
   loading: LoadableLoading,
 });
 
