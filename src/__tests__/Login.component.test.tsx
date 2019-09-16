@@ -1,14 +1,24 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
 import React, { ComponentType } from "react";
 import "@marko/testing-library/cleanup-after-each";
-import { render, fireEvent, wait, waitForElement } from "@testing-library/react";
-
+import {
+  render,
+  fireEvent,
+  wait,
+  waitForElement,
+} from "@testing-library/react";
 import { Login } from "../components/Login/login.component";
 import { Props } from "../components/Login/login.utils";
 import { renderWithRouter, fillField } from "./test_utils";
 import { ApolloError } from "apollo-client";
 import { GraphQLError } from "graphql";
+import { refreshToHome } from "../refresh-to-app";
+import { EXPERIENCES_URL } from "../routes";
+import { getLoggedOutUser, storeUser } from "../state/users";
+import { useUser } from "../components/use-user";
+import { isConnected } from "../state/connections";
+import { useMutation } from "react-apollo";
+import { scrollIntoView } from "../components/scroll-into-view";
 
 jest.mock("../state/connections");
 jest.mock("../refresh-to-app");
@@ -17,25 +27,32 @@ jest.mock("../components/SidebarHeader/sidebar-header.component", () => ({
 }));
 jest.mock("../state/users");
 jest.mock("../components/use-user");
-
-import { refreshToHome } from "../refresh-to-app";
-import { EXPERIENCES_URL } from "../routes";
-import { getLoggedOutUser, storeUser } from "../state/users";
-import { useUser } from "../components/use-user";
-import { isConnected } from "../state/connections";
+jest.mock("react-apollo");
+jest.mock("../components/scroll-into-view");
 
 const mockRefreshToHome = refreshToHome as jest.Mock;
 const mockIsConnected = isConnected as jest.Mock;
 const mockGetLoggedOutUser = getLoggedOutUser as jest.Mock;
 const mockStoreUser = storeUser as jest.Mock;
 const mockUseUser = useUser as jest.Mock;
+const mockUseMutation = useMutation as jest.Mock;
+const mockScrollIntoView = scrollIntoView as jest.Mock;
+
+beforeEach(() => {
+  mockIsConnected.mockReset();
+  mockStoreUser.mockReset();
+  mockGetLoggedOutUser.mockReset();
+  mockUseUser.mockReset();
+  mockUseMutation.mockReset();
+  mockScrollIntoView.mockReset();
+});
 
 it("renders correctly and submits", async () => {
   /**
    * Given that server will return a valid user after form submission
    */
   const user = {};
-  const { ui, mockLogin, mockScrollToTop } = makeComp();
+  const { ui, mockLogin } = makeComp();
 
   mockLogin.mockResolvedValue({
     data: {
@@ -105,14 +122,14 @@ it("renders correctly and submits", async () => {
   /**
    * And page should not be scrolled to top
    */
-  expect(mockScrollToTop).not.toBeCalled();
+  expect(mockScrollIntoView).not.toBeCalled();
 });
 
 it("renders error if socket not connected", async () => {
   /**
    * Given that server is not connected
    */
-  const { ui, mockScrollToTop } = makeComp({ isConnected: false });
+  const { ui } = makeComp({ isConnected: false });
 
   /**
    * When we start using the login component
@@ -141,7 +158,7 @@ it("renders error if socket not connected", async () => {
   /**
    * And page should be scrolled to top
    */
-  expect(mockScrollToTop).toHaveBeenCalled();
+  expect(mockScrollIntoView).toHaveBeenCalled();
 });
 
 it("renders error if email is invalid", async () => {
@@ -174,7 +191,7 @@ it("renders error if email is invalid", async () => {
 });
 
 it("renders error if password is invalid", async () => {
-  const { ui, mockScrollToTop } = makeComp();
+  const { ui } = makeComp();
 
   /**
    * Given that we are using the login component
@@ -200,14 +217,14 @@ it("renders error if password is invalid", async () => {
   /**
    * And page should be scrolled to top
    */
-  expect(mockScrollToTop).toBeCalled();
+  expect(mockScrollIntoView).toBeCalled();
 });
 
 it("renders error if server returns field errors", async () => {
   /**
    * Given that server will return field errors
    */
-  const { ui, mockLogin, mockScrollToTop } = makeComp();
+  const { ui, mockLogin } = makeComp();
 
   mockLogin.mockRejectedValue(
     new ApolloError({
@@ -251,11 +268,11 @@ it("renders error if server returns field errors", async () => {
   /**
    * And page should be scrolled to top
    */
-  expect(mockScrollToTop).toBeCalled();
+  expect(mockScrollIntoView).toBeCalled();
 });
 
 it("renders error if server returns network errors", async () => {
-  const { ui, mockLogin, mockScrollToTop } = makeComp();
+  const { ui, mockLogin } = makeComp();
 
   /**
    * Given that server will return network error
@@ -293,7 +310,7 @@ it("renders error if server returns network errors", async () => {
   /**
    * And page should be scrolled to top
    */
-  expect(mockScrollToTop).toBeCalled();
+  expect(mockScrollIntoView).toBeCalled();
 });
 
 it("pre-fills form with user data", async () => {
@@ -351,20 +368,15 @@ function makeComp({
   isConnected = true,
   props = {},
 }: { isConnected?: boolean; props?: Partial<Props> } = {}) {
-  const mockScrollToTop = jest.fn();
-  mockIsConnected.mockReset();
-  mockStoreUser.mockReset();
-  mockGetLoggedOutUser.mockReset();
-  mockUseUser.mockReset();
   mockIsConnected.mockReturnValue(isConnected);
 
   const mockLogin = jest.fn();
+  mockUseMutation.mockReturnValue([mockLogin]);
   const { Ui, ...rest } = renderWithRouter(LoginP);
 
   return {
-    ui: <Ui login={mockLogin} scrollToTop={mockScrollToTop} {...props} />,
+    ui: <Ui {...props} />,
     ...rest,
     mockLogin,
-    mockScrollToTop,
   };
 }

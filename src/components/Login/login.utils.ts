@@ -5,12 +5,10 @@ import { FormikErrors } from "formik";
 import { ApolloError } from "apollo-client";
 import immer from "immer";
 import { LoginUser as FormValues } from "../../graphql/apollo-types/globalTypes";
-import { LoginMutationProps } from "../../graphql/login.mutation";
 import {
   PasswordInputAction,
   PasswordInputType,
 } from "../PasswordInput/password-input.utils";
-import { ScrollIntoView } from "../scroll-into-view";
 import { wrapReducer } from "../../logger";
 
 export const ValidationSchema = Yup.object<FormValues>().shape({
@@ -34,18 +32,9 @@ export enum ActionType {
   SHOW_PAGE = "@/login/showPage",
 }
 
-export interface State {
-  readonly otherErrors?: string | null;
-  readonly formErrors?: FormikErrors<FormValues> | null;
-  readonly serverFieldErrors?: string | null;
-  readonly pwdType?: "password" | "text";
-  readonly networkError?: string | null;
-  readonly showPage?: boolean;
-}
+export const initialState = {} as IStateMachine;
 
-export const initialState = {} as State;
-
-export const reducer: Reducer<State, Action> = (state, action) =>
+export const reducer: Reducer<IStateMachine, Action> = (state, action) =>
   wrapReducer(state, action, (prevState, [type, payload]) => {
     return immer(prevState, proxy => {
       switch (type) {
@@ -118,9 +107,13 @@ export type Action =
   | [ActionType.SHOW_PAGE, boolean];
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface OwnProps extends RouteComponentProps<{}> {}
+export interface Props extends RouteComponentProps<{}> {}
 
-export type Props = OwnProps &
-  LoginMutationProps & {
-    scrollToTop: ScrollIntoView;
-  };
+export interface IStateMachine {
+  readonly otherErrors?: string | null;
+  readonly formErrors?: FormikErrors<FormValues> | null;
+  readonly serverFieldErrors?: string | null;
+  readonly pwdType?: "password" | "text";
+  readonly networkError?: string | null;
+  readonly showPage?: boolean;
+}
