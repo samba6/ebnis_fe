@@ -97,7 +97,9 @@ it("loads Experience page", () => {
    * Given no path is specified when component is requested
    */
   const { ui } = makeComp({
-    props: {},
+    queryResults: {
+      getExperience: {} as any,
+    },
   });
 
   /**

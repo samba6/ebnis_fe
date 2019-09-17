@@ -2,8 +2,10 @@
 import React, { ComponentType } from "react";
 import "@marko/testing-library/cleanup-after-each";
 import { render } from "@testing-library/react";
-import { ExperienceRoute } from "../components/ExperienceRoute/experience-route.component";
-import { Props } from "../components/ExperienceRoute/experience-route.utils";
+import {
+  ExperienceRoute,
+  Props,
+} from "../components/ExperienceRoute/experience-route.component";
 
 jest.mock("../components/SidebarHeader/sidebar-header.component", () => ({
   SidebarHeader: () => null,

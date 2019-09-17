@@ -3,32 +3,18 @@ import { Loading } from "../Loading/loading";
 import { NEW_ENTRY_URL } from "../../constants/new-entry-route";
 import { NavigateFn } from "@reach/router";
 import { NewEntry, ExperienceRoute } from "./loadables";
-import { GET_EXPERIENCE_FULL_QUERY } from "../../graphql/get-experience-full.query";
-import {
-  GetExperienceFullVariables,
-  GetExperienceFull,
-} from "../../graphql/apollo-types/GetExperienceFull";
-import { isUnsavedId } from "../../constants";
-import { useQuery } from "@apollo/react-hooks";
 import { RouteComponentProps } from "@reach/router";
 import { NewEntryRouteParams } from "../../routes";
+import { useGetExperienceFullQuery } from "./experience-new-entry-parent.injectables";
 
 export const ExperienceNewEntryParent = function(props: Props) {
   const { experienceId, path, navigate } = props;
 
-  const { loading, error: getExperienceGqlError, data } = useQuery<
-    GetExperienceFull,
-    GetExperienceFullVariables
-  >(GET_EXPERIENCE_FULL_QUERY, {
-    variables: {
-      id: experienceId as string,
-      entriesPagination: {
-        first: 20000,
-      },
-    },
-    // istanbul ignore next:
-    fetchPolicy: isUnsavedId(experienceId) ? "cache-only" : "cache-first",
-  });
+  const {
+    loading,
+    error: getExperienceGqlError,
+    data,
+  } = useGetExperienceFullQuery(experienceId);
 
   const getExperience = data && data.getExperience;
 
