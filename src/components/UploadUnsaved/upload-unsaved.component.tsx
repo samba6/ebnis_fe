@@ -2,7 +2,7 @@ import React, {
   useReducer,
   useEffect,
   useContext,
-  useLayoutEffect,
+  useLayoutEffect
 } from "react";
 import {
   Props,
