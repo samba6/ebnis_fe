@@ -13,8 +13,6 @@
     "noImplicitAny": true,
     "strictNullChecks": true,
     "suppressImplicitAnyIndexErrors": true,
-    // suppressed in favor of eslint
-    // "noUnusedLocals": true,
     "allowSyntheticDefaultImports": true,
     "noEmit": true,
     "noEmitHelpers": true,

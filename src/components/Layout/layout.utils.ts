@@ -104,6 +104,12 @@ export const reducer: Reducer<IStateMachine, LayoutAction> = (state, action) =>
             proxy.states.prefetchExperiences.value = "already-fetched";
           }
           break;
+
+        case LayoutActionType.SET_UNSAVED_COUNT:
+          {
+            proxy.context.unsavedCount = (payload as { count: number }).count;
+          }
+          break;
       }
     });
   });

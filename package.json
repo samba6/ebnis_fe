@@ -111,7 +111,7 @@
     "rimraf": "2.6.3",
     "serve": "11.0.0",
     "start-server-and-test": "1.10.2",
-    "typescript": "3.5.2",
+    "typescript": "3.6.3",
     "workbox-window": "4.3.1"
   },
   "eslintConfig": {

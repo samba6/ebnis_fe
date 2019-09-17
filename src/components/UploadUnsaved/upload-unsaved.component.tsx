@@ -1,4 +1,9 @@
-import React, { useReducer, useEffect, useContext } from "react";
+import React, {
+  useReducer,
+  useEffect,
+  useContext,
+  useLayoutEffect,
+} from "react";
 import {
   Props,
   reducer,
@@ -91,9 +96,9 @@ export function UploadUnsaved(props: Props) {
   const { cache, client, persistor } = useContext(EbnisAppContext);
   const { layoutDispatch } = useContext(LayoutUnchangingContext);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     addUploadUnsavedResolvers(client);
-  }, [client]);
+  }, []);
 
   useEffect(
     function setCompTitle() {

@@ -552,6 +552,62 @@ describe("components", () => {
 
     expect(preFetchExperiencesArgs.ids[0]).toEqual("1");
   });
+
+  test("n", async () => {
+    const { ui, emitData } = makeComp();
+    mockUseUser.mockReturnValue({});
+    mockIsConnected.mockReturnValue(true);
+    mockGetUnsavedCount.mockResolvedValue(2);
+
+    /**
+     * Given the component is rendered
+     */
+
+    render(ui);
+
+    let context = layoutContextValue as ILayoutContextHeaderValue;
+
+    /**
+     * Then we should not query for unsaved data in the beginning
+     */
+
+    expect(context).toBeNull();
+
+    /**
+     * When main component is rendered
+     */
+
+    await waitForElement(() => {
+      return document.getElementById(browserRenderedUiId);
+    });
+
+    context = layoutContextValue as ILayoutContextHeaderValue;
+
+    /**
+     * Then we should query for unsaved data
+     */
+
+    expect(context.unsavedCount).toBe(2);
+
+    /**
+     * When disconnect event occurs
+     */
+
+    emitData({
+      type: EmitActionType.connectionChanged,
+      hasConnection: false,
+    });
+
+    await wait(() => {
+      context = layoutContextValue as ILayoutContextHeaderValue;
+    });
+
+    /**
+     * Then we should reset unsaved data count
+     */
+
+    expect(context.unsavedCount).toBe(0);
+  });
 });
 
 describe("reducer", () => {
@@ -653,6 +709,35 @@ describe("reducer", () => {
      */
 
     expect(nextState.states.prefetchExperiences.value).toEqual("never-fetched");
+  });
+
+  test("sets unsaved count", () => {
+    /**
+     * Given we have some unsaved data
+     */
+
+    const state = {
+      context: {
+        unsavedCount: 5,
+      },
+    } as IStateMachine;
+
+    /**
+     * When we update count of unsaved data
+     */
+
+    const action = {
+      type: LayoutActionType.SET_UNSAVED_COUNT,
+      count: 17,
+    } as LayoutAction;
+
+    const nextState = reducer(state, action);
+
+    /**
+     * Then the count should reflect new value
+     */
+
+    expect(nextState.context.unsavedCount).toBe(17);
   });
 });
 
