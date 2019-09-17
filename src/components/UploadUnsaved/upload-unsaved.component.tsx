@@ -31,7 +31,6 @@ import { Experience } from "../Experience/experience.component";
 import { scrollIntoView } from "../scroll-into-view";
 import { FormCtrlError } from "../FormCtrlError/form-ctrl-error.component";
 import { Entry } from "../Entry/entry.component";
-import { GetAllUnSavedQueryData } from "../../state/unsaved-resolvers";
 import {
   LayoutActionType,
   LayoutUnchangingContext,
@@ -48,22 +47,28 @@ import { IconProps } from "semantic-ui-react";
 import { DataObjectFragment } from "../../graphql/apollo-types/DataObjectFragment";
 import { MY_EXPERIENCES_TITLE } from "../../constants/my-experiences-title";
 import { EbnisAppContext } from "../../context";
+import {
+  useGetAllUnsavedQuery,
+  useUploadUnsavedExperiencesMutation,
+  useUploadAllUnsavedsMutation,
+  useUploadSavedExperiencesEntriesMutation,
+  addUploadUnsavedResolvers,
+} from "./upload-unsaved.injectables";
 
 const timeoutMs = 500;
 const REDIRECT_ROUTE = makeSiteTitle(MY_EXPERIENCES_TITLE);
 
 export function UploadUnsaved(props: Props) {
-  const {
-    getAllUnsavedProps: {
-      loading,
-      getAllUnsaved,
-    } = {} as GetAllUnSavedQueryData,
+  const { navigate } = props;
+  const [uploadUnsavedExperiences] = useUploadUnsavedExperiencesMutation();
+  const [uploadAllUnsaveds] = useUploadAllUnsavedsMutation();
 
-    uploadUnsavedExperiences,
-    createEntries,
-    uploadAllUnsaveds,
-    navigate,
-  } = props;
+  const [
+    uploadSavedExperiencesEntries,
+  ] = useUploadSavedExperiencesEntriesMutation();
+
+  const { data, loading } = useGetAllUnsavedQuery();
+  const getAllUnsaved = data && data.getAllUnsaved;
 
   const [state, dispatch] = useReducer(
     reducer,
@@ -86,18 +91,23 @@ export function UploadUnsaved(props: Props) {
   const { cache, client, persistor } = useContext(EbnisAppContext);
   const { layoutDispatch } = useContext(LayoutUnchangingContext);
 
-  useEffect(function setCompTitle() {
-    if (!isConnected()) {
-      (navigate as NavigateFn)(REDIRECT_ROUTE);
-      return;
-    }
+  useEffect(() => {
+    addUploadUnsavedResolvers(client);
+  }, [client]);
 
-    setDocumentTitle(makeSiteTitle(UPLOAD_UNSAVED_TITLE));
+  useEffect(
+    function setCompTitle() {
+      if (!isConnected()) {
+        (navigate as NavigateFn)(REDIRECT_ROUTE);
+        return;
+      }
 
-    return setDocumentTitle;
+      setDocumentTitle(makeSiteTitle(UPLOAD_UNSAVED_TITLE));
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+      return setDocumentTitle;
+    },
+    [navigate],
+  );
 
   useEffect(() => {
     if (getAllUnsaved) {
@@ -111,8 +121,7 @@ export function UploadUnsaved(props: Props) {
 
       dispatch([ActionType.initStateFromProps, getAllUnsaved]);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [getAllUnsaved]);
+  }, [getAllUnsaved, navigate]);
 
   useEffect(() => {
     if (shouldRedirect) {
@@ -123,8 +132,7 @@ export function UploadUnsaved(props: Props) {
 
       (navigate as NavigateFn)(EXPERIENCES_URL);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [shouldRedirect]);
+  }, [shouldRedirect, navigate, layoutDispatch]);
 
   useDeleteMutationsOnExit(
     ["saveOfflineExperiences", "createEntries"],
@@ -157,7 +165,7 @@ export function UploadUnsaved(props: Props) {
           input: unsavedExperiencesToUploadData(unsavedExperiencesMap),
         } as unknown) as UploadAllUnsavedsMutationVariables;
       } else {
-        uploadFunction = createEntries;
+        uploadFunction = uploadSavedExperiencesEntries;
 
         variables = ({
           input: savedExperiencesToUploadData(savedExperiencesMap),
@@ -275,6 +283,8 @@ export function UploadUnsaved(props: Props) {
     </div>
   );
 }
+
+export default UploadUnsaved;
 
 ////////////////////////// COMPONENTS ///////////////////////////////////
 

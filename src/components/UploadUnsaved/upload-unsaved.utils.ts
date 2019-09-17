@@ -1,13 +1,7 @@
 import {
-  GetAllUnSavedQueryProps,
   GetUnsavedSummary,
   SavedAndUnsavedExperienceSummary,
 } from "../../state/unsaved-resolvers";
-import {
-  UploadUnsavedExperiencesMutationProps,
-  UploadAllUnsavedsMutationProps,
-} from "../../graphql/upload-unsaveds.mutation";
-import { CreateEntriesMutationGqlProps } from "../../graphql/create-entries.mutation";
 import immer, { Draft } from "immer";
 import { Reducer } from "react";
 import { RouteComponentProps } from "@reach/router";
@@ -22,7 +16,6 @@ import {
   UploadAllUnsavedsMutation_saveOfflineExperiences,
   UploadAllUnsavedsMutation_createEntries,
 } from "../../graphql/apollo-types/UploadAllUnsavedsMutation";
-import { WithApolloClient } from "react-apollo";
 import ApolloClient, { ApolloError } from "apollo-client";
 import { Dispatch } from "react";
 import {
@@ -35,16 +28,7 @@ import { EntryFragment } from "../../graphql/apollo-types/EntryFragment";
 import { DataDefinitionFragment } from "../../graphql/apollo-types/DataDefinitionFragment";
 import { DataObjectFragment } from "../../graphql/apollo-types/DataObjectFragment";
 
-export interface OwnProps
-  extends GetAllUnSavedQueryProps,
-    RouteComponentProps,
-    WithApolloClient<{}> {}
-
-export interface Props
-  extends OwnProps,
-    UploadUnsavedExperiencesMutationProps,
-    CreateEntriesMutationGqlProps,
-    UploadAllUnsavedsMutationProps {}
+export type Props = RouteComponentProps;
 
 export interface State {
   readonly hasUnsavedExperiencesUploadError?: boolean | null;

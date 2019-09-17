@@ -43,7 +43,7 @@ const createUnsavedEntryResolver: LocalResolverFn<
 > = async (_, variables, context) => {
   const { client } = context;
 
-  let experience = variables.experience;
+  let experience = { ...variables.experience };
   experience.hasUnsaved = true;
 
   const { id: experienceId } = experience;
