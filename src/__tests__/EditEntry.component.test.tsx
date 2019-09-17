@@ -2,7 +2,7 @@
 import React, { ComponentType } from "react";
 import "@marko/testing-library/cleanup-after-each";
 import { render, wait, waitForElement } from "@testing-library/react";
-import { EditEntry } from "../components/EditEntry/edit-entry-component";
+import { EditEntry } from "../components/EditEntry/edit-entry.component";
 import { Props, ActionTypes } from "../components/EditEntry/edit-entry-utils";
 import { EntryFragment } from "../graphql/apollo-types/EntryFragment";
 import { DataDefinitionFragment } from "../graphql/apollo-types/DataDefinitionFragment";
@@ -968,16 +968,14 @@ function makeComp({ props = {} }: { props?: Partial<Props> } = {}) {
   const mockUpdateDefinitionsAndDataOnline = jest.fn();
   const mockUpdateDataOnline = jest.fn();
 
+  mockUseUpdateDefinitionsOnline.mockReturnValue([mockUpdateDefinitionsOnline]);
+  mockUseUpdateDataObjectsOnline.mockReturnValue([mockUpdateDataOnline]);
+  mockUseUpdateDefinitionAndDataOnline.mockReturnValue([
+    mockUpdateDefinitionsAndDataOnline,
+  ]);
+
   return {
-    ui: (
-      <EditEntryP
-        updateDefinitionsOnline={mockUpdateDefinitionsOnline}
-        dispatch={mockParentDispatch}
-        updateDefinitionAndDataOnline={mockUpdateDefinitionsAndDataOnline}
-        updateDataObjectsOnline={mockUpdateDataOnline}
-        {...props}
-      />
-    ),
+    ui: <EditEntryP dispatch={mockParentDispatch} {...props} />,
     mockUpdateDefinitionsOnline,
     mockParentDispatch,
     mockUpdateDefinitionsAndDataOnline,

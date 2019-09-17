@@ -22,7 +22,7 @@ const ExperienceDefinition = Loadable({
 const ExperienceNewEntryParent = Loadable({
   loader: () =>
     import(
-      "../../components/ExperienceNewEntryParent/experience-new-entry-index"
+      "../../components/ExperienceNewEntryParent/experience-new-entry-parent.component"
     ),
   loading: LoadableLoading,
 });

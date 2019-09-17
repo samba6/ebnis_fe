@@ -488,7 +488,7 @@ function makeComp(args: Args = {} as Args) {
 
   const queryResults = args.queryResults as GetExperiencesQueryResult;
   const results = {
-    loading: queryResults.loading,
+    ...queryResults,
   } as GetExperienceConnectionMiniQueryResult;
 
   if (queryResults.getExperiences) {

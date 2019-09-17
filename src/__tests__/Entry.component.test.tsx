@@ -14,13 +14,13 @@ import {
   Props as EditEntryProps,
   ActionTypes as EditEntryActionTypes,
 } from "../components/EditEntry/edit-entry-utils";
+import { EditEntry } from "../components/EditEntry/edit-entry.component";
 
-jest.mock("../components/EditEntry/edit-entry-index", () => ({
+jest.mock("../components/EditEntry/edit-entry.component", () => ({
   EditEntry: jest.fn(() => {
     return <div id="edit-entry" />;
   }),
 }));
-import { EditEntry } from "../components/EditEntry/edit-entry-index";
 const mockEditEntry = EditEntry as jest.Mock;
 
 it("renders single line text", () => {

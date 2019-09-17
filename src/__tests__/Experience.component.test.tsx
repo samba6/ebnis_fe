@@ -33,7 +33,7 @@ beforeEach(() => {
   jest.useFakeTimers();
 });
 
-it.only("renders ui to show empty entries", () => {
+it("renders ui to show empty entries", () => {
   const mockOnDelete = jest.fn();
 
   const { ui } = makeComp({
