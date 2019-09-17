@@ -3,7 +3,7 @@ import {
   CreateExperienceMutationVariables,
 } from "../../graphql/apollo-types/CreateExperienceMutation";
 import { CREATE_EXPERIENCE_MUTATION } from "../../graphql/create-experience.mutation";
-import { useMutation } from "react-apollo";
+import { useMutation } from "@apollo/react-hooks";
 import ApolloClient from "apollo-client";
 import {
   experienceDefinitionResolvers,

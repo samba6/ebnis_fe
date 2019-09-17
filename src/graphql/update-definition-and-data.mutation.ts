@@ -13,7 +13,7 @@ import {
   UpdateDefinitionAndData,
   UpdateDefinitionAndDataVariables,
 } from "./apollo-types/UpdateDefinitionAndData";
-import { MutationFunction } from "react-apollo";
+import { MutationFunction } from "@apollo/react-common";
 
 export const UPDATE_DEFINITIONS_RESPONSE_FRAGMENT = gql`
   fragment UpdateDefinitionsResponseFragment on UpdateDefinitionsResponse {

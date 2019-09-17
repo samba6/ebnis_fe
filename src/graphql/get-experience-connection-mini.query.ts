@@ -1,5 +1,5 @@
 import gql from "graphql-tag";
-import { QueryResult } from "react-apollo";
+import { QueryResult } from "@apollo/react-common";
 
 import {
   GetExperienceConnectionMini,

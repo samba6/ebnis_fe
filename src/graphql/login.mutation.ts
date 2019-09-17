@@ -4,7 +4,7 @@ import {
   LoginMutation,
   LoginMutationVariables,
 } from "./apollo-types/LoginMutation";
-import { MutationFunction } from "react-apollo";
+import { MutationFunction } from "@apollo/react-common";
 
 export const LOGIN_MUTATION = gql`
   mutation LoginMutation($login: LoginUser!) {

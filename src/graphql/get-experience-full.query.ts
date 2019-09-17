@@ -4,7 +4,7 @@ import {
   GetExperienceFullVariables,
   GetExperienceFull,
 } from "./apollo-types/GetExperienceFull";
-import { QueryResult } from "react-apollo";
+import { QueryResult } from "@apollo/react-common";
 
 export const GET_EXPERIENCE_FULL_QUERY = gql`
   query GetExperienceFull($id: ID!, $entriesPagination: PaginationInput!) {

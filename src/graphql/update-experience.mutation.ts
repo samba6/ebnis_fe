@@ -4,7 +4,7 @@ import {
   UpdateExperienceMutation,
   UpdateExperienceMutationVariables,
 } from "./apollo-types/UpdateExperienceMutation";
-import { MutationFunction } from "react-apollo";
+import { MutationFunction } from "@apollo/react-common";
 
 export const UPDATE_EXPERIENCE_MUTATION = gql`
   mutation UpdateExperienceMutation($input: UpdateExperienceInput!) {

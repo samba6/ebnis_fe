@@ -40,7 +40,7 @@ jest.mock("../components/scroll-into-view");
 jest.mock(
   "../components/ExperienceDefinition/experience-definition.injectables",
 );
-jest.mock("react-apollo");
+jest.mock("@apollo/react-hooks");
 
 const mockIsConnected = isConnected as jest.Mock;
 const mockScrollIntoView = scrollIntoView as jest.Mock;

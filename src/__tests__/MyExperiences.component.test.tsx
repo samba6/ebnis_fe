@@ -19,7 +19,7 @@ import {
   GetExperienceConnectionMini_getExperiences,
   GetExperienceConnectionMini_getExperiences_edges,
 } from "../graphql/apollo-types/GetExperienceConnectionMini";
-import { useQuery } from "react-apollo";
+import { useQuery } from "@apollo/react-hooks";
 import { GetExperienceConnectionMiniQueryResult } from "../graphql/get-experience-connection-mini.query";
 
 jest.mock("../components/SidebarHeader/sidebar-header.component", () => ({
@@ -35,7 +35,7 @@ jest.mock("../components/MyExperiences/my-experiences.injectables", () => ({
   searchDebounceTimeoutMs: 0,
 }));
 
-jest.mock("react-apollo");
+jest.mock("@apollo/react-hooks");
 
 const mockCleanUpOnSearchExit = cleanUpOnSearchExit as jest.Mock;
 const mockUseQuery = useQuery as jest.Mock;

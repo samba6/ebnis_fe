@@ -10,7 +10,7 @@ import { renderWithRouter } from "./test_utils";
 import { NEW_ENTRY_URL } from "../constants/new-entry-route";
 import { GetExperienceFullQueryResult } from "../graphql/get-experience-full.query";
 import { GetExperienceFull_getExperience } from "../graphql/apollo-types/GetExperienceFull";
-import { useQuery } from "react-apollo";
+import { useQuery } from "@apollo/react-hooks";
 
 jest.mock("../components/ExperienceNewEntryParent/loadables", () => ({
   NewEntry: () => <div id="new-entry-page" />,
@@ -22,7 +22,7 @@ jest.mock("../components/Loading/loading", () => ({
   Loading: () => <div id="a-a-l" />,
 }));
 
-jest.mock("react-apollo");
+jest.mock("@apollo/react-hooks");
 
 const mockUseQuery = useQuery as jest.Mock;
 

@@ -10,7 +10,7 @@ import {
 } from "./apollo-types/UploadAllUnsavedsMutation";
 import { EXPERIENCE_NO_ENTRY_FRAGMENT } from "./experience.fragment";
 import { CREATE_EXPERIENCE_ERRORS } from "./create-experience-errors.fragment";
-import { MutationFunction, MutationFetchResult } from "react-apollo";
+import { MutationFunction, MutationFetchResult } from "@apollo/react-common";
 
 const UPLOAD_UNSAVED_EXPERIENCES_EXPERIENCE_ERROR_FRAGMENT = gql`
   fragment UploadUnsavedExperiencesExperienceErrorFragment on CreateOfflineExperienceErrors {

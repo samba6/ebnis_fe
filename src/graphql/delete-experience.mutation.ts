@@ -4,7 +4,7 @@ import {
   DeleteExperienceMutation,
   DeleteExperienceMutationVariables,
 } from "./apollo-types/DeleteExperienceMutation";
-import { MutationFunction } from "react-apollo";
+import { MutationFunction } from "@apollo/react-common";
 
 export const DELETE_EXPERIENCE_MUTATION = gql`
   mutation DeleteExperienceMutation($id: ID!) {

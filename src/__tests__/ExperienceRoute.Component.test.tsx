@@ -15,7 +15,7 @@ jest.mock("../components/Experience/experience.component", () => ({
   getTitle: jest.fn(() => "cool"),
 }));
 
-jest.mock("react-apollo", () => ({
+jest.mock("@apollo/react-hooks", () => ({
   useMutation: () => [],
 }));
 

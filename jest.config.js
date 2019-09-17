@@ -8,7 +8,6 @@ module.exports = {
     "!src/**/refresh-to-app.ts",
     "!src/graphql/**",
     "!src/components/AuthRequired**",
-    "!src/components/**/*hoc.tsx",
     "!src/components/use-*",
     "!src/types.ts",
     "!src/components/RootHelmet/**",
@@ -18,7 +17,7 @@ module.exports = {
     "!src/**/*.d.ts",
     "!src/context.ts",
     "!src/socket.ts",
-    "!src/components/NewEntry/update.ts",
+    "!src/components/**/*injectables.ts",
     "!src/components/**/*gql.ts",
     "!src/test-utils/**",
     "!src/components/ExperienceNewEntryParent/loadables.ts",
@@ -28,10 +27,8 @@ module.exports = {
     "!src/components/Layout/pre-fetch-experiences.ts",
     "!src/components/Experience/loadables.ts",
     "!src/components/EditEntry/edit-entry.ts*",
-    "!src/components/ExperienceDefinition/experience-definition.ts",
-    "!src/components/ExperienceDefinition/experience-definition.update.ts",
     "!src/components/ExperienceNewEntryParent/experience-new-entry-parent-utils.ts",
-    "!src/state/setup-observable.ts"
+    "!src/state/setup-observable.ts",
   ],
   setupFiles: [
     "<rootDir>/config/jest/loadershim.js",

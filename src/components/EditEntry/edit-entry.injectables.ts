@@ -1,4 +1,4 @@
-import { useMutation } from "react-apollo";
+import { useMutation } from "@apollo/react-hooks";
 import {
   UPDATE_DEFINITIONS_ONLINE_MUTATION,
   UPDATE_DATA_OBJECTS_ONLINE_MUTATION,

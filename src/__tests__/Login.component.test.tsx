@@ -17,7 +17,7 @@ import { EXPERIENCES_URL } from "../routes";
 import { getLoggedOutUser, storeUser } from "../state/users";
 import { useUser } from "../components/use-user";
 import { isConnected } from "../state/connections";
-import { useMutation } from "react-apollo";
+import { useMutation } from "@apollo/react-hooks";
 import { scrollIntoView } from "../components/scroll-into-view";
 
 jest.mock("../state/connections");
@@ -27,7 +27,7 @@ jest.mock("../components/SidebarHeader/sidebar-header.component", () => ({
 }));
 jest.mock("../state/users");
 jest.mock("../components/use-user");
-jest.mock("react-apollo");
+jest.mock("@apollo/react-hooks");
 jest.mock("../components/scroll-into-view");
 
 const mockRefreshToHome = refreshToHome as jest.Mock;

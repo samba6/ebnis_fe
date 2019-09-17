@@ -1,12 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { Formik, Field, FormikProps, FieldProps } from "formik";
 import { noop } from "../../constants";
-import {
-  EditExperienceActionType,
-  Props,
-  EditingState,
-  UpdateErrors,
-} from "./edit-experience.utils";
 import Form from "semantic-ui-react/dist/commonjs/collections/Form";
 import Message from "semantic-ui-react/dist/commonjs/collections/Message";
 import Button from "semantic-ui-react/dist/commonjs/elements/Button";
@@ -20,6 +14,10 @@ import immer from "immer";
 import { ApolloError } from "apollo-client";
 import { FormCtrlError } from "../FormCtrlError/form-ctrl-error.component";
 import "./edit-experience.styles.scss";
+import { ExperienceNoEntryFragment } from "../../graphql/apollo-types/ExperienceNoEntryFragment";
+import { UpdateExperienceMutationFn } from "../../graphql/update-experience.mutation";
+import { Dispatch } from "react";
+import { UpdateExperienceMutation_updateExperience_errors } from "../../graphql/apollo-types/UpdateExperienceMutation";
 
 const unwantedExperienceFields: (keyof ExperienceFragment)[] = [
   "__typename",
@@ -30,6 +28,18 @@ const unwantedExperienceFields: (keyof ExperienceFragment)[] = [
   "dataDefinitions",
   "hasUnsaved",
 ];
+
+export enum EditExperienceActionType {
+  aborted = "@components/edit-experience-modal/edit-cancelled",
+  completed = "@components/edit-experience-modal/edit-finished",
+  ready = "ready",
+  submitting = "submitting",
+  formError = "form-error",
+  genericServerError = "generic-server-error",
+  successful = "successful",
+  experienceError = "experience-error",
+  fieldDefinitionsErrors = "field-definitions-errors",
+}
 
 export function EditExperience(props: Props) {
   const { experience, dispatch, onEdit } = props;
@@ -225,4 +235,25 @@ function parseErrors([stateTag, stateData]: EditingState) {
   }
 
   return errorObject;
+}
+
+export interface Props {
+  experience: ExperienceNoEntryFragment;
+  onEdit: UpdateExperienceMutationFn;
+  dispatch: Dispatch<EditExperienceAction>;
+}
+
+export type EditExperienceAction =
+  | [EditExperienceActionType.aborted]
+  | [EditExperienceActionType.completed];
+
+export type EditingState =
+  | [EditExperienceActionType.ready]
+  | [EditExperienceActionType.submitting]
+  | [EditExperienceActionType.formError]
+  | [EditExperienceActionType.genericServerError, string]
+  | [EditExperienceActionType.experienceError, UpdateErrors];
+
+export interface UpdateErrors {
+  experienceError: UpdateExperienceMutation_updateExperience_errors;
 }

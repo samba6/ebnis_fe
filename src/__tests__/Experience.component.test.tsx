@@ -17,7 +17,7 @@ import {
   ExperienceFragment_entries_edges,
   ExperienceFragment_dataDefinitions,
 } from "../graphql/apollo-types/ExperienceFragment";
-import { EditExperienceActionType } from "../components/EditExperience/edit-experience.utils";
+import { EditExperienceActionType } from "../components/EditExperience/edit-experience.component";
 
 jest.mock("../components/Experience/loadables", () => ({
   EditExperience: () => <div id="js-editor" />,

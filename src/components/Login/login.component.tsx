@@ -35,7 +35,7 @@ import {
   LoginMutationVariables,
 } from "../../graphql/apollo-types/LoginMutation";
 import { LOGIN_MUTATION } from "../../graphql/login.mutation";
-import { useMutation } from "react-apollo";
+import { useMutation } from "@apollo/react-hooks";
 import { scrollIntoView } from "../scroll-into-view";
 
 const scrollToTopId = makeScrollIntoViewId("login");

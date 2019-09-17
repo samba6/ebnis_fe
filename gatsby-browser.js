@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types */
 import React from "react";
-import { ApolloProvider } from "react-apollo";
+import { ApolloProvider } from "@apollo/react-hooks";
 import { HelmetProvider } from "react-helmet-async";
 import { Workbox } from "workbox-window";
 

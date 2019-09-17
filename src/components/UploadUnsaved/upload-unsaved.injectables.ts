@@ -6,7 +6,7 @@ import {
   UploadUnsavedExperiencesMutation,
   UploadUnsavedExperiencesMutationVariables,
 } from "../../graphql/apollo-types/UploadUnsavedExperiencesMutation";
-import { useMutation, useQuery } from "react-apollo";
+import { useMutation, useQuery } from "@apollo/react-hooks";
 import ApolloClient from "apollo-client";
 import {
   unsavedResolvers,

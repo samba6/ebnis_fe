@@ -31,7 +31,7 @@ import { SidebarHeader } from "../SidebarHeader/sidebar-header.component";
 import { ToOtherAuthLink } from "../ToOtherAuthLink";
 import { storeUser } from "../../state/users";
 import { makeScrollIntoViewId, scrollIntoView } from "../scroll-into-view";
-import { useMutation } from "react-apollo";
+import { useMutation } from "@apollo/react-hooks";
 import {
   UserRegMutation,
   UserRegMutationVariables,

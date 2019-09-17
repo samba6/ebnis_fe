@@ -9,7 +9,7 @@ import { isUnsavedId } from "../constants";
 import { readGetExperienceFullQueryFromCache } from "./resolvers/read-get-experience-full-query-from-cache";
 import { getSavedAndUnsavedExperiencesFromCache } from "./resolvers/get-saved-and-unsaved-experiences-from-cache";
 import ApolloClient from "apollo-client";
-import { QueryResult } from "react-apollo";
+import { QueryResult } from "@apollo/react-common";
 
 export const SAVED_AND_UNSAVED_EXPERIENCES_QUERY = gql`
   {

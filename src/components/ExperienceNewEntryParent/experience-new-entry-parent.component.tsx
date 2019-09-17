@@ -9,7 +9,7 @@ import {
   GetExperienceFull,
 } from "../../graphql/apollo-types/GetExperienceFull";
 import { isUnsavedId } from "../../constants";
-import { useQuery } from "react-apollo";
+import { useQuery } from "@apollo/react-hooks";
 import { RouteComponentProps } from "@reach/router";
 import { NewEntryRouteParams } from "../../routes";
 
@@ -26,7 +26,7 @@ export const ExperienceNewEntryParent = function(props: Props) {
         first: 20000,
       },
     },
-
+    // istanbul ignore next:
     fetchPolicy: isUnsavedId(experienceId) ? "cache-only" : "cache-first",
   });
 

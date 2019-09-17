@@ -15,7 +15,7 @@ import { refreshToHome } from "../refresh-to-app";
 import { ApolloError } from "apollo-client";
 import { GraphQLError } from "graphql";
 import { storeUser } from "../state/users";
-import { useMutation } from "react-apollo";
+import { useMutation } from "@apollo/react-hooks";
 import { scrollIntoView } from "../components/scroll-into-view";
 
 jest.mock("../state/connections");
@@ -24,7 +24,7 @@ jest.mock("../components/SidebarHeader/sidebar-header.component", () => ({
   SidebarHeader: jest.fn(() => null),
 }));
 jest.mock("../state/users");
-jest.mock("react-apollo");
+jest.mock("@apollo/react-hooks");
 jest.mock("../components/scroll-into-view");
 
 const mockIsConnected = isConnected as jest.Mock;

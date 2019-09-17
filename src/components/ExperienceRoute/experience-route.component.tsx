@@ -9,7 +9,7 @@ import {
   UpdateExperienceMutation,
   UpdateExperienceMutationVariables,
 } from "../../graphql/apollo-types/UpdateExperienceMutation";
-import { useMutation } from "react-apollo";
+import { useMutation } from "@apollo/react-hooks";
 
 export function ExperienceRoute(props: Props) {
   const { experience } = props;

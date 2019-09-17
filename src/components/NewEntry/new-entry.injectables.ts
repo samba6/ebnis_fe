@@ -2,7 +2,7 @@
 
 import { ApolloClient } from "apollo-client";
 import { newEntryResolvers } from "./resolvers";
-import { useMutation } from "react-apollo";
+import { useMutation } from "@apollo/react-hooks";
 import { CREATE_ENTRY_MUTATION } from "../../graphql/create-entry.mutation";
 import {
   CreateEntryMutation,

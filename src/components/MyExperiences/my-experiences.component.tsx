@@ -47,7 +47,7 @@ import {
   GetExperienceConnectionMiniVariables,
 } from "../../graphql/apollo-types/GetExperienceConnectionMini";
 import { GET_EXPERIENCES_MINI_QUERY } from "../../graphql/get-experience-connection-mini.query";
-import { useQuery } from "react-apollo";
+import { useQuery } from "@apollo/react-hooks";
 import {
   searchDebounceTimeoutMs,
   cleanUpOnSearchExit,

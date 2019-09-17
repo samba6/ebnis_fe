@@ -1,12 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+
 import React, { ComponentType } from "react";
 import "@marko/testing-library/cleanup-after-each";
 import { render, act, wait, waitForElement } from "@testing-library/react";
-import { EditExperience } from "../components/EditExperience/edit-experience.component";
 import {
+  EditExperience,
   Props,
   EditExperienceActionType,
-} from "../components/EditExperience/edit-experience.utils";
+} from "../components/EditExperience/edit-experience.component";
 import { ExperienceFragment } from "../graphql/apollo-types/ExperienceFragment";
 import { fillField, closeMessage } from "./test_utils";
 import { ApolloError } from "apollo-client";
