@@ -1,8 +1,7 @@
 import React, { useState, ComponentType, PropsWithChildren } from "react";
 
 import { Sidebar } from "../Sidebar/sidebar-index";
-import { Header } from "../Header/header-index";
-import { OwnProps as HeaderOwnProps } from "../Header/header.component";
+import { Header, OwnProps as HeaderOwnProps } from "../Header/header.component";
 
 export type OwnProps = HeaderOwnProps;
 

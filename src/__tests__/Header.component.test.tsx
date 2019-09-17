@@ -3,15 +3,21 @@
 import React, { ComponentType } from "react";
 import { render, fireEvent } from "@testing-library/react";
 import { Header, Props } from "../components/Header/header.component";
-import { renderWithRouter } from "./test_utils";
 import { EXPERIENCES_URL, ROOT_URL } from "../routes";
 import { ILayoutContextHeaderValue } from "../components/Layout/layout.utils";
 import { UPLOAD_UNSAVED_PREVIEW_URL } from "../constants/upload-unsaved-routes";
-import { LayoutProvider } from "../components/Layout/layout-providers";
+import {
+  LayoutProvider,
+  LocationProvider,
+} from "../components/Layout/layout-providers";
+import { useUser } from "../components/use-user";
+import { WindowLocation } from "@reach/router";
 
 jest.mock("../components/use-user");
 
-import { useUser } from "../components/use-user";
+jest.mock("../components/Header/header.injectables", () => ({
+  useLogo: () => ({}),
+}));
 
 const mockUseUser = useUser as jest.Mock;
 
@@ -71,8 +77,8 @@ it("should not navigate when in experiences route", () => {
     props: {
       title,
       sidebar: true,
-      location: { pathname: EXPERIENCES_URL } as any,
     },
+    location: { pathname: EXPERIENCES_URL } as any,
   });
 
   /**
@@ -105,8 +111,8 @@ it("should not navigate when in root route", () => {
     props: {
       title,
       sidebar: true,
-      location: { pathname: ROOT_URL } as any,
     },
+    location: { pathname: ROOT_URL } as any,
   });
 
   /**
@@ -139,8 +145,8 @@ it("should navigate to experiences route when on any url except root and experie
     props: {
       title,
       sidebar: true,
-      location: { pathname: ROOT_URL + 5 } as any,
     },
+    location: { pathname: ROOT_URL + 5 } as any,
   });
 
   mockUseUser.mockReturnValue({});
@@ -175,8 +181,8 @@ it("should navigate to root route when on any url except root and experiences ro
     props: {
       title,
       sidebar: true,
-      location: { pathname: ROOT_URL + 5 } as any,
     },
+    location: { pathname: ROOT_URL + 5 } as any,
   });
 
   /**
@@ -300,9 +306,7 @@ it("does not render unsaved count in 'upload unsaved' route", () => {
       hasConnection: true,
     },
 
-    props: {
-      location: { pathname: UPLOAD_UNSAVED_PREVIEW_URL } as any,
-    },
+    location: { pathname: UPLOAD_UNSAVED_PREVIEW_URL } as any,
   });
 
   render(ui);
@@ -374,30 +378,33 @@ it("sets class name", () => {
 
 const HeaderP = Header as ComponentType<Partial<Props>>;
 
-function setup({
-  props = {},
-  context = {},
-}: {
-  props?: Partial<Props>;
-  context?: Partial<ILayoutContextHeaderValue>;
-} = {}) {
+function setup(args: Args = {}) {
   mockUseUser.mockReset();
 
-  const { Ui, ...rest } = renderWithRouter(
-    HeaderP,
-    {},
+  const props = args.props || {};
+  const mockNavigate = jest.fn();
+  const locationContextValue = {
+    pathname: "",
+    ...(args.location || {}),
+    navigate: mockNavigate,
+  };
 
-    { logoAttrs: {} as any, ...props },
-  );
-
-  context = context as ILayoutContextHeaderValue;
+  const context = args.context || {};
 
   return {
     ui: (
-      <LayoutProvider value={context as any}>
-        <Ui />
-      </LayoutProvider>
+      <LocationProvider value={locationContextValue as any}>
+        <LayoutProvider value={context as any}>
+          <HeaderP {...props} />
+        </LayoutProvider>
+      </LocationProvider>
     ),
-    ...rest,
+    mockNavigate,
   };
+}
+
+interface Args {
+  props?: Partial<Props>;
+  context?: Partial<ILayoutContextHeaderValue>;
+  location?: Partial<WindowLocation>;
 }

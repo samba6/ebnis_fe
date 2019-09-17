@@ -2,19 +2,18 @@ import React, { useContext } from "react";
 import Menu from "semantic-ui-react/dist/commonjs/collections/Menu";
 import Icon from "semantic-ui-react/dist/commonjs/elements/Icon";
 import makeClassnames from "classnames";
-import { WindowLocation, NavigateFn } from "@reach/router";
 import { Link } from "gatsby";
 import "./header.styles.scss";
 import { EXPERIENCES_URL, ROOT_URL } from "../../routes";
-import { LayoutContextHeader } from "../Layout/layout.utils";
+import { LayoutContextHeader, LocationContext } from "../Layout/layout.utils";
 import {
   UPLOAD_UNSAVED_PREVIEW_URL,
   UPLOAD_UNSAVED_URL_START,
 } from "../../constants/upload-unsaved-routes";
 import { useUser } from "../use-user";
 import { SetStateAction, PropsWithChildren } from "react";
-import { RouteComponentProps } from "@reach/router";
 import { LogoImageQuery_file_childImageSharp_fixed } from "../../graphql/gatsby-types/LogoImageQuery";
+import { useLogo } from "./header.injectables";
 
 export const Header = (props: Props) => {
   const {
@@ -22,16 +21,14 @@ export const Header = (props: Props) => {
     sidebar,
     toggleShowSidebar,
     show,
-    location,
-    navigate,
-    logoAttrs,
     children,
     className = "",
   } = props;
 
   const user = useUser();
+  const logoAttrs = useLogo();
+  const { navigate, pathname } = useContext(LocationContext);
 
-  const pathname = (location as WindowLocation).pathname;
   const isHome = pathname === EXPERIENCES_URL || pathname === ROOT_URL;
 
   const { unsavedCount, hasConnection } = useContext(LayoutContextHeader);
@@ -39,8 +36,7 @@ export const Header = (props: Props) => {
   const asUrlProps = isHome
     ? {}
     : {
-        onClick: () =>
-          (navigate as NavigateFn)(user ? EXPERIENCES_URL : ROOT_URL),
+        onClick: () => navigate(user ? EXPERIENCES_URL : ROOT_URL),
       };
 
   return (
@@ -131,11 +127,4 @@ export interface OwnProps {
   className?: string;
 }
 
-export interface Props
-  extends WithLogo,
-    RouteComponentProps,
-    PropsWithChildren<OwnProps> {}
-
-export interface WithLogo {
-  logoAttrs: LogoImageQuery_file_childImageSharp_fixed;
-}
+export type Props = PropsWithChildren<OwnProps>;

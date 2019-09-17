@@ -18,13 +18,17 @@ import {
   LayoutProvider,
   LayoutUnchangingProvider,
   LayoutExperienceProvider,
+  LocationProvider,
 } from "./layout-providers";
 import { preFetchExperiences } from "./pre-fetch-experiences";
 import { useUser } from "../use-user";
 import { isConnected } from "../../state/connections";
+import { WindowLocation, NavigateFn } from "@reach/router";
 
 export function Layout(props: Props) {
   const { children } = props;
+  const location = props.location as WindowLocation;
+  const navigate = props.navigate as NavigateFn;
 
   const {
     cache,
@@ -96,7 +100,7 @@ export function Layout(props: Props) {
         });
       })();
     },
-    [restoreCacheOrPurgeStorage, dispatch, persistor, client],
+    [restoreCacheOrPurgeStorage, dispatch, persistor, client, cache],
   );
 
   useEffect(() => {
@@ -146,7 +150,9 @@ export function Layout(props: Props) {
             } as ILayoutContextHeaderValue
           }
         >
-          {children}
+          <LocationProvider value={{ ...location, navigate }}>
+            {children}
+          </LocationProvider>
         </LayoutProvider>
       </LayoutExperienceProvider>
     </LayoutUnchangingProvider>

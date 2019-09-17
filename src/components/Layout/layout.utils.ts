@@ -1,6 +1,6 @@
 import { createContext, Reducer, Dispatch, PropsWithChildren } from "react";
 import immer from "immer";
-import { RouteComponentProps } from "@reach/router";
+import { RouteComponentProps, WindowLocation, NavigateFn } from "@reach/router";
 import { wrapReducer } from "../../logger";
 import { ConnectionStatus, isConnected } from "../../state/connections";
 import { UserFragment } from "../../graphql/apollo-types/UserFragment";
@@ -150,6 +150,10 @@ export const LayoutContextExperience = createContext<
   ILayoutContextExperienceValue
 >({} as ILayoutContextExperienceValue);
 
+export const LocationContext = createContext<ILocationContextValue>(
+  {} as ILocationContextValue,
+);
+
 ////////////////////////// TYPES ////////////////////////////
 
 export type LayoutAction =
@@ -222,4 +226,8 @@ export interface ILayoutUnchaningContextValue {
 
 export interface ILayoutContextExperienceValue {
   fetchExperience: IPrefetchExperiencesState["value"];
+}
+
+interface ILocationContextValue extends WindowLocation {
+  navigate: NavigateFn;
 }

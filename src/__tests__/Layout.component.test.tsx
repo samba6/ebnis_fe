@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+
 import React, { ComponentType } from "react";
 import "@marko/testing-library/cleanup-after-each";
 import { render, waitForElement, wait } from "@testing-library/react";
@@ -24,6 +25,7 @@ import {
   preFetchExperiences,
   PreFetchExperiencesFnArgs,
 } from "../components/Layout/pre-fetch-experiences";
+import { WindowLocation } from "@reach/router";
 
 ////////////////////////// MOCKS ////////////////////////////
 
@@ -43,6 +45,7 @@ const mockUseUser = useUser as jest.Mock;
 let layoutContextValue: null | ILayoutContextHeaderValue;
 let layoutDispatch: LayoutDispatchType;
 let layoutExperienceContextValue: null | ILayoutContextExperienceValue;
+let locationContextValue: null | WindowLocation;
 
 jest.mock("../components/Layout/layout-providers", () => ({
   LayoutProvider: ({ children, value }: any) => {
@@ -60,6 +63,11 @@ jest.mock("../components/Layout/layout-providers", () => ({
 
   LayoutExperienceProvider: ({ children, value }: any) => {
     layoutExperienceContextValue = value;
+    return children;
+  },
+
+  LocationProvider: ({ children, value }: any) => {
+    locationContextValue = value;
     return children;
   },
 }));
@@ -83,6 +91,7 @@ describe("components", () => {
     mockUseUser.mockReset();
     mockIsConnected.mockReset();
     mockPrefetchExperiences.mockReset();
+    locationContextValue = null;
   });
 
   afterEach(() => {
@@ -136,6 +145,12 @@ describe("components", () => {
     expect(document.getElementById("o-o-1")).not.toBeNull();
 
     /**
+     * And location context should not be set
+     */
+
+    expect(locationContextValue).toBeNull();
+
+    /**
      * After some pause
      */
 
@@ -153,6 +168,11 @@ describe("components", () => {
      * And we should not see loading indicator
      */
     expect(document.getElementById("o-o-1")).toBeNull();
+
+    /**
+     * And location context should have been set
+     */
+    expect(locationContextValue).toMatchObject({});
   });
 
   it("renders browser hydrated children if cache persist succeeds", async () => {
