@@ -1107,6 +1107,8 @@ it("renders errors if we get field errors", async () => {
         errors: {
           title: "t",
           user: null,
+          __typename: "CreateExperienceErrors",
+
           dataDefinitionsErrors: [
             {
               index: 1,

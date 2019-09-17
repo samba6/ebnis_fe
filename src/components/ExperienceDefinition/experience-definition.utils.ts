@@ -15,6 +15,7 @@ import {
   CreateExperienceMutation_createExperience_errors_dataDefinitionsErrors,
 } from "../../graphql/apollo-types/CreateExperienceMutation";
 import { ApolloError, MutationUpdaterFn } from "apollo-client";
+import { wrapReducer } from "../../logger";
 
 export type CreateExpUpdateFn = MutationUpdaterFn<CreateExperienceMutation>;
 
@@ -53,7 +54,7 @@ export enum ActionType {
 
   clearAllErrors = "@components/experience-definition/clear-all-errors",
 
-  setFieldErrors = "@components/experience-definition/set-field-errors",
+  FIELD_ERRORS = "@components/experience-definition/field-errors",
 }
 
 export type Action =
@@ -61,64 +62,62 @@ export type Action =
   | [ActionType.setApolloError, ApolloError]
   | [ActionType.showDescriptionInput, boolean]
   | [ActionType.clearAllErrors]
-  | [
-      ActionType.setFieldErrors,
-      CreateExperienceMutation_createExperience_errors,
-    ];
+  | [ActionType.FIELD_ERRORS, CreateExperienceMutation_createExperience_errors];
 
-export const reducer: Reducer<State, Action> = (prevState, [type, payload]) => {
-  return immer(prevState, proxy => {
-    switch (type) {
-      case ActionType.clearAllErrors:
-        {
-          proxy.otherErrors = null;
-          proxy.submittedFormErrors = null;
-          proxy.graphQlError = null;
-          proxy.serverOtherErrorsMap = null;
-          proxy.serverDataDefinitionsErrorsMap = null;
-        }
+export const reducer: Reducer<State, Action> = (state, action) =>
+  wrapReducer(state, action, (prevState, [type, payload]) => {
+    return immer(prevState, proxy => {
+      switch (type) {
+        case ActionType.clearAllErrors:
+          {
+            proxy.otherErrors = null;
+            proxy.submittedFormErrors = null;
+            proxy.graphQlError = null;
+            proxy.serverOtherErrorsMap = null;
+            proxy.serverDataDefinitionsErrorsMap = null;
+          }
 
-        break;
+          break;
 
-      case ActionType.setFieldErrors:
-        {
-          const errors = normalizeServerFieldsErrors(
-            payload as CreateExperienceMutation_createExperience_errors,
-          );
+        case ActionType.FIELD_ERRORS:
+          {
+            const errors = normalizeServerFieldsErrors(
+              payload as CreateExperienceMutation_createExperience_errors,
+            );
 
-          proxy.serverOtherErrorsMap = errors.serverOtherErrorsMap;
-          proxy.serverDataDefinitionsErrorsMap =
-            errors.serverDataDefinitionsErrorsMap;
-        }
+            proxy.serverOtherErrorsMap = errors.serverOtherErrorsMap;
+            proxy.serverDataDefinitionsErrorsMap =
+              errors.serverDataDefinitionsErrorsMap;
+          }
 
-        break;
+          break;
 
-      case ActionType.setFormError:
-        {
-          proxy.submittedFormErrors = payload as FormikErrors<FormValues>;
-        }
+        case ActionType.setFormError:
+          {
+            proxy.submittedFormErrors = payload as FormikErrors<FormValues>;
+          }
 
-        break;
+          break;
 
-      case ActionType.setApolloError:
-        {
-          const { networkError, graphQLErrors } = payload as ApolloError;
-          proxy.graphQlError =
-            (networkError && networkError.message) ||
-            (graphQLErrors && graphQLErrors[0].message);
-        }
+        case ActionType.setApolloError:
+          {
+            const { networkError, graphQLErrors } = payload as ApolloError;
+            proxy.graphQlError =
+              (networkError && networkError.message) ||
+              (graphQLErrors && graphQLErrors[0].message);
+          }
 
-        break;
+          break;
 
-      case ActionType.showDescriptionInput:
-        {
-          proxy.showDescriptionInput = payload as boolean;
-        }
+        case ActionType.showDescriptionInput:
+          {
+            proxy.showDescriptionInput = payload as boolean;
+          }
 
-        break;
-    }
+          break;
+      }
+    });
   });
-};
 
 export const EMPTY_FIELD = { name: "", type: "" as DataTypes };
 
@@ -126,6 +125,8 @@ function normalizeServerFieldsErrors(
   serverFieldErrors: CreateExperienceMutation_createExperience_errors,
 ) {
   const { dataDefinitionsErrors, ...serverOtherErrorsMap } = serverFieldErrors;
+
+  delete serverOtherErrorsMap["__typename"];
 
   return {
     serverOtherErrorsMap,

@@ -171,7 +171,7 @@ export function ExperienceDefinition(props: Props) {
         scrollIntoView(mainComponentId);
 
         if (fieldErrors) {
-          dispatch([ActionType.setFieldErrors, fieldErrors]);
+          dispatch([ActionType.FIELD_ERRORS, fieldErrors]);
           return;
         }
 
