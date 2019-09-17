@@ -11,7 +11,7 @@ jest.mock("../components/Header/header.component", () => ({
   Header: jest.fn(() => null),
 }));
 
-jest.mock("../components/Sidebar/sidebar-index", () => ({
+jest.mock("../components/Sidebar/sidebar.component", () => ({
   Sidebar: jest.fn(() => <div id="yo" />),
 }));
 

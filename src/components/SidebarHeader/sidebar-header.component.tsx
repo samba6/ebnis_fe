@@ -1,12 +1,10 @@
 import React, { useState, ComponentType, PropsWithChildren } from "react";
-
-import { Sidebar } from "../Sidebar/sidebar-index";
+import { Sidebar } from "../Sidebar/sidebar.component";
 import { Header, OwnProps as HeaderOwnProps } from "../Header/header.component";
 
 export type OwnProps = HeaderOwnProps;
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface Props extends PropsWithChildren<OwnProps> {}
+export type Props = PropsWithChildren<OwnProps>;
 
 export interface WithSideBar {
   SidebarHeader: ComponentType<OwnProps>;

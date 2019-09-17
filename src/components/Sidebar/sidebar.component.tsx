@@ -1,5 +1,9 @@
-import React, { Dispatch, MouseEventHandler, SetStateAction } from "react";
-import { RouteComponentProps, NavigateFn, WindowLocation } from "@reach/router";
+import React, {
+  Dispatch,
+  MouseEventHandler,
+  SetStateAction,
+  useContext,
+} from "react";
 import makeClassNames from "classnames";
 import "./sidebar.styles.scss";
 import {
@@ -9,8 +13,9 @@ import {
 } from "../../routes";
 import { clearUser } from "../../state/users";
 import { useUser } from "../use-user";
+import { LocationContext } from "../Layout/layout.utils";
 
-export interface Props extends RouteComponentProps {
+export interface Props {
   show: boolean;
   toggleShowSidebar: Dispatch<SetStateAction<boolean>>;
 }
@@ -19,10 +24,9 @@ const blockClicks: MouseEventHandler<HTMLDivElement> = evt =>
   evt.stopPropagation();
 
 export function Sidebar(props: Props) {
-  const { location, show, toggleShowSidebar, navigate } = props;
+  const { show, toggleShowSidebar } = props;
   const user = useUser();
-
-  const pathname = (location as WindowLocation).pathname;
+  const { pathname, navigate } = useContext(LocationContext);
 
   function hideSidebar() {
     toggleShowSidebar(false);
@@ -31,7 +35,7 @@ export function Sidebar(props: Props) {
   function onGoToExperience(where: string) {
     return function goToExperience() {
       hideSidebar();
-      (navigate as NavigateFn)(where);
+      navigate(where);
     };
   }
 
@@ -90,7 +94,7 @@ export function Sidebar(props: Props) {
               onClick={() => {
                 clearUser();
 
-                (navigate as NavigateFn)(LOGIN_URL);
+                navigate(LOGIN_URL);
               }}
               id="sidebar-logout-link"
             >
