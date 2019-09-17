@@ -19,7 +19,6 @@ import {
   formObjToString,
 } from "./new-entry.utils";
 import { makeExperienceRoute } from "../../constants/experience-route";
-import { updateExperienceWithNewEntry } from "./update";
 import { SidebarHeader } from "../SidebarHeader/sidebar-header.component";
 import { setDocumentTitle, makeSiteTitle } from "../../constants";
 import { isConnected } from "../../state/connections";
@@ -39,6 +38,7 @@ import {
   addResolvers,
   useCreateOnlineEntry,
   useCreateUnsavedEntry,
+  updateExperienceWithNewEntry,
 } from "./new-entry.injectables";
 import { EbnisAppContext } from "../../context";
 

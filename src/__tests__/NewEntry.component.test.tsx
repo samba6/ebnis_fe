@@ -37,7 +37,6 @@ import {
   CreateEntryMutation,
   CreateEntryMutationVariables,
 } from "../graphql/apollo-types/CreateEntryMutation";
-import { updateExperienceWithNewEntry } from "../components/NewEntry/update";
 import { isConnected } from "../state/connections";
 import { scrollIntoView } from "../components/scroll-into-view";
 import {
@@ -48,9 +47,9 @@ import { GraphQLError } from "graphql";
 import {
   useCreateOnlineEntry,
   useCreateUnsavedEntry,
+  updateExperienceWithNewEntry,
 } from "../components/NewEntry/new-entry.injectables";
 
-jest.mock("../components/NewEntry/update");
 jest.mock("../components/SidebarHeader/sidebar-header.component", () => ({
   SidebarHeader: () => null,
 }));

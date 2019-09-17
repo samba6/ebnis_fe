@@ -59,8 +59,6 @@ export function EditExperience(props: Props) {
 
       const { values } = formikProps;
 
-
-
       try {
         const result = await onEdit({
           variables: {
@@ -84,7 +82,7 @@ export function EditExperience(props: Props) {
         if (experience) {
           dispatch([EditExperienceActionType.completed]);
 
-          return
+          return;
         }
 
         if (errors) {
@@ -203,6 +201,8 @@ export function EditExperience(props: Props) {
     </Modal>
   );
 }
+
+export default EditExperience;
 
 function parseErrors([stateTag, stateData]: EditingState) {
   const errorObject: {

@@ -5,13 +5,12 @@ import { CacheContext } from "../state/resolvers";
 import { isUnsavedId } from "../constants";
 import { makeTestCache } from "./test_utils";
 import { EntryFragment } from "../graphql/apollo-types/EntryFragment";
-
-jest.mock("../components/NewEntry/update");
-jest.mock("../state/resolvers/update-saved-and-unsaved-experiences-in-cache");
-
-import { updateExperienceWithNewEntry } from "../components/NewEntry/update";
+import { updateExperienceWithNewEntry } from "../components/NewEntry/new-entry.injectables";
 import { ExperienceFragment } from "../graphql/apollo-types/ExperienceFragment";
 import { updateEntriesCountSavedAndUnsavedExperiencesInCache } from "../state/resolvers/update-saved-and-unsaved-experiences-in-cache";
+
+jest.mock("../components/NewEntry/new-entry.injectables");
+jest.mock("../state/resolvers/update-saved-and-unsaved-experiences-in-cache");
 
 const mockUpdateExperienceWithNewEntry = updateExperienceWithNewEntry as jest.Mock;
 

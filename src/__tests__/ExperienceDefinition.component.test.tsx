@@ -19,7 +19,6 @@ import {
   CreateExperienceMutationVariables,
   CreateExperienceMutation,
 } from "../graphql/apollo-types/CreateExperienceMutation";
-import { ExperienceDefinitionUpdate } from "../components/ExperienceDefinition/experience-definition.update";
 import { isConnected } from "../state/connections";
 import { scrollIntoView } from "../components/scroll-into-view";
 import { CreateUnsavedExperienceMutationData } from "../components/ExperienceDefinition/resolvers";
@@ -30,9 +29,9 @@ import {
   useCreateExperience,
   addResolvers,
   useCreateUnsavedExperience,
+  ExperienceDefinitionUpdate,
 } from "../components/ExperienceDefinition/experience-definition.injectables";
 
-jest.mock("../components/ExperienceDefinition/experience-definition.update");
 jest.mock("../components/SidebarHeader/sidebar-header.component", () => ({
   SidebarHeader: jest.fn(() => null),
 }));
