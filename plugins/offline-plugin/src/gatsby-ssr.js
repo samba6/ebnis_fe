@@ -1,9 +1,15 @@
 export const onPreRenderHTML = ({
   getHeadComponents,
   pathname,
-  replaceHeadComponents
+  replaceHeadComponents,
 }) => {
-  if (pathname !== `/offline-plugin-app-shell-fallback/`) return;
+  if (
+    ![
+      `/offline-plugin-app-shell-fallback/`,
+      `/offline-plugin-app-shell-fallback/index.html`,
+    ].includes(pathname)
+  )
+    return;
 
   const headComponents = getHeadComponents();
 
@@ -13,8 +19,9 @@ export const onPreRenderHTML = ({
         type === `link` &&
         props.as === `fetch` &&
         props.rel === `preload` &&
-        props.href.startsWith(`/static/d/`)
-      )
+        (props.href.startsWith(`/static/d/`) ||
+          props.href.startsWith(`/page-data/`))
+      ),
   );
 
   replaceHeadComponents(filteredHeadComponents);

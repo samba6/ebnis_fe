@@ -14,7 +14,7 @@ import {
   reducer,
   LayoutAction,
   LayoutDispatchType,
-  ILayoutUnchaningContextValue,
+  ILayoutUnchangingContextValue,
   ILayoutContextExperienceValue,
 } from "../components/Layout/layout.utils";
 import { getUnsavedCount } from "../state/unsaved-resolvers";
@@ -56,7 +56,7 @@ jest.mock("../components/Layout/layout-providers", () => ({
   },
 
   LayoutUnchangingProvider: ({ children, value }: any) => {
-    layoutDispatch = (value as ILayoutUnchaningContextValue).layoutDispatch;
+    layoutDispatch = (value as ILayoutUnchangingContextValue).layoutDispatch;
 
     return children;
   },

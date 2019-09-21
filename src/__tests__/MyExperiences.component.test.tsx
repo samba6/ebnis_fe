@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+
 import React, { ComponentType } from "react";
 import "@marko/testing-library/cleanup-after-each";
 import { render, fireEvent, act } from "@testing-library/react";
@@ -11,7 +12,7 @@ import {
   LayoutExperienceProvider,
 } from "../components/Layout/layout-providers";
 import {
-  ILayoutUnchaningContextValue,
+  ILayoutUnchangingContextValue,
   ILayoutContextExperienceValue,
 } from "../components/Layout/layout.utils";
 import { cleanUpOnSearchExit } from "../components/MyExperiences/my-experiences.injectables";
@@ -505,7 +506,7 @@ function makeComp(args: Args = {} as Args) {
         value={
           {
             layoutDispatch: mockLayoutDispatch as any,
-          } as ILayoutUnchaningContextValue
+          } as ILayoutUnchangingContextValue
         }
       >
         <LayoutExperienceProvider

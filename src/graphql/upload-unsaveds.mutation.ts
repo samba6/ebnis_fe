@@ -29,7 +29,7 @@ const UPLOAD_UNSAVED_EXPERIENCES_FRAGMENT = gql`
     experience {
       ...ExperienceNoEntryFragment
 
-      entries(pagination: { first: 100 }) {
+      entries(pagination: { first: 2000 }) {
         ...EntryConnectionFragment
       }
     }

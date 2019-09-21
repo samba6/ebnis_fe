@@ -143,8 +143,8 @@ export const LayoutContextHeader = createContext<ILayoutContextHeaderValue>({
 } as ILayoutContextHeaderValue);
 
 export const LayoutUnchangingContext = createContext<
-  ILayoutUnchaningContextValue
->({} as ILayoutUnchaningContextValue);
+  ILayoutUnchangingContextValue
+>({} as ILayoutUnchangingContextValue);
 
 export const LayoutContextExperience = createContext<
   ILayoutContextExperienceValue
@@ -220,7 +220,7 @@ export interface ILayoutContextHeaderValue {
   hasConnection: boolean;
 }
 
-export interface ILayoutUnchaningContextValue {
+export interface ILayoutUnchangingContextValue {
   layoutDispatch: LayoutDispatchType;
 }
 
