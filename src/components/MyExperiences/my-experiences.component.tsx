@@ -18,7 +18,7 @@ import {
   ActionTypes,
   initState,
   SearchResults,
-  StateMachine,
+  IStateMachine,
 } from "./my-experiences.utils";
 import { EXPERIENCE_DEFINITION_URL } from "../../routes";
 import { makeExperienceRoute } from "../../constants/experience-route";
@@ -98,6 +98,21 @@ export const MyExperiences = (props: Props) => {
 
     return setDocumentTitle;
   }, []);
+
+  // istanbul ignore next:
+  useEffect(() => {
+    if (
+      experiences.length === 0 ||
+      states.search.context.experiencesPrepared.length !== 0
+    ) {
+      return;
+    }
+
+    dispatch({
+      type: ActionTypes.PREPARE_EXPERIENCES_FOR_SEARCH,
+      experiences,
+    });
+  }, [experiences, states]);
 
   useEffect(() => {
     if (!getExperiences || fetchExperience !== "never-fetched") {
@@ -286,7 +301,7 @@ const searchResultRenderer = (props: SearchResultProps) => {
   );
 };
 
-function SearchComponent(props: StateMachine["states"]["search"]) {
+function SearchComponent(props: IStateMachine["states"]["search"]) {
   const {
     dispatch,
     navigate,

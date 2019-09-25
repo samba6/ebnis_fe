@@ -14,13 +14,12 @@ export enum ActionTypes {
   TOGGLE_DESCRIPTION = "@my-experiences/toggle-description",
   SEARCH_STARTED = "@my-experiences/search-started",
   SEARCH_TEXT_SET = "@my-experiences/search-text-set",
+  PREPARE_EXPERIENCES_FOR_SEARCH = "@my-experiences/prepare-experiences-for-search",
 }
 
 export function initState({
   experiences,
-}: {
-  experiences: ExperienceConnectionFragment_edges_node[];
-}): StateMachine {
+}: PrepareExperiencesPayload): IStateMachine {
   return {
     context: {
       descriptionMap: {},
@@ -31,20 +30,14 @@ export function initState({
         value: "inactive",
 
         context: {
-          experiencesPrepared: experiences.map(({ id, title }) => {
-            return {
-              id,
-              title,
-              target: fuzzysort.prepare(title) as Fuzzysort.Prepared,
-            };
-          }),
+          experiencesPrepared: preExperiencesForSearch(experiences),
         },
       },
     },
   };
 }
 
-export const reducer: Reducer<StateMachine, Action> = (state, action) =>
+export const reducer: Reducer<IStateMachine, Action> = (state, action) =>
   wrapReducer(state, action, (prevState, { type, ...payload }) => {
     return immer(prevState, proxy => {
       switch (type) {
@@ -80,7 +73,7 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
             searchResultsState.context = context;
             searching.results = searchResultsState;
 
-            const genericSearch = searching as StateMachine["states"]["search"];
+            const genericSearch = searching as IStateMachine["states"]["search"];
             genericSearch.value = "inactive";
 
             const searchResults = fuzzysort.go(
@@ -101,6 +94,14 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
             });
           }
 
+          break;
+
+        case ActionTypes.PREPARE_EXPERIENCES_FOR_SEARCH:
+          {
+            proxy.states.search.context.experiencesPrepared = preExperiencesForSearch(
+              (payload as PrepareExperiencesPayload).experiences,
+            );
+          }
           break;
       }
     });
@@ -126,6 +127,18 @@ export function mapSavedExperiencesToIds(
   );
 }
 
+function preExperiencesForSearch(
+  experiences: ExperienceConnectionFragment_edges_node[],
+) {
+  return experiences.map(({ id, title }) => {
+    return {
+      id,
+      title,
+      target: fuzzysort.prepare(title) as Fuzzysort.Prepared,
+    };
+  });
+}
+
 export const dispatchContext = createContext<NoneStateContextValue>(
   {} as NoneStateContextValue,
 );
@@ -134,7 +147,7 @@ export const DispatchProvider = dispatchContext.Provider;
 
 ////////////////////////// TYPES ////////////////////////////
 
-export interface StateMachine {
+export interface IStateMachine {
   readonly context: {
     descriptionMap: DescriptionMap;
   };
@@ -178,7 +191,7 @@ export interface MySearchResult {
   price: string; // this is actually the experience id but semantic UI search is dogmatic about the shape of object it accepts
 }
 
-type Action =
+export type Action =
   | {
       type: ActionTypes.TOGGLE_DESCRIPTION;
       id: string;
@@ -189,7 +202,10 @@ type Action =
     }
   | {
       type: ActionTypes.SEARCH_STARTED;
-    };
+    }
+  | (PrepareExperiencesPayload & {
+      type: ActionTypes.PREPARE_EXPERIENCES_FOR_SEARCH;
+    });
 
 export type Props = RouteComponentProps<{}>;
 
@@ -207,4 +223,8 @@ interface NoneStateContextValue {
   navigate: NavigateFn;
   searchDebounceTimeoutMs: number;
   cleanUpOnSearchExit: (arg: Cancelable) => void;
+}
+
+interface PrepareExperiencesPayload {
+  experiences: ExperienceConnectionFragment_edges_node[];
 }
