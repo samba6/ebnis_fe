@@ -8,12 +8,11 @@ import { Reducer, Dispatch, createContext } from "react";
 import { wrapReducer } from "../../logger";
 import immer from "immer";
 import fuzzysort from "fuzzysort";
-import { Cancelable } from "lodash";
 
 export enum ActionTypes {
   TOGGLE_DESCRIPTION = "@my-experiences/toggle-description",
-  SEARCH_STARTED = "@my-experiences/search-started",
-  SEARCH_TEXT_SET = "@my-experiences/search-text-set",
+  SEARCH_TEXT_SET = "@my-experiences/search-started",
+  EXEC_SEARCH = "@my-experiences/search-text-set",
   PREPARE_EXPERIENCES_FOR_SEARCH = "@my-experiences/prepare-experiences-for-search",
 }
 
@@ -23,6 +22,7 @@ export function initState({
   return {
     context: {
       descriptionMap: {},
+      experiencesPrepared: preExperiencesForSearch(experiences),
     },
 
     states: {
@@ -30,7 +30,7 @@ export function initState({
         value: "inactive",
 
         context: {
-          experiencesPrepared: preExperiencesForSearch(experiences),
+          searchText: "",
         },
       },
     },
@@ -50,13 +50,15 @@ export const reducer: Reducer<IStateMachine, Action> = (state, action) =>
 
           break;
 
-        case ActionTypes.SEARCH_STARTED:
+        case ActionTypes.SEARCH_TEXT_SET:
           {
+            const { searchText } = payload as { searchText: string };
             proxy.states.search.value = "searching";
+            proxy.states.search.context.searchText = searchText;
           }
           break;
 
-        case ActionTypes.SEARCH_TEXT_SET:
+        case ActionTypes.EXEC_SEARCH:
           {
             const { searchText } = payload as { searchText: string };
 
@@ -69,7 +71,6 @@ export const reducer: Reducer<IStateMachine, Action> = (state, action) =>
               searchResultsState.context ||
               ({} as SearchResults["results"]["context"]);
 
-            context.searchText = searchText;
             searchResultsState.context = context;
             searching.results = searchResultsState;
 
@@ -78,7 +79,7 @@ export const reducer: Reducer<IStateMachine, Action> = (state, action) =>
 
             const searchResults = fuzzysort.go(
               searchText,
-              genericSearch.context.experiencesPrepared,
+              proxy.context.experiencesPrepared,
               {
                 key: "title",
               },
@@ -98,7 +99,7 @@ export const reducer: Reducer<IStateMachine, Action> = (state, action) =>
 
         case ActionTypes.PREPARE_EXPERIENCES_FOR_SEARCH:
           {
-            proxy.states.search.context.experiencesPrepared = preExperiencesForSearch(
+            proxy.context.experiencesPrepared = preExperiencesForSearch(
               (payload as PrepareExperiencesPayload).experiences,
             );
           }
@@ -150,6 +151,12 @@ export const DispatchProvider = dispatchContext.Provider;
 export interface IStateMachine {
   readonly context: {
     descriptionMap: DescriptionMap;
+
+    experiencesPrepared: ({
+      target: Fuzzysort.Prepared;
+      title: string;
+      id: string;
+    })[];
   };
 
   readonly states: {
@@ -167,11 +174,7 @@ export interface IStateMachine {
 }
 
 interface SearchContext {
-  experiencesPrepared: ({
-    target: Fuzzysort.Prepared;
-    title: string;
-    id: string;
-  })[];
+  searchText: string;
 }
 
 export interface SearchResults {
@@ -179,8 +182,6 @@ export interface SearchResults {
 
   results: {
     context: {
-      searchText: string;
-
       results: MySearchResult[];
     };
   };
@@ -190,18 +191,18 @@ export interface MySearchResult {
   title: string;
   price: string; // this is actually the experience id but semantic UI search is dogmatic about the shape of object it accepts
 }
-
 export type Action =
   | {
       type: ActionTypes.TOGGLE_DESCRIPTION;
       id: string;
     }
   | {
-      type: ActionTypes.SEARCH_TEXT_SET;
+      type: ActionTypes.EXEC_SEARCH;
       searchText: string;
     }
   | {
-      type: ActionTypes.SEARCH_STARTED;
+      type: ActionTypes.SEARCH_TEXT_SET;
+      searchText: string;
     }
   | (PrepareExperiencesPayload & {
       type: ActionTypes.PREPARE_EXPERIENCES_FOR_SEARCH;
@@ -218,13 +219,14 @@ export interface ExperienceProps {
   experience: ExperienceConnectionFragment_edges_node;
 }
 
-interface NoneStateContextValue {
+export interface NoneStateContextValue {
   dispatch: Dispatch<Action>;
   navigate: NavigateFn;
-  searchDebounceTimeoutMs: number;
-  cleanUpOnSearchExit: (arg: Cancelable) => void;
 }
 
 interface PrepareExperiencesPayload {
   experiences: ExperienceConnectionFragment_edges_node[];
 }
+
+export type SearchComponentProps = IStateMachine["states"]["search"] &
+  NoneStateContextValue;

@@ -483,11 +483,7 @@ describe("component", () => {
 describe("reducer", () => {
   it("prepares experiences for search", () => {
     const state = {
-      states: {
-        search: {
-          context: {},
-        },
-      },
+      context: {},
     } as IStateMachine;
 
     const experiences = [
@@ -504,7 +500,7 @@ describe("reducer", () => {
 
     const nextState = reducer(state, action);
 
-    expect(nextState.states.search.context.experiencesPrepared).toBeDefined();
+    expect(nextState.context.experiencesPrepared).toBeDefined();
   });
 });
 

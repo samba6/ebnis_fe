@@ -4,4 +4,4 @@ export function cleanUpOnSearchExit(cancellable: Cancelable) {
   cancellable.cancel();
 }
 
-export const searchDebounceTimeoutMs = 250;
+export const searchDebounceTimeoutMs = 70;
