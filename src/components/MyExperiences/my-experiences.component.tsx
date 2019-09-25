@@ -5,6 +5,7 @@ import React, {
   useMemo,
   useRef,
   useCallback,
+  memo,
 } from "react";
 import Icon from "semantic-ui-react/dist/commonjs/elements/Icon";
 import "./my-experiences.styles.scss";
@@ -18,7 +19,7 @@ import {
   ActionTypes,
   initState,
   SearchResults,
-  StateMachine,
+  SearchComponentProps,
 } from "./my-experiences.utils";
 import { EXPERIENCE_DEFINITION_URL } from "../../routes";
 import { makeExperienceRoute } from "../../constants/experience-route";
@@ -53,6 +54,8 @@ import {
   cleanUpOnSearchExit,
 } from "./my-experiences.injectables";
 
+const SearchComponent = memo(SearchComponentUnMemo, SearchComponentPropsDiffFn);
+
 export const MyExperiences = (props: Props) => {
   const { data, loading } = useQuery<
     GetExperienceConnectionMini,
@@ -86,7 +89,7 @@ export const MyExperiences = (props: Props) => {
   );
 
   const {
-    context: { descriptionMap },
+    context: { descriptionMap, experiencesPrepared },
     states,
   } = stateMachine;
 
@@ -98,6 +101,18 @@ export const MyExperiences = (props: Props) => {
 
     return setDocumentTitle;
   }, []);
+
+  // istanbul ignore next:
+  useEffect(() => {
+    if (experiences.length === 0 || experiencesPrepared.length !== 0) {
+      return;
+    }
+
+    dispatch({
+      type: ActionTypes.PREPARE_EXPERIENCES_FOR_SEARCH,
+      experiences,
+    });
+  }, [experiences, experiencesPrepared]);
 
   useEffect(() => {
     if (!getExperiences || fetchExperience !== "never-fetched") {
@@ -135,7 +150,11 @@ export const MyExperiences = (props: Props) => {
 
     return (
       <div id="experiences-container" className="experiences-container">
-        <SearchComponent {...states.search} />
+        <SearchComponent
+          {...states.search}
+          navigate={props.navigate as NavigateFn}
+          dispatch={dispatch}
+        />
 
         {experiences.map(experience => {
           const { id } = experience;
@@ -184,8 +203,6 @@ export const MyExperiences = (props: Props) => {
         value={{
           dispatch,
           navigate: props.navigate as NavigateFn,
-          searchDebounceTimeoutMs: searchDebounceTimeoutMs,
-          cleanUpOnSearchExit: cleanUpOnSearchExit,
         }}
       >
         <div className="main">{renderMain()}</div>
@@ -277,6 +294,8 @@ const defaultSearchActiveContext = {
   results: [],
 } as SearchResults["results"]["context"];
 
+const defaultSearchResults = {} as SearchResults["results"];
+
 const searchResultRenderer = (props: SearchResultProps) => {
   const { price: experienceId, title } = props;
   return (
@@ -286,27 +305,23 @@ const searchResultRenderer = (props: SearchResultProps) => {
   );
 };
 
-function SearchComponent(props: StateMachine["states"]["search"]) {
-  const {
-    dispatch,
-    navigate,
-    searchDebounceTimeoutMs,
-    cleanUpOnSearchExit,
-  } = useContext(dispatchContext);
-  const activeSearch =
-    (props as SearchResults).results || ({} as SearchResults["results"]);
+function SearchComponentUnMemo(props: SearchComponentProps) {
+  const { dispatch, navigate } = props;
+
+  const activeSearch = (props as SearchResults).results || defaultSearchResults;
 
   const searchFn = useCallback(
     (_, { value }: SearchProps) => {
-      dispatch({
-        type: ActionTypes.SEARCH_STARTED,
-      });
-
       const searchText = value as string;
+
+      dispatch({
+        type: ActionTypes.SEARCH_TEXT_SET,
+        searchText,
+      });
 
       setTimeout(() => {
         dispatch({
-          type: ActionTypes.SEARCH_TEXT_SET,
+          type: ActionTypes.EXEC_SEARCH,
           searchText,
         });
       });
@@ -328,12 +343,12 @@ function SearchComponent(props: StateMachine["states"]["search"]) {
     return () => {
       cleanUpOnSearchExit(debounced);
     };
-  }, [cleanUpOnSearchExit]);
+  }, []);
 
   return (
     <SemanticSearch
       id="my-experiences-search"
-      value={context.searchText}
+      value={props.context.searchText}
       className="my-search"
       loading={props.value === "searching"}
       results={context.results}
@@ -344,5 +359,23 @@ function SearchComponent(props: StateMachine["states"]["search"]) {
         navigate(makeExperienceRoute(experienceId));
       }}
     />
+  );
+}
+
+function SearchComponentPropsDiffFn(
+  pp: SearchComponentProps,
+  np: SearchComponentProps,
+) {
+  if (pp.value !== np.value) {
+    return false;
+  }
+  const { context: prevContext = {} as SearchResults["results"]["context"] } =
+    (pp as SearchResults).results || defaultSearchResults;
+  const { context: nexContext = {} as SearchResults["results"]["context"] } =
+    (np as SearchResults).results || defaultSearchResults;
+
+  return (
+    pp.context.searchText === np.context.searchText &&
+    prevContext.results === nexContext.results
   );
 }
