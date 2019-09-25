@@ -26,7 +26,7 @@ import { Loading } from "../Loading/loading";
 import { SidebarHeader } from "../SidebarHeader/sidebar-header.component";
 import { setDocumentTitle, makeSiteTitle } from "../../constants";
 import { MY_EXPERIENCES_TITLE } from "../../constants/my-experiences-title";
-import { Link } from "gatsby";
+import { Link } from "../Link";
 import {
   ExperienceConnectionFragment,
   ExperienceConnectionFragment_edges,
@@ -118,7 +118,7 @@ export const MyExperiences = (props: Props) => {
         ids,
       });
     }, 1000);
-  }, [getExperiences, layoutDispatch]);
+  }, [fetchExperience, getExperiences, layoutDispatch]);
 
   function renderExperiences() {
     if (experiences.length === 0) {

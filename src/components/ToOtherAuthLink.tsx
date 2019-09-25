@@ -1,6 +1,6 @@
 import React from "react";
-import { Link } from "gatsby";
 import Button from "semantic-ui-react/dist/commonjs/elements/Button";
+import { Link } from "./Link";
 import makeClassNames from "classnames";
 import { SIGN_UP_URL, LOGIN_URL } from "../routes";
 

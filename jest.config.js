@@ -7,7 +7,6 @@ module.exports = {
     "!src/pages/**",
     "!src/**/refresh-to-app.ts",
     "!src/graphql/**",
-    "!src/components/AuthRequired**",
     "!src/components/use-*",
     "!src/types.ts",
     "!src/components/RootHelmet/**",
@@ -50,7 +49,7 @@ module.exports = {
   ],
   modulePaths: [],
   moduleNameMapper: {
-    "^react-native$": "react-native-web",
+    // "^react-native$": "react-native-web",
     "^.+\\.module\\.(css|sass|scss)$": "identity-obj-proxy",
   },
   moduleFileExtensions: ["js", "ts", "tsx", "json", "jsx", "node"],
@@ -59,7 +58,7 @@ module.exports = {
     "jest-watch-typeahead/testname",
   ],
   watchPathIgnorePatterns: [
-    "<rootDir>/node_modules/",
+    "<rootDir>/node_modules*",
     "<rootDir>/cypress/",
     "<rootDir>/package.json",
     "<rootDir>/gatsby-*",
@@ -75,4 +74,5 @@ module.exports = {
   },
   testURL: "http://localhost",
   extraGlobals: ["Date"],
+  roots: ["<rootDir>/src"],
 };

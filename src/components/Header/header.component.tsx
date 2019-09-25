@@ -2,7 +2,7 @@ import React, { useContext } from "react";
 import Menu from "semantic-ui-react/dist/commonjs/collections/Menu";
 import Icon from "semantic-ui-react/dist/commonjs/elements/Icon";
 import makeClassnames from "classnames";
-import { Link } from "gatsby";
+import { Link } from "../Link";
 import "./header.styles.scss";
 import { EXPERIENCES_URL, ROOT_URL } from "../../routes";
 import { LayoutContextHeader, LocationContext } from "../Layout/layout.utils";
