@@ -5,8 +5,6 @@ import {
 import { CreateExperienceMutationVariables } from "../../graphql/apollo-types/CreateExperienceMutation";
 import { CreateDataDefinition } from "../../graphql/apollo-types/globalTypes";
 import { makeUnsavedId } from "../../constants";
-import { graphql } from "react-apollo";
-import { MutationFn } from "react-apollo";
 import gql from "graphql-tag";
 import {
   ExperienceFragment_dataDefinitions,
@@ -21,7 +19,7 @@ const createUnsavedExperienceResolver: LocalResolverFn<
   CreateExperienceMutationVariables,
   ExperienceFragment
 > = (
-  root,
+  _,
   {
     createExperienceInput: {
       description = null,
@@ -97,26 +95,6 @@ export interface CreateUnsavedExperienceMutationData {
   createUnsavedExperience: ExperienceFragment;
 }
 
-type Fn = MutationFn<
-  CreateUnsavedExperienceMutationData,
-  CreateExperienceMutationVariables
->;
-
-export interface CreateUnsavedExperienceMutationProps {
-  createUnsavedExperience: Fn;
-}
-
-export const createUnsavedExperienceGql = graphql<
-  {},
-  CreateUnsavedExperienceMutationData,
-  CreateExperienceMutationVariables,
-  CreateUnsavedExperienceMutationProps | undefined
->(CREATE_UNSAVED_EXPERIENCE_MUTATION, {
-  props: ({ mutate }) =>
-    mutate && {
-      [MUTATION_NAME_createUnsavedExperience]: mutate,
-    },
-});
 //////////////////////////// QUERIES /////////////////////////////////
 
 //////////////////////////// END QUERIES ////////////////////////////

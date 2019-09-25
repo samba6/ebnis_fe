@@ -1,21 +1,20 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import React, { ComponentType } from "react";
-import "react-testing-library/cleanup-after-each";
-import { render, fireEvent } from "react-testing-library";
+import "@marko/testing-library/cleanup-after-each";
+import { render, fireEvent } from "@testing-library/react";
 import { Sidebar, Props } from "../components/Sidebar/sidebar.component";
-import { renderWithRouter } from "./test_utils";
 import { RouteComponentProps } from "@reach/router";
 import {
   EXPERIENCES_URL,
   EXPERIENCE_DEFINITION_URL,
   LOGIN_URL,
 } from "../routes";
+import { useUser } from "../components/use-user";
+import { LocationProvider } from "../components/Layout/layout-providers";
 
 jest.mock("../components/use-user");
 jest.mock("../state/users");
-
-import { useUser } from "../components/use-user";
 
 const mockUseUser = useUser as jest.Mock;
 
@@ -104,7 +103,7 @@ it("renders my experiences link when not in my experiences route", () => {
    * Given that we are not in my experiences route
    */
   const { ui, mockNavigate, mockToggleShowSidebar } = setup({
-    routeProps: {
+    location: {
       path: EXPERIENCES_URL + "some string",
     },
   });
@@ -134,7 +133,7 @@ it("renders 'New Experience Definition' link when not in 'New Experience Definit
    * Given that we are not in New Experience Definition route
    */
   const { ui, mockNavigate, mockToggleShowSidebar } = setup({
-    routeProps: {
+    location: {
       path: EXPERIENCE_DEFINITION_URL + "some string",
     },
   });
@@ -205,24 +204,31 @@ it("does not render logout button if we are not logged in", () => {
 
 const SidebarP = Sidebar as ComponentType<Partial<Props>>;
 
-function setup({
-  props = {},
-  routeProps = {},
-}: {
-  props?: Partial<Props>;
-  routeProps?: Partial<RouteComponentProps>;
-} = {}) {
+function setup(args: Args = {}) {
   mockUseUser.mockReset();
   const mockToggleShowSidebar = jest.fn();
 
-  const { Ui, ...rest } = renderWithRouter(SidebarP, routeProps, {
-    toggleShowSidebar: mockToggleShowSidebar,
-    ...props,
-  });
+  const props = args.props || {};
+
+  const mockNavigate = jest.fn();
+  const location = {
+    pathname: "",
+    ...(args.location || {}),
+    navigate: mockNavigate,
+  };
 
   return {
-    ui: <Ui />,
-    ...rest,
+    ui: (
+      <LocationProvider value={location as any}>
+        <SidebarP toggleShowSidebar={mockToggleShowSidebar} {...props} />
+      </LocationProvider>
+    ),
     mockToggleShowSidebar,
+    mockNavigate,
   };
+}
+
+interface Args {
+  props?: Partial<Props>;
+  location?: Partial<RouteComponentProps>;
 }

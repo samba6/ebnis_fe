@@ -1,19 +1,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import React, { ComponentType } from "react";
-import "jest-dom/extend-expect";
-import { render } from "react-testing-library";
-
+import { render } from "@testing-library/react";
 import {
   SidebarHeader,
   Props,
 } from "../components/SidebarHeader/sidebar-header.component";
 
-jest.mock("../components/Header/header-index", () => ({
+jest.mock("../components/Header/header.component", () => ({
   Header: jest.fn(() => null),
 }));
 
-jest.mock("../components/Sidebar/sidebar-index", () => ({
+jest.mock("../components/Sidebar/sidebar.component", () => ({
   Sidebar: jest.fn(() => <div id="yo" />),
 }));
 

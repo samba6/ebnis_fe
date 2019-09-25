@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import React, { ComponentType } from "react";
-import "react-testing-library/cleanup-after-each";
-import { render } from "react-testing-library";
+import "@marko/testing-library/cleanup-after-each";
+import { render } from "@testing-library/react";
 import {
   ToOtherAuthLink,
   ToOtherAuthLinkProps,

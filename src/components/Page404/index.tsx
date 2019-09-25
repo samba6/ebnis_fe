@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "gatsby";
+import { Link } from "../Link";
 import Button from "semantic-ui-react/dist/commonjs/elements/Button";
 
 import { SidebarHeader } from "../SidebarHeader/sidebar-header.component";

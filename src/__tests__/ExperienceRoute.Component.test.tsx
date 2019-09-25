@@ -1,10 +1,11 @@
-// tslint:disable: no-any
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { ComponentType } from "react";
-import "jest-dom/extend-expect";
-import "react-testing-library/cleanup-after-each";
-import { render } from "react-testing-library";
-import { ExperienceRoute } from "../components/ExperienceRoute/experience-route.component";
-import { Props } from "../components/ExperienceRoute/experience-route.utils";
+import "@marko/testing-library/cleanup-after-each";
+import { render } from "@testing-library/react";
+import {
+  ExperienceRoute,
+  Props,
+} from "../components/ExperienceRoute/experience-route.component";
 
 jest.mock("../components/SidebarHeader/sidebar-header.component", () => ({
   SidebarHeader: () => null,
@@ -14,6 +15,10 @@ jest.mock("../components/Experience/experience.component", () => ({
   Experience: () => null,
 
   getTitle: jest.fn(() => "cool"),
+}));
+
+jest.mock("@apollo/react-hooks", () => ({
+  useMutation: () => [],
 }));
 
 it("renders correctly", () => {

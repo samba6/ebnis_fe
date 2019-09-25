@@ -16,7 +16,7 @@ import {
   EntryFragment_dataObjects,
   EntryFragment,
 } from "../../graphql/apollo-types/EntryFragment";
-import { EditEntry } from "../EditEntry/edit-entry-index";
+import { EditEntry } from "../EditEntry/edit-entry.component";
 import { DataDefinitionFragment } from "../../graphql/apollo-types/DataDefinitionFragment";
 
 export function Entry(props: Props) {

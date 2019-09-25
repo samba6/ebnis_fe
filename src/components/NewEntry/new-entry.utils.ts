@@ -1,9 +1,6 @@
 import { RouteComponentProps } from "@reach/router";
 import { Reducer, Dispatch } from "react";
 import { NewEntryRouteParams } from "../../routes";
-import { CreateEntryMutationProps } from "../../graphql/create-entry.mutation";
-import { WithApolloClient } from "react-apollo";
-import { CreateUnsavedEntryMutationProps } from "./resolvers";
 import {
   ExperienceFragment,
   ExperienceFragment_dataDefinitions,
@@ -16,7 +13,7 @@ import {
   CreateEntryMutation_createEntry_errors_dataObjectsErrors,
 } from "../../graphql/apollo-types/CreateEntryMutation";
 import dateFnFormat from "date-fns/format";
-import parseISO from 'date-fns/parseISO'
+import parseISO from "date-fns/parseISO";
 
 const NEW_LINE_REGEX = /\n/g;
 export const ISO_DATE_FORMAT = "yyyy-MM-dd";
@@ -27,7 +24,7 @@ export function toISODateString(date: Date) {
 }
 
 export function toISODatetimeString(date: Date | string) {
-  date = typeof date === 'string' ? parseISO(date) : date
+  date = typeof date === "string" ? parseISO(date) : date;
   return dateFnFormat(date, ISO_DATE_TIME_FORMAT);
 }
 
@@ -74,16 +71,9 @@ export function formObjToString(type: DataTypes, val: FormObjVal) {
   return (toString as string).trim();
 }
 
-export interface OwnProps
-  extends WithApolloClient<{}>,
-    RouteComponentProps<NewEntryRouteParams> {
+export interface Props extends RouteComponentProps<NewEntryRouteParams> {
   experience: ExperienceFragment;
 }
-
-export interface Props
-  extends OwnProps,
-    CreateEntryMutationProps,
-    CreateUnsavedEntryMutationProps {}
 
 export type FormObjVal = Date | string | number;
 

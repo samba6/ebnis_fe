@@ -28,7 +28,7 @@ import {
   makeObservable,
   ObservableUtils,
   EmitPayload,
-} from "./setup-observable";
+} from "./observable-manager";
 
 export function buildClientCache(
   {
@@ -57,6 +57,8 @@ export function buildClientCache(
       cacheRedirects: {
         ...CUSTOM_QUERY_RESOLVERS,
       },
+
+      freezeResults: true,
     }) as InMemoryCache;
   }
 
@@ -80,6 +82,7 @@ export function buildClientCache(
   const client = new ApolloClient({
     cache,
     link,
+    assumeImmutableResults: true,
   }) as ApolloClient<{}>;
 
   const state = initState();
@@ -237,6 +240,8 @@ export interface E2EWindowObject extends ObservableUtils {
   connectionStatus: ConnectionStatus;
   emitter: ZenObservable.SubscriptionObserver<EmitPayload>;
   emitting: boolean;
+  experienceDefinitionResolversAdded?: boolean;
+  newEntryResolversAdded?: boolean;
 }
 
 type KeyOfE2EWindowObject = keyof E2EWindowObject;

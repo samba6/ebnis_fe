@@ -1,17 +1,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+
 import React, { ComponentType } from "react";
-import "jest-dom/extend-expect";
-import "react-testing-library/cleanup-after-each";
-import { render, act, wait, waitForElement } from "react-testing-library";
-import { EditExperience } from "../components/EditExperience/edit-experience.component";
+import "@marko/testing-library/cleanup-after-each";
+import { render, act, wait, waitForElement } from "@testing-library/react";
 import {
+  EditExperience,
   Props,
   EditExperienceActionType,
-} from "../components/EditExperience/edit-experience.utils";
+} from "../components/EditExperience/edit-experience.component";
 import { ExperienceFragment } from "../graphql/apollo-types/ExperienceFragment";
 import { fillField, closeMessage } from "./test_utils";
 import { ApolloError } from "apollo-client";
-import { UpdateExperienceMutation } from '../graphql/apollo-types/UpdateExperienceMutation';
+import { UpdateExperienceMutation } from "../graphql/apollo-types/UpdateExperienceMutation";
 
 const experience = {
   id: "1",
@@ -39,7 +39,7 @@ it("submits form and closes modal when everything goes well", async () => {
     },
   });
 
-  const { } = render(ui);
+  const {} = render(ui);
 
   const $description = document.getElementById(
     "edit-experience-form-description",
@@ -49,11 +49,11 @@ it("submits form and closes modal when everything goes well", async () => {
     "edit-experience-submit",
   ) as HTMLButtonElement;
 
-  expect($btn).toBeDisabled();
+  expect($btn.disabled).toBe(true);
 
   fillField($description, "cc");
 
-  expect($btn).not.toBeDisabled();
+  expect($btn.disabled).toBe(false);
 
   act(() => {
     $btn.click();
@@ -81,7 +81,7 @@ it("renders apollo error and closes form when close button clicked", async () =>
     }),
   );
 
-  const { } = render(ui);
+  const {} = render(ui);
 
   fillField(
     document.getElementById("edit-experience-form-description") as any,
@@ -130,7 +130,7 @@ it("renders experience error", async () => {
     } as UpdateExperienceMutation,
   });
 
-  const { } = render(ui);
+  const {} = render(ui);
 
   fillField(
     document.getElementById(
@@ -154,8 +154,6 @@ it("renders experience error", async () => {
   expect(mockDispatch).not.toHaveBeenCalled();
 });
 
-
-
 it("renders other errors", async () => {
   const { ui, mockOnEdit, mockDispatch } = makeComp({
     props: {
@@ -165,7 +163,7 @@ it("renders other errors", async () => {
 
   mockOnEdit.mockResolvedValue({});
 
-  const { } = render(ui);
+  const {} = render(ui);
 
   fillField(
     document.getElementById(

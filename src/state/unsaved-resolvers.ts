@@ -1,4 +1,3 @@
-import { graphql, DataValue } from "react-apollo";
 import {
   ExperienceFragment,
   ExperienceFragment_entries_edges,
@@ -10,6 +9,7 @@ import { isUnsavedId } from "../constants";
 import { readGetExperienceFullQueryFromCache } from "./resolvers/read-get-experience-full-query-from-cache";
 import { getSavedAndUnsavedExperiencesFromCache } from "./resolvers/get-saved-and-unsaved-experiences-from-cache";
 import ApolloClient from "apollo-client";
+import { QueryResult } from "@apollo/react-common";
 
 export const SAVED_AND_UNSAVED_EXPERIENCES_QUERY = gql`
   {
@@ -67,34 +67,12 @@ export interface GetAllUnSavedQueryReturned {
   getAllUnsaved: GetUnsavedSummary;
 }
 
-export type GetAllUnSavedQueryData = DataValue<GetAllUnSavedQueryReturned>;
-
-export interface GetAllUnSavedQueryProps {
-  getAllUnsavedProps: GetAllUnSavedQueryData;
-}
-
-export const getAllUnsavedGql = graphql<
-  {},
-  GetAllUnSavedQueryReturned,
-  {},
-  GetAllUnSavedQueryProps | undefined
->(GET_ALL_UNSAVED_QUERY, {
-  props: ({ data }) =>
-    data && {
-      getAllUnsavedProps: data,
-    },
-
-  options: () => {
-    return {
-      fetchPolicy: "cache-and-network",
-    };
-  },
-});
+export type GetAllUnsavedQueryResult = QueryResult<GetAllUnSavedQueryReturned>;
 
 const getAllUnsavedResolver: LocalResolverFn<
   {},
   Promise<GetUnsavedSummary>
-> = async (root, variables, { cache, client }) => {
+> = async (_, variables, { cache, client }) => {
   let unsavedExperiencesLen = 0;
   let savedExperiencesLen = 0;
   const unsavedExperiencesMap = {} as UnsavedExperienceSummaryMap;

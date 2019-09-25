@@ -10,13 +10,13 @@ exports.createPages = ({ actions }) => {
     const { createPage } = actions;
     createPage({
       path: `/offline-plugin-app-shell-fallback/`,
-      component: slash(path.resolve(`${__dirname}/app-shell.js`))
+      component: slash(path.resolve(`${__dirname}/app-shell.js`)),
     });
   }
 };
 
-exports.onPostBuild = (args, { otherOptions = {}, ...pluginOptions }) => {
-  const { pathPrefix } = args;
+exports.onPostBuild = (args, { otherOptions = {}, workboxConfig = {} }) => {
+  const { pathPrefix, reporter } = args;
   const rootDir = `public`;
 
   // Remove the custom prefix (if any) so Workbox can find the files.
@@ -24,14 +24,14 @@ exports.onPostBuild = (args, { otherOptions = {}, ...pluginOptions }) => {
   // from the correct location.
   const omitPrefix = path => path.slice(pathPrefix.length);
 
-  let globPatterns = getAllChunks(otherOptions);
+  let { chunks: globPatterns, appFile } = getAllChunks(otherOptions);
 
   globPatterns = lodashUnique(globPatterns.map(omitPrefix));
 
-  const manifests = [`manifest.json`, `manifest.webmanifest`];
-  manifests.forEach(file => {
-    if (fs.existsSync(`${rootDir}/${file}`)) globPatterns.push(file);
-  });
+  //  const manifests = [`manifest.json`, `manifest.webmanifest`];
+  //  manifests.forEach(file => {
+  //    if (fs.existsSync(`${rootDir}/${file}`)) globPatterns.push(file);
+  //  });
 
   const workboxBuildOptions = {
     importWorkboxFrom: `local`,
@@ -40,9 +40,9 @@ exports.onPostBuild = (args, { otherOptions = {}, ...pluginOptions }) => {
     modifyURLPrefix: {
       // If `pathPrefix` is configured by user, we should replace
       // the default prefix with `pathPrefix`.
-      "/": `${pathPrefix}/`
+      "/": `${pathPrefix}/`,
     },
-    cacheId: `gatsby-plugin-offline`,
+    cacheId: `ebnis-app`,
     // Don't cache-bust JS or CSS files, and anything in the static directory,
     // since these files have unique URLs and their contents will never change
     dontCacheBustURLsMatching: /(\.js$|\.css$|static\/)/,
@@ -51,36 +51,40 @@ exports.onPostBuild = (args, { otherOptions = {}, ...pluginOptions }) => {
         // Use cacheFirst since these don't need to be revalidated (same RegExp
         // and same reason as above)
         urlPattern: /(\.js$|\.css$|static\/)/,
-        handler: `CacheFirst`
+        handler: `CacheFirst`,
+      },
+      {
+        // page-data.json files are not content hashed
+        urlPattern: /^https?:.*\page-data\/.*\/page-data\.json/,
+        handler: `NetworkFirst`,
       },
       {
         // Add runtime caching of various other page resources
         urlPattern: /^https?:.*\.(png|jpg|jpeg|webp|svg|gif|tiff|js|woff|woff2|json|css)$/,
-        handler: `StaleWhileRevalidate`
+        handler: `StaleWhileRevalidate`,
       },
       {
         // Google Fonts CSS (doesn't end in .css so we need to specify it)
         urlPattern: /^https?:\/\/fonts\.googleapis\.com\/css/,
-        handler: "StaleWhileRevalidate"
-      }
+        handler: "StaleWhileRevalidate",
+      },
     ],
     skipWaiting: true,
     clientsClaim: true,
-    navigateFallback: "/index.html"
+    navigateFallback: "/index.html",
     // navigateFallbackWhitelist: [/^\/app/]
   };
 
   // pluginOptions.plugins is assigned automatically when the user hasn't
   // specified custom options - Workbox throws an error with unsupported
   // parameters, so delete it.
-  delete pluginOptions.plugins;
-  const combinedOptions = { ...workboxBuildOptions, ...pluginOptions };
+  const combinedOptions = { ...workboxBuildOptions, ...workboxConfig };
 
   const idbKeyvalFile = `idb-keyval-iife.min.js`;
   const idbKeyvalSource = require.resolve(`idb-keyval/dist/${idbKeyvalFile}`);
   const idbKeyvalDest = `public/${idbKeyvalFile}`;
   fs.createReadStream(idbKeyvalSource).pipe(
-    fs.createWriteStream(idbKeyvalDest)
+    fs.createWriteStream(idbKeyvalDest),
   );
 
   const swDest = `public/sw.js`;
@@ -91,12 +95,13 @@ exports.onPostBuild = (args, { otherOptions = {}, ...pluginOptions }) => {
 
       const swAppend = fs
         .readFileSync(`${__dirname}/sw-append.js`, `utf8`)
-        .replace(/%pathPrefix%/g, pathPrefix);
+        .replace(/%pathPrefix%/g, pathPrefix)
+        .replace(/%appFile%/g, appFile);
 
       fs.appendFileSync(`public/sw.js`, `\n` + swAppend);
 
-      console.log(
-        `\n\nGenerated ${swDest}, which will precache ${count} files, totaling ${size} bytes.\n`
+      reporter.info(
+        `\n\nGenerated ${swDest}, which will precache ${count} files, totaling ${size} bytes.\n`,
       );
     });
 };
@@ -105,10 +110,12 @@ function getAllChunks(otherOptions) {
   const rootPath = path.resolve(process.cwd(), "public");
 
   const webpackStats = JSON.parse(
-    fs.readFileSync(path.resolve(rootPath, "webpack.stats.json"), "utf-8")
+    fs.readFileSync(path.resolve(rootPath, "webpack.stats.json"), "utf-8"),
   );
 
   let chunks = lodashFlatten(Object.values(webpackStats.assetsByChunkName));
+
+  const appFile = chunks.find(f => f.startsWith("app-"));
 
   ["manifest.json", "manifest.webmanifest"].forEach(file => {
     if (fs.existsSync(path.join(rootPath, file))) {
@@ -132,8 +139,10 @@ function getAllChunks(otherOptions) {
       const staticFilePath = path.join(ancestorDirPath, staticFileOrDirName);
 
       if (fs.lstatSync(staticFilePath).isDirectory()) {
-        ancestorDirContents = ancestorDirContents.concat(
-          fs.readdirSync(staticFilePath).map(s => `${staticFileOrDirName}/${s}`)
+        ancestorDirContents.push(
+          ...fs
+            .readdirSync(staticFilePath)
+            .map(s => `${staticFileOrDirName}/${s}`),
         );
       } else {
         chunks.push(`${ancestorDirName}/${staticFileOrDirName}`);
@@ -154,6 +163,7 @@ function getAllChunks(otherOptions) {
   });
 
   getChunksFromDir("static");
+  getChunksFromDir("offline-plugin-app-shell-fallback");
 
   (otherOptions.directoriesToCache || []).forEach(getChunksFromDir);
 
@@ -161,5 +171,5 @@ function getAllChunks(otherOptions) {
     chunks = chunks.concat(otherOptions.globPatternsFn());
   }
 
-  return chunks;
+  return { chunks, appFile };
 }

@@ -11,20 +11,24 @@ import {
 import {
   EmitActionType,
   ConnectionChangedPayload,
-} from "../../state/setup-observable";
+} from "../../state/observable-manager";
 import { ZenObservable } from "zen-observable-ts";
 import { getUnsavedCount } from "../../state/unsaved-resolvers";
 import {
   LayoutProvider,
   LayoutUnchangingProvider,
   LayoutExperienceProvider,
+  LocationProvider,
 } from "./layout-providers";
 import { preFetchExperiences } from "./pre-fetch-experiences";
 import { useUser } from "../use-user";
 import { isConnected } from "../../state/connections";
+import { WindowLocation, NavigateFn } from "@reach/router";
 
 export function Layout(props: Props) {
   const { children } = props;
+  const location = props.location as WindowLocation;
+  const navigate = props.navigate as NavigateFn;
 
   const {
     cache,
@@ -55,50 +59,28 @@ export function Layout(props: Props) {
   } = stateMachine;
 
   useEffect(() => {
-    // by now we are done persisting cache so let's see if user has unsaved
-    // data
-    if (user && renderChildren && unsavedCount === null) {
-      (async function() {
-        if (await isConnected()) {
-          const newUnsavedCount = await getUnsavedCount(client);
+    subscriptionRef.current = observable.subscribe({
+      next({ type, ...payload }) {
+        if (type === EmitActionType.connectionChanged) {
+          const {
+            hasConnection: isConnected,
+          } = payload as ConnectionChangedPayload;
 
-          dispatch({
-            type: LayoutActionType.SET_UNSAVED_COUNT,
-            count: newUnsavedCount,
+          getUnsavedCount(client).then(newUnsavedCount => {
+            dispatch({
+              type: LayoutActionType.CONNECTION_CHANGED,
+              unsavedCount: newUnsavedCount,
+              isConnected,
+            });
           });
         }
-      })();
-    }
-
-    if (!subscriptionRef.current) {
-      subscriptionRef.current = observable.subscribe({
-        next({ type, ...payload }) {
-          if (type === EmitActionType.connectionChanged) {
-            const {
-              hasConnection: isConnected,
-            } = payload as ConnectionChangedPayload;
-
-            getUnsavedCount(client).then(newUnsavedCount => {
-              dispatch({
-                type: LayoutActionType.CONNECTION_CHANGED,
-                unsavedCount: newUnsavedCount,
-                isConnected,
-              });
-            });
-          }
-        },
-      });
-    }
+      },
+    });
 
     return () => {
-      // do not unsubscribe when re-rendering i.e between
-      // renderChildren === false && renderChildren === true change
-      if (subscriptionRef.current && renderChildren) {
-        subscriptionRef.current.unsubscribe();
-        subscriptionRef.current = null;
-      }
+      (subscriptionRef.current as ZenObservable.Subscription).unsubscribe();
     };
-  }, [renderChildren, client, observable, user, unsavedCount]);
+  }, [client, observable]);
 
   useEffect(
     function persistCacheEffect() {
@@ -112,31 +94,36 @@ export function Layout(props: Props) {
         } catch (error) {}
 
         dispatch({
-          type: LayoutActionType.RENDER_CHILDREN,
+          type: LayoutActionType.CACHE_PERSISTED,
+          unsavedCount: await getUnsavedCount(client),
+          hasConnection: !!isConnected(),
         });
       })();
     },
-    [cache, restoreCacheOrPurgeStorage, dispatch, persistor],
+    [restoreCacheOrPurgeStorage, dispatch, persistor, client, cache],
   );
 
   useEffect(() => {
-    if (prefetchExperiences.value === "fetch-now") {
-      const {
-        context: { ids },
-      } = prefetchExperiences;
-      setTimeout(() => {
-        preFetchExperiences({
-          ids,
-          client,
-          cache,
-          onDone: () => {
-            dispatch({
-              type: LayoutActionType.DONE_FETCHING_EXPERIENCES,
-            });
-          },
-        });
-      }, 500);
+    if (prefetchExperiences.value !== "fetch-now") {
+      return;
     }
+
+    const {
+      context: { ids },
+    } = prefetchExperiences;
+
+    setTimeout(() => {
+      preFetchExperiences({
+        ids,
+        client,
+        cache,
+        onDone: () => {
+          dispatch({
+            type: LayoutActionType.DONE_FETCHING_EXPERIENCES,
+          });
+        },
+      });
+    }, 500);
   }, [prefetchExperiences, cache, client]);
 
   // this will be true if we are server rendering in gatsby build
@@ -163,7 +150,9 @@ export function Layout(props: Props) {
             } as ILayoutContextHeaderValue
           }
         >
-          {children}
+          <LocationProvider value={{ ...location, navigate }}>
+            {children}
+          </LocationProvider>
         </LayoutProvider>
       </LayoutExperienceProvider>
     </LayoutUnchangingProvider>

@@ -1,10 +1,10 @@
 import gql from "graphql-tag";
 import { EXPERIENCE_NO_ENTRY_FRAGMENT } from "./experience.fragment";
-import { MutationFn } from "react-apollo";
 import {
   DeleteExperienceMutation,
   DeleteExperienceMutationVariables,
 } from "./apollo-types/DeleteExperienceMutation";
+import { MutationFunction } from "@apollo/react-common";
 
 export const DELETE_EXPERIENCE_MUTATION = gql`
   mutation DeleteExperienceMutation($id: ID!) {
@@ -16,7 +16,7 @@ export const DELETE_EXPERIENCE_MUTATION = gql`
   ${EXPERIENCE_NO_ENTRY_FRAGMENT}
 `;
 
-export type DeleteExperienceMutationFn = MutationFn<
+export type DeleteExperienceMutationFn = MutationFunction<
   DeleteExperienceMutation,
   DeleteExperienceMutationVariables
 >;

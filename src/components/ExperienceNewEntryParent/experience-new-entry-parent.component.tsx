@@ -1,30 +1,28 @@
 import React, { useEffect } from "react";
-import { Props } from "./experience-new-entry-parent-utils";
 import { Loading } from "../Loading/loading";
 import { NEW_ENTRY_URL } from "../../constants/new-entry-route";
-import { GetExperienceFullData } from "../../graphql/get-experience-full.query";
 import { NavigateFn } from "@reach/router";
 import { NewEntry, ExperienceRoute } from "./loadables";
+import { RouteComponentProps } from "@reach/router";
+import { NewEntryRouteParams } from "../../routes";
+import { useGetExperienceFullQuery } from "./experience-new-entry-parent.injectables";
 
 export const ExperienceNewEntryParent = function(props: Props) {
-  const {
-    getExperienceGql: {
-      loading,
-      error: getExperienceGqlError,
-      getExperience,
-    } = {} as GetExperienceFullData,
+  const { experienceId, path, navigate } = props;
 
-    path,
-    navigate,
-  } = props;
+  const {
+    loading,
+    error: getExperienceGqlError,
+    data,
+  } = useGetExperienceFullQuery(experienceId);
+
+  const getExperience = data && data.getExperience;
 
   useEffect(() => {
     if (getExperienceGqlError || (!loading && !getExperience)) {
       (navigate as NavigateFn)("/404");
     }
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [getExperienceGqlError, loading, getExperience]);
+  }, [getExperienceGqlError, loading, getExperience, navigate]);
 
   if (loading) {
     return <Loading loading={loading} />;
@@ -36,3 +34,7 @@ export const ExperienceNewEntryParent = function(props: Props) {
     <ExperienceRoute {...props} experience={getExperience} />
   );
 };
+
+export default ExperienceNewEntryParent;
+
+export type Props = RouteComponentProps<NewEntryRouteParams>;

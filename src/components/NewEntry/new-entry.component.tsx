@@ -1,4 +1,4 @@
-import React, { useEffect, useReducer } from "react";
+import React, { useEffect, useReducer, useContext } from "react";
 import Form from "semantic-ui-react/dist/commonjs/collections/Form";
 import Message from "semantic-ui-react/dist/commonjs/collections/Message";
 import Button from "semantic-ui-react/dist/commonjs/elements/Button";
@@ -19,8 +19,6 @@ import {
   formObjToString,
 } from "./new-entry.utils";
 import { makeExperienceRoute } from "../../constants/experience-route";
-import { CreateEntryMutationFn } from "../../graphql/create-entry.mutation";
-import { updateExperienceWithNewEntry } from "./update";
 import { SidebarHeader } from "../SidebarHeader/sidebar-header.component";
 import { setDocumentTitle, makeSiteTitle } from "../../constants";
 import { isConnected } from "../../state/connections";
@@ -36,9 +34,19 @@ import { CreateEntryMutation_createEntry } from "../../graphql/apollo-types/Crea
 import { CreateUnsavedEntryMutationReturned } from "./resolvers";
 import { componentFromDataType } from "./component-from-data-type";
 import { InputOnChangeData } from "semantic-ui-react";
+import {
+  addResolvers,
+  useCreateOnlineEntry,
+  useCreateUnsavedEntry,
+  updateExperienceWithNewEntry,
+} from "./new-entry.injectables";
+import { EbnisAppContext } from "../../context";
 
 export function NewEntry(props: Props) {
-  const { navigate, createEntry, createUnsavedEntry, experience } = props;
+  const { navigate, experience } = props;
+  const [createEntry] = useCreateOnlineEntry();
+  const [createUnsavedEntry] = useCreateUnsavedEntry();
+  const { client } = useContext(EbnisAppContext);
 
   const [state, dispatch] = useReducer(
     reducer,
@@ -49,6 +57,10 @@ export function NewEntry(props: Props) {
   const { fieldErrors, networkError } = state;
 
   const pageTitle = makePageTitle(experience);
+
+  useEffect(() => {
+    addResolvers(client);
+  }, [client]);
 
   useEffect(
     function setRouteTitle() {
@@ -89,7 +101,7 @@ export function NewEntry(props: Props) {
       let createResult: CreateEntryMutation_createEntry;
 
       if (isConnected()) {
-        const result = await (createEntry as CreateEntryMutationFn)({
+        const result = await createEntry({
           variables: {
             input: {
               experienceId,
@@ -216,6 +228,8 @@ export function NewEntry(props: Props) {
     </div>
   );
 }
+
+export default NewEntry;
 
 const DataComponent = React.memo(
   function FieldComponentFn(props: DataComponentProps) {

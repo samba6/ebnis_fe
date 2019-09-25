@@ -17,7 +17,8 @@ import {
   dispatchContext,
   ActionTypes,
   initState,
-  SearchActive,
+  SearchResults,
+  StateMachine,
 } from "./my-experiences.utils";
 import { EXPERIENCE_DEFINITION_URL } from "../../routes";
 import { makeExperienceRoute } from "../../constants/experience-route";
@@ -25,8 +26,7 @@ import { Loading } from "../Loading/loading";
 import { SidebarHeader } from "../SidebarHeader/sidebar-header.component";
 import { setDocumentTitle, makeSiteTitle } from "../../constants";
 import { MY_EXPERIENCES_TITLE } from "../../constants/my-experiences-title";
-import { Link } from "gatsby";
-import { GetExperienceConnectionMiniData } from "../../graphql/get-experience-connection-mini.query";
+import { Link } from "../Link";
 import {
   ExperienceConnectionFragment,
   ExperienceConnectionFragment_edges,
@@ -42,14 +42,32 @@ import SemanticSearch from "semantic-ui-react/dist/commonjs/modules/Search";
 import { SearchResultProps, SearchProps } from "semantic-ui-react";
 import { NavigateFn } from "@reach/router";
 import lodashDebounce from "lodash/debounce";
+import {
+  GetExperienceConnectionMini,
+  GetExperienceConnectionMiniVariables,
+} from "../../graphql/apollo-types/GetExperienceConnectionMini";
+import { GET_EXPERIENCES_MINI_QUERY } from "../../graphql/get-experience-connection-mini.query";
+import { useQuery } from "@apollo/react-hooks";
+import {
+  searchDebounceTimeoutMs,
+  cleanUpOnSearchExit,
+} from "./my-experiences.injectables";
 
 export const MyExperiences = (props: Props) => {
-  const {
-    getExperiencesMiniProps: {
-      loading,
-      getExperiences,
-    } = {} as GetExperienceConnectionMiniData,
-  } = props;
+  const { data, loading } = useQuery<
+    GetExperienceConnectionMini,
+    GetExperienceConnectionMiniVariables
+  >(GET_EXPERIENCES_MINI_QUERY, {
+    variables: {
+      input: {
+        pagination: {
+          first: 2000,
+        },
+      },
+    },
+  });
+
+  const getExperiences = data && data.getExperiences;
 
   const experiences = useMemo(() => {
     if (!getExperiences) {
@@ -100,7 +118,7 @@ export const MyExperiences = (props: Props) => {
         ids,
       });
     }, 1000);
-  }, [getExperiences, layoutDispatch]);
+  }, [fetchExperience, getExperiences, layoutDispatch]);
 
   function renderExperiences() {
     if (experiences.length === 0) {
@@ -117,7 +135,7 @@ export const MyExperiences = (props: Props) => {
 
     return (
       <div id="experiences-container" className="experiences-container">
-        <SearchComponent {...(states.searching as SearchActive)} />
+        <SearchComponent {...states.search} />
 
         {experiences.map(experience => {
           const { id } = experience;
@@ -166,8 +184,8 @@ export const MyExperiences = (props: Props) => {
         value={{
           dispatch,
           navigate: props.navigate as NavigateFn,
-          searchDebounceTimeoutMs: props.searchDebounceTimeoutMs,
-          cleanUpOnSearchExit: props.cleanUpOnSearchExit,
+          searchDebounceTimeoutMs: searchDebounceTimeoutMs,
+          cleanUpOnSearchExit: cleanUpOnSearchExit,
         }}
       >
         <div className="main">{renderMain()}</div>
@@ -175,6 +193,8 @@ export const MyExperiences = (props: Props) => {
     </div>
   );
 };
+
+export default MyExperiences;
 
 const Experience = React.memo(
   function ExperienceFn({ showingDescription, experience }: ExperienceProps) {
@@ -255,7 +275,7 @@ const ShowDescriptionToggle = React.memo(
 const defaultSearchActiveContext = {
   searchText: "",
   results: [],
-} as SearchActive["active"]["context"];
+} as SearchResults["results"]["context"];
 
 const searchResultRenderer = (props: SearchResultProps) => {
   const { price: experienceId, title } = props;
@@ -266,14 +286,15 @@ const searchResultRenderer = (props: SearchResultProps) => {
   );
 };
 
-function SearchComponent(props: SearchActive) {
+function SearchComponent(props: StateMachine["states"]["search"]) {
   const {
     dispatch,
     navigate,
     searchDebounceTimeoutMs,
     cleanUpOnSearchExit,
   } = useContext(dispatchContext);
-  const activeSearch = props.active || ({} as SearchActive["active"]);
+  const activeSearch =
+    (props as SearchResults).results || ({} as SearchResults["results"]);
 
   const searchFn = useCallback(
     (_, { value }: SearchProps) => {
@@ -314,7 +335,7 @@ function SearchComponent(props: SearchActive) {
       id="my-experiences-search"
       value={context.searchText}
       className="my-search"
-      loading={props.value === "active"}
+      loading={props.value === "searching"}
       results={context.results}
       resultRenderer={searchResultRenderer}
       onSearchChange={searchFnDebouncedRef.current}

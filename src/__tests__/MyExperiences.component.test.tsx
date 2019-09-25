@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+
 import React, { ComponentType } from "react";
-import "react-testing-library/cleanup-after-each";
-import { render, fireEvent } from "react-testing-library";
+import "@marko/testing-library/cleanup-after-each";
+import { render, fireEvent, act } from "@testing-library/react";
 import { MyExperiences } from "../components/MyExperiences/my-experiences.component";
 import { Props } from "../components/MyExperiences/my-experiences.utils";
 import { renderWithRouter, fillField } from "./test_utils";
@@ -11,9 +12,16 @@ import {
   LayoutExperienceProvider,
 } from "../components/Layout/layout-providers";
 import {
-  ILayoutUnchaningContextValue,
+  ILayoutUnchangingContextValue,
   ILayoutContextExperienceValue,
 } from "../components/Layout/layout.utils";
+import { cleanUpOnSearchExit } from "../components/MyExperiences/my-experiences.injectables";
+import {
+  GetExperienceConnectionMini_getExperiences,
+  GetExperienceConnectionMini_getExperiences_edges,
+} from "../graphql/apollo-types/GetExperienceConnectionMini";
+import { useQuery } from "@apollo/react-hooks";
+import { GetExperienceConnectionMiniQueryResult } from "../graphql/get-experience-connection-mini.query";
 
 jest.mock("../components/SidebarHeader/sidebar-header.component", () => ({
   SidebarHeader: jest.fn(() => null),
@@ -23,8 +31,20 @@ jest.mock("../components/Loading/loading", () => ({
   Loading: () => <div id="loading-a-a" />,
 }));
 
+jest.mock("../components/MyExperiences/my-experiences.injectables", () => ({
+  cleanUpOnSearchExit: jest.fn(),
+  searchDebounceTimeoutMs: 0,
+}));
+
+jest.mock("@apollo/react-hooks");
+
+const mockCleanUpOnSearchExit = cleanUpOnSearchExit as jest.Mock;
+const mockUseQuery = useQuery as jest.Mock;
+
 beforeEach(() => {
   jest.useFakeTimers();
+  mockCleanUpOnSearchExit.mockClear();
+  mockUseQuery.mockReset();
 });
 
 afterEach(() => {
@@ -33,7 +53,7 @@ afterEach(() => {
 
 it("renders loading state and not main", () => {
   const { ui } = makeComp({
-    getExperiencesMiniProps: { loading: true } as any,
+    queryResults: { loading: true },
   });
 
   render(ui);
@@ -44,7 +64,11 @@ it("renders loading state and not main", () => {
 
 it("does not render empty experiences", () => {
   const { ui } = makeComp({
-    getExperiencesMiniProps: { getExperiences: { edges: [] } } as any,
+    queryResults: {
+      getExperiences: {
+        edges: [] as GetExperienceConnectionMini_getExperiences_edges[],
+      } as GetExperienceConnectionMini_getExperiences,
+    },
   });
 
   render(ui);
@@ -82,7 +106,9 @@ it("renders experiences from server", () => {
   } as ExperienceConnectionFragment;
 
   const { ui } = makeComp({
-    getExperiencesMiniProps: { getExperiences } as any,
+    queryResults: {
+      getExperiences,
+    },
   });
 
   /**
@@ -207,7 +233,9 @@ it("loads full experiences in the background when experiences are loaded", () =>
   } as ExperienceConnectionFragment;
 
   const { ui, mockLayoutDispatch } = makeComp({
-    getExperiencesMiniProps: { getExperiences } as any,
+    queryResults: {
+      getExperiences,
+    },
   });
 
   /**
@@ -237,11 +265,11 @@ it("loads full experiences in the background when experiences are loaded", () =>
 
 it("does not load entries in background when experiences are loaded but empty", () => {
   const { ui, mockLayoutDispatch } = makeComp({
-    getExperiencesMiniProps: {
+    queryResults: {
       getExperiences: {
-        edges: [],
-      },
-    } as any,
+        edges: [] as GetExperienceConnectionMini_getExperiences_edges[],
+      } as GetExperienceConnectionMini_getExperiences,
+    },
   });
 
   render(ui);
@@ -266,7 +294,7 @@ it("renders error ui if we are unable to get experiences", () => {
   expect(document.getElementById("no-experiences-error")).not.toBeNull();
 });
 
-it("goes to detailed experience page on search", () => {
+it("goes to detailed experience page on search", async () => {
   /**
    * Given there are experiences in the system
    */
@@ -291,12 +319,14 @@ it("goes to detailed experience page on search", () => {
     ],
   } as ExperienceConnectionFragment;
 
-  const { ui, mockNavigate, mockCleanUpOnSearchExit } = makeComp({
-    getExperiencesMiniProps: { getExperiences } as any,
+  const { ui, mockNavigate } = makeComp({
+    queryResults: {
+      getExperiences,
+    },
   });
 
   /**
-   * When we use the component
+   * And component is rendered
    */
 
   const { unmount } = render(ui);
@@ -306,6 +336,16 @@ it("goes to detailed experience page on search", () => {
    */
 
   expect(document.getElementById("search-result-id1")).toBeNull();
+
+  let $searchContainer = document.getElementsByClassName(
+    "my-search",
+  )[0] as HTMLDivElement;
+
+  /**
+   * And we should not see loading indicator
+   */
+
+  expect($searchContainer.classList).not.toContain("loading");
 
   /**
    * When we search for title 1
@@ -317,7 +357,25 @@ it("goes to detailed experience page on search", () => {
 
   fillField($search, "t1");
 
-  jest.runAllTimers();
+  /**
+   * Then we should see loading indicator
+   */
+
+  expect($searchContainer.classList).toContain("loading");
+
+  /**
+   * When search is completed
+   */
+
+  act(() => {
+    jest.runAllTimers();
+  });
+
+  /**
+   * Then loading indicator should no longer be visible;
+   */
+
+  expect($searchContainer.classList).not.toContain("loading");
 
   /**
    * Then search result for experience 1 should be visible
@@ -372,16 +430,17 @@ it("does not load any experience in the background if background experiences pre
     ],
   } as ExperienceConnectionFragment;
 
-  const { ui, mockLayoutDispatch } = makeComp(
-    {
-      getExperiencesMiniProps: { getExperiences } as any,
+  const { ui, mockLayoutDispatch } = makeComp({
+    queryResults: {
+      getExperiences,
     },
-    {
+
+    contexts: {
       layoutContextMyExpriencesValue: {
         fetchExperience: "already-fetched",
       },
     },
-  );
+  });
 
   /**
    * When we use the component
@@ -412,20 +471,34 @@ it("does not load any experience in the background if background experiences pre
 
 const MyExperiencesP = MyExperiences as ComponentType<Partial<Props>>;
 
-function makeComp(
-  props: Partial<Props> = {},
+const defaultArgs: Args = {
   contexts: {
-    layoutContextMyExpriencesValue?: ILayoutContextExperienceValue;
-  } = {
     layoutContextMyExpriencesValue: {
       fetchExperience: "never-fetched",
     },
   },
-) {
+
+  queryResults: {},
+};
+
+function makeComp(args: Args = {} as Args) {
+  args = { ...defaultArgs, ...args };
   const { Ui, ...rest } = renderWithRouter(MyExperiencesP);
 
   const mockLayoutDispatch = jest.fn();
-  const mockCleanUpOnSearchExit = jest.fn();
+
+  const queryResults = args.queryResults as GetExperiencesQueryResult;
+  const results = {
+    ...queryResults,
+  } as GetExperienceConnectionMiniQueryResult;
+
+  if (queryResults.getExperiences) {
+    results.data = {
+      getExperiences: queryResults.getExperiences,
+    };
+  }
+
+  mockUseQuery.mockReturnValue(results);
 
   return {
     ui: (
@@ -433,26 +506,37 @@ function makeComp(
         value={
           {
             layoutDispatch: mockLayoutDispatch as any,
-          } as ILayoutUnchaningContextValue
+          } as ILayoutUnchangingContextValue
         }
       >
         <LayoutExperienceProvider
           value={
-            contexts.layoutContextMyExpriencesValue as ILayoutContextExperienceValue
+            (args.contexts as Contexts)
+              .layoutContextMyExpriencesValue as ILayoutContextExperienceValue
           }
         >
-          <Ui
-            searchDebounceTimeoutMs={0}
-            cleanUpOnSearchExit={mockCleanUpOnSearchExit}
-            {...props}
-          />
+          <Ui />
         </LayoutExperienceProvider>
       </LayoutUnchangingProvider>
     ),
 
     mockLayoutDispatch,
-    mockCleanUpOnSearchExit,
 
     ...rest,
   };
+}
+
+interface Contexts {
+  layoutContextMyExpriencesValue?: ILayoutContextExperienceValue;
+}
+
+interface Args {
+  contexts?: Contexts;
+
+  queryResults?: GetExperiencesQueryResult;
+}
+
+interface GetExperiencesQueryResult {
+  loading?: boolean;
+  getExperiences?: GetExperienceConnectionMini_getExperiences;
 }

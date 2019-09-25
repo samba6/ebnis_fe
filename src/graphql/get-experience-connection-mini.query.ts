@@ -1,5 +1,5 @@
 import gql from "graphql-tag";
-import { DataValue } from "react-apollo";
+import { QueryResult } from "@apollo/react-common";
 
 import {
   GetExperienceConnectionMini,
@@ -30,14 +30,10 @@ export const GET_EXPERIENCES_MINI_QUERY = gql`
   ${EXPERIENCE_MINI_FRAGMENT}
 `;
 
-export type GetExperienceConnectionMiniData = DataValue<
+export type GetExperienceConnectionMiniQueryResult = QueryResult<
   GetExperienceConnectionMini,
   GetExperienceConnectionMiniVariables
 >;
-
-export interface GetExperienceConnectionMiniProps {
-  getExperiencesMiniProps: GetExperienceConnectionMiniData;
-}
 
 export const PRE_FETCH_EXPERIENCES_QUERY = gql`
   query PreFetchExperiences(
@@ -51,3 +47,4 @@ export const PRE_FETCH_EXPERIENCES_QUERY = gql`
 
   ${EXPERIENCE_CONNECTION_PRE_FETCH_FRAGMENT}
 `;
+

@@ -1,12 +1,22 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
 import React, { ComponentType } from "react";
-import "react-testing-library/cleanup-after-each";
-import { render, fireEvent, wait, waitForElement } from "react-testing-library";
-
+import "@marko/testing-library/cleanup-after-each";
+import {
+  render,
+  fireEvent,
+  wait,
+  waitForElement,
+} from "@testing-library/react";
 import { SignUp } from "../components/Signup/signup.component";
 import { Props } from "../components/Signup/signup.utils";
 import { renderWithRouter, fillField } from "./test_utils";
+import { isConnected } from "../state/connections";
+import { refreshToHome } from "../refresh-to-app";
+import { ApolloError } from "apollo-client";
+import { GraphQLError } from "graphql";
+import { storeUser } from "../state/users";
+import { useMutation } from "@apollo/react-hooks";
+import { scrollIntoView } from "../components/scroll-into-view";
 
 jest.mock("../state/connections");
 jest.mock("../refresh-to-app");
@@ -14,23 +24,29 @@ jest.mock("../components/SidebarHeader/sidebar-header.component", () => ({
   SidebarHeader: jest.fn(() => null),
 }));
 jest.mock("../state/users");
-
-import { isConnected } from "../state/connections";
-import { refreshToHome } from "../refresh-to-app";
-import { ApolloError } from "apollo-client";
-import { GraphQLError } from "graphql";
-import { storeUser } from "../state/users";
+jest.mock("@apollo/react-hooks");
+jest.mock("../components/scroll-into-view");
 
 const mockIsConnected = isConnected as jest.Mock;
 const mockRefreshToHome = refreshToHome as jest.Mock;
 const mockStoreUser = storeUser as jest.Mock;
+const mockUseMutation = useMutation as jest.Mock;
+const mockScrollIntoView = scrollIntoView as jest.Mock;
+
+beforeEach(() => {
+  mockIsConnected.mockReset();
+  mockRefreshToHome.mockReset();
+  mockStoreUser.mockReset();
+  mockUseMutation.mockReset();
+  mockScrollIntoView.mockReset();
+});
 
 it("renders correctly and submits", async () => {
   const user = {};
 
-  const { ui, mockRegUser } = makeComp();
+  const { ui, mockRegisterUser } = makeComp();
 
-  mockRegUser.mockResolvedValue({
+  mockRegisterUser.mockResolvedValue({
     data: {
       registration: user,
     },
@@ -91,7 +107,7 @@ it("renders correctly and submits", async () => {
    */
   await wait(
     () =>
-      expect(mockRegUser).toHaveBeenCalledWith({
+      expect(mockRegisterUser).toHaveBeenCalledWith({
         variables: {
           registration: {
             name: "Kanmii",
@@ -120,7 +136,7 @@ it("renders error if socket not connected", async () => {
   /**
    * Given that we are not connected to the server
    */
-  const { ui, mockScrollToTop } = makeComp(false);
+  const { ui } = makeComp(false);
 
   /**
    * And we are using the signup component
@@ -149,11 +165,11 @@ it("renders error if socket not connected", async () => {
   /**
    * And page should be automatically scrolled to the top of page
    */
-  expect(mockScrollToTop).toBeCalled();
+  expect(mockScrollIntoView).toBeCalled();
 });
 
 it("renders error if password and password confirm are not same", async () => {
-  const { ui, mockScrollToTop } = makeComp();
+  const { ui } = makeComp();
 
   /**
    * Given we are using signup component
@@ -211,16 +227,16 @@ it("renders error if password and password confirm are not same", async () => {
   /**
    * And the page should be automatically scrolled up
    */
-  expect(mockScrollToTop).toBeCalled();
+  expect(mockScrollIntoView).toBeCalled();
 });
 
 it("renders errors if server returns network errors", async () => {
-  const { ui, mockRegUser, mockScrollToTop } = makeComp();
+  const { ui, mockRegisterUser } = makeComp();
 
   /**
    * Given that our server will return network error on form submission
    */
-  mockRegUser.mockRejectedValue(
+  mockRegisterUser.mockRejectedValue(
     new ApolloError({
       networkError: new Error("network error"),
     }),
@@ -253,16 +269,16 @@ it("renders errors if server returns network errors", async () => {
   /**
    * And we should be automatically scrolled to top
    */
-  expect(mockScrollToTop).toBeCalled();
+  expect(mockScrollIntoView).toBeCalled();
 });
 
 it("renders errors if server returns field errors", async () => {
-  const { ui, mockRegUser, mockScrollToTop } = makeComp();
+  const { ui, mockRegisterUser } = makeComp();
 
   /**
    * Given that our server will return field errors on form submission
    */
-  mockRegUser.mockRejectedValue(
+  mockRegisterUser.mockRejectedValue(
     new ApolloError({
       graphQLErrors: [
         new GraphQLError(`{"errors":{"email":"has already been taken"}}`),
@@ -317,7 +333,7 @@ it("renders errors if server returns field errors", async () => {
   /**
    * And we should be automatically scrolled to top
    */
-  expect(mockScrollToTop).toBeCalled();
+  expect(mockScrollIntoView).toBeCalled();
 
   /**
    * When we click on close button of error UI
@@ -355,18 +371,15 @@ function fillForm() {
 const SignUpP = SignUp as ComponentType<Partial<Props>>;
 
 function makeComp(isServerConnected: boolean = true) {
-  const mockScrollToTop = jest.fn();
-  mockStoreUser.mockReset();
-
   mockIsConnected.mockReturnValue(isServerConnected);
   const { Ui, ...rest } = renderWithRouter(SignUpP);
 
-  const mockRegUser = jest.fn();
+  const mockRegisterUser = jest.fn();
+  mockUseMutation.mockReturnValue([mockRegisterUser]);
 
   return {
-    ui: <Ui regUser={mockRegUser} scrollToTop={mockScrollToTop} />,
-    mockRegUser,
-    mockScrollToTop,
+    ui: <Ui />,
+    mockRegisterUser,
     ...rest,
   };
 }

@@ -4,19 +4,11 @@ import { FormikErrors } from "formik";
 import { ApolloError } from "apollo-client";
 import { Reducer, Dispatch } from "react";
 import immer from "immer";
-import { RegMutationProps } from "../../graphql/user-reg.mutation";
 import { Registration } from "../../graphql/apollo-types/globalTypes";
 import {
   PasswordInputAction,
   PasswordInputType,
 } from "../PasswordInput/password-input.utils";
-import { ScrollIntoView } from "../scroll-into-view";
-
-export interface Props extends RouteComponentProps, RegMutationProps {
-  scrollToTop: ScrollIntoView;
-}
-
-export type FormValuesKey = keyof Registration;
 
 export const initialFormValues: Registration = {
   name: "",
@@ -65,35 +57,6 @@ export enum ActionType {
   clearAllErrors = "@components/signup/clear_all_errors",
   clearErrorSummary = "@components/signup/clear_error_summary",
 }
-
-export type FormErrors = FormikErrors<Registration>;
-type ServerFieldsErrors = { [k in keyof Registration]: string };
-export type FormFieldErrors = Pick<State, "formErrors" | "serverFieldsErrors">;
-
-export type ErrorSummary = Pick<
-  State,
-  | "formErrors"
-  | "networkError"
-  | "otherErrors"
-  | "showingErrorSummary"
-  | "serverFieldsErrors"
->;
-export interface State {
-  readonly serverFieldsErrors?: ServerFieldsErrors | null;
-  readonly formErrors?: FormErrors | null;
-  readonly pwdType?: "password" | "text";
-  readonly otherErrors?: string | null;
-  readonly networkError?: string | null;
-  readonly showingErrorSummary?: boolean;
-}
-
-type Action =
-  | [ActionType.setOtherErrors, string]
-  | [ActionType.setFormErrors, FormErrors]
-  | [ActionType.setServerErrors, ApolloError]
-  | [ActionType.clearAllErrors]
-  | [ActionType.clearErrorSummary]
-  | PasswordInputAction;
 
 /**
  * form-errors and server-field-errors should be at bottom of field and not in summary
@@ -168,4 +131,41 @@ export const reducer: Reducer<State, Action> = (prevState, [type, payload]) => {
   });
 };
 
+////////////////////////// TYPES ////////////////////////////
+
+export type FormErrors = FormikErrors<Registration>;
+
+type ServerFieldsErrors = { [k in keyof Registration]: string };
+
+export type FormFieldErrors = Pick<State, "formErrors" | "serverFieldsErrors">;
+
+export type ErrorSummary = Pick<
+  State,
+  | "formErrors"
+  | "networkError"
+  | "otherErrors"
+  | "showingErrorSummary"
+  | "serverFieldsErrors"
+>;
+export interface State {
+  readonly serverFieldsErrors?: ServerFieldsErrors | null;
+  readonly formErrors?: FormErrors | null;
+  readonly pwdType?: "password" | "text";
+  readonly otherErrors?: string | null;
+  readonly networkError?: string | null;
+  readonly showingErrorSummary?: boolean;
+}
+
+type Action =
+  | [ActionType.setOtherErrors, string]
+  | [ActionType.setFormErrors, FormErrors]
+  | [ActionType.setServerErrors, ApolloError]
+  | [ActionType.clearAllErrors]
+  | [ActionType.clearErrorSummary]
+  | PasswordInputAction;
+
 export type DispatchType = Dispatch<Action>;
+
+export interface Props extends RouteComponentProps {}
+
+export type FormValuesKey = keyof Registration;

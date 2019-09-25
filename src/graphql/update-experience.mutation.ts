@@ -1,10 +1,10 @@
 import gql from "graphql-tag";
 import { EXPERIENCE_NO_ENTRY_FRAGMENT } from "./experience.fragment";
-import { MutationFn } from "react-apollo";
 import {
   UpdateExperienceMutation,
   UpdateExperienceMutationVariables,
 } from "./apollo-types/UpdateExperienceMutation";
+import { MutationFunction } from "@apollo/react-common";
 
 export const UPDATE_EXPERIENCE_MUTATION = gql`
   mutation UpdateExperienceMutation($input: UpdateExperienceInput!) {
@@ -23,7 +23,7 @@ export const UPDATE_EXPERIENCE_MUTATION = gql`
   ${EXPERIENCE_NO_ENTRY_FRAGMENT}
 `;
 
-export type UpdateExperienceMutationFn = MutationFn<
+export type UpdateExperienceMutationFn = MutationFunction<
   UpdateExperienceMutation,
   UpdateExperienceMutationVariables
 >;

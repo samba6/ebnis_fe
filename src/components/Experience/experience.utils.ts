@@ -10,7 +10,7 @@ import { UpdateExperienceMutationFn } from "../../graphql/update-experience.muta
 import {
   EditExperienceAction,
   EditExperienceActionType,
-} from "../EditExperience/edit-experience.utils";
+} from "../EditExperience/edit-experience.component";
 
 export interface IMenuOptions {
   newEntry?: boolean;

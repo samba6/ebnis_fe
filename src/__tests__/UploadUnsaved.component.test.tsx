@@ -1,9 +1,12 @@
-/* eslint-disable react/display-name */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
 import React, { ComponentType } from "react";
-import "react-testing-library/cleanup-after-each";
-import { render, fireEvent, wait, waitForElement } from "react-testing-library";
+import "@marko/testing-library/cleanup-after-each";
+import {
+  render,
+  fireEvent,
+  wait,
+  waitForElement,
+} from "@testing-library/react";
 import { UploadUnsaved } from "../components/UploadUnsaved/upload-unsaved.component";
 import {
   Props,
@@ -31,8 +34,8 @@ import { Props as EntryProps } from "../components/Entry/entry.utils";
 import { DataObjectFragment } from "../graphql/apollo-types/DataObjectFragment";
 import { EXPERIENCES_URL } from "../routes";
 import {
-  GetAllUnSavedQueryData,
   GetUnsavedSummary,
+  GetAllUnsavedQueryResult,
 } from "../state/unsaved-resolvers";
 import { LayoutUnchangingProvider } from "../components/Layout/layout-providers";
 import { isConnected } from "../state/connections";
@@ -43,6 +46,12 @@ import { replaceExperiencesInGetExperiencesMiniQuery } from "../state/resolvers/
 import { deleteIdsFromCache } from "../state/resolvers/delete-references-from-cache";
 import { deleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache } from "../state/resolvers/update-saved-and-unsaved-experiences-in-cache";
 import { EbnisAppProvider } from "../context";
+import {
+  useGetAllUnsavedQuery,
+  useUploadUnsavedExperiencesMutation,
+  useUploadAllUnsavedsMutation,
+  useUploadSavedExperiencesEntriesMutation,
+} from "../components/UploadUnsaved/upload-unsaved.injectables";
 
 jest.mock("../components/Loading/loading", () => ({
   Loading: () => <div id="a-lo" />,
@@ -54,15 +63,11 @@ jest.mock("../components/SidebarHeader/sidebar-header.component", () => ({
   },
 }));
 
-jest.mock("../state/connections");
-const mockIsConnected = isConnected as jest.Mock;
-
 jest.mock("../components/Entry/entry.component", () => ({
   Entry: jest.fn((props: any) => {
     return <div className={props.className} id={props.id} />;
   }),
 }));
-const mockEntry = Entry as jest.Mock;
 
 jest.mock("../components/Experience/loadables", () => ({
   EditExperience: () => <div className="js-editor" />,
@@ -70,22 +75,41 @@ jest.mock("../components/Experience/loadables", () => ({
   EditEntry: () => <div id="entry-edit-modal" />,
 }));
 
+jest.mock("../state/connections");
 jest.mock("../components/scroll-into-view");
-const mockScrollIntoView = scrollIntoView as jest.Mock;
-
 jest.mock("../components/UploadUnsaved/update-cache");
-const mockUpdateCache = updateCache as jest.Mock;
-
 jest.mock("../state/resolvers/update-get-experiences-mini-query");
-const mockReplaceExperiencesInGetExperiencesMiniQuery = replaceExperiencesInGetExperiencesMiniQuery as jest.Mock;
-
 jest.mock("../state/resolvers/delete-references-from-cache");
-const mockDeleteIdsFromCache = deleteIdsFromCache as jest.Mock;
-
 jest.mock("../state/resolvers/update-saved-and-unsaved-experiences-in-cache");
+jest.mock("../components/UploadUnsaved/upload-unsaved.injectables");
+
+const mockIsConnected = isConnected as jest.Mock;
+const mockEntry = Entry as jest.Mock;
+const mockScrollIntoView = scrollIntoView as jest.Mock;
+const mockUpdateCache = updateCache as jest.Mock;
+const mockReplaceExperiencesInGetExperiencesMiniQuery = replaceExperiencesInGetExperiencesMiniQuery as jest.Mock;
+const mockDeleteIdsFromCache = deleteIdsFromCache as jest.Mock;
 const mockDeleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache = deleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache as jest.Mock;
+const mockUseGetAllUnsavedQuery = useGetAllUnsavedQuery as jest.Mock;
+const mockUseUploadUnsavedExperiencesMutation = useUploadUnsavedExperiencesMutation as jest.Mock;
+const mockUseUploadAllUnsavedsMutation = useUploadAllUnsavedsMutation as jest.Mock;
+const mockUseUploadSavedExperiencesEntriesMutation = useUploadSavedExperiencesEntriesMutation as jest.Mock;
 
 ////////////////////////// END MOCK ////////////////////////////
+
+beforeEach(() => {
+  mockDeleteIdsFromCache.mockReset();
+  mockUpdateCache.mockReset();
+  mockScrollIntoView.mockReset();
+  mockIsConnected.mockReset();
+  mockEntry.mockClear();
+  mockUseGetAllUnsavedQuery.mockReset();
+  mockUseUploadSavedExperiencesEntriesMutation.mockReset();
+  mockUseUploadUnsavedExperiencesMutation.mockReset();
+  mockUseUploadAllUnsavedsMutation.mockReset();
+  mockDeleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache.mockReset();
+  mockReplaceExperiencesInGetExperiencesMiniQuery.mockReset();
+});
 
 const timeStamps = { insertedAt: "a", updatedAt: "a" };
 
@@ -105,10 +129,8 @@ it("redirects to 404 when not connected", async () => {
 
 it("renders loading indicator", () => {
   const { ui } = makeComp({
-    props: {
-      getAllUnsavedProps: {
-        loading: true,
-      } as GetAllUnSavedQueryData,
+    queryResultProp: {
+      loading: true,
     },
   });
 
@@ -119,13 +141,11 @@ it("renders loading indicator", () => {
 
 it("redirects to 404 when there are no unsaved data", async () => {
   const { ui, mockNavigate } = makeComp({
-    props: {
-      getAllUnsavedProps: {
-        getAllUnsaved: {
-          unsavedExperiencesLen: 0,
-          savedExperiencesLen: 0,
-        },
-      } as GetAllUnSavedQueryData,
+    queryResultProp: {
+      getAllUnsaved: {
+        unsavedExperiencesLen: 0,
+        savedExperiencesLen: 0,
+      } as GetUnsavedSummary,
     },
   });
 
@@ -177,20 +197,18 @@ it("shows only saved experiences, does not show saved entries and uploads unsave
     mockUploadSavedExperiencesEntries,
     mockUploadAllUnsaveds,
   } = makeComp({
-    props: {
-      getAllUnsavedProps: {
-        getAllUnsaved: {
-          savedExperiencesMap: {
-            "1": {
-              experience,
-              unsavedEntries: [unsavedEntry],
-              savedEntries: [savedEntry],
-            },
-          } as ExperiencesIdsToObjectMap,
+    queryResultProp: {
+      getAllUnsaved: {
+        savedExperiencesMap: {
+          "1": {
+            experience,
+            unsavedEntries: [unsavedEntry],
+            savedEntries: [savedEntry],
+          },
+        } as ExperiencesIdsToObjectMap,
 
-          savedExperiencesLen: 1,
-        } as GetUnsavedSummary,
-      } as GetAllUnSavedQueryData,
+        savedExperiencesLen: 1,
+      } as GetUnsavedSummary,
     },
   });
 
@@ -307,20 +325,18 @@ it("shows only 'unsaved experiences' data and uploading same succeeds", async ()
     mockUploadSavedExperiencesEntries,
     mockUploadAllUnsaveds,
   } = makeComp({
-    props: {
-      getAllUnsavedProps: {
-        getAllUnsaved: {
-          unsavedExperiencesLen: 1,
+    queryResultProp: {
+      getAllUnsaved: {
+        unsavedExperiencesLen: 1,
 
-          unsavedExperiencesMap: {
-            "1": {
-              experience: unsavedExperience,
-              unsavedEntries: [unsavedEntry],
-              savedEntries: [],
-            },
-          } as ExperiencesIdsToObjectMap,
-        },
-      } as GetAllUnSavedQueryData,
+        unsavedExperiencesMap: {
+          "1": {
+            experience: unsavedExperience,
+            unsavedEntries: [unsavedEntry],
+            savedEntries: [],
+          },
+        } as ExperiencesIdsToObjectMap,
+      } as GetUnsavedSummary,
     },
   });
 
@@ -436,59 +452,57 @@ it("toggles saved and 'unsaved experiences' and uploads data but returns errors 
     mockUploadSavedExperiencesEntries,
     mockUploadAllUnsaveds,
   } = makeComp({
-    props: {
-      getAllUnsavedProps: {
-        getAllUnsaved: {
-          unsavedExperiencesLen: 1,
+    queryResultProp: {
+      getAllUnsaved: {
+        unsavedExperiencesLen: 1,
 
-          unsavedExperiencesMap: {
-            "1": {
-              experience: {
-                id: "1",
-                title: "a",
-                clientId: "1",
-                dataDefinitions: makeDataDefinitions(),
+        unsavedExperiencesMap: {
+          "1": {
+            experience: {
+              id: "1",
+              title: "a",
+              clientId: "1",
+              dataDefinitions: makeDataDefinitions(),
 
-                entries: {
-                  edges: [
-                    {
-                      node: unsavedExperienceEntry,
-                    },
-                  ],
-                },
-              } as ExperienceFragment,
+              entries: {
+                edges: [
+                  {
+                    node: unsavedExperienceEntry,
+                  },
+                ],
+              },
+            } as ExperienceFragment,
 
-              unsavedEntries: [unsavedExperienceEntry],
+            unsavedEntries: [unsavedExperienceEntry],
 
-              savedEntries: [],
-            },
-          } as ExperiencesIdsToObjectMap,
+            savedEntries: [],
+          },
+        } as ExperiencesIdsToObjectMap,
 
-          savedExperiencesLen: 1,
+        savedExperiencesLen: 1,
 
-          savedExperiencesMap: {
-            "2": {
-              experience: {
-                id: "2",
-                title: "a",
-                dataDefinitions: makeDataDefinitions(),
+        savedExperiencesMap: {
+          "2": {
+            experience: {
+              id: "2",
+              title: "a",
+              dataDefinitions: makeDataDefinitions(),
 
-                entries: {
-                  edges: [
-                    {
-                      node: savedExperienceEntry,
-                    },
-                  ],
-                },
-              } as ExperienceFragment,
+              entries: {
+                edges: [
+                  {
+                    node: savedExperienceEntry,
+                  },
+                ],
+              },
+            } as ExperienceFragment,
 
-              unsavedEntries: [savedExperienceEntry],
+            unsavedEntries: [savedExperienceEntry],
 
-              savedEntries: [],
-            },
-          } as ExperiencesIdsToObjectMap,
-        } as GetUnsavedSummary,
-      } as GetAllUnSavedQueryData,
+            savedEntries: [],
+          },
+        } as ExperiencesIdsToObjectMap,
+      } as GetUnsavedSummary,
     },
   });
 
@@ -660,72 +674,70 @@ it("toggles saved and 'unsaved experiences' and uploads data but returns errors 
 
 it("shows apollo errors", async () => {
   const { ui, mockUploadAllUnsaveds } = makeComp({
-    props: {
-      getAllUnsavedProps: {
-        getAllUnsaved: {
-          unsavedExperiencesLen: 1,
+    queryResultProp: {
+      getAllUnsaved: {
+        unsavedExperiencesLen: 1,
 
-          unsavedExperiencesMap: {
-            "1": {
-              experience: {
+        unsavedExperiencesMap: {
+          "1": {
+            experience: {
+              id: "1",
+              title: "a",
+              clientId: "1",
+
+              entries: {
+                edges: [
+                  {
+                    node: {
+                      id: "1",
+                      clientId: "1",
+                    },
+                  },
+                ],
+              },
+            } as ExperienceFragment,
+
+            unsavedEntries: [
+              {
                 id: "1",
-                title: "a",
                 clientId: "1",
+              } as ExperienceFragment_entries_edges_node,
+            ],
 
-                entries: {
-                  edges: [
-                    {
-                      node: {
-                        id: "1",
-                        clientId: "1",
-                      },
+            savedEntries: [],
+          },
+        } as ExperiencesIdsToObjectMap,
+
+        savedExperiencesLen: 1,
+
+        savedExperiencesMap: {
+          "2": {
+            experience: {
+              id: "2",
+              title: "b",
+
+              entries: {
+                edges: [
+                  {
+                    node: {
+                      id: makeUnsavedId("1"),
+                      clientId: makeUnsavedId("1"),
                     },
-                  ],
-                },
-              } as ExperienceFragment,
+                  },
+                ],
+              },
+            } as ExperienceFragment,
 
-              unsavedEntries: [
-                {
-                  id: "1",
-                  clientId: "1",
-                } as ExperienceFragment_entries_edges_node,
-              ],
-
-              savedEntries: [],
-            },
-          } as ExperiencesIdsToObjectMap,
-
-          savedExperiencesLen: 1,
-
-          savedExperiencesMap: {
-            "2": {
-              experience: {
-                id: "2",
-                title: "b",
-
-                entries: {
-                  edges: [
-                    {
-                      node: {
-                        id: makeUnsavedId("1"),
-                        clientId: makeUnsavedId("1"),
-                      },
-                    },
-                  ],
-                },
-              } as ExperienceFragment,
-
-              unsavedEntries: [
-                {
-                  id: makeUnsavedId("1"),
-                  clientId: makeUnsavedId("1"),
-                } as ExperienceFragment_entries_edges_node,
-              ],
-              savedEntries: [],
-            },
-          } as ExperiencesIdsToObjectMap,
-        } as GetUnsavedSummary,
-      } as GetAllUnSavedQueryData,
+            unsavedEntries: [
+              {
+                id: makeUnsavedId("1"),
+                clientId: makeUnsavedId("1"),
+              } as ExperienceFragment_entries_edges_node,
+            ],
+            savedEntries: [],
+          },
+        } as ExperiencesIdsToObjectMap,
+      } as GetUnsavedSummary,
     },
   });
 
@@ -796,20 +808,18 @@ it("deletes unsaved experience", async () => {
   } as ExperienceFragment;
 
   const { ui, mockNavigate, mockLayoutDispatch } = makeComp({
-    props: {
-      getAllUnsavedProps: {
-        getAllUnsaved: {
-          unsavedExperiencesLen: 1,
+    queryResultProp: {
+      getAllUnsaved: {
+        unsavedExperiencesLen: 1,
 
-          unsavedExperiencesMap: {
-            "1": {
-              experience: unsavedExperience,
-              unsavedEntries: [unsavedEntry],
-              savedEntries: [],
-            },
-          } as ExperiencesIdsToObjectMap,
-        },
-      } as GetAllUnSavedQueryData,
+        unsavedExperiencesMap: {
+          "1": {
+            experience: unsavedExperience,
+            unsavedEntries: [unsavedEntry],
+            savedEntries: [],
+          },
+        } as ExperiencesIdsToObjectMap,
+      } as GetUnsavedSummary,
     },
   });
 
@@ -840,34 +850,32 @@ it("deletes unsaved experience", async () => {
 
 it("deletes saved experience", async () => {
   const { ui, mockNavigate } = makeComp({
-    props: {
-      getAllUnsavedProps: {
-        getAllUnsaved: {
-          savedExperiencesLen: 1,
+    queryResultProp: {
+      getAllUnsaved: {
+        savedExperiencesLen: 1,
 
-          savedExperiencesMap: {
-            "1": {
-              experience: {
-                id: "1",
-              } as ExperienceFragment,
-              unsavedEntries: [],
-              savedEntries: [],
-            },
-          } as ExperiencesIdsToObjectMap,
+        savedExperiencesMap: {
+          "1": {
+            experience: {
+              id: "1",
+            } as ExperienceFragment,
+            unsavedEntries: [],
+            savedEntries: [],
+          },
+        } as ExperiencesIdsToObjectMap,
 
-          unsavedExperiencesLen: 1,
+        unsavedExperiencesLen: 1,
 
-          unsavedExperiencesMap: {
-            "2": {
-              experience: {
-                id: "2",
-              } as ExperienceFragment,
-              unsavedEntries: [],
-              savedEntries: [],
-            },
-          } as ExperiencesIdsToObjectMap,
-        },
-      } as GetAllUnSavedQueryData,
+        unsavedExperiencesMap: {
+          "2": {
+            experience: {
+              id: "2",
+            } as ExperienceFragment,
+            unsavedEntries: [],
+            savedEntries: [],
+          },
+        } as ExperiencesIdsToObjectMap,
+      },
     },
   });
 
@@ -963,20 +971,18 @@ test("experience saved but entry did not", async () => {
   } as ExperienceFragment;
 
   const { ui, mockUploadUnsavedExperiences } = makeComp({
-    props: {
-      getAllUnsavedProps: {
-        getAllUnsaved: {
-          unsavedExperiencesLen: 1,
+    queryResultProp: {
+      getAllUnsaved: {
+        unsavedExperiencesLen: 1,
 
-          unsavedExperiencesMap: {
-            "1": {
-              experience: unsavedExperience,
-              unsavedEntries: [unsavedEntry],
-              savedEntries: [],
-            },
-          } as ExperiencesIdsToObjectMap,
-        },
-      } as GetAllUnSavedQueryData,
+        unsavedExperiencesMap: {
+          "1": {
+            experience: unsavedExperience,
+            unsavedEntries: [unsavedEntry],
+            savedEntries: [],
+          },
+        } as ExperiencesIdsToObjectMap,
+      } as GetUnsavedSummary,
     },
   });
 
@@ -1034,23 +1040,44 @@ test("experience saved but entry did not", async () => {
 
 const UploadUnsavedP = UploadUnsaved as ComponentType<Partial<Props>>;
 
-function makeComp({
-  props = {},
-  isConnected = true,
-}: { props?: Partial<Props>; isConnected?: boolean } = {}) {
-  mockDeleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache.mockReset();
-  mockDeleteIdsFromCache.mockReset();
-  mockReplaceExperiencesInGetExperiencesMiniQuery.mockReset();
-  mockUpdateCache.mockReset();
-  mockScrollIntoView.mockReset();
-  mockIsConnected.mockReset();
-  mockEntry.mockClear();
+const defaultArgs: Args = {
+  props: {},
+  isConnected: true,
+  queryResultProp: {},
+};
+
+function makeComp(args: Args = {}) {
+  args = { ...defaultArgs, ...args };
+  const queryResultProp = args.queryResultProp as QueryResultProps;
+  const queryResult = { ...queryResultProp } as GetAllUnsavedQueryResult;
+
+  if (queryResultProp.getAllUnsaved) {
+    queryResult.data = {
+      getAllUnsaved: queryResultProp.getAllUnsaved,
+    };
+  }
+
+  mockUseGetAllUnsavedQuery.mockReturnValue(queryResult);
+
+  const { props, isConnected } = args;
 
   mockIsConnected.mockReturnValue(isConnected);
 
   const mockUploadUnsavedExperiences = jest.fn();
+
+  mockUseUploadUnsavedExperiencesMutation.mockReturnValue([
+    mockUploadUnsavedExperiences,
+  ]);
+
   const mockUploadSavedExperiencesEntries = jest.fn();
+
+  mockUseUploadSavedExperiencesEntriesMutation.mockReturnValue([
+    mockUploadSavedExperiencesEntries,
+  ]);
+
   const mockUploadAllUnsaveds = jest.fn();
+  mockUseUploadAllUnsavedsMutation.mockReturnValue([mockUploadAllUnsaveds]);
+
   const mockLayoutDispatch = jest.fn();
 
   const { Ui, ...routerProps } = renderWithRouter(UploadUnsavedP);
@@ -1073,12 +1100,7 @@ function makeComp({
             layoutDispatch: mockLayoutDispatch,
           }}
         >
-          <Ui
-            uploadUnsavedExperiences={mockUploadUnsavedExperiences}
-            createEntries={mockUploadSavedExperiencesEntries}
-            uploadAllUnsaveds={mockUploadAllUnsaveds}
-            {...props}
-          />
+          <Ui {...props} />
         </LayoutUnchangingProvider>
       </EbnisAppProvider>
     ),
@@ -1090,3 +1112,13 @@ function makeComp({
     ...routerProps,
   };
 }
+
+interface Args {
+  props?: Partial<Props>;
+  isConnected?: boolean;
+  queryResultProp?: QueryResultProps;
+}
+
+type QueryResultProps = Partial<GetAllUnsavedQueryResult> & {
+  getAllUnsaved?: GetUnsavedSummary;
+};

@@ -1,10 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
 import React, { ComponentType } from "react";
-import "jest-dom/extend-expect";
-import "react-testing-library/cleanup-after-each";
-import { render, fireEvent } from "react-testing-library";
-
+import "@marko/testing-library/cleanup-after-each";
+import { render, fireEvent } from "@testing-library/react";
 import {
   Experience,
   getTitle,
@@ -20,7 +17,7 @@ import {
   ExperienceFragment_entries_edges,
   ExperienceFragment_dataDefinitions,
 } from "../graphql/apollo-types/ExperienceFragment";
-import { EditExperienceActionType } from "../components/EditExperience/edit-experience.utils";
+import { EditExperienceActionType } from "../components/EditExperience/edit-experience.component";
 
 jest.mock("../components/Experience/loadables", () => ({
   EditExperience: () => <div id="js-editor" />,

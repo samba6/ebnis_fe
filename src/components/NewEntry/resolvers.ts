@@ -5,8 +5,7 @@ import {
 import { makeUnsavedId } from "../../constants";
 import { CreateDataObject } from "../../graphql/apollo-types/globalTypes";
 import gql from "graphql-tag";
-import { graphql, MutationFn } from "react-apollo";
-import { updateExperienceWithNewEntry } from "./update";
+import { updateExperienceWithNewEntry } from "./new-entry.injectables";
 import { ENTRY_FRAGMENT } from "../../graphql/entry.fragment";
 import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragment";
 import { EntryFragment } from "../../graphql/apollo-types/EntryFragment";
@@ -29,26 +28,6 @@ export const CREATE_UNSAVED_ENTRY_MUTATION = gql`
   ${ENTRY_FRAGMENT}
 `;
 
-// istanbul ignore next
-export const createUnsavedEntryGql = graphql<
-  {},
-  CreateUnsavedEntryMutationReturned,
-  CreateUnsavedEntryVariables,
-  CreateUnsavedEntryMutationProps | undefined
->(CREATE_UNSAVED_ENTRY_MUTATION, {
-  props: ({ mutate }) =>
-    mutate && {
-      [MUTATION_NAME_createUnsavedEntry]: mutate,
-    },
-});
-
-export interface CreateUnsavedEntryMutationProps {
-  createUnsavedEntry: MutationFn<
-    CreateUnsavedEntryMutationReturned,
-    CreateUnsavedEntryVariables
-  >;
-}
-
 export interface CreateUnsavedEntryMutationReturned {
   createUnsavedEntry: {
     id: string;
@@ -64,7 +43,7 @@ const createUnsavedEntryResolver: LocalResolverFn<
 > = async (_, variables, context) => {
   const { client } = context;
 
-  let experience = variables.experience;
+  let experience = { ...variables.experience };
   experience.hasUnsaved = true;
 
   const { id: experienceId } = experience;

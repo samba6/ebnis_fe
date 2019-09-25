@@ -1,6 +1,5 @@
 import gql from "graphql-tag";
 import { DATA_OBJECT_FRAGMENT } from "./data-object-fragment";
-import { MutationFn } from "react-apollo";
 import {
   UpdateDataObjects,
   UpdateDataObjectsVariables,
@@ -14,6 +13,7 @@ import {
   UpdateDefinitionAndData,
   UpdateDefinitionAndDataVariables,
 } from "./apollo-types/UpdateDefinitionAndData";
+import { MutationFunction } from "@apollo/react-common";
 
 export const UPDATE_DEFINITIONS_RESPONSE_FRAGMENT = gql`
   fragment UpdateDefinitionsResponseFragment on UpdateDefinitionsResponse {
@@ -48,7 +48,7 @@ export const UPDATE_DEFINITIONS_ONLINE_MUTATION = gql`
   ${UPDATE_DEFINITIONS_RESPONSE_FRAGMENT}
 `;
 
-export type UpdateDefinitionsMutationFn = MutationFn<
+export type UpdateDefinitionsMutationFn = MutationFunction<
   UpdateDefinitions,
   UpdateDefinitionsVariables
 >;
@@ -86,7 +86,7 @@ export const UPDATE_DATA_OBJECTS_ONLINE_MUTATION = gql`
   ${UPDATE_DATA_OBJECTS_RESPONSE_FRAGMENT}
 `;
 
-export type UpdateDataObjectsOnlineMutationFn = MutationFn<
+export type UpdateDataObjectsOnlineMutationFn = MutationFunction<
   UpdateDataObjects,
   UpdateDataObjectsVariables
 >;
@@ -113,7 +113,7 @@ export const UPDATE_DEFINITION_AND_DATA_ONLINE_MUTATION = gql`
   ${UPDATE_DEFINITIONS_RESPONSE_FRAGMENT}
 `;
 
-export type UpdateDefinitionAndDataOnlineMutationFn = MutationFn<
+export type UpdateDefinitionAndDataOnlineMutationFn = MutationFunction<
   UpdateDefinitionAndData,
   UpdateDefinitionAndDataVariables
 >;

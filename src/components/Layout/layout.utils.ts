@@ -1,13 +1,13 @@
 import { createContext, Reducer, Dispatch, PropsWithChildren } from "react";
 import immer from "immer";
-import { RouteComponentProps } from "@reach/router";
+import { RouteComponentProps, WindowLocation, NavigateFn } from "@reach/router";
 import { wrapReducer } from "../../logger";
 import { ConnectionStatus, isConnected } from "../../state/connections";
 import { UserFragment } from "../../graphql/apollo-types/UserFragment";
 
 export enum LayoutActionType {
   SET_UNSAVED_COUNT = "@layout/set-unsaved-count",
-  RENDER_CHILDREN = "@layout/render-children",
+  CACHE_PERSISTED = "@layout/render-children",
   EXPERIENCES_TO_PREFETCH = "@layout/experiences-to-pre-fetch",
   CONNECTION_CHANGED = "@layout/connection-changed",
   DONE_FETCHING_EXPERIENCES = "@layout/experiences-already-fetched",
@@ -52,17 +52,22 @@ export const reducer: Reducer<IStateMachine, LayoutAction> = (state, action) =>
 
           break;
 
-        case LayoutActionType.SET_UNSAVED_COUNT:
-          {
-            proxy.context.unsavedCount = (payload as { count: number }).count;
-            proxy.context.hasConnection = !!isConnected();
-          }
-          break;
-
-        case LayoutActionType.RENDER_CHILDREN:
+        case LayoutActionType.CACHE_PERSISTED:
           {
             proxy.context.renderChildren = true;
-            proxy.context.hasConnection = !!isConnected();
+
+            const { hasConnection, unsavedCount } = payload as {
+              unsavedCount: number;
+              hasConnection: boolean;
+            };
+
+            proxy.context.hasConnection = hasConnection;
+
+            if (!hasConnection) {
+              return;
+            }
+
+            proxy.context.unsavedCount = unsavedCount;
           }
 
           break;
@@ -99,6 +104,12 @@ export const reducer: Reducer<IStateMachine, LayoutAction> = (state, action) =>
             proxy.states.prefetchExperiences.value = "already-fetched";
           }
           break;
+
+        case LayoutActionType.SET_UNSAVED_COUNT:
+          {
+            proxy.context.unsavedCount = (payload as { count: number }).count;
+          }
+          break;
       }
     });
   });
@@ -132,12 +143,16 @@ export const LayoutContextHeader = createContext<ILayoutContextHeaderValue>({
 } as ILayoutContextHeaderValue);
 
 export const LayoutUnchangingContext = createContext<
-  ILayoutUnchaningContextValue
->({} as ILayoutUnchaningContextValue);
+  ILayoutUnchangingContextValue
+>({} as ILayoutUnchangingContextValue);
 
 export const LayoutContextExperience = createContext<
   ILayoutContextExperienceValue
 >({} as ILayoutContextExperienceValue);
+
+export const LocationContext = createContext<ILocationContextValue>(
+  {} as ILocationContextValue,
+);
 
 ////////////////////////// TYPES ////////////////////////////
 
@@ -147,7 +162,9 @@ export type LayoutAction =
       count: number;
     }
   | {
-      type: LayoutActionType.RENDER_CHILDREN;
+      type: LayoutActionType.CACHE_PERSISTED;
+      unsavedCount: number | null;
+      hasConnection: boolean;
     }
   | {
       type: LayoutActionType.EXPERIENCES_TO_PREFETCH;
@@ -203,10 +220,14 @@ export interface ILayoutContextHeaderValue {
   hasConnection: boolean;
 }
 
-export interface ILayoutUnchaningContextValue {
+export interface ILayoutUnchangingContextValue {
   layoutDispatch: LayoutDispatchType;
 }
 
 export interface ILayoutContextExperienceValue {
   fetchExperience: IPrefetchExperiencesState["value"];
+}
+
+interface ILocationContextValue extends WindowLocation {
+  navigate: NavigateFn;
 }

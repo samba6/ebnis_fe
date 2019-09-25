@@ -1,6 +1,19 @@
-import immer from "immer";
+/* eslint-disable react-hooks/rules-of-hooks */
 
-import { CreateEntryMutation } from "../../graphql/apollo-types/CreateEntryMutation";
+import { ApolloClient } from "apollo-client";
+import { newEntryResolvers } from "./resolvers";
+import { useMutation } from "@apollo/react-hooks";
+import { CREATE_ENTRY_MUTATION } from "../../graphql/create-entry.mutation";
+import {
+  CreateEntryMutation,
+  CreateEntryMutationVariables,
+} from "../../graphql/apollo-types/CreateEntryMutation";
+import {
+  CREATE_UNSAVED_ENTRY_MUTATION,
+  CreateUnsavedEntryMutationReturned,
+  CreateUnsavedEntryVariables,
+} from "./resolvers";
+import immer from "immer";
 import {
   ExperienceFragment,
   ExperienceFragment_entries,
@@ -11,6 +24,28 @@ import { DataProxy } from "apollo-cache";
 import { FetchResult } from "apollo-link";
 import { readGetExperienceFullQueryFromCache } from "../../state/resolvers/read-get-experience-full-query-from-cache";
 import { entryToEdge } from "../../state/resolvers/entry-to-edge";
+
+export function addResolvers(client: ApolloClient<{}>) {
+  if (window.____ebnis.newEntryResolversAdded) {
+    return;
+  }
+
+  client.addResolvers(newEntryResolvers);
+  window.____ebnis.newEntryResolversAdded = true;
+}
+
+export function useCreateOnlineEntry() {
+  return useMutation<CreateEntryMutation, CreateEntryMutationVariables>(
+    CREATE_ENTRY_MUTATION,
+  );
+}
+
+export function useCreateUnsavedEntry() {
+  return useMutation<
+    CreateUnsavedEntryMutationReturned,
+    CreateUnsavedEntryVariables
+  >(CREATE_UNSAVED_ENTRY_MUTATION);
+}
 
 type Fn<T = string | ExperienceFragment> = (
   arg: T,

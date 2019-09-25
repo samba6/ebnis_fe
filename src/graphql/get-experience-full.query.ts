@@ -1,10 +1,10 @@
 import gql from "graphql-tag";
-import { DataValue } from "react-apollo";
 import { EXPERIENCE_FRAGMENT } from "./experience.fragment";
 import {
-  GetExperienceFull,
   GetExperienceFullVariables,
+  GetExperienceFull,
 } from "./apollo-types/GetExperienceFull";
+import { QueryResult } from "@apollo/react-common";
 
 export const GET_EXPERIENCE_FULL_QUERY = gql`
   query GetExperienceFull($id: ID!, $entriesPagination: PaginationInput!) {
@@ -16,11 +16,7 @@ export const GET_EXPERIENCE_FULL_QUERY = gql`
   ${EXPERIENCE_FRAGMENT}
 `;
 
-export type GetExperienceFullData = DataValue<
+export type GetExperienceFullQueryResult = QueryResult<
   GetExperienceFull,
   GetExperienceFullVariables
 >;
-
-export interface GetExperienceFullProps {
-  getExperienceGql?: GetExperienceFullData;
-}

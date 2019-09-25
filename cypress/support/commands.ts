@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-namespace */
 /* eslint-disable @typescript-eslint/no-use-before-define */
-
 import { UserCreationObject } from "./user-creation-object";
 import { Registration } from "../../src/graphql/apollo-types/globalTypes";
 import {
@@ -9,7 +8,7 @@ import {
   UserRegMutationVariables,
   UserRegMutation_registration,
 } from "../../src/graphql/apollo-types/UserRegMutation";
-import { REG_USER_MUTATION } from "../../src/graphql/user-reg.mutation";
+import { REGISTER_USER_MUTATION } from "../../src/graphql/user-registration.mutation";
 import { mutate } from "./mutate";
 import { buildClientCache } from "../../src/state/apollo-setup";
 import { allResolvers } from "../../src/state/all-resolvers";
@@ -44,7 +43,7 @@ function createUser(userData: UserCreationObject) {
 
 async function registerUser(userData: Registration = USER_REGISTRATION_OBJECT) {
   return mutate<UserRegMutation, UserRegMutationVariables>({
-    mutation: REG_USER_MUTATION,
+    mutation: REGISTER_USER_MUTATION,
     variables: {
       registration: userData,
     },

@@ -13,7 +13,7 @@ import {
   ValidationSchema,
   reducer,
   ActionType,
-  State,
+  IStateMachine,
   Action,
   initialState,
 } from "./login.utils";
@@ -30,11 +30,21 @@ import { EXPERIENCES_URL } from "../../routes";
 import { storeUser, getLoggedOutUser } from "../../state/users";
 import { useUser } from "../use-user";
 import { makeScrollIntoViewId } from "../scroll-into-view";
+import {
+  LoginMutation,
+  LoginMutationVariables,
+} from "../../graphql/apollo-types/LoginMutation";
+import { LOGIN_MUTATION } from "../../graphql/login.mutation";
+import { useMutation } from "@apollo/react-hooks";
+import { scrollIntoView } from "../scroll-into-view";
 
 const scrollToTopId = makeScrollIntoViewId("login");
 
 export function Login(props: Props) {
-  const { login, location, navigate, scrollToTop } = props;
+  const { location, navigate } = props;
+  const [login] = useMutation<LoginMutation, LoginMutationVariables>(
+    LOGIN_MUTATION,
+  );
 
   const [state, dispatch] = useReducer(reducer, initialState);
 
@@ -87,7 +97,7 @@ export function Login(props: Props) {
               dispatch([ActionType.CLEAR_ALL_ERRORS]);
 
               if (!isConnected()) {
-                scrollToTop(scrollToTopId, {
+                scrollIntoView(scrollToTopId, {
                   behavior: "smooth",
                 });
 
@@ -103,7 +113,7 @@ export function Login(props: Props) {
               const errors = await formikBag.validateForm(values);
 
               if (errors.email || errors.password) {
-                scrollToTop(scrollToTopId, {
+                scrollIntoView(scrollToTopId, {
                   behavior: "smooth",
                 });
 
@@ -129,7 +139,7 @@ export function Login(props: Props) {
 
                 refreshToHome();
               } catch (error) {
-                scrollToTop(scrollToTopId, {
+                scrollIntoView(scrollToTopId, {
                   behavior: "smooth",
                 });
 
@@ -212,7 +222,7 @@ function EmailInput(props: FieldProps<FormValues>) {
 
 function Errors(props: {
   errors: Pick<
-    State,
+    IStateMachine,
     "formErrors" | "networkError" | "otherErrors" | "serverFieldErrors"
   >;
   dispatch: Dispatch<Action>;

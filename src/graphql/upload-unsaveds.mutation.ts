@@ -1,11 +1,6 @@
 import gql from "graphql-tag";
 import { ENTRY_CONNECTION_FRAGMENT } from "./entry-connection.fragment";
 import {
-  UploadUnsavedExperiencesMutation,
-  UploadUnsavedExperiencesMutationVariables,
-} from "./apollo-types/UploadUnsavedExperiencesMutation";
-import { MutationFn, FetchResult } from "react-apollo";
-import {
   CREATE_ENTRIES_RESPONSE_FRAGMENT,
   CREATE_ENTRIES_ERROR_FRAGMENT,
 } from "./create-entries-response.fragment";
@@ -15,6 +10,7 @@ import {
 } from "./apollo-types/UploadAllUnsavedsMutation";
 import { EXPERIENCE_NO_ENTRY_FRAGMENT } from "./experience.fragment";
 import { CREATE_EXPERIENCE_ERRORS } from "./create-experience-errors.fragment";
+import { MutationFunction, MutationFetchResult } from "@apollo/react-common";
 
 const UPLOAD_UNSAVED_EXPERIENCES_EXPERIENCE_ERROR_FRAGMENT = gql`
   fragment UploadUnsavedExperiencesExperienceErrorFragment on CreateOfflineExperienceErrors {
@@ -33,7 +29,7 @@ const UPLOAD_UNSAVED_EXPERIENCES_FRAGMENT = gql`
     experience {
       ...ExperienceNoEntryFragment
 
-      entries(pagination: { first: 100 }) {
+      entries(pagination: { first: 2000 }) {
         ...EntryConnectionFragment
       }
     }
@@ -81,24 +77,11 @@ export const UPLOAD_ALL_UNSAVEDS_MUTATION = gql`
   ${CREATE_ENTRIES_RESPONSE_FRAGMENT}
 `;
 
-export type UploadUnsavedExperiencesMutationFn = MutationFn<
-  UploadUnsavedExperiencesMutation,
-  UploadUnsavedExperiencesMutationVariables
->;
-
-export interface UploadUnsavedExperiencesMutationProps {
-  uploadUnsavedExperiences: UploadUnsavedExperiencesMutationFn;
-}
-
-export type UploadAllUnsavedsMutationFn = MutationFn<
+export type UploadAllUnsavedsMutationFn = MutationFunction<
   UploadAllUnsavedsMutation,
   UploadAllUnsavedsMutationVariables
 >;
 
-export interface UploadAllUnsavedsMutationProps {
-  uploadAllUnsaveds: UploadAllUnsavedsMutationFn;
-}
-
-export type UploadAllUnsavedsMutationFnResult = FetchResult<
+export type UploadAllUnsavedsMutationFnResult = MutationFetchResult<
   UploadAllUnsavedsMutation
 >;

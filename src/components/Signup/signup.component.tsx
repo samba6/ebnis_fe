@@ -27,16 +27,24 @@ import { Registration } from "../../graphql/apollo-types/globalTypes";
 import { refreshToHome } from "../../refresh-to-app";
 import { isConnected } from "../../state/connections";
 import { noop } from "../../constants";
-import { UserRegMutationFn } from "../../graphql/user-reg.mutation";
 import { SidebarHeader } from "../SidebarHeader/sidebar-header.component";
 import { ToOtherAuthLink } from "../ToOtherAuthLink";
 import { storeUser } from "../../state/users";
-import { makeScrollIntoViewId } from "../scroll-into-view";
+import { makeScrollIntoViewId, scrollIntoView } from "../scroll-into-view";
+import { useMutation } from "@apollo/react-hooks";
+import {
+  UserRegMutation,
+  UserRegMutationVariables,
+} from "../../graphql/apollo-types/UserRegMutation";
+import { REGISTER_USER_MUTATION } from "../../graphql/user-registration.mutation";
 
 const scrollToTopId = makeScrollIntoViewId("signup");
 
 export function SignUp(props: Props) {
-  const { regUser, location, scrollToTop } = props;
+  const { location } = props;
+  const [registerUser] = useMutation<UserRegMutation, UserRegMutationVariables>(
+    REGISTER_USER_MUTATION,
+  );
   const [state, dispatch] = useReducer(reducer, {});
   const {
     otherErrors,
@@ -73,7 +81,7 @@ export function SignUp(props: Props) {
               if (!isConnected()) {
                 formikBag.setSubmitting(false);
                 dispatch([ActionType.setOtherErrors, "You are not connected"]);
-                scrollToTop(scrollToTopId, {
+                scrollIntoView(scrollToTopId, {
                   behavior: "smooth",
                 });
                 return;
@@ -86,7 +94,7 @@ export function SignUp(props: Props) {
                 formikBag.setSubmitting(false);
                 dispatch([ActionType.setFormErrors, errors]);
 
-                scrollToTop(scrollToTopId, {
+                scrollIntoView(scrollToTopId, {
                   behavior: "smooth",
                 });
 
@@ -94,7 +102,7 @@ export function SignUp(props: Props) {
               }
 
               try {
-                const result = await (regUser as UserRegMutationFn)({
+                const result = await registerUser({
                   variables: { registration: values },
                 });
 
@@ -105,7 +113,7 @@ export function SignUp(props: Props) {
               } catch (error) {
                 formikBag.setSubmitting(false);
                 dispatch([ActionType.setServerErrors, error]);
-                scrollToTop(scrollToTopId, {
+                scrollIntoView(scrollToTopId, {
                   behavior: "smooth",
                 });
               }
