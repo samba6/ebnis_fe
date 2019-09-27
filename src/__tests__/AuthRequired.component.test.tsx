@@ -3,57 +3,54 @@
 import React, { ComponentType } from "react";
 import "@marko/testing-library/cleanup-after-each";
 import { render } from "@testing-library/react";
-import { AuthRequired, Props } from "../components/AuthRequired";
+import {
+  AuthRequired,
+  Props,
+} from "../components/AuthRequired/auth-required.componnet";
 import { useUser } from "../components/use-user";
-import { LocationProvider } from "../components/Layout/layout-providers";
-import { LOGIN_URL } from "../routes";
+import { redirectToLogin } from "../components/AuthRequired/auth-required.injectables";
 
 jest.mock("../components/use-user");
 const mockUseUser = useUser as jest.Mock;
 
+jest.mock("../components/AuthRequired/auth-required.injectables");
+const mockRedirectToLogin = redirectToLogin as jest.Mock;
+
 beforeEach(() => {
   mockUseUser.mockReset();
+  mockRedirectToLogin.mockReset();
 });
 
 it("redirects to login if no authenticated user", () => {
-  const { ui, mockNavigate } = makeComp({
+  const { ui } = makeComp({
     props: {},
   });
 
   const {} = render(ui);
-
-  expect(mockNavigate).toHaveBeenCalledWith(LOGIN_URL);
   expect(document.getElementById("00")).toBeNull();
+  expect(mockRedirectToLogin).toHaveBeenCalled();
 });
 
 it("renders component if user is authenticated", () => {
   mockUseUser.mockReturnValue({});
 
-  const { ui, mockNavigate } = makeComp({
+  const { ui } = makeComp({
     props: {},
   });
 
   const {} = render(ui);
 
-  expect(mockNavigate).not.toHaveBeenCalled()
+  expect(mockRedirectToLogin).not.toHaveBeenCalled();
   expect(document.getElementById("00")).not.toBeNull();
 });
+
 ////////////////////////// HELPER FUNCTIONS ///////////////////////////
 
 const AuthRequiredP = AuthRequired as ComponentType<Partial<Props>>;
 
 function makeComp({ props = {} }: { props?: Partial<Props> } = {}) {
-  const mockNavigate = jest.fn();
-  const context = { navigate: mockNavigate } as any;
-
   return {
-    ui: (
-      <LocationProvider value={context}>
-        <AuthRequiredP {...props} component={RenderComponent} />
-      </LocationProvider>
-    ),
-
-    mockNavigate,
+    ui: <AuthRequiredP {...props} component={RenderComponent} />,
   };
 }
 

@@ -1,10 +1,10 @@
 import React from "react";
 import { Link } from "../Link";
 import Button from "semantic-ui-react/dist/commonjs/elements/Button";
-
 import { SidebarHeader } from "../SidebarHeader/sidebar-header.component";
 import { ROOT_URL } from "../../routes";
 import { RouteComponentProps } from "@reach/router";
+
 
 export function Page404({  }: RouteComponentProps) {
   return (
@@ -35,3 +35,4 @@ export function Page404({  }: RouteComponentProps) {
     </>
   );
 }
+

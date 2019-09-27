@@ -1,19 +1,18 @@
-import React, { ComponentType, useContext, useLayoutEffect } from "react";
-import { LOGIN_URL } from "../routes";
-import { useUser } from "./use-user";
+import React, { ComponentType, useLayoutEffect } from "react";
+import { useUser } from "../use-user";
 import { RouteComponentProps } from "@reach/router";
-import { LocationContext } from "./Layout/layout.utils";
+import { redirectToLogin } from "./auth-required.injectables";
 
 export function AuthRequired(props: Props) {
   const { component: AuthComponent, ...rest } = props;
-  const { navigate } = useContext(LocationContext);
   const user = useUser();
 
   useLayoutEffect(() => {
     if (!user) {
-      navigate(LOGIN_URL);
+      redirectToLogin();
+      return;
     }
-  }, [user, navigate]);
+  }, [user]);
 
   return user ? <AuthComponent {...rest} /> : null;
 }

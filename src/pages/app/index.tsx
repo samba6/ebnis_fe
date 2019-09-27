@@ -1,7 +1,6 @@
 import React from "react";
 import { Router, RouteComponentProps } from "@reach/router";
-
-import { AuthRequired } from "../../components/AuthRequired";
+import { AuthRequired } from "../../components/AuthRequired/auth-required.componnet";
 import { EXPERIENCE_DEFINITION_URL, EXPERIENCES_URL } from "../../routes";
 import { NotFound } from "../../components/NotFound";
 import { Layout } from "../../components/Layout/layout.component";
