@@ -3,40 +3,66 @@
 
 importScripts(`idb-keyval-iife.min.js`);
 
+const offlineShell = `%pathPrefix%/offline-plugin-app-shell-fallback/index.html`;
+const appPageDataUrl = "%pathPrefix%/page-data/app/page-data.json";
+
 const { NavigationRoute } = workbox.routing;
 
-const navigationRoute = new NavigationRoute(async ({ event }) => {
-  let { pathname } = new URL(event.request.url);
+const navigationRoute = new NavigationRoute(
+  async ({ event }) => {
+    let { pathname } = new URL(event.request.url);
 
-  pathname = pathname.replace(new RegExp(`^%pathPrefix%`), ``);
+    pathname = pathname.replace(new RegExp(`^%pathPrefix%`), ``);
 
-  // Check for resources + the app bundle
-  // The latter may not exist if the SW is updating to a new version
-  const resources = await idbKeyval.get(`resources:${pathname}`);
-  if (!resources || !(await caches.match(`%pathPrefix%/%appFile%`))) {
-    return await fetch(event.request);
-  }
-
-  for (const resource of resources) {
-    // As soon as we detect a failed resource, fetch the entire page from
-    // network - that way we won't risk being in an inconsistent state with
-    // some parts of the page failing.
-    if (!(await caches.match(resource))) {
+    // Check for resources + the app bundle
+    // The latter may not exist if the SW is updating to a new version
+    const resources = await idbKeyval.get(`resources:${pathname}`);
+    if (!resources || !(await caches.match(`%pathPrefix%/%appFile%`))) {
       return await fetch(event.request);
     }
-  }
 
-  const offlineShell = `%pathPrefix%/offline-plugin-app-shell-fallback/index.html`;
-  const offlineShellWithKey = workbox.precaching.getCacheKeyForURL(
-    offlineShell,
-  );
-  return await caches.match(offlineShellWithKey);
-});
+    for (const resource of resources) {
+      // As soon as we detect a failed resource, fetch the entire page from
+      // network - that way we won't risk being in an inconsistent state with
+      // some parts of the page failing.
+      if (!(await caches.match(resource))) {
+        return await fetch(event.request);
+      }
+    }
+
+    const offlineShellWithKey = workbox.precaching.getCacheKeyForURL(
+      offlineShell,
+    );
+
+    return await caches.match(offlineShellWithKey);
+  },
+
+  {
+    blacklist: [new RegExp("/app/.+")],
+  },
+);
 
 workbox.routing.registerRoute(navigationRoute);
 
+workbox.routing.registerNavigationRoute(
+  workbox.precaching.getCacheKeyForURL("/app/index.html"),
+  {
+    whitelist: [new RegExp("/app/.+")],
+  },
+);
+
+workbox.routing.registerRoute(
+  new RegExp("/page-data/app/.+?/page-data\\.json"),
+
+  () => {
+    const appPageDataKey = workbox.precaching.getCacheKeyForURL(appPageDataUrl);
+    return caches.match(appPageDataKey);
+  },
+);
+
 const messageApi = {
-  setPathResources(event, { path, resources }) {
+  setPathResources(event, arg) {
+    const { path, resources } = arg;
     event.waitUntil(idbKeyval.set(`resources:${path}`, resources));
   },
 

@@ -13,18 +13,6 @@ exports.onServiceWorkerActive = ({
     return;
   }
 
-  // grab nodes from head of document
-  const nodes = document.querySelectorAll(`
-    head > script[src],
-    head > link[href],
-    head > style[data-href]
-  `);
-
-  // get all resource URLs
-  const headerResources = [].slice
-    .call(nodes)
-    .map(node => node.src || node.href || node.getAttribute(`data-href`));
-
   // Loop over prefetched pages and add their resources to an array,
   // plus specify which resources are required for those paths.
   const prefetchedResources = [];
@@ -37,22 +25,6 @@ exports.onServiceWorkerActive = ({
       path,
       resources,
     });
-  });
-
-  // Loop over all resources and fetch the page component + JSON data
-  // to add it to the SW cache.
-  const resources = [...headerResources, ...prefetchedResources];
-
-  resources.forEach(resource => {
-    // Create a prefetch link for each resource, so Workbox runtime-caches them
-    const link = document.createElement(`link`);
-    link.rel = `prefetch`;
-    link.href = resource;
-
-    link.onload = link.remove;
-    link.onerror = link.remove;
-
-    document.head.appendChild(link);
   });
 };
 
@@ -87,4 +59,3 @@ exports.onRouteUpdate = ({ location, getResourceURLsForPathname }) => {
 exports.onPostPrefetchPathname = ({ pathname, getResourceURLsForPathname }) => {
   setPathResources(pathname, getResourceURLsForPathname);
 };
-

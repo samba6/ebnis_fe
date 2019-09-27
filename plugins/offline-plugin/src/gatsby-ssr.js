@@ -13,6 +13,7 @@ export const onPreRenderHTML = ({
 
   const headComponents = getHeadComponents();
 
+
   const filteredHeadComponents = headComponents.filter(
     ({ type, props }) =>
       !(
