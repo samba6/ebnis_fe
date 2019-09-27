@@ -2,7 +2,7 @@ import React, {
   useReducer,
   useEffect,
   useContext,
-  useLayoutEffect
+  useLayoutEffect,
 } from "react";
 import {
   Props,
@@ -11,11 +11,15 @@ import {
   definitionToUnsavedData,
   ExperiencesIdsToObjectMap,
   DispatchType,
-  State,
+  StateMachine,
   stateInitializerFn,
   ExperienceObjectMap,
   SaveStatusType,
-  onUploadResult,
+  onUploadResultsReceived,
+  PartialUploadSuccessState,
+  ExperiencesUploadedState,
+  ExperiencesUploadedResultState,
+  TabsState,
 } from "./upload-unsaved.utils";
 import { Loading } from "../Loading/loading";
 import { SidebarHeader } from "../SidebarHeader/sidebar-header.component";
@@ -75,30 +79,28 @@ export function UploadUnsaved(props: Props) {
   const { data, loading } = useGetAllUnsavedQuery();
   const getAllUnsaved = data && data.getAllUnsaved;
 
-  const [state, dispatch] = useReducer(
+  const [stateMachine, dispatch] = useReducer(
     reducer,
     getAllUnsaved,
     stateInitializerFn,
   );
 
   const {
-    tabs,
-    uploading,
-    serverError,
-    allUploadSucceeded,
-    unsavedExperiencesLen,
-    savedExperiencesLen,
-    savedExperiencesMap,
-    unsavedExperiencesMap,
+    neverSavedCount,
+    partlySavedCount,
+    partlySavedMap,
+    neverSavedMap,
     shouldRedirect,
-  } = state;
+    states: { upload, dataLoaded, tabs: tabsState },
+    context: { allCount },
+  } = stateMachine;
 
   const { cache, client, persistor } = useContext(EbnisAppContext);
   const { layoutDispatch } = useContext(LayoutUnchangingContext);
 
   useLayoutEffect(() => {
     addUploadUnsavedResolvers(client);
-  }, []);
+  }, [client]);
 
   useEffect(
     function setCompTitle() {
@@ -115,18 +117,20 @@ export function UploadUnsaved(props: Props) {
   );
 
   useEffect(() => {
-    if (getAllUnsaved) {
-      const count =
-        getAllUnsaved.savedExperiencesLen + getAllUnsaved.unsavedExperiencesLen;
-
-      if (count === 0) {
-        (navigate as NavigateFn)(REDIRECT_ROUTE);
-        return;
-      }
-
-      dispatch([ActionType.initStateFromProps, getAllUnsaved]);
+    if (getAllUnsaved && dataLoaded.value === "no") {
+      dispatch({
+        type: ActionType.INIT_STATE_FROM_PROPS,
+        getAllUnsaved,
+      });
     }
-  }, [getAllUnsaved, navigate]);
+  }, [getAllUnsaved, dataLoaded, navigate]);
+
+  useEffect(() => {
+    if (allCount === 0) {
+      (navigate as NavigateFn)(REDIRECT_ROUTE);
+      return;
+    }
+  }, [allCount, navigate]);
 
   useEffect(() => {
     if (shouldRedirect) {
@@ -140,40 +144,45 @@ export function UploadUnsaved(props: Props) {
   }, [shouldRedirect, navigate, layoutDispatch]);
 
   useDeleteMutationsOnExit(
-    ["saveOfflineExperiences", "createEntries"],
-    state.hasSavedExperiencesUploadError !== null,
+    ["saveOfflineExperiences", "createEntries", "getAllUnsaved"],
+    upload.value === "uploaded",
   );
 
+  if (loading) {
+    return <Loading />;
+  }
+
   async function onSubmit() {
-    dispatch([ActionType.setUploading, true]);
+    dispatch({
+      type: ActionType.UPLOAD_STARTED,
+      isUploading: true,
+    });
 
     try {
       let uploadFunction;
       let variables;
 
-      if (unsavedExperiencesLen !== 0 && savedExperiencesLen !== 0) {
+      if (neverSavedCount !== 0 && partlySavedCount !== 0) {
         uploadFunction = uploadAllUnsaveds;
 
         variables = {
           unsavedExperiencesInput: unsavedExperiencesToUploadData(
-            unsavedExperiencesMap,
+            neverSavedMap,
           ),
 
-          unsavedEntriesInput: savedExperiencesToUploadData(
-            savedExperiencesMap,
-          ),
+          unsavedEntriesInput: savedExperiencesToUploadData(partlySavedMap),
         };
-      } else if (unsavedExperiencesLen !== 0) {
+      } else if (neverSavedCount !== 0) {
         uploadFunction = uploadUnsavedExperiences;
 
         variables = ({
-          input: unsavedExperiencesToUploadData(unsavedExperiencesMap),
+          input: unsavedExperiencesToUploadData(neverSavedMap),
         } as unknown) as UploadAllUnsavedsMutationVariables;
       } else {
         uploadFunction = uploadSavedExperiencesEntries;
 
         variables = ({
-          input: savedExperiencesToUploadData(savedExperiencesMap),
+          input: savedExperiencesToUploadData(partlySavedMap),
         } as unknown) as UploadAllUnsavedsMutationVariables;
       }
 
@@ -181,14 +190,19 @@ export function UploadUnsaved(props: Props) {
         variables,
       });
 
-      const newState = onUploadResult(state, result && result.data);
+      const newState = onUploadResultsReceived(stateMachine, result && result.data);
 
       let outstandingUnsavedCount: number | null = null;
 
-      if (newState.atLeastOneUploadSucceeded) {
+      if (
+        newState.states.upload.value === "uploaded" &&
+        newState.states.upload.uploaded.states.experiences &&
+        (newState.states.upload.uploaded.states
+          .experiences as ExperiencesUploadedResultState).context.anySuccess
+      ) {
         outstandingUnsavedCount = updateCache({
-          savedExperiencesMap: newState.savedExperiencesMap,
-          unsavedExperiencesMap: newState.unsavedExperiencesMap,
+          partlySavedMap: newState.partlySavedMap,
+          neverSavedMap: newState.neverSavedMap,
           cache,
           client,
         });
@@ -196,7 +210,10 @@ export function UploadUnsaved(props: Props) {
         await persistor.persist();
       }
 
-      dispatch([ActionType.onUploadResult, newState]);
+      dispatch({
+        type: ActionType.UPLOAD_RESULTS_RECEIVED,
+        stateMachine: newState,
+      });
 
       if (outstandingUnsavedCount !== null) {
         layoutDispatch({
@@ -204,53 +221,85 @@ export function UploadUnsaved(props: Props) {
           count: outstandingUnsavedCount,
         });
       }
-    } catch (error) {
-      dispatch([ActionType.setServerError, error]);
+    } catch (errors) {
+      dispatch({
+        type: ActionType.SERVER_ERROR,
+        errors,
+      });
 
       scrollIntoView("js-scroll-into-view-server-error");
     }
   }
 
-  if (loading) {
-    return <Loading />;
-  }
+  const serverErrors =
+    (upload.value === "uploaded" &&
+      upload.uploaded.states.apolloErrors &&
+      upload.uploaded.states.apolloErrors.value === "active" &&
+      upload.uploaded.states.apolloErrors.active.context.errors) ||
+    null;
+
+  const uploadSomeSuccess =
+    (upload.value === "uploaded" && upload.uploaded.states.experiences) || null;
+
+  const tabsValue = tabsState.value;
+  const twoTabsValue = tabsState.value === "two" && tabsState.states.two.value;
+
+  const partlySavedTabActive =
+    (tabsValue === "one" && tabsState.context.partlySaved) ||
+    (twoTabsValue && twoTabsValue === "partlySaved");
+
+  const neverSavedTabActive =
+    (tabsValue === "one" && tabsState.context.neverSaved) ||
+    (twoTabsValue && twoTabsValue === "neverSaved");
 
   return (
     <div className="components-upload-unsaved">
-      <ModalComponent open={uploading} />
+      <ModalComponent open={upload.value === "uploading"} />
 
       <SidebarHeader sidebar={true}>
         <div className="components-upload-unsaved-header">
           <span>Unsaved Preview</span>
 
-          <UploadAllButtonComponent
-            onUploadAllClicked={onSubmit}
-            allUploadSucceeded={allUploadSucceeded}
-          />
+          {!(uploadSomeSuccess && uploadSomeSuccess.value === "allSuccess") && (
+            <UploadAllButtonComponent onUploadAllClicked={onSubmit} />
+          )}
         </div>
       </SidebarHeader>
 
       <div className="main">
-        <TabsMenuComponent state={state} dispatch={dispatch} />
+        {tabsState.value !== "none" && (
+          <TabsMenuComponent
+            dispatch={dispatch}
+            tabsState={tabsState}
+            neverSavedCount={neverSavedCount}
+            partlySavedCount={partlySavedCount}
+            {...computeUploadedPartialState(uploadSomeSuccess)}
+          />
+        )}
 
-        <ServerError dispatch={dispatch} serverError={serverError} />
+        {serverErrors && (
+          <ServerError dispatch={dispatch} errors={serverErrors} />
+        )}
 
         <TransitionGroup className="all-unsaveds">
-          {tabs["1"] && (
+          {partlySavedTabActive && (
             <CSSTransition
               timeout={timeoutMs}
               key="saved-experiences"
               classNames="pane-animation-left"
             >
               <div
-                className={makeClassNames({ tab: true, active: tabs["1"] })}
-                id="upload-unsaved-saved-experiences-container"
+                className={makeClassNames({
+                  tab: true,
+                  active: partlySavedTabActive,
+                })}
+                id="upload-unsaved-container-partly-saved"
               >
-                {Object.entries(savedExperiencesMap).map(([id, map]) => {
+                {Object.entries(partlySavedMap).map(([id, map]) => {
                   return (
                     <ExperienceComponent
                       key={id}
-                      type="saved"
+                      mode="saved"
                       experienceObjectMap={map}
                       dispatch={dispatch}
                     />
@@ -260,21 +309,24 @@ export function UploadUnsaved(props: Props) {
             </CSSTransition>
           )}
 
-          {tabs["2"] && (
+          {neverSavedTabActive && (
             <CSSTransition
               timeout={timeoutMs}
               key="unsaved-experiences"
               classNames="pane-animation-right"
             >
               <div
-                className={makeClassNames({ tab: true, active: tabs["2"] })}
-                id="upload-unsaved-unsaved-experiences-container"
+                className={makeClassNames({
+                  tab: true,
+                  active: neverSavedTabActive,
+                })}
+                id="upload-unsaved-container-never-saved"
               >
-                {Object.entries(unsavedExperiencesMap).map(([id, map]) => {
+                {Object.entries(neverSavedMap).map(([id, map]) => {
                   return (
                     <ExperienceComponent
                       key={id}
-                      type="unsaved"
+                      mode="unsaved"
                       experienceObjectMap={map}
                       dispatch={dispatch}
                     />
@@ -294,12 +346,12 @@ export default UploadUnsaved;
 ////////////////////////// COMPONENTS ///////////////////////////////////
 
 function ExperienceComponent({
-  type,
+  mode,
   experienceObjectMap,
   dispatch,
 }: {
   experienceObjectMap: ExperienceObjectMap;
-  type: SaveStatusType;
+  mode: SaveStatusType;
   dispatch: DispatchType;
 }) {
   const { client, cache } = useContext(EbnisAppContext);
@@ -317,7 +369,7 @@ function ExperienceComponent({
   const hasError = entriesErrors || experienceError;
 
   const experienceId = experience.id;
-  const typePrefix = type + "-experience";
+  const typePrefix = mode + "-experience";
   let uploadStatusIndicatorSuffix = "";
   let experienceClassName = "";
   const idPrefix = `${typePrefix}-${experienceId}`;
@@ -375,7 +427,11 @@ function ExperienceComponent({
             [experienceId],
           );
 
-          dispatch([ActionType.experienceDeleted, { id: experienceId, type }]);
+          dispatch({
+            type: ActionType.DELETE_EXPERIENCE,
+            id: experienceId,
+            mode,
+          });
         },
       }}
       entriesJSX={unsavedEntries.map((entry, index) => {
@@ -421,114 +477,113 @@ function ModalComponent({ open }: { open?: boolean }) {
 
 function TabsMenuComponent({
   dispatch,
-  state,
-}: {
+  serverErrors,
+  savedError,
+  unsavedError,
+  savedAllSuccess,
+  unsavedAllSuccess,
+  tabsState,
+}: ComputeUploadPartialStateReturnValue & {
   dispatch: DispatchType;
-  state: State;
-}) {
-  const {
-    hasUnsavedExperiencesUploadError,
-    hasSavedExperiencesUploadError,
-    tabs,
-    unsavedExperiencesLen,
-    savedExperiencesLen,
-  } = state;
+  tabsState: TabsState;
+} & Pick<StateMachine, "neverSavedCount" | "partlySavedCount">) {
+  const { context, value: tabsValue } = tabsState;
 
-  let unsavedUploadTriggeredIcon = null;
-  let savedUploadTriggeredIcon = null;
+  const twoTabsValue = tabsState.value === "two" && tabsState.states.two.value;
+  const tabActive = tabsValue === "one";
 
-  let unsavedIcon = null;
-  let savedIcon = null;
+  const partlySavedUploadedIcon = savedAllSuccess ? (
+    <Icon
+      name="check"
+      id="upload-triggered-success-icon-partly-saved"
+      className="upload-success-icon upload-result-icon"
+    />
+  ) : serverErrors || savedError ? (
+    <Icon
+      name="ban"
+      id="upload-triggered-error-icon-partly-saved"
+      className="upload-error-icon upload-result-icon"
+    />
+  ) : null;
 
-  if (savedExperiencesLen > 0) {
-    if (hasSavedExperiencesUploadError === true) {
-      savedUploadTriggeredIcon = (
-        <Icon
-          name="ban"
-          id="upload-triggered-icon-error-saved-experiences"
-          className="upload-error-icon upload-result-icon"
-        />
-      );
-    } else if (hasSavedExperiencesUploadError === false) {
-      savedUploadTriggeredIcon = (
-        <Icon
-          name="check"
-          id="upload-triggered-icon-success-saved-experiences"
-          className="upload-success-icon upload-result-icon"
-        />
-      );
-    }
+  const partlySavedTabIcon = context.partlySaved ? (
+    <a
+      className={makeClassNames({
+        item: true,
+        active: tabActive || twoTabsValue === "partlySaved",
+        "tab-menu": true,
+      })}
+      id="upload-unsaved-tab-menu-partly-saved"
+      onClick={() => {
+        if (twoTabsValue) {
+          dispatch({
+            type: ActionType.TOGGLE_TAB,
+            currentValue: twoTabsValue,
+          });
+        }
+      }}
+    >
+      Entries
+      {partlySavedUploadedIcon}
+    </a>
+  ) : null;
 
-    savedIcon = (
-      <a
-        className={setTabMenuClassNames("1", tabs)}
-        id="upload-unsaved-saved-experiences-menu"
-        onClick={() => dispatch([ActionType.toggleTab, 1])}
-      >
-        Entries
-        {savedUploadTriggeredIcon}
-      </a>
-    );
-  }
+  const neverSavedUploadedIcon = unsavedAllSuccess ? (
+    <Icon
+      name="check"
+      id="uploaded-success-tab-icon-never-saved"
+      className="upload-success-icon upload-result-icon"
+    />
+  ) : serverErrors || unsavedError ? (
+    <Icon
+      name="ban"
+      id="uploaded-error-tab-icon-never-saved"
+      className="upload-error-icon upload-result-icon"
+    />
+  ) : null;
 
-  if (unsavedExperiencesLen > 0) {
-    if (hasUnsavedExperiencesUploadError === true) {
-      unsavedUploadTriggeredIcon = (
-        <Icon
-          name="ban"
-          id="upload-triggered-icon-error-unsaved-experiences"
-          className="upload-error-icon upload-result-icon"
-        />
-      );
-    } else if (hasUnsavedExperiencesUploadError === false) {
-      unsavedUploadTriggeredIcon = (
-        <Icon
-          name="check"
-          id="upload-triggered-icon-success-unsaved-experiences"
-          className="upload-success-icon upload-result-icon"
-        />
-      );
-    }
-
-    unsavedIcon = (
-      <a
-        className={setTabMenuClassNames("2", tabs)}
-        id="upload-unsaved-unsaved-experiences-menu"
-        onClick={() => dispatch([ActionType.toggleTab, 2])}
-      >
-        Experiences
-        {unsavedUploadTriggeredIcon}
-      </a>
-    );
-  }
+  const neverSavedTabIcon = context.neverSaved ? (
+    <a
+      className={makeClassNames({
+        item: true,
+        active: tabActive || twoTabsValue === "neverSaved",
+        "tab-menu": true,
+      })}
+      id="upload-unsaved-tab-menu-never-saved"
+      onClick={() => {
+        if (twoTabsValue) {
+          dispatch({
+            type: ActionType.TOGGLE_TAB,
+            currentValue: twoTabsValue,
+          });
+        }
+      }}
+    >
+      Experiences
+      {neverSavedUploadedIcon}
+    </a>
+  ) : null;
 
   return (
     <div
       className={makeClassNames({
         "ui item menu": true,
-        one: savedIcon === null || unsavedIcon === null,
-        two: savedIcon !== null && unsavedIcon !== null,
+        [tabsValue]: true,
       })}
       id="upload-unsaved-tabs-menu"
     >
-      {savedIcon}
+      {partlySavedTabIcon}
 
-      {unsavedIcon}
+      {neverSavedTabIcon}
     </div>
   );
 }
 
 function UploadAllButtonComponent({
   onUploadAllClicked,
-  allUploadSucceeded,
 }: {
   onUploadAllClicked: () => Promise<void>;
-  allUploadSucceeded?: boolean;
 }) {
-  if (allUploadSucceeded) {
-    return null;
-  }
-
   return (
     <Button
       className="upload-button"
@@ -540,15 +595,8 @@ function UploadAllButtonComponent({
   );
 }
 
-function ServerError(props: {
-  dispatch: DispatchType;
-  serverError: State["serverError"];
-}) {
-  const { serverError, dispatch } = props;
-
-  if (!serverError) {
-    return null;
-  }
+function ServerError(props: { dispatch: DispatchType; errors: string }) {
+  const { errors, dispatch } = props;
 
   return (
     <Message
@@ -562,7 +610,9 @@ function ServerError(props: {
       id="upload-unsaved-server-error"
       error={true}
       onDismiss={function onDismiss() {
-        dispatch([ActionType.removeServerErrors]);
+        dispatch({
+          type: ActionType.CLEAR_SERVER_ERRORS,
+        });
       }}
     >
       <Message.Content>
@@ -574,13 +624,11 @@ function ServerError(props: {
           id="js-scroll-into-view-server-error"
         />
 
-        {serverError}
+        {errors}
       </Message.Content>
     </Message>
   );
 }
-
-////////////////////////// END COMPONENTS ///////////////////////////////////
 
 ////////////////////////// HELPER FUNCTIONS ///////////////////////////////////
 
@@ -646,14 +694,41 @@ function savedExperiencesToUploadData(
   );
 }
 
-function setTabMenuClassNames(tabNumber: string | number, tabs: State["tabs"]) {
-  return makeClassNames({
-    item: true,
-    active: tabs[tabNumber],
-    "tab-menu": true,
-  });
+function computeUploadedPartialState(
+  uploadSomeSuccess: ExperiencesUploadedState | null,
+): ComputeUploadPartialStateReturnValue {
+  if (uploadSomeSuccess) {
+    const { value } = uploadSomeSuccess;
+
+    if (value === "serverError") {
+      return {
+        serverErrors: true,
+      };
+    } else {
+      const {
+        states: { saved, unsaved },
+      } = (uploadSomeSuccess as PartialUploadSuccessState).partial;
+
+      return {
+        savedError: saved && saved.value !== "allSuccess",
+        unsavedError: unsaved && unsaved.value !== "allSuccess",
+        savedAllSuccess: saved && saved.value === "allSuccess",
+        unsavedAllSuccess: unsaved && unsaved.value === "allSuccess",
+      };
+    }
+  }
+
+  return {};
 }
 
 ////////////////////////// END HELPER FUNCTIONS //////////////////////////////
 
 ////////////////////////// TYPES ///////////////////////////////////
+
+interface ComputeUploadPartialStateReturnValue {
+  serverErrors?: boolean;
+  savedError?: boolean;
+  unsavedError?: boolean;
+  savedAllSuccess?: boolean;
+  unsavedAllSuccess?: boolean;
+}

@@ -108,7 +108,7 @@ context("Upload unsaved page", () => {
 
       cy.get("#header-unsaved-count-label").click();
       cy.title().should("contain", UPLOAD_UNSAVED_TITLE);
-      cy.get("#upload-unsaved-unsaved-experiences-menu").click();
+      cy.get("#upload-unsaved-tab-menu-never-saved").click();
       cy.get("#upload-unsaved-upload-btn").click();
 
       cy.get(

@@ -72,11 +72,11 @@ export type GetAllUnsavedQueryResult = QueryResult<GetAllUnSavedQueryReturned>;
 const getAllUnsavedResolver: LocalResolverFn<
   {},
   Promise<GetUnsavedSummary>
-> = async (_, variables, { cache, client }) => {
-  let unsavedExperiencesLen = 0;
-  let savedExperiencesLen = 0;
-  const unsavedExperiencesMap = {} as UnsavedExperienceSummaryMap;
-  const savedExperiencesMap = {} as UnsavedExperienceSummaryMap;
+> = async (_root, _variables, { cache, client }) => {
+  let neverSavedCount = 0;
+  let partlySavedCount = 0;
+  const neverSavedMap = {} as UnsavedExperienceSummaryMap;
+  const partlySavedMap = {} as UnsavedExperienceSummaryMap;
 
   (await getSavedAndUnsavedExperiencesFromCache(client)).forEach(
     ({ id: id }) => {
@@ -84,16 +84,16 @@ const getAllUnsavedResolver: LocalResolverFn<
 
       if (experience) {
         if (isUnsavedId(id)) {
-          ++unsavedExperiencesLen;
-          unsavedExperiencesMap[id] = {
+          ++neverSavedCount;
+          neverSavedMap[id] = {
             experience,
             savedEntries: [],
             unsavedEntries: entryNodesFromExperience(experience),
           };
         } else {
-          ++savedExperiencesLen;
+          ++partlySavedCount;
 
-          savedExperiencesMap[id] = {
+          partlySavedMap[id] = {
             experience,
             ...separateExperienceUnsavedEntries(experience),
           };
@@ -103,10 +103,10 @@ const getAllUnsavedResolver: LocalResolverFn<
   );
 
   return {
-    unsavedExperiencesMap,
-    savedExperiencesMap,
-    unsavedExperiencesLen,
-    savedExperiencesLen,
+    neverSavedMap,
+    partlySavedMap,
+    neverSavedCount,
+    partlySavedCount,
   };
 };
 
@@ -140,13 +140,10 @@ export const unsavedResolvers = {
 };
 
 export interface GetUnsavedSummary {
-  unsavedExperiencesMap: UnsavedExperienceSummaryMap;
-
-  savedExperiencesMap: UnsavedExperienceSummaryMap;
-
-  unsavedExperiencesLen: number;
-
-  savedExperiencesLen: number;
+  neverSavedMap: UnsavedExperienceSummaryMap;
+  partlySavedMap: UnsavedExperienceSummaryMap;
+  neverSavedCount: number;
+  partlySavedCount: number;
 }
 
 interface UnsavedExperienceSummaryMap {

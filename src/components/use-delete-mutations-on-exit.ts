@@ -6,7 +6,7 @@ export function useDeleteMutationsOnExit(
   mutations: string[],
   shouldDelete?: boolean,
 ) {
-  const { cache } = useContext(EbnisAppContext);
+  const { cache, persistor } = useContext(EbnisAppContext);
 
   useEffect(() => {
     if (!shouldDelete) {
@@ -15,6 +15,7 @@ export function useDeleteMutationsOnExit(
 
     return () => {
       removeQueriesAndMutationsFromCache(cache, mutations);
+      persistor.persist();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shouldDelete]);

@@ -388,7 +388,7 @@ describe("components", () => {
 
     const { ui } = makeComp({
       props: {
-        children: <FecthExperienceInstructorComponent props={childProps} />,
+        children: <FetchExperienceInstructorComponent props={childProps} />,
       },
     });
 
@@ -480,7 +480,7 @@ describe("components", () => {
      */
 
     const childProps = {} as FetchExperienceInstructorProps["props"];
-    const children = <FecthExperienceInstructorComponent props={childProps} />;
+    const children = <FetchExperienceInstructorComponent props={childProps} />;
 
     /**
      * And we are initially disconnected
@@ -810,7 +810,7 @@ function makeComp({
   };
 }
 
-function FecthExperienceInstructorComponent(
+function FetchExperienceInstructorComponent(
   props: FetchExperienceInstructorProps,
 ) {
   return (
