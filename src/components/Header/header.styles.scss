@@ -13,39 +13,26 @@ $header-border-bottom: 5px solid;
   }
 
   flex-shrink: 0;
-  // min-height: 80px;
   z-index: 2; // otherwise app-main will cover it and the close button will be
   // covered by sidebar
   position: relative;
-
-  .logo-container {
-    padding: 5px !important;
-
-    &.with-pointer {
-      cursor: pointer;
-    }
-
-    &.center-children {
-      justify-content: center;
-      width: 100%;
-    }
-  }
 
   .app-header-title {
     text-overflow: ellipsis;
     overflow: hidden;
     max-width: 400px;
-    font-weight: bolder;
     color: $app-color;
-    padding: 0 0 1px 10px;
-    font-size: 1.2em;
-    margin-top: -10px;
+    padding: 0 0 1px 5px;
+    font-size: 0.8em;
+    margin-top: -20px;
     white-space: nowrap;
 
     &.no-sidebar {
       text-align: center;
       margin-left: auto;
       margin-right: auto;
+      font-weight: bolder;
+      font-size: 1.2em;
     }
   }
 
@@ -82,8 +69,8 @@ $header-border-bottom: 5px solid;
     border-color: green !important;
     color: #ffffff !important;
     position: absolute;
-    left: -0.5px;
-    bottom: -10px;
+    left: 5px;
+    top: 5px;
     display: flex;
     align-items: center;
     justify-content: center;

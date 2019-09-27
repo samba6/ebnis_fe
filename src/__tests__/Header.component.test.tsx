@@ -3,23 +3,13 @@
 import React, { ComponentType } from "react";
 import { render, fireEvent } from "@testing-library/react";
 import { Header, Props } from "../components/Header/header.component";
-import { EXPERIENCES_URL, ROOT_URL } from "../routes";
 import { ILayoutContextHeaderValue } from "../components/Layout/layout.utils";
 import { UPLOAD_UNSAVED_PREVIEW_URL } from "../constants/upload-unsaved-routes";
 import {
   LayoutProvider,
   LocationProvider,
 } from "../components/Layout/layout-providers";
-import { useUser } from "../components/use-user";
 import { WindowLocation } from "@reach/router";
-
-jest.mock("../components/use-user");
-
-jest.mock("../components/Header/header.injectables", () => ({
-  useLogo: () => ({}),
-}));
-
-const mockUseUser = useUser as jest.Mock;
 
 const title = "My App title";
 
@@ -35,13 +25,6 @@ it("renders sidebar", () => {
    * Then header should contain the sidebar trigger UI
    */
   expect(document.getElementById("header-sidebar-trigger")).not.toBeNull();
-
-  /**
-   * And the logo should not be centered
-   */
-  expect(
-    (document.getElementById("header-logo-container") as any).classList,
-  ).not.toContain("center-children");
 
   /**
    * And app title should reflect that we are showing sidebar
@@ -60,145 +43,6 @@ it("does not render sidebar", () => {
    * Then header should not render sidebar trigger UI
    */
   expect(document.getElementById("header-sidebar-trigger")).toBeNull();
-
-  /**
-   * And the logo should be centered
-   */
-  expect(
-    (document.getElementById("header-logo-container") as any).classList,
-  ).toContain("center-children");
-});
-
-it("should not navigate when in experiences route", () => {
-  /**
-   * Given we are on experiences route
-   */
-  const { ui, mockNavigate } = setup({
-    props: {
-      title,
-      sidebar: true,
-    },
-    location: { pathname: EXPERIENCES_URL } as any,
-  });
-
-  /**
-   * And we are using header component
-   */
-  render(ui);
-
-  /**
-   * Then the logo should not have a pointer
-   */
-  const $logo = document.getElementById("header-logo-container") as any;
-  expect($logo.classList).not.toContain("with-pointer");
-
-  /**
-   * When we click on the logo
-   */
-  fireEvent.click($logo);
-
-  /**
-   * Then we should not be navigated away
-   */
-  expect(mockNavigate).not.toHaveBeenCalled();
-});
-
-it("should not navigate when in root route", () => {
-  /**
-   * Given we are on ROOT route
-   */
-  const { ui, mockNavigate } = setup({
-    props: {
-      title,
-      sidebar: true,
-    },
-    location: { pathname: ROOT_URL } as any,
-  });
-
-  /**
-   * And we are using header component
-   */
-  render(ui);
-
-  /**
-   * Then the logo should not have a pointer
-   */
-  const $logo = document.getElementById("header-logo-container") as any;
-  expect($logo.classList).not.toContain("with-pointer");
-
-  /**
-   * When we click on the logo
-   */
-  fireEvent.click($logo);
-
-  /**
-   * Then we should not be navigated away
-   */
-  expect(mockNavigate).not.toHaveBeenCalled();
-});
-
-it("should navigate to experiences route when on any url except root and experiences routes and we are logged in", () => {
-  /**
-   * Given we are logged in and are on a route except ROOT and experiences
-   */
-  const { ui, mockNavigate } = setup({
-    props: {
-      title,
-      sidebar: true,
-    },
-    location: { pathname: ROOT_URL + 5 } as any,
-  });
-
-  mockUseUser.mockReturnValue({});
-
-  /**
-   * And we are using header component
-   */
-  render(ui);
-
-  /**
-   * Then the logo should have a pointer
-   */
-  const $logo = document.getElementById("header-logo-container") as any;
-  expect($logo.classList).toContain("with-pointer");
-
-  /**
-   * When we click on the logo
-   */
-  fireEvent.click($logo);
-
-  /**
-   * Then we should be navigated away to experiences url
-   */
-  expect(mockNavigate).toHaveBeenCalledWith(EXPERIENCES_URL);
-});
-
-it("should navigate to root route when on any url except root and experiences routes and we are not logged in", () => {
-  /**
-   * Given we are not logged in and are on a route except ROOT and experiences
-   */
-  const { ui, mockNavigate } = setup({
-    props: {
-      title,
-      sidebar: true,
-    },
-    location: { pathname: ROOT_URL + 5 } as any,
-  });
-
-  /**
-   * And we are using header component
-   */
-  render(ui);
-
-  /**
-   * When we click on the logo
-   */
-  fireEvent.click(document.getElementById("header-logo-container") as any);
-
-  /**
-   * Then we should be navigated away to root url
-   */
-  expect(mockNavigate).toHaveBeenCalledWith(ROOT_URL);
 });
 
 it("renders close sidebar icon but not show icon", () => {
@@ -374,19 +218,87 @@ it("sets class name", () => {
   expect(document.getElementsByClassName("a")[0]).toBeDefined();
 });
 
+it("does not render show sidebar icon if has unsaved", () => {
+  /**
+   * Given we have unsaved items and we would like to show sidebar, but have
+   * not sent command to show sidebar
+   */
+  const { ui } = setup({
+    props: {
+      title,
+      sidebar: true,
+      show: false,
+    },
+
+    context: {
+      unsavedCount: 1,
+    },
+  });
+
+  /**
+   * When component is rendered
+   */
+
+  render(ui);
+
+  /**
+   * Then unsaved count show be be shown
+   */
+
+  expect(document.getElementById("header-unsaved-count-label")).not.toBeNull();
+
+  /**
+   * And show sidebar icon should not be visible
+   */
+
+  expect(document.getElementById("header-show-sidebar-icon")).toBeNull();
+});
+
+it("does not render hide sidebar icon if has unsaved", () => {
+  /**
+   * Given we have unsaved items and we would like to show sidebar and have
+   * sent command to show sidebar
+   */
+  const { ui } = setup({
+    props: {
+      title,
+      sidebar: true,
+      show: true,
+    },
+
+    context: {
+      unsavedCount: 1,
+    },
+  });
+
+  /**
+   * When component is rendered
+   */
+
+  render(ui);
+
+  /**
+   * Then unsaved count show be be shown
+   */
+
+  expect(document.getElementById("header-unsaved-count-label")).not.toBeNull();
+
+  /**
+   * And close sidebar icon should not be visible
+   */
+
+  expect(document.getElementById("header-close-sidebar-icon")).toBeNull();
+});
+
 ////////////////////////// HELPER FUNCTIONS ///////////////////////////
 
 const HeaderP = Header as ComponentType<Partial<Props>>;
 
 function setup(args: Args = {}) {
-  mockUseUser.mockReset();
-
   const props = args.props || {};
-  const mockNavigate = jest.fn();
   const locationContextValue = {
     pathname: "",
     ...(args.location || {}),
-    navigate: mockNavigate,
   };
 
   const context = args.context || {};
@@ -399,7 +311,6 @@ function setup(args: Args = {}) {
         </LayoutProvider>
       </LocationProvider>
     ),
-    mockNavigate,
   };
 }
 
