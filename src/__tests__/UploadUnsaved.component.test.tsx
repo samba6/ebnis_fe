@@ -1,21 +1,26 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { ComponentType } from "react";
-import "@marko/testing-library/cleanup-after-each";
+import React, { ComponentType, useState, useEffect } from "react";
 import {
   render,
   fireEvent,
   wait,
   waitForElement,
+  cleanup,
 } from "@testing-library/react";
 import { UploadUnsaved } from "../components/UploadUnsaved/upload-unsaved.component";
 import {
   Props,
   definitionToUnsavedData,
   ExperiencesIdsToObjectMap,
+  onUploadResultsReceived,
+  StateMachine,
+  ExperienceObjectMap,
 } from "../components/UploadUnsaved/upload-unsaved.utils";
 import {
   ExperienceFragment,
   ExperienceFragment_entries_edges_node,
+  ExperienceFragment_entries_edges_node_dataObjects,
+  ExperienceFragment_dataDefinitions,
 } from "../graphql/apollo-types/ExperienceFragment";
 import { makeUnsavedId } from "../constants";
 import {
@@ -43,18 +48,22 @@ import { Entry } from "../components/Entry/entry.component";
 import { scrollIntoView } from "../components/scroll-into-view";
 import { updateCache } from "../components/UploadUnsaved/update-cache";
 import { replaceExperiencesInGetExperiencesMiniQuery } from "../state/resolvers/update-get-experiences-mini-query";
-import { deleteIdsFromCache } from "../state/resolvers/delete-references-from-cache";
+import {
+  deleteIdsFromCache,
+  removeQueriesAndMutationsFromCache,
+} from "../state/resolvers/delete-references-from-cache";
 import { deleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache } from "../state/resolvers/update-saved-and-unsaved-experiences-in-cache";
 import { EbnisAppProvider } from "../context";
 import {
-  useGetAllUnsavedQuery,
   useUploadUnsavedExperiencesMutation,
   useUploadAllUnsavedsMutation,
   useUploadSavedExperiencesEntriesMutation,
 } from "../components/UploadUnsaved/upload-unsaved.injectables";
+import { act } from "react-dom/test-utils";
 
+const mockLoadingId = "a-lo";
 jest.mock("../components/Loading/loading", () => ({
-  Loading: () => <div id="a-lo" />,
+  Loading: () => <div id={mockLoadingId} />,
 }));
 
 jest.mock("../components/SidebarHeader/sidebar-header.component", () => ({
@@ -81,7 +90,29 @@ jest.mock("../components/UploadUnsaved/update-cache");
 jest.mock("../state/resolvers/update-get-experiences-mini-query");
 jest.mock("../state/resolvers/delete-references-from-cache");
 jest.mock("../state/resolvers/update-saved-and-unsaved-experiences-in-cache");
-jest.mock("../components/UploadUnsaved/upload-unsaved.injectables");
+
+const mockUseState = useState;
+const mockUseEffect = useEffect;
+let mockGetAllUnsavedQueryReturnValue: null | GetAllUnsavedQueryResult;
+jest.mock("../components/UploadUnsaved/upload-unsaved.injectables", () => ({
+  useGetAllUnsavedQuery: () => {
+    const [result, setResult] = mockUseState<GetAllUnsavedQueryResult>({
+      loading: true,
+    } as GetAllUnsavedQueryResult);
+
+    mockUseEffect(() => {
+      const r = mockGetAllUnsavedQueryReturnValue as GetAllUnsavedQueryResult;
+      setResult(r);
+    }, []);
+
+    return result;
+  },
+
+  useUploadUnsavedExperiencesMutation: jest.fn(),
+  useUploadAllUnsavedsMutation: jest.fn(),
+  useUploadSavedExperiencesEntriesMutation: jest.fn(),
+  addUploadUnsavedResolvers: jest.fn(),
+}));
 
 const mockIsConnected = isConnected as jest.Mock;
 const mockEntry = Entry as jest.Mock;
@@ -90,116 +121,131 @@ const mockUpdateCache = updateCache as jest.Mock;
 const mockReplaceExperiencesInGetExperiencesMiniQuery = replaceExperiencesInGetExperiencesMiniQuery as jest.Mock;
 const mockDeleteIdsFromCache = deleteIdsFromCache as jest.Mock;
 const mockDeleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache = deleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache as jest.Mock;
-const mockUseGetAllUnsavedQuery = useGetAllUnsavedQuery as jest.Mock;
 const mockUseUploadUnsavedExperiencesMutation = useUploadUnsavedExperiencesMutation as jest.Mock;
 const mockUseUploadAllUnsavedsMutation = useUploadAllUnsavedsMutation as jest.Mock;
 const mockUseUploadSavedExperiencesEntriesMutation = useUploadSavedExperiencesEntriesMutation as jest.Mock;
+const mockRemoveQueriesAndMutationsFromCache = removeQueriesAndMutationsFromCache as jest.Mock;
 
 ////////////////////////// END MOCK ////////////////////////////
 
 beforeEach(() => {
+  jest.useFakeTimers();
   mockDeleteIdsFromCache.mockReset();
   mockUpdateCache.mockReset();
   mockScrollIntoView.mockReset();
   mockIsConnected.mockReset();
   mockEntry.mockClear();
-  mockUseGetAllUnsavedQuery.mockReset();
+  mockGetAllUnsavedQueryReturnValue = null;
   mockUseUploadSavedExperiencesEntriesMutation.mockReset();
   mockUseUploadUnsavedExperiencesMutation.mockReset();
   mockUseUploadAllUnsavedsMutation.mockReset();
   mockDeleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache.mockReset();
   mockReplaceExperiencesInGetExperiencesMiniQuery.mockReset();
+  mockRemoveQueriesAndMutationsFromCache.mockReset();
+});
+
+afterEach(() => {
+  jest.clearAllTimers();
+  cleanup();
 });
 
 const timeStamps = { insertedAt: "a", updatedAt: "a" };
 
-it("redirects to 404 when not connected", async () => {
-  const { ui, mockNavigate } = makeComp({
-    isConnected: false,
-  });
+describe("components", () => {
+  it("redirects to 404 when not connected", async () => {
+    const { ui, mockNavigate } = makeComp({
+      isConnected: false,
+    });
 
-  render(ui);
+    act(() => {
+      render(ui);
+    });
 
-  await wait(() => {
     expect(mockNavigate).toHaveBeenCalled();
+    expect(document.getElementById("a-lo")).toBeNull();
   });
 
-  expect(document.getElementById("a-lo")).toBeNull();
-});
+  it("renders loading indicator", () => {
+    expect(mockGetAllUnsavedQueryReturnValue).toBeNull();
 
-it("renders loading indicator", () => {
-  const { ui } = makeComp({
-    queryResultProp: {
-      loading: true,
-    },
+    /**
+     * Given we are loading data
+     */
+    const { ui } = makeComp({
+      getAllUnsaved: {} as any,
+    });
+
+    /**
+     * While component is rendering
+     */
+    act(() => {
+      render(ui);
+
+      /**
+       * Then we should see loading indicator
+       */
+      expect(document.getElementById("a-lo")).not.toBeNull();
+    });
   });
 
-  render(ui);
-
-  expect(document.getElementById("a-lo")).not.toBeNull();
-});
-
-it("redirects to 404 when there are no unsaved data", async () => {
-  const { ui, mockNavigate } = makeComp({
-    queryResultProp: {
+  it("redirects to 404 when there are no unsaved data", async () => {
+    expect(mockGetAllUnsavedQueryReturnValue).toBeNull();
+    const { ui, mockNavigate } = makeComp({
       getAllUnsaved: {
-        unsavedExperiencesLen: 0,
-        savedExperiencesLen: 0,
+        neverSavedCount: 0,
+        partlySavedCount: 0,
       } as GetUnsavedSummary,
-    },
-  });
+    });
 
-  render(ui);
+    render(ui);
 
-  await wait(() => {
     expect(mockNavigate).toHaveBeenCalled();
+    expect(document.getElementById("a-lo")).toBeNull();
   });
 
-  expect(document.getElementById("a-lo")).toBeNull();
-});
+  it("shows only partly saved with no saved entries and uploads all unsaved entries successfully", async () => {
+    expect(mockGetAllUnsavedQueryReturnValue).toBeNull();
 
-it("shows only saved experiences, does not show saved entries and uploads unsaved entries", async () => {
-  const { id: entryId, ...entry } = {
-    ...makeEntryNode(makeUnsavedId("1")),
-    clientId: "a",
-    experienceId: "1",
-  };
+    const { id: entryId, ...entry } = {
+      ...makeEntryNode(makeUnsavedId("1")),
+      clientId: "a",
+      experienceId: "1",
+    };
 
-  const unsavedEntry = {
-    ...entry,
-    id: entryId,
-  } as ExperienceFragment_entries_edges_node;
+    const unsavedEntry = {
+      ...entry,
+      id: entryId,
+    } as ExperienceFragment_entries_edges_node;
 
-  const savedEntry = {
-    id: "2",
-  } as ExperienceFragment_entries_edges_node;
+    const savedEntry = {
+      id: "2",
+    } as ExperienceFragment_entries_edges_node;
 
-  const experience = {
-    id: "1",
-    title: "a",
+    const experience = {
+      id: "1",
+      title: "a",
 
-    entries: {
-      edges: [
-        {
-          node: unsavedEntry,
-        },
+      entries: {
+        edges: [
+          {
+            node: unsavedEntry,
+          },
 
-        {
-          node: savedEntry,
-        },
-      ],
-    },
-  } as ExperienceFragment;
+          {
+            node: savedEntry,
+          },
+        ],
+      },
+    } as ExperienceFragment;
 
-  const {
-    ui,
-    mockUploadUnsavedExperiences,
-    mockUploadSavedExperiencesEntries,
-    mockUploadAllUnsaveds,
-  } = makeComp({
-    queryResultProp: {
+    const {
+      ui,
+      mockUploadUnsavedExperiences,
+      mockUploadSavedExperiencesEntries,
+      mockUploadAllUnsaveds,
+    } = makeComp({
       getAllUnsaved: {
-        savedExperiencesMap: {
+        partlySavedMap: {
           "1": {
             experience,
             unsavedEntries: [unsavedEntry],
@@ -207,129 +253,161 @@ it("shows only saved experiences, does not show saved entries and uploads unsave
           },
         } as ExperiencesIdsToObjectMap,
 
-        savedExperiencesLen: 1,
+        partlySavedCount: 1,
       } as GetUnsavedSummary,
-    },
-  });
+    });
 
-  mockUploadSavedExperiencesEntries.mockResolvedValue({
-    data: {
-      createEntries: [
-        {
-          experienceId: "1",
-          entries: [{}],
-        },
-      ],
-    },
-  });
+    mockUploadSavedExperiencesEntries.mockResolvedValue({
+      data: {
+        createEntries: [
+          {
+            experienceId: "1",
+            entries: [{}],
+          },
+        ],
+      },
+    });
 
-  render(ui);
+    let unmount: any = null;
 
-  expect(
-    document.getElementById("upload-unsaved-saved-experiences-menu"),
-  ).not.toBeNull();
+    act(() => {
+      const args = render(ui);
+      unmount = args.unmount;
+    });
 
-  expect(
-    document.getElementById("upload-unsaved-unsaved-experiences-container"),
-  ).toBeNull();
+    expect(
+      document.getElementById("upload-unsaved-tab-menu-partly-saved"),
+    ).not.toBeNull();
 
-  expect(
-    document.getElementById("upload-unsaved-unsaved-experiences-menu"),
-  ).toBeNull();
+    expect(
+      document.getElementById("upload-unsaved-container-never-saved"),
+    ).toBeNull();
 
-  expect(
-    (document.getElementById("upload-unsaved-saved-experience-1-title") as any)
-      .classList,
-  ).not.toContain("experience-title--success");
+    expect(
+      document.getElementById("upload-unsaved-tab-menu-never-saved"),
+    ).toBeNull();
 
-  expect(document.getElementById("upload-triggered-icon-success-1")).toBeNull();
+    expect(
+      (document.getElementById(
+        "upload-unsaved-saved-experience-1-title",
+      ) as any).classList,
+    ).not.toContain("experience-title--success");
 
-  expect(
-    document.getElementById("upload-triggered-icon-success-saved-experiences"),
-  ).toBeNull();
+    expect(
+      document.getElementById("upload-triggered-icon-success-1"),
+    ).toBeNull();
 
-  const tabsMenuClassList = (document.getElementById(
-    "upload-unsaved-tabs-menu",
-  ) as any).classList;
+    expect(
+      document.getElementById("upload-triggered-success-icon-partly-saved"),
+    ).toBeNull();
 
-  expect(tabsMenuClassList).toContain("one");
-  expect(tabsMenuClassList).not.toContain("two");
+    const tabsMenuClassList = (document.getElementById(
+      "upload-unsaved-tabs-menu",
+    ) as any).classList;
 
-  fireEvent.click(document.getElementById("upload-unsaved-upload-btn") as any);
+    expect(tabsMenuClassList).toContain("one");
+    expect(tabsMenuClassList).not.toContain("two");
 
-  await wait(() => {
+    /**
+     * When we click on partly saved tab menu
+     */
+
+    (document.getElementById(
+      "upload-unsaved-tab-menu-partly-saved",
+    ) as any).click();
+
+    jest.runAllTimers();
+
+    /**
+     * Then partly saved experience should continue to be visible
+     * (there is only one tab)
+     */
+
+    expect(
+      document.getElementById("upload-unsaved-container-partly-saved"),
+    ).not.toBeNull();
+
+    fireEvent.click(document.getElementById(
+      "upload-unsaved-upload-btn",
+    ) as any);
+
+    const $elm = await waitForElement(() => {
+      return document.getElementById(
+        "upload-unsaved-saved-experience-1-title",
+      ) as any;
+    });
+
     expect(mockUploadSavedExperiencesEntries).toHaveBeenCalled();
+
+    expect($elm.classList).toContain("experience-title--success");
+
+    const uploadedEntry = ((mockUploadSavedExperiencesEntries.mock
+      .calls[0][0] as any).variables as CreateEntryMutationVariables).input[0];
+
+    expect(uploadedEntry).toEqual(entry);
+
+    expect(mockUploadUnsavedExperiences).not.toHaveBeenCalled();
+    expect(mockUploadAllUnsaveds).not.toHaveBeenCalled();
+
+    expect(document.getElementById("upload-unsaved-upload-btn")).toBeNull();
+
+    expect(
+      document.getElementById("upload-triggered-icon-success-1"),
+    ).not.toBeNull();
+
+    expect(
+      document.getElementById("upload-triggered-success-icon-partly-saved"),
+    ).not.toBeNull();
+
+    expect(mockUpdateCache).toHaveBeenCalled();
+    unmount();
+    expect(mockRemoveQueriesAndMutationsFromCache).toHaveBeenCalled();
   });
 
-  const uploadedEntry = ((mockUploadSavedExperiencesEntries.mock
-    .calls[0][0] as any).variables as CreateEntryMutationVariables).input[0];
+  it("shows only never-saved and uploading all succeeds", async () => {
+    const experience = {
+      title: "a",
+      clientId: "1",
+      description: "x",
+      dataDefinitions: makeDataDefinitions(),
+      ...timeStamps,
+    } as ExperienceFragment;
 
-  expect(uploadedEntry).toEqual(entry);
+    const { id: entryId, ...entry } = {
+      ...makeEntryNode(),
+      clientId: "b",
+      experienceId: "1",
+      ...timeStamps,
+    };
 
-  expect(mockUploadUnsavedExperiences).not.toHaveBeenCalled();
-  expect(mockUploadAllUnsaveds).not.toHaveBeenCalled();
+    const unsavedEntry = {
+      ...entry,
+      id: entryId,
+    } as ExperienceFragment_entries_edges_node;
 
-  expect(
-    (document.getElementById("upload-unsaved-saved-experience-1-title") as any)
-      .classList,
-  ).toContain("experience-title--success");
+    const unsavedExperience = {
+      id: "1",
+      ...experience,
 
-  expect(document.getElementById("upload-unsaved-upload-btn")).toBeNull();
+      entries: {
+        edges: [
+          {
+            node: unsavedEntry,
+          },
+        ],
+      },
+    } as ExperienceFragment;
 
-  expect(
-    document.getElementById("upload-triggered-icon-success-1"),
-  ).not.toBeNull();
-
-  expect(
-    document.getElementById("upload-triggered-icon-success-saved-experiences"),
-  ).not.toBeNull();
-});
-
-it("shows only 'unsaved experiences' data and uploading same succeeds", async () => {
-  const experience = {
-    title: "a",
-    clientId: "1",
-    description: "x",
-    dataDefinitions: makeDataDefinitions(),
-    ...timeStamps,
-  } as ExperienceFragment;
-
-  const { id: entryId, ...entry } = {
-    ...makeEntryNode(),
-    clientId: "b",
-    experienceId: "1",
-    ...timeStamps,
-  };
-
-  const unsavedEntry = {
-    ...entry,
-    id: entryId,
-  } as ExperienceFragment_entries_edges_node;
-
-  const unsavedExperience = {
-    id: "1",
-    ...experience,
-
-    entries: {
-      edges: [
-        {
-          node: unsavedEntry,
-        },
-      ],
-    },
-  } as ExperienceFragment;
-
-  const {
-    ui,
-    mockUploadUnsavedExperiences,
-    mockUploadSavedExperiencesEntries,
-    mockUploadAllUnsaveds,
-  } = makeComp({
-    queryResultProp: {
+    const {
+      ui,
+      mockUploadUnsavedExperiences,
+      mockUploadSavedExperiencesEntries,
+      mockUploadAllUnsaveds,
+    } = makeComp({
       getAllUnsaved: {
-        unsavedExperiencesLen: 1,
+        neverSavedCount: 1,
 
-        unsavedExperiencesMap: {
+        neverSavedMap: {
           "1": {
             experience: unsavedExperience,
             unsavedEntries: [unsavedEntry],
@@ -337,126 +415,152 @@ it("shows only 'unsaved experiences' data and uploading same succeeds", async ()
           },
         } as ExperiencesIdsToObjectMap,
       } as GetUnsavedSummary,
-    },
+    });
+
+    mockUploadUnsavedExperiences.mockResolvedValue({
+      data: {
+        saveOfflineExperiences: [
+          {
+            experience: unsavedExperience,
+          },
+        ],
+      },
+    });
+
+    let unmount: any;
+
+    act(() => {
+      const args = render(ui);
+      unmount = args.unmount;
+      expect(document.getElementById(mockLoadingId)).not.toBeNull();
+    });
+
+    expect(
+      document.getElementById("upload-unsaved-container-partly-saved"),
+    ).toBeNull();
+
+    expect(
+      document.getElementById("upload-unsaved-tab-menu-partly-saved"),
+    ).toBeNull();
+
+    expect(
+      document.getElementById("upload-unsaved-container-never-saved"),
+    ).not.toBeNull();
+
+    expect(
+      document.getElementById("upload-unsaved-tab-menu-never-saved"),
+    ).not.toBeNull();
+
+    expect(
+      document.getElementById("uploaded-success-tab-icon-never-saved"),
+    ).toBeNull();
+
+    expect(
+      (document.getElementById(
+        "upload-unsaved-unsaved-experience-1-title",
+      ) as any).classList,
+    ).not.toContain("experience-title--success");
+
+    expect(document.getElementById("upload-triggered-icon-error-1")).toBeNull();
+
+    expect(
+      document.getElementById("upload-triggered-icon-success-1"),
+    ).toBeNull();
+
+    const tabsMenuClassList = (document.getElementById(
+      "upload-unsaved-tabs-menu",
+    ) as any).classList;
+
+    expect(tabsMenuClassList).toContain("one");
+    expect(tabsMenuClassList).not.toContain("two");
+
+    /**
+     * When we click on never saved tab menu
+     */
+
+    (document.getElementById(
+      "upload-unsaved-tab-menu-never-saved",
+    ) as any).click();
+
+    jest.runAllTimers();
+
+    /**
+     * Then never saved experience should continue to be visible
+     * (there is only one tab)
+     */
+
+    expect(
+      document.getElementById("upload-unsaved-container-never-saved"),
+    ).not.toBeNull();
+
+    fireEvent.click(document.getElementById(
+      "upload-unsaved-upload-btn",
+    ) as any);
+
+    const $successIcon = await waitForElement(() =>
+      document.getElementById("uploaded-success-tab-icon-never-saved"),
+    );
+
+    expect($successIcon).not.toBeNull();
+
+    const {
+      entries: uploadedEntries,
+
+      ...otherExperienceFields
+    } = (mockUploadUnsavedExperiences.mock
+      .calls[0][0] as any).variables.input[0];
+
+    experience.dataDefinitions = experience.dataDefinitions.map(
+      definitionToUnsavedData as any,
+    );
+
+    expect(otherExperienceFields).toEqual(experience);
+
+    expect(uploadedEntries[0]).toEqual(entry);
+
+    expect(mockUploadSavedExperiencesEntries).not.toHaveBeenCalled();
+    expect(mockUploadAllUnsaveds).not.toHaveBeenCalled();
+
+    expect(document.getElementById("upload-unsaved-upload-btn")).toBeNull();
+
+    expect(
+      (document.getElementById(
+        "upload-unsaved-unsaved-experience-1-title",
+      ) as any).classList,
+    ).toContain("experience-title--success");
+
+    expect(
+      document.getElementById("upload-triggered-icon-success-1"),
+    ).not.toBeNull();
+
+    expect(mockUpdateCache).toHaveBeenCalled();
+    unmount();
+    expect(mockRemoveQueriesAndMutationsFromCache).toHaveBeenCalled();
   });
 
-  mockUploadUnsavedExperiences.mockResolvedValue({
-    data: {
-      saveOfflineExperiences: [
-        {
-          experience: unsavedExperience,
-        },
-      ],
-    },
-  });
+  it("toggles partly and never saved, uploads but returns errors for all never saved", async () => {
+    const entryId = makeUnsavedId("1");
 
-  render(ui);
+    const unsavedExperienceEntry = {
+      ...makeEntryNode("1"),
+      clientId: "1",
+    } as ExperienceFragment_entries_edges_node;
 
-  expect(
-    document.getElementById("upload-unsaved-saved-experiences-container"),
-  ).toBeNull();
+    const savedExperienceEntry = {
+      ...makeEntryNode(entryId),
+      clientId: entryId,
+    } as ExperienceFragment_entries_edges_node;
 
-  expect(
-    document.getElementById("upload-unsaved-saved-experiences-menu"),
-  ).toBeNull();
-
-  expect(
-    document.getElementById("upload-unsaved-unsaved-experiences-container"),
-  ).not.toBeNull();
-
-  expect(
-    document.getElementById("upload-unsaved-unsaved-experiences-menu"),
-  ).not.toBeNull();
-
-  expect(
-    document.getElementById(
-      "upload-triggered-icon-success-unsaved-experiences",
-    ),
-  ).toBeNull();
-
-  expect(
-    (document.getElementById(
-      "upload-unsaved-unsaved-experience-1-title",
-    ) as any).classList,
-  ).not.toContain("experience-title--success");
-
-  expect(document.getElementById("upload-triggered-icon-error-1")).toBeNull();
-
-  expect(document.getElementById("upload-triggered-icon-success-1")).toBeNull();
-
-  const tabsMenuClassList = (document.getElementById(
-    "upload-unsaved-tabs-menu",
-  ) as any).classList;
-
-  expect(tabsMenuClassList).toContain("one");
-  expect(tabsMenuClassList).not.toContain("two");
-
-  fireEvent.click(document.getElementById("upload-unsaved-upload-btn") as any);
-
-  const $successIcon = await waitForElement(() =>
-    document.getElementById(
-      "upload-triggered-icon-success-unsaved-experiences",
-    ),
-  );
-
-  expect($successIcon).not.toBeNull();
-
-  const {
-    entries: uploadedEntries,
-
-    ...otherExperienceFields
-  } = (mockUploadUnsavedExperiences.mock.calls[0][0] as any).variables.input[0];
-
-  experience.dataDefinitions = experience.dataDefinitions.map(
-    definitionToUnsavedData as any,
-  );
-
-  expect(otherExperienceFields).toEqual(experience);
-
-  expect(uploadedEntries[0]).toEqual(entry);
-
-  expect(mockUploadSavedExperiencesEntries).not.toHaveBeenCalled();
-  expect(mockUploadAllUnsaveds).not.toHaveBeenCalled();
-
-  expect(document.getElementById("upload-unsaved-upload-btn")).toBeNull();
-
-  expect(
-    (document.getElementById(
-      "upload-unsaved-unsaved-experience-1-title",
-    ) as any).classList,
-  ).toContain("experience-title--success");
-
-  expect(
-    document.getElementById("upload-triggered-icon-success-1"),
-  ).not.toBeNull();
-});
-
-it("toggles saved and 'unsaved experiences' and uploads data but returns errors for both unsaved entries and unsaved experiences", async () => {
-  jest.useFakeTimers();
-
-  const entryId = makeUnsavedId("1");
-
-  const unsavedExperienceEntry = {
-    ...makeEntryNode("1"),
-    clientId: "1",
-  } as ExperienceFragment_entries_edges_node;
-
-  const savedExperienceEntry = {
-    ...makeEntryNode(entryId),
-    clientId: entryId,
-  } as ExperienceFragment_entries_edges_node;
-
-  const {
-    ui,
-    mockUploadUnsavedExperiences,
-    mockUploadSavedExperiencesEntries,
-    mockUploadAllUnsaveds,
-  } = makeComp({
-    queryResultProp: {
+    const {
+      ui,
+      mockUploadUnsavedExperiences,
+      mockUploadSavedExperiencesEntries,
+      mockUploadAllUnsaveds,
+    } = makeComp({
       getAllUnsaved: {
-        unsavedExperiencesLen: 1,
+        neverSavedCount: 1,
 
-        unsavedExperiencesMap: {
+        neverSavedMap: {
           "1": {
             experience: {
               id: "1",
@@ -479,9 +583,9 @@ it("toggles saved and 'unsaved experiences' and uploads data but returns errors 
           },
         } as ExperiencesIdsToObjectMap,
 
-        savedExperiencesLen: 1,
+        partlySavedCount: 1,
 
-        savedExperiencesMap: {
+        partlySavedMap: {
           "2": {
             experience: {
               id: "2",
@@ -503,187 +607,244 @@ it("toggles saved and 'unsaved experiences' and uploads data but returns errors 
           },
         } as ExperiencesIdsToObjectMap,
       } as GetUnsavedSummary,
-    },
-  });
+    });
 
-  mockUploadAllUnsaveds.mockResolvedValue({
-    data: {
-      createEntries: [
-        {
-          errors: [
-            {
-              clientId: entryId,
+    mockUploadAllUnsaveds.mockResolvedValue({
+      data: {
+        createEntries: [
+          {
+            errors: [
+              {
+                clientId: entryId,
+                errors: {
+                  clientId: `${entryId} error`,
+                },
+              },
+            ],
+
+            experienceId: "2",
+          },
+        ] as UploadAllUnsavedsMutation_createEntries[],
+
+        saveOfflineExperiences: [
+          {
+            experienceErrors: {
+              clientId: "1",
               errors: {
-                clientId: `${entryId} error`,
+                title: "experience error",
+                user: "",
+                __typename: "CreateExperienceErrors",
               },
             },
-          ],
-
-          experienceId: "2",
-        },
-      ] as UploadAllUnsavedsMutation_createEntries[],
-
-      saveOfflineExperiences: [
-        {
-          experienceErrors: {
-            clientId: "1",
-            errors: {
-              title: "experience error",
-            },
           },
-        },
-      ] as UploadAllUnsavedsMutation_saveOfflineExperiences[],
-    } as UploadAllUnsavedsMutation,
+        ] as UploadAllUnsavedsMutation_saveOfflineExperiences[],
+      } as UploadAllUnsavedsMutation,
+    });
+
+    /**
+     * When component is rendered
+     */
+
+    act(() => {
+      render(ui);
+    });
+
+    /**
+     * Then partly saved experiences should be visible
+     */
+
+    expect(
+      document.getElementById("upload-unsaved-container-partly-saved"),
+    ).not.toBeNull();
+
+    /**
+     * And never saved experiences should not be visible
+     */
+
+    expect(
+      document.getElementById("upload-unsaved-container-never-saved"),
+    ).toBeNull();
+
+    const tabsMenuClassList = (document.getElementById(
+      "upload-unsaved-tabs-menu",
+    ) as any).classList;
+
+    /**
+     * And tabs menu should show that not one but two tabs are used
+     */
+
+    expect(tabsMenuClassList).not.toContain("one");
+    expect(tabsMenuClassList).toContain("two");
+
+    /**
+     * When we click on never saved tab menu
+     */
+
+    const $neverSavedTabMenu = document.getElementById(
+      "upload-unsaved-tab-menu-never-saved",
+    ) as any;
+
+    $neverSavedTabMenu.click();
+
+    jest.runAllTimers();
+
+    /**
+     * Then never saved experiences should be visible
+     */
+
+    expect(
+      document.getElementById("upload-unsaved-container-never-saved"),
+    ).not.toBeNull();
+
+    /**
+     * And partly saved experience should not be visible
+     */
+
+    expect(
+      document.getElementById("upload-unsaved-container-partly-saved"),
+    ).toBeNull();
+
+    /**
+     * And should not contain any error UI
+     */
+
+    expect(
+      (document.getElementById(
+        "upload-unsaved-unsaved-experience-1-title",
+      ) as any).classList,
+    ).not.toContain("experience-title--error");
+
+    /**
+     * When we click on partly saved tab menu
+     */
+
+    const $partlySavedTabMenu = document.getElementById(
+      "upload-unsaved-tab-menu-partly-saved",
+    ) as any;
+
+    fireEvent.click($partlySavedTabMenu);
+
+    jest.runAllTimers();
+
+    /**
+     * Then partly saved experiences should become visible
+     */
+
+    expect(
+      document.getElementById("upload-unsaved-container-partly-saved"),
+    ).not.toBeNull();
+
+    /**
+     * And never saved experiences should not be visible
+     */
+
+    expect(
+      document.getElementById("upload-unsaved-container-never-saved"),
+    ).toBeNull();
+
+    expect(
+      (document.getElementById(
+        "upload-unsaved-saved-experience-2-title",
+      ) as any).classList,
+    ).not.toContain("experience-title--error");
+
+    const $entry = document.getElementById(
+      `upload-unsaved-entry-${entryId}`,
+    ) as any;
+
+    expect($entry.classList).not.toContain("entry--error");
+
+    expect(document.getElementById("upload-triggered-icon-error-1")).toBeNull();
+
+    expect(document.getElementById("upload-triggered-icon-error-2")).toBeNull();
+
+    expect(
+      document.getElementById("upload-triggered-error-icon-partly-saved"),
+    ).toBeNull();
+
+    expect(
+      document.getElementById("uploaded-error-tab-icon-never-saved"),
+    ).toBeNull();
+
+    expect(document.getElementById("unsaved-experience-errors-1")).toBeNull();
+
+    fireEvent.click(document.getElementById(
+      "upload-unsaved-upload-btn",
+    ) as any);
+
+    const $error = await waitForElement(() =>
+      document.getElementById("upload-triggered-icon-error-2"),
+    );
+
+    expect($error).not.toBeNull();
+
+    expect(mockUploadAllUnsaveds).toHaveBeenCalled();
+
+    expect(mockUploadUnsavedExperiences).not.toHaveBeenCalled();
+    expect(mockUploadSavedExperiencesEntries).not.toHaveBeenCalled();
+
+    expect(
+      document.getElementById("upload-triggered-error-icon-partly-saved"),
+    ).not.toBeNull();
+
+    // we are currently showing saved experiences - we confirm it has error class
+    expect(
+      document.getElementById("upload-unsaved-container-partly-saved"),
+    ).not.toBeNull();
+
+    expect(
+      (document.getElementById(
+        "upload-unsaved-saved-experience-2-title",
+      ) as any).classList,
+    ).toContain("experience-title--error");
+
+    // we also check to see that correct class has been applied to the entry
+    expect($entry.classList).toContain("entry--error");
+
+    // we toggle to show unsaved experiences and confirm they also have error
+    // class
+    fireEvent.click($neverSavedTabMenu);
+    jest.runAllTimers();
+
+    expect(
+      document.getElementById("upload-unsaved-container-never-saved"),
+    ).not.toBeNull();
+
+    expect(
+      (document.getElementById(
+        "upload-unsaved-unsaved-experience-1-title",
+      ) as any).classList,
+    ).toContain("experience-title--error");
+
+    expect(
+      document.getElementById("upload-triggered-icon-error-1"),
+    ).not.toBeNull();
+
+    expect(
+      document.getElementById("uploaded-error-tab-icon-never-saved"),
+    ).not.toBeNull();
+
+    expect(document.getElementById("upload-unsaved-upload-btn")).not.toBeNull();
+
+    expect(
+      document.getElementById("unsaved-experience-errors-1"),
+    ).not.toBeNull();
+
+    expect(mockUpdateCache).not.toHaveBeenCalled();
   });
 
-  render(ui);
-
-  expect(
-    document.getElementById("upload-unsaved-saved-experiences-container"),
-  ).not.toBeNull();
-
-  expect(
-    document.getElementById("upload-unsaved-unsaved-experiences-container"),
-  ).toBeNull();
-
-  const tabsMenuClassList = (document.getElementById(
-    "upload-unsaved-tabs-menu",
-  ) as any).classList;
-
-  expect(tabsMenuClassList).not.toContain("one");
-  expect(tabsMenuClassList).toContain("two");
-
-  const $unsavedMenu = document.getElementById(
-    "upload-unsaved-unsaved-experiences-menu",
-  ) as any;
-
-  fireEvent.click($unsavedMenu);
-  jest.runAllTimers();
-
-  expect(
-    document.getElementById("upload-unsaved-saved-experiences-container"),
-  ).toBeNull();
-
-  expect(
-    document.getElementById("upload-unsaved-unsaved-experiences-container"),
-  ).not.toBeNull();
-
-  expect(
-    (document.getElementById(
-      "upload-unsaved-unsaved-experience-1-title",
-    ) as any).classList,
-  ).not.toContain("experience-title--error");
-
-  const $savedMenu = document.getElementById(
-    "upload-unsaved-saved-experiences-menu",
-  ) as any;
-
-  fireEvent.click($savedMenu);
-  jest.runAllTimers();
-
-  expect(
-    document.getElementById("upload-unsaved-saved-experiences-container"),
-  ).not.toBeNull();
-
-  expect(
-    document.getElementById("upload-unsaved-unsaved-experiences-container"),
-  ).toBeNull();
-
-  expect(
-    (document.getElementById("upload-unsaved-saved-experience-2-title") as any)
-      .classList,
-  ).not.toContain("experience-title--error");
-
-  const $entry = document.getElementById(
-    `upload-unsaved-entry-${entryId}`,
-  ) as any;
-
-  expect($entry.classList).not.toContain("entry--error");
-
-  expect(document.getElementById("upload-triggered-icon-error-1")).toBeNull();
-
-  expect(document.getElementById("upload-triggered-icon-error-2")).toBeNull();
-
-  expect(
-    document.getElementById("upload-triggered-icon-error-saved-experiences"),
-  ).toBeNull();
-
-  expect(
-    document.getElementById("upload-triggered-icon-error-unsaved-experiences"),
-  ).toBeNull();
-
-  expect(document.getElementById("unsaved-experience-errors-1")).toBeNull();
-
-  fireEvent.click(document.getElementById("upload-unsaved-upload-btn") as any);
-
-  const $error = await waitForElement(() =>
-    document.getElementById("upload-triggered-icon-error-2"),
-  );
-
-  expect($error).not.toBeNull();
-
-  expect(mockUploadAllUnsaveds).toHaveBeenCalled();
-
-  expect(mockUploadUnsavedExperiences).not.toHaveBeenCalled();
-  expect(mockUploadSavedExperiencesEntries).not.toHaveBeenCalled();
-
-  expect(
-    document.getElementById("upload-triggered-icon-error-saved-experiences"),
-  ).not.toBeNull();
-
-  // we are currently showing saved experiences - we confirm it has error class
-  expect(
-    document.getElementById("upload-unsaved-saved-experiences-container"),
-  ).not.toBeNull();
-
-  expect(
-    (document.getElementById("upload-unsaved-saved-experience-2-title") as any)
-      .classList,
-  ).toContain("experience-title--error");
-
-  // we also check to see that correct class has been applied to the entry
-  expect($entry.classList).toContain("entry--error");
-
-  // we toggle to show unsaved experiences and confirm they also have error
-  // class
-  fireEvent.click($unsavedMenu);
-  jest.runAllTimers();
-
-  expect(
-    document.getElementById("upload-unsaved-unsaved-experiences-container"),
-  ).not.toBeNull();
-
-  expect(
-    (document.getElementById(
-      "upload-unsaved-unsaved-experience-1-title",
-    ) as any).classList,
-  ).toContain("experience-title--error");
-
-  expect(
-    document.getElementById("upload-triggered-icon-error-1"),
-  ).not.toBeNull();
-
-  expect(
-    document.getElementById("upload-triggered-icon-error-unsaved-experiences"),
-  ).not.toBeNull();
-
-  expect(document.getElementById("upload-unsaved-upload-btn")).not.toBeNull();
-
-  expect(document.getElementById("unsaved-experience-errors-1")).not.toBeNull();
-});
-
-it("shows apollo errors", async () => {
-  const { ui, mockUploadAllUnsaveds } = makeComp({
-    queryResultProp: {
+  it("shows apollo errors", async () => {
+    const { ui, mockUploadAllUnsaveds } = makeComp({
       getAllUnsaved: {
-        unsavedExperiencesLen: 1,
+        neverSavedCount: 1,
 
-        unsavedExperiencesMap: {
+        neverSavedMap: {
           "1": {
             experience: {
               id: "1",
               title: "a",
               clientId: "1",
+              dataDefinitions: [] as ExperienceFragment_dataDefinitions[],
 
               entries: {
                 edges: [
@@ -701,6 +862,7 @@ it("shows apollo errors", async () => {
               {
                 id: "1",
                 clientId: "1",
+                dataObjects: [] as ExperienceFragment_entries_edges_node_dataObjects[],
               } as ExperienceFragment_entries_edges_node,
             ],
 
@@ -708,13 +870,14 @@ it("shows apollo errors", async () => {
           },
         } as ExperiencesIdsToObjectMap,
 
-        savedExperiencesLen: 1,
+        partlySavedCount: 1,
 
-        savedExperiencesMap: {
+        partlySavedMap: {
           "2": {
             experience: {
               id: "2",
               title: "b",
+              dataDefinitions: [] as ExperienceFragment_dataDefinitions[],
 
               entries: {
                 edges: [
@@ -732,129 +895,165 @@ it("shows apollo errors", async () => {
               {
                 id: makeUnsavedId("1"),
                 clientId: makeUnsavedId("1"),
+                dataObjects: [] as ExperienceFragment_entries_edges_node_dataObjects[],
               } as ExperienceFragment_entries_edges_node,
             ],
             savedEntries: [],
           },
         } as ExperiencesIdsToObjectMap,
       } as GetUnsavedSummary,
-    },
+    });
+
+    mockUploadAllUnsaveds.mockRejectedValue(new Error("a"));
+
+    render(ui);
+
+    expect(document.getElementById("upload-unsaved-server-error")).toBeNull();
+
+    fireEvent.click(document.getElementById(
+      "upload-unsaved-upload-btn",
+    ) as any);
+
+    const $errorUi = await waitForElement(() =>
+      document.getElementById("upload-unsaved-server-error"),
+    );
+
+    expect($errorUi).not.toBeNull();
+
+    expect(mockScrollIntoView).toHaveBeenCalledWith(
+      "js-scroll-into-view-server-error",
+    );
+
+    expect(
+      document.getElementById("uploaded-success-tab-icon-never-saved"),
+    ).toBeNull();
+
+    expect(
+      document.getElementById("uploaded-error-tab-icon-never-saved"),
+    ).not.toBeNull();
+
+    expect(
+      document.getElementById("upload-triggered-success-icon-partly-saved"),
+    ).toBeNull();
+
+    expect(
+      document.getElementById("upload-triggered-error-icon-partly-saved"),
+    ).not.toBeNull();
+
+    closeMessage($errorUi);
+
+    expect(document.getElementById("upload-unsaved-server-error")).toBeNull();
+
+    expect(
+      document.getElementById("uploaded-error-tab-icon-never-saved"),
+    ).not.toBeNull();
+
+    expect(
+      document.getElementById("upload-triggered-error-icon-partly-saved"),
+    ).not.toBeNull();
+
+    expect(mockUpdateCache).not.toHaveBeenCalled();
   });
 
-  mockUploadAllUnsaveds.mockRejectedValue(new Error("a"));
-
-  render(ui);
-
-  expect(document.getElementById("upload-unsaved-server-error")).toBeNull();
-
-  fireEvent.click(document.getElementById("upload-unsaved-upload-btn") as any);
-
-  const $errorUi = await waitForElement(() =>
-    document.getElementById("upload-unsaved-server-error"),
-  );
-
-  expect($errorUi).not.toBeNull();
-
-  expect(mockScrollIntoView).toHaveBeenCalledWith(
-    "js-scroll-into-view-server-error",
-  );
-
-  expect(
-    document.getElementById(
-      "upload-triggered-icon-success-unsaved-experiences",
-    ),
-  ).toBeNull();
-
-  expect(
-    document.getElementById("upload-triggered-icon-error-unsaved-experiences"),
-  ).not.toBeNull();
-
-  expect(
-    document.getElementById("upload-triggered-icon-success-saved-experiences"),
-  ).toBeNull();
-
-  expect(
-    document.getElementById("upload-triggered-icon-error-saved-experiences"),
-  ).not.toBeNull();
-
-  closeMessage($errorUi);
-
-  expect(document.getElementById("upload-unsaved-server-error")).toBeNull();
-
-  expect(
-    document.getElementById("upload-triggered-icon-error-unsaved-experiences"),
-  ).not.toBeNull();
-
-  expect(
-    document.getElementById("upload-triggered-icon-error-saved-experiences"),
-  ).not.toBeNull();
-});
-
-it("deletes unsaved experience", async () => {
-  const unsavedEntry = {
-    id: "10",
-    clientId: "10",
-  } as ExperienceFragment_entries_edges_node;
-
-  const unsavedExperience = {
-    id: "1",
-    entries: {
-      edges: [
-        {
-          node: unsavedEntry,
-        },
-      ],
-    },
-  } as ExperienceFragment;
-
-  const { ui, mockNavigate, mockLayoutDispatch } = makeComp({
-    queryResultProp: {
+  it("deletes never saved", async () => {
+    const { ui, mockNavigate, mockLayoutDispatch } = makeComp({
       getAllUnsaved: {
-        unsavedExperiencesLen: 1,
+        neverSavedCount: 1,
 
-        unsavedExperiencesMap: {
+        neverSavedMap: {
           "1": {
-            experience: unsavedExperience,
-            unsavedEntries: [unsavedEntry],
+            experience: {
+              id: "1",
+              entries: {
+                edges: [
+                  {
+                    node: {
+                      id: "10",
+                      clientId: "10",
+                    } as ExperienceFragment_entries_edges_node,
+                  },
+                ],
+              },
+            } as ExperienceFragment,
+
+            unsavedEntries: [
+              {
+                id: "10",
+                clientId: "10",
+              } as ExperienceFragment_entries_edges_node,
+            ],
+
             savedEntries: [],
           },
         } as ExperiencesIdsToObjectMap,
       } as GetUnsavedSummary,
-    },
+    });
+
+    mockReplaceExperiencesInGetExperiencesMiniQuery.mockResolvedValue({});
+
+    render(ui);
+
+    const $deleteBtn = await waitForElement(
+      () => document.getElementById("experience-1-delete-button") as any,
+    );
+
+    $deleteBtn.click();
+
+    await wait(() => {
+      jest.runAllTimers();
+      expect(document.getElementById("experience-1-delete-button")).toBeNull();
+    });
+
+    expect(
+      mockReplaceExperiencesInGetExperiencesMiniQuery.mock.calls[0][1],
+    ).toEqual({ "1": null });
+
+    expect(mockDeleteIdsFromCache).toHaveBeenCalledWith({}, ["1", "10"]);
+
+    expect(
+      mockDeleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache,
+    ).toHaveBeenCalledWith({}, ["1"]);
+
+    expect(mockNavigate).toHaveBeenCalledWith(EXPERIENCES_URL);
+
+    expect(mockLayoutDispatch).toHaveBeenCalled();
   });
 
-  mockReplaceExperiencesInGetExperiencesMiniQuery.mockResolvedValue({});
-
-  render(ui);
-
-  fireEvent.click(document.getElementById("experience-1-delete-button") as any);
-
-  await wait(() => {
-    expect(document.getElementById("experience-1-delete-button")).toBeNull();
-  });
-
-  expect(
-    mockReplaceExperiencesInGetExperiencesMiniQuery.mock.calls[0][1],
-  ).toEqual({ "1": null });
-
-  expect(mockDeleteIdsFromCache).toHaveBeenCalledWith({}, ["1", "10"]);
-
-  expect(
-    mockDeleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache,
-  ).toHaveBeenCalledWith({}, ["1"]);
-
-  expect(mockNavigate).toHaveBeenCalledWith(EXPERIENCES_URL);
-
-  expect(mockLayoutDispatch).toHaveBeenCalled();
-});
-
-it("deletes saved experience", async () => {
-  const { ui, mockNavigate } = makeComp({
-    queryResultProp: {
+  it("deletes partly saved but not never saved", async () => {
+    const { ui, mockNavigate } = makeComp({
       getAllUnsaved: {
-        savedExperiencesLen: 1,
+        neverSavedCount: 1,
 
-        savedExperiencesMap: {
+        neverSavedMap: {
+          "2": {
+            experience: {
+              id: "2",
+              entries: {
+                edges: [
+                  {
+                    node: {
+                      id: "10",
+                      clientId: "10",
+                    } as ExperienceFragment_entries_edges_node,
+                  },
+                ],
+              },
+            } as ExperienceFragment,
+
+            unsavedEntries: [
+              {
+                id: "10",
+                clientId: "10",
+              } as ExperienceFragment_entries_edges_node,
+            ],
+
+            savedEntries: [],
+          },
+        } as ExperiencesIdsToObjectMap,
+
+        partlySavedCount: 1,
+
+        partlySavedMap: {
           "1": {
             experience: {
               id: "1",
@@ -863,119 +1062,108 @@ it("deletes saved experience", async () => {
             savedEntries: [],
           },
         } as ExperiencesIdsToObjectMap,
+      } as GetUnsavedSummary,
+    });
 
-        unsavedExperiencesLen: 1,
+    mockReplaceExperiencesInGetExperiencesMiniQuery.mockResolvedValue({});
 
-        unsavedExperiencesMap: {
-          "2": {
-            experience: {
-              id: "2",
-            } as ExperienceFragment,
-            unsavedEntries: [],
-            savedEntries: [],
-          },
-        } as ExperiencesIdsToObjectMap,
-      },
-    },
+    act(() => {
+      render(ui);
+    });
+
+    expect(
+      document.getElementById("upload-unsaved-tab-menu-partly-saved"),
+    ).not.toBeNull();
+
+    (document.getElementById("experience-1-delete-button") as any).click();
+
+    await wait(() => {
+      jest.runAllTimers();
+      expect(document.getElementById("experience-1-delete-button")).toBeNull();
+    });
+
+    expect(
+      document.getElementById("upload-unsaved-tab-menu-partly-saved"),
+    ).toBeNull();
+
+    expect(mockNavigate).not.toHaveBeenCalled();
+
+    expect(
+      mockReplaceExperiencesInGetExperiencesMiniQuery.mock.calls[0][1],
+    ).toEqual({ "1": null });
+
+    expect(mockDeleteIdsFromCache.mock.calls[0][1]).toEqual(["1"]);
+
+    expect(
+      mockDeleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache.mock
+        .calls[0][1],
+    ).toEqual(["1"]);
   });
 
-  mockReplaceExperiencesInGetExperiencesMiniQuery.mockResolvedValue({});
-
-  render(ui);
-
-  expect(
-    document.getElementById("upload-unsaved-saved-experiences-menu"),
-  ).not.toBeNull();
-
-  fireEvent.click(document.getElementById("experience-1-delete-button") as any);
-
-  await wait(() => {
-    expect(document.getElementById("experience-1-delete-button")).toBeNull();
-  });
-
-  expect(
-    document.getElementById("upload-unsaved-saved-experiences-menu"),
-  ).toBeNull();
-
-  expect(mockNavigate).not.toHaveBeenCalled();
-
-  expect(
-    mockReplaceExperiencesInGetExperiencesMiniQuery.mock.calls[0][1],
-  ).toEqual({ "1": null });
-
-  expect(mockDeleteIdsFromCache.mock.calls[0][1]).toEqual(["1"]);
-
-  expect(
-    mockDeleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache.mock
-      .calls[0][1],
-  ).toEqual(["1"]);
-});
-
-test("experience saved but entry did not", async () => {
-  const unsavedEntry = {
-    id: "1",
-    clientId: "1",
-    dataObjects: [
-      {
-        definitionId: "f1",
-        data: `{"decimal":1}`,
-      },
-    ],
-    experienceId: "1",
-    ...timeStamps,
-  } as ExperienceFragment_entries_edges_node;
-
-  const unsavedExperience = {
-    title: "a",
-    clientId: "1",
-    id: "1",
-
-    entries: {
-      edges: [
+  test("experience saved but entry did not", async done => {
+    const unsavedEntry = {
+      id: "1",
+      clientId: "1",
+      dataObjects: [
         {
-          node: unsavedEntry,
+          definitionId: "f1",
+          data: `{"decimal":1}`,
         },
       ],
-    },
+      experienceId: "1",
+      ...timeStamps,
+    } as ExperienceFragment_entries_edges_node;
 
-    dataDefinitions: [
-      {
-        id: "f1",
-        clientId: "f1",
-        type: "DECIMAL" as any,
-        name: "f1",
+    const unsavedExperience = {
+      title: "a",
+      clientId: "1",
+      id: "1",
+
+      entries: {
+        edges: [
+          {
+            node: unsavedEntry,
+          },
+        ],
       },
-    ],
 
-    ...timeStamps,
-  } as ExperienceFragment;
+      dataDefinitions: [
+        {
+          id: "f1",
+          clientId: "f1",
+          type: "DECIMAL" as any,
+          name: "f1",
+        },
+      ],
 
-  const savedExperience = {
-    title: "a",
-    clientId: "1",
-    // id will change on successful save
-    id: "2",
+      ...timeStamps,
+    } as ExperienceFragment;
 
-    entries: {},
+    const savedExperience = {
+      title: "a",
+      clientId: "1",
+      // id will change on successful save
+      id: "2",
 
-    dataDefinitions: [
-      {
-        // id will change on successful save
-        id: "f2",
-        clientId: "f1",
-        type: "DECIMAL" as any,
-        name: "f1",
-      },
-    ],
-    ...timeStamps,
-  } as ExperienceFragment;
+      entries: {},
 
-  const { ui, mockUploadUnsavedExperiences } = makeComp({
-    queryResultProp: {
+      dataDefinitions: [
+        {
+          // id will change on successful save
+          id: "f2",
+          clientId: "f1",
+          type: "DECIMAL" as any,
+          name: "f1",
+        },
+      ],
+      ...timeStamps,
+    } as ExperienceFragment;
+
+    const { ui, mockUploadUnsavedExperiences } = makeComp({
       getAllUnsaved: {
-        unsavedExperiencesLen: 1,
+        neverSavedCount: 1,
 
-        unsavedExperiencesMap: {
+        neverSavedMap: {
           "1": {
             experience: unsavedExperience,
             unsavedEntries: [unsavedEntry],
@@ -983,57 +1171,287 @@ test("experience saved but entry did not", async () => {
           },
         } as ExperiencesIdsToObjectMap,
       } as GetUnsavedSummary,
-    },
+    });
+
+    mockUploadUnsavedExperiences.mockResolvedValue({
+      data: {
+        saveOfflineExperiences: [
+          {
+            experience: savedExperience,
+            entriesErrors: [
+              {
+                experienceId: "2",
+                clientId: "1",
+                errors: {
+                  experienceId: "err",
+                },
+              },
+            ],
+          } as UploadAllUnsavedsMutation_saveOfflineExperiences,
+        ],
+      },
+    });
+
+    act(() => {
+      render(ui);
+      expect(document.getElementById(mockLoadingId)).not.toBeNull();
+    });
+
+    expect(
+      document.getElementById("uploaded-success-tab-icon-never-saved"),
+    ).toBeNull();
+
+    expect(document.getElementById("upload-triggered-icon-error-2")).toBeNull();
+
+    const $uploadBtn = await waitForElement(() => {
+      return document.getElementById("upload-unsaved-upload-btn") as any;
+    });
+
+    fireEvent.click($uploadBtn);
+
+    const $errorIcon = await waitForElement(() =>
+      document.getElementById("upload-triggered-icon-error-2"),
+    );
+
+    expect($errorIcon).not.toBeNull();
+
+    expect(document.getElementById("upload-unsaved-upload-btn")).not.toBeNull();
+
+    expect(
+      document.getElementById("upload-triggered-icon-success-1"),
+    ).toBeNull();
+
+    const { entry } = mockEntry.mock.calls[
+      mockEntry.mock.calls.length - 1
+    ][0] as EntryProps;
+
+    expect((entry.dataObjects[0] as DataObjectFragment).definitionId).toEqual(
+      "f2", // the new definition.id
+    );
+
+    expect(mockUpdateCache).toHaveBeenCalled();
+
+    done();
+  });
+});
+
+describe("non components", () => {
+  test("onUploadResultsReceived/2 does nothing if upload mutation does not exist", () => {
+    expect(onUploadResultsReceived({} as StateMachine, undefined)).toEqual({});
   });
 
-  mockUploadUnsavedExperiences.mockResolvedValue({
-    data: {
-      saveOfflineExperiences: [
-        {
-          experience: savedExperience,
-          entriesErrors: [
-            {
-              experienceId: "2",
-              clientId: "1",
-              errors: {
-                experienceId: "err",
+  test("onUploadResultsReceived/2 initializes experience uploaded state", () => {
+    const nextState = onUploadResultsReceived(
+      {
+        states: {
+          upload: {},
+        },
+      } as StateMachine,
+      {} as UploadAllUnsavedsMutation,
+    );
+
+    expect(nextState).toEqual({
+      states: {
+        upload: {
+          value: "uploaded",
+          uploaded: {
+            parallel: true,
+            states: {
+              experiences: {
+                value: "initial",
+                context: {
+                  anySuccess: false,
+                },
               },
             },
-          ],
-        } as UploadAllUnsavedsMutation_saveOfflineExperiences,
-      ],
-    },
+          },
+        },
+      },
+    } as StateMachine);
   });
 
-  render(ui);
+  test("onUploadResultsReceived/2 handles results with undefined elements", () => {
+    const state = {
+      states: {
+        upload: {},
+      },
 
-  expect(
-    document.getElementById(
-      "upload-triggered-icon-success-unsaved-experiences",
-    ),
-  ).toBeNull();
+      neverSavedMap: {
+        "1": {
+          experience: {
+            id: "1",
+            clientId: "1",
+          } as ExperienceFragment,
 
-  expect(document.getElementById("upload-triggered-icon-error-2")).toBeNull();
+          unsavedEntries: [
+            {
+              id: "1",
+              clientId: "1",
+              dataObjects: [
+                {
+                  definitionId: "1",
+                },
+              ],
+            },
 
-  fireEvent.click(document.getElementById("upload-unsaved-upload-btn") as any);
+            {
+              id: "2",
+              clientId: "2",
+              dataObjects: [
+                {
+                  // Notice definitionId (2), different from above (1). Server
+                  // will return dataDefinition.clientId of 1 and so only
+                  // the entry above will have its definitionId replaced
+                  // because 2 will not match
+                  definitionId: "2",
+                },
+              ],
+            },
+          ],
+        } as ExperienceObjectMap,
+      } as ExperiencesIdsToObjectMap,
 
-  const $errorIcon = await waitForElement(() =>
-    document.getElementById("upload-triggered-icon-error-2"),
-  );
+      partlySavedMap: {
+        "1": {
+          unsavedEntries: [
+            {
+              id: "1",
+              clientId: "1",
+            },
+          ],
+        } as ExperienceObjectMap,
+      } as ExperiencesIdsToObjectMap,
+    } as StateMachine;
 
-  expect($errorIcon).not.toBeNull();
+    const payload = {
+      saveOfflineExperiences: [
+        null,
 
-  expect(document.getElementById("upload-unsaved-upload-btn")).not.toBeNull();
+        {
+          experience: {
+            id: "a",
+            clientId: "1",
+            dataDefinitions: [
+              {
+                id: "a",
+                clientId: "1",
+              },
+            ],
 
-  expect(document.getElementById("upload-triggered-icon-success-1")).toBeNull();
+            entries: {},
+          },
+        },
+      ],
 
-  const { entry } = mockEntry.mock.calls[
-    mockEntry.mock.calls.length - 1
-  ][0] as EntryProps;
+      createEntries: [
+        null,
 
-  expect((entry.dataObjects[0] as DataObjectFragment).definitionId).toEqual(
-    "f2", // the new definition.id
-  );
+        {
+          errors: [],
+
+          entries: [
+            {
+              id: "a",
+              clientId: "1",
+            },
+          ],
+
+          experienceId: "1",
+        },
+      ],
+    } as UploadAllUnsavedsMutation;
+
+    const nextState = onUploadResultsReceived(state, payload);
+    // console.log(JSON.stringify(nextState, null, 2));
+
+    expect(nextState).toEqual({
+      states: {
+        upload: {
+          value: "uploaded",
+          uploaded: {
+            parallel: true,
+            states: {
+              experiences: {
+                context: {
+                  anySuccess: true,
+                },
+                partial: {
+                  states: {
+                    unsaved: {
+                      value: "partialSuccess",
+                    },
+                    saved: {
+                      value: "partialSuccess",
+                    },
+                  },
+                },
+                value: "partial",
+              },
+            },
+          },
+        },
+      },
+      neverSavedMap: {
+        "1": {
+          experience: {
+            id: "1",
+            clientId: "1",
+          },
+          unsavedEntries: [
+            {
+              id: "1",
+              clientId: "1",
+              dataObjects: [
+                {
+                  definitionId: "a",
+                },
+              ],
+            },
+            {
+              id: "2",
+              clientId: "2",
+              dataObjects: [
+                {
+                  definitionId: "2",
+                },
+              ],
+            },
+          ],
+          newlySavedExperience: {
+            id: "a",
+            clientId: "1",
+            dataDefinitions: [
+              {
+                id: "a",
+                clientId: "1",
+              },
+            ],
+            entries: {},
+          },
+          didUploadSucceed: true,
+        } as ExperienceObjectMap,
+      } as ExperiencesIdsToObjectMap,
+
+      partlySavedMap: {
+        "1": {
+          unsavedEntries: [
+            {
+              id: "a",
+              clientId: "1",
+            },
+          ],
+          newlySavedEntries: [
+            {
+              id: "a",
+              clientId: "1",
+            },
+          ],
+          didUploadSucceed: false,
+          entriesErrors: {},
+        } as ExperienceObjectMap,
+      } as ExperiencesIdsToObjectMap,
+    } as StateMachine);
+  });
 });
 
 ////////////////////////// HELPER FUNCTIONS ///////////////////////////////////
@@ -1043,23 +1461,19 @@ const UploadUnsavedP = UploadUnsaved as ComponentType<Partial<Props>>;
 const defaultArgs: Args = {
   props: {},
   isConnected: true,
-  queryResultProp: {},
 };
 
 function makeComp(args: Args = {}) {
   args = { ...defaultArgs, ...args };
-  const queryResultProp = args.queryResultProp as QueryResultProps;
-  const queryResult = { ...queryResultProp } as GetAllUnsavedQueryResult;
+  const { props, isConnected, getAllUnsaved } = args;
 
-  if (queryResultProp.getAllUnsaved) {
-    queryResult.data = {
-      getAllUnsaved: queryResultProp.getAllUnsaved,
-    };
-  }
-
-  mockUseGetAllUnsavedQuery.mockReturnValue(queryResult);
-
-  const { props, isConnected } = args;
+  mockGetAllUnsavedQueryReturnValue = (getAllUnsaved
+    ? {
+        data: {
+          getAllUnsaved,
+        },
+      }
+    : {}) as GetAllUnsavedQueryResult;
 
   mockIsConnected.mockReturnValue(isConnected);
 
@@ -1116,9 +1530,5 @@ function makeComp(args: Args = {}) {
 interface Args {
   props?: Partial<Props>;
   isConnected?: boolean;
-  queryResultProp?: QueryResultProps;
-}
-
-type QueryResultProps = Partial<GetAllUnsavedQueryResult> & {
   getAllUnsaved?: GetUnsavedSummary;
-};
+}

@@ -27,160 +27,238 @@ import { InMemoryCache } from "apollo-cache-inmemory";
 import { EntryFragment } from "../../graphql/apollo-types/EntryFragment";
 import { DataDefinitionFragment } from "../../graphql/apollo-types/DataDefinitionFragment";
 import { DataObjectFragment } from "../../graphql/apollo-types/DataObjectFragment";
+import { wrapReducer } from "../../logger";
 
-export type Props = RouteComponentProps;
+const initialStates = {
+  upload: {
+    value: "idle",
+  },
 
-export interface State {
-  readonly hasUnsavedExperiencesUploadError?: boolean | null;
-  readonly hasSavedExperiencesUploadError?: boolean | null;
-  readonly allUploadSucceeded?: boolean;
-  readonly tabs: { [k: number]: boolean };
-  readonly uploading?: boolean;
-  readonly serverError?: string | null;
-  readonly savedExperiencesLen: number;
-  readonly unsavedExperiencesLen: number;
-  readonly unSavedCount: number;
-  readonly savedExperiencesMap: ExperiencesIdsToObjectMap;
-  readonly unsavedExperiencesMap: ExperiencesIdsToObjectMap;
-  readonly shouldRedirect?: boolean;
-  readonly atLeastOneUploadSucceeded?: boolean | null;
-}
+  dataLoaded: {
+    value: "no",
+  },
+
+  tabs: {
+    value: "none",
+    context: {},
+  },
+};
+
+const initialContext = {
+  allCount: null,
+};
+
+const initial = {
+  parallel: true,
+  states: initialStates,
+  context: initialContext,
+};
 
 export function stateInitializerFn(getAllUnsaved?: GetUnsavedSummary) {
   if (!getAllUnsaved) {
     return {
-      tabs: {},
-      unsavedExperiencesMap: {},
-      savedExperiencesMap: {},
-    } as State;
+      ...initial,
+      neverSavedMap: {},
+      partlySavedMap: {},
+    } as StateMachine;
   }
 
-  const {
-    savedExperiencesLen = 0,
-    unsavedExperiencesLen = 0,
-    unsavedExperiencesMap = {},
-    savedExperiencesMap = {},
-  } = getAllUnsaved;
+  const { partlySavedCount = 0, neverSavedCount = 0 } = getAllUnsaved;
+
+  const allCount = partlySavedCount + neverSavedCount;
+
+  const context = {
+    ...initialContext,
+    allCount,
+  };
+
+  const tabsState = { ...initialStates.tabs } as TabsState;
+
+  if (allCount > 0) {
+    updateTabsState(tabsState, partlySavedCount, neverSavedCount);
+  }
+
+  const states = {
+    ...initialStates,
+
+    dataLoaded: {
+      value: "yes",
+    },
+
+    tabs: tabsState,
+  };
 
   return {
+    ...{ ...initial, states, context },
     ...getAllUnsaved,
 
-    tabs: {
-      1: savedExperiencesLen !== 0,
-      2: savedExperiencesLen === 0 && unsavedExperiencesLen !== 0,
-    },
-    unSavedCount: savedExperiencesLen + unsavedExperiencesLen,
-    savedExperiencesMap,
-    unsavedExperiencesMap,
-    savedExperiencesLen,
-    unsavedExperiencesLen,
-  } as State;
+    partlySavedCount,
+    neverSavedCount,
+  } as StateMachine;
+}
+
+function updateTabsState(
+  tabsState: TabsState,
+  partlySavedCount: number,
+  neverSavedCount: number,
+) {
+  const context = { ...tabsState.context } as TabStateContext;
+
+  if (partlySavedCount > 0 && neverSavedCount > 0) {
+    context.neverSaved = true;
+    context.partlySaved = true;
+    tabsState.value = "two";
+    const twoTabs = (tabsState as unknown) as TabTwo;
+
+    twoTabs.states = {
+      two: {
+        value: "partlySaved",
+      },
+    };
+  } else {
+    tabsState.value = "one";
+    context.partlySaved = partlySavedCount > 0;
+    context.neverSaved = neverSavedCount > 0;
+  }
+
+  tabsState.context = context;
 }
 
 export enum ActionType {
-  toggleTab = "@components/upload-unsaved/toggle-tab",
-  setUploading = "@components/upload-unsaved/set-uploading",
-  onUploadResult = "@components/upload-unsaved/result",
-  setServerError = "@components/upload-unsaved/set-server-error",
-  removeServerErrors = "@components/upload-unsaved/remove-server-error",
-  initStateFromProps = "@components/upload-unsaved/init-state-from-props",
-  experienceDeleted = "@components/upload-unsaved/experience-deleted",
+  UPLOAD_STARTED = "@upload-unsaved/upload-started",
+  UPLOAD_RESULTS_RECEIVED = "@upload-unsaved/upload-results-received",
+  SERVER_ERROR = "@upload-unsaved/set-server-error",
+  CLEAR_SERVER_ERRORS = "@upload-unsaved/clear-server-errors",
+  INIT_STATE_FROM_PROPS = "@upload-unsaved/init-state-from-props",
+  DELETE_EXPERIENCE = "@upload-unsaved/delete-experience",
+  TOGGLE_TAB = "@upload-unsaved/toggle-tab",
 }
 
-type Action =
-  | [ActionType.toggleTab, number | string]
-  | [ActionType.setUploading, boolean]
-  | [ActionType.onUploadResult, State]
-  | [ActionType.setServerError, ApolloError]
-  | [ActionType.removeServerErrors]
-  | [ActionType.initStateFromProps, GetUnsavedSummary]
-  | [ActionType.experienceDeleted, DeleteActionPayload];
+export const reducer: Reducer<StateMachine, Action> = (state, action) =>
+  wrapReducer(
+    state,
+    action,
+    (prevState, { type, ...payload }) => {
+      if (type === ActionType.UPLOAD_RESULTS_RECEIVED) {
+        return (payload as OnUploadResultPayload).stateMachine;
+      }
 
-export type DispatchType = Dispatch<Action>;
+      return immer(prevState, proxy => {
+        switch (type) {
+          case ActionType.INIT_STATE_FROM_PROPS:
+            {
+              Object.entries(
+                stateInitializerFn(
+                  (payload as InitStateFromPropsPayload).getAllUnsaved,
+                ),
+              ).forEach(([k, v]) => {
+                proxy[k] = v;
+              });
+            }
 
-export const reducer: Reducer<State, Action> = (prevState, [type, payload]) => {
-  if (type === ActionType.onUploadResult) {
-    return payload as State;
-  }
+            break;
 
-  return immer(prevState, proxy => {
-    switch (type) {
-      case ActionType.initStateFromProps:
-        {
-          Object.entries(
-            stateInitializerFn(payload as GetUnsavedSummary),
-          ).forEach(([k, v]) => {
-            proxy[k] = v;
-          });
+          case ActionType.UPLOAD_STARTED:
+            {
+              proxy.states.upload.value = "uploading";
+            }
+
+            break;
+
+          case ActionType.TOGGLE_TAB:
+            {
+              const twoTabs = (proxy.states.tabs as TabTwo).states.two;
+
+              twoTabs.value =
+                (payload as TabStateTogglePayload).currentValue ===
+                "partlySaved"
+                  ? "neverSaved"
+                  : "partlySaved";
+            }
+
+            break;
+
+          case ActionType.SERVER_ERROR:
+            {
+              const upload = proxy.states.upload as UploadedState;
+              upload.value = "uploaded";
+
+              const uploaded = (upload.uploaded ||
+                {}) as UploadedState["uploaded"];
+
+              uploaded.parallel = true;
+              const uploadedStates = uploaded.states || {};
+
+              uploadedStates.experiences =
+                uploadedStates.experiences || ({} as ExperiencesUploadedState);
+
+              uploadedStates.experiences.value = "serverError";
+
+              const errors = (payload as { errors: ApolloError }).errors
+                .message;
+
+              const apolloErrors = (uploadedStates.apolloErrors ||
+                {}) as ApolloErrorsActive;
+
+              apolloErrors.value = "active";
+              apolloErrors.active = {
+                context: {
+                  errors,
+                },
+              };
+
+              uploadedStates.apolloErrors = apolloErrors;
+              uploaded.states = uploadedStates;
+              upload.uploaded = uploaded;
+            }
+
+            break;
+
+          case ActionType.CLEAR_SERVER_ERRORS:
+            {
+              ((proxy.states.upload as UploadedState).uploaded.states
+                .apolloErrors as ApolloErrorsInActive).value = "inactive";
+            }
+
+            break;
+
+          case ActionType.DELETE_EXPERIENCE:
+            {
+              const { id, mode } = payload as DeleteActionPayload;
+              const {
+                context,
+                states: { tabs },
+              } = proxy;
+
+              if (mode === "unsaved") {
+                delete proxy.neverSavedMap[id];
+                --proxy.neverSavedCount;
+              } else {
+                delete proxy.partlySavedMap[id];
+                --proxy.partlySavedCount;
+              }
+
+              const count = proxy.neverSavedCount + proxy.partlySavedCount;
+              context.allCount = count;
+
+              if (count === 0) {
+                tabs.value = "none";
+                proxy.shouldRedirect = true;
+              } else {
+                updateTabsState(
+                  tabs,
+                  proxy.partlySavedCount,
+                  proxy.neverSavedCount,
+                );
+              }
+            }
+
+            break;
         }
-
-        break;
-
-      case ActionType.toggleTab:
-        {
-          proxy.tabs = { [payload as number]: true };
-        }
-
-        break;
-
-      case ActionType.setUploading:
-        {
-          proxy.uploading = payload as boolean;
-          proxy.serverError = null;
-          proxy.hasUnsavedExperiencesUploadError = null;
-          proxy.hasSavedExperiencesUploadError = null;
-          proxy.atLeastOneUploadSucceeded = false;
-        }
-
-        break;
-
-      case ActionType.setServerError:
-        {
-          proxy.uploading = false;
-          proxy.hasUnsavedExperiencesUploadError = true;
-          proxy.hasSavedExperiencesUploadError = true;
-
-          const message = (payload as ApolloError).message;
-
-          try {
-            proxy.serverError = message;
-          } catch (error) {
-            proxy.serverError = message;
-          }
-        }
-
-        break;
-
-      case ActionType.removeServerErrors:
-        {
-          proxy.serverError = null;
-        }
-
-        break;
-
-      case ActionType.experienceDeleted:
-        {
-          const { id, type } = payload as DeleteActionPayload;
-
-          if (type === "unsaved") {
-            delete proxy.unsavedExperiencesMap[id];
-            proxy.hasUnsavedExperiencesUploadError = null;
-            --proxy.unsavedExperiencesLen;
-          } else {
-            delete proxy.savedExperiencesMap[id];
-            proxy.hasSavedExperiencesUploadError = null;
-            --proxy.savedExperiencesLen;
-          }
-
-          if (proxy.unsavedExperiencesLen + proxy.savedExperiencesLen === 0) {
-            proxy.shouldRedirect = true;
-          }
-        }
-
-        break;
-    }
-  });
-};
+      });
+    },
+    //    true,
+  );
 
 export function definitionToUnsavedData(
   value: ExperienceFragment_dataDefinitions | null,
@@ -202,73 +280,103 @@ function entriesErrorsToMap(errors: CreateEntriesErrorsFragment[]) {
   );
 }
 
-function updateStateWithSavedExperiencesUploadResult(
-  stateProxy: Draft<State>,
+function updatePartlySavedFromUploadResults(
+  stateProxy: Draft<StateMachine>,
   createEntries: (UploadAllUnsavedsMutation_createEntries | null)[] | null,
+  successState: ExperiencesUploadedResultState,
 ) {
-  stateProxy.hasSavedExperiencesUploadError = false;
-  let noUploadSucceeded = true;
-
   if (!createEntries) {
-    return noUploadSucceeded;
+    return;
   }
 
-  const { savedExperiencesMap } = stateProxy;
+  const localState = successState as PartialUploadSuccessState;
+  let hasSuccess = false;
+  let hasError = false;
+  const { partlySavedMap } = stateProxy;
 
-  createEntries.forEach(elm => {
-    // istanbul ignore next: make typescript happy
-    if (!elm) {
-      stateProxy.hasSavedExperiencesUploadError = true;
+  localState.partial = localState.partial || {
+    states: {},
+  };
+
+  const context = (localState as ExperiencesUploadedResultState).context;
+
+  createEntries.forEach(element => {
+    localState.value = "partial";
+
+    if (!element) {
+      hasError = true;
       return;
     }
 
-    const { errors, experienceId, entries = [] } = elm;
-    if (entries.length > 0) {
-      noUploadSucceeded = false;
-    }
+    const { errors, experienceId, entries = [] } = element;
+    hasSuccess = entries.length > 0;
 
-    const map = savedExperiencesMap[experienceId];
+    const map = partlySavedMap[experienceId];
     map.newlySavedEntries = entries as ExperienceFragment_entries_edges_node[];
 
-    map.unsavedEntries = replaceUnsavedEntriesWithSavedVersionsSaveds(
+    map.unsavedEntries = replacePartlyUnsavedEntriesWithNewlySaved(
       map.unsavedEntries,
       map.newlySavedEntries,
     );
 
     if (errors) {
-      stateProxy.hasSavedExperiencesUploadError = true;
+      hasError = true;
       map.didUploadSucceed = false;
 
       map.entriesErrors = entriesErrorsToMap(
         errors as CreateEntriesErrorsFragment[],
       );
-    } else if (map.didUploadSucceed !== false) {
+    } else {
       map.didUploadSucceed = true;
     }
   });
 
-  return noUploadSucceeded;
-}
-
-function updateStateWithUnsavedExperiencesUploadResult(
-  stateProxy: Draft<State>,
-  saveOfflineExperiences:
-    | (UploadAllUnsavedsMutation_saveOfflineExperiences | null)[]
-    | null,
-) {
-  stateProxy.hasUnsavedExperiencesUploadError = false;
-  let noUploadSucceeded = true;
-
-  if (!saveOfflineExperiences) {
-    return noUploadSucceeded;
+  if (hasSuccess) {
+    context.anySuccess = true;
   }
 
-  const { unsavedExperiencesMap } = stateProxy;
+  if (!hasSuccess) {
+    localState.partial.states.saved = {
+      value: "allError",
+    };
+  } else if (hasError) {
+    localState.partial.states.saved = {
+      value: "partialSuccess",
+    };
+  } else {
+    localState.partial.states.saved = {
+      value: "allSuccess",
+    };
+  }
+}
 
-  saveOfflineExperiences.forEach(elm => {
-    // istanbul ignore next: make typescript happy
+function updateNeverSavedFromUploadResults(
+  stateProxy: Draft<StateMachine>,
+  uploadResults:
+    | (UploadAllUnsavedsMutation_saveOfflineExperiences | null)[]
+    | null,
+  successState: ExperiencesUploadedResultState,
+) {
+  if (!uploadResults) {
+    return;
+  }
+
+  const { neverSavedMap } = stateProxy;
+  let hasSuccess = false;
+  let hasError = false;
+  const localState = successState as PartialUploadSuccessState;
+
+  localState.partial = localState.partial || {
+    states: {},
+  };
+
+  const context = (localState as ExperiencesUploadedResultState).context;
+
+  uploadResults.forEach(elm => {
+    localState.value = "partial";
+
     if (!elm) {
-      stateProxy.hasUnsavedExperiencesUploadError = true;
+      hasError = true;
       return;
     }
 
@@ -277,10 +385,10 @@ function updateStateWithUnsavedExperiencesUploadResult(
     let map = {} as ExperiencesIdsToObjectMap["k"];
 
     if (experienceErrors) {
-      map = unsavedExperiencesMap[experienceErrors.clientId as string];
+      map = neverSavedMap[experienceErrors.clientId as string];
       map.experienceError = Object.entries(experienceErrors.errors).reduce(
         (acc, [k, v]) => {
-          if (v) {
+          if (v && k !== "__typename") {
             acc += `\n${k}: ${v}`;
           }
 
@@ -288,14 +396,15 @@ function updateStateWithUnsavedExperiencesUploadResult(
         },
         "",
       );
-    } else if (experience) {
-      noUploadSucceeded = false;
+    }
 
+    if (experience) {
+      hasSuccess = true;
       const { clientId } = experience;
-      map = unsavedExperiencesMap[clientId as string];
+      map = neverSavedMap[clientId as string];
       map.newlySavedExperience = experience;
 
-      map.unsavedEntries = replaceUnsavedEntriesWithSavedVersionsUnsaveds(
+      map.unsavedEntries = replaceNeverSavedEntriesWithNewlySaved(
         map.unsavedEntries,
         experience,
       );
@@ -309,24 +418,40 @@ function updateStateWithUnsavedExperiencesUploadResult(
 
     if (experienceErrors || entriesErrors) {
       map.didUploadSucceed = false;
-      stateProxy.hasUnsavedExperiencesUploadError = true;
-    } else if (map.didUploadSucceed !== false) {
+      hasError = true;
+    } else {
       map.didUploadSucceed = true;
     }
   });
 
-  return noUploadSucceeded;
+  if (hasSuccess) {
+    context.anySuccess = true;
+  }
+
+  if (!hasSuccess) {
+    localState.partial.states.unsaved = {
+      value: "allError",
+    };
+  } else if (hasError) {
+    localState.partial.states.unsaved = {
+      value: "partialSuccess",
+    };
+  } else {
+    localState.partial.states.unsaved = {
+      value: "allSuccess",
+    };
+  }
 }
 
-function replaceUnsavedEntriesWithSavedVersionsSaveds(
+function replacePartlyUnsavedEntriesWithNewlySaved(
   unsavedEntries: EntryFragment[],
-  savedEntries: EntryFragment[],
+  newlySavedEntries: EntryFragment[],
 ) {
-  if (savedEntries.length === 0) {
+  if (newlySavedEntries.length === 0) {
     return unsavedEntries;
   }
 
-  const savedEntriesMap = savedEntries.reduce(
+  const newlySavedEntriesMap = newlySavedEntries.reduce(
     (acc, item) => {
       acc[item.clientId as string] = item;
       return acc;
@@ -335,7 +460,7 @@ function replaceUnsavedEntriesWithSavedVersionsSaveds(
   );
 
   return unsavedEntries.map(entry => {
-    const saved = savedEntriesMap[entry.clientId as string];
+    const saved = newlySavedEntriesMap[entry.clientId as string];
 
     if (saved) {
       return saved;
@@ -345,11 +470,11 @@ function replaceUnsavedEntriesWithSavedVersionsSaveds(
   });
 }
 
-function replaceUnsavedEntriesWithSavedVersionsUnsaveds(
+function replaceNeverSavedEntriesWithNewlySaved(
   unsavedEntries: EntryFragment[],
-  experience: ExperienceFragment,
+  newlySavedExperience: ExperienceFragment,
 ) {
-  const savedEntries = (experience.entries.edges || []).map(
+  const savedEntries = (newlySavedExperience.entries.edges || []).map(
     edge =>
       (edge as ExperienceFragment_entries_edges)
         .node as ExperienceFragment_entries_edges_node,
@@ -363,7 +488,7 @@ function replaceUnsavedEntriesWithSavedVersionsUnsaveds(
     {} as { [k: string]: EntryFragment },
   );
 
-  const definitionsMap = experience.dataDefinitions.reduce(
+  const newlySavedDefinitionsClientIdsMap = newlySavedExperience.dataDefinitions.reduce(
     (acc, elm) => {
       const { clientId, id } = elm as DataDefinitionFragment;
 
@@ -374,66 +499,106 @@ function replaceUnsavedEntriesWithSavedVersionsUnsaveds(
     {} as { [k: string]: string },
   );
 
-  return unsavedEntries.map(entry => {
-    const saved = savedEntriesMap[entry.clientId as string];
+  return unsavedEntries.map(unsavedEntry => {
+    const saved = savedEntriesMap[unsavedEntry.clientId as string];
 
     if (saved) {
       return saved;
     }
 
-    entry.dataObjects = mapDataObjectsDefinitionIdsToServerIds(
-      entry.dataObjects as DataObjectFragment[],
-      definitionsMap,
+    unsavedEntry.dataObjects = mapUnsavedDataObjectsDefinitionIdsToSaved(
+      unsavedEntry.dataObjects as DataObjectFragment[],
+      newlySavedDefinitionsClientIdsMap,
     );
 
-    return entry;
+    return unsavedEntry;
   });
 }
 
-function mapDataObjectsDefinitionIdsToServerIds(
-  dataObjects: DataObjectFragment[],
-  definitionClientIdMap: { [k: string]: string },
+function mapUnsavedDataObjectsDefinitionIdsToSaved(
+  unsavedDataObjects: DataObjectFragment[],
+  newlySavedDefinitionClientIdMap: { [k: string]: string },
 ) {
-  return dataObjects.map(dataObject => {
-    const definitionId = definitionClientIdMap[dataObject.definitionId];
+  return unsavedDataObjects.map(unsavedDataObject => {
+    const newlySavedDefinitionId =
+      newlySavedDefinitionClientIdMap[unsavedDataObject.definitionId];
 
-    if (definitionId) {
-      dataObject.definitionId = definitionId;
+    if (newlySavedDefinitionId) {
+      unsavedDataObject.definitionId = newlySavedDefinitionId;
     }
 
-    return dataObject;
+    return unsavedDataObject;
   });
 }
 
-export function onUploadResult(
-  prevState: State,
+export function onUploadResultsReceived(
+  prevState: StateMachine,
   payload: UploadAllUnsavedsMutation | undefined | void,
 ) {
   return immer(prevState, proxy => {
-    proxy.uploading = false;
-
     if (!payload) {
       return;
     }
 
+    const upload = proxy.states.upload as UploadedState;
+    upload.value = "uploaded";
+    const uploaded = upload.uploaded || ({} as UploadedState["uploaded"]);
+    uploaded.parallel = true;
+
+    const uploadedStates = (uploaded.states ||
+      {}) as UploadedState["uploaded"]["states"];
+
+    uploadedStates.experiences = (uploadedStates.experiences || {
+      value: "initial",
+    }) as ExperiencesUploadedResultState;
+
+    uploadedStates.experiences.context = uploadedStates.experiences.context || {
+      anySuccess: false,
+    };
+
     const { saveOfflineExperiences, createEntries } = payload;
 
-    const noSuccess1 = updateStateWithUnsavedExperiencesUploadResult(
+    updateNeverSavedFromUploadResults(
       proxy,
       saveOfflineExperiences,
+      uploadedStates.experiences,
     );
 
-    const noSuccess2 = updateStateWithSavedExperiencesUploadResult(
+    updatePartlySavedFromUploadResults(
       proxy,
       createEntries,
+      uploadedStates.experiences,
     );
 
-    proxy.allUploadSucceeded = !(
-      proxy.hasUnsavedExperiencesUploadError === true ||
-      proxy.hasSavedExperiencesUploadError === true
-    );
+    const experiences = uploadedStates.experiences;
 
-    proxy.atLeastOneUploadSucceeded = !(noSuccess1 && noSuccess2);
+    if (experiences.value === "partial") {
+      const {
+        states: { unsaved, saved },
+      } = experiences.partial;
+
+      let savedAllSuccess = false;
+      let unsavedAllSuccess = false;
+
+      if (!saved) {
+        savedAllSuccess = true;
+      } else {
+        savedAllSuccess = saved.value === "allSuccess";
+      }
+
+      if (!unsaved) {
+        unsavedAllSuccess = true;
+      } else {
+        unsavedAllSuccess = unsaved.value === "allSuccess";
+      }
+
+      if (savedAllSuccess && unsavedAllSuccess) {
+        uploadedStates.experiences.value = "allSuccess";
+      }
+    }
+
+    uploaded.states = uploadedStates;
+    upload.uploaded = uploaded;
   });
 }
 
@@ -460,7 +625,176 @@ export interface UploadResultPayloadThirdArg {
 
 interface DeleteActionPayload {
   id: string;
-  type: SaveStatusType;
+  mode: SaveStatusType;
 }
 
 export type SaveStatusType = "saved" | "unsaved";
+
+export type Props = RouteComponentProps;
+
+export interface StateMachine {
+  readonly partlySavedCount: number;
+  readonly neverSavedCount: number;
+  readonly partlySavedMap: ExperiencesIdsToObjectMap;
+  readonly neverSavedMap: ExperiencesIdsToObjectMap;
+  readonly shouldRedirect?: boolean;
+
+  readonly parallel: true;
+  readonly states: {
+    readonly upload: UploadState;
+    readonly tabs: TabsState;
+
+    readonly dataLoaded: {
+      value: "yes" | "no";
+    };
+  };
+
+  readonly context: {
+    allCount: null | number;
+  };
+}
+
+export type TabsState = {
+  context: TabStateContext;
+} & (
+  | {
+      value: "none";
+    }
+  | {
+      value: "one";
+    }
+  | TabTwo);
+
+interface TabTwo {
+  value: "two";
+
+  states: {
+    two: {
+      value: "partlySaved" | "neverSaved";
+    };
+  };
+}
+
+interface TabStateContext {
+  partlySaved?: boolean;
+  neverSaved?: boolean;
+}
+
+interface TabStateTogglePayload {
+  currentValue: TabTwo["states"]["two"]["value"];
+}
+
+type UploadState =
+  | {
+      value: "idle";
+    }
+  | {
+      value: "uploading";
+    }
+  | UploadedState;
+
+interface UploadedState {
+  value: "uploaded";
+
+  uploaded: {
+    parallel: true;
+    states: {
+      experiences?: ExperiencesUploadedState;
+      apolloErrors?: ApolloErrorsState;
+    };
+  };
+}
+
+type ApolloErrorsState = ApolloErrorsInActive | ApolloErrorsActive;
+
+interface ApolloErrorsInActive {
+  value: "inactive";
+}
+
+interface ApolloErrorsActive {
+  value: "active";
+
+  active: {
+    context: {
+      errors: string;
+    };
+  };
+}
+
+export type ExperiencesUploadedState =
+  | {
+      value: "serverError";
+    }
+  | ExperiencesUploadedResultState;
+
+export type ExperiencesUploadedResultState = {
+  context: {
+    anySuccess: boolean;
+  };
+} & (
+  | {
+      value: "initial";
+    }
+  | {
+      value: "allSuccess";
+    }
+  | PartialUploadSuccessState);
+
+export interface PartialUploadSuccessState {
+  value: "partial";
+
+  partial: {
+    parallel: true;
+
+    states: {
+      saved?: {
+        value: "allSuccess" | "allError" | "partialSuccess";
+      };
+
+      unsaved?: {
+        value: "allSuccess" | "allError" | "partialSuccess";
+      };
+    };
+  };
+}
+
+type Action =
+  | ({
+      type: ActionType.UPLOAD_STARTED;
+    } & UploadingPayload)
+  | ({
+      type: ActionType.UPLOAD_RESULTS_RECEIVED;
+    } & OnUploadResultPayload)
+  | {
+      type: ActionType.SERVER_ERROR;
+      errors: ApolloError;
+    }
+  | {
+      type: ActionType.CLEAR_SERVER_ERRORS;
+    }
+  | ({
+      type: ActionType.INIT_STATE_FROM_PROPS;
+    } & InitStateFromPropsPayload)
+  | ({
+      type: ActionType.DELETE_EXPERIENCE;
+    } & DeleteActionPayload)
+  | ({
+      type: ActionType.TOGGLE_TAB;
+    } & TabStateTogglePayload);
+
+interface UploadingPayload {
+  isUploading: boolean;
+}
+
+interface OnUploadResultPayload {
+  stateMachine: StateMachine;
+}
+
+interface ToggleTabPayload {
+  tabNumber: number | string;
+}
+
+interface InitStateFromPropsPayload {
+  getAllUnsaved: GetUnsavedSummary;
+}
+export type DispatchType = Dispatch<Action>;

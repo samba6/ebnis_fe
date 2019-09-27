@@ -133,8 +133,10 @@ export function removeQueriesAndMutationsFromCache(
     }
 
     if (
+      dataKey.startsWith("$ROOT_MUTATION") ||
+      dataKey.startsWith("$ROOT_QUERY") ||
       dataKey.startsWith("ROOT_MUTATION") ||
-      dataKey.startsWith("$ROOT_QUERY")
+      dataKey.startsWith("ROOT_QUERY")
     ) {
       for (const operationName of operations) {
         if (dataKey.includes(operationName)) {
