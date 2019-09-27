@@ -28,11 +28,6 @@ exports.onPostBuild = (args, { otherOptions = {}, workboxConfig = {} }) => {
 
   globPatterns = lodashUnique(globPatterns.map(omitPrefix));
 
-  //  const manifests = [`manifest.json`, `manifest.webmanifest`];
-  //  manifests.forEach(file => {
-  //    if (fs.existsSync(`${rootDir}/${file}`)) globPatterns.push(file);
-  //  });
-
   const workboxBuildOptions = {
     importWorkboxFrom: `local`,
     globDirectory: rootDir,
@@ -54,13 +49,8 @@ exports.onPostBuild = (args, { otherOptions = {}, workboxConfig = {} }) => {
         handler: `CacheFirst`,
       },
       {
-        // page-data.json files are not content hashed
-        urlPattern: /^https?:.*\page-data\/.*\/page-data\.json/,
-        handler: `NetworkFirst`,
-      },
-      {
         // Add runtime caching of various other page resources
-        urlPattern: /^https?:.*\.(png|jpg|jpeg|webp|svg|gif|tiff|js|woff|woff2|json|css)$/,
+        urlPattern: /^https?:.*\.(png|jpg|jpeg|webp|svg|gif|tiff|js|woff|woff2|css)$/,
         handler: `StaleWhileRevalidate`,
       },
       {
@@ -68,28 +58,29 @@ exports.onPostBuild = (args, { otherOptions = {}, workboxConfig = {} }) => {
         urlPattern: /^https?:\/\/fonts\.googleapis\.com\/css/,
         handler: "StaleWhileRevalidate",
       },
+      {
+        /**
+         * cache all .json resources except /page-data/.*?\.json
+         */
+        urlPattern: new RegExp("^(?:https?://[^/]+)?/(?!page-data).+?\\.json$"),
+        handler: `StaleWhileRevalidate`,
+      },
     ],
     skipWaiting: true,
     clientsClaim: true,
-    navigateFallback: "/index.html",
-    // navigateFallbackWhitelist: [/^\/app/]
   };
-
-  // pluginOptions.plugins is assigned automatically when the user hasn't
-  // specified custom options - Workbox throws an error with unsupported
-  // parameters, so delete it.
-  const combinedOptions = { ...workboxBuildOptions, ...workboxConfig };
 
   const idbKeyvalFile = `idb-keyval-iife.min.js`;
   const idbKeyvalSource = require.resolve(`idb-keyval/dist/${idbKeyvalFile}`);
   const idbKeyvalDest = `public/${idbKeyvalFile}`;
+
   fs.createReadStream(idbKeyvalSource).pipe(
     fs.createWriteStream(idbKeyvalDest),
   );
 
   const swDest = `public/sw.js`;
   return workboxBuild
-    .generateSW({ swDest, ...combinedOptions })
+    .generateSW({ swDest, ...workboxBuildOptions, ...workboxConfig })
     .then(({ count, size, warnings }) => {
       if (warnings) warnings.forEach(warning => console.warn(warning));
 
@@ -106,7 +97,7 @@ exports.onPostBuild = (args, { otherOptions = {}, workboxConfig = {} }) => {
     });
 };
 
-function getAllChunks(otherOptions) {
+function getAllChunks(options) {
   const rootPath = path.resolve(process.cwd(), "public");
 
   const webpackStats = JSON.parse(
@@ -163,12 +154,13 @@ function getAllChunks(otherOptions) {
   });
 
   getChunksFromDir("static");
+  getChunksFromDir("page-data");
   getChunksFromDir("offline-plugin-app-shell-fallback");
 
-  (otherOptions.directoriesToCache || []).forEach(getChunksFromDir);
+  (options.directoriesToCache || []).forEach(getChunksFromDir);
 
-  if (otherOptions.globPatternsFn) {
-    chunks = chunks.concat(otherOptions.globPatternsFn());
+  if (options.globPatternsFn) {
+    chunks.push(...options.globPatternsFn());
   }
 
   return { chunks, appFile };

@@ -77,7 +77,6 @@ if (!process.env.IS_E2E) {
           // apollo graphql.
           ignoreURLParametersMatching: [
             /v/, //
-            /app\/.+?\/page-data\.json/,
           ],
           cleanupOutdatedCaches: true,
           clientsClaim: false,
@@ -88,12 +87,6 @@ if (!process.env.IS_E2E) {
           globPatternsFn,
           directoriesToCache: ["icons"],
         },
-
-        precachePages: [
-          "/login/", //
-          "/app/",
-          "/signup/",
-        ],
       },
     },
 
