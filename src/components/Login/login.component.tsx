@@ -1,4 +1,4 @@
-import React, { useReducer, Dispatch, useRef, useEffect, useMemo } from "react";
+import React, { useReducer, Dispatch, useMemo, useLayoutEffect } from "react";
 import Card from "semantic-ui-react/dist/commonjs/views/Card";
 import Button from "semantic-ui-react/dist/commonjs/elements/Button";
 import Form from "semantic-ui-react/dist/commonjs/collections/Form";
@@ -24,7 +24,6 @@ import { isConnected } from "../../state/connections";
 import { noop } from "../../constants";
 import { LoginMutationFn } from "../../graphql/login.mutation";
 import { LoginMutation_login } from "../../graphql/apollo-types/LoginMutation";
-import { SidebarHeader } from "../SidebarHeader/sidebar-header.component";
 import { ToOtherAuthLink } from "../ToOtherAuthLink";
 import { EXPERIENCES_URL } from "../../routes";
 import { storeUser, getLoggedOutUser } from "../../state/users";
@@ -37,6 +36,7 @@ import {
 import { LOGIN_MUTATION } from "../../graphql/login.mutation";
 import { useMutation } from "@apollo/react-hooks";
 import { scrollIntoView } from "../scroll-into-view";
+import { HeaderSemantic } from "../Header/header-semantic.component";
 
 const scrollToTopId = makeScrollIntoViewId("login");
 
@@ -48,23 +48,13 @@ export function Login(props: Props) {
 
   const [state, dispatch] = useReducer(reducer, initialState);
 
-  const mainRef = useRef<HTMLDivElement>(null);
-
   const user = useUser();
 
-  const {
-    otherErrors,
-    formErrors,
-    serverFieldErrors,
-    networkError,
-    showPage,
-  } = state;
+  const { otherErrors, formErrors, serverFieldErrors, networkError } = state;
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (user) {
       (navigate as NavigateFn)(EXPERIENCES_URL);
-    } else {
-      dispatch([ActionType.SHOW_PAGE, true]);
     }
   }, [user, navigate]);
 
@@ -73,10 +63,6 @@ export function Login(props: Props) {
 
     return loggedOutUser ? loggedOutUser : { email: "" };
   }, []);
-
-  if (!showPage) {
-    return null;
-  }
 
   function renderForm({
     dirty,
@@ -191,9 +177,9 @@ export function Login(props: Props) {
 
   return (
     <div className="components-login">
-      <SidebarHeader title="Login to Ebnis" />
+      <HeaderSemantic title="Login to Ebnis" />
 
-      <div className="main" ref={mainRef} id={scrollToTopId}>
+      <div className="main" id={scrollToTopId}>
         <Formik
           initialValues={{
             email: initialFormValues.email,

@@ -22,9 +22,6 @@ import { scrollIntoView } from "../components/scroll-into-view";
 
 jest.mock("../state/connections");
 jest.mock("../refresh-to-app");
-jest.mock("../components/SidebarHeader/sidebar-header.component", () => ({
-  SidebarHeader: jest.fn(() => null),
-}));
 jest.mock("../state/users");
 jest.mock("../components/use-user");
 jest.mock("@apollo/react-hooks");

@@ -10,7 +10,7 @@ import {
   ILayoutContextHeaderValue,
   Props,
   LayoutActionType,
-  IStateMachine,
+  StateMachine,
   reducer,
   LayoutAction,
   LayoutDispatchType,
@@ -275,6 +275,7 @@ describe("components", () => {
 
     context1 = layoutContextValue as ILayoutContextHeaderValue;
     expect(context1.hasConnection).toBe(false);
+    expect(context1.sidebarVisible).toBe(false);
 
     /**
      * And we should not have queried for unsaved data
@@ -642,7 +643,7 @@ describe("reducer", () => {
       context: {
         user: null,
       },
-    } as IStateMachine;
+    } as StateMachine;
 
     const action = {
       type: LayoutActionType.EXPERIENCES_TO_PREFETCH,
@@ -664,7 +665,7 @@ describe("reducer", () => {
       context: {
         user: {},
       },
-    } as IStateMachine;
+    } as StateMachine;
 
     const action = {
       type: LayoutActionType.EXPERIENCES_TO_PREFETCH,
@@ -686,7 +687,7 @@ describe("reducer", () => {
       context: {
         user: {},
       },
-    } as IStateMachine;
+    } as StateMachine;
 
     const action = {
       type: LayoutActionType.EXPERIENCES_TO_PREFETCH,
@@ -710,7 +711,7 @@ describe("reducer", () => {
       },
 
       context: {},
-    } as IStateMachine;
+    } as StateMachine;
 
     /**
      * When connection changes
@@ -740,7 +741,7 @@ describe("reducer", () => {
       context: {
         unsavedCount: 5,
       },
-    } as IStateMachine;
+    } as StateMachine;
 
     /**
      * When we update count of unsaved data
@@ -758,6 +759,26 @@ describe("reducer", () => {
      */
 
     expect(nextState.context.unsavedCount).toBe(17);
+  });
+
+  it("toggles sidebar", () => {
+    const state = {
+      states: {
+        sidebar: {
+          value: "closed",
+        },
+      },
+    } as StateMachine;
+
+    const action = {
+      type: LayoutActionType.TOGGLE_SIDEBAR,
+    } as LayoutAction;
+
+    let nextState = reducer(state, action);
+    expect(nextState.states.sidebar.value).toEqual("opened");
+
+    nextState = reducer(nextState, action);
+    expect(nextState.states.sidebar.value).toEqual("closed");
   });
 });
 

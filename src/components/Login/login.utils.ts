@@ -29,7 +29,6 @@ export enum ActionType {
   FORM_ERRORS = "@/login/set_form_error",
   SERVER_ERRORS = "@/login/set_server_errors",
   CLEAR_ALL_ERRORS = "@/login/clear_all_errors",
-  SHOW_PAGE = "@/login/showPage",
 }
 
 export const initialState = {} as IStateMachine;
@@ -85,13 +84,6 @@ export const reducer: Reducer<IStateMachine, Action> = (state, action) =>
           }
 
           break;
-
-        case ActionType.SHOW_PAGE:
-          {
-            proxy.showPage = payload as boolean;
-          }
-
-          break;
       }
     });
   });
@@ -103,8 +95,7 @@ export type Action =
   | [ActionType.OTHER_ERRORS, string]
   | [ActionType.FORM_ERRORS, FormikErrors<FormValues>]
   | [ActionType.SERVER_ERRORS, string]
-  | PasswordInputAction
-  | [ActionType.SHOW_PAGE, boolean];
+  | PasswordInputAction;
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface Props extends RouteComponentProps<{}> {}

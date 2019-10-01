@@ -50,9 +50,6 @@ import {
   updateExperienceWithNewEntry,
 } from "../components/NewEntry/new-entry.injectables";
 
-jest.mock("../components/SidebarHeader/sidebar-header.component", () => ({
-  SidebarHeader: () => null,
-}));
 jest.mock("../state/connections");
 jest.mock("../components/scroll-into-view");
 jest.mock("../components/NewEntry/new-entry.injectables");

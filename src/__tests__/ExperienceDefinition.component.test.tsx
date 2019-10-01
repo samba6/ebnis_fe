@@ -32,9 +32,6 @@ import {
   ExperienceDefinitionUpdate,
 } from "../components/ExperienceDefinition/experience-definition.injectables";
 
-jest.mock("../components/SidebarHeader/sidebar-header.component", () => ({
-  SidebarHeader: jest.fn(() => null),
-}));
 jest.mock("../state/connections");
 jest.mock("../components/scroll-into-view");
 jest.mock(

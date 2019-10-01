@@ -1,27 +1,28 @@
-import React, { useContext, SetStateAction, PropsWithChildren } from "react";
+import React, { useContext, PropsWithChildren } from "react";
 import Menu from "semantic-ui-react/dist/commonjs/collections/Menu";
 import Icon from "semantic-ui-react/dist/commonjs/elements/Icon";
 import makeClassnames from "classnames";
 import { Link } from "../Link";
 import "./header.styles.scss";
-import { LayoutContextHeader, LocationContext } from "../Layout/layout.utils";
+import {
+  LayoutContextHeader,
+  LocationContext,
+  LayoutUnchangingContext,
+  LayoutActionType,
+} from "../Layout/layout.utils";
 import {
   UPLOAD_UNSAVED_PREVIEW_URL,
   UPLOAD_UNSAVED_URL_START,
 } from "../../constants/upload-unsaved-routes";
 
-export const Header = (props: Props) => {
-  const {
-    title,
-    sidebar,
-    toggleShowSidebar,
-    show,
-    children,
-    className = "",
-  } = props;
+export const HeaderSemantic = (props: Props) => {
+  const { title, sidebar, children, className = "" } = props;
 
+  const { layoutDispatch } = useContext(LayoutUnchangingContext);
   const { pathname } = useContext(LocationContext);
-  const { unsavedCount, hasConnection } = useContext(LayoutContextHeader);
+  const { unsavedCount, hasConnection, sidebarVisible } = useContext(
+    LayoutContextHeader,
+  );
 
   return (
     <header
@@ -41,22 +42,18 @@ export const Header = (props: Props) => {
           >
             {unsavedCount}
           </Link>
-        ) : sidebar ? (
+        ) : sidebar && !sidebarVisible ? (
           <Menu.Item
             position="left"
             className="sidebar-trigger"
-            onClick={() => toggleShowSidebar && toggleShowSidebar(!show)}
+            onClick={() => {
+              layoutDispatch({
+                type: LayoutActionType.TOGGLE_SIDEBAR,
+              });
+            }}
             id="header-sidebar-trigger"
           >
-            {show ? (
-              <Icon
-                id="header-close-sidebar-icon"
-                className="close-sidebar-icon"
-                name="close"
-              />
-            ) : (
-              <Icon id="header-show-sidebar-icon" name="content" />
-            )}
+            <Icon id="header-show-sidebar-icon" name="content" />
           </Menu.Item>
         ) : null}
       </Menu>
@@ -85,8 +82,6 @@ export interface OwnProps {
   title?: string;
   wide?: boolean;
   sidebar?: boolean;
-  show?: boolean;
-  toggleShowSidebar?: React.Dispatch<SetStateAction<boolean>>;
   className?: string;
 }
 

@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+
 import React, { ComponentType } from "react";
 import "@marko/testing-library/cleanup-after-each";
 import {
@@ -20,9 +21,6 @@ import { scrollIntoView } from "../components/scroll-into-view";
 
 jest.mock("../state/connections");
 jest.mock("../refresh-to-app");
-jest.mock("../components/SidebarHeader/sidebar-header.component", () => ({
-  SidebarHeader: jest.fn(() => null),
-}));
 jest.mock("../state/users");
 jest.mock("@apollo/react-hooks");
 jest.mock("../components/scroll-into-view");

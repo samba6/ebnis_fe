@@ -14,6 +14,7 @@ import {
 import { clearUser } from "../../state/users";
 import { useUser } from "../use-user";
 import { LocationContext } from "../Layout/layout.utils";
+import Menu from "semantic-ui-react/dist/commonjs/collections/Menu";
 
 export interface Props {
   show: boolean;
@@ -52,30 +53,33 @@ export function Sidebar(props: Props) {
           onClick={hideSidebar}
         />
 
-        <ul className="sidebar__content up">
+        <Menu as="ul" className="sidebar__content up">
           {pathname !== EXPERIENCES_URL && (
-            <li
+            <Menu.Item
+              as="li"
               className="sidebar__item"
               onClick={onGoToExperience(EXPERIENCES_URL)}
               id="side-bar-my-experiences-link"
             >
               My Experiences
-            </li>
+            </Menu.Item>
           )}
 
           {pathname !== EXPERIENCE_DEFINITION_URL && (
-            <li
+            <Menu.Item
+              as="li"
               className="sidebar__item"
               onClick={onGoToExperience(EXPERIENCE_DEFINITION_URL)}
               id="sidebar-new-experience-definition-link"
             >
               New Experience Definition
-            </li>
+            </Menu.Item>
           )}
-        </ul>
+        </Menu>
 
-        <ul className="sidebar__content down">
-          <li
+        <Menu as="ul" className="sidebar__content down">
+          <Menu.Item
+            as="li"
             className="sidebar__item sidebar__item--down-first-child"
             onClick={() => {
               // istanbul ignore next:
@@ -86,10 +90,11 @@ export function Sidebar(props: Props) {
             }}
           >
             Refresh
-          </li>
+          </Menu.Item>
 
           {user && (
-            <li
+            <Menu.Item
+              as="li"
               className="sidebar__item"
               onClick={() => {
                 clearUser();
@@ -99,9 +104,9 @@ export function Sidebar(props: Props) {
               id="sidebar-logout-link"
             >
               Log out
-            </li>
+            </Menu.Item>
           )}
-        </ul>
+        </Menu>
       </nav>
     </aside>
   );

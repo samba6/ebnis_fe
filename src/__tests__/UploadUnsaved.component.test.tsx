@@ -66,12 +66,6 @@ jest.mock("../components/Loading/loading", () => ({
   Loading: () => <div id={mockLoadingId} />,
 }));
 
-jest.mock("../components/SidebarHeader/sidebar-header.component", () => ({
-  SidebarHeader: ({ children }: any) => {
-    return <> {children} </>;
-  },
-}));
-
 jest.mock("../components/Entry/entry.component", () => ({
   Entry: jest.fn((props: any) => {
     return <div className={props.className} id={props.id} />;

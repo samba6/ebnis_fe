@@ -24,6 +24,7 @@ import { preFetchExperiences } from "./pre-fetch-experiences";
 import { useUser } from "../use-user";
 import { isConnected } from "../../state/connections";
 import { WindowLocation, NavigateFn } from "@reach/router";
+import { SidebarSemantic } from "../Sidebar/sidebar-semantic.component";
 
 export function Layout(props: Props) {
   const { children } = props;
@@ -49,13 +50,12 @@ export function Layout(props: Props) {
   );
 
   const {
-    unsavedCount,
-    renderChildren,
-    hasConnection: hasConnection,
-  } = stateMachine.context;
+    states: {
+      prefetchExperiences,
+      sidebar: { value: sidebarValue },
+    },
 
-  const {
-    states: { prefetchExperiences },
+    context: { unsavedCount, renderChildren, hasConnection: hasConnection },
   } = stateMachine;
 
   useEffect(() => {
@@ -147,11 +147,12 @@ export function Layout(props: Props) {
             {
               unsavedCount,
               hasConnection: hasConnection,
+              sidebarVisible: sidebarValue === "opened",
             } as ILayoutContextHeaderValue
           }
         >
           <LocationProvider value={{ ...location, navigate }}>
-            {children}
+            <SidebarSemantic>{children}</SidebarSemantic>
           </LocationProvider>
         </LayoutProvider>
       </LayoutExperienceProvider>

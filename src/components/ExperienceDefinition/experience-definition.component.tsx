@@ -37,7 +37,6 @@ import {
 import { makeExperienceRoute } from "../../constants/experience-route";
 import { noop, setDocumentTitle, makeSiteTitle } from "../../constants";
 import { EXPERIENCE_DEFINITION_TITLE } from "../../constants/experience-definition-title";
-import { SidebarHeader } from "../SidebarHeader/sidebar-header.component";
 import { FormCtrlError } from "../FormCtrlError/form-ctrl-error.component";
 import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragment";
 import { isConnected } from "../../state/connections";
@@ -57,6 +56,7 @@ import {
   useCreateUnsavedExperience,
   ExperienceDefinitionUpdate,
 } from "./experience-definition.injectables";
+import { HeaderSemantic } from "../Header/header-semantic.component";
 
 const mainComponentId = "components-experience-definition";
 
@@ -256,7 +256,7 @@ export function ExperienceDefinition(props: Props) {
 
   return (
     <div className="components-experience-definition">
-      <SidebarHeader title="[New] Experience Definition" sidebar={true} />
+      <HeaderSemantic title="[New] Experience Definition" sidebar={true} />
 
       <div className="main" id={mainComponentId}>
         <Formik<FormValues>

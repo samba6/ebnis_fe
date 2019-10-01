@@ -22,7 +22,6 @@ import {
   TabsState,
 } from "./upload-unsaved.utils";
 import { Loading } from "../Loading/loading";
-import { SidebarHeader } from "../SidebarHeader/sidebar-header.component";
 import { ExperienceFragment_entries_edges_node } from "../../graphql/apollo-types/ExperienceFragment";
 import "./upload-unsaved.styles.scss";
 import { CSSTransition, TransitionGroup } from "react-transition-group";
@@ -63,6 +62,7 @@ import {
   useUploadSavedExperiencesEntriesMutation,
   addUploadUnsavedResolvers,
 } from "./upload-unsaved.injectables";
+import { HeaderSemantic } from "../Header/header-semantic.component";
 
 const timeoutMs = 500;
 const REDIRECT_ROUTE = makeSiteTitle(MY_EXPERIENCES_TITLE);
@@ -190,7 +190,10 @@ export function UploadUnsaved(props: Props) {
         variables,
       });
 
-      const newState = onUploadResultsReceived(stateMachine, result && result.data);
+      const newState = onUploadResultsReceived(
+        stateMachine,
+        result && result.data,
+      );
 
       let outstandingUnsavedCount: number | null = null;
 
@@ -256,7 +259,7 @@ export function UploadUnsaved(props: Props) {
     <div className="components-upload-unsaved">
       <ModalComponent open={upload.value === "uploading"} />
 
-      <SidebarHeader sidebar={true}>
+      <HeaderSemantic sidebar={true}>
         <div className="components-upload-unsaved-header">
           <span>Unsaved Preview</span>
 
@@ -264,7 +267,7 @@ export function UploadUnsaved(props: Props) {
             <UploadAllButtonComponent onUploadAllClicked={onSubmit} />
           )}
         </div>
-      </SidebarHeader>
+      </HeaderSemantic>
 
       <div className="main">
         {tabsState.value !== "none" && (

@@ -27,7 +27,6 @@ import { Registration } from "../../graphql/apollo-types/globalTypes";
 import { refreshToHome } from "../../refresh-to-app";
 import { isConnected } from "../../state/connections";
 import { noop } from "../../constants";
-import { SidebarHeader } from "../SidebarHeader/sidebar-header.component";
 import { ToOtherAuthLink } from "../ToOtherAuthLink";
 import { storeUser } from "../../state/users";
 import { makeScrollIntoViewId, scrollIntoView } from "../scroll-into-view";
@@ -37,6 +36,7 @@ import {
   UserRegMutationVariables,
 } from "../../graphql/apollo-types/UserRegMutation";
 import { REGISTER_USER_MUTATION } from "../../graphql/user-registration.mutation";
+import {HeaderSemantic} from '../Header/header-semantic.component';
 
 const scrollToTopId = makeScrollIntoViewId("signup");
 
@@ -163,9 +163,11 @@ export function SignUp(props: Props) {
     );
   }
 
+
+
   return (
     <div className="routes-sign-up-route">
-      <SidebarHeader title="Sign up for Ebnis" />
+      <HeaderSemantic    title="Sign up for Ebnis" />
 
       <div className="main" id="components-signup-main">
         <Formik

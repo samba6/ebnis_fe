@@ -19,7 +19,6 @@ import {
   formObjToString,
 } from "./new-entry.utils";
 import { makeExperienceRoute } from "../../constants/experience-route";
-import { SidebarHeader } from "../SidebarHeader/sidebar-header.component";
 import { setDocumentTitle, makeSiteTitle } from "../../constants";
 import { isConnected } from "../../state/connections";
 import { ExperienceFragment_dataDefinitions } from "../../graphql/apollo-types/ExperienceFragment";
@@ -41,6 +40,7 @@ import {
   updateExperienceWithNewEntry,
 } from "./new-entry.injectables";
 import { EbnisAppContext } from "../../context";
+import {HeaderSemantic} from '../Header/header-semantic.component';
 
 export function NewEntry(props: Props) {
   const { navigate, experience } = props;
@@ -220,9 +220,11 @@ export function NewEntry(props: Props) {
     );
   }
 
+
+
   return (
     <div className="component-new-entry">
-      <SidebarHeader title={pageTitle} sidebar={true} />
+      <HeaderSemantic    title={pageTitle} sidebar={true} />
 
       {renderMain()}
     </div>

@@ -4,7 +4,7 @@
 $sidebar-item-border: 0.1px solid
   lighten(
     $color: $app-color,
-    $amount: 35%
+    $amount: 35%,
   );
 
 .components-sidebar {
@@ -77,6 +77,8 @@ $sidebar-item-border: 0.1px solid
     list-style: none;
     padding: 0;
     margin: 0;
+    flex-direction: column;
+    border: none !important;
 
     &.up {
       flex: 1;
@@ -85,12 +87,15 @@ $sidebar-item-border: 0.1px solid
 
   .sidebar__item {
     height: 32px;
-    line-height: 32px;
-    padding: 5px 15px;
+    line-height: 32px !important;
+    padding: 5px 15px !important;
     cursor: pointer;
     margin-top: 3px;
     box-sizing: content-box;
     border-bottom: $sidebar-item-border;
+    display: block !important;
+    width: 100%;
+    position: static;
 
     &:hover {
       background: lighten($color: $app-color, $amount: 30%);

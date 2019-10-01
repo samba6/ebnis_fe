@@ -11,9 +11,10 @@ export enum LayoutActionType {
   EXPERIENCES_TO_PREFETCH = "@layout/experiences-to-pre-fetch",
   CONNECTION_CHANGED = "@layout/connection-changed",
   DONE_FETCHING_EXPERIENCES = "@layout/experiences-already-fetched",
+  TOGGLE_SIDEBAR = "@layout/toggle-sidebar",
 }
 
-export const reducer: Reducer<IStateMachine, LayoutAction> = (state, action) =>
+export const reducer: Reducer<StateMachine, LayoutAction> = (state, action) =>
   wrapReducer(state, action, (prevState, { type, ...payload }) => {
     return immer(prevState, proxy => {
       switch (type) {
@@ -110,6 +111,17 @@ export const reducer: Reducer<IStateMachine, LayoutAction> = (state, action) =>
             proxy.context.unsavedCount = (payload as { count: number }).count;
           }
           break;
+
+        case LayoutActionType.TOGGLE_SIDEBAR:
+          {
+            const {
+              states: { sidebar },
+            } = proxy;
+
+            sidebar.value = sidebar.value === "closed" ? "opened" : "closed";
+          }
+
+          break;
       }
     });
   });
@@ -117,7 +129,7 @@ export const reducer: Reducer<IStateMachine, LayoutAction> = (state, action) =>
 export function initState(args: {
   connectionStatus: ConnectionStatus;
   user: UserFragment | null;
-}): IStateMachine {
+}): StateMachine {
   const {
     connectionStatus: { isConnected },
     user,
@@ -133,6 +145,10 @@ export function initState(args: {
     states: {
       prefetchExperiences: {
         value: "never-fetched",
+      },
+
+      sidebar: {
+        value: "closed",
       },
     },
   };
@@ -175,6 +191,9 @@ export type LayoutAction =
     } & ConnectionChangedPayload
   | {
       type: LayoutActionType.DONE_FETCHING_EXPERIENCES;
+    }
+  | {
+      type: LayoutActionType.TOGGLE_SIDEBAR;
     };
 
 interface ConnectionChangedPayload {
@@ -182,7 +201,7 @@ interface ConnectionChangedPayload {
   unsavedCount: number;
 }
 
-export interface IStateMachine {
+export interface StateMachine {
   context: {
     hasConnection: boolean;
     unsavedCount: number | null;
@@ -192,6 +211,9 @@ export interface IStateMachine {
 
   states: {
     prefetchExperiences: IPrefetchExperiencesState;
+    sidebar: {
+      value: "opened" | "closed";
+    };
   };
 }
 
@@ -218,6 +240,7 @@ export interface Props extends PropsWithChildren<{}>, RouteComponentProps {}
 export interface ILayoutContextHeaderValue {
   unsavedCount: number;
   hasConnection: boolean;
+  sidebarVisible: boolean;
 }
 
 export interface ILayoutUnchangingContextValue {

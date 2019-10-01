@@ -24,7 +24,6 @@ import {
 import { EXPERIENCE_DEFINITION_URL } from "../../routes";
 import { makeExperienceRoute } from "../../constants/experience-route";
 import { Loading } from "../Loading/loading";
-import { SidebarHeader } from "../SidebarHeader/sidebar-header.component";
 import { setDocumentTitle, makeSiteTitle } from "../../constants";
 import { MY_EXPERIENCES_TITLE } from "../../constants/my-experiences-title";
 import { Link } from "../Link";
@@ -53,6 +52,7 @@ import {
   searchDebounceTimeoutMs,
   cleanUpOnSearchExit,
 } from "./my-experiences.injectables";
+import { HeaderSemantic } from "../Header/header-semantic.component";
 
 const SearchComponent = memo(SearchComponentUnMemo, SearchComponentPropsDiffFn);
 
@@ -197,7 +197,7 @@ export const MyExperiences = (props: Props) => {
 
   return (
     <div className="components-experiences">
-      <SidebarHeader title="My Experiences" sidebar={true} />
+      <HeaderSemantic title="My Experiences" sidebar={true} />
 
       <DispatchProvider
         value={{

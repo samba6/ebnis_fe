@@ -7,10 +7,6 @@ import {
   Props,
 } from "../components/ExperienceRoute/experience-route.component";
 
-jest.mock("../components/SidebarHeader/sidebar-header.component", () => ({
-  SidebarHeader: () => null,
-}));
-
 jest.mock("../components/Experience/experience.component", () => ({
   Experience: () => null,
 
