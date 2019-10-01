@@ -3,9 +3,8 @@ import "./sidebar.styles.scss";
 import {
   EXPERIENCE_DEFINITION_URL,
   EXPERIENCES_URL,
-  LOGIN_URL,
+  LOGOUT_URL,
 } from "../../routes";
-import { clearUser } from "../../state/users";
 import { useUser } from "../use-user";
 import {
   LocationContext,
@@ -24,7 +23,11 @@ export function SidebarSemantic(props: Props) {
   const { layoutDispatch } = useContext(LayoutUnchangingContext);
   const { sidebarVisible } = useContext(LayoutContextHeader);
 
-  console.log(`\n\t\tLogging start\n\n\n\n"SidebarSemantic" label\n`, sidebarVisible, `\n\n\n\n\t\tLogging ends\n`)
+  console.log(
+    `\n\t\tLogging start\n\n\n\n"SidebarSemantic" label\n`,
+    sidebarVisible,
+    `\n\n\n\n\t\tLogging ends\n`,
+  );
 
   function onGoToLink(linkLocation: string) {
     return function goToExperience() {
@@ -89,11 +92,7 @@ export function SidebarSemantic(props: Props) {
             <Menu.Item
               as="div"
               className="sidebar__item"
-              onClick={() => {
-                clearUser();
-
-                navigate(LOGIN_URL);
-              }}
+              onClick={onGoToLink(LOGOUT_URL)}
               id="sidebar-logout-link"
             >
               Log out

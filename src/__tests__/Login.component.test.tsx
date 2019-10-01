@@ -9,16 +9,18 @@ import {
 } from "@testing-library/react";
 import { Login } from "../components/Login/login.component";
 import { Props } from "../components/Login/login.utils";
-import { renderWithRouter, fillField } from "./test_utils";
+import { fillField, createLocation } from "./test_utils";
 import { ApolloError } from "apollo-client";
 import { GraphQLError } from "graphql";
 import { refreshToHome } from "../refresh-to-app";
-import { EXPERIENCES_URL } from "../routes";
-import { getLoggedOutUser, storeUser } from "../state/users";
+import { EXPERIENCES_URL, LOGOUT_URL } from "../routes";
+import { getLoggedOutUser, storeUser, logoutUser } from "../state/users";
 import { useUser } from "../components/use-user";
 import { isConnected } from "../state/connections";
 import { useMutation } from "@apollo/react-hooks";
 import { scrollIntoView } from "../components/scroll-into-view";
+import { WindowLocation } from "@reach/router";
+import { LocationProvider } from "../components/Layout/layout-providers";
 
 jest.mock("../state/connections");
 jest.mock("../refresh-to-app");
@@ -34,8 +36,10 @@ const mockStoreUser = storeUser as jest.Mock;
 const mockUseUser = useUser as jest.Mock;
 const mockUseMutation = useMutation as jest.Mock;
 const mockScrollIntoView = scrollIntoView as jest.Mock;
+const mockLogoutUser = logoutUser as jest.Mock;
 
 beforeEach(() => {
+  mockLogoutUser.mockReset();
   mockIsConnected.mockReset();
   mockStoreUser.mockReset();
   mockGetLoggedOutUser.mockReset();
@@ -334,9 +338,9 @@ it("pre-fills form with user data", async () => {
   );
 });
 
-it("navigates to 'my experiences page' if user is logged in", async () => {
+it("navigates to 'my experiences page' if user is logged in", () => {
   /**
-   * Given user has logged out
+   * Given user is logged in
    */
 
   const { ui, mockNavigate } = makeComp();
@@ -344,11 +348,37 @@ it("navigates to 'my experiences page' if user is logged in", async () => {
   mockUseUser.mockReturnValue({});
 
   /**
-   * When we start to use the login component
+   * When we navigate to the component
    */
   render(ui);
 
+  /**
+   * Then we should be redirected to 'my experiences' route
+   */
+
   expect(mockNavigate).toHaveBeenCalledWith(EXPERIENCES_URL);
+});
+
+it("logouts user", () => {
+  /**
+   * Given user wishes to logout
+   */
+  const pathname = LOGOUT_URL;
+
+  const { ui } = makeComp({
+    locationProps: { pathname },
+  });
+
+  /**
+   * When the component is rendered
+   */
+  render(ui);
+
+  /**
+   * Then user should be logged out
+   */
+
+  expect(mockLogoutUser).toHaveBeenCalledWith();
 });
 
 ////////////////////////// HELPER FUNCTIONS ///////////////////////////
@@ -364,16 +394,25 @@ const LoginP = Login as ComponentType<Partial<Props>>;
 function makeComp({
   isConnected = true,
   props = {},
-}: { isConnected?: boolean; props?: Partial<Props> } = {}) {
+  locationProps = {},
+}: {
+  isConnected?: boolean;
+  props?: Partial<Props>;
+  locationProps?: Partial<WindowLocation>;
+} = {}) {
   mockIsConnected.mockReturnValue(isConnected);
 
   const mockLogin = jest.fn();
   mockUseMutation.mockReturnValue([mockLogin]);
-  const { Ui, ...rest } = renderWithRouter(LoginP);
+  const location = createLocation(locationProps as WindowLocation);
 
   return {
-    ui: <Ui {...props} />,
-    ...rest,
+    ui: (
+      <LocationProvider value={location as any}>
+        <LoginP {...props} />
+      </LocationProvider>
+    ),
+    ...location,
     mockLogin,
   };
 }

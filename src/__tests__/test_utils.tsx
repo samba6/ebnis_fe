@@ -35,6 +35,18 @@ export function renderWithRouter<TProps extends RouteComponentProps>(
   };
 }
 
+export function createLocation(
+  locationProps: WindowLocation = {} as WindowLocation,
+) {
+  const navigate = jest.fn();
+  return {
+    mockNavigate: navigate,
+    pathname: "/",
+    navigate,
+    ...locationProps,
+  };
+}
+
 export function fillField(element: Element, value: string) {
   fireEvent.change(element, {
     target: { value },
@@ -102,4 +114,3 @@ export interface ToInputVariables<T> {
 
   update: jest.Mock;
 }
-

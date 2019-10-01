@@ -13,7 +13,7 @@ export default function LoginPage(props: RouteComponentProps) {
         <title>{makeSiteTitle("Log in")}</title>
       </Helmet>
 
-      <Login {...props} />
+      <Login />
     </Layout>
   );
 }

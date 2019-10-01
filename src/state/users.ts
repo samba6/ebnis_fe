@@ -36,6 +36,11 @@ export function storeLoggedOutUser() {
   }
 }
 
+export function logoutUser() {
+  storeLoggedOutUser();
+  clearUser();
+}
+
 export function getLoggedOutUser() {
   // istanbul ignore next: branch required only for ssr
   if (typeof window === "undefined") {

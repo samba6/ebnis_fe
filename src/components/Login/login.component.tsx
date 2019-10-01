@@ -1,4 +1,10 @@
-import React, { useReducer, Dispatch, useMemo, useLayoutEffect } from "react";
+import React, {
+  useReducer,
+  Dispatch,
+  useMemo,
+  useLayoutEffect,
+  useContext,
+} from "react";
 import Card from "semantic-ui-react/dist/commonjs/views/Card";
 import Button from "semantic-ui-react/dist/commonjs/elements/Button";
 import Form from "semantic-ui-react/dist/commonjs/collections/Form";
@@ -6,10 +12,8 @@ import Icon from "semantic-ui-react/dist/commonjs/elements/Icon";
 import Message from "semantic-ui-react/dist/commonjs/collections/Message";
 import Input from "semantic-ui-react/dist/commonjs/elements/Input";
 import { Formik, FastField, FieldProps, FormikProps, Field } from "formik";
-import { WindowLocation, NavigateFn } from "@reach/router";
 import "./login.styles.scss";
 import {
-  Props,
   ValidationSchema,
   reducer,
   ActionType,
@@ -25,8 +29,8 @@ import { noop } from "../../constants";
 import { LoginMutationFn } from "../../graphql/login.mutation";
 import { LoginMutation_login } from "../../graphql/apollo-types/LoginMutation";
 import { ToOtherAuthLink } from "../ToOtherAuthLink";
-import { EXPERIENCES_URL } from "../../routes";
-import { storeUser, getLoggedOutUser } from "../../state/users";
+import { EXPERIENCES_URL, LOGOUT_URL } from "../../routes";
+import { storeUser, getLoggedOutUser, logoutUser } from "../../state/users";
 import { useUser } from "../use-user";
 import { makeScrollIntoViewId } from "../scroll-into-view";
 import {
@@ -37,11 +41,12 @@ import { LOGIN_MUTATION } from "../../graphql/login.mutation";
 import { useMutation } from "@apollo/react-hooks";
 import { scrollIntoView } from "../scroll-into-view";
 import { HeaderSemantic } from "../Header/header-semantic.component";
+import { LocationContext } from "../Layout/layout.utils";
 
 const scrollToTopId = makeScrollIntoViewId("login");
 
-export function Login(props: Props) {
-  const { location, navigate } = props;
+export function Login() {
+  const { navigate, pathname } = useContext(LocationContext);
   const [login] = useMutation<LoginMutation, LoginMutationVariables>(
     LOGIN_MUTATION,
   );
@@ -53,10 +58,15 @@ export function Login(props: Props) {
   const { otherErrors, formErrors, serverFieldErrors, networkError } = state;
 
   useLayoutEffect(() => {
-    if (user) {
-      (navigate as NavigateFn)(EXPERIENCES_URL);
+    if (pathname === LOGOUT_URL) {
+      logoutUser();
+      return;
     }
-  }, [user, navigate]);
+
+    if (user) {
+      navigate(EXPERIENCES_URL);
+    }
+  }, [pathname, user, navigate]);
 
   const initialFormValues = useMemo(() => {
     const loggedOutUser = getLoggedOutUser();
@@ -165,7 +175,7 @@ export function Login(props: Props) {
 
         <Card.Content extra={true}>
           <ToOtherAuthLink
-            pathname={(location as WindowLocation).pathname}
+            pathname={pathname}
             className="to-sign-up-button"
             name="to-sign-up"
             isSubmitting={isSubmitting}
