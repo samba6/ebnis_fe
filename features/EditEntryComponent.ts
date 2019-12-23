@@ -5,10 +5,10 @@
 const editEntryComponent = {
   id: "editEntryComponent",
   context: {
-    entry: Entry,
+    entry: {},
     definitions: [],
-    dispatch: DispatchType,
-    editFn: EditFn,
+    dispatch: {},
+    editFn: () => void
   },
   enter: [
     'show UI title as "Edit Entry"', //
@@ -31,7 +31,7 @@ const editEntryComponent = {
 
       states: {
         ...definitionTitle,
-        ...dataObjects,
+        ...dataObject,
       },
     },
 
@@ -64,37 +64,36 @@ const editEntryComponent = {
 };
 
 const dataObject = {
-    initial: "unchanged",
+  initial: "unchanged",
+  states: {
+    unchanged: {
+      context: {
+        anyEditSuccessful: true,
+      },
+
+      enter: [
+        "if nothing changed, disable submit button", //
+        "display default data object",
+      ],
+
+      on: {
+        DATA_CHANGED: "changed",
+      },
+    },
+
+    changed: {
+      context: {
+        formValue: {},
+      },
+      enter: [
+        "enable submit button", //
+      ],
+      on: {
+        SUBMIT: "submitting",
+      },
+    },
+
     states: {
-      unchanged: {
-        context: {
-          anyEditSuccessful?: true
-        },
-
-        enter: [
-          "if nothing changed, disable submit button", //
-          "display default data object",
-        ],
-
-        on: {
-          DATA_CHANGED: "changed",
-        },
-      },
-
-      changed: {
-        context: {
-          formValue: {}
-        },
-        enter: [
-          "enable submit button", //
-        ],
-        on: {
-          SUBMIT: "submitting",
-        },
-      },
-
-      states: {
-
       submitting: {
         enter: [
           "hand edited data to parent", //
@@ -115,23 +114,23 @@ const dataObject = {
             ],
           },
 
-          DATA_SERVER_ERRORS: 'serverErrors'
+          DATA_SERVER_ERRORS: "serverErrors",
         },
       },
 
       formErrors: {
         context: {
-          errors: {}
-        }
+          errors: {},
+        },
       },
-        serverErrors: {
-          context: {
-            errors: {}
-          }
-        }
-    }
 
+      serverErrors: {
+        context: {
+          errors: {},
+        },
+      },
     },
+  },
 };
 
 const errors = {

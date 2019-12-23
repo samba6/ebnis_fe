@@ -1,4 +1,11 @@
-import React, { useContext, PropsWithChildren } from "react";
+import React, {
+  useContext,
+  PropsWithChildren,
+  useState,
+  createContext,
+  Dispatch,
+  SetStateAction,
+} from "react";
 import "./sidebar.styles.scss";
 import {
   EXPERIENCE_DEFINITION_URL,
@@ -6,36 +13,26 @@ import {
   LOGOUT_URL,
 } from "../../routes";
 import { useUser } from "../use-user";
-import {
-  LocationContext,
-  LayoutContextHeader,
-  LayoutUnchangingContext,
-  LayoutActionType,
-} from "../Layout/layout.utils";
+import { LocationContext } from "../Layout/layout.utils";
 import Menu from "semantic-ui-react/dist/commonjs/collections/Menu";
 import Sidebar from "semantic-ui-react/dist/commonjs/modules/Sidebar";
 import Segment from "semantic-ui-react/dist/commonjs/elements/Segment";
+import { onClickLogoutLinkCallback } from "./sidebar.injectables";
+
+export const sidebarSemanticContext = createContext<SidebarSemanticContext>(
+  {} as SidebarSemanticContext,
+);
 
 export function SidebarSemantic(props: Props) {
   const { children } = props;
   const user = useUser();
   const { navigate } = useContext(LocationContext);
-  const { layoutDispatch } = useContext(LayoutUnchangingContext);
-  const { sidebarVisible } = useContext(LayoutContextHeader);
-
-  console.log(
-    `\n\t\tLogging start\n\n\n\n"SidebarSemantic" label\n`,
-    sidebarVisible,
-    `\n\n\n\n\t\tLogging ends\n`,
-  );
+  const [sidebarVisible, setSidebarVisibility] = useState(false);
 
   function onGoToLink(linkLocation: string) {
     return function goToExperience() {
-      layoutDispatch({
-        type: LayoutActionType.TOGGLE_SIDEBAR,
-      });
-
       navigate(linkLocation);
+      setSidebarVisibility(false);
     };
   }
 
@@ -48,9 +45,7 @@ export function SidebarSemantic(props: Props) {
         vertical={true}
         visible={sidebarVisible}
         onHide={() => {
-          layoutDispatch({
-            type: LayoutActionType.TOGGLE_SIDEBAR,
-          });
+          setSidebarVisibility(false);
         }}
       >
         <Menu.Menu>
@@ -58,7 +53,7 @@ export function SidebarSemantic(props: Props) {
             as="div"
             className="sidebar__item"
             onClick={onGoToLink(EXPERIENCES_URL)}
-            id="side-bar-my-experiences-link"
+            id="sidebar-my-experiences-link"
           >
             My Experiences
           </Menu.Item>
@@ -77,13 +72,8 @@ export function SidebarSemantic(props: Props) {
           <Menu.Item
             as="div"
             className="sidebar__item sidebar__item--down-first-child"
-            onClick={() => {
-              // istanbul ignore next:
-              if (typeof window !== "undefined") {
-                // istanbul ignore next:
-                window.location.reload();
-              }
-            }}
+            id="sidebar-refresh-link"
+            onClick={onClickLogoutLinkCallback}
           >
             Refresh
           </Menu.Item>
@@ -107,3 +97,8 @@ export function SidebarSemantic(props: Props) {
 }
 
 export type Props = PropsWithChildren<{}>;
+
+interface SidebarSemanticContext {
+  setSidebarVisibility: Dispatch<SetStateAction<boolean>>;
+  sidebarVisible: boolean;
+}
