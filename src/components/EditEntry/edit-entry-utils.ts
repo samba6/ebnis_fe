@@ -12,10 +12,6 @@ import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragmen
 import { DataObjectFragment } from "../../graphql/apollo-types/DataObjectFragment";
 import { FormObjVal } from "../Experience/experience.utils";
 import { DataTypes } from "../../graphql/apollo-types/globalTypes";
-import {
-  UpdateDataObjectsOnlineMutationProps,
-  UpdateDefinitionAndDataOnlineMutationProps,
-} from "../../graphql/update-definition-and-data.mutation";
 import { UpdateDefinitionAndData } from "../../graphql/apollo-types/UpdateDefinitionAndData";
 import {
   UpdateDataObjects_updateDataObjects,
@@ -28,6 +24,12 @@ import { ApolloError } from "apollo-client";
 import { formObjToString, ISO_DATE_FORMAT } from "../NewEntry/new-entry.utils";
 import parseISO from "date-fns/parseISO";
 import parse from "date-fns/parse";
+import {
+  UpdateDataObjectsOnlineMutationProps,
+  UpdateDefinitionsOnlineProps,
+  UpdateDefinitionsAndDataOnlineProps,
+  EditEntryUpdateProps,
+} from "./edit-entry.injectables";
 
 export enum ActionTypes {
   EDIT_BTN_CLICKED = "@component/edit-entry/edit-btn-clicked",
@@ -727,10 +729,10 @@ function putDataServerErrors(
 ////////////////////////// TYPES ////////////////////////////
 
 interface ContextValue
-  extends UpdateDefinitionAndDataOnlineMutationProps,
-    UpdateDataObjectsOnlineMutationProps {
+  extends UpdateDefinitionsAndDataOnlineProps,
+    UpdateDataObjectsOnlineMutationProps,
+    EditEntryUpdateProps {
   dispatch: DispatchType;
-  editEntryUpdate: () => void;
 }
 
 export interface IStateMachine {
@@ -911,12 +913,17 @@ interface DefinitionFormErrorsPayload {
   ids: string[];
 }
 
-export interface Props {
+export type Props = UpdateDefinitionsOnlineProps &
+  UpdateDataObjectsOnlineMutationProps &
+  UpdateDefinitionsAndDataOnlineProps &
+  EditEntryUpdateProps &
+  OwnProps;
+
+export interface OwnProps {
   entry: EntryFragment;
   experience: ExperienceFragment;
   dispatch: DispatchType;
 }
-
 
 export type DefinitionFormValue = Pick<
   DataDefinitionFragment,

@@ -13,6 +13,7 @@ import {
   DataStates,
   SubmissionResponseState,
   PrimaryState,
+  OwnProps,
 } from "./edit-entry-utils";
 import Form from "semantic-ui-react/dist/commonjs/collections/Form";
 import Message from "semantic-ui-react/dist/commonjs/collections/Message";
@@ -21,7 +22,6 @@ import Input from "semantic-ui-react/dist/commonjs/elements/Input";
 import Modal from "semantic-ui-react/dist/commonjs/modules/Modal";
 import makeClassNames from "classnames";
 import { FormCtrlError } from "../FormCtrlError/form-ctrl-error.component";
-import { UpdateDefinitionsMutationFn } from "../../graphql/update-definition-and-data.mutation";
 import {
   UpdateDefinitionInput,
   UpdateDataObjectInput,
@@ -32,28 +32,31 @@ import { componentFromDataType } from "../NewEntry/component-from-data-type";
 import { FormObjVal } from "../Experience/experience.utils";
 import { InputOnChangeData } from "semantic-ui-react";
 import { DataTypes } from "../../graphql/apollo-types/globalTypes";
-import {
-  UpdateDataObjectsOnlineMutationProps,
-  UpdateDefinitionsMutationProps,
-  UpdateDefinitionAndDataOnlineMutationProps,
-} from "../../graphql/update-definition-and-data.mutation";
 import { formObjToString } from "../NewEntry/new-entry.utils";
 import { UpdateDataObjectsResponseFragment_fieldErrors } from "../../graphql/apollo-types/UpdateDataObjectsResponseFragment";
 import { ErrorBoundary } from "../ErrorBoundary/error-boundary.component";
 import { ApolloError } from "apollo-client";
 import {
   editEntryUpdate,
-  useUpdateDataObjectsOnline,
+  useUpdateDataObjectsOnlineMutation,
   useUpdateDefinitionsOnline,
   useUpdateDefinitionAndDataOnline,
+  EditEntryUpdateProps,
+  UpdateDefinitionsAndDataOnlineProps,
+  UpdateDataObjectsOnlineMutationProps,
+  UpdateDefinitionsOnlineProps,
+  UpdateDefinitionsOnlineMutationFn,
 } from "./edit-entry.injectables";
 
-export function EditEntry(props: Props) {
-  const { dispatch: parentDispatch, experience } = props;
-
-  const [updateDefinitionsOnline] = useUpdateDefinitionsOnline();
-  const [updateDataObjectsOnline] = useUpdateDataObjectsOnline();
-  const [updateDefinitionAndDataOnline] = useUpdateDefinitionAndDataOnline();
+export function EditEntryComponent(props: Props) {
+  const {
+    dispatch: parentDispatch,
+    experience,
+    updateDataObjectsOnline,
+    updateDefinitionsOnline,
+    updateDefinitionsAndDataOnline,
+    editEntryUpdateProp,
+  } = props;
 
   const [state, dispatch] = useReducer(reducer, props, initStateFromProps);
   const {
@@ -71,10 +74,10 @@ export function EditEntry(props: Props) {
   return (
     <EditEnryContext.Provider
       value={{
-        editEntryUpdate,
+        editEntryUpdateProp,
         dispatch,
         updateDataObjectsOnline,
-        updateDefinitionAndDataOnline,
+        updateDefinitionsAndDataOnline,
       }}
     >
       {commonState.value === "submitting" && <SubmittingOverlay />}
@@ -130,9 +133,9 @@ export function EditEntry(props: Props) {
                           dispatch,
                           globalState: state,
                           updateDataObjectsOnline,
-                          updateDefinitionAndDataOnline,
+                          updateDefinitionsAndDataOnline,
                           updateDefinitionsOnline,
-                          editEntryUpdate,
+                          editEntryUpdateProp,
                         })}
                       />
                     )}
@@ -159,9 +162,9 @@ export function EditEntry(props: Props) {
                     dispatch,
                     globalState: state,
                     updateDataObjectsOnline,
-                    updateDefinitionAndDataOnline,
+                    updateDefinitionsAndDataOnline,
                     updateDefinitionsOnline,
-                    editEntryUpdate,
+                    editEntryUpdateProp,
                   })}
                 >
                   Submit
@@ -516,8 +519,8 @@ function submit(args: SubmitArgs) {
     const {
       dispatch,
       globalState,
-      updateDefinitionAndDataOnline,
-      editEntryUpdate,
+      updateDefinitionsAndDataOnline,
+      editEntryUpdateProp,
       updateDataObjectsOnline,
       updateDefinitionsOnline,
     } = args;
@@ -562,7 +565,7 @@ function submit(args: SubmitArgs) {
               definitions: definitionsInput,
             },
           },
-          update: editEntryUpdate,
+          update: editEntryUpdateProp,
         });
 
         const data = result && result.data;
@@ -580,7 +583,7 @@ function submit(args: SubmitArgs) {
             input: dataInput,
           },
 
-          update: editEntryUpdate,
+          update: editEntryUpdateProp,
         });
 
         const successResult = result1 && result1.data;
@@ -593,7 +596,7 @@ function submit(args: SubmitArgs) {
           });
         }
       } else {
-        const result = await updateDefinitionAndDataOnline({
+        const result = await updateDefinitionsAndDataOnline({
           variables: {
             definitionsInput: {
               experienceId,
@@ -603,7 +606,7 @@ function submit(args: SubmitArgs) {
             dataInput,
           },
 
-          update: editEntryUpdate,
+          update: editEntryUpdateProp,
         });
 
         const successResult = result && result.data;
@@ -731,7 +734,7 @@ function getNodesFromObject(obj: { [k: string]: string }) {
 
 interface SubmitDefinitionsArgs {
   dispatch: DispatchType;
-  updateDefinitionsOnline: UpdateDefinitionsMutationFn;
+  updateDefinitionsOnline: UpdateDefinitionsOnlineMutationFn;
   allDefinitionsStates: DefinitionsStates;
   editEntryUpdate: () => void;
 }
@@ -752,10 +755,27 @@ interface DataComponentProps {
 type E = React.ChangeEvent<HTMLInputElement>;
 
 interface SubmitArgs
-  extends UpdateDefinitionAndDataOnlineMutationProps,
+  extends UpdateDefinitionsAndDataOnlineProps,
     UpdateDataObjectsOnlineMutationProps,
-    UpdateDefinitionsMutationProps {
+    UpdateDefinitionsOnlineProps,
+    EditEntryUpdateProps {
   dispatch: DispatchType;
   globalState: IStateMachine;
-  editEntryUpdate: () => void;
+}
+
+// istanbul ignore next:
+export function EditEntry(props: OwnProps) {
+  const [updateDataObjectsOnline] = useUpdateDataObjectsOnlineMutation();
+  const [updateDefinitionsOnline] = useUpdateDefinitionsOnline();
+  const [updateDefinitionsAndDataOnline] = useUpdateDefinitionAndDataOnline();
+
+  return (
+    <EditEntryComponent
+      updateDataObjectsOnline={updateDataObjectsOnline}
+      updateDefinitionsOnline={updateDefinitionsOnline}
+      updateDefinitionsAndDataOnline={updateDefinitionsAndDataOnline}
+      editEntryUpdateProp={editEntryUpdate}
+      {...props}
+    />
+  );
 }
