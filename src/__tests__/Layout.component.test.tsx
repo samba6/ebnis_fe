@@ -761,8 +761,7 @@ describe("reducer", () => {
     expect(nextState.context.unsavedCount).toBe(17);
   });
 
-  it("toggles sidebar", () => {
-    const state = {
+  it("toggles sidebar", () => { const state = {
       states: {
         sidebar: {
           value: "closed",

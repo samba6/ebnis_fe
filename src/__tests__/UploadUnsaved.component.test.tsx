@@ -66,6 +66,12 @@ jest.mock("../components/Loading/loading", () => ({
   Loading: () => <div id={mockLoadingId} />,
 }));
 
+jest.mock("../components/SidebarHeader/sidebar-header.component", () => ({
+  SidebarHeader: ({ children }: any) => {
+    return <> {children} </>;
+  },
+}));
+
 jest.mock("../components/Entry/entry.component", () => ({
   Entry: jest.fn((props: any) => {
     return <div className={props.className} id={props.id} />;
@@ -178,7 +184,7 @@ describe("components", () => {
       /**
        * Then we should see loading indicator
        */
-      expect(document.getElementById("a-lo")).not.toBeNull();
+      expect(document.getElementById(mockLoadingId)).not.toBeNull();
     });
   });
 
@@ -194,7 +200,7 @@ describe("components", () => {
     render(ui);
 
     expect(mockNavigate).toHaveBeenCalled();
-    expect(document.getElementById("a-lo")).toBeNull();
+    expect(document.getElementById(mockLoadingId)).toBeNull();
   });
 
   it("shows only partly saved with no saved entries and uploads all unsaved entries successfully", async () => {
@@ -1526,3 +1532,4 @@ interface Args {
   isConnected?: boolean;
   getAllUnsaved?: GetUnsavedSummary;
 }
+
