@@ -3,7 +3,7 @@
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL fragment: UploadUnsavedExperiencesExperienceErrorFragment
+// GraphQL fragment: UploadOfflineExperienceErrorFragment
 // ====================================================
 
 export interface UploadUnsavedExperiencesExperienceErrorFragment_errors_dataDefinitionsErrors_errors {
@@ -26,7 +26,7 @@ export interface UploadUnsavedExperiencesExperienceErrorFragment_errors {
   dataDefinitionsErrors: (UploadUnsavedExperiencesExperienceErrorFragment_errors_dataDefinitionsErrors | null)[] | null;
 }
 
-export interface UploadUnsavedExperiencesExperienceErrorFragment {
+export interface UploadOfflineExperienceErrorFragment {
   __typename: "CreateOfflineExperienceErrors";
   /**
    * The client ID of the failing experience. As user may not have provided a

@@ -5,15 +5,15 @@ import {
   CREATE_ENTRIES_ERROR_FRAGMENT,
 } from "./create-entries-response.fragment";
 import {
-  UploadAllUnsavedsMutation,
-  UploadAllUnsavedsMutationVariables,
-} from "./apollo-types/UploadAllUnsavedsMutation";
+  UploadOfflineItemsMutation,
+  UploadOfflineItemsMutationVariables,
+} from "./apollo-types/UploadOfflineItemsMutation";
 import { EXPERIENCE_NO_ENTRY_FRAGMENT } from "./experience.fragment";
 import { CREATE_EXPERIENCE_ERRORS } from "./create-experience-errors.fragment";
 import { MutationFunction, MutationFetchResult } from "@apollo/react-common";
 
 const UPLOAD_OFFLINE_EXPERIENCES_EXPERIENCE_ERROR_FRAGMENT = gql`
-  fragment UploadUnsavedExperiencesExperienceErrorFragment on CreateOfflineExperienceErrors {
+  fragment UploadOfflineExperienceErrorFragment on CreateOfflineExperienceErrors {
     clientId
     index
     errors {
@@ -25,7 +25,7 @@ const UPLOAD_OFFLINE_EXPERIENCES_EXPERIENCE_ERROR_FRAGMENT = gql`
 `;
 
 const UPLOAD_OFFLINE_EXPERIENCES_FRAGMENT = gql`
-  fragment UploadUnsavedExperiencesFragment on OfflineExperience {
+  fragment UploadOfflineExperiencesFragment on OfflineExperience {
     experience {
       ...ExperienceNoEntryFragment
 
@@ -35,7 +35,7 @@ const UPLOAD_OFFLINE_EXPERIENCES_FRAGMENT = gql`
     }
 
     experienceErrors {
-      ...UploadUnsavedExperiencesExperienceErrorFragment
+      ...UploadOfflineExperienceErrorFragment
     }
 
     entriesErrors {
@@ -50,9 +50,9 @@ const UPLOAD_OFFLINE_EXPERIENCES_FRAGMENT = gql`
 `;
 
 export const UPLOAD_OFFLINE_EXPERIENCES_MUTATION = gql`
-  mutation UploadUnsavedExperiencesMutation($input: [CreateExperienceInput!]!) {
+  mutation UploadOfflineExperiencesMutation($input: [CreateExperienceInput!]!) {
     saveOfflineExperiences(input: $input) {
-      ...UploadUnsavedExperiencesFragment
+      ...UploadOfflineExperiencesFragment
     }
   }
 
@@ -60,15 +60,15 @@ export const UPLOAD_OFFLINE_EXPERIENCES_MUTATION = gql`
 `;
 
 export const UPLOAD_OFFLINE_ITEMS_MUTATION = gql`
-  mutation UploadAllUnsavedsMutation(
-    $unsavedExperiencesInput: [CreateExperienceInput!]!
-    $unsavedEntriesInput: [CreateEntriesInput!]!
+  mutation UploadOfflineItemsMutation(
+    $offlineExperiencesInput: [CreateExperienceInput!]!
+    $offlineEntriesInput: [CreateEntriesInput!]!
   ) {
-    saveOfflineExperiences(input: $unsavedExperiencesInput) {
-      ...UploadUnsavedExperiencesFragment
+    saveOfflineExperiences(input: $offlineExperiencesInput) {
+      ...UploadOfflineExperiencesFragment
     }
 
-    createEntries(input: $unsavedEntriesInput) {
+    createEntries(input: $offlineEntriesInput) {
       ...CreateEntriesResponseFragment
     }
   }
@@ -78,10 +78,10 @@ export const UPLOAD_OFFLINE_ITEMS_MUTATION = gql`
 `;
 
 export type UploadOfflineItemsMutationFn = MutationFunction<
-  UploadAllUnsavedsMutation,
-  UploadAllUnsavedsMutationVariables
+  UploadOfflineItemsMutation,
+  UploadOfflineItemsMutationVariables
 >;
 
-export type UploadAllUnsavedsMutationFnResult = MutationFetchResult<
-  UploadAllUnsavedsMutation
+export type UploadOfflineItemsMutationFnResult = MutationFetchResult<
+  UploadOfflineItemsMutation
 >;

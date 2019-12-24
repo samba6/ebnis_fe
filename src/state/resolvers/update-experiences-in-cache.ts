@@ -1,7 +1,7 @@
 import { DataProxy } from "apollo-cache";
 import {
   SavedAndUnsavedExperiencesQueryReturned,
-  SAVED_AND_UNSAVED_EXPERIENCES_QUERY,
+  OFFLINE_EXPERIENCES_QUERY,
   SavedAndUnsavedExperiences,
   SAVED_AND_UNSAVED_EXPERIENCE_TYPENAME,
 } from "../offline-resolvers";
@@ -15,7 +15,7 @@ export function writeSavedAndUnsavedExperiencesToCache(
   data: SavedAndUnsavedExperiences[],
 ) {
   dataProxy.writeQuery<SavedAndUnsavedExperiencesQueryReturned>({
-    query: SAVED_AND_UNSAVED_EXPERIENCES_QUERY,
+    query: OFFLINE_EXPERIENCES_QUERY,
 
     data: {
       savedAndUnsavedExperiences: data,

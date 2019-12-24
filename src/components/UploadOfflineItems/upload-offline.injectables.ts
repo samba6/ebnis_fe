@@ -3,9 +3,9 @@ import {
   UPLOAD_OFFLINE_ITEMS_MUTATION,
 } from "../../graphql/upload-offline-items.mutation";
 import {
-  UploadUnsavedExperiencesMutation,
+  UploadOfflineExperiencesMutation,
   UploadUnsavedExperiencesMutationVariables,
-} from "../../graphql/apollo-types/UploadUnsavedExperiencesMutation";
+} from "../../graphql/apollo-types/UploadOfflineExperiencesMutation";
 import { useMutation, useQuery } from "@apollo/react-hooks";
 import ApolloClient from "apollo-client";
 import {
@@ -14,9 +14,9 @@ import {
   GetAllUnSavedQueryReturned,
 } from "../../state/offline-resolvers";
 import {
-  UploadAllUnsavedsMutation,
-  UploadAllUnsavedsMutationVariables,
-} from "../../graphql/apollo-types/UploadAllUnsavedsMutation";
+  UploadOfflineItemsMutation,
+  UploadOfflineItemsMutationVariables,
+} from "../../graphql/apollo-types/UploadOfflineItemsMutation";
 import { CREATE_ENTRIES_MUTATION } from "../../graphql/create-entries.mutation";
 import {
   CreateEntriesMutation,
@@ -36,15 +36,15 @@ export function addUploadOfflineItemsResolvers(client: ApolloClient<{}>) {
 
 export function useUploadOfflineExperiencesMutation() {
   return useMutation<
-    UploadUnsavedExperiencesMutation,
+    UploadOfflineExperiencesMutation,
     UploadUnsavedExperiencesMutationVariables
   >(UPLOAD_OFFLINE_EXPERIENCES_MUTATION);
 }
 
 export function useUploadOfflineItemsMutation() {
   return useMutation<
-    UploadAllUnsavedsMutation,
-    UploadAllUnsavedsMutationVariables
+    UploadOfflineItemsMutation,
+    UploadOfflineItemsMutationVariables
   >(UPLOAD_OFFLINE_ITEMS_MUTATION);
 }
 

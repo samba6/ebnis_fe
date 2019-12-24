@@ -12,10 +12,10 @@ import {
   ExperienceFragment_entries_edges,
 } from "../../graphql/apollo-types/ExperienceFragment";
 import {
-  UploadAllUnsavedsMutation,
+  UploadOfflineItemsMutation,
   UploadAllUnsavedsMutation_saveOfflineExperiences,
   UploadAllUnsavedsMutation_createEntries,
-} from "../../graphql/apollo-types/UploadAllUnsavedsMutation";
+} from "../../graphql/apollo-types/UploadOfflineItemsMutation";
 import ApolloClient, { ApolloError } from "apollo-client";
 import { Dispatch } from "react";
 import {
@@ -533,7 +533,7 @@ function mapUnsavedDataObjectsDefinitionIdsToSaved(
 
 export function onUploadResultsReceived(
   prevState: StateMachine,
-  payload: UploadAllUnsavedsMutation | undefined | void,
+  payload: UploadOfflineItemsMutation | undefined | void,
 ) {
   return immer(prevState, proxy => {
     if (!payload) {
@@ -620,7 +620,7 @@ export interface UploadResultPayloadThirdArg {
   cache: InMemoryCache;
   client: ApolloClient<{}>;
   layoutDispatch: LayoutDispatchType;
-  result: UploadAllUnsavedsMutation | undefined | void;
+  result: UploadOfflineItemsMutation | undefined | void;
 }
 
 interface DeleteActionPayload {

@@ -5,7 +5,7 @@
 import { CreateExperienceInput, CreateEntriesInput, DataTypes } from "./globalTypes";
 
 // ====================================================
-// GraphQL mutation operation: UploadAllUnsavedsMutation
+// GraphQL mutation operation: UploadOfflineItemsMutation
 // ====================================================
 
 export interface UploadAllUnsavedsMutation_saveOfflineExperiences_experience_dataDefinitions {
@@ -341,7 +341,7 @@ export interface UploadAllUnsavedsMutation_createEntries {
   errors: (UploadAllUnsavedsMutation_createEntries_errors | null)[] | null;
 }
 
-export interface UploadAllUnsavedsMutation {
+export interface UploadOfflineItemsMutation {
   /**
    * Save many experiences created offline
    */
@@ -352,7 +352,7 @@ export interface UploadAllUnsavedsMutation {
   createEntries: (UploadAllUnsavedsMutation_createEntries | null)[] | null;
 }
 
-export interface UploadAllUnsavedsMutationVariables {
-  unsavedExperiencesInput: CreateExperienceInput[];
-  unsavedEntriesInput: CreateEntriesInput[];
+export interface UploadOfflineItemsMutationVariables {
+  offlineExperiencesInput: CreateExperienceInput[];
+  offlineEntriesInput: CreateEntriesInput[];
 }

@@ -35,7 +35,7 @@ import { NavigateFn } from "@reach/router";
 import Modal from "semantic-ui-react/dist/commonjs/modules/Modal";
 import Icon from "semantic-ui-react/dist/commonjs/elements/Icon";
 import Message from "semantic-ui-react/dist/commonjs/collections/Message";
-import { UploadAllUnsavedsMutationVariables } from "../../graphql/apollo-types/UploadAllUnsavedsMutation";
+import { UploadOfflineItemsMutationVariables } from "../../graphql/apollo-types/UploadOfflineItemsMutation";
 import { Experience } from "../Experience/experience.component";
 import { scrollIntoView } from "../scroll-into-view";
 import { FormCtrlError } from "../FormCtrlError/form-ctrl-error.component";
@@ -166,24 +166,24 @@ export function UploadOfflineItems(props: Props) {
         uploadFunction = uploadAllUnsaveds;
 
         variables = {
-          unsavedExperiencesInput: unsavedExperiencesToUploadData(
+          offlineExperiencesInput: unsavedExperiencesToUploadData(
             neverSavedMap,
           ),
 
-          unsavedEntriesInput: savedExperiencesToUploadData(partlySavedMap),
+          offlineEntriesInput: savedExperiencesToUploadData(partlySavedMap),
         };
       } else if (neverSavedCount !== 0) {
         uploadFunction = uploadUnsavedExperiences;
 
         variables = ({
           input: unsavedExperiencesToUploadData(neverSavedMap),
-        } as unknown) as UploadAllUnsavedsMutationVariables;
+        } as unknown) as UploadOfflineItemsMutationVariables;
       } else {
         uploadFunction = uploadSavedExperiencesEntries;
 
         variables = ({
           input: savedExperiencesToUploadData(partlySavedMap),
-        } as unknown) as UploadAllUnsavedsMutationVariables;
+        } as unknown) as UploadOfflineItemsMutationVariables;
       }
 
       const result = await (uploadFunction as UploadOfflineItemsMutationFn)({

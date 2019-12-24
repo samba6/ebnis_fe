@@ -31,10 +31,10 @@ import {
 } from "./test_utils";
 import { CreateEntryMutationVariables } from "../graphql/apollo-types/CreateEntryMutation";
 import {
-  UploadAllUnsavedsMutation,
+  UploadOfflineItemsMutation,
   UploadAllUnsavedsMutation_createEntries,
   UploadAllUnsavedsMutation_saveOfflineExperiences,
-} from "../graphql/apollo-types/UploadAllUnsavedsMutation";
+} from "../graphql/apollo-types/UploadOfflineItemsMutation";
 import { Props as EntryProps } from "../components/Entry/entry.utils";
 import { DataObjectFragment } from "../graphql/apollo-types/DataObjectFragment";
 import { EXPERIENCES_URL } from "../routes";
@@ -638,7 +638,7 @@ describe("components", () => {
             },
           },
         ] as UploadAllUnsavedsMutation_saveOfflineExperiences[],
-      } as UploadAllUnsavedsMutation,
+      } as UploadOfflineItemsMutation,
     });
 
     /**
@@ -1247,7 +1247,7 @@ describe("non components", () => {
           upload: {},
         },
       } as StateMachine,
-      {} as UploadAllUnsavedsMutation,
+      {} as UploadOfflineItemsMutation,
     );
 
     expect(nextState).toEqual({
@@ -1359,7 +1359,7 @@ describe("non components", () => {
           experienceId: "1",
         },
       ],
-    } as UploadAllUnsavedsMutation;
+    } as UploadOfflineItemsMutation;
 
     const nextState = onUploadResultsReceived(state, payload);
     // console.log(JSON.stringify(nextState, null, 2));

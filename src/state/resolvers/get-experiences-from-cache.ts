@@ -1,5 +1,5 @@
 import {
-  SAVED_AND_UNSAVED_EXPERIENCES_QUERY,
+  OFFLINE_EXPERIENCES_QUERY,
   SavedAndUnsavedExperiencesQueryReturned,
 } from "../offline-resolvers";
 import ApolloClient from "apollo-client";
@@ -10,7 +10,7 @@ export async function getExperiencesFromCache(
   const { data } = await dataProxy.query<
     SavedAndUnsavedExperiencesQueryReturned
   >({
-    query: SAVED_AND_UNSAVED_EXPERIENCES_QUERY,
+    query: OFFLINE_EXPERIENCES_QUERY,
     fetchPolicy: "cache-only",
   });
 

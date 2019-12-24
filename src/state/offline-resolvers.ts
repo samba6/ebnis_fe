@@ -11,7 +11,7 @@ import { getExperiencesFromCache } from "./resolvers/get-experiences-from-cache"
 import ApolloClient from "apollo-client";
 import { QueryResult } from "@apollo/react-common";
 
-export const SAVED_AND_UNSAVED_EXPERIENCES_QUERY = gql`
+export const OFFLINE_EXPERIENCES_QUERY = gql`
   {
     savedAndUnsavedExperiences @client {
       id

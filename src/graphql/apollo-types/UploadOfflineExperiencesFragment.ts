@@ -2,13 +2,13 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
-import { CreateExperienceInput, DataTypes } from "./globalTypes";
+import { DataTypes } from "./globalTypes";
 
 // ====================================================
-// GraphQL mutation operation: UploadUnsavedExperiencesMutation
+// GraphQL fragment: UploadOfflineExperiencesFragment
 // ====================================================
 
-export interface UploadUnsavedExperiencesMutation_saveOfflineExperiences_experience_dataDefinitions {
+export interface UploadUnsavedExperiencesFragment_experience_dataDefinitions {
   __typename: "DataDefinition";
   id: string;
   /**
@@ -28,7 +28,7 @@ export interface UploadUnsavedExperiencesMutation_saveOfflineExperiences_experie
   clientId: string | null;
 }
 
-export interface UploadUnsavedExperiencesMutation_saveOfflineExperiences_experience_entries_pageInfo {
+export interface UploadUnsavedExperiencesFragment_experience_entries_pageInfo {
   __typename: "PageInfo";
   /**
    * When paginating forwards, are there more items?
@@ -40,7 +40,7 @@ export interface UploadUnsavedExperiencesMutation_saveOfflineExperiences_experie
   hasPreviousPage: boolean;
 }
 
-export interface UploadUnsavedExperiencesMutation_saveOfflineExperiences_experience_entries_edges_node_dataObjects {
+export interface UploadUnsavedExperiencesFragment_experience_entries_edges_node_dataObjects {
   __typename: "DataObject";
   id: string;
   data: any;
@@ -53,7 +53,7 @@ export interface UploadUnsavedExperiencesMutation_saveOfflineExperiences_experie
   updatedAt: any;
 }
 
-export interface UploadUnsavedExperiencesMutation_saveOfflineExperiences_experience_entries_edges_node {
+export interface UploadUnsavedExperiencesFragment_experience_entries_edges_node {
   __typename: "Entry";
   /**
    * Entry ID
@@ -75,10 +75,10 @@ export interface UploadUnsavedExperiencesMutation_saveOfflineExperiences_experie
   /**
    * The list of data belonging to this entry.
    */
-  dataObjects: (UploadUnsavedExperiencesMutation_saveOfflineExperiences_experience_entries_edges_node_dataObjects | null)[];
+  dataObjects: (UploadUnsavedExperiencesFragment_experience_entries_edges_node_dataObjects | null)[];
 }
 
-export interface UploadUnsavedExperiencesMutation_saveOfflineExperiences_experience_entries_edges {
+export interface UploadUnsavedExperiencesFragment_experience_entries_edges {
   __typename: "EntryEdge";
   /**
    * A cursor for use in pagination
@@ -87,16 +87,16 @@ export interface UploadUnsavedExperiencesMutation_saveOfflineExperiences_experie
   /**
    * The item at the end of the edge
    */
-  node: UploadUnsavedExperiencesMutation_saveOfflineExperiences_experience_entries_edges_node | null;
+  node: UploadUnsavedExperiencesFragment_experience_entries_edges_node | null;
 }
 
-export interface UploadUnsavedExperiencesMutation_saveOfflineExperiences_experience_entries {
+export interface UploadUnsavedExperiencesFragment_experience_entries {
   __typename: "EntryConnection";
-  pageInfo: UploadUnsavedExperiencesMutation_saveOfflineExperiences_experience_entries_pageInfo;
-  edges: (UploadUnsavedExperiencesMutation_saveOfflineExperiences_experience_entries_edges | null)[] | null;
+  pageInfo: UploadUnsavedExperiencesFragment_experience_entries_pageInfo;
+  edges: (UploadUnsavedExperiencesFragment_experience_entries_edges | null)[] | null;
 }
 
-export interface UploadUnsavedExperiencesMutation_saveOfflineExperiences_experience {
+export interface UploadUnsavedExperiencesFragment_experience {
   __typename: "Experience";
   /**
    * The title of the experience
@@ -120,34 +120,34 @@ export interface UploadUnsavedExperiencesMutation_saveOfflineExperiences_experie
   /**
    * The field definitions used for the experience entries
    */
-  dataDefinitions: (UploadUnsavedExperiencesMutation_saveOfflineExperiences_experience_dataDefinitions | null)[];
+  dataDefinitions: (UploadUnsavedExperiencesFragment_experience_dataDefinitions | null)[];
   /**
    * The entries of the experience - can be paginated
    */
-  entries: UploadUnsavedExperiencesMutation_saveOfflineExperiences_experience_entries;
+  entries: UploadUnsavedExperiencesFragment_experience_entries;
 }
 
-export interface UploadUnsavedExperiencesMutation_saveOfflineExperiences_experienceErrors_errors_dataDefinitionsErrors_errors {
+export interface UploadUnsavedExperiencesFragment_experienceErrors_errors_dataDefinitionsErrors_errors {
   __typename: "DataDefinitionError";
   name: string | null;
   type: string | null;
 }
 
-export interface UploadUnsavedExperiencesMutation_saveOfflineExperiences_experienceErrors_errors_dataDefinitionsErrors {
+export interface UploadUnsavedExperiencesFragment_experienceErrors_errors_dataDefinitionsErrors {
   __typename: "DataDefinitionErrors";
   index: number;
-  errors: UploadUnsavedExperiencesMutation_saveOfflineExperiences_experienceErrors_errors_dataDefinitionsErrors_errors;
+  errors: UploadUnsavedExperiencesFragment_experienceErrors_errors_dataDefinitionsErrors_errors;
 }
 
-export interface UploadUnsavedExperiencesMutation_saveOfflineExperiences_experienceErrors_errors {
+export interface UploadUnsavedExperiencesFragment_experienceErrors_errors {
   __typename: "CreateExperienceErrors";
   clientId: string | null;
   title: string | null;
   user: string | null;
-  dataDefinitionsErrors: (UploadUnsavedExperiencesMutation_saveOfflineExperiences_experienceErrors_errors_dataDefinitionsErrors | null)[] | null;
+  dataDefinitionsErrors: (UploadUnsavedExperiencesFragment_experienceErrors_errors_dataDefinitionsErrors | null)[] | null;
 }
 
-export interface UploadUnsavedExperiencesMutation_saveOfflineExperiences_experienceErrors {
+export interface UploadUnsavedExperiencesFragment_experienceErrors {
   __typename: "CreateOfflineExperienceErrors";
   /**
    * The client ID of the failing experience. As user may not have provided a
@@ -162,23 +162,23 @@ export interface UploadUnsavedExperiencesMutation_saveOfflineExperiences_experie
   /**
    * The error object representing the insert failure reasons
    */
-  errors: UploadUnsavedExperiencesMutation_saveOfflineExperiences_experienceErrors_errors;
+  errors: UploadUnsavedExperiencesFragment_experienceErrors_errors;
 }
 
-export interface UploadUnsavedExperiencesMutation_saveOfflineExperiences_entriesErrors_errors_dataObjectsErrors_errors {
+export interface UploadUnsavedExperiencesFragment_entriesErrors_errors_dataObjectsErrors_errors {
   __typename: "DataObjectError";
   data: string | null;
   definition: string | null;
   definitionId: string | null;
 }
 
-export interface UploadUnsavedExperiencesMutation_saveOfflineExperiences_entriesErrors_errors_dataObjectsErrors {
+export interface UploadUnsavedExperiencesFragment_entriesErrors_errors_dataObjectsErrors {
   __typename: "DataObjectsErrors";
   index: number;
-  errors: UploadUnsavedExperiencesMutation_saveOfflineExperiences_entriesErrors_errors_dataObjectsErrors_errors;
+  errors: UploadUnsavedExperiencesFragment_entriesErrors_errors_dataObjectsErrors_errors;
 }
 
-export interface UploadUnsavedExperiencesMutation_saveOfflineExperiences_entriesErrors_errors {
+export interface UploadUnsavedExperiencesFragment_entriesErrors_errors {
   __typename: "CreateEntryErrors";
   /**
    * May be because client ID is not unique for experience
@@ -200,10 +200,10 @@ export interface UploadUnsavedExperiencesMutation_saveOfflineExperiences_entries
   /**
    * Did we fail because there are errors in the data object object?
    */
-  dataObjectsErrors: (UploadUnsavedExperiencesMutation_saveOfflineExperiences_entriesErrors_errors_dataObjectsErrors | null)[] | null;
+  dataObjectsErrors: (UploadUnsavedExperiencesFragment_entriesErrors_errors_dataObjectsErrors | null)[] | null;
 }
 
-export interface UploadUnsavedExperiencesMutation_saveOfflineExperiences_entriesErrors {
+export interface UploadUnsavedExperiencesFragment_entriesErrors {
   __typename: "CreateEntriesErrors";
   /**
    * The experience ID of the entry which fails to save
@@ -213,34 +213,23 @@ export interface UploadUnsavedExperiencesMutation_saveOfflineExperiences_entries
    * The client ID of the entry which fails to save
    */
   clientId: string;
-  errors: UploadUnsavedExperiencesMutation_saveOfflineExperiences_entriesErrors_errors;
+  errors: UploadUnsavedExperiencesFragment_entriesErrors_errors;
 }
 
-export interface UploadUnsavedExperiencesMutation_saveOfflineExperiences {
+export interface UploadOfflineExperiencesFragment {
   __typename: "OfflineExperience";
   /**
    * The experience which was successfully inserted
    *   - will be null if experience fails to insert
    */
-  experience: UploadUnsavedExperiencesMutation_saveOfflineExperiences_experience | null;
+  experience: UploadUnsavedExperiencesFragment_experience | null;
   /**
    * If the experience fails to insert, then this is the error object
    *   returned
    */
-  experienceErrors: UploadUnsavedExperiencesMutation_saveOfflineExperiences_experienceErrors | null;
+  experienceErrors: UploadUnsavedExperiencesFragment_experienceErrors | null;
   /**
    * A list of error objects denoting entries which fail to insert
    */
-  entriesErrors: (UploadUnsavedExperiencesMutation_saveOfflineExperiences_entriesErrors | null)[] | null;
-}
-
-export interface UploadUnsavedExperiencesMutation {
-  /**
-   * Save many experiences created offline
-   */
-  saveOfflineExperiences: (UploadUnsavedExperiencesMutation_saveOfflineExperiences | null)[] | null;
-}
-
-export interface UploadUnsavedExperiencesMutationVariables {
-  input: CreateExperienceInput[];
+  entriesErrors: (UploadUnsavedExperiencesFragment_entriesErrors | null)[] | null;
 }
