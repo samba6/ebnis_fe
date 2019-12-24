@@ -11,7 +11,7 @@ import {
 import { writeSavedAndUnsavedExperiencesToCache } from "../../state/resolvers/update-experiences-in-cache";
 import immer from "immer";
 import { entryToEdge } from "../../state/resolvers/entry-to-edge";
-import { ExperiencesIdsToObjectMap } from "./upload-unsaved.utils";
+import { ExperiencesIdsToObjectMap } from "./upload-offline.utils";
 import { deleteIdsFromCache } from "../../state/resolvers/delete-references-from-cache";
 import { writeGetExperienceFullQueryToCache } from "../../state/resolvers/write-get-experience-full-query-to-cache";
 import { replaceExperiencesInGetExperiencesMiniQuery } from "../../state/resolvers/update-get-experiences-mini-query";

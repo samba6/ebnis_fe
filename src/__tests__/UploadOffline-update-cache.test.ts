@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { updateCache } from "../components/UploadOfflineItems/update-cache";
-import { ExperiencesIdsToObjectMap } from "../components/UploadOfflineItems/upload-unsaved.utils";
+import { ExperiencesIdsToObjectMap } from "../components/UploadOfflineItems/upload-offline.utils";
 import {
   ExperienceFragment,
   ExperienceFragment_entries_edges_node,

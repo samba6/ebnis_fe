@@ -20,16 +20,16 @@ import {
   ExperiencesUploadedState,
   ExperiencesUploadedResultState,
   TabsState,
-} from "./upload-unsaved.utils";
+} from "./upload-offline.utils";
 import { Loading } from "../Loading/loading";
 import { SidebarHeader } from "../SidebarHeader/sidebar-header.component";
 import { ExperienceFragment_entries_edges_node } from "../../graphql/apollo-types/ExperienceFragment";
-import "./upload-unsaved.styles.scss";
+import "./upload-offline.styles.scss";
 import { CSSTransition, TransitionGroup } from "react-transition-group";
 import makeClassNames from "classnames";
 import Button from "semantic-ui-react/dist/commonjs/elements/Button";
 import { CreateEntriesInput } from "../../graphql/apollo-types/globalTypes";
-import { UploadAllUnsavedsMutationFn } from "../../graphql/upload-unsaveds.mutation";
+import { UploadOfflineItemsMutationFn } from "../../graphql/upload-offline-items.mutation";
 import { isConnected } from "../../state/connections";
 import { NavigateFn } from "@reach/router";
 import Modal from "semantic-ui-react/dist/commonjs/modules/Modal";
@@ -58,10 +58,10 @@ import { MY_EXPERIENCES_TITLE } from "../../constants/my-experiences-title";
 import { EbnisAppContext } from "../../context";
 import {
   useGetAllUnsavedQuery,
-  useUploadUnsavedExperiencesMutation,
-  useUploadAllUnsavedsMutation,
-  useUploadSavedExperiencesEntriesMutation,
-  addUploadUnsavedResolvers,
+  useUploadOfflineExperiencesMutation,
+  useUploadOfflineItemsMutation,
+  useUploadOnlineEntriesMutation,
+  addUploadOfflineItemsResolvers,
 } from "./upload-offline.injectables";
 
 const timeoutMs = 500;
@@ -69,12 +69,12 @@ const REDIRECT_ROUTE = makeSiteTitle(MY_EXPERIENCES_TITLE);
 
 export function UploadOfflineItems(props: Props) {
   const { navigate } = props;
-  const [uploadUnsavedExperiences] = useUploadUnsavedExperiencesMutation();
-  const [uploadAllUnsaveds] = useUploadAllUnsavedsMutation();
+  const [uploadUnsavedExperiences] = useUploadOfflineExperiencesMutation();
+  const [uploadAllUnsaveds] = useUploadOfflineItemsMutation();
 
   const [
     uploadSavedExperiencesEntries,
-  ] = useUploadSavedExperiencesEntriesMutation();
+  ] = useUploadOnlineEntriesMutation();
 
   const { data, loading } = useGetAllUnsavedQuery();
   const getAllUnsaved = data && data.getAllUnsaved;
@@ -99,7 +99,7 @@ export function UploadOfflineItems(props: Props) {
   const { layoutDispatch } = useContext(LayoutUnchangingContext);
 
   useLayoutEffect(() => {
-    addUploadUnsavedResolvers(client);
+    addUploadOfflineItemsResolvers(client);
   }, [client]);
 
   useEffect(
@@ -186,7 +186,7 @@ export function UploadOfflineItems(props: Props) {
         } as unknown) as UploadAllUnsavedsMutationVariables;
       }
 
-      const result = await (uploadFunction as UploadAllUnsavedsMutationFn)({
+      const result = await (uploadFunction as UploadOfflineItemsMutationFn)({
         variables,
       });
 

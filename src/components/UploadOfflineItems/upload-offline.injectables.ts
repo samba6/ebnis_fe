@@ -1,7 +1,7 @@
 import {
   UPLOAD_OFFLINE_EXPERIENCES_MUTATION,
-  UPLOAD_ALL_UNSAVEDS_MUTATION,
-} from "../../graphql/upload-unsaveds.mutation";
+  UPLOAD_OFFLINE_ITEMS_MUTATION,
+} from "../../graphql/upload-offline-items.mutation";
 import {
   UploadUnsavedExperiencesMutation,
   UploadUnsavedExperiencesMutationVariables,
@@ -25,7 +25,7 @@ import {
 
 let resolversAdded = false;
 
-export function addUploadUnsavedResolvers(client: ApolloClient<{}>) {
+export function addUploadOfflineItemsResolvers(client: ApolloClient<{}>) {
   if (resolversAdded === true) {
     return;
   }
@@ -34,21 +34,21 @@ export function addUploadUnsavedResolvers(client: ApolloClient<{}>) {
   resolversAdded = true;
 }
 
-export function useUploadUnsavedExperiencesMutation() {
+export function useUploadOfflineExperiencesMutation() {
   return useMutation<
     UploadUnsavedExperiencesMutation,
     UploadUnsavedExperiencesMutationVariables
   >(UPLOAD_OFFLINE_EXPERIENCES_MUTATION);
 }
 
-export function useUploadAllUnsavedsMutation() {
+export function useUploadOfflineItemsMutation() {
   return useMutation<
     UploadAllUnsavedsMutation,
     UploadAllUnsavedsMutationVariables
-  >(UPLOAD_ALL_UNSAVEDS_MUTATION);
+  >(UPLOAD_OFFLINE_ITEMS_MUTATION);
 }
 
-export function useUploadSavedExperiencesEntriesMutation() {
+export function useUploadOnlineEntriesMutation() {
   return useMutation<CreateEntriesMutation, CreateEntriesMutationVariables>(
     CREATE_ENTRIES_MUTATION,
   );

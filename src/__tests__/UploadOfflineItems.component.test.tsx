@@ -15,7 +15,7 @@ import {
   onUploadResultsReceived,
   StateMachine,
   ExperienceObjectMap,
-} from "../components/UploadOfflineItems/upload-unsaved.utils";
+} from "../components/UploadOfflineItems/upload-offline.utils";
 import {
   ExperienceFragment,
   ExperienceFragment_entries_edges_node,
@@ -55,9 +55,9 @@ import {
 import { deleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache } from "../state/resolvers/update-experiences-in-cache";
 import { EbnisAppProvider } from "../context";
 import {
-  useUploadUnsavedExperiencesMutation,
-  useUploadAllUnsavedsMutation,
-  useUploadSavedExperiencesEntriesMutation,
+  useUploadOfflineExperiencesMutation,
+  useUploadOfflineItemsMutation,
+  useUploadOnlineEntriesMutation,
 } from "../components/UploadOfflineItems/upload-offline.injectables";
 import { act } from "react-dom/test-utils";
 
@@ -108,10 +108,10 @@ jest.mock("../components/UploadOfflineItems/upload-offline.injectables", () => (
     return result;
   },
 
-  useUploadUnsavedExperiencesMutation: jest.fn(),
-  useUploadAllUnsavedsMutation: jest.fn(),
-  useUploadSavedExperiencesEntriesMutation: jest.fn(),
-  addUploadUnsavedResolvers: jest.fn(),
+  useUploadOfflineExperiencesMutation: jest.fn(),
+  useUploadOfflineItemsMutation: jest.fn(),
+  useUploadOnlineEntriesMutation: jest.fn(),
+  addUploadOfflineItemsResolvers: jest.fn(),
 }));
 
 const mockIsConnected = isConnected as jest.Mock;
@@ -121,9 +121,9 @@ const mockUpdateCache = updateCache as jest.Mock;
 const mockReplaceExperiencesInGetExperiencesMiniQuery = replaceExperiencesInGetExperiencesMiniQuery as jest.Mock;
 const mockDeleteIdsFromCache = deleteIdsFromCache as jest.Mock;
 const mockDeleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache = deleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache as jest.Mock;
-const mockUseUploadUnsavedExperiencesMutation = useUploadUnsavedExperiencesMutation as jest.Mock;
-const mockUseUploadAllUnsavedsMutation = useUploadAllUnsavedsMutation as jest.Mock;
-const mockUseUploadSavedExperiencesEntriesMutation = useUploadSavedExperiencesEntriesMutation as jest.Mock;
+const mockUseUploadUnsavedExperiencesMutation = useUploadOfflineExperiencesMutation as jest.Mock;
+const mockUseUploadAllUnsavedsMutation = useUploadOfflineItemsMutation as jest.Mock;
+const mockUseUploadSavedExperiencesEntriesMutation = useUploadOnlineEntriesMutation as jest.Mock;
 const mockRemoveQueriesAndMutationsFromCache = removeQueriesAndMutationsFromCache as jest.Mock;
 
 ////////////////////////// END MOCK ////////////////////////////

@@ -59,7 +59,7 @@ export const UPLOAD_OFFLINE_EXPERIENCES_MUTATION = gql`
   ${UPLOAD_OFFLINE_EXPERIENCES_FRAGMENT}
 `;
 
-export const UPLOAD_ALL_UNSAVEDS_MUTATION = gql`
+export const UPLOAD_OFFLINE_ITEMS_MUTATION = gql`
   mutation UploadAllUnsavedsMutation(
     $unsavedExperiencesInput: [CreateExperienceInput!]!
     $unsavedEntriesInput: [CreateEntriesInput!]!
@@ -77,7 +77,7 @@ export const UPLOAD_ALL_UNSAVEDS_MUTATION = gql`
   ${CREATE_ENTRIES_RESPONSE_FRAGMENT}
 `;
 
-export type UploadAllUnsavedsMutationFn = MutationFunction<
+export type UploadOfflineItemsMutationFn = MutationFunction<
   UploadAllUnsavedsMutation,
   UploadAllUnsavedsMutationVariables
 >;
