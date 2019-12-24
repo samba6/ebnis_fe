@@ -1,6 +1,6 @@
 import {
   LocalResolverFn,
-  MUTATION_NAME_createEntryOffline,
+  MUTATION_NAME_createOfflineEntry,
 } from "../../state/resolvers";
 import { makeOfflineId } from "../../constants";
 import { CreateDataObject } from "../../graphql/apollo-types/globalTypes";
@@ -12,12 +12,12 @@ import { EntryFragment } from "../../graphql/apollo-types/EntryFragment";
 import { updateEntriesCountInCache } from "../../state/resolvers/update-experiences-in-cache";
 import { CreateEntryMutation_createEntry } from "../../graphql/apollo-types/CreateEntryMutation";
 
-export const CREATE_ENTRY_OFFLINE_MUTATION = gql`
-  mutation CreateEntryOffline(
+export const CREATE_OFFLINE_ENTRY_MUTATION = gql`
+  mutation CreateOfflineEntry(
     $experience: Experience!
     $dataObjects: [DataObjects!]!
   ) {
-    createEntryOffline(experience: $experience, dataObjects: $dataObjects)
+    createOfflineEntry(experience: $experience, dataObjects: $dataObjects)
       @client {
       entry {
         ...EntryFragment
@@ -28,8 +28,8 @@ export const CREATE_ENTRY_OFFLINE_MUTATION = gql`
   ${ENTRY_FRAGMENT}
 `;
 
-export interface CreateEntryOfflineMutationReturned {
-  createEntryOffline: {
+export interface CreateOfflineEntryMutationReturned {
+  createOfflineEntry: {
     id: string;
     entry: EntryFragment;
     experience: ExperienceFragment;
@@ -37,9 +37,9 @@ export interface CreateEntryOfflineMutationReturned {
   };
 }
 
-const createEntryOfflineResolver: LocalResolverFn<
+const createOfflineEntryResolver: LocalResolverFn<
   CreateEntryOfflineVariables,
-  Promise<CreateEntryOfflineMutationReturned["createEntryOffline"]>
+  Promise<CreateOfflineEntryMutationReturned["createOfflineEntry"]>
 > = async (_, variables, context) => {
   const { client } = context;
 
@@ -91,7 +91,7 @@ export interface CreateEntryOfflineVariables {
 
 export const newEntryResolvers = {
   Mutation: {
-    [MUTATION_NAME_createEntryOffline]: createEntryOfflineResolver,
+    [MUTATION_NAME_createOfflineEntry]: createOfflineEntryResolver,
   },
 
   Query: {},

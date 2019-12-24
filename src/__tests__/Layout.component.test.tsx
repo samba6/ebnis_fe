@@ -281,7 +281,7 @@ describe("components", () => {
      * And we should not have queried for unsaved data
      */
 
-    expect(context1.unsavedCount).toBe(null);
+    expect(context1.offlineItemsCount).toBe(null);
 
     /**
      * When connection event occurs
@@ -298,7 +298,7 @@ describe("components", () => {
       context1 = layoutContextValue as ILayoutContextHeaderValue;
     });
 
-    expect(context1.unsavedCount).toBe(5);
+    expect(context1.offlineItemsCount).toBe(5);
 
     /**
      * And set connection status to true
@@ -325,7 +325,7 @@ describe("components", () => {
     });
 
     expect(context2).toBe(context1);
-    expect(context2.unsavedCount).toBe(5);
+    expect(context2.offlineItemsCount).toBe(5);
   });
 
   test("sets unsaved count to 0 if we lose connection", async () => {
@@ -362,7 +362,7 @@ describe("components", () => {
      * Then we should query for unsaved data
      */
 
-    expect(context.unsavedCount).toBe(2);
+    expect(context.offlineItemsCount).toBe(2);
 
     /**
      * When disconnect event occurs
@@ -381,7 +381,7 @@ describe("components", () => {
      * Then we should reset unsaved data count
      */
 
-    expect(context.unsavedCount).toBe(0);
+    expect(context.offlineItemsCount).toBe(0);
   });
 
   test("pre-fetches experiences - initially connected", async () => {
@@ -608,7 +608,7 @@ describe("components", () => {
      * Then we should query for unsaved data
      */
 
-    expect(context.unsavedCount).toBe(2);
+    expect(context.offlineItemsCount).toBe(2);
 
     /**
      * When disconnect event occurs
@@ -627,7 +627,7 @@ describe("components", () => {
      * Then we should reset unsaved data count
      */
 
-    expect(context.unsavedCount).toBe(0);
+    expect(context.offlineItemsCount).toBe(0);
   });
 });
 
@@ -720,7 +720,7 @@ describe("reducer", () => {
     const action = {
       type: LayoutActionType.CONNECTION_CHANGED,
       isConnected: true,
-      unsavedCount: 5,
+      offlineItemsCount: 5,
     } as LayoutAction;
 
     const nextState = reducer(state, action);
@@ -739,7 +739,7 @@ describe("reducer", () => {
 
     const state = {
       context: {
-        unsavedCount: 5,
+        offlineItemsCount: 5,
       },
     } as StateMachine;
 
@@ -758,7 +758,7 @@ describe("reducer", () => {
      * Then the count should reflect new value
      */
 
-    expect(nextState.context.unsavedCount).toBe(17);
+    expect(nextState.context.offlineItemsCount).toBe(17);
   });
 
   it("toggles sidebar", () => { const state = {

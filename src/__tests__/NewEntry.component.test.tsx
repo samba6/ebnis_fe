@@ -41,7 +41,7 @@ import { isConnected } from "../state/connections";
 import { scrollIntoView } from "../components/scroll-into-view";
 import {
   CreateEntryOfflineVariables,
-  CreateEntryOfflineMutationReturned,
+  CreateOfflineEntryMutationReturned,
 } from "../components/NewEntry/new-entry.resolvers";
 import { GraphQLError } from "graphql";
 import {
@@ -380,10 +380,10 @@ it("creates new entry when offline", async () => {
 
   mockCreateUnsavedEntry.mockResolvedValue({
     data: {
-      createEntryOffline: {
+      createOfflineEntry: {
         entry: {},
       },
-    } as CreateEntryOfflineMutationReturned,
+    } as CreateOfflineEntryMutationReturned,
   });
 
   /**

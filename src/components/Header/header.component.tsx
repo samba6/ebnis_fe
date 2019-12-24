@@ -21,7 +21,7 @@ export const Header = (props: Props) => {
   } = props;
 
   const { pathname } = useContext(LocationContext);
-  const { unsavedCount, hasConnection } = useContext(LayoutContextHeader);
+  const { offlineItemsCount, hasConnection } = useContext(LayoutContextHeader);
 
   return (
     <header
@@ -33,13 +33,13 @@ export const Header = (props: Props) => {
       })}
     >
       <Menu secondary={true}>
-        {unsavedCount > 0 && !pathname.includes(UPLOAD_OFFLINE_ITEMS_URL_START) ? (
+        {offlineItemsCount > 0 && !pathname.includes(UPLOAD_OFFLINE_ITEMS_URL_START) ? (
           <Link
             to={UPLOAD_OFFLINE_ITEMS_PREVIEW_URL}
             id="header-unsaved-count-label"
             className="unsaved-count-label"
           >
-            {unsavedCount}
+            {offlineItemsCount}
           </Link>
         ) : sidebar ? (
           <Menu.Item

@@ -16,7 +16,7 @@ const mockUpdateExperienceWithNewEntry = updateExperienceWithNewEntry as jest.Mo
 
 const mockUpdateEntriesCountSavedAndUnsavedExperiencesInCache = updateEntriesCountInCache as jest.Mock;
 
-const { createEntryOffline } = newEntryResolvers.Mutation;
+const { createOfflineEntry } = newEntryResolvers.Mutation;
 
 it("updates unsaved experience successfully", async done => {
   const { mockContext, mockUpdateExperienceWithNewEntryInnerFn } = setUp();
@@ -53,7 +53,7 @@ it("updates unsaved experience successfully", async done => {
     id,
     entry,
     experience: updatedExperience,
-  } = await createEntryOffline(
+  } = await createOfflineEntry(
     {},
     { experience, dataObjects: [dataObject] },
     mockContext,

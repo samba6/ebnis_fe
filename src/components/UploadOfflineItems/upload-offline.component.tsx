@@ -14,7 +14,7 @@ import {
   StateMachine,
   stateInitializerFn,
   ExperienceObjectMap,
-  SaveStatusType,
+  CreationMode,
   onUploadResultsReceived,
   PartialUploadSuccessState,
   ExperiencesUploadedState,
@@ -51,7 +51,7 @@ import { EXPERIENCES_URL } from "../../routes";
 import { updateCache } from "./update-cache";
 import { useDeleteMutationsOnExit } from "../use-delete-mutations-on-exit";
 import { makeSiteTitle, setDocumentTitle } from "../../constants";
-import { UPLOAD_UNSAVED_TITLE } from "../../constants/upload-unsaved-title";
+import { UPLOAD_OFFLINE_ITEMS_TITLE } from "../../constants/upload-offline-title";
 import { IconProps } from "semantic-ui-react";
 import { DataObjectFragment } from "../../graphql/apollo-types/DataObjectFragment";
 import { MY_EXPERIENCES_TITLE } from "../../constants/my-experiences-title";
@@ -63,6 +63,7 @@ import {
   useUploadOnlineEntriesMutation,
   addUploadOfflineItemsResolvers,
 } from "./upload-offline.injectables";
+import { makeCompletelyOfflineExperienceTitleId } from "./upload-offline.dom";
 
 const timeoutMs = 500;
 const REDIRECT_ROUTE = makeSiteTitle(MY_EXPERIENCES_TITLE);
@@ -107,7 +108,7 @@ export function UploadOfflineItems(props: Props) {
         return;
       }
 
-      setDocumentTitle(makeSiteTitle(UPLOAD_UNSAVED_TITLE));
+      setDocumentTitle(makeSiteTitle(UPLOAD_OFFLINE_ITEMS_TITLE));
 
       return setDocumentTitle;
     },
@@ -202,7 +203,7 @@ export function UploadOfflineItems(props: Props) {
           .experiences as ExperiencesUploadedResultState).context.anySuccess
       ) {
         outstandingUnsavedCount = updateCache({
-          partlyOfflineMap: newState.partlySavedMap,
+          partlyOfflineMap: newState.partlyOfflineMap,
           completelyOfflineMap: newState.completelyOfflineMap,
           cache,
           client,
@@ -300,7 +301,7 @@ export function UploadOfflineItems(props: Props) {
                   return (
                     <ExperienceComponent
                       key={id}
-                      mode="saved"
+                      mode={CreationMode.online}
                       experienceObjectMap={map}
                       dispatch={dispatch}
                     />
@@ -327,7 +328,7 @@ export function UploadOfflineItems(props: Props) {
                   return (
                     <ExperienceComponent
                       key={id}
-                      mode="unsaved"
+                      mode={CreationMode.offline}
                       experienceObjectMap={map}
                       dispatch={dispatch}
                     />
@@ -352,7 +353,7 @@ function ExperienceComponent({
   dispatch,
 }: {
   experienceObjectMap: ExperienceObjectMap;
-  mode: SaveStatusType;
+  mode: CreationMode;
   dispatch: DispatchType;
 }) {
   const { client, cache } = useContext(EbnisAppContext);
@@ -373,7 +374,6 @@ function ExperienceComponent({
   const typePrefix = mode + "-experience";
   let uploadStatusIndicatorSuffix = "";
   let experienceClassName = "";
-  const idPrefix = `${typePrefix}-${experienceId}`;
 
   let iconProps: IconProps | null = null;
 
@@ -404,7 +404,7 @@ function ExperienceComponent({
       className={experienceClassName}
       experience={experience}
       headerProps={{
-        id: `upload-unsaved-${idPrefix}-title`,
+        id: makeCompletelyOfflineExperienceTitleId(experienceId, mode),
         className: `experience-title--uploads experience-title${uploadStatusIndicatorSuffix}`,
 
         children: iconProps ? <Icon {...iconProps} /> : null,
@@ -706,14 +706,14 @@ function computeUploadedPartialState(
       };
     } else {
       const {
-        states: { saved, unsaved },
+        states: { saved, offline },
       } = (uploadSomeSuccess as PartialUploadSuccessState).partial;
 
       return {
         savedError: saved && saved.value !== "allSuccess",
-        unsavedError: unsaved && unsaved.value !== "allSuccess",
+        unsavedError: offline && offline.value !== "allSuccess",
         savedAllSuccess: saved && saved.value === "allSuccess",
-        unsavedAllSuccess: unsaved && unsaved.value === "allSuccess",
+        unsavedAllSuccess: offline && offline.value === "allSuccess",
       };
     }
   }

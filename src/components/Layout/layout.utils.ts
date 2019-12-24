@@ -21,7 +21,7 @@ export const reducer: Reducer<StateMachine, LayoutAction> = (state, action) =>
         case LayoutActionType.CONNECTION_CHANGED:
           {
             const {
-              unsavedCount,
+              offlineItemsCount,
               isConnected,
             } = payload as ConnectionChangedPayload;
 
@@ -30,9 +30,9 @@ export const reducer: Reducer<StateMachine, LayoutAction> = (state, action) =>
             context.hasConnection = isConnected;
 
             if (!isConnected) {
-              context.unsavedCount = 0;
+              context.offlineItemsCount = 0;
             } else if (user) {
-              context.unsavedCount = unsavedCount;
+              context.offlineItemsCount = offlineItemsCount;
             }
 
             if (!user) {
@@ -57,8 +57,8 @@ export const reducer: Reducer<StateMachine, LayoutAction> = (state, action) =>
           {
             proxy.context.renderChildren = true;
 
-            const { hasConnection, unsavedCount } = payload as {
-              unsavedCount: number;
+            const { hasConnection, offlineItemsCount } = payload as {
+              offlineItemsCount: number;
               hasConnection: boolean;
             };
 
@@ -68,7 +68,7 @@ export const reducer: Reducer<StateMachine, LayoutAction> = (state, action) =>
               return;
             }
 
-            proxy.context.unsavedCount = unsavedCount;
+            proxy.context.offlineItemsCount = offlineItemsCount;
           }
 
           break;
@@ -108,7 +108,7 @@ export const reducer: Reducer<StateMachine, LayoutAction> = (state, action) =>
 
         case LayoutActionType.SET_UNSAVED_COUNT:
           {
-            proxy.context.unsavedCount = (payload as { count: number }).count;
+            proxy.context.offlineItemsCount = (payload as { count: number }).count;
           }
           break;
 
@@ -137,7 +137,7 @@ export function initState(args: {
 
   return {
     context: {
-      unsavedCount: null,
+      offlineItemsCount: null,
       renderChildren: false,
       hasConnection: !!isConnected,
       user,
@@ -155,7 +155,7 @@ export function initState(args: {
 }
 
 export const LayoutContextHeader = createContext<ILayoutContextHeaderValue>({
-  unsavedCount: 0,
+  offlineItemsCount: 0,
 } as ILayoutContextHeaderValue);
 
 export const LayoutUnchangingContext = createContext<
@@ -179,7 +179,7 @@ export type LayoutAction =
     }
   | {
       type: LayoutActionType.CACHE_PERSISTED;
-      unsavedCount: number | null;
+      offlineItemsCount: number | null;
       hasConnection: boolean;
     }
   | {
@@ -198,13 +198,13 @@ export type LayoutAction =
 
 interface ConnectionChangedPayload {
   isConnected: boolean;
-  unsavedCount: number;
+  offlineItemsCount: number;
 }
 
 export interface StateMachine {
   context: {
     hasConnection: boolean;
-    unsavedCount: number | null;
+    offlineItemsCount: number | null;
     renderChildren: boolean;
     user: UserFragment | null;
   };
@@ -238,7 +238,7 @@ export type LayoutDispatchType = Dispatch<LayoutAction>;
 export interface Props extends PropsWithChildren<{}>, RouteComponentProps {}
 
 export interface ILayoutContextHeaderValue {
-  unsavedCount: number;
+  offlineItemsCount: number;
   hasConnection: boolean;
   sidebarVisible: boolean;
 }

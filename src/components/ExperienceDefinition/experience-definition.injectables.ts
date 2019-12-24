@@ -7,8 +7,8 @@ import { useMutation } from "@apollo/react-hooks";
 import ApolloClient from "apollo-client";
 import {
   experienceDefinitionResolvers,
-  CREATE_UNSAVED_EXPERIENCE_MUTATION,
-  CreateUnsavedExperienceMutationData,
+  CREATE_OFFLINE_EXPERIENCE_MUTATION,
+  CreateOfflineExperienceMutationData,
 } from "./resolvers";
 import { CreateExpUpdateFn } from "./experience-definition.utils";
 import { insertExperienceInGetExperiencesMiniQuery } from "../../state/resolvers/update-get-experiences-mini-query";
@@ -22,9 +22,9 @@ export function useCreateExperience() {
 
 export function useCreateUnsavedExperience() {
   return useMutation<
-    CreateUnsavedExperienceMutationData,
+    CreateOfflineExperienceMutationData,
     CreateExperienceMutationVariables
-  >(CREATE_UNSAVED_EXPERIENCE_MUTATION);
+  >(CREATE_OFFLINE_EXPERIENCE_MUTATION);
 }
 
 export function addResolvers(client: ApolloClient<{}>) {

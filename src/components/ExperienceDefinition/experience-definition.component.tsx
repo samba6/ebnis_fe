@@ -1,4 +1,10 @@
-import React, { useEffect, Dispatch, useReducer, useContext } from "react";
+import React, {
+  useEffect,
+  Dispatch,
+  useReducer,
+  useContext,
+  useLayoutEffect,
+} from "react";
 import {
   Formik,
   FastField,
@@ -65,13 +71,13 @@ export function ExperienceDefinition(props: Props) {
   const { client } = useContext(EbnisAppContext);
 
   const [createExperience] = useCreateExperience();
-  const [createUnsavedExperience] = useCreateUnsavedExperience();
+  const [createOfflineExperience] = useCreateUnsavedExperience();
 
   const [state, dispatch] = useReducer(reducer, {
     showDescriptionInput: true,
   } as State);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     addResolvers(client);
   }, [client]);
 
@@ -150,7 +156,7 @@ export function ExperienceDefinition(props: Props) {
             experienceId = experience.id;
           }
         } else {
-          result = await createUnsavedExperience({
+          result = await createOfflineExperience({
             variables: {
               createExperienceInput: values,
               entriesPagination,
@@ -159,7 +165,7 @@ export function ExperienceDefinition(props: Props) {
 
           experienceId = ((result &&
             result.data &&
-            result.data.createUnsavedExperience) as ExperienceFragment).id;
+            result.data.createOfflineExperience) as ExperienceFragment).id;
         }
 
         if (experienceId) {

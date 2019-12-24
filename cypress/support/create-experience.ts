@@ -7,8 +7,8 @@ import {
 } from "../../src/graphql/apollo-types/CreateExperienceMutation";
 import { ExperienceFragment } from "../../src/graphql/apollo-types/ExperienceFragment";
 import {
-  CreateUnsavedExperienceMutationData,
-  CREATE_UNSAVED_EXPERIENCE_MUTATION,
+  CreateOfflineExperienceMutationData,
+  CREATE_OFFLINE_EXPERIENCE_MUTATION,
 } from "../../src/components/ExperienceDefinition/resolvers";
 
 export function createSavedExperience(
@@ -37,15 +37,15 @@ export function createSavedExperience(
   });
 }
 
-export function createUnsavedExperience(
+export function createOfflineExperience(
   experienceDefinitionArgs: CreateExperienceInput,
   { persist }: { persist?: boolean } = {},
 ) {
   return mutate<
-    CreateUnsavedExperienceMutationData,
+    CreateOfflineExperienceMutationData,
     CreateExperienceMutationVariables
   >({
-    mutation: CREATE_UNSAVED_EXPERIENCE_MUTATION,
+    mutation: CREATE_OFFLINE_EXPERIENCE_MUTATION,
     variables: {
       createExperienceInput: experienceDefinitionArgs,
       entriesPagination: { first: 2000 },
@@ -54,7 +54,7 @@ export function createUnsavedExperience(
     const experience =
       result &&
       result.data &&
-      (result.data.createUnsavedExperience as ExperienceFragment);
+      (result.data.createOfflineExperience as ExperienceFragment);
 
     if (persist) {
       return persistCache().then(() => {

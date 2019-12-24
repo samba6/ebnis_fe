@@ -15,6 +15,7 @@ import {
   onUploadResultsReceived,
   StateMachine,
   ExperienceObjectMap,
+  CreationMode,
 } from "../components/UploadOfflineItems/upload-offline.utils";
 import {
   ExperienceFragment,
@@ -60,6 +61,7 @@ import {
   useUploadOnlineEntriesMutation,
 } from "../components/UploadOfflineItems/upload-offline.injectables";
 import { act } from "react-dom/test-utils";
+import { makeCompletelyOfflineExperienceTitleId } from "../components/UploadOfflineItems/upload-offline.dom";
 
 const mockLoadingId = "a-lo";
 jest.mock("../components/Loading/loading", () => ({
@@ -94,25 +96,28 @@ jest.mock("../state/resolvers/update-experiences-in-cache");
 const mockUseState = useState;
 const mockUseEffect = useEffect;
 let mockGetAllUnsavedQueryReturnValue: null | GetOfflineItemsQueryResult;
-jest.mock("../components/UploadOfflineItems/upload-offline.injectables", () => ({
-  useGetAllUnsavedQuery: () => {
-    const [result, setResult] = mockUseState<GetOfflineItemsQueryResult>({
-      loading: true,
-    } as GetOfflineItemsQueryResult);
+jest.mock(
+  "../components/UploadOfflineItems/upload-offline.injectables",
+  () => ({
+    useGetAllUnsavedQuery: () => {
+      const [result, setResult] = mockUseState<GetOfflineItemsQueryResult>({
+        loading: true,
+      } as GetOfflineItemsQueryResult);
 
-    mockUseEffect(() => {
-      const r = mockGetAllUnsavedQueryReturnValue as GetOfflineItemsQueryResult;
-      setResult(r);
-    }, []);
+      mockUseEffect(() => {
+        const r = mockGetAllUnsavedQueryReturnValue as GetOfflineItemsQueryResult;
+        setResult(r);
+      }, []);
 
-    return result;
-  },
+      return result;
+    },
 
-  useUploadOfflineExperiencesMutation: jest.fn(),
-  useUploadOfflineItemsMutation: jest.fn(),
-  useUploadOnlineEntriesMutation: jest.fn(),
-  addUploadOfflineItemsResolvers: jest.fn(),
-}));
+    useUploadOfflineExperiencesMutation: jest.fn(),
+    useUploadOfflineItemsMutation: jest.fn(),
+    useUploadOnlineEntriesMutation: jest.fn(),
+    addUploadOfflineItemsResolvers: jest.fn(),
+  }),
+);
 
 const mockIsConnected = isConnected as jest.Mock;
 const mockEntry = Entry as jest.Mock;
@@ -188,7 +193,7 @@ describe("components", () => {
     });
   });
 
-  it("redirects to 404 when there are no unsaved data", async () => {
+  it("redirects to 404 when there are no offline data", async () => {
     expect(mockGetAllUnsavedQueryReturnValue).toBeNull();
     const { ui, mockNavigate } = makeComp({
       getOfflineItems: {
@@ -203,7 +208,7 @@ describe("components", () => {
     expect(document.getElementById(mockLoadingId)).toBeNull();
   });
 
-  it("shows only partly saved with no saved entries and uploads all unsaved entries successfully", async () => {
+  it("shows only partly offline item with no online entries and uploads all offline entries successfully", async () => {
     expect(mockGetAllUnsavedQueryReturnValue).toBeNull();
 
     const { id: entryId, ...entry } = {
@@ -268,6 +273,11 @@ describe("components", () => {
       },
     });
 
+    const domOfflineTitle1Id = makeCompletelyOfflineExperienceTitleId(
+      1,
+      CreationMode.online,
+    );
+
     let unmount: any = null;
 
     act(() => {
@@ -288,9 +298,7 @@ describe("components", () => {
     ).toBeNull();
 
     expect(
-      (document.getElementById(
-        "upload-unsaved-saved-experience-1-title",
-      ) as any).classList,
+      (document.getElementById(domOfflineTitle1Id) as any).classList,
     ).not.toContain("experience-title--success");
 
     expect(
@@ -331,10 +339,13 @@ describe("components", () => {
       "upload-unsaved-upload-btn",
     ) as any);
 
+    const domOnlineTitle1Id = makeCompletelyOfflineExperienceTitleId(
+      1,
+      CreationMode.online,
+    );
+
     const $elm = await waitForElement(() => {
-      return document.getElementById(
-        "upload-unsaved-saved-experience-1-title",
-      ) as any;
+      return document.getElementById(domOnlineTitle1Id) as HTMLElement;
     });
 
     expect(mockUploadSavedExperiencesEntries).toHaveBeenCalled();
@@ -364,7 +375,7 @@ describe("components", () => {
     expect(mockRemoveQueriesAndMutationsFromCache).toHaveBeenCalled();
   });
 
-  it("shows only never-saved and uploading all succeeds", async () => {
+  it("shows only completely offline items and uploading all succeeds", async () => {
     const experience = {
       title: "a",
       clientId: "1",
@@ -455,10 +466,13 @@ describe("components", () => {
       document.getElementById("uploaded-success-tab-icon-never-saved"),
     ).toBeNull();
 
+    const domTitle1Id = makeCompletelyOfflineExperienceTitleId(
+      1,
+      CreationMode.offline,
+    );
+
     expect(
-      (document.getElementById(
-        "upload-unsaved-unsaved-experience-1-title",
-      ) as any).classList,
+      (document.getElementById(domTitle1Id) as any).classList,
     ).not.toContain("experience-title--success");
 
     expect(document.getElementById("upload-triggered-icon-error-1")).toBeNull();
@@ -523,11 +537,9 @@ describe("components", () => {
 
     expect(document.getElementById("upload-unsaved-upload-btn")).toBeNull();
 
-    expect(
-      (document.getElementById(
-        "upload-unsaved-unsaved-experience-1-title",
-      ) as any).classList,
-    ).toContain("experience-title--success");
+    expect((document.getElementById(domTitle1Id) as any).classList).toContain(
+      "experience-title--success",
+    );
 
     expect(
       document.getElementById("upload-triggered-icon-success-1"),
@@ -708,10 +720,13 @@ describe("components", () => {
      * And should not contain any error UI
      */
 
+    const domTitle1Id = makeCompletelyOfflineExperienceTitleId(
+      1,
+      CreationMode.offline,
+    );
+
     expect(
-      (document.getElementById(
-        "upload-unsaved-unsaved-experience-1-title",
-      ) as any).classList,
+      (document.getElementById(domTitle1Id) as any).classList,
     ).not.toContain("experience-title--error");
 
     /**
@@ -742,10 +757,13 @@ describe("components", () => {
       document.getElementById("upload-unsaved-container-never-saved"),
     ).toBeNull();
 
+    const domTitle2Id = makeCompletelyOfflineExperienceTitleId(
+      2,
+      CreationMode.online,
+    );
+
     expect(
-      (document.getElementById(
-        "upload-unsaved-saved-experience-2-title",
-      ) as any).classList,
+      (document.getElementById(domTitle2Id) as any).classList,
     ).not.toContain("experience-title--error");
 
     const $entry = document.getElementById(
@@ -792,11 +810,9 @@ describe("components", () => {
       document.getElementById("upload-unsaved-container-partly-saved"),
     ).not.toBeNull();
 
-    expect(
-      (document.getElementById(
-        "upload-unsaved-saved-experience-2-title",
-      ) as any).classList,
-    ).toContain("experience-title--error");
+    expect((document.getElementById(domTitle2Id) as any).classList).toContain(
+      "experience-title--error",
+    );
 
     // we also check to see that correct class has been applied to the entry
     expect($entry.classList).toContain("entry--error");
@@ -810,11 +826,9 @@ describe("components", () => {
       document.getElementById("upload-unsaved-container-never-saved"),
     ).not.toBeNull();
 
-    expect(
-      (document.getElementById(
-        "upload-unsaved-unsaved-experience-1-title",
-      ) as any).classList,
-    ).toContain("experience-title--error");
+    expect((document.getElementById(domTitle1Id) as any).classList).toContain(
+      "experience-title--error",
+    );
 
     expect(
       document.getElementById("upload-triggered-icon-error-1"),
@@ -1362,7 +1376,6 @@ describe("non components", () => {
     } as UploadOfflineItemsMutation;
 
     const nextState = onUploadResultsReceived(state, payload);
-    // console.log(JSON.stringify(nextState, null, 2));
 
     expect(nextState).toEqual({
       states: {
@@ -1377,7 +1390,7 @@ describe("non components", () => {
                 },
                 partial: {
                   states: {
-                    unsaved: {
+                    offline: {
                       value: "partialSuccess",
                     },
                     saved: {
@@ -1532,4 +1545,3 @@ interface Args {
   isConnected?: boolean;
   getOfflineItems?: GetOfflineItemsSummary;
 }
-

@@ -15,7 +15,7 @@ import { writeGetExperienceFullQueryToCache } from "../../state/resolvers/write-
 import { insertExperienceInGetExperiencesMiniQuery } from "../../state/resolvers/update-get-experiences-mini-query";
 import { updateEntriesCountInCache } from "../../state/resolvers/update-experiences-in-cache";
 
-const createUnsavedExperienceResolver: LocalResolverFn<
+const createOfflineExperienceResolver: LocalResolverFn<
   CreateExperienceMutationVariables,
   ExperienceFragment
 > = (
@@ -71,18 +71,21 @@ const createUnsavedExperienceResolver: LocalResolverFn<
   writeGetExperienceFullQueryToCache(cache, experience, {
     writeFragment: false,
   });
+
   insertExperienceInGetExperiencesMiniQuery(client, experience, {
     force: true,
   });
+
   updateEntriesCountInCache(client, experienceId);
+
   return experience;
 };
 
-export const CREATE_UNSAVED_EXPERIENCE_MUTATION = gql`
-  mutation CreateUnsavedExperienceMutation(
+export const CREATE_OFFLINE_EXPERIENCE_MUTATION = gql`
+  mutation CreateOfflineExperienceMutation(
     $createExperienceInput: CreateExperienceInput!
   ) {
-    createUnsavedExperience(createExperienceInput: $createExperienceInput)
+    createOfflineExperience(createExperienceInput: $createExperienceInput)
       @client {
       ...ExperienceFragment
     }
@@ -91,8 +94,8 @@ export const CREATE_UNSAVED_EXPERIENCE_MUTATION = gql`
   ${EXPERIENCE_FRAGMENT}
 `;
 
-export interface CreateUnsavedExperienceMutationData {
-  createUnsavedExperience: ExperienceFragment;
+export interface CreateOfflineExperienceMutationData {
+  createOfflineExperience: ExperienceFragment;
 }
 
 //////////////////////////// QUERIES /////////////////////////////////
@@ -101,7 +104,7 @@ export interface CreateUnsavedExperienceMutationData {
 
 export const experienceDefinitionResolvers = {
   Mutation: {
-    [MUTATION_NAME_createExperienceOffline]: createUnsavedExperienceResolver,
+    [MUTATION_NAME_createExperienceOffline]: createOfflineExperienceResolver,
   },
 
   Query: {},

@@ -40,8 +40,8 @@ export function initState() {
   };
 }
 
-export const MUTATION_NAME_createExperienceOffline = "createExperienceOffline";
+export const MUTATION_NAME_createExperienceOffline = "createOfflineExperience";
 
-export const MUTATION_NAME_createEntryOffline = "createEntryOffline";
+export const MUTATION_NAME_createOfflineEntry = "createOfflineEntry";
 
 export const QUERY_NAME_getExperience = "getExperience";

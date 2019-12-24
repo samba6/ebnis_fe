@@ -4,14 +4,14 @@ import { DataTypes } from "../../src/graphql/apollo-types/globalTypes";
 import { makeExperienceRoute } from "../../src/constants/experience-route";
 import {
   createSavedExperience,
-  createUnsavedExperience,
+  createOfflineExperience,
 } from "../support/create-experience";
 import {
   createExperienceEntries,
-  createEntryOffline,
+  createOfflineEntry,
 } from "../support/create-entries";
 import { PAGE_NOT_FOUND_TITLE } from "../../src/constants";
-import { UPLOAD_UNSAVED_TITLE } from "../../src/constants/upload-unsaved-title";
+import { UPLOAD_OFFLINE_ITEMS_TITLE } from "../../src/constants/upload-offline-title";
 import { persistCache } from "../support/mutate";
 
 context("Upload offline items page", () => {
@@ -20,7 +20,7 @@ context("Upload offline items page", () => {
     cy.registerUser(USER_REGISTRATION_OBJECT);
   });
 
-  it("uploads unsaved data successfully", () => {
+  it("uploads offline item successfully", () => {
     const savedExperiencePromise = createSavedExperience({
       title: "saved-1",
       dataDefinitions: [
@@ -45,7 +45,7 @@ context("Upload offline items page", () => {
         },
       ]);
 
-      const unsaved = createEntryOffline({
+      const offlineEntry = createOfflineEntry({
         experience,
         dataObjects: [
           {
@@ -55,26 +55,26 @@ context("Upload offline items page", () => {
         ],
       });
 
-      return Promise.all([saved, unsaved]).then(() => {
+      return Promise.all([saved, offlineEntry]).then(() => {
         return experience;
       });
     });
 
-    const unsavedExperienceTitle = "olu omo";
+    const offlineExperienceTitle = "olu omo";
 
-    const unsavedExperiencePromise = createUnsavedExperience({
-      title: unsavedExperienceTitle,
+    const offlineExperiencePromise = createOfflineExperience({
+      title: offlineExperienceTitle,
       dataDefinitions: [
         {
           name: "f2",
           type: DataTypes.INTEGER,
         },
       ],
-    }).then(unsavedExperience => {
-      const { dataDefinitions } = unsavedExperience;
+    }).then(offlineExperience => {
+      const { dataDefinitions } = offlineExperience;
 
-      return createEntryOffline({
-        experience: unsavedExperience,
+      return createOfflineEntry({
+        experience: offlineExperience,
         dataObjects: [
           {
             data: `{"integer":"3"}`,
@@ -82,32 +82,32 @@ context("Upload offline items page", () => {
           },
         ],
       }).then(() => {
-        return unsavedExperience;
+        return offlineExperience;
       });
     });
 
     let experiencesPromises = Promise.all([
       savedExperiencePromise,
-      unsavedExperiencePromise,
+      offlineExperiencePromise,
     ]).then(result => {
       return persistCache().then(() => {
         return result;
       });
     });
 
-    cy.wrap(experiencesPromises).then(([, unsavedExperience]) => {
-      const { id: unsavedId } = unsavedExperience;
-      const unsavedRoute = makeExperienceRoute(unsavedId);
+    cy.wrap(experiencesPromises).then(([, offlineExperience]) => {
+      const { id: offlineId } = offlineExperience;
+      const offlineRoute = makeExperienceRoute(offlineId);
 
-      cy.visit(unsavedRoute);
+      cy.visit(offlineRoute);
 
       let uploadSuccessRegexp = /^upload-triggered-icon-success-(.+?)$/;
       let savedId: string;
 
-      cy.title().should("contain", unsavedExperienceTitle);
+      cy.title().should("contain", offlineExperienceTitle);
 
       cy.get("#header-unsaved-count-label").click();
-      cy.title().should("contain", UPLOAD_UNSAVED_TITLE);
+      cy.title().should("contain", UPLOAD_OFFLINE_ITEMS_TITLE);
       cy.get("#upload-unsaved-tab-menu-never-saved").click();
       cy.get("#upload-unsaved-upload-btn").click();
 
@@ -117,9 +117,9 @@ context("Upload offline items page", () => {
         savedId = uploadSuccessRegexp.exec($elm.attr("id"))[1];
 
         cy.visit(makeExperienceRoute(savedId));
-        cy.title().should("contain", unsavedExperienceTitle);
+        cy.title().should("contain", offlineExperienceTitle);
 
-        cy.visit(unsavedRoute);
+        cy.visit(offlineRoute);
         cy.title().should("contain", PAGE_NOT_FOUND_TITLE);
       });
     });

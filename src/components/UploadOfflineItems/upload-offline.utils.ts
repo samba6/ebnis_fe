@@ -29,6 +29,11 @@ import { DataDefinitionFragment } from "../../graphql/apollo-types/DataDefinitio
 import { DataObjectFragment } from "../../graphql/apollo-types/DataObjectFragment";
 import { wrapReducer } from "../../logger";
 
+export enum CreationMode {
+  offline = "offline",
+  online = "online",
+}
+
 const initialStates = {
   upload: {
     value: "idle",
@@ -63,7 +68,10 @@ export function stateInitializerFn(getOfflineItems?: GetOfflineItemsSummary) {
     } as StateMachine;
   }
 
-  const { partlyOfflineCount = 0, completelyOfflineCount = 0 } = getOfflineItems;
+  const {
+    partlyOfflineCount = 0,
+    completelyOfflineCount = 0,
+  } = getOfflineItems;
 
   const allCount = partlyOfflineCount + completelyOfflineCount;
 
@@ -230,7 +238,7 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
                 states: { tabs },
               } = proxy;
 
-              if (mode === "unsaved") {
+              if (mode === "offline") {
                 delete proxy.completelyOfflineMap[id];
                 --proxy.completelyOfflineCount;
               } else {
@@ -238,7 +246,8 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
                 --proxy.partlyOfflineCount;
               }
 
-              const count = proxy.completelyOfflineCount + proxy.partlyOfflineCount;
+              const count =
+                proxy.completelyOfflineCount + proxy.partlyOfflineCount;
               context.allCount = count;
 
               if (count === 0) {
@@ -429,15 +438,15 @@ function updateNeverSavedFromUploadResults(
   }
 
   if (!hasSuccess) {
-    localState.partial.states.unsaved = {
+    localState.partial.states.offline = {
       value: "allError",
     };
   } else if (hasError) {
-    localState.partial.states.unsaved = {
+    localState.partial.states.offline = {
       value: "partialSuccess",
     };
   } else {
-    localState.partial.states.unsaved = {
+    localState.partial.states.offline = {
       value: "allSuccess",
     };
   }
@@ -574,7 +583,7 @@ export function onUploadResultsReceived(
 
     if (experiences.value === "partial") {
       const {
-        states: { unsaved, saved },
+        states: { offline, saved },
       } = experiences.partial;
 
       let savedAllSuccess = false;
@@ -586,10 +595,10 @@ export function onUploadResultsReceived(
         savedAllSuccess = saved.value === "allSuccess";
       }
 
-      if (!unsaved) {
+      if (!offline) {
         unsavedAllSuccess = true;
       } else {
-        unsavedAllSuccess = unsaved.value === "allSuccess";
+        unsavedAllSuccess = offline.value === "allSuccess";
       }
 
       if (savedAllSuccess && unsavedAllSuccess) {
@@ -625,10 +634,8 @@ export interface UploadResultPayloadThirdArg {
 
 interface DeleteActionPayload {
   id: string;
-  mode: SaveStatusType;
+  mode: CreationMode
 }
-
-export type SaveStatusType = "saved" | "unsaved";
 
 export type Props = RouteComponentProps;
 
@@ -751,7 +758,7 @@ export interface PartialUploadSuccessState {
         value: "allSuccess" | "allError" | "partialSuccess";
       };
 
-      unsaved?: {
+      offline?: {
         value: "allSuccess" | "allError" | "partialSuccess";
       };
     };

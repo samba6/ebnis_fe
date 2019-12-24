@@ -19,7 +19,7 @@ import { InMemoryCache } from "apollo-cache-inmemory";
 import ApolloClient from "apollo-client";
 import {
   MUTATION_NAME_createExperienceOffline,
-  MUTATION_NAME_createEntryOffline,
+  MUTATION_NAME_createOfflineEntry,
   QUERY_NAME_getExperience,
 } from "../../state/resolvers";
 import { DataObjectFragment } from "../../graphql/apollo-types/DataObjectFragment";
@@ -164,7 +164,7 @@ function handleUnsavedExperiences(
 
         // we will delete the unsaved version from cache.
         toDeletes.push(`Entry:${clientId}`);
-        mutations.push([MUTATION_NAME_createEntryOffline, `Entry:${clientId}`]);
+        mutations.push([MUTATION_NAME_createOfflineEntry, `Entry:${clientId}`]);
 
         deleteDataObjectsFromEntry(entry, toDeletes);
       }
@@ -193,7 +193,7 @@ function handleUnsavedExperiences(
           if (entriesErrorsIds.includes(id)) {
             edges.push(entryToEdge(entry));
 
-            mutations.push([MUTATION_NAME_createEntryOffline, `Entry:${id}`]);
+            mutations.push([MUTATION_NAME_createOfflineEntry, `Entry:${id}`]);
           }
         });
       } else {
@@ -261,7 +261,7 @@ function handleSavedExperiences(
           deleteDataObjectsFromEntry(entry, toDeletes);
 
           mutations.push([
-            MUTATION_NAME_createEntryOffline,
+            MUTATION_NAME_createOfflineEntry,
             `Entry:${clientId}`,
           ]);
 

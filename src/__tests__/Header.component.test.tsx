@@ -126,7 +126,7 @@ it("renders show sidebar icon but not close icon", () => {
 it("renders unsaved count when not in 'upload unsaved' route", () => {
   const { ui } = setup({
     context: {
-      unsavedCount: 1,
+      offlineItemsCount: 1,
     },
   });
 
@@ -146,7 +146,7 @@ it("renders unsaved count when not in 'upload unsaved' route", () => {
 it("does not render unsaved count in 'upload unsaved' route", () => {
   const { ui } = setup({
     context: {
-      unsavedCount: 1,
+      offlineItemsCount: 1,
       hasConnection: true,
     },
 
@@ -231,7 +231,7 @@ it("does not render show sidebar icon if has unsaved", () => {
     },
 
     context: {
-      unsavedCount: 1,
+      offlineItemsCount: 1,
     },
   });
 
@@ -267,7 +267,7 @@ it("does not render hide sidebar icon if has unsaved", () => {
     },
 
     context: {
-      unsavedCount: 1,
+      offlineItemsCount: 1,
     },
   });
 

@@ -55,7 +55,7 @@ export function Layout(props: Props) {
       sidebar: { value: sidebarValue },
     },
 
-    context: { unsavedCount, renderChildren, hasConnection: hasConnection },
+    context: { offlineItemsCount, renderChildren, hasConnection: hasConnection },
   } = stateMachine;
 
   useEffect(() => {
@@ -69,7 +69,7 @@ export function Layout(props: Props) {
           getOfflineItemsCount(client).then(newUnsavedCount => {
             dispatch({
               type: LayoutActionType.CONNECTION_CHANGED,
-              unsavedCount: newUnsavedCount,
+              offlineItemsCount: newUnsavedCount,
               isConnected,
             });
           });
@@ -95,7 +95,7 @@ export function Layout(props: Props) {
 
         dispatch({
           type: LayoutActionType.CACHE_PERSISTED,
-          unsavedCount: await getOfflineItemsCount(client),
+          offlineItemsCount: await getOfflineItemsCount(client),
           hasConnection: !!isConnected(),
         });
       })();
@@ -129,7 +129,7 @@ export function Layout(props: Props) {
   // this will be true if we are server rendering in gatsby build
   if (!(cache && restoreCacheOrPurgeStorage && client)) {
     return (
-      <LayoutProvider value={{ unsavedCount: 0 } as ILayoutContextHeaderValue}>
+      <LayoutProvider value={{ offlineItemsCount: 0 } as ILayoutContextHeaderValue}>
         {children}
       </LayoutProvider>
     );
@@ -145,7 +145,7 @@ export function Layout(props: Props) {
         <LayoutProvider
           value={
             {
-              unsavedCount,
+              offlineItemsCount,
               hasConnection: hasConnection,
               sidebarVisible: sidebarValue === "opened",
             } as ILayoutContextHeaderValue

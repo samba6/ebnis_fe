@@ -30,7 +30,7 @@ import {
   CreateDataObject,
 } from "../../graphql/apollo-types/globalTypes";
 import { CreateEntryMutation_createEntry } from "../../graphql/apollo-types/CreateEntryMutation";
-import { CreateEntryOfflineMutationReturned } from "./new-entry.resolvers";
+import { CreateOfflineEntryMutationReturned } from "./new-entry.resolvers";
 import { componentFromDataType } from "./component-from-data-type";
 import { InputOnChangeData } from "semantic-ui-react";
 import {
@@ -45,7 +45,7 @@ import { HeaderSemantic } from "../Header/header-semantic.component";
 export function NewEntry(props: Props) {
   const { navigate, experience } = props;
   const [createEntry] = useCreateOnlineEntry();
-  const [createEntryOffline] = useCreateEntryOffline();
+  const [createOfflineEntry] = useCreateEntryOffline();
   const { client } = useContext(EbnisAppContext);
 
   const [state, dispatch] = useReducer(
@@ -115,7 +115,7 @@ export function NewEntry(props: Props) {
         createResult = ((result && result.data && result.data.createEntry) ||
           {}) as CreateEntryMutation_createEntry;
       } else {
-        const result = await createEntryOffline({
+        const result = await createOfflineEntry({
           variables: {
             experience,
             dataObjects,
@@ -125,7 +125,7 @@ export function NewEntry(props: Props) {
         const { entry } = (result &&
           result.data &&
           result.data
-            .createEntryOffline) as CreateEntryOfflineMutationReturned["createEntryOffline"];
+            .createOfflineEntry) as CreateOfflineEntryMutationReturned["createOfflineEntry"];
 
         createResult = { entry } as CreateEntryMutation_createEntry;
       }

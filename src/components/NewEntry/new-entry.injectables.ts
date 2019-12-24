@@ -8,8 +8,8 @@ import {
   CreateEntryMutationVariables,
 } from "../../graphql/apollo-types/CreateEntryMutation";
 import {
-  CREATE_ENTRY_OFFLINE_MUTATION,
-  CreateEntryOfflineMutationReturned,
+  CREATE_OFFLINE_ENTRY_MUTATION,
+  CreateOfflineEntryMutationReturned,
   CreateEntryOfflineVariables,
   newEntryResolvers,
 } from "./new-entry.resolvers";
@@ -42,9 +42,9 @@ export function useCreateOnlineEntry() {
 
 export function useCreateEntryOffline() {
   return useMutation<
-    CreateEntryOfflineMutationReturned,
+    CreateOfflineEntryMutationReturned,
     CreateEntryOfflineVariables
-  >(CREATE_ENTRY_OFFLINE_MUTATION);
+  >(CREATE_OFFLINE_ENTRY_MUTATION);
 }
 
 type Fn<T = string | ExperienceFragment> = (

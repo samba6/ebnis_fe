@@ -19,7 +19,7 @@ import { replaceExperiencesInGetExperiencesMiniQuery } from "../state/resolvers/
 import { writeGetExperienceFullQueryToCache } from "../state/resolvers/write-get-experience-full-query-to-cache";
 import { writeAllExperiencesToCache } from "../state/resolvers/update-experiences-in-cache";
 import {
-  MUTATION_NAME_createEntryOffline,
+  MUTATION_NAME_createOfflineEntry,
   MUTATION_NAME_createExperienceOffline,
   QUERY_NAME_getExperience,
 } from "../state/resolvers";
@@ -192,8 +192,8 @@ test("partially saved unsaved experience", () => {
     {
       mutations: [
         [MUTATION_NAME_createExperienceOffline, "Experience:2"],
-        [MUTATION_NAME_createEntryOffline, "Entry:saved-entry"],
-        [MUTATION_NAME_createEntryOffline, "Entry:unsaved-entry"],
+        [MUTATION_NAME_createOfflineEntry, "Entry:saved-entry"],
+        [MUTATION_NAME_createOfflineEntry, "Entry:unsaved-entry"],
       ],
 
       queries: [[QUERY_NAME_getExperience, "Experience:2"]],
@@ -363,7 +363,7 @@ test("saved experience with unsaved entry not saved", () => {
   expect(outstandingUnsavedCount).toBe(1);
 
   expect(mockDeleteIdsFromCache).toHaveBeenCalledWith({}, ["Entry:22-c"], {
-    mutations: [[MUTATION_NAME_createEntryOffline, "Entry:22-c"]],
+    mutations: [[MUTATION_NAME_createOfflineEntry, "Entry:22-c"]],
 
     queries: [],
   });
@@ -504,7 +504,7 @@ test("saved experience completely saved", () => {
     {},
     ["Entry:71-c", "DataObject:1", `${ALL_EXPERIENCES_TYPENAME}:7`],
     {
-      mutations: [[MUTATION_NAME_createEntryOffline, "Entry:71-c"]],
+      mutations: [[MUTATION_NAME_createOfflineEntry, "Entry:71-c"]],
 
       queries: [],
     },

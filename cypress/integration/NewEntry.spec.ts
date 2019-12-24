@@ -3,7 +3,7 @@ import { DataTypes } from "../../src/graphql/apollo-types/globalTypes";
 import { makeNewEntryRoute } from "../../src/constants/new-entry-route";
 import {
   createSavedExperience,
-  createUnsavedExperience,
+  createOfflineExperience,
 } from "../support/create-experience";
 import { ExperienceFragment } from "../../src/graphql/apollo-types/ExperienceFragment";
 import { OFFLINE_ID_PREFIX } from "../../src/constants";
@@ -115,7 +115,7 @@ context("new entry page", () => {
      */
     const fieldName = "tt";
 
-    let p = createUnsavedExperience(
+    let p = createOfflineExperience(
       {
         title,
         dataDefinitions: [
