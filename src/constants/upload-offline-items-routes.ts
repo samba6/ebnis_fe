@@ -1,0 +1,7 @@
+import { CLIENT_ONLY_PATH_PREFIX } from "./client-only-prefix";
+
+export const UPLOAD_OFFLINE_ITEMS_URL_START =
+  CLIENT_ONLY_PATH_PREFIX + "/upload-offline-items";
+export const UPLOAD_OFFLINE_ITEMS_PREVIEW_URL = UPLOAD_OFFLINE_ITEMS_URL_START + "/preview";
+export const UPLOAD_OFFLINE_ITEMS_PREVIEW_RESULT_URL =
+  UPLOAD_OFFLINE_ITEMS_URL_START + "/result";

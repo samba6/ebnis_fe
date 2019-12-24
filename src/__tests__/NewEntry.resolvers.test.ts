@@ -2,19 +2,19 @@
 
 import { newEntryResolvers } from "../components/NewEntry/new-entry.resolvers";
 import { CacheContext } from "../state/resolvers";
-import { isUnsavedId } from "../constants";
+import { isOfflineId } from "../constants";
 import { makeTestCache } from "./test_utils";
 import { EntryFragment } from "../graphql/apollo-types/EntryFragment";
 import { updateExperienceWithNewEntry } from "../components/NewEntry/new-entry.injectables";
 import { ExperienceFragment } from "../graphql/apollo-types/ExperienceFragment";
-import { updateEntriesCountSavedAndUnsavedExperiencesInCache } from "../state/resolvers/update-saved-and-unsaved-experiences-in-cache";
+import { updateEntriesCountInCache } from "../state/resolvers/update-experiences-in-cache";
 
 jest.mock("../components/NewEntry/new-entry.injectables");
-jest.mock("../state/resolvers/update-saved-and-unsaved-experiences-in-cache");
+jest.mock("../state/resolvers/update-experiences-in-cache");
 
 const mockUpdateExperienceWithNewEntry = updateExperienceWithNewEntry as jest.Mock;
 
-const mockUpdateEntriesCountSavedAndUnsavedExperiencesInCache = updateEntriesCountSavedAndUnsavedExperiencesInCache as jest.Mock;
+const mockUpdateEntriesCountSavedAndUnsavedExperiencesInCache = updateEntriesCountInCache as jest.Mock;
 
 const { createEntryOffline } = newEntryResolvers.Mutation;
 
@@ -59,7 +59,7 @@ it("updates unsaved experience successfully", async done => {
     mockContext,
   );
 
-  expect(isUnsavedId(entry.id)).toBe(true);
+  expect(isOfflineId(entry.id)).toBe(true);
   expect(entry.id).toBe(entry.clientId);
   expect(entry.id).toBe(id);
   expect(__typename).toEqual("Entry");

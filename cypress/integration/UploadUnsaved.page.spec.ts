@@ -14,7 +14,7 @@ import { PAGE_NOT_FOUND_TITLE } from "../../src/constants";
 import { UPLOAD_UNSAVED_TITLE } from "../../src/constants/upload-unsaved-title";
 import { persistCache } from "../support/mutate";
 
-context("Upload unsaved page", () => {
+context("Upload offline items page", () => {
   beforeEach(() => {
     cy.checkoutSession();
     cy.registerUser(USER_REGISTRATION_OBJECT);

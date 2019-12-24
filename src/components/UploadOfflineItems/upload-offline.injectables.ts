@@ -1,5 +1,5 @@
 import {
-  UPLOAD_UNSAVED_EXPERIENCES_MUTATION,
+  UPLOAD_OFFLINE_EXPERIENCES_MUTATION,
   UPLOAD_ALL_UNSAVEDS_MUTATION,
 } from "../../graphql/upload-unsaveds.mutation";
 import {
@@ -38,7 +38,7 @@ export function useUploadUnsavedExperiencesMutation() {
   return useMutation<
     UploadUnsavedExperiencesMutation,
     UploadUnsavedExperiencesMutationVariables
-  >(UPLOAD_UNSAVED_EXPERIENCES_MUTATION);
+  >(UPLOAD_OFFLINE_EXPERIENCES_MUTATION);
 }
 
 export function useUploadAllUnsavedsMutation() {

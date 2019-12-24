@@ -46,7 +46,7 @@ import {
 } from "../Layout/layout.utils";
 import { replaceExperiencesInGetExperiencesMiniQuery } from "../../state/resolvers/update-get-experiences-mini-query";
 import { deleteIdsFromCache } from "../../state/resolvers/delete-references-from-cache";
-import { deleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache } from "../../state/resolvers/update-saved-and-unsaved-experiences-in-cache";
+import { deleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache } from "../../state/resolvers/update-experiences-in-cache";
 import { EXPERIENCES_URL } from "../../routes";
 import { updateCache } from "./update-cache";
 import { useDeleteMutationsOnExit } from "../use-delete-mutations-on-exit";
@@ -62,12 +62,12 @@ import {
   useUploadAllUnsavedsMutation,
   useUploadSavedExperiencesEntriesMutation,
   addUploadUnsavedResolvers,
-} from "./upload-unsaved.injectables";
+} from "./upload-offline.injectables";
 
 const timeoutMs = 500;
 const REDIRECT_ROUTE = makeSiteTitle(MY_EXPERIENCES_TITLE);
 
-export function UploadUnsaved(props: Props) {
+export function UploadOfflineItems(props: Props) {
   const { navigate } = props;
   const [uploadUnsavedExperiences] = useUploadUnsavedExperiencesMutation();
   const [uploadAllUnsaveds] = useUploadAllUnsavedsMutation();
@@ -344,7 +344,7 @@ export function UploadUnsaved(props: Props) {
   );
 }
 
-export default UploadUnsaved;
+export default UploadOfflineItems;
 
 ////////////////////////// COMPONENTS ///////////////////////////////////
 

@@ -6,7 +6,7 @@ import {
   createUnsavedExperience,
 } from "../support/create-experience";
 import { ExperienceFragment } from "../../src/graphql/apollo-types/ExperienceFragment";
-import { UNSAVED_ID_PREFIX } from "../../src/constants";
+import { OFFLINE_ID_PREFIX } from "../../src/constants";
 
 context("new entry page", () => {
   beforeEach(() => {
@@ -104,7 +104,7 @@ context("new entry page", () => {
        */
       cy.get(makeIdAttributeSelector(experience)).then($element => {
         expect($element.text()).eq("4");
-        expect($element.attr("id")).to.include(UNSAVED_ID_PREFIX);
+        expect($element.attr("id")).to.include(OFFLINE_ID_PREFIX);
       });
     });
   });
@@ -159,7 +159,7 @@ context("new entry page", () => {
        */
       cy.get(makeIdAttributeSelector(experience)).then($element => {
         expect($element.text()).eq("2");
-        expect($element.attr("id")).to.include(UNSAVED_ID_PREFIX);
+        expect($element.attr("id")).to.include(OFFLINE_ID_PREFIX);
       });
     });
   });

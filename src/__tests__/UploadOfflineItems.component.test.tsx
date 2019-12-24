@@ -7,7 +7,7 @@ import {
   waitForElement,
   cleanup,
 } from "@testing-library/react";
-import { UploadUnsaved } from "../components/UploadUnsaved/upload-unsaved.component";
+import { UploadOfflineItems } from "../components/UploadOfflineItems/upload-offline.component";
 import {
   Props,
   definitionToUnsavedData,
@@ -15,7 +15,7 @@ import {
   onUploadResultsReceived,
   StateMachine,
   ExperienceObjectMap,
-} from "../components/UploadUnsaved/upload-unsaved.utils";
+} from "../components/UploadOfflineItems/upload-unsaved.utils";
 import {
   ExperienceFragment,
   ExperienceFragment_entries_edges_node,
@@ -46,19 +46,19 @@ import { LayoutUnchangingProvider } from "../components/Layout/layout-providers"
 import { isConnected } from "../state/connections";
 import { Entry } from "../components/Entry/entry.component";
 import { scrollIntoView } from "../components/scroll-into-view";
-import { updateCache } from "../components/UploadUnsaved/update-cache";
+import { updateCache } from "../components/UploadOfflineItems/update-cache";
 import { replaceExperiencesInGetExperiencesMiniQuery } from "../state/resolvers/update-get-experiences-mini-query";
 import {
   deleteIdsFromCache,
   removeQueriesAndMutationsFromCache,
 } from "../state/resolvers/delete-references-from-cache";
-import { deleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache } from "../state/resolvers/update-saved-and-unsaved-experiences-in-cache";
+import { deleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache } from "../state/resolvers/update-experiences-in-cache";
 import { EbnisAppProvider } from "../context";
 import {
   useUploadUnsavedExperiencesMutation,
   useUploadAllUnsavedsMutation,
   useUploadSavedExperiencesEntriesMutation,
-} from "../components/UploadUnsaved/upload-unsaved.injectables";
+} from "../components/UploadOfflineItems/upload-offline.injectables";
 import { act } from "react-dom/test-utils";
 
 const mockLoadingId = "a-lo";
@@ -86,15 +86,15 @@ jest.mock("../components/Experience/loadables", () => ({
 
 jest.mock("../state/connections");
 jest.mock("../components/scroll-into-view");
-jest.mock("../components/UploadUnsaved/update-cache");
+jest.mock("../components/UploadOfflineItems/update-cache");
 jest.mock("../state/resolvers/update-get-experiences-mini-query");
 jest.mock("../state/resolvers/delete-references-from-cache");
-jest.mock("../state/resolvers/update-saved-and-unsaved-experiences-in-cache");
+jest.mock("../state/resolvers/update-experiences-in-cache");
 
 const mockUseState = useState;
 const mockUseEffect = useEffect;
 let mockGetAllUnsavedQueryReturnValue: null | GetAllUnsavedQueryResult;
-jest.mock("../components/UploadUnsaved/upload-unsaved.injectables", () => ({
+jest.mock("../components/UploadOfflineItems/upload-offline.injectables", () => ({
   useGetAllUnsavedQuery: () => {
     const [result, setResult] = mockUseState<GetAllUnsavedQueryResult>({
       loading: true,
@@ -1456,7 +1456,7 @@ describe("non components", () => {
 
 ////////////////////////// HELPER FUNCTIONS ///////////////////////////////////
 
-const UploadUnsavedP = UploadUnsaved as ComponentType<Partial<Props>>;
+const UploadUnsavedP = UploadOfflineItems as ComponentType<Partial<Props>>;
 
 const defaultArgs: Args = {
   props: {},

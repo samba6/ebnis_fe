@@ -12,7 +12,7 @@ import { EXPERIENCE_NO_ENTRY_FRAGMENT } from "./experience.fragment";
 import { CREATE_EXPERIENCE_ERRORS } from "./create-experience-errors.fragment";
 import { MutationFunction, MutationFetchResult } from "@apollo/react-common";
 
-const UPLOAD_UNSAVED_EXPERIENCES_EXPERIENCE_ERROR_FRAGMENT = gql`
+const UPLOAD_OFFLINE_EXPERIENCES_EXPERIENCE_ERROR_FRAGMENT = gql`
   fragment UploadUnsavedExperiencesExperienceErrorFragment on CreateOfflineExperienceErrors {
     clientId
     index
@@ -24,7 +24,7 @@ const UPLOAD_UNSAVED_EXPERIENCES_EXPERIENCE_ERROR_FRAGMENT = gql`
   ${CREATE_EXPERIENCE_ERRORS}
 `;
 
-const UPLOAD_UNSAVED_EXPERIENCES_FRAGMENT = gql`
+const UPLOAD_OFFLINE_EXPERIENCES_FRAGMENT = gql`
   fragment UploadUnsavedExperiencesFragment on OfflineExperience {
     experience {
       ...ExperienceNoEntryFragment
@@ -46,17 +46,17 @@ const UPLOAD_UNSAVED_EXPERIENCES_FRAGMENT = gql`
   ${EXPERIENCE_NO_ENTRY_FRAGMENT}
   ${ENTRY_CONNECTION_FRAGMENT}
   ${CREATE_ENTRIES_ERROR_FRAGMENT}
-  ${UPLOAD_UNSAVED_EXPERIENCES_EXPERIENCE_ERROR_FRAGMENT}
+  ${UPLOAD_OFFLINE_EXPERIENCES_EXPERIENCE_ERROR_FRAGMENT}
 `;
 
-export const UPLOAD_UNSAVED_EXPERIENCES_MUTATION = gql`
+export const UPLOAD_OFFLINE_EXPERIENCES_MUTATION = gql`
   mutation UploadUnsavedExperiencesMutation($input: [CreateExperienceInput!]!) {
     saveOfflineExperiences(input: $input) {
       ...UploadUnsavedExperiencesFragment
     }
   }
 
-  ${UPLOAD_UNSAVED_EXPERIENCES_FRAGMENT}
+  ${UPLOAD_OFFLINE_EXPERIENCES_FRAGMENT}
 `;
 
 export const UPLOAD_ALL_UNSAVEDS_MUTATION = gql`
@@ -73,7 +73,7 @@ export const UPLOAD_ALL_UNSAVEDS_MUTATION = gql`
     }
   }
 
-  ${UPLOAD_UNSAVED_EXPERIENCES_FRAGMENT}
+  ${UPLOAD_OFFLINE_EXPERIENCES_FRAGMENT}
   ${CREATE_ENTRIES_RESPONSE_FRAGMENT}
 `;
 

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { updateCache } from "../components/UploadUnsaved/update-cache";
-import { ExperiencesIdsToObjectMap } from "../components/UploadUnsaved/upload-unsaved.utils";
+import { updateCache } from "../components/UploadOfflineItems/update-cache";
+import { ExperiencesIdsToObjectMap } from "../components/UploadOfflineItems/upload-unsaved.utils";
 import {
   ExperienceFragment,
   ExperienceFragment_entries_edges_node,
@@ -12,12 +12,12 @@ import {
 jest.mock("../state/resolvers/update-get-experiences-mini-query");
 jest.mock("../state/resolvers/write-get-experience-full-query-to-cache");
 jest.mock("../state/resolvers/delete-references-from-cache");
-jest.mock("../state/resolvers/update-saved-and-unsaved-experiences-in-cache");
+jest.mock("../state/resolvers/update-experiences-in-cache");
 
 import { deleteIdsFromCache } from "../state/resolvers/delete-references-from-cache";
 import { replaceExperiencesInGetExperiencesMiniQuery } from "../state/resolvers/update-get-experiences-mini-query";
 import { writeGetExperienceFullQueryToCache } from "../state/resolvers/write-get-experience-full-query-to-cache";
-import { writeSavedAndUnsavedExperiencesToCache } from "../state/resolvers/update-saved-and-unsaved-experiences-in-cache";
+import { writeSavedAndUnsavedExperiencesToCache } from "../state/resolvers/update-experiences-in-cache";
 import {
   MUTATION_NAME_createEntryOffline,
   MUTATION_NAME_createExperienceOffline,

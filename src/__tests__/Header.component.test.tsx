@@ -4,7 +4,7 @@ import React, { ComponentType } from "react";
 import { render, fireEvent } from "@testing-library/react";
 import { Header, Props } from "../components/Header/header.component";
 import { ILayoutContextHeaderValue } from "../components/Layout/layout.utils";
-import { UPLOAD_UNSAVED_PREVIEW_URL } from "../constants/upload-unsaved-routes";
+import { UPLOAD_OFFLINE_ITEMS_PREVIEW_URL } from "../constants/upload-offline-items-routes";
 import {
   LayoutProvider,
   LocationProvider,
@@ -150,7 +150,7 @@ it("does not render unsaved count in 'upload unsaved' route", () => {
       hasConnection: true,
     },
 
-    location: { pathname: UPLOAD_UNSAVED_PREVIEW_URL } as any,
+    location: { pathname: UPLOAD_OFFLINE_ITEMS_PREVIEW_URL } as any,
   });
 
   render(ui);

@@ -5,7 +5,7 @@ import {
   SavedAndUnsavedExperiences,
   SAVED_AND_UNSAVED_EXPERIENCE_TYPENAME,
 } from "../offline-resolvers";
-import { isUnsavedId } from "../../constants";
+import { isOfflineId } from "../../constants";
 import { getExperiencesFromCache } from "./get-experiences-from-cache";
 import ApolloClient from "apollo-client";
 import immer from "immer";
@@ -23,7 +23,7 @@ export function writeSavedAndUnsavedExperiencesToCache(
   });
 }
 
-export async function updateEntriesCountSavedAndUnsavedExperiencesInCache(
+export async function updateEntriesCountInCache(
   client: ApolloClient<{}>,
   id: string,
 ) {
@@ -33,7 +33,7 @@ export async function updateEntriesCountSavedAndUnsavedExperiencesInCache(
     cacheData = [
       {
         id: id,
-        unsavedEntriesCount: isUnsavedId(id) ? 0 : 1,
+        unsavedEntriesCount: isOfflineId(id) ? 0 : 1,
         __typename: SAVED_AND_UNSAVED_EXPERIENCE_TYPENAME,
       },
     ];

@@ -5,7 +5,7 @@ import {
 } from "../graphql/apollo-types/ExperienceFragment";
 import gql from "graphql-tag";
 import { LocalResolverFn } from "./resolvers";
-import { isUnsavedId } from "../constants";
+import { isOfflineId } from "../constants";
 import { readGetExperienceFullQueryFromCache } from "./resolvers/read-get-experience-full-query-from-cache";
 import { getExperiencesFromCache } from "./resolvers/get-experiences-from-cache";
 import ApolloClient from "apollo-client";
@@ -25,7 +25,7 @@ export async function getOfflineItemsCount(client: ApolloClient<{}>) {
     (acc, { id, unsavedEntriesCount }) => {
       acc += unsavedEntriesCount;
 
-      if (isUnsavedId(id)) {
+      if (isOfflineId(id)) {
         ++acc;
       }
 
@@ -82,7 +82,7 @@ const getAllUnsavedResolver: LocalResolverFn<
     const experience = readGetExperienceFullQueryFromCache(cache, id);
 
     if (experience) {
-      if (isUnsavedId(id)) {
+      if (isOfflineId(id)) {
         ++neverSavedCount;
         neverSavedMap[id] = {
           experience,
@@ -116,7 +116,7 @@ function separateExperienceUnsavedEntries({ entries }: ExperienceFragment) {
     (edge: ExperienceFragment_entries_edges) => {
       const node = edge.node as ExperienceFragment_entries_edges_node;
 
-      if (isUnsavedId(node.id)) {
+      if (isOfflineId(node.id)) {
         unsavedEntries.push(node);
       } else {
         savedEntries.push(node);

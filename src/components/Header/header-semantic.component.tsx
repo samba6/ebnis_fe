@@ -11,9 +11,9 @@ import {
   LayoutActionType,
 } from "../Layout/layout.utils";
 import {
-  UPLOAD_UNSAVED_PREVIEW_URL,
-  UPLOAD_UNSAVED_URL_START,
-} from "../../constants/upload-unsaved-routes";
+  UPLOAD_OFFLINE_ITEMS_PREVIEW_URL,
+  UPLOAD_OFFLINE_ITEMS_URL_START,
+} from "../../constants/upload-offline-items-routes";
 
 export const HeaderSemantic = (props: Props) => {
   const { title, sidebar, children, className = "" } = props;
@@ -34,9 +34,9 @@ export const HeaderSemantic = (props: Props) => {
       })}
     >
       <Menu secondary={true}>
-        {unsavedCount > 0 && !pathname.includes(UPLOAD_UNSAVED_URL_START) ? (
+        {unsavedCount > 0 && !pathname.includes(UPLOAD_OFFLINE_ITEMS_URL_START) ? (
           <Link
-            to={UPLOAD_UNSAVED_PREVIEW_URL}
+            to={UPLOAD_OFFLINE_ITEMS_PREVIEW_URL}
             id="header-unsaved-count-label"
             className="unsaved-count-label"
           >

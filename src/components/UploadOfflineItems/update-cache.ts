@@ -8,7 +8,7 @@ import {
   SavedAndUnsavedExperiences,
   SAVED_AND_UNSAVED_EXPERIENCE_TYPENAME,
 } from "../../state/offline-resolvers";
-import { writeSavedAndUnsavedExperiencesToCache } from "../../state/resolvers/update-saved-and-unsaved-experiences-in-cache";
+import { writeSavedAndUnsavedExperiencesToCache } from "../../state/resolvers/update-experiences-in-cache";
 import immer from "immer";
 import { entryToEdge } from "../../state/resolvers/entry-to-edge";
 import { ExperiencesIdsToObjectMap } from "./upload-unsaved.utils";
