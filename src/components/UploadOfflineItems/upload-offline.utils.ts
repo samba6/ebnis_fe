@@ -1,6 +1,6 @@
 import {
   GetOfflineItemsSummary,
-  SavedAndUnsavedExperienceSummary,
+  AllExperienceSummary,
 } from "../../state/offline-resolvers";
 import immer, { Draft } from "immer";
 import { Reducer } from "react";
@@ -58,14 +58,14 @@ export function stateInitializerFn(getOfflineItems?: GetOfflineItemsSummary) {
   if (!getOfflineItems) {
     return {
       ...initial,
-      neverSavedMap: {},
-      partlySavedMap: {},
+      completelyOfflineMap: {},
+      partlyOfflineMap: {},
     } as StateMachine;
   }
 
-  const { partlySavedCount = 0, neverSavedCount = 0 } = getOfflineItems;
+  const { partlyOfflineCount = 0, completelyOfflineCount = 0 } = getOfflineItems;
 
-  const allCount = partlySavedCount + neverSavedCount;
+  const allCount = partlyOfflineCount + completelyOfflineCount;
 
   const context = {
     ...initialContext,
@@ -75,7 +75,7 @@ export function stateInitializerFn(getOfflineItems?: GetOfflineItemsSummary) {
   const tabsState = { ...initialStates.tabs } as TabsState;
 
   if (allCount > 0) {
-    updateTabsState(tabsState, partlySavedCount, neverSavedCount);
+    updateTabsState(tabsState, partlyOfflineCount, completelyOfflineCount);
   }
 
   const states = {
@@ -92,19 +92,19 @@ export function stateInitializerFn(getOfflineItems?: GetOfflineItemsSummary) {
     ...{ ...initial, states, context },
     ...getOfflineItems,
 
-    partlySavedCount,
-    neverSavedCount,
+    partlyOfflineCount,
+    completelyOfflineCount,
   } as StateMachine;
 }
 
 function updateTabsState(
   tabsState: TabsState,
-  partlySavedCount: number,
-  neverSavedCount: number,
+  partlyOfflineCount: number,
+  completelyOfflineCount: number,
 ) {
   const context = { ...tabsState.context } as TabStateContext;
 
-  if (partlySavedCount > 0 && neverSavedCount > 0) {
+  if (partlyOfflineCount > 0 && completelyOfflineCount > 0) {
     context.neverSaved = true;
     context.partlySaved = true;
     tabsState.value = "two";
@@ -117,21 +117,21 @@ function updateTabsState(
     };
   } else {
     tabsState.value = "one";
-    context.partlySaved = partlySavedCount > 0;
-    context.neverSaved = neverSavedCount > 0;
+    context.partlySaved = partlyOfflineCount > 0;
+    context.neverSaved = completelyOfflineCount > 0;
   }
 
   tabsState.context = context;
 }
 
 export enum ActionType {
-  UPLOAD_STARTED = "@upload-unsaved/upload-started",
-  UPLOAD_RESULTS_RECEIVED = "@upload-unsaved/upload-results-received",
-  SERVER_ERROR = "@upload-unsaved/set-server-error",
-  CLEAR_SERVER_ERRORS = "@upload-unsaved/clear-server-errors",
-  INIT_STATE_FROM_PROPS = "@upload-unsaved/init-state-from-props",
-  DELETE_EXPERIENCE = "@upload-unsaved/delete-experience",
-  TOGGLE_TAB = "@upload-unsaved/toggle-tab",
+  UPLOAD_STARTED = "@upload-offline/upload-started",
+  UPLOAD_RESULTS_RECEIVED = "@upload-offline/upload-results-received",
+  SERVER_ERROR = "@upload-offline/set-server-error",
+  CLEAR_SERVER_ERRORS = "@upload-offline/clear-server-errors",
+  INIT_STATE_FROM_PROPS = "@upload-offline/init-state-from-props",
+  DELETE_EXPERIENCE = "@upload-offline/delete-experience",
+  TOGGLE_TAB = "@upload-offline/toggle-tab",
 }
 
 export const reducer: Reducer<StateMachine, Action> = (state, action) =>
@@ -231,14 +231,14 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
               } = proxy;
 
               if (mode === "unsaved") {
-                delete proxy.neverSavedMap[id];
-                --proxy.neverSavedCount;
+                delete proxy.completelyOfflineMap[id];
+                --proxy.completelyOfflineCount;
               } else {
-                delete proxy.partlySavedMap[id];
-                --proxy.partlySavedCount;
+                delete proxy.partlyOfflineMap[id];
+                --proxy.partlyOfflineCount;
               }
 
-              const count = proxy.neverSavedCount + proxy.partlySavedCount;
+              const count = proxy.completelyOfflineCount + proxy.partlyOfflineCount;
               context.allCount = count;
 
               if (count === 0) {
@@ -247,8 +247,8 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
               } else {
                 updateTabsState(
                   tabs,
-                  proxy.partlySavedCount,
-                  proxy.neverSavedCount,
+                  proxy.partlyOfflineCount,
+                  proxy.completelyOfflineCount,
                 );
               }
             }
@@ -292,7 +292,7 @@ function updatePartlySavedFromUploadResults(
   const localState = successState as PartialUploadSuccessState;
   let hasSuccess = false;
   let hasError = false;
-  const { partlySavedMap } = stateProxy;
+  const { partlyOfflineMap } = stateProxy;
 
   localState.partial = localState.partial || {
     states: {},
@@ -311,7 +311,7 @@ function updatePartlySavedFromUploadResults(
     const { errors, experienceId, entries = [] } = element;
     hasSuccess = entries.length > 0;
 
-    const map = partlySavedMap[experienceId];
+    const map = partlyOfflineMap[experienceId];
     map.newlySavedEntries = entries as ExperienceFragment_entries_edges_node[];
 
     map.offlineEntries = replacePartlyUnsavedEntriesWithNewlySaved(
@@ -361,7 +361,7 @@ function updateNeverSavedFromUploadResults(
     return;
   }
 
-  const { neverSavedMap } = stateProxy;
+  const { completelyOfflineMap } = stateProxy;
   let hasSuccess = false;
   let hasError = false;
   const localState = successState as PartialUploadSuccessState;
@@ -385,7 +385,7 @@ function updateNeverSavedFromUploadResults(
     let map = {} as ExperiencesIdsToObjectMap["k"];
 
     if (experienceErrors) {
-      map = neverSavedMap[experienceErrors.clientId as string];
+      map = completelyOfflineMap[experienceErrors.clientId as string];
       map.experienceError = Object.entries(experienceErrors.errors).reduce(
         (acc, [k, v]) => {
           if (v && k !== "__typename") {
@@ -401,7 +401,7 @@ function updateNeverSavedFromUploadResults(
     if (experience) {
       hasSuccess = true;
       const { clientId } = experience;
-      map = neverSavedMap[clientId as string];
+      map = completelyOfflineMap[clientId as string];
       map.newlySavedExperience = experience;
 
       map.offlineEntries = replaceNeverSavedEntriesWithNewlySaved(
@@ -606,7 +606,7 @@ export interface ExperiencesIdsToObjectMap {
   [k: string]: ExperienceObjectMap;
 }
 
-export interface ExperienceObjectMap extends SavedAndUnsavedExperienceSummary {
+export interface ExperienceObjectMap extends AllExperienceSummary {
   didUploadSucceed?: boolean;
   experienceError?: string;
   entriesErrors?: {
@@ -633,10 +633,10 @@ export type SaveStatusType = "saved" | "unsaved";
 export type Props = RouteComponentProps;
 
 export interface StateMachine {
-  readonly partlySavedCount: number;
-  readonly neverSavedCount: number;
-  readonly partlySavedMap: ExperiencesIdsToObjectMap;
-  readonly neverSavedMap: ExperiencesIdsToObjectMap;
+  readonly partlyOfflineCount: number;
+  readonly completelyOfflineCount: number;
+  readonly partlyOfflineMap: ExperiencesIdsToObjectMap;
+  readonly completelyOfflineMap: ExperiencesIdsToObjectMap;
   readonly shouldRedirect?: boolean;
 
   readonly parallel: true;

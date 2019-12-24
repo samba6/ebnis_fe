@@ -72,9 +72,7 @@ export function UploadOfflineItems(props: Props) {
   const [uploadUnsavedExperiences] = useUploadOfflineExperiencesMutation();
   const [uploadAllUnsaveds] = useUploadOfflineItemsMutation();
 
-  const [
-    uploadSavedExperiencesEntries,
-  ] = useUploadOnlineEntriesMutation();
+  const [uploadSavedExperiencesEntries] = useUploadOnlineEntriesMutation();
 
   const { data, loading } = useGetAllUnsavedQuery();
   const getOfflineItems = data && data.getOfflineItems;
@@ -86,10 +84,10 @@ export function UploadOfflineItems(props: Props) {
   );
 
   const {
-    neverSavedCount,
-    partlySavedCount,
-    partlySavedMap,
-    neverSavedMap,
+    completelyOfflineCount,
+    partlyOfflineCount,
+    partlyOfflineMap,
+    completelyOfflineMap,
     shouldRedirect,
     states: { upload, dataLoaded, tabs: tabsState },
     context: { allCount },
@@ -162,27 +160,27 @@ export function UploadOfflineItems(props: Props) {
       let uploadFunction;
       let variables;
 
-      if (neverSavedCount !== 0 && partlySavedCount !== 0) {
+      if (completelyOfflineCount !== 0 && partlyOfflineCount !== 0) {
         uploadFunction = uploadAllUnsaveds;
 
         variables = {
           offlineExperiencesInput: unsavedExperiencesToUploadData(
-            neverSavedMap,
+            completelyOfflineMap,
           ),
 
-          offlineEntriesInput: savedExperiencesToUploadData(partlySavedMap),
+          offlineEntriesInput: savedExperiencesToUploadData(partlyOfflineMap),
         };
-      } else if (neverSavedCount !== 0) {
+      } else if (completelyOfflineCount !== 0) {
         uploadFunction = uploadUnsavedExperiences;
 
         variables = ({
-          input: unsavedExperiencesToUploadData(neverSavedMap),
+          input: unsavedExperiencesToUploadData(completelyOfflineMap),
         } as unknown) as UploadOfflineItemsMutationVariables;
       } else {
         uploadFunction = uploadSavedExperiencesEntries;
 
         variables = ({
-          input: savedExperiencesToUploadData(partlySavedMap),
+          input: savedExperiencesToUploadData(partlyOfflineMap),
         } as unknown) as UploadOfflineItemsMutationVariables;
       }
 
@@ -204,8 +202,8 @@ export function UploadOfflineItems(props: Props) {
           .experiences as ExperiencesUploadedResultState).context.anySuccess
       ) {
         outstandingUnsavedCount = updateCache({
-          partlySavedMap: newState.partlySavedMap,
-          neverSavedMap: newState.neverSavedMap,
+          partlyOfflineMap: newState.partlySavedMap,
+          completelyOfflineMap: newState.completelyOfflineMap,
           cache,
           client,
         });
@@ -274,8 +272,8 @@ export function UploadOfflineItems(props: Props) {
           <TabsMenuComponent
             dispatch={dispatch}
             tabsState={tabsState}
-            neverSavedCount={neverSavedCount}
-            partlySavedCount={partlySavedCount}
+            completelyOfflineCount={completelyOfflineCount}
+            partlyOfflineCount={partlyOfflineCount}
             {...computeUploadedPartialState(uploadSomeSuccess)}
           />
         )}
@@ -298,7 +296,7 @@ export function UploadOfflineItems(props: Props) {
                 })}
                 id="upload-unsaved-container-partly-saved"
               >
-                {Object.entries(partlySavedMap).map(([id, map]) => {
+                {Object.entries(partlyOfflineMap).map(([id, map]) => {
                   return (
                     <ExperienceComponent
                       key={id}
@@ -325,7 +323,7 @@ export function UploadOfflineItems(props: Props) {
                 })}
                 id="upload-unsaved-container-never-saved"
               >
-                {Object.entries(neverSavedMap).map(([id, map]) => {
+                {Object.entries(completelyOfflineMap).map(([id, map]) => {
                   return (
                     <ExperienceComponent
                       key={id}
@@ -425,10 +423,9 @@ function ExperienceComponent({
             ),
           );
 
-          await deleteExperiencesIdsFromAllExperiencesInCache(
-            client,
-            [experienceId],
-          );
+          await deleteExperiencesIdsFromAllExperiencesInCache(client, [
+            experienceId,
+          ]);
 
           dispatch({
             type: ActionType.DELETE_EXPERIENCE,
@@ -489,7 +486,7 @@ function TabsMenuComponent({
 }: ComputeUploadPartialStateReturnValue & {
   dispatch: DispatchType;
   tabsState: TabsState;
-} & Pick<StateMachine, "neverSavedCount" | "partlySavedCount">) {
+} & Pick<StateMachine, "completelyOfflineCount" | "partlyOfflineCount">) {
   const { context, value: tabsValue } = tabsState;
 
   const twoTabsValue = tabsState.value === "two" && tabsState.states.two.value;

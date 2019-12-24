@@ -192,8 +192,8 @@ describe("components", () => {
     expect(mockGetAllUnsavedQueryReturnValue).toBeNull();
     const { ui, mockNavigate } = makeComp({
       getOfflineItems: {
-        neverSavedCount: 0,
-        partlySavedCount: 0,
+        completelyOfflineCount: 0,
+        partlyOfflineCount: 0,
       } as GetOfflineItemsSummary,
     });
 
@@ -245,7 +245,7 @@ describe("components", () => {
       mockUploadAllUnsaveds,
     } = makeComp({
       getOfflineItems: {
-        partlySavedMap: {
+        partlyOfflineMap: {
           "1": {
             experience,
             offlineEntries: [unsavedEntry],
@@ -253,7 +253,7 @@ describe("components", () => {
           },
         } as ExperiencesIdsToObjectMap,
 
-        partlySavedCount: 1,
+        partlyOfflineCount: 1,
       } as GetOfflineItemsSummary,
     });
 
@@ -405,9 +405,9 @@ describe("components", () => {
       mockUploadAllUnsaveds,
     } = makeComp({
       getOfflineItems: {
-        neverSavedCount: 1,
+        completelyOfflineCount: 1,
 
-        neverSavedMap: {
+        completelyOfflineMap: {
           "1": {
             experience: unsavedExperience,
             offlineEntries: [unsavedEntry],
@@ -558,9 +558,9 @@ describe("components", () => {
       mockUploadAllUnsaveds,
     } = makeComp({
       getOfflineItems: {
-        neverSavedCount: 1,
+        completelyOfflineCount: 1,
 
-        neverSavedMap: {
+        completelyOfflineMap: {
           "1": {
             experience: {
               id: "1",
@@ -583,9 +583,9 @@ describe("components", () => {
           },
         } as ExperiencesIdsToObjectMap,
 
-        partlySavedCount: 1,
+        partlyOfflineCount: 1,
 
-        partlySavedMap: {
+        partlyOfflineMap: {
           "2": {
             experience: {
               id: "2",
@@ -836,9 +836,9 @@ describe("components", () => {
   it("shows apollo errors", async () => {
     const { ui, mockUploadAllUnsaveds } = makeComp({
       getOfflineItems: {
-        neverSavedCount: 1,
+        completelyOfflineCount: 1,
 
-        neverSavedMap: {
+        completelyOfflineMap: {
           "1": {
             experience: {
               id: "1",
@@ -870,9 +870,9 @@ describe("components", () => {
           },
         } as ExperiencesIdsToObjectMap,
 
-        partlySavedCount: 1,
+        partlyOfflineCount: 1,
 
-        partlySavedMap: {
+        partlyOfflineMap: {
           "2": {
             experience: {
               id: "2",
@@ -958,9 +958,9 @@ describe("components", () => {
   it("deletes never saved", async () => {
     const { ui, mockNavigate, mockLayoutDispatch } = makeComp({
       getOfflineItems: {
-        neverSavedCount: 1,
+        completelyOfflineCount: 1,
 
-        neverSavedMap: {
+        completelyOfflineMap: {
           "1": {
             experience: {
               id: "1",
@@ -1022,9 +1022,9 @@ describe("components", () => {
   it("deletes partly saved but not never saved", async () => {
     const { ui, mockNavigate } = makeComp({
       getOfflineItems: {
-        neverSavedCount: 1,
+        completelyOfflineCount: 1,
 
-        neverSavedMap: {
+        completelyOfflineMap: {
           "2": {
             experience: {
               id: "2",
@@ -1051,9 +1051,9 @@ describe("components", () => {
           },
         } as ExperiencesIdsToObjectMap,
 
-        partlySavedCount: 1,
+        partlyOfflineCount: 1,
 
-        partlySavedMap: {
+        partlyOfflineMap: {
           "1": {
             experience: {
               id: "1",
@@ -1161,9 +1161,9 @@ describe("components", () => {
 
     const { ui, mockUploadUnsavedExperiences } = makeComp({
       getOfflineItems: {
-        neverSavedCount: 1,
+        completelyOfflineCount: 1,
 
-        neverSavedMap: {
+        completelyOfflineMap: {
           "1": {
             experience: unsavedExperience,
             offlineEntries: [unsavedEntry],
@@ -1276,7 +1276,7 @@ describe("non components", () => {
         upload: {},
       },
 
-      neverSavedMap: {
+      completelyOfflineMap: {
         "1": {
           experience: {
             id: "1",
@@ -1311,7 +1311,7 @@ describe("non components", () => {
         } as ExperienceObjectMap,
       } as ExperiencesIdsToObjectMap,
 
-      partlySavedMap: {
+      partlyOfflineMap: {
         "1": {
           offlineEntries: [
             {
@@ -1391,7 +1391,7 @@ describe("non components", () => {
           },
         },
       },
-      neverSavedMap: {
+      completelyOfflineMap: {
         "1": {
           experience: {
             id: "1",
@@ -1432,7 +1432,7 @@ describe("non components", () => {
         } as ExperienceObjectMap,
       } as ExperiencesIdsToObjectMap,
 
-      partlySavedMap: {
+      partlyOfflineMap: {
         "1": {
           offlineEntries: [
             {

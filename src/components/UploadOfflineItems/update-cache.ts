@@ -26,14 +26,14 @@ import { DataObjectFragment } from "../../graphql/apollo-types/DataObjectFragmen
 import { EntryFragment } from "../../graphql/apollo-types/EntryFragment";
 
 export function updateCache({
-  neverSavedMap,
-  partlySavedMap,
+  completelyOfflineMap,
+  partlyOfflineMap,
   cache,
   client,
 }: Args) {
-  const unsavedExperiences = handleUnsavedExperiences(neverSavedMap);
+  const unsavedExperiences = handleUnsavedExperiences(completelyOfflineMap);
 
-  const savedExperiences = handleSavedExperiences(partlySavedMap);
+  const savedExperiences = handleSavedExperiences(partlyOfflineMap);
 
   // PLEASE DO ALL DELETES BEFORE UNSAVED EXPERIENCES NOW SAVED WRITES !!!!!!
   // This is because if now saved experience contains unsaved entries, those
@@ -351,8 +351,8 @@ export interface SavedStatus {
 }
 
 export interface Args {
-  neverSavedMap: ExperiencesIdsToObjectMap;
-  partlySavedMap: ExperiencesIdsToObjectMap;
+  completelyOfflineMap: ExperiencesIdsToObjectMap;
+  partlyOfflineMap: ExperiencesIdsToObjectMap;
   cache: InMemoryCache;
   client: ApolloClient<{}>;
 }

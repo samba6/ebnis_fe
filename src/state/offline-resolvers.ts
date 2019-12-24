@@ -75,26 +75,27 @@ const getOfflineItemsResolver: LocalResolverFn<
   {},
   Promise<GetOfflineItemsSummary>
 > = async (_root, _variables, { cache, client }) => {
-  let neverSavedCount = 0;
-  let partlySavedCount = 0;
-  const neverSavedMap = {} as OfflineExperienceSummaryMap;
-  const partlySavedMap = {} as OfflineExperienceSummaryMap;
+  let completelyOfflineCount = 0;
+  let partlyOfflineCount = 0;
+
+  const completelyOfflineMap = {} as OfflineExperienceSummaryMap;
+  const partlyOfflineMap = {} as OfflineExperienceSummaryMap;
 
   (await getExperiencesFromCache(client)).forEach(({ id: id }) => {
     const experience = readGetExperienceFullQueryFromCache(cache, id);
 
     if (experience) {
       if (isOfflineId(id)) {
-        ++neverSavedCount;
-        neverSavedMap[id] = {
+        ++completelyOfflineCount;
+        completelyOfflineMap[id] = {
           experience,
           onlineEntries: [],
           offlineEntries: entryNodesFromExperience(experience),
         };
       } else {
-        ++partlySavedCount;
+        ++partlyOfflineCount;
 
-        partlySavedMap[id] = {
+        partlyOfflineMap[id] = {
           experience,
           ...getOnlineAndOfflineEntriesFromExperience(experience),
         };
@@ -103,10 +104,10 @@ const getOfflineItemsResolver: LocalResolverFn<
   });
 
   return {
-    neverSavedMap,
-    partlySavedMap,
-    neverSavedCount,
-    partlySavedCount,
+    completelyOfflineMap,
+    partlyOfflineMap,
+    completelyOfflineCount,
+    partlyOfflineCount,
   };
 };
 
@@ -142,17 +143,17 @@ export const offlineItemsResolvers = {
 };
 
 export interface GetOfflineItemsSummary {
-  neverSavedMap: OfflineExperienceSummaryMap;
-  partlySavedMap: OfflineExperienceSummaryMap;
-  neverSavedCount: number;
-  partlySavedCount: number;
+  completelyOfflineMap: OfflineExperienceSummaryMap;
+  partlyOfflineMap: OfflineExperienceSummaryMap;
+  completelyOfflineCount: number;
+  partlyOfflineCount: number;
 }
 
 interface OfflineExperienceSummaryMap {
-  [K: string]: SavedAndUnsavedExperienceSummary;
+  [K: string]: AllExperienceSummary;
 }
 
-export interface SavedAndUnsavedExperienceSummary {
+export interface AllExperienceSummary {
   offlineEntries: ExperienceFragment_entries_edges_node[];
   experience: ExperienceFragment;
   onlineEntries: ExperienceFragment_entries_edges_node[];

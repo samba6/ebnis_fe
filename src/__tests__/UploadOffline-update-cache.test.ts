@@ -41,7 +41,7 @@ beforeEach(() => {
 });
 
 test("completely saved unsaved experience", () => {
-  const neverSavedMap = {
+  const completelyOfflineMap = {
     "1": {
       experience: {
         id: "1",
@@ -74,8 +74,8 @@ test("completely saved unsaved experience", () => {
   };
 
   const outstandingUnsavedCount = updateCache({
-    neverSavedMap,
-    partlySavedMap: {},
+    completelyOfflineMap,
+    partlyOfflineMap: {},
     cache: {} as any,
     client: {} as any,
   });
@@ -111,7 +111,7 @@ test("completely saved unsaved experience", () => {
 });
 
 test("partially saved unsaved experience", () => {
-  const neverSavedMap = {
+  const completelyOfflineMap = {
     "2": {
       // experience partially saved, will be deleted from cache
       experience: {
@@ -172,8 +172,8 @@ test("partially saved unsaved experience", () => {
   };
 
   const outstandingUnsavedCount = updateCache({
-    neverSavedMap,
-    partlySavedMap: {},
+    completelyOfflineMap,
+    partlyOfflineMap: {},
     cache: {} as any,
     client: {} as any,
   });
@@ -243,7 +243,7 @@ test("partially saved unsaved experience", () => {
 });
 
 test("unsaved experience not saved", () => {
-  const neverSavedMap = {
+  const completelyOfflineMap = {
     "3": {
       // newlySavedExperience = undefined, outstanding unsaved count = 2
       experience: {
@@ -259,8 +259,8 @@ test("unsaved experience not saved", () => {
   };
 
   const outstandingUnsavedCount = updateCache({
-    neverSavedMap,
-    partlySavedMap: {},
+    completelyOfflineMap,
+    partlyOfflineMap: {},
     cache: {} as any,
     client: {} as any,
   });
@@ -284,7 +284,7 @@ test("unsaved experience not saved", () => {
 });
 
 test("saved experience with unsaved entry not saved", () => {
-  const partlySavedMap = {
+  const partlyOfflineMap = {
     "6": {
       // has an unsaved entry, so we will put it back in savedUnsaved
       experience: {
@@ -329,8 +329,8 @@ test("saved experience with unsaved entry not saved", () => {
   };
 
   const outstandingUnsavedCount = updateCache({
-    neverSavedMap: {},
-    partlySavedMap,
+    completelyOfflineMap: {},
+    partlyOfflineMap,
     cache: {} as any,
     client: {} as any,
   });
@@ -389,7 +389,7 @@ test("saved experience with unsaved entry not saved", () => {
 });
 
 test("saved experience with no 'newlySavedEntries' ", () => {
-  const partlySavedMap = {
+  const partlyOfflineMap = {
     "4": {
       experience: {
         id: "4",
@@ -400,8 +400,8 @@ test("saved experience with no 'newlySavedEntries' ", () => {
   } as ExperiencesIdsToObjectMap;
 
   const outstandingUnsavedCount = updateCache({
-    neverSavedMap: {},
-    partlySavedMap,
+    completelyOfflineMap: {},
+    partlyOfflineMap,
     cache: {} as any,
     client: {} as any,
   });
@@ -425,7 +425,7 @@ test("saved experience with no 'newlySavedEntries' ", () => {
 });
 
 test("saved experience with empty 'newlySavedEntries' ", () => {
-  const partlySavedMap = {
+  const partlyOfflineMap = {
     "5": {
       experience: {
         id: "5",
@@ -436,8 +436,8 @@ test("saved experience with empty 'newlySavedEntries' ", () => {
   } as ExperiencesIdsToObjectMap;
 
   const outstandingUnsavedCount = updateCache({
-    neverSavedMap: {},
-    partlySavedMap,
+    completelyOfflineMap: {},
+    partlyOfflineMap,
     cache: {} as any,
     client: {} as any,
   });
@@ -461,7 +461,7 @@ test("saved experience with empty 'newlySavedEntries' ", () => {
 });
 
 test("saved experience completely saved", () => {
-  const partlySavedMap = {
+  const partlyOfflineMap = {
     "7": {
       experience: {
         id: "7",
@@ -486,8 +486,8 @@ test("saved experience completely saved", () => {
   } as ExperiencesIdsToObjectMap;
 
   const outstandingUnsavedCount = updateCache({
-    neverSavedMap: {},
-    partlySavedMap,
+    completelyOfflineMap: {},
+    partlyOfflineMap,
     cache: {} as any,
     client: {} as any,
   });
@@ -527,8 +527,8 @@ test("saved experience completely saved", () => {
 
 it("is a noop when updating and there is nothing to update", () => {
   const outstandingUnsavedCount = updateCache({
-    neverSavedMap: {},
-    partlySavedMap: {},
+    completelyOfflineMap: {},
+    partlyOfflineMap: {},
     cache: {} as any,
     client: {} as any,
   });
