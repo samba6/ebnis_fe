@@ -7,10 +7,10 @@ import {
 import { CREATE_ENTRIES_MUTATION } from "../../src/graphql/create-entries.mutation";
 import { EntryFragment } from "../../src/graphql/apollo-types/EntryFragment";
 import {
-  CreateUnsavedEntryVariables,
-  CreateUnsavedEntryMutationReturned,
-  CREATE_UNSAVED_ENTRY_MUTATION,
-} from "../../src/components/NewEntry/resolvers";
+  CreateEntryOfflineVariables,
+  CreateEntryOfflineMutationReturned,
+  CREATE_ENTRY_OFFLINE_MUTATION,
+} from "../../src/components/NewEntry/new-entry.resolvers";
 
 export function createExperienceEntries(input: CreateEntriesInput[]) {
   return mutate<CreateEntriesMutation, CreateEntriesMutationVariables>({
@@ -32,28 +32,28 @@ export function createExperienceEntries(input: CreateEntriesInput[]) {
   });
 }
 
-export function createUnsavedEntry(
-  variables: CreateUnsavedEntryVariables,
+export function createEntryOffline(
+  variables: CreateEntryOfflineVariables,
   persist?: boolean,
 ) {
   return mutate<
-    CreateUnsavedEntryMutationReturned,
-    CreateUnsavedEntryVariables
+    CreateEntryOfflineMutationReturned,
+    CreateEntryOfflineVariables
   >({
-    mutation: CREATE_UNSAVED_ENTRY_MUTATION,
+    mutation: CREATE_ENTRY_OFFLINE_MUTATION,
     variables,
   }).then(result => {
-    const unsavedEntry = (result &&
+    const offlineEntry = (result &&
       result.data &&
-      result.data.createUnsavedEntry &&
-      result.data.createUnsavedEntry.entry) as EntryFragment;
+      result.data.createEntryOffline &&
+      result.data.createEntryOffline.entry) as EntryFragment;
 
     if (persist) {
       return persistCache().then(() => {
-        return unsavedEntry;
+        return offlineEntry;
       });
     }
 
-    return unsavedEntry;
+    return offlineEntry;
   });
 }

@@ -1,8 +1,8 @@
 import {
   LocalResolverFn,
-  MUTATION_NAME_createUnsavedEntry,
+  MUTATION_NAME_createEntryOffline,
 } from "../../state/resolvers";
-import { makeUnsavedId } from "../../constants";
+import { makeOfflineId } from "../../constants";
 import { CreateDataObject } from "../../graphql/apollo-types/globalTypes";
 import gql from "graphql-tag";
 import { updateExperienceWithNewEntry } from "./new-entry.injectables";
@@ -12,12 +12,12 @@ import { EntryFragment } from "../../graphql/apollo-types/EntryFragment";
 import { updateEntriesCountSavedAndUnsavedExperiencesInCache } from "../../state/resolvers/update-saved-and-unsaved-experiences-in-cache";
 import { CreateEntryMutation_createEntry } from "../../graphql/apollo-types/CreateEntryMutation";
 
-export const CREATE_UNSAVED_ENTRY_MUTATION = gql`
-  mutation CreateUnsavedEntry(
+export const CREATE_ENTRY_OFFLINE_MUTATION = gql`
+  mutation CreateEntryOffline(
     $experience: Experience!
     $dataObjects: [DataObjects!]!
   ) {
-    createUnsavedEntry(experience: $experience, dataObjects: $dataObjects)
+    createEntryOffline(experience: $experience, dataObjects: $dataObjects)
       @client {
       entry {
         ...EntryFragment
@@ -28,8 +28,8 @@ export const CREATE_UNSAVED_ENTRY_MUTATION = gql`
   ${ENTRY_FRAGMENT}
 `;
 
-export interface CreateUnsavedEntryMutationReturned {
-  createUnsavedEntry: {
+export interface CreateEntryOfflineMutationReturned {
+  createEntryOffline: {
     id: string;
     entry: EntryFragment;
     experience: ExperienceFragment;
@@ -37,9 +37,9 @@ export interface CreateUnsavedEntryMutationReturned {
   };
 }
 
-const createUnsavedEntryResolver: LocalResolverFn<
-  CreateUnsavedEntryVariables,
-  Promise<CreateUnsavedEntryMutationReturned["createUnsavedEntry"]>
+const createEntryOfflineResolver: LocalResolverFn<
+  CreateEntryOfflineVariables,
+  Promise<CreateEntryOfflineMutationReturned["createEntryOffline"]>
 > = async (_, variables, context) => {
   const { client } = context;
 
@@ -50,7 +50,7 @@ const createUnsavedEntryResolver: LocalResolverFn<
   const today = new Date();
   const timestamps = today.toJSON();
 
-  const id = makeUnsavedId(today.getTime());
+  const id = makeOfflineId(today.getTime());
 
   const dataObjects = variables.dataObjects.map((dataObject, index) => {
     const dataObjectId = `${id}--data-object-${index}`;
@@ -84,14 +84,14 @@ const createUnsavedEntryResolver: LocalResolverFn<
   return { id, experience, entry, __typename: "Entry" };
 };
 
-export interface CreateUnsavedEntryVariables {
+export interface CreateEntryOfflineVariables {
   dataObjects: (CreateDataObject)[];
   experience: ExperienceFragment;
 }
 
 export const newEntryResolvers = {
   Mutation: {
-    [MUTATION_NAME_createUnsavedEntry]: createUnsavedEntryResolver,
+    [MUTATION_NAME_createEntryOffline]: createEntryOfflineResolver,
   },
 
   Query: {},

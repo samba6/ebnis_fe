@@ -16,7 +16,7 @@ export function setDocumentTitle(title?: string) {
   document.title = title ? title : SITE_TITLE;
 }
 
-export function makeUnsavedId(id: string | number = new Date().getTime()) {
+export function makeOfflineId(id: string | number = new Date().getTime()) {
   return UNSAVED_ID_PREFIX + id;
 }
 

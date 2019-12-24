@@ -7,7 +7,7 @@ import {
 import {
   SavedAndUnsavedExperiences,
   SAVED_AND_UNSAVED_EXPERIENCE_TYPENAME,
-} from "../../state/unsaved-resolvers";
+} from "../../state/offline-resolvers";
 import { writeSavedAndUnsavedExperiencesToCache } from "../../state/resolvers/update-saved-and-unsaved-experiences-in-cache";
 import immer from "immer";
 import { entryToEdge } from "../../state/resolvers/entry-to-edge";
@@ -18,8 +18,8 @@ import { replaceExperiencesInGetExperiencesMiniQuery } from "../../state/resolve
 import { InMemoryCache } from "apollo-cache-inmemory";
 import ApolloClient from "apollo-client";
 import {
-  MUTATION_NAME_createUnsavedExperience,
-  MUTATION_NAME_createUnsavedEntry,
+  MUTATION_NAME_createExperienceOffline,
+  MUTATION_NAME_createEntryOffline,
   QUERY_NAME_getExperience,
 } from "../../state/resolvers";
 import { DataObjectFragment } from "../../graphql/apollo-types/DataObjectFragment";
@@ -149,7 +149,7 @@ function handleUnsavedExperiences(
       f => toDeletes.push(`DataDefinition:${f.id}`),
     );
 
-    mutations.push([MUTATION_NAME_createUnsavedExperience, cacheKey]);
+    mutations.push([MUTATION_NAME_createExperienceOffline, cacheKey]);
     queries.push([QUERY_NAME_getExperience, cacheKey]);
 
     const updatedExperience = immer(newlySavedExperience, proxy => {
@@ -164,7 +164,7 @@ function handleUnsavedExperiences(
 
         // we will delete the unsaved version from cache.
         toDeletes.push(`Entry:${clientId}`);
-        mutations.push([MUTATION_NAME_createUnsavedEntry, `Entry:${clientId}`]);
+        mutations.push([MUTATION_NAME_createEntryOffline, `Entry:${clientId}`]);
 
         deleteDataObjectsFromEntry(entry, toDeletes);
       }
@@ -193,7 +193,7 @@ function handleUnsavedExperiences(
           if (entriesErrorsIds.includes(id)) {
             edges.push(entryToEdge(entry));
 
-            mutations.push([MUTATION_NAME_createUnsavedEntry, `Entry:${id}`]);
+            mutations.push([MUTATION_NAME_createEntryOffline, `Entry:${id}`]);
           }
         });
       } else {
@@ -261,7 +261,7 @@ function handleSavedExperiences(
           deleteDataObjectsFromEntry(entry, toDeletes);
 
           mutations.push([
-            MUTATION_NAME_createUnsavedEntry,
+            MUTATION_NAME_createEntryOffline,
             `Entry:${clientId}`,
           ]);
 

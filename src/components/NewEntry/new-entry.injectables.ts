@@ -1,7 +1,6 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 
 import { ApolloClient } from "apollo-client";
-import { newEntryResolvers } from "./resolvers";
 import { useMutation } from "@apollo/react-hooks";
 import { CREATE_ENTRY_MUTATION } from "../../graphql/create-entry.mutation";
 import {
@@ -9,10 +8,11 @@ import {
   CreateEntryMutationVariables,
 } from "../../graphql/apollo-types/CreateEntryMutation";
 import {
-  CREATE_UNSAVED_ENTRY_MUTATION,
-  CreateUnsavedEntryMutationReturned,
-  CreateUnsavedEntryVariables,
-} from "./resolvers";
+  CREATE_ENTRY_OFFLINE_MUTATION,
+  CreateEntryOfflineMutationReturned,
+  CreateEntryOfflineVariables,
+  newEntryResolvers,
+} from "./new-entry.resolvers";
 import immer from "immer";
 import {
   ExperienceFragment,
@@ -40,11 +40,11 @@ export function useCreateOnlineEntry() {
   );
 }
 
-export function useCreateUnsavedEntry() {
+export function useCreateEntryOffline() {
   return useMutation<
-    CreateUnsavedEntryMutationReturned,
-    CreateUnsavedEntryVariables
-  >(CREATE_UNSAVED_ENTRY_MUTATION);
+    CreateEntryOfflineMutationReturned,
+    CreateEntryOfflineVariables
+  >(CREATE_ENTRY_OFFLINE_MUTATION);
 }
 
 type Fn<T = string | ExperienceFragment> = (

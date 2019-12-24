@@ -1,7 +1,7 @@
 import {
   GetUnsavedSummary,
   SavedAndUnsavedExperienceSummary,
-} from "../../state/unsaved-resolvers";
+} from "../../state/offline-resolvers";
 import immer, { Draft } from "immer";
 import { Reducer } from "react";
 import { RouteComponentProps } from "@reach/router";

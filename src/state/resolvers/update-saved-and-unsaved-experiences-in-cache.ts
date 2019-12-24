@@ -4,9 +4,9 @@ import {
   SAVED_AND_UNSAVED_EXPERIENCES_QUERY,
   SavedAndUnsavedExperiences,
   SAVED_AND_UNSAVED_EXPERIENCE_TYPENAME,
-} from "../unsaved-resolvers";
+} from "../offline-resolvers";
 import { isUnsavedId } from "../../constants";
-import { getSavedAndUnsavedExperiencesFromCache } from "./get-saved-and-unsaved-experiences-from-cache";
+import { getExperiencesFromCache } from "./get-experiences-from-cache";
 import ApolloClient from "apollo-client";
 import immer from "immer";
 
@@ -27,7 +27,7 @@ export async function updateEntriesCountSavedAndUnsavedExperiencesInCache(
   client: ApolloClient<{}>,
   id: string,
 ) {
-  let cacheData = await getSavedAndUnsavedExperiencesFromCache(client);
+  let cacheData = await getExperiencesFromCache(client);
 
   if (cacheData.length === 0) {
     cacheData = [
@@ -61,7 +61,7 @@ export async function deleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache(
   client: ApolloClient<{}>,
   ids: string[],
 ) {
-  const cacheData = (await getSavedAndUnsavedExperiencesFromCache(
+  const cacheData = (await getExperiencesFromCache(
     client,
   )).reduce(
     (acc, map) => {

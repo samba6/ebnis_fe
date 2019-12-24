@@ -1,10 +1,10 @@
 import {
   LocalResolverFn,
-  MUTATION_NAME_createUnsavedExperience,
+  MUTATION_NAME_createExperienceOffline,
 } from "../../state/resolvers";
 import { CreateExperienceMutationVariables } from "../../graphql/apollo-types/CreateExperienceMutation";
 import { CreateDataDefinition } from "../../graphql/apollo-types/globalTypes";
-import { makeUnsavedId } from "../../constants";
+import { makeOfflineId } from "../../constants";
 import gql from "graphql-tag";
 import {
   ExperienceFragment_dataDefinitions,
@@ -31,7 +31,7 @@ const createUnsavedExperienceResolver: LocalResolverFn<
 ) => {
   const today = new Date();
   const timestamp = today.toJSON();
-  const experienceId = makeUnsavedId(today.getTime());
+  const experienceId = makeOfflineId(today.getTime());
 
   const dataDefinitions: ExperienceFragment_dataDefinitions[] = (createDataDefinitions as CreateDataDefinition[]).map(
     ({ name, type }, index) => {
@@ -101,7 +101,7 @@ export interface CreateUnsavedExperienceMutationData {
 
 export const experienceDefinitionResolvers = {
   Mutation: {
-    [MUTATION_NAME_createUnsavedExperience]: createUnsavedExperienceResolver,
+    [MUTATION_NAME_createExperienceOffline]: createUnsavedExperienceResolver,
   },
 
   Query: {},

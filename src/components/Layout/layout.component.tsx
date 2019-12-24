@@ -13,7 +13,7 @@ import {
   ConnectionChangedPayload,
 } from "../../state/observable-manager";
 import { ZenObservable } from "zen-observable-ts";
-import { getUnsavedCount } from "../../state/unsaved-resolvers";
+import { getOfflineItemsCount } from "../../state/offline-resolvers";
 import {
   LayoutProvider,
   LayoutUnchangingProvider,
@@ -66,7 +66,7 @@ export function Layout(props: Props) {
             hasConnection: isConnected,
           } = payload as ConnectionChangedPayload;
 
-          getUnsavedCount(client).then(newUnsavedCount => {
+          getOfflineItemsCount(client).then(newUnsavedCount => {
             dispatch({
               type: LayoutActionType.CONNECTION_CHANGED,
               unsavedCount: newUnsavedCount,
@@ -95,7 +95,7 @@ export function Layout(props: Props) {
 
         dispatch({
           type: LayoutActionType.CACHE_PERSISTED,
-          unsavedCount: await getUnsavedCount(client),
+          unsavedCount: await getOfflineItemsCount(client),
           hasConnection: !!isConnected(),
         });
       })();

@@ -7,7 +7,7 @@ import gql from "graphql-tag";
 import { LocalResolverFn } from "./resolvers";
 import { isUnsavedId } from "../constants";
 import { readGetExperienceFullQueryFromCache } from "./resolvers/read-get-experience-full-query-from-cache";
-import { getSavedAndUnsavedExperiencesFromCache } from "./resolvers/get-saved-and-unsaved-experiences-from-cache";
+import { getExperiencesFromCache } from "./resolvers/get-experiences-from-cache";
 import ApolloClient from "apollo-client";
 import { QueryResult } from "@apollo/react-common";
 
@@ -20,8 +20,8 @@ export const SAVED_AND_UNSAVED_EXPERIENCES_QUERY = gql`
   }
 `;
 
-export async function getUnsavedCount(client: ApolloClient<{}>) {
-  return (await getSavedAndUnsavedExperiencesFromCache(client)).reduce(
+export async function getOfflineItemsCount(client: ApolloClient<{}>) {
+  return (await getExperiencesFromCache(client)).reduce(
     (acc, { id, unsavedEntriesCount }) => {
       acc += unsavedEntriesCount;
 
@@ -78,29 +78,27 @@ const getAllUnsavedResolver: LocalResolverFn<
   const neverSavedMap = {} as UnsavedExperienceSummaryMap;
   const partlySavedMap = {} as UnsavedExperienceSummaryMap;
 
-  (await getSavedAndUnsavedExperiencesFromCache(client)).forEach(
-    ({ id: id }) => {
-      const experience = readGetExperienceFullQueryFromCache(cache, id);
+  (await getExperiencesFromCache(client)).forEach(({ id: id }) => {
+    const experience = readGetExperienceFullQueryFromCache(cache, id);
 
-      if (experience) {
-        if (isUnsavedId(id)) {
-          ++neverSavedCount;
-          neverSavedMap[id] = {
-            experience,
-            savedEntries: [],
-            unsavedEntries: entryNodesFromExperience(experience),
-          };
-        } else {
-          ++partlySavedCount;
+    if (experience) {
+      if (isUnsavedId(id)) {
+        ++neverSavedCount;
+        neverSavedMap[id] = {
+          experience,
+          savedEntries: [],
+          unsavedEntries: entryNodesFromExperience(experience),
+        };
+      } else {
+        ++partlySavedCount;
 
-          partlySavedMap[id] = {
-            experience,
-            ...separateExperienceUnsavedEntries(experience),
-          };
-        }
+        partlySavedMap[id] = {
+          experience,
+          ...separateExperienceUnsavedEntries(experience),
+        };
       }
-    },
-  );
+    }
+  });
 
   return {
     neverSavedMap,
@@ -129,7 +127,7 @@ function separateExperienceUnsavedEntries({ entries }: ExperienceFragment) {
   return { unsavedEntries, savedEntries };
 }
 
-export const DEFAULT_UNSAVED_STATES = {
+export const DEFAULT_OFFLINE_STATES = {
   savedAndUnsavedExperiences: [],
 };
 

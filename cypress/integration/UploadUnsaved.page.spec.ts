@@ -8,7 +8,7 @@ import {
 } from "../support/create-experience";
 import {
   createExperienceEntries,
-  createUnsavedEntry,
+  createEntryOffline,
 } from "../support/create-entries";
 import { PAGE_NOT_FOUND_TITLE } from "../../src/constants";
 import { UPLOAD_UNSAVED_TITLE } from "../../src/constants/upload-unsaved-title";
@@ -45,7 +45,7 @@ context("Upload unsaved page", () => {
         },
       ]);
 
-      const unsaved = createUnsavedEntry({
+      const unsaved = createEntryOffline({
         experience,
         dataObjects: [
           {
@@ -73,7 +73,7 @@ context("Upload unsaved page", () => {
     }).then(unsavedExperience => {
       const { dataDefinitions } = unsavedExperience;
 
-      return createUnsavedEntry({
+      return createEntryOffline({
         experience: unsavedExperience,
         dataObjects: [
           {

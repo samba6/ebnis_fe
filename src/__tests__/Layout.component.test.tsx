@@ -17,7 +17,7 @@ import {
   ILayoutUnchangingContextValue,
   ILayoutContextExperienceValue,
 } from "../components/Layout/layout.utils";
-import { getUnsavedCount } from "../state/unsaved-resolvers";
+import { getOfflineItemsCount } from "../state/offline-resolvers";
 import { isConnected } from "../state/connections";
 import { useUser } from "../components/use-user";
 import { E2EWindowObject } from "../state/apollo-setup";
@@ -29,8 +29,8 @@ import { WindowLocation } from "@reach/router";
 
 ////////////////////////// MOCKS ////////////////////////////
 
-jest.mock("../state/unsaved-resolvers");
-const mockGetUnsavedCount = getUnsavedCount as jest.Mock;
+jest.mock("../state/offline-resolvers");
+const mockGetUnsavedCount = getOfflineItemsCount as jest.Mock;
 
 jest.mock("../state/connections");
 const mockIsConnected = isConnected as jest.Mock;

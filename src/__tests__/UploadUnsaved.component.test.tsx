@@ -22,7 +22,7 @@ import {
   ExperienceFragment_entries_edges_node_dataObjects,
   ExperienceFragment_dataDefinitions,
 } from "../graphql/apollo-types/ExperienceFragment";
-import { makeUnsavedId } from "../constants";
+import { makeOfflineId } from "../constants";
 import {
   renderWithRouter,
   makeDataDefinitions,
@@ -41,7 +41,7 @@ import { EXPERIENCES_URL } from "../routes";
 import {
   GetUnsavedSummary,
   GetAllUnsavedQueryResult,
-} from "../state/unsaved-resolvers";
+} from "../state/offline-resolvers";
 import { LayoutUnchangingProvider } from "../components/Layout/layout-providers";
 import { isConnected } from "../state/connections";
 import { Entry } from "../components/Entry/entry.component";
@@ -207,7 +207,7 @@ describe("components", () => {
     expect(mockGetAllUnsavedQueryReturnValue).toBeNull();
 
     const { id: entryId, ...entry } = {
-      ...makeEntryNode(makeUnsavedId("1")),
+      ...makeEntryNode(makeOfflineId("1")),
       clientId: "a",
       experienceId: "1",
     };
@@ -539,7 +539,7 @@ describe("components", () => {
   });
 
   it("toggles partly and never saved, uploads but returns errors for all never saved", async () => {
-    const entryId = makeUnsavedId("1");
+    const entryId = makeOfflineId("1");
 
     const unsavedExperienceEntry = {
       ...makeEntryNode("1"),
@@ -883,8 +883,8 @@ describe("components", () => {
                 edges: [
                   {
                     node: {
-                      id: makeUnsavedId("1"),
-                      clientId: makeUnsavedId("1"),
+                      id: makeOfflineId("1"),
+                      clientId: makeOfflineId("1"),
                     },
                   },
                 ],
@@ -893,8 +893,8 @@ describe("components", () => {
 
             unsavedEntries: [
               {
-                id: makeUnsavedId("1"),
-                clientId: makeUnsavedId("1"),
+                id: makeOfflineId("1"),
+                clientId: makeOfflineId("1"),
                 dataObjects: [] as ExperienceFragment_entries_edges_node_dataObjects[],
               } as ExperienceFragment_entries_edges_node,
             ],

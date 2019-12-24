@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { newEntryResolvers } from "../components/NewEntry/resolvers";
+import { newEntryResolvers } from "../components/NewEntry/new-entry.resolvers";
 import { CacheContext } from "../state/resolvers";
 import { isUnsavedId } from "../constants";
 import { makeTestCache } from "./test_utils";
@@ -16,7 +16,7 @@ const mockUpdateExperienceWithNewEntry = updateExperienceWithNewEntry as jest.Mo
 
 const mockUpdateEntriesCountSavedAndUnsavedExperiencesInCache = updateEntriesCountSavedAndUnsavedExperiencesInCache as jest.Mock;
 
-const { createUnsavedEntry } = newEntryResolvers.Mutation;
+const { createEntryOffline } = newEntryResolvers.Mutation;
 
 it("updates unsaved experience successfully", async done => {
   const { mockContext, mockUpdateExperienceWithNewEntryInnerFn } = setUp();
@@ -53,7 +53,7 @@ it("updates unsaved experience successfully", async done => {
     id,
     entry,
     experience: updatedExperience,
-  } = await createUnsavedEntry(
+  } = await createEntryOffline(
     {},
     { experience, dataObjects: [dataObject] },
     mockContext,

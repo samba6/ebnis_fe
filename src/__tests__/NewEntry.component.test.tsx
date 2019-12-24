@@ -40,13 +40,13 @@ import {
 import { isConnected } from "../state/connections";
 import { scrollIntoView } from "../components/scroll-into-view";
 import {
-  CreateUnsavedEntryVariables,
-  CreateUnsavedEntryMutationReturned,
-} from "../components/NewEntry/resolvers";
+  CreateEntryOfflineVariables,
+  CreateEntryOfflineMutationReturned,
+} from "../components/NewEntry/new-entry.resolvers";
 import { GraphQLError } from "graphql";
 import {
   useCreateOnlineEntry,
-  useCreateUnsavedEntry,
+  useCreateEntryOffline,
   updateExperienceWithNewEntry,
 } from "../components/NewEntry/new-entry.injectables";
 
@@ -58,7 +58,7 @@ const mockIsConnected = isConnected as jest.Mock;
 const mockUpdate = updateExperienceWithNewEntry as jest.Mock;
 const mockScrollIntoView = scrollIntoView as jest.Mock;
 const mockUseCreateOnlineEntry = useCreateOnlineEntry as jest.Mock;
-const mockUseCreateUnsavedEntry = useCreateUnsavedEntry as jest.Mock;
+const mockUseCreateUnsavedEntry = useCreateEntryOffline as jest.Mock;
 
 beforeEach(() => {
   mockScrollIntoView.mockReset();
@@ -380,10 +380,10 @@ it("creates new entry when offline", async () => {
 
   mockCreateUnsavedEntry.mockResolvedValue({
     data: {
-      createUnsavedEntry: {
+      createEntryOffline: {
         entry: {},
       },
-    } as CreateUnsavedEntryMutationReturned,
+    } as CreateEntryOfflineMutationReturned,
   });
 
   /**
@@ -415,7 +415,7 @@ it("creates new entry when offline", async () => {
   const {
     variables: { experience, dataObjects },
   } = mockCreateUnsavedEntry.mock.calls[0][0] as ToVariables<
-    CreateUnsavedEntryVariables
+    CreateEntryOfflineVariables
   >;
 
   expect(experience.id).toBe("1");

@@ -30,22 +30,22 @@ import {
   CreateDataObject,
 } from "../../graphql/apollo-types/globalTypes";
 import { CreateEntryMutation_createEntry } from "../../graphql/apollo-types/CreateEntryMutation";
-import { CreateUnsavedEntryMutationReturned } from "./resolvers";
+import { CreateEntryOfflineMutationReturned } from "./new-entry.resolvers";
 import { componentFromDataType } from "./component-from-data-type";
 import { InputOnChangeData } from "semantic-ui-react";
 import {
   addResolvers,
   useCreateOnlineEntry,
-  useCreateUnsavedEntry,
+  useCreateEntryOffline,
   updateExperienceWithNewEntry,
 } from "./new-entry.injectables";
 import { EbnisAppContext } from "../../context";
-import {HeaderSemantic} from '../Header/header-semantic.component';
+import { HeaderSemantic } from "../Header/header-semantic.component";
 
 export function NewEntry(props: Props) {
   const { navigate, experience } = props;
   const [createEntry] = useCreateOnlineEntry();
-  const [createUnsavedEntry] = useCreateUnsavedEntry();
+  const [createEntryOffline] = useCreateEntryOffline();
   const { client } = useContext(EbnisAppContext);
 
   const [state, dispatch] = useReducer(
@@ -115,7 +115,7 @@ export function NewEntry(props: Props) {
         createResult = ((result && result.data && result.data.createEntry) ||
           {}) as CreateEntryMutation_createEntry;
       } else {
-        const result = await createUnsavedEntry({
+        const result = await createEntryOffline({
           variables: {
             experience,
             dataObjects,
@@ -125,7 +125,7 @@ export function NewEntry(props: Props) {
         const { entry } = (result &&
           result.data &&
           result.data
-            .createUnsavedEntry) as CreateUnsavedEntryMutationReturned["createUnsavedEntry"];
+            .createEntryOffline) as CreateEntryOfflineMutationReturned["createEntryOffline"];
 
         createResult = { entry } as CreateEntryMutation_createEntry;
       }
@@ -220,11 +220,9 @@ export function NewEntry(props: Props) {
     );
   }
 
-
-
   return (
     <div className="component-new-entry">
-      <HeaderSemantic    title={pageTitle} sidebar={true} />
+      <HeaderSemantic title={pageTitle} sidebar={true} />
 
       {renderMain()}
     </div>

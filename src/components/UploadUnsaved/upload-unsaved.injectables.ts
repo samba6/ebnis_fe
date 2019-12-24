@@ -12,7 +12,7 @@ import {
   unsavedResolvers,
   GET_ALL_UNSAVED_QUERY,
   GetAllUnSavedQueryReturned,
-} from "../../state/unsaved-resolvers";
+} from "../../state/offline-resolvers";
 import {
   UploadAllUnsavedsMutation,
   UploadAllUnsavedsMutationVariables,

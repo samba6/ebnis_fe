@@ -1,10 +1,10 @@
 import {
   SAVED_AND_UNSAVED_EXPERIENCES_QUERY,
   SavedAndUnsavedExperiencesQueryReturned,
-} from "../unsaved-resolvers";
+} from "../offline-resolvers";
 import ApolloClient from "apollo-client";
 
-export async function getSavedAndUnsavedExperiencesFromCache(
+export async function getExperiencesFromCache(
   dataProxy: ApolloClient<{}>,
 ) {
   const { data } = await dataProxy.query<
