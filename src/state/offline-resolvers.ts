@@ -11,19 +11,19 @@ import { getExperiencesFromCache } from "./resolvers/get-experiences-from-cache"
 import ApolloClient from "apollo-client";
 import { QueryResult } from "@apollo/react-common";
 
-export const OFFLINE_EXPERIENCES_QUERY = gql`
+export const ALL_EXPERIENCES_QUERY = gql`
   {
-    savedAndUnsavedExperiences @client {
+    allExperiences @client {
       id
-      unsavedEntriesCount
+      offlineEntriesCount
     }
   }
 `;
 
 export async function getOfflineItemsCount(client: ApolloClient<{}>) {
   return (await getExperiencesFromCache(client)).reduce(
-    (acc, { id, unsavedEntriesCount }) => {
-      acc += unsavedEntriesCount;
+    (acc, { id, offlineEntriesCount }) => {
+      acc += offlineEntriesCount;
 
       if (isOfflineId(id)) {
         ++acc;
@@ -43,40 +43,42 @@ export function entryNodesFromExperience({ entries }: ExperienceFragment) {
   );
 }
 
-type SavedAndUnsavedExperiencesTypeName = "SavedAndUnsavedExperiences";
+type AllExperiencesTypeName = "AllExperiences";
 
-export const SAVED_AND_UNSAVED_EXPERIENCE_TYPENAME = "SavedAndUnsavedExperiences" as SavedAndUnsavedExperiencesTypeName;
+export const ALL_EXPERIENCES_TYPENAME = "AllExperiences" as AllExperiencesTypeName;
 
-export interface SavedAndUnsavedExperiences {
+export interface AllExperiences {
   id: string;
-  unsavedEntriesCount: number;
-  __typename: SavedAndUnsavedExperiencesTypeName;
+  offlineEntriesCount: number;
+  __typename: AllExperiencesTypeName;
 }
 
-export interface SavedAndUnsavedExperiencesQueryReturned {
-  savedAndUnsavedExperiences: SavedAndUnsavedExperiences[];
+export interface AllExperiencesQueryReturned {
+  allExperiences: AllExperiences[];
 }
 
-export const GET_ALL_UNSAVED_QUERY = gql`
+export const GET_OFFLINE_ITEMS_QUERY = gql`
   {
-    getAllUnsaved @client
+    getOfflineItems @client
   }
 `;
 
-export interface GetAllUnSavedQueryReturned {
-  getAllUnsaved: GetUnsavedSummary;
+export interface GetOfflineItemsQueryReturned {
+  getOfflineItems: GetOfflineItemsSummary;
 }
 
-export type GetAllUnsavedQueryResult = QueryResult<GetAllUnSavedQueryReturned>;
+export type GetOfflineItemsQueryResult = QueryResult<
+  GetOfflineItemsQueryReturned
+>;
 
-const getAllUnsavedResolver: LocalResolverFn<
+const getOfflineItemsResolver: LocalResolverFn<
   {},
-  Promise<GetUnsavedSummary>
+  Promise<GetOfflineItemsSummary>
 > = async (_root, _variables, { cache, client }) => {
   let neverSavedCount = 0;
   let partlySavedCount = 0;
-  const neverSavedMap = {} as UnsavedExperienceSummaryMap;
-  const partlySavedMap = {} as UnsavedExperienceSummaryMap;
+  const neverSavedMap = {} as OfflineExperienceSummaryMap;
+  const partlySavedMap = {} as OfflineExperienceSummaryMap;
 
   (await getExperiencesFromCache(client)).forEach(({ id: id }) => {
     const experience = readGetExperienceFullQueryFromCache(cache, id);
@@ -86,15 +88,15 @@ const getAllUnsavedResolver: LocalResolverFn<
         ++neverSavedCount;
         neverSavedMap[id] = {
           experience,
-          savedEntries: [],
-          unsavedEntries: entryNodesFromExperience(experience),
+          onlineEntries: [],
+          offlineEntries: entryNodesFromExperience(experience),
         };
       } else {
         ++partlySavedCount;
 
         partlySavedMap[id] = {
           experience,
-          ...separateExperienceUnsavedEntries(experience),
+          ...getOnlineAndOfflineEntriesFromExperience(experience),
         };
       }
     }
@@ -108,48 +110,50 @@ const getAllUnsavedResolver: LocalResolverFn<
   };
 };
 
-function separateExperienceUnsavedEntries({ entries }: ExperienceFragment) {
-  let unsavedEntries: ExperienceFragment_entries_edges_node[] = [];
-  let savedEntries: ExperienceFragment_entries_edges_node[] = [];
+function getOnlineAndOfflineEntriesFromExperience({
+  entries,
+}: ExperienceFragment) {
+  let offlineEntries: ExperienceFragment_entries_edges_node[] = [];
+  let onlineEntries: ExperienceFragment_entries_edges_node[] = [];
 
   ((entries.edges as ExperienceFragment_entries_edges[]) || []).forEach(
     (edge: ExperienceFragment_entries_edges) => {
       const node = edge.node as ExperienceFragment_entries_edges_node;
 
       if (isOfflineId(node.id)) {
-        unsavedEntries.push(node);
+        offlineEntries.push(node);
       } else {
-        savedEntries.push(node);
+        onlineEntries.push(node);
       }
     },
   );
 
-  return { unsavedEntries, savedEntries };
+  return { offlineEntries, onlineEntries };
 }
 
 export const DEFAULT_OFFLINE_STATES = {
-  savedAndUnsavedExperiences: [],
+  allExperiences: [],
 };
 
-export const unsavedResolvers = {
+export const offlineItemsResolvers = {
   Mutation: {},
 
-  Query: { getAllUnsaved: getAllUnsavedResolver },
+  Query: { getOfflineItems: getOfflineItemsResolver },
 };
 
-export interface GetUnsavedSummary {
-  neverSavedMap: UnsavedExperienceSummaryMap;
-  partlySavedMap: UnsavedExperienceSummaryMap;
+export interface GetOfflineItemsSummary {
+  neverSavedMap: OfflineExperienceSummaryMap;
+  partlySavedMap: OfflineExperienceSummaryMap;
   neverSavedCount: number;
   partlySavedCount: number;
 }
 
-interface UnsavedExperienceSummaryMap {
+interface OfflineExperienceSummaryMap {
   [K: string]: SavedAndUnsavedExperienceSummary;
 }
 
 export interface SavedAndUnsavedExperienceSummary {
-  unsavedEntries: ExperienceFragment_entries_edges_node[];
+  offlineEntries: ExperienceFragment_entries_edges_node[];
   experience: ExperienceFragment;
-  savedEntries: ExperienceFragment_entries_edges_node[];
+  onlineEntries: ExperienceFragment_entries_edges_node[];
 }

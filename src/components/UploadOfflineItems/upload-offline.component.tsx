@@ -46,7 +46,7 @@ import {
 } from "../Layout/layout.utils";
 import { replaceExperiencesInGetExperiencesMiniQuery } from "../../state/resolvers/update-get-experiences-mini-query";
 import { deleteIdsFromCache } from "../../state/resolvers/delete-references-from-cache";
-import { deleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache } from "../../state/resolvers/update-experiences-in-cache";
+import { deleteExperiencesIdsFromAllExperiencesInCache } from "../../state/resolvers/update-experiences-in-cache";
 import { EXPERIENCES_URL } from "../../routes";
 import { updateCache } from "./update-cache";
 import { useDeleteMutationsOnExit } from "../use-delete-mutations-on-exit";
@@ -77,11 +77,11 @@ export function UploadOfflineItems(props: Props) {
   ] = useUploadOnlineEntriesMutation();
 
   const { data, loading } = useGetAllUnsavedQuery();
-  const getAllUnsaved = data && data.getAllUnsaved;
+  const getOfflineItems = data && data.getOfflineItems;
 
   const [stateMachine, dispatch] = useReducer(
     reducer,
-    getAllUnsaved,
+    getOfflineItems,
     stateInitializerFn,
   );
 
@@ -117,13 +117,13 @@ export function UploadOfflineItems(props: Props) {
   );
 
   useEffect(() => {
-    if (getAllUnsaved && dataLoaded.value === "no") {
+    if (getOfflineItems && dataLoaded.value === "no") {
       dispatch({
         type: ActionType.INIT_STATE_FROM_PROPS,
-        getAllUnsaved,
+        getOfflineItems,
       });
     }
-  }, [getAllUnsaved, dataLoaded, navigate]);
+  }, [getOfflineItems, dataLoaded, navigate]);
 
   useEffect(() => {
     if (allCount === 0) {
@@ -144,7 +144,7 @@ export function UploadOfflineItems(props: Props) {
   }, [shouldRedirect, navigate, layoutDispatch]);
 
   useDeleteMutationsOnExit(
-    ["saveOfflineExperiences", "createEntries", "getAllUnsaved"],
+    ["saveOfflineExperiences", "createEntries", "getOfflineItems"],
     upload.value === "uploaded",
   );
 
@@ -363,7 +363,7 @@ function ExperienceComponent({
     experience,
     newlySavedExperience,
     didUploadSucceed,
-    unsavedEntries,
+    offlineEntries,
     entriesErrors,
     experienceError,
   } = experienceObjectMap;
@@ -421,11 +421,11 @@ function ExperienceComponent({
           deleteIdsFromCache(
             cache,
             [experienceId].concat(
-              unsavedEntries.map(e => e.clientId as string),
+              offlineEntries.map(e => e.clientId as string),
             ),
           );
 
-          await deleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache(
+          await deleteExperiencesIdsFromAllExperiencesInCache(
             client,
             [experienceId],
           );
@@ -437,7 +437,7 @@ function ExperienceComponent({
           });
         },
       }}
-      entriesJSX={unsavedEntries.map((entry, index) => {
+      entriesJSX={offlineEntries.map((entry, index) => {
         const { id: entryId } = entry;
 
         const error = entriesErrors && entriesErrors[entryId];
@@ -447,7 +447,7 @@ function ExperienceComponent({
             key={entryId}
             entry={entry}
             experience={experience}
-            entriesLen={unsavedEntries.length}
+            entriesLen={offlineEntries.length}
             index={index}
             id={`upload-unsaved-entry-${entryId}`}
             className={makeClassNames({ "entry--error": !!error })}
@@ -670,9 +670,9 @@ function unsavedExperiencesToUploadData(
   experiencesIdsToObjectMap: ExperiencesIdsToObjectMap,
 ) {
   return Object.values(experiencesIdsToObjectMap).map(
-    ({ experience, unsavedEntries }) => {
+    ({ experience, offlineEntries }) => {
       return {
-        entries: unsavedEntries.map(toUploadableEntry),
+        entries: offlineEntries.map(toUploadableEntry),
         title: experience.title,
         clientId: experience.clientId,
         dataDefinitions: experience.dataDefinitions.map(
@@ -690,8 +690,8 @@ function savedExperiencesToUploadData(
   experiencesIdsToObjectMap: ExperiencesIdsToObjectMap,
 ) {
   return Object.entries(experiencesIdsToObjectMap).reduce(
-    (acc, [, { unsavedEntries }]) => {
-      return acc.concat(unsavedEntries.map(toUploadableEntry));
+    (acc, [, { offlineEntries }]) => {
+      return acc.concat(offlineEntries.map(toUploadableEntry));
     },
     [] as CreateEntriesInput[],
   );

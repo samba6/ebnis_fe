@@ -1,24 +1,24 @@
 import { DataProxy } from "apollo-cache";
 import {
-  SavedAndUnsavedExperiencesQueryReturned,
-  OFFLINE_EXPERIENCES_QUERY,
-  SavedAndUnsavedExperiences,
-  SAVED_AND_UNSAVED_EXPERIENCE_TYPENAME,
+  AllExperiencesQueryReturned,
+  ALL_EXPERIENCES_QUERY,
+  AllExperiences,
+  ALL_EXPERIENCES_TYPENAME,
 } from "../offline-resolvers";
 import { isOfflineId } from "../../constants";
 import { getExperiencesFromCache } from "./get-experiences-from-cache";
 import ApolloClient from "apollo-client";
 import immer from "immer";
 
-export function writeSavedAndUnsavedExperiencesToCache(
+export function writeAllExperiencesToCache(
   dataProxy: DataProxy,
-  data: SavedAndUnsavedExperiences[],
+  data: AllExperiences[],
 ) {
-  dataProxy.writeQuery<SavedAndUnsavedExperiencesQueryReturned>({
-    query: OFFLINE_EXPERIENCES_QUERY,
+  dataProxy.writeQuery<AllExperiencesQueryReturned>({
+    query: ALL_EXPERIENCES_QUERY,
 
     data: {
-      savedAndUnsavedExperiences: data,
+      allExperiences: data,
     },
   });
 }
@@ -33,8 +33,8 @@ export async function updateEntriesCountInCache(
     cacheData = [
       {
         id: id,
-        unsavedEntriesCount: isOfflineId(id) ? 0 : 1,
-        __typename: SAVED_AND_UNSAVED_EXPERIENCE_TYPENAME,
+        offlineEntriesCount: isOfflineId(id) ? 0 : 1,
+        __typename: ALL_EXPERIENCES_TYPENAME,
       },
     ];
   } else {
@@ -46,7 +46,7 @@ export async function updateEntriesCountInCache(
         const map = proxy[index];
 
         if (map.id === id) {
-          ++map.unsavedEntriesCount;
+          ++map.offlineEntriesCount;
         }
 
         proxy[index] = map;
@@ -54,10 +54,10 @@ export async function updateEntriesCountInCache(
     });
   }
 
-  writeSavedAndUnsavedExperiencesToCache(client, cacheData);
+  writeAllExperiencesToCache(client, cacheData);
 }
 
-export async function deleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache(
+export async function deleteExperiencesIdsFromAllExperiencesInCache(
   client: ApolloClient<{}>,
   ids: string[],
 ) {
@@ -73,8 +73,8 @@ export async function deleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache(
 
       return acc;
     },
-    [] as SavedAndUnsavedExperiences[],
+    [] as AllExperiences[],
   );
 
-  writeSavedAndUnsavedExperiencesToCache(client, cacheData);
+  writeAllExperiencesToCache(client, cacheData);
 }

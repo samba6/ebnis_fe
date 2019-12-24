@@ -39,8 +39,8 @@ import { Props as EntryProps } from "../components/Entry/entry.utils";
 import { DataObjectFragment } from "../graphql/apollo-types/DataObjectFragment";
 import { EXPERIENCES_URL } from "../routes";
 import {
-  GetUnsavedSummary,
-  GetAllUnsavedQueryResult,
+  GetOfflineItemsSummary,
+  GetOfflineItemsQueryResult,
 } from "../state/offline-resolvers";
 import { LayoutUnchangingProvider } from "../components/Layout/layout-providers";
 import { isConnected } from "../state/connections";
@@ -52,7 +52,7 @@ import {
   deleteIdsFromCache,
   removeQueriesAndMutationsFromCache,
 } from "../state/resolvers/delete-references-from-cache";
-import { deleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache } from "../state/resolvers/update-experiences-in-cache";
+import { deleteExperiencesIdsFromAllExperiencesInCache } from "../state/resolvers/update-experiences-in-cache";
 import { EbnisAppProvider } from "../context";
 import {
   useUploadOfflineExperiencesMutation,
@@ -93,15 +93,15 @@ jest.mock("../state/resolvers/update-experiences-in-cache");
 
 const mockUseState = useState;
 const mockUseEffect = useEffect;
-let mockGetAllUnsavedQueryReturnValue: null | GetAllUnsavedQueryResult;
+let mockGetAllUnsavedQueryReturnValue: null | GetOfflineItemsQueryResult;
 jest.mock("../components/UploadOfflineItems/upload-offline.injectables", () => ({
   useGetAllUnsavedQuery: () => {
-    const [result, setResult] = mockUseState<GetAllUnsavedQueryResult>({
+    const [result, setResult] = mockUseState<GetOfflineItemsQueryResult>({
       loading: true,
-    } as GetAllUnsavedQueryResult);
+    } as GetOfflineItemsQueryResult);
 
     mockUseEffect(() => {
-      const r = mockGetAllUnsavedQueryReturnValue as GetAllUnsavedQueryResult;
+      const r = mockGetAllUnsavedQueryReturnValue as GetOfflineItemsQueryResult;
       setResult(r);
     }, []);
 
@@ -120,7 +120,7 @@ const mockScrollIntoView = scrollIntoView as jest.Mock;
 const mockUpdateCache = updateCache as jest.Mock;
 const mockReplaceExperiencesInGetExperiencesMiniQuery = replaceExperiencesInGetExperiencesMiniQuery as jest.Mock;
 const mockDeleteIdsFromCache = deleteIdsFromCache as jest.Mock;
-const mockDeleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache = deleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache as jest.Mock;
+const mockDeleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache = deleteExperiencesIdsFromAllExperiencesInCache as jest.Mock;
 const mockUseUploadUnsavedExperiencesMutation = useUploadOfflineExperiencesMutation as jest.Mock;
 const mockUseUploadAllUnsavedsMutation = useUploadOfflineItemsMutation as jest.Mock;
 const mockUseUploadSavedExperiencesEntriesMutation = useUploadOnlineEntriesMutation as jest.Mock;
@@ -172,7 +172,7 @@ describe("components", () => {
      * Given we are loading data
      */
     const { ui } = makeComp({
-      getAllUnsaved: {} as any,
+      getOfflineItems: {} as any,
     });
 
     /**
@@ -191,10 +191,10 @@ describe("components", () => {
   it("redirects to 404 when there are no unsaved data", async () => {
     expect(mockGetAllUnsavedQueryReturnValue).toBeNull();
     const { ui, mockNavigate } = makeComp({
-      getAllUnsaved: {
+      getOfflineItems: {
         neverSavedCount: 0,
         partlySavedCount: 0,
-      } as GetUnsavedSummary,
+      } as GetOfflineItemsSummary,
     });
 
     render(ui);
@@ -244,17 +244,17 @@ describe("components", () => {
       mockUploadSavedExperiencesEntries,
       mockUploadAllUnsaveds,
     } = makeComp({
-      getAllUnsaved: {
+      getOfflineItems: {
         partlySavedMap: {
           "1": {
             experience,
-            unsavedEntries: [unsavedEntry],
-            savedEntries: [savedEntry],
+            offlineEntries: [unsavedEntry],
+            onlineEntries: [savedEntry],
           },
         } as ExperiencesIdsToObjectMap,
 
         partlySavedCount: 1,
-      } as GetUnsavedSummary,
+      } as GetOfflineItemsSummary,
     });
 
     mockUploadSavedExperiencesEntries.mockResolvedValue({
@@ -404,17 +404,17 @@ describe("components", () => {
       mockUploadSavedExperiencesEntries,
       mockUploadAllUnsaveds,
     } = makeComp({
-      getAllUnsaved: {
+      getOfflineItems: {
         neverSavedCount: 1,
 
         neverSavedMap: {
           "1": {
             experience: unsavedExperience,
-            unsavedEntries: [unsavedEntry],
-            savedEntries: [],
+            offlineEntries: [unsavedEntry],
+            onlineEntries: [],
           },
         } as ExperiencesIdsToObjectMap,
-      } as GetUnsavedSummary,
+      } as GetOfflineItemsSummary,
     });
 
     mockUploadUnsavedExperiences.mockResolvedValue({
@@ -557,7 +557,7 @@ describe("components", () => {
       mockUploadSavedExperiencesEntries,
       mockUploadAllUnsaveds,
     } = makeComp({
-      getAllUnsaved: {
+      getOfflineItems: {
         neverSavedCount: 1,
 
         neverSavedMap: {
@@ -577,9 +577,9 @@ describe("components", () => {
               },
             } as ExperienceFragment,
 
-            unsavedEntries: [unsavedExperienceEntry],
+            offlineEntries: [unsavedExperienceEntry],
 
-            savedEntries: [],
+            onlineEntries: [],
           },
         } as ExperiencesIdsToObjectMap,
 
@@ -601,12 +601,12 @@ describe("components", () => {
               },
             } as ExperienceFragment,
 
-            unsavedEntries: [savedExperienceEntry],
+            offlineEntries: [savedExperienceEntry],
 
-            savedEntries: [],
+            onlineEntries: [],
           },
         } as ExperiencesIdsToObjectMap,
-      } as GetUnsavedSummary,
+      } as GetOfflineItemsSummary,
     });
 
     mockUploadAllUnsaveds.mockResolvedValue({
@@ -835,7 +835,7 @@ describe("components", () => {
 
   it("shows apollo errors", async () => {
     const { ui, mockUploadAllUnsaveds } = makeComp({
-      getAllUnsaved: {
+      getOfflineItems: {
         neverSavedCount: 1,
 
         neverSavedMap: {
@@ -858,7 +858,7 @@ describe("components", () => {
               },
             } as ExperienceFragment,
 
-            unsavedEntries: [
+            offlineEntries: [
               {
                 id: "1",
                 clientId: "1",
@@ -866,7 +866,7 @@ describe("components", () => {
               } as ExperienceFragment_entries_edges_node,
             ],
 
-            savedEntries: [],
+            onlineEntries: [],
           },
         } as ExperiencesIdsToObjectMap,
 
@@ -891,17 +891,17 @@ describe("components", () => {
               },
             } as ExperienceFragment,
 
-            unsavedEntries: [
+            offlineEntries: [
               {
                 id: makeOfflineId("1"),
                 clientId: makeOfflineId("1"),
                 dataObjects: [] as ExperienceFragment_entries_edges_node_dataObjects[],
               } as ExperienceFragment_entries_edges_node,
             ],
-            savedEntries: [],
+            onlineEntries: [],
           },
         } as ExperiencesIdsToObjectMap,
-      } as GetUnsavedSummary,
+      } as GetOfflineItemsSummary,
     });
 
     mockUploadAllUnsaveds.mockRejectedValue(new Error("a"));
@@ -957,7 +957,7 @@ describe("components", () => {
 
   it("deletes never saved", async () => {
     const { ui, mockNavigate, mockLayoutDispatch } = makeComp({
-      getAllUnsaved: {
+      getOfflineItems: {
         neverSavedCount: 1,
 
         neverSavedMap: {
@@ -976,17 +976,17 @@ describe("components", () => {
               },
             } as ExperienceFragment,
 
-            unsavedEntries: [
+            offlineEntries: [
               {
                 id: "10",
                 clientId: "10",
               } as ExperienceFragment_entries_edges_node,
             ],
 
-            savedEntries: [],
+            onlineEntries: [],
           },
         } as ExperiencesIdsToObjectMap,
-      } as GetUnsavedSummary,
+      } as GetOfflineItemsSummary,
     });
 
     mockReplaceExperiencesInGetExperiencesMiniQuery.mockResolvedValue({});
@@ -1021,7 +1021,7 @@ describe("components", () => {
 
   it("deletes partly saved but not never saved", async () => {
     const { ui, mockNavigate } = makeComp({
-      getAllUnsaved: {
+      getOfflineItems: {
         neverSavedCount: 1,
 
         neverSavedMap: {
@@ -1040,14 +1040,14 @@ describe("components", () => {
               },
             } as ExperienceFragment,
 
-            unsavedEntries: [
+            offlineEntries: [
               {
                 id: "10",
                 clientId: "10",
               } as ExperienceFragment_entries_edges_node,
             ],
 
-            savedEntries: [],
+            onlineEntries: [],
           },
         } as ExperiencesIdsToObjectMap,
 
@@ -1058,11 +1058,11 @@ describe("components", () => {
             experience: {
               id: "1",
             } as ExperienceFragment,
-            unsavedEntries: [],
-            savedEntries: [],
+            offlineEntries: [],
+            onlineEntries: [],
           },
         } as ExperiencesIdsToObjectMap,
-      } as GetUnsavedSummary,
+      } as GetOfflineItemsSummary,
     });
 
     mockReplaceExperiencesInGetExperiencesMiniQuery.mockResolvedValue({});
@@ -1160,17 +1160,17 @@ describe("components", () => {
     } as ExperienceFragment;
 
     const { ui, mockUploadUnsavedExperiences } = makeComp({
-      getAllUnsaved: {
+      getOfflineItems: {
         neverSavedCount: 1,
 
         neverSavedMap: {
           "1": {
             experience: unsavedExperience,
-            unsavedEntries: [unsavedEntry],
-            savedEntries: [],
+            offlineEntries: [unsavedEntry],
+            onlineEntries: [],
           },
         } as ExperiencesIdsToObjectMap,
-      } as GetUnsavedSummary,
+      } as GetOfflineItemsSummary,
     });
 
     mockUploadUnsavedExperiences.mockResolvedValue({
@@ -1283,7 +1283,7 @@ describe("non components", () => {
             clientId: "1",
           } as ExperienceFragment,
 
-          unsavedEntries: [
+          offlineEntries: [
             {
               id: "1",
               clientId: "1",
@@ -1313,7 +1313,7 @@ describe("non components", () => {
 
       partlySavedMap: {
         "1": {
-          unsavedEntries: [
+          offlineEntries: [
             {
               id: "1",
               clientId: "1",
@@ -1397,7 +1397,7 @@ describe("non components", () => {
             id: "1",
             clientId: "1",
           },
-          unsavedEntries: [
+          offlineEntries: [
             {
               id: "1",
               clientId: "1",
@@ -1434,7 +1434,7 @@ describe("non components", () => {
 
       partlySavedMap: {
         "1": {
-          unsavedEntries: [
+          offlineEntries: [
             {
               id: "a",
               clientId: "1",
@@ -1465,15 +1465,15 @@ const defaultArgs: Args = {
 
 function makeComp(args: Args = {}) {
   args = { ...defaultArgs, ...args };
-  const { props, isConnected, getAllUnsaved } = args;
+  const { props, isConnected, getOfflineItems } = args;
 
-  mockGetAllUnsavedQueryReturnValue = (getAllUnsaved
+  mockGetAllUnsavedQueryReturnValue = (getOfflineItems
     ? {
         data: {
-          getAllUnsaved,
+          getOfflineItems,
         },
       }
-    : {}) as GetAllUnsavedQueryResult;
+    : {}) as GetOfflineItemsQueryResult;
 
   mockIsConnected.mockReturnValue(isConnected);
 
@@ -1530,6 +1530,6 @@ function makeComp(args: Args = {}) {
 interface Args {
   props?: Partial<Props>;
   isConnected?: boolean;
-  getAllUnsaved?: GetUnsavedSummary;
+  getOfflineItems?: GetOfflineItemsSummary;
 }
 

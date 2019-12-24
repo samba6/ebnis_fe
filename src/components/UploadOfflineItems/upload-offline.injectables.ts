@@ -9,9 +9,9 @@ import {
 import { useMutation, useQuery } from "@apollo/react-hooks";
 import ApolloClient from "apollo-client";
 import {
-  unsavedResolvers,
-  GET_ALL_UNSAVED_QUERY,
-  GetAllUnSavedQueryReturned,
+  offlineItemsResolvers,
+  GET_OFFLINE_ITEMS_QUERY,
+  GetOfflineItemsQueryReturned,
 } from "../../state/offline-resolvers";
 import {
   UploadOfflineItemsMutation,
@@ -30,7 +30,7 @@ export function addUploadOfflineItemsResolvers(client: ApolloClient<{}>) {
     return;
   }
 
-  client.addResolvers(unsavedResolvers);
+  client.addResolvers(offlineItemsResolvers);
   resolversAdded = true;
 }
 
@@ -55,8 +55,8 @@ export function useUploadOnlineEntriesMutation() {
 }
 
 export function useGetAllUnsavedQuery() {
-  return useQuery<GetAllUnSavedQueryReturned, {}>(
-    GET_ALL_UNSAVED_QUERY,
+  return useQuery<GetOfflineItemsQueryReturned, {}>(
+    GET_OFFLINE_ITEMS_QUERY,
 
     {
       fetchPolicy: "cache-and-network",

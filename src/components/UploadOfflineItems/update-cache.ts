@@ -5,10 +5,10 @@ import {
   ExperienceFragment_dataDefinitions,
 } from "../../graphql/apollo-types/ExperienceFragment";
 import {
-  SavedAndUnsavedExperiences,
-  SAVED_AND_UNSAVED_EXPERIENCE_TYPENAME,
+  AllExperiences,
+  ALL_EXPERIENCES_TYPENAME,
 } from "../../state/offline-resolvers";
-import { writeSavedAndUnsavedExperiencesToCache } from "../../state/resolvers/update-experiences-in-cache";
+import { writeAllExperiencesToCache } from "../../state/resolvers/update-experiences-in-cache";
 import immer from "immer";
 import { entryToEdge } from "../../state/resolvers/entry-to-edge";
 import { ExperiencesIdsToObjectMap } from "./upload-offline.utils";
@@ -78,12 +78,12 @@ export function updateCache({
     });
   }
 
-  const savedAndUnsavedExperiences = unsavedExperiences.savedAndUnsavedExperiences.concat(
-    savedExperiences.savedAndUnsavedExperiences,
+  const allExperiences = unsavedExperiences.allExperiences.concat(
+    savedExperiences.allExperiences,
   );
 
-  if (savedAndUnsavedExperiences.length !== 0 || toDeletes.length !== 0) {
-    writeSavedAndUnsavedExperiencesToCache(cache, savedAndUnsavedExperiences);
+  if (allExperiences.length !== 0 || toDeletes.length !== 0) {
+    writeAllExperiencesToCache(cache, allExperiences);
   }
 
   // Now if we have unsaved entries, we are sure they will be re-created if
@@ -113,7 +113,7 @@ export function updateCache({
 function handleUnsavedExperiences(
   unsavedExperiencesMap: ExperiencesIdsToObjectMap,
 ) {
-  const savedAndUnsavedExperiences: SavedAndUnsavedExperiences[] = [];
+  const allExperiences: AllExperiences[] = [];
   let outstandingUnsavedCount = 0;
   let toDeletes: string[] = [];
   const mutations: [string, string][] = [];
@@ -123,19 +123,19 @@ function handleUnsavedExperiences(
   Object.entries(unsavedExperiencesMap).forEach(([unsavedId, map]) => {
     const {
       newlySavedExperience,
-      unsavedEntries,
+      offlineEntries,
       entriesErrors,
       experience,
     } = map;
 
     if (!newlySavedExperience) {
-      const errorsLen = unsavedEntries.length;
+      const errorsLen = offlineEntries.length;
       outstandingUnsavedCount += 1 + errorsLen;
 
-      savedAndUnsavedExperiences.push({
+      allExperiences.push({
         id: experience.id,
-        unsavedEntriesCount: errorsLen,
-        __typename: SAVED_AND_UNSAVED_EXPERIENCE_TYPENAME,
+        offlineEntriesCount: errorsLen,
+        __typename: ALL_EXPERIENCES_TYPENAME,
       });
 
       return;
@@ -179,14 +179,14 @@ function handleUnsavedExperiences(
         outstandingUnsavedCount += errorsLen;
 
         // we now replace unsaved experience version with saved version
-        savedAndUnsavedExperiences.push({
+        allExperiences.push({
           id: newlySavedExperience.id,
-          unsavedEntriesCount: errorsLen,
-          __typename: SAVED_AND_UNSAVED_EXPERIENCE_TYPENAME,
+          offlineEntriesCount: errorsLen,
+          __typename: ALL_EXPERIENCES_TYPENAME,
         });
 
         // we merge unsaved entries into saved entries received from server.
-        unsavedEntries.forEach(entry => {
+        offlineEntries.forEach(entry => {
           // it is unsaved so id === clientId
           const { id } = entry;
 
@@ -197,7 +197,7 @@ function handleUnsavedExperiences(
           }
         });
       } else {
-        toDeletes.push(`${SAVED_AND_UNSAVED_EXPERIENCE_TYPENAME}:${unsavedId}`);
+        toDeletes.push(`${ALL_EXPERIENCES_TYPENAME}:${unsavedId}`);
       }
 
       entries.edges = edges;
@@ -208,7 +208,7 @@ function handleUnsavedExperiences(
   });
 
   return {
-    savedAndUnsavedExperiences,
+    allExperiences,
     outstandingUnsavedCount,
     toDeletes,
     mutations,
@@ -220,7 +220,7 @@ function handleUnsavedExperiences(
 function handleSavedExperiences(
   savedExperiencesMap: ExperiencesIdsToObjectMap,
 ) {
-  const savedAndUnsavedExperiences: SavedAndUnsavedExperiences[] = [];
+  const allExperiences: AllExperiences[] = [];
   let outstandingUnsavedCount = 0;
   let toDeletes: string[] = [];
   const mutations: [string, string][] = [];
@@ -231,17 +231,17 @@ function handleSavedExperiences(
       newlySavedEntries,
       experience,
       entriesErrors,
-      unsavedEntries,
+      offlineEntries,
     } = map;
 
     if (!newlySavedEntries || newlySavedEntries.length === 0) {
-      const errorsLen = unsavedEntries.length;
+      const errorsLen = offlineEntries.length;
       outstandingUnsavedCount += errorsLen;
 
-      savedAndUnsavedExperiences.push({
+      allExperiences.push({
         id: experience.id,
-        unsavedEntriesCount: errorsLen,
-        __typename: SAVED_AND_UNSAVED_EXPERIENCE_TYPENAME,
+        offlineEntriesCount: errorsLen,
+        __typename: ALL_EXPERIENCES_TYPENAME,
       });
 
       return;
@@ -288,21 +288,21 @@ function handleSavedExperiences(
 
       outstandingUnsavedCount += errorsLen;
 
-      savedAndUnsavedExperiences.push({
+      allExperiences.push({
         id: experienceId,
-        unsavedEntriesCount: errorsLen,
-        __typename: SAVED_AND_UNSAVED_EXPERIENCE_TYPENAME,
+        offlineEntriesCount: errorsLen,
+        __typename: ALL_EXPERIENCES_TYPENAME,
       });
     } else {
       toDeletes.push(
-        `${SAVED_AND_UNSAVED_EXPERIENCE_TYPENAME}:${experienceId}`,
+        `${ALL_EXPERIENCES_TYPENAME}:${experienceId}`,
       );
     }
     unsavedExperiencesNowSaved.push(updatedExperience);
   });
 
   return {
-    savedAndUnsavedExperiences,
+    allExperiences,
     outstandingUnsavedCount,
     toDeletes,
     mutations,
@@ -344,7 +344,7 @@ export interface SavedStatuses {
 
 export interface SavedStatus {
   savedExperience: ExperienceFragment;
-  unsavedEntries: ExperienceFragment_entries_edges_node[];
+  offlineEntries: ExperienceFragment_entries_edges_node[];
   clientIdsOfEntriesWithErrors: string[];
   isUnsavedExperience: boolean;
   savedExperienceSavedEntries?: ExperienceFragment_entries_edges_node[];

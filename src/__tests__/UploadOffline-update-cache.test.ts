@@ -17,13 +17,13 @@ jest.mock("../state/resolvers/update-experiences-in-cache");
 import { deleteIdsFromCache } from "../state/resolvers/delete-references-from-cache";
 import { replaceExperiencesInGetExperiencesMiniQuery } from "../state/resolvers/update-get-experiences-mini-query";
 import { writeGetExperienceFullQueryToCache } from "../state/resolvers/write-get-experience-full-query-to-cache";
-import { writeSavedAndUnsavedExperiencesToCache } from "../state/resolvers/update-experiences-in-cache";
+import { writeAllExperiencesToCache } from "../state/resolvers/update-experiences-in-cache";
 import {
   MUTATION_NAME_createEntryOffline,
   MUTATION_NAME_createExperienceOffline,
   QUERY_NAME_getExperience,
 } from "../state/resolvers";
-import { SAVED_AND_UNSAVED_EXPERIENCE_TYPENAME } from "../state/offline-resolvers";
+import { ALL_EXPERIENCES_TYPENAME } from "../state/offline-resolvers";
 import { CreateEntriesErrorsFragment_errors } from "../graphql/apollo-types/CreateEntriesErrorsFragment";
 import { EntryFragment_dataObjects } from "../graphql/apollo-types/EntryFragment";
 import { DataObjectFragment } from "../graphql/apollo-types/DataObjectFragment";
@@ -34,7 +34,7 @@ const mockReplaceExperiencesInGetExperiencesMiniQuery = replaceExperiencesInGetE
 
 const mockWriteGetExperienceFullQueryToCache = writeGetExperienceFullQueryToCache as jest.Mock;
 
-const mockWriteSavedAndUnsavedExperiencesToCache = writeSavedAndUnsavedExperiencesToCache as jest.Mock;
+const mockWriteSavedAndUnsavedExperiencesToCache = writeAllExperiencesToCache as jest.Mock;
 
 beforeEach(() => {
   jest.resetAllMocks();
@@ -60,8 +60,8 @@ test("completely saved unsaved experience", () => {
         } as ExperienceFragment_entries,
       } as ExperienceFragment,
 
-      unsavedEntries: [],
-      savedEntries: [],
+      offlineEntries: [],
+      onlineEntries: [],
       newlySavedEntries: [],
       newlySavedExperience: {
         id: "1s",
@@ -85,11 +85,7 @@ test("completely saved unsaved experience", () => {
 
   expect(mockDeleteIdsFromCache).toHaveBeenCalledWith(
     {},
-    [
-      "Experience:1",
-      "DataDefinition:1",
-      `${SAVED_AND_UNSAVED_EXPERIENCE_TYPENAME}:1`,
-    ],
+    ["Experience:1", "DataDefinition:1", `${ALL_EXPERIENCES_TYPENAME}:1`],
     {
       mutations: [[MUTATION_NAME_createExperienceOffline, "Experience:1"]],
 
@@ -137,7 +133,7 @@ test("partially saved unsaved experience", () => {
       } as ExperienceFragment,
       // one of these entries (21) failed to save -hence this experience is
       // partially saved
-      unsavedEntries: [
+      offlineEntries: [
         {
           id: "unsaved-entry",
         }, // did not save - notice it has same ID as entriesErrors
@@ -151,7 +147,7 @@ test("partially saved unsaved experience", () => {
         "unsaved-entry": {} as CreateEntriesErrorsFragment_errors,
       },
 
-      savedEntries: [], // an unsaved experience never has savedEntries
+      onlineEntries: [], // an unsaved experience never has savedEntries
 
       newlySavedExperience: {
         id: "2s",
@@ -240,8 +236,8 @@ test("partially saved unsaved experience", () => {
   expect(mockWriteSavedAndUnsavedExperiencesToCache.mock.calls[0][1]).toEqual([
     {
       id: "2s",
-      unsavedEntriesCount: 1,
-      __typename: "SavedAndUnsavedExperiences",
+      offlineEntriesCount: 1,
+      __typename: ALL_EXPERIENCES_TYPENAME,
     },
   ]);
 });
@@ -255,9 +251,9 @@ test("unsaved experience not saved", () => {
       } as ExperienceFragment,
       // since experience did not save, ditto entry. outstanding unsaved
       // count = 3
-      unsavedEntries: [{} as ExperienceFragment_entries_edges_node],
+      offlineEntries: [{} as ExperienceFragment_entries_edges_node],
       entriesErrors: {},
-      savedEntries: [],
+      onlineEntries: [],
       newlySavedEntries: [],
     },
   };
@@ -281,8 +277,8 @@ test("unsaved experience not saved", () => {
   expect(mockWriteSavedAndUnsavedExperiencesToCache.mock.calls[0][1]).toEqual([
     {
       id: "3",
-      unsavedEntriesCount: 1,
-      __typename: "SavedAndUnsavedExperiences",
+      offlineEntriesCount: 1,
+      __typename: ALL_EXPERIENCES_TYPENAME,
     },
   ]);
 });
@@ -314,8 +310,8 @@ test("saved experience with unsaved entry not saved", () => {
           ] as ExperienceFragment_entries_edges[],
         },
       } as ExperienceFragment,
-      unsavedEntries: [],
-      savedEntries: [],
+      offlineEntries: [],
+      onlineEntries: [],
       newlySavedEntries: [
         {
           id: "22s",
@@ -386,8 +382,8 @@ test("saved experience with unsaved entry not saved", () => {
   expect(mockWriteSavedAndUnsavedExperiencesToCache.mock.calls[0][1]).toEqual([
     {
       id: "6",
-      unsavedEntriesCount: 1,
-      __typename: "SavedAndUnsavedExperiences",
+      offlineEntriesCount: 1,
+      __typename: ALL_EXPERIENCES_TYPENAME,
     },
   ]);
 });
@@ -399,7 +395,7 @@ test("saved experience with no 'newlySavedEntries' ", () => {
         id: "4",
       },
       // newlySavedEntries = undefined
-      unsavedEntries: [{}],
+      offlineEntries: [{}],
     } as any,
   } as ExperiencesIdsToObjectMap;
 
@@ -422,8 +418,8 @@ test("saved experience with no 'newlySavedEntries' ", () => {
   expect(mockWriteSavedAndUnsavedExperiencesToCache.mock.calls[0][1]).toEqual([
     {
       id: "4",
-      unsavedEntriesCount: 1,
-      __typename: "SavedAndUnsavedExperiences",
+      offlineEntriesCount: 1,
+      __typename: ALL_EXPERIENCES_TYPENAME,
     },
   ]);
 });
@@ -434,7 +430,7 @@ test("saved experience with empty 'newlySavedEntries' ", () => {
       experience: {
         id: "5",
       },
-      unsavedEntries: [{}],
+      offlineEntries: [{}],
       newlySavedEntries: [],
     } as any,
   } as ExperiencesIdsToObjectMap;
@@ -458,8 +454,8 @@ test("saved experience with empty 'newlySavedEntries' ", () => {
   expect(mockWriteSavedAndUnsavedExperiencesToCache.mock.calls[0][1]).toEqual([
     {
       id: "5",
-      unsavedEntriesCount: 1,
-      __typename: "SavedAndUnsavedExperiences",
+      offlineEntriesCount: 1,
+      __typename: ALL_EXPERIENCES_TYPENAME,
     },
   ]);
 });
@@ -473,8 +469,8 @@ test("saved experience completely saved", () => {
           edges: [] as ExperienceFragment_entries_edges[],
         },
       } as ExperienceFragment,
-      unsavedEntries: [],
-      savedEntries: [],
+      offlineEntries: [],
+      onlineEntries: [],
       newlySavedEntries: [
         {
           clientId: "71-c",
@@ -506,11 +502,7 @@ test("saved experience completely saved", () => {
 
   expect(mockDeleteIdsFromCache).toHaveBeenCalledWith(
     {},
-    [
-      "Entry:71-c",
-      "DataObject:1",
-      `${SAVED_AND_UNSAVED_EXPERIENCE_TYPENAME}:7`,
-    ],
+    ["Entry:71-c", "DataObject:1", `${ALL_EXPERIENCES_TYPENAME}:7`],
     {
       mutations: [[MUTATION_NAME_createEntryOffline, "Entry:71-c"]],
 

@@ -1,5 +1,5 @@
 import {
-  GetUnsavedSummary,
+  GetOfflineItemsSummary,
   SavedAndUnsavedExperienceSummary,
 } from "../../state/offline-resolvers";
 import immer, { Draft } from "immer";
@@ -54,8 +54,8 @@ const initial = {
   context: initialContext,
 };
 
-export function stateInitializerFn(getAllUnsaved?: GetUnsavedSummary) {
-  if (!getAllUnsaved) {
+export function stateInitializerFn(getOfflineItems?: GetOfflineItemsSummary) {
+  if (!getOfflineItems) {
     return {
       ...initial,
       neverSavedMap: {},
@@ -63,7 +63,7 @@ export function stateInitializerFn(getAllUnsaved?: GetUnsavedSummary) {
     } as StateMachine;
   }
 
-  const { partlySavedCount = 0, neverSavedCount = 0 } = getAllUnsaved;
+  const { partlySavedCount = 0, neverSavedCount = 0 } = getOfflineItems;
 
   const allCount = partlySavedCount + neverSavedCount;
 
@@ -90,7 +90,7 @@ export function stateInitializerFn(getAllUnsaved?: GetUnsavedSummary) {
 
   return {
     ...{ ...initial, states, context },
-    ...getAllUnsaved,
+    ...getOfflineItems,
 
     partlySavedCount,
     neverSavedCount,
@@ -149,7 +149,7 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
             {
               Object.entries(
                 stateInitializerFn(
-                  (payload as InitStateFromPropsPayload).getAllUnsaved,
+                  (payload as InitStateFromPropsPayload).getOfflineItems,
                 ),
               ).forEach(([k, v]) => {
                 proxy[k] = v;
@@ -314,8 +314,8 @@ function updatePartlySavedFromUploadResults(
     const map = partlySavedMap[experienceId];
     map.newlySavedEntries = entries as ExperienceFragment_entries_edges_node[];
 
-    map.unsavedEntries = replacePartlyUnsavedEntriesWithNewlySaved(
-      map.unsavedEntries,
+    map.offlineEntries = replacePartlyUnsavedEntriesWithNewlySaved(
+      map.offlineEntries,
       map.newlySavedEntries,
     );
 
@@ -404,8 +404,8 @@ function updateNeverSavedFromUploadResults(
       map = neverSavedMap[clientId as string];
       map.newlySavedExperience = experience;
 
-      map.unsavedEntries = replaceNeverSavedEntriesWithNewlySaved(
-        map.unsavedEntries,
+      map.offlineEntries = replaceNeverSavedEntriesWithNewlySaved(
+        map.offlineEntries,
         experience,
       );
 
@@ -444,11 +444,11 @@ function updateNeverSavedFromUploadResults(
 }
 
 function replacePartlyUnsavedEntriesWithNewlySaved(
-  unsavedEntries: EntryFragment[],
+  offlineEntries: EntryFragment[],
   newlySavedEntries: EntryFragment[],
 ) {
   if (newlySavedEntries.length === 0) {
-    return unsavedEntries;
+    return offlineEntries;
   }
 
   const newlySavedEntriesMap = newlySavedEntries.reduce(
@@ -459,7 +459,7 @@ function replacePartlyUnsavedEntriesWithNewlySaved(
     {} as { [k: string]: EntryFragment },
   );
 
-  return unsavedEntries.map(entry => {
+  return offlineEntries.map(entry => {
     const saved = newlySavedEntriesMap[entry.clientId as string];
 
     if (saved) {
@@ -471,7 +471,7 @@ function replacePartlyUnsavedEntriesWithNewlySaved(
 }
 
 function replaceNeverSavedEntriesWithNewlySaved(
-  unsavedEntries: EntryFragment[],
+  offlineEntries: EntryFragment[],
   newlySavedExperience: ExperienceFragment,
 ) {
   const savedEntries = (newlySavedExperience.entries.edges || []).map(
@@ -499,7 +499,7 @@ function replaceNeverSavedEntriesWithNewlySaved(
     {} as { [k: string]: string },
   );
 
-  return unsavedEntries.map(unsavedEntry => {
+  return offlineEntries.map(unsavedEntry => {
     const saved = savedEntriesMap[unsavedEntry.clientId as string];
 
     if (saved) {
@@ -795,6 +795,6 @@ interface ToggleTabPayload {
 }
 
 interface InitStateFromPropsPayload {
-  getAllUnsaved: GetUnsavedSummary;
+  getOfflineItems: GetOfflineItemsSummary;
 }
 export type DispatchType = Dispatch<Action>;
