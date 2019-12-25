@@ -36,7 +36,7 @@ import {
   LayoutUnchangingContext,
   LayoutActionType,
   LayoutContextExperience,
-} from "../Layout/layout.utils";
+} from "../Layout/layout.utils1";
 import { ExperienceMiniFragment } from "../../graphql/apollo-types/ExperienceMiniFragment";
 import SemanticSearch from "semantic-ui-react/dist/commonjs/modules/Search";
 import { SearchResultProps, SearchProps } from "semantic-ui-react";
@@ -52,7 +52,7 @@ import {
   searchDebounceTimeoutMs,
   cleanUpOnSearchExit,
 } from "./my-experiences.injectables";
-import { HeaderSemantic } from "../Header/header-semantic.component";
+import { SidebarHeader } from "../SidebarHeader/sidebar-header.component1";
 
 const SearchComponent = memo(SearchComponentUnMemo, SearchComponentPropsDiffFn);
 
@@ -197,7 +197,7 @@ export const MyExperiences = (props: Props) => {
 
   return (
     <div className="components-experiences">
-      <HeaderSemantic title="My Experiences" sidebar={true} />
+      <SidebarHeader title="My Experiences" sidebar={true} />
 
       <DispatchProvider
         value={{

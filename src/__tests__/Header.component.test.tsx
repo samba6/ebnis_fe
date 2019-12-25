@@ -8,7 +8,7 @@ import { UPLOAD_OFFLINE_ITEMS_PREVIEW_URL } from "../constants/upload-offline-it
 import {
   LayoutProvider,
   LocationProvider,
-} from "../components/Layout/layout-providers";
+} from "../components/Layout/layout-providers1";
 import { WindowLocation } from "@reach/router";
 
 const title = "My App title";

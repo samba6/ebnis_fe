@@ -258,9 +258,9 @@ export function UploadOfflineItems(props: Props) {
     <div className="components-upload-unsaved">
       <ModalComponent open={upload.value === "uploading"} />
 
-      <SidebarHeader sidebar={true}>
+      <SidebarHeader sidebar={false}>
         <div className="components-upload-unsaved-header">
-          <span>Unsaved Preview</span>
+          <span>Offline Items Preview</span>
 
           {!(uploadSomeSuccess && uploadSomeSuccess.value === "allSuccess") && (
             <UploadAllButtonComponent onUploadAllClicked={onSubmit} />
@@ -283,7 +283,7 @@ export function UploadOfflineItems(props: Props) {
           <ServerError dispatch={dispatch} errors={serverErrors} />
         )}
 
-        <TransitionGroup className="all-unsaveds">
+        <TransitionGroup className="offline-items">
           {partlySavedTabActive && (
             <CSSTransition
               timeout={timeoutMs}

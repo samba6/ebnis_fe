@@ -20,7 +20,7 @@ import { isConnected } from "../state/connections";
 import { useMutation } from "@apollo/react-hooks";
 import { scrollIntoView } from "../components/scroll-into-view";
 import { WindowLocation } from "@reach/router";
-import { LocationProvider } from "../components/Layout/layout-providers";
+import { LocationProvider } from "../components/Layout/layout-providers1";
 
 jest.mock("../state/connections");
 jest.mock("../refresh-to-app");

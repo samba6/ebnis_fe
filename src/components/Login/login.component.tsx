@@ -28,6 +28,7 @@ import { isConnected } from "../../state/connections";
 import { noop } from "../../constants";
 import { LoginMutationFn } from "../../graphql/login.mutation";
 import { LoginMutation_login } from "../../graphql/apollo-types/LoginMutation";
+import { SidebarHeader } from "../SidebarHeader/sidebar-header.component1";
 import { ToOtherAuthLink } from "../ToOtherAuthLink";
 import { EXPERIENCES_URL, LOGOUT_URL } from "../../routes";
 import { storeUser, getLoggedOutUser, logoutUser } from "../../state/users";
@@ -40,8 +41,7 @@ import {
 import { LOGIN_MUTATION } from "../../graphql/login.mutation";
 import { useMutation } from "@apollo/react-hooks";
 import { scrollIntoView } from "../scroll-into-view";
-import { HeaderSemantic } from "../Header/header-semantic.component";
-import { LocationContext } from "../Layout/layout.utils";
+import { LocationContext } from "../Layout/layout.utils1";
 
 const scrollToTopId = makeScrollIntoViewId("login");
 
@@ -187,7 +187,7 @@ export function Login() {
 
   return (
     <div className="components-login">
-      <HeaderSemantic title="Login to Ebnis" />
+      <SidebarHeader title="Login to Ebnis" />
 
       <div className="main" id={scrollToTopId}>
         <Formik

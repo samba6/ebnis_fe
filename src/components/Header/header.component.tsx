@@ -4,7 +4,7 @@ import Icon from "semantic-ui-react/dist/commonjs/elements/Icon";
 import makeClassnames from "classnames";
 import { Link } from "../Link";
 import "./header.styles.scss";
-import { LayoutContextHeader, LocationContext } from "../Layout/layout.utils";
+import { LayoutContextHeader, LocationContext } from "../Layout/layout.utils1";
 import {
   UPLOAD_OFFLINE_ITEMS_PREVIEW_URL,
   UPLOAD_OFFLINE_ITEMS_URL_START,
@@ -33,7 +33,8 @@ export const Header = (props: Props) => {
       })}
     >
       <Menu secondary={true}>
-        {offlineItemsCount > 0 && !pathname.includes(UPLOAD_OFFLINE_ITEMS_URL_START) ? (
+        {offlineItemsCount > 0 &&
+        !pathname.includes(UPLOAD_OFFLINE_ITEMS_URL_START) ? (
           <Link
             to={UPLOAD_OFFLINE_ITEMS_PREVIEW_URL}
             id="header-unsaved-count-label"
