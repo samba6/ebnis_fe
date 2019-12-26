@@ -100,6 +100,7 @@ export function Experience(props: Props) {
           "components-experience": true,
           [className]: !!className,
         })}
+        id={experience.id}
         {...otherProps}
       >
         <Card.Content className="experience__header" {...headerProps}>

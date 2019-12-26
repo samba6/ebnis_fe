@@ -9,7 +9,7 @@ import { ExperienceFragment } from "../../src/graphql/apollo-types/ExperienceFra
 import {
   CreateOfflineExperienceMutationData,
   CREATE_OFFLINE_EXPERIENCE_MUTATION,
-} from "../../src/components/ExperienceDefinition/resolvers";
+} from "../../src/components/ExperienceDefinition/experience-definition.resolvers";
 
 export function createSavedExperience(
   experienceDefinitionArgs: CreateExperienceInput,

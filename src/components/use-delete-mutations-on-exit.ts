@@ -2,7 +2,7 @@ import { useContext, useEffect } from "react";
 import { removeQueriesAndMutationsFromCache } from "../state/resolvers/delete-references-from-cache";
 import { EbnisAppContext } from "../context";
 
-export function useDeleteMutationsOnExit(
+export function useDeleteCachedQueriesMutationsOnExit(
   mutations: string[],
   shouldDelete?: boolean,
 ) {

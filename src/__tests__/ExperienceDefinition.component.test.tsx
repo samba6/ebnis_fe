@@ -42,6 +42,8 @@ jest.mock("../components/SidebarHeader/sidebar-header.component", () => ({
   SidebarHeader: jest.fn(() => null),
 }));
 
+jest.mock("../components/use-delete-mutations-on-exit");
+
 const mockIsConnected = isConnected as jest.Mock;
 const mockScrollIntoView = scrollIntoView as jest.Mock;
 const mockUseCreateExperience = useCreateExperience as jest.Mock;

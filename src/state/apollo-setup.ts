@@ -242,6 +242,7 @@ export interface E2EWindowObject extends ObservableUtils {
   emitting: boolean;
   experienceDefinitionResolversAdded?: boolean;
   newEntryResolversAdded?: boolean;
+  logApolloQueries?: boolean;
 }
 
 type KeyOfE2EWindowObject = keyof E2EWindowObject;

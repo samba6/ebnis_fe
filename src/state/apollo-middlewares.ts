@@ -33,14 +33,19 @@ export function middlewareAuthLink(makeSocketLink: MakeSocketLinkFn) {
 }
 
 export function middlewareLoggerLink(link: ApolloLink) {
-  if (process.env.NODE_ENV === "production" || process.env.NO_LOG) {
-    return link;
-  }
-
   return new ApolloLink((operation, forward) => {
+    if (!forward) {
+      return null;
+    }
+
+    const fop = forward(operation);
+
+    if (doNotLog()) {
+      return fop;
+    }
+
     const operationName = `Apollo operation: ${operation.operationName}`;
 
-    // tslint:disable-next-line:no-console
     console.log(
       "\n\n\n",
       getNow(),
@@ -52,15 +57,8 @@ export function middlewareLoggerLink(link: ApolloLink) {
       `\n\n===End ${operationName}====`,
     );
 
-    if (!forward) {
-      return null;
-    }
-
-    const fop = forward(operation);
-
     if (fop.map) {
       return fop.map(response => {
-        // tslint:disable-next-line:no-console
         console.log(
           "\n\n\n",
           getNow(),
@@ -77,15 +75,14 @@ export function middlewareLoggerLink(link: ApolloLink) {
 }
 
 export function middlewareErrorLink(link: ApolloLink) {
-  if (process.env.NODE_ENV === "production" || process.env.NO_LOG) {
-    return link;
-  }
-
   return onError(({ graphQLErrors, networkError, response, operation }) => {
+    if (doNotLog()) {
+      return;
+    }
+
     const logError = (errorName: string, obj: object) => {
       const operationName = `Response [${errorName} error] from Apollo operation: ${operation.operationName}`;
 
-      // tslint:disable-next-line:no-console
       console.error(
         "\n\n\n",
         getNow(),
@@ -112,4 +109,11 @@ export function middlewareErrorLink(link: ApolloLink) {
 function getNow() {
   const n = new Date();
   return `${n.getHours()}:${n.getMinutes()}:${n.getSeconds()}:${n.getMilliseconds()}`;
+}
+
+function doNotLog() {
+  return (
+    !window.____ebnis.logApolloQueries &&
+    (process.env.NODE_ENV === "production" || process.env.NO_LOG === "true")
+  );
 }

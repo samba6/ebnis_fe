@@ -49,6 +49,8 @@ jest.mock("../components/DateField/date-field.component", () => ({
 
 jest.mock("../components/EditEntry/edit-entry.injectables");
 
+jest.mock("../components/use-delete-mutations-on-exit");
+
 let errorConsoleSpy: jest.SpyInstance;
 
 beforeAll(() => {

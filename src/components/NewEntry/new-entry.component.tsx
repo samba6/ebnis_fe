@@ -1,4 +1,9 @@
-import React, { useEffect, useReducer, useContext } from "react";
+import React, {
+  useEffect,
+  useReducer,
+  useContext,
+  useLayoutEffect,
+} from "react";
 import Form from "semantic-ui-react/dist/commonjs/collections/Form";
 import Message from "semantic-ui-react/dist/commonjs/collections/Message";
 import Button from "semantic-ui-react/dist/commonjs/elements/Button";
@@ -40,7 +45,10 @@ import {
   updateExperienceWithNewEntry,
 } from "./new-entry.injectables";
 import { EbnisAppContext } from "../../context";
-import { SidebarHeader } from "../SidebarHeader/sidebar-header.component"
+import { SidebarHeader } from "../SidebarHeader/sidebar-header.component";
+import { useDeleteCachedQueriesMutationsOnExit } from "../use-delete-mutations-on-exit";
+import { MUTATION_NAME_createEntry } from "../../graphql/create-entry.mutation";
+import { MUTATION_NAME_createOfflineEntry } from "../../state/resolvers";
 
 export function NewEntry(props: Props) {
   const { navigate, experience } = props;
@@ -58,7 +66,7 @@ export function NewEntry(props: Props) {
 
   const pageTitle = makePageTitle(experience);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     addResolvers(client);
   }, [client]);
 
@@ -84,6 +92,17 @@ export function NewEntry(props: Props) {
       behavior: "smooth",
     });
   }, [fieldErrors]);
+
+  // we use getExperience( instead of getExperience so that getExperiences does
+  // not get deleted
+  useDeleteCachedQueriesMutationsOnExit(
+    [
+      "getExperience(",
+      MUTATION_NAME_createEntry,
+      MUTATION_NAME_createOfflineEntry,
+    ],
+    true,
+  );
 
   function goToExperience() {
     (navigate as NavigateFn)(makeExperienceRoute(experience.id));

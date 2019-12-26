@@ -81,3 +81,6 @@ export const UPDATE_DEFINITION_AND_DATA_ONLINE_MUTATION = gql`
   ${UPDATE_DATA_OBJECTS_RESPONSE_FRAGMENT}
   ${UPDATE_DEFINITIONS_RESPONSE_FRAGMENT}
 `;
+
+export const MUTATION_NAME_updateDataObjects = "updateDataObjects";
+export const MUTATION_NAME_updateDefinitions = "updateDefinitions";

@@ -48,3 +48,10 @@ export const PRE_FETCH_EXPERIENCES_QUERY = gql`
   ${EXPERIENCE_CONNECTION_PRE_FETCH_FRAGMENT}
 `;
 
+export const getExperienceConnectionMiniVariables: GetExperienceConnectionMiniVariables = {
+  input: {
+    pagination: {
+      first: 20000,
+    },
+  },
+};

@@ -13,6 +13,11 @@ import {
 import { PAGE_NOT_FOUND_TITLE } from "../../src/constants";
 import { UPLOAD_OFFLINE_ITEMS_TITLE } from "../../src/constants/upload-offline-title";
 import { persistCache } from "../support/mutate";
+import {
+  offlineExperiencesTabMenuDomId,
+  uploadBtnDomId,
+  makeUploadStatusIconId,
+} from "../../src/components/UploadOfflineItems/upload-offline.dom";
 
 context("Upload offline items page", () => {
   beforeEach(() => {
@@ -21,7 +26,7 @@ context("Upload offline items page", () => {
   });
 
   it("uploads offline item successfully", () => {
-    const savedExperiencePromise = createSavedExperience({
+    const onlineExperiencePromise = createSavedExperience({
       title: "saved-1",
       dataDefinitions: [
         {
@@ -32,7 +37,7 @@ context("Upload offline items page", () => {
     }).then(experience => {
       const { id, dataDefinitions } = experience;
 
-      const saved = createExperienceEntries([
+      const onlineEntryPromise = createExperienceEntries([
         {
           dataObjects: [
             {
@@ -45,7 +50,7 @@ context("Upload offline items page", () => {
         },
       ]);
 
-      const offlineEntry = createOfflineEntry({
+      const offlineEntryPromise = createOfflineEntry({
         experience,
         dataObjects: [
           {
@@ -55,7 +60,7 @@ context("Upload offline items page", () => {
         ],
       });
 
-      return Promise.all([saved, offlineEntry]).then(() => {
+      return Promise.all([onlineEntryPromise, offlineEntryPromise]).then(() => {
         return experience;
       });
     });
@@ -87,7 +92,7 @@ context("Upload offline items page", () => {
     });
 
     let experiencesPromises = Promise.all([
-      savedExperiencePromise,
+      onlineExperiencePromise,
       offlineExperiencePromise,
     ]).then(result => {
       return persistCache().then(() => {
@@ -98,28 +103,49 @@ context("Upload offline items page", () => {
     cy.wrap(experiencesPromises).then(([, offlineExperience]) => {
       const { id: offlineId } = offlineExperience;
       const offlineRoute = makeExperienceRoute(offlineId);
+      const successIconDomId = makeUploadStatusIconId(offlineId, "success");
 
       cy.visit(offlineRoute);
-
-      let uploadSuccessRegexp = /^upload-triggered-icon-success-(.+?)$/;
-      let savedId: string;
 
       cy.title().should("contain", offlineExperienceTitle);
 
       cy.get("#header-unsaved-count-label").click();
       cy.title().should("contain", UPLOAD_OFFLINE_ITEMS_TITLE);
-      cy.get("#upload-unsaved-tab-menu-never-saved").click();
-      cy.get("#upload-unsaved-upload-btn").click();
+      cy.get(`#${offlineExperiencesTabMenuDomId}`).click();
 
-      cy.get(
-        ".unsaved-experience--success .experience-title__success-icon",
-      ).then($elm => {
-        savedId = uploadSuccessRegexp.exec($elm.attr("id"))[1];
+      /**
+       * we should not see success icon
+       */
+      cy.get(`#${successIconDomId}`).should("not.exist");
 
-        cy.visit(makeExperienceRoute(savedId));
+      /**
+       * When upload button is clicked
+       */
+      cy.get(`#${uploadBtnDomId}`).click();
+
+      /**
+       * Then we should see success icon
+       */
+
+      cy.get(`#${successIconDomId}`).then($elm => {
+        /**
+         * When we visit detailed page of newly online experience
+         */
+        cy.visit(makeExperienceRoute($elm.data("experience-id")));
+
+        /**
+         * Then we should see that it has same title as offline experience
+         */
         cy.title().should("contain", offlineExperienceTitle);
 
+        /**
+         * But when we visit detailed page of offline experience
+         */
         cy.visit(offlineRoute);
+
+        /**
+         * We should find that it no longer exists
+         */
         cy.title().should("contain", PAGE_NOT_FOUND_TITLE);
       });
     });

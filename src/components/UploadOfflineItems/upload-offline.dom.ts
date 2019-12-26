@@ -1,6 +1,6 @@
 import { CreationMode } from "./upload-offline.utils";
 
-export const domPrefix = "upload-offline";
+export const domPrefix = "upload-offline-items";
 
 export function makeExperienceComponentId(id: Id, mode: CreationMode) {
   return `${domPrefix}-${mode}-experience-title-${id}`;
@@ -9,6 +9,12 @@ export function makeExperienceComponentId(id: Id, mode: CreationMode) {
 export const createdOnlineExperiencesContainerId = `${domPrefix}-created-online-experiences-container`;
 
 export const createdOfflineExperiencesContainerId = `${domPrefix}-created-offline-experiences-container`;
+
+export const offlineExperiencesTabMenuDomId = `${domPrefix}-offline-experiences-tab-menu`;
+
+export const uploadBtnDomId = `${domPrefix}-upload-btn`
+
+export const uploadSuccessIconClassName = 'upload-success-icon'
 
 const experienceUploadStatusClassNamePrefix = "upload-experience-status--";
 

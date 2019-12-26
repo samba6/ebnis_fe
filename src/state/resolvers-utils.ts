@@ -4,7 +4,10 @@ import {
   GetExperienceConnectionMini,
   GetExperienceConnectionMiniVariables,
 } from "../graphql/apollo-types/GetExperienceConnectionMini";
-import { GET_EXPERIENCES_MINI_QUERY } from "../graphql/get-experience-connection-mini.query";
+import {
+  GET_EXPERIENCES_MINI_QUERY,
+  getExperienceConnectionMiniVariables,
+} from "../graphql/get-experience-connection-mini.query";
 import immer from "immer";
 import { ExperienceConnectionFragment } from "../graphql/apollo-types/ExperienceConnectionFragment";
 
@@ -26,20 +29,12 @@ export function updateGetExperiencesQuery(
   dataProxy: DataProxy,
   experiences: ExperienceFragment[],
 ) {
-  const variables: GetExperienceConnectionMiniVariables = {
-    input: {
-      pagination: {
-        first: 20000,
-      },
-    },
-  };
-
   const experiencesMiniQuery = dataProxy.readQuery<
     GetExperienceConnectionMini,
     GetExperienceConnectionMiniVariables
   >({
     query: GET_EXPERIENCES_MINI_QUERY,
-    variables,
+    variables: getExperienceConnectionMiniVariables,
   });
 
   const getExperiences =
@@ -63,7 +58,7 @@ export function updateGetExperiencesQuery(
     GetExperienceConnectionMiniVariables
   >({
     query: GET_EXPERIENCES_MINI_QUERY,
-    variables,
+    variables: getExperienceConnectionMiniVariables,
     data: { getExperiences: updatedExperienceConnection },
   });
 }

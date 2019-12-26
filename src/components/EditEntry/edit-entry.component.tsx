@@ -47,6 +47,11 @@ import {
   UpdateDefinitionsOnlineProps,
   UpdateDefinitionsOnlineMutationFn,
 } from "./edit-entry.injectables";
+import { useDeleteCachedQueriesMutationsOnExit } from "../use-delete-mutations-on-exit";
+import {
+  MUTATION_NAME_updateDataObjects,
+  MUTATION_NAME_updateDefinitions,
+} from "../../graphql/update-definition-and-data.mutation";
 
 export function EditEntryComponent(props: Props) {
   const {
@@ -70,6 +75,11 @@ export function EditEntryComponent(props: Props) {
     definitionsStates,
     dataStates,
   } = state;
+
+  useDeleteCachedQueriesMutationsOnExit(
+    [MUTATION_NAME_updateDataObjects, MUTATION_NAME_updateDefinitions],
+    true,
+  );
 
   return (
     <EditEnryContext.Provider

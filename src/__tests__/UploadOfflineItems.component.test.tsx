@@ -69,6 +69,8 @@ import {
   makeUploadStatusIconId,
   makeEntryId,
   makeExperienceErrorId,
+  uploadBtnDomId,
+  offlineExperiencesTabMenuDomId,
 } from "../components/UploadOfflineItems/upload-offline.dom";
 
 const mockLoadingId = "a-lo";
@@ -253,7 +255,7 @@ describe("components", () => {
 
     const {
       ui,
-      mockUploadUnsavedExperiences,
+      mockUploadOfflineExperiences,
       mockUploadSavedExperiencesEntries,
       mockUploadAllUnsaveds,
     } = makeComp({
@@ -301,9 +303,7 @@ describe("components", () => {
       document.getElementById(createdOfflineExperiencesContainerId),
     ).toBeNull();
 
-    expect(
-      document.getElementById("upload-unsaved-tab-menu-never-saved"),
-    ).toBeNull();
+    expect(document.getElementById(offlineExperiencesTabMenuDomId)).toBeNull();
 
     expect(
       (document.getElementById(domOfflineTitle1Id) as any).classList,
@@ -343,9 +343,7 @@ describe("components", () => {
       document.getElementById(createdOnlineExperiencesContainerId),
     ).not.toBeNull();
 
-    fireEvent.click(document.getElementById(
-      "upload-unsaved-upload-btn",
-    ) as any);
+    fireEvent.click(document.getElementById(uploadBtnDomId) as any);
 
     const domOnlineTitle1Id = makeExperienceComponentId(1, CreationMode.online);
 
@@ -364,10 +362,10 @@ describe("components", () => {
 
     expect(uploadedEntry).toEqual(entry);
 
-    expect(mockUploadUnsavedExperiences).not.toHaveBeenCalled();
+    expect(mockUploadOfflineExperiences).not.toHaveBeenCalled();
     expect(mockUploadAllUnsaveds).not.toHaveBeenCalled();
 
-    expect(document.getElementById("upload-unsaved-upload-btn")).toBeNull();
+    expect(document.getElementById(uploadBtnDomId)).toBeNull();
 
     expect(
       document.getElementById(makeUploadStatusIconId(1, "success")),
@@ -418,7 +416,7 @@ describe("components", () => {
 
     const {
       ui,
-      mockUploadUnsavedExperiences,
+      mockUploadOfflineExperiences,
       mockUploadSavedExperiencesEntries,
       mockUploadAllUnsaveds,
     } = makeComp({
@@ -435,7 +433,7 @@ describe("components", () => {
       } as GetOfflineItemsSummary,
     });
 
-    mockUploadUnsavedExperiences.mockResolvedValue({
+    mockUploadOfflineExperiences.mockResolvedValue({
       data: {
         saveOfflineExperiences: [
           {
@@ -466,7 +464,7 @@ describe("components", () => {
     ).not.toBeNull();
 
     expect(
-      document.getElementById("upload-unsaved-tab-menu-never-saved"),
+      document.getElementById(offlineExperiencesTabMenuDomId),
     ).not.toBeNull();
 
     expect(
@@ -498,9 +496,7 @@ describe("components", () => {
      * When we click on never saved tab menu
      */
 
-    (document.getElementById(
-      "upload-unsaved-tab-menu-never-saved",
-    ) as any).click();
+    (document.getElementById(offlineExperiencesTabMenuDomId) as any).click();
 
     jest.runAllTimers();
 
@@ -513,9 +509,7 @@ describe("components", () => {
       document.getElementById(createdOfflineExperiencesContainerId),
     ).not.toBeNull();
 
-    fireEvent.click(document.getElementById(
-      "upload-unsaved-upload-btn",
-    ) as any);
+    fireEvent.click(document.getElementById(uploadBtnDomId) as any);
 
     const $successIcon = await waitForElement(() =>
       document.getElementById("uploaded-success-tab-icon-never-saved"),
@@ -527,7 +521,7 @@ describe("components", () => {
       entries: uploadedEntries,
 
       ...otherExperienceFields
-    } = (mockUploadUnsavedExperiences.mock
+    } = (mockUploadOfflineExperiences.mock
       .calls[0][0] as any).variables.input[0];
 
     experience.dataDefinitions = experience.dataDefinitions.map(
@@ -541,7 +535,7 @@ describe("components", () => {
     expect(mockUploadSavedExperiencesEntries).not.toHaveBeenCalled();
     expect(mockUploadAllUnsaveds).not.toHaveBeenCalled();
 
-    expect(document.getElementById("upload-unsaved-upload-btn")).toBeNull();
+    expect(document.getElementById(uploadBtnDomId)).toBeNull();
 
     expect((document.getElementById(domTitle1Id) as any).classList).toContain(
       makeExperienceUploadStatusClassNames(true)[1],
@@ -571,7 +565,7 @@ describe("components", () => {
 
     const {
       ui,
-      mockUploadUnsavedExperiences,
+      mockUploadOfflineExperiences,
       mockUploadSavedExperiencesEntries,
       mockUploadAllUnsaveds,
     } = makeComp({
@@ -699,8 +693,8 @@ describe("components", () => {
      */
 
     const $neverSavedTabMenu = document.getElementById(
-      "upload-unsaved-tab-menu-never-saved",
-    ) as any;
+      offlineExperiencesTabMenuDomId,
+    ) as HTMLElement;
 
     $neverSavedTabMenu.click();
 
@@ -790,9 +784,7 @@ describe("components", () => {
 
     expect(document.getElementById("unsaved-experience-errors-1")).toBeNull();
 
-    fireEvent.click(document.getElementById(
-      "upload-unsaved-upload-btn",
-    ) as any);
+    fireEvent.click(document.getElementById(uploadBtnDomId) as any);
 
     const $error = await waitForElement(() =>
       document.getElementById(makeUploadStatusIconId(2, "error")),
@@ -802,7 +794,7 @@ describe("components", () => {
 
     expect(mockUploadAllUnsaveds).toHaveBeenCalled();
 
-    expect(mockUploadUnsavedExperiences).not.toHaveBeenCalled();
+    expect(mockUploadOfflineExperiences).not.toHaveBeenCalled();
     expect(mockUploadSavedExperiencesEntries).not.toHaveBeenCalled();
 
     expect(
@@ -842,7 +834,7 @@ describe("components", () => {
       document.getElementById("uploaded-error-tab-icon-never-saved"),
     ).not.toBeNull();
 
-    expect(document.getElementById("upload-unsaved-upload-btn")).not.toBeNull();
+    expect(document.getElementById(uploadBtnDomId)).not.toBeNull();
 
     expect(document.getElementById(makeExperienceErrorId(1))).not.toBeNull();
 
@@ -926,9 +918,7 @@ describe("components", () => {
 
     expect(document.getElementById("upload-unsaved-server-error")).toBeNull();
 
-    fireEvent.click(document.getElementById(
-      "upload-unsaved-upload-btn",
-    ) as any);
+    fireEvent.click(document.getElementById(uploadBtnDomId) as any);
 
     const $errorUi = await waitForElement(() =>
       document.getElementById("upload-unsaved-server-error"),
@@ -1116,8 +1106,11 @@ describe("components", () => {
     ).toEqual(["1"]);
   });
 
-  test("experience saved but entry did not", async done => {
-    const unsavedEntry = {
+  test("experience now online but entry still offline", async done => {
+    const offlineExperienceId = "1";
+    const newlyOnlineExperienceId = "2";
+
+    const offlineEntry = {
       id: "1",
       clientId: "1",
       dataObjects: [
@@ -1126,19 +1119,19 @@ describe("components", () => {
           data: `{"decimal":1}`,
         },
       ],
-      experienceId: "1",
+      experienceId: offlineExperienceId,
       ...timeStamps,
     } as ExperienceFragment_entries_edges_node;
 
-    const unsavedExperience = {
+    const offlineExperience = {
       title: "a",
-      clientId: "1",
-      id: "1",
+      clientId: offlineExperienceId,
+      id: offlineExperienceId,
 
       entries: {
         edges: [
           {
-            node: unsavedEntry,
+            node: offlineEntry,
           },
         ],
       },
@@ -1155,11 +1148,10 @@ describe("components", () => {
       ...timeStamps,
     } as ExperienceFragment;
 
-    const savedExperience = {
+    const newlyOnlineExperience = {
       title: "a",
-      clientId: "1",
-      // id will change on successful save
-      id: "2",
+      clientId: offlineExperienceId,
+      id: newlyOnlineExperienceId,
 
       entries: {},
 
@@ -1175,28 +1167,28 @@ describe("components", () => {
       ...timeStamps,
     } as ExperienceFragment;
 
-    const { ui, mockUploadUnsavedExperiences } = makeComp({
+    const { ui, mockUploadOfflineExperiences } = makeComp({
       getOfflineItems: {
         completelyOfflineCount: 1,
 
         completelyOfflineMap: {
-          "1": {
-            experience: unsavedExperience,
-            offlineEntries: [unsavedEntry],
+          [offlineExperienceId]: {
+            experience: offlineExperience,
+            offlineEntries: [offlineEntry],
             onlineEntries: [],
           },
         } as ExperiencesIdsToObjectMap,
       } as GetOfflineItemsSummary,
     });
 
-    mockUploadUnsavedExperiences.mockResolvedValue({
+    mockUploadOfflineExperiences.mockResolvedValue({
       data: {
         saveOfflineExperiences: [
           {
-            experience: savedExperience,
+            experience: newlyOnlineExperience,
             entriesErrors: [
               {
-                experienceId: "2",
+                experienceId: newlyOnlineExperienceId,
                 clientId: "1",
                 errors: {
                   experienceId: "err",
@@ -1218,25 +1210,31 @@ describe("components", () => {
     ).toBeNull();
 
     expect(
-      document.getElementById(makeUploadStatusIconId(2, "error")),
+      document.getElementById(
+        makeUploadStatusIconId(offlineExperienceId, "error"),
+      ),
     ).toBeNull();
 
     const $uploadBtn = await waitForElement(() => {
-      return document.getElementById("upload-unsaved-upload-btn") as any;
+      return document.getElementById(uploadBtnDomId) as any;
     });
 
     fireEvent.click($uploadBtn);
 
     const $errorIcon = await waitForElement(() =>
-      document.getElementById(makeUploadStatusIconId(2, "error")),
+      document.getElementById(
+        makeUploadStatusIconId(offlineExperienceId, "error"),
+      ),
     );
 
     expect($errorIcon).not.toBeNull();
 
-    expect(document.getElementById("upload-unsaved-upload-btn")).not.toBeNull();
+    expect(document.getElementById(uploadBtnDomId)).not.toBeNull();
 
     expect(
-      document.getElementById(makeUploadStatusIconId(1, "success")),
+      document.getElementById(
+        makeUploadStatusIconId(offlineExperienceId, "success"),
+      ),
     ).toBeNull();
 
     const { entry } = mockEntry.mock.calls[
@@ -1494,10 +1492,10 @@ function makeComp(args: Args = {}) {
 
   mockIsConnected.mockReturnValue(isConnected);
 
-  const mockUploadUnsavedExperiences = jest.fn();
+  const mockUploadOfflineExperiences = jest.fn();
 
   mockUseUploadUnsavedExperiencesMutation.mockReturnValue([
-    mockUploadUnsavedExperiences,
+    mockUploadOfflineExperiences,
   ]);
 
   const mockUploadSavedExperiencesEntries = jest.fn();
@@ -1536,7 +1534,7 @@ function makeComp(args: Args = {}) {
       </EbnisAppProvider>
     ),
 
-    mockUploadUnsavedExperiences,
+    mockUploadOfflineExperiences,
     mockUploadSavedExperiencesEntries,
     mockUploadAllUnsaveds,
     mockLayoutDispatch,

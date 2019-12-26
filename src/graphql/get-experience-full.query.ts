@@ -20,3 +20,5 @@ export type GetExperienceFullQueryResult = QueryResult<
   GetExperienceFull,
   GetExperienceFullVariables
 >;
+
+export const QUERY_NAME_getExperienceFull = "getExperience";

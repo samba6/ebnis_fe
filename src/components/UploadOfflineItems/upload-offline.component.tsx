@@ -49,7 +49,7 @@ import { deleteIdsFromCache } from "../../state/resolvers/delete-references-from
 import { deleteExperiencesIdsFromOfflineItemsInCache } from "../../state/resolvers/update-experiences-in-cache";
 import { EXPERIENCES_URL } from "../../routes";
 import { updateCache } from "./update-cache";
-import { useDeleteMutationsOnExit } from "../use-delete-mutations-on-exit";
+import { useDeleteCachedQueriesMutationsOnExit } from "../use-delete-mutations-on-exit";
 import { makeSiteTitle, setDocumentTitle } from "../../constants";
 import { UPLOAD_OFFLINE_ITEMS_TITLE } from "../../constants/upload-offline-title";
 import { IconProps } from "semantic-ui-react";
@@ -71,7 +71,10 @@ import {
   makeUploadStatusIconId,
   makeEntryId,
   makeExperienceErrorId,
+  uploadBtnDomId,
+  offlineExperiencesTabMenuDomId,
 } from "./upload-offline.dom";
+import { QUERY_NAME_getExperienceFull } from "../../graphql/get-experience-full.query";
 
 const timeoutMs = 500;
 const REDIRECT_ROUTE = makeSiteTitle(MY_EXPERIENCES_TITLE);
@@ -143,8 +146,13 @@ export function UploadOfflineItems(props: Props) {
     }
   }, [shouldRedirect, navigate, layoutDispatch]);
 
-  useDeleteMutationsOnExit(
-    ["saveOfflineExperiences", "createEntries", "getOfflineItems"],
+  useDeleteCachedQueriesMutationsOnExit(
+    [
+      "saveOfflineExperiences",
+      "createEntries",
+      "getOfflineItems",
+      QUERY_NAME_getExperienceFull + "(",
+    ],
     upload.value === "uploaded",
   );
 
@@ -371,6 +379,10 @@ function ExperienceComponent({
   experience = newlySavedExperience || experience;
   const hasError = !!(entriesErrors || experienceError);
   const experienceId = experience.id;
+  const experienceClientId =
+    mode === CreationMode.offline
+      ? (experience.clientId as string)
+      : experienceId;
 
   const [
     uploadStatusClassName,
@@ -382,14 +394,15 @@ function ExperienceComponent({
         name: "check",
         className:
           "experience-title--success-icon upload-success-icon upload-result-icon",
-        id: makeUploadStatusIconId(experienceId, "success"),
+        id: makeUploadStatusIconId(experienceClientId, "success"),
+        "data-experience-id": experienceId,
       }
     : hasError
     ? {
         name: "ban",
         className:
           "experience-title--error-icon upload-error-icon upload-result-icon",
-        id: makeUploadStatusIconId(experienceId, "error"),
+        id: makeUploadStatusIconId(experienceClientId, "error"),
       }
     : null;
 
@@ -542,14 +555,14 @@ function TabsMenuComponent({
     />
   ) : null;
 
-  const neverSavedTabIcon = context.offline ? (
+  const offlineExperiencesTabIcon = context.offline ? (
     <a
       className={makeClassNames({
         item: true,
         active: tabActive || twoTabsValue === CreationMode.offline,
         "tab-menu": true,
       })}
-      id="upload-unsaved-tab-menu-never-saved"
+      id={offlineExperiencesTabMenuDomId}
       onClick={() => {
         if (twoTabsValue) {
           dispatch({
@@ -574,7 +587,7 @@ function TabsMenuComponent({
     >
       {partlySavedTabIcon}
 
-      {neverSavedTabIcon}
+      {offlineExperiencesTabIcon}
     </div>
   );
 }
@@ -587,7 +600,7 @@ function UploadAllButtonComponent({
   return (
     <Button
       className="upload-button"
-      id="upload-unsaved-upload-btn"
+      id={uploadBtnDomId}
       onClick={onUploadAllClicked}
     >
       UPLOAD

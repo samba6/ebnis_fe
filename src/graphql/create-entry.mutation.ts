@@ -34,3 +34,4 @@ export const CREATE_ENTRY_MUTATION = gql`
   ${CREATE_ENTRY_ERRORS_FRAGMENT}
 `;
 
+export const MUTATION_NAME_createEntry = "createEntry";
