@@ -75,7 +75,7 @@ test("completely saved unsaved experience", () => {
 
   const outstandingUnsavedCount = updateCache({
     completelyOfflineMap,
-    partlyOfflineMap: {},
+    partialOfflineMap: {},
     cache: {} as any,
     client: {} as any,
   });
@@ -173,7 +173,7 @@ test("partially saved unsaved experience", () => {
 
   const outstandingUnsavedCount = updateCache({
     completelyOfflineMap,
-    partlyOfflineMap: {},
+    partialOfflineMap: {},
     cache: {} as any,
     client: {} as any,
   });
@@ -260,7 +260,7 @@ test("unsaved experience not saved", () => {
 
   const outstandingUnsavedCount = updateCache({
     completelyOfflineMap,
-    partlyOfflineMap: {},
+    partialOfflineMap: {},
     cache: {} as any,
     client: {} as any,
   });
@@ -284,7 +284,7 @@ test("unsaved experience not saved", () => {
 });
 
 test("saved experience with unsaved entry not saved", () => {
-  const partlyOfflineMap = {
+  const partialOfflineMap = {
     "6": {
       // has an unsaved entry, so we will put it back in savedUnsaved
       experience: {
@@ -330,7 +330,7 @@ test("saved experience with unsaved entry not saved", () => {
 
   const outstandingUnsavedCount = updateCache({
     completelyOfflineMap: {},
-    partlyOfflineMap,
+    partialOfflineMap,
     cache: {} as any,
     client: {} as any,
   });
@@ -389,7 +389,7 @@ test("saved experience with unsaved entry not saved", () => {
 });
 
 test("saved experience with no 'newlySavedEntries' ", () => {
-  const partlyOfflineMap = {
+  const partialOfflineMap = {
     "4": {
       experience: {
         id: "4",
@@ -401,7 +401,7 @@ test("saved experience with no 'newlySavedEntries' ", () => {
 
   const outstandingUnsavedCount = updateCache({
     completelyOfflineMap: {},
-    partlyOfflineMap,
+    partialOfflineMap,
     cache: {} as any,
     client: {} as any,
   });
@@ -425,7 +425,7 @@ test("saved experience with no 'newlySavedEntries' ", () => {
 });
 
 test("saved experience with empty 'newlySavedEntries' ", () => {
-  const partlyOfflineMap = {
+  const partialOfflineMap = {
     "5": {
       experience: {
         id: "5",
@@ -437,7 +437,7 @@ test("saved experience with empty 'newlySavedEntries' ", () => {
 
   const outstandingUnsavedCount = updateCache({
     completelyOfflineMap: {},
-    partlyOfflineMap,
+    partialOfflineMap,
     cache: {} as any,
     client: {} as any,
   });
@@ -461,7 +461,7 @@ test("saved experience with empty 'newlySavedEntries' ", () => {
 });
 
 test("saved experience completely saved", () => {
-  const partlyOfflineMap = {
+  const partialOfflineMap = {
     "7": {
       experience: {
         id: "7",
@@ -487,7 +487,7 @@ test("saved experience completely saved", () => {
 
   const outstandingUnsavedCount = updateCache({
     completelyOfflineMap: {},
-    partlyOfflineMap,
+    partialOfflineMap,
     cache: {} as any,
     client: {} as any,
   });
@@ -528,7 +528,7 @@ test("saved experience completely saved", () => {
 it("is a noop when updating and there is nothing to update", () => {
   const outstandingUnsavedCount = updateCache({
     completelyOfflineMap: {},
-    partlyOfflineMap: {},
+    partialOfflineMap: {},
     cache: {} as any,
     client: {} as any,
   });

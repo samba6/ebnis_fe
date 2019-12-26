@@ -3,12 +3,12 @@ import { Link } from "../Link";
 import Button from "semantic-ui-react/dist/commonjs/elements/Button";
 import { ROOT_URL } from "../../routes";
 import { RouteComponentProps } from "@reach/router";
-import { HeaderSemantic } from "../Header/header-semantic.component";
+import { SidebarHeader } from "../SidebarHeader/sidebar-header.component"
 
 export function Page404({  }: RouteComponentProps) {
   return (
     <>
-      <HeaderSemantic title="Page Not Found" />
+      <SidebarHeader title="Page Not Found" />
 
       <div
         style={{

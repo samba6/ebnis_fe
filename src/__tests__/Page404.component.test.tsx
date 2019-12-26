@@ -5,7 +5,9 @@ import "@marko/testing-library/cleanup-after-each";
 import { render } from "@testing-library/react";
 import { Page404 } from "../components/Page404/index";
 
-const Page404P = Page404 as ComponentType<Partial<{}>>;
+jest.mock("../components/SidebarHeader/sidebar-header.component", () => ({
+  SidebarHeader: jest.fn(() => null),
+}));
 
 it("renders correctly", () => {
   const { ui } = makeComp({
@@ -16,6 +18,7 @@ it("renders correctly", () => {
 });
 
 ////////////////////////// HELPER FUNCTIONS ///////////////////////////////////
+const Page404P = Page404 as ComponentType<Partial<{}>>;
 
 function makeComp({ props = {} }: { props?: Partial<{}> } = {}) {
   return {

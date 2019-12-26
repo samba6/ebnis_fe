@@ -79,7 +79,7 @@ const getOfflineItemsResolver: LocalResolverFn<
   let partlyOfflineCount = 0;
 
   const completelyOfflineMap = {} as OfflineExperienceSummaryMap;
-  const partlyOfflineMap = {} as OfflineExperienceSummaryMap;
+  const partialOfflineMap = {} as OfflineExperienceSummaryMap;
 
   (await getExperiencesFromCache(client)).forEach(({ id: id }) => {
     const experience = readGetExperienceFullQueryFromCache(cache, id);
@@ -95,7 +95,7 @@ const getOfflineItemsResolver: LocalResolverFn<
       } else {
         ++partlyOfflineCount;
 
-        partlyOfflineMap[id] = {
+        partialOfflineMap[id] = {
           experience,
           ...getOnlineAndOfflineEntriesFromExperience(experience),
         };
@@ -105,7 +105,7 @@ const getOfflineItemsResolver: LocalResolverFn<
 
   return {
     completelyOfflineMap,
-    partlyOfflineMap,
+    partialOfflineMap,
     completelyOfflineCount,
     partlyOfflineCount,
   };
@@ -144,7 +144,7 @@ export const offlineItemsResolvers = {
 
 export interface GetOfflineItemsSummary {
   completelyOfflineMap: OfflineExperienceSummaryMap;
-  partlyOfflineMap: OfflineExperienceSummaryMap;
+  partialOfflineMap: OfflineExperienceSummaryMap;
   completelyOfflineCount: number;
   partlyOfflineCount: number;
 }

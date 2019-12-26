@@ -275,7 +275,6 @@ describe("components", () => {
 
     context1 = layoutContextValue as ILayoutContextHeaderValue;
     expect(context1.hasConnection).toBe(false);
-    expect(context1.sidebarVisible).toBe(false);
 
     /**
      * And we should not have queried for unsaved data
@@ -748,7 +747,7 @@ describe("reducer", () => {
      */
 
     const action = {
-      type: LayoutActionType.SET_UNSAVED_COUNT,
+      type: LayoutActionType.SET_OFFLINE_ITEMS_COUNT,
       count: 17,
     } as LayoutAction;
 
@@ -761,24 +760,6 @@ describe("reducer", () => {
     expect(nextState.context.offlineItemsCount).toBe(17);
   });
 
-  it("toggles sidebar", () => { const state = {
-      states: {
-        sidebar: {
-          value: "closed",
-        },
-      },
-    } as StateMachine;
-
-    const action = {
-      type: LayoutActionType.TOGGLE_SIDEBAR,
-    } as LayoutAction;
-
-    let nextState = reducer(state, action);
-    expect(nextState.states.sidebar.value).toEqual("opened");
-
-    nextState = reducer(nextState, action);
-    expect(nextState.states.sidebar.value).toEqual("closed");
-  });
 });
 
 ////////////////////////// HELPER FUNCTIONS ///////////////////////////////////

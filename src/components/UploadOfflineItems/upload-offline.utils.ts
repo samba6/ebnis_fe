@@ -64,7 +64,7 @@ export function stateInitializerFn(getOfflineItems?: GetOfflineItemsSummary) {
     return {
       ...initial,
       completelyOfflineMap: {},
-      partlyOfflineMap: {},
+      partialOfflineMap: {},
     } as StateMachine;
   }
 
@@ -113,20 +113,20 @@ function updateTabsState(
   const context = { ...tabsState.context } as TabStateContext;
 
   if (partlyOfflineCount > 0 && completelyOfflineCount > 0) {
-    context.neverSaved = true;
-    context.partlySaved = true;
+    context.offline = true;
+    context.online = true;
     tabsState.value = "two";
     const twoTabs = (tabsState as unknown) as TabTwo;
 
     twoTabs.states = {
       two: {
-        value: "partlySaved",
+        value: CreationMode.online,
       },
     };
   } else {
     tabsState.value = "one";
-    context.partlySaved = partlyOfflineCount > 0;
-    context.neverSaved = completelyOfflineCount > 0;
+    context.online = partlyOfflineCount > 0;
+    context.offline = completelyOfflineCount > 0;
   }
 
   tabsState.context = context;
@@ -179,9 +179,9 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
 
               twoTabs.value =
                 (payload as TabStateTogglePayload).currentValue ===
-                "partlySaved"
-                  ? "neverSaved"
-                  : "partlySaved";
+                CreationMode.online
+                  ? CreationMode.offline
+                  : CreationMode.online;
             }
 
             break;
@@ -242,7 +242,7 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
                 delete proxy.completelyOfflineMap[id];
                 --proxy.completelyOfflineCount;
               } else {
-                delete proxy.partlyOfflineMap[id];
+                delete proxy.partialOfflineMap[id];
                 --proxy.partlyOfflineCount;
               }
 
@@ -289,7 +289,7 @@ function entriesErrorsToMap(errors: CreateEntriesErrorsFragment[]) {
   );
 }
 
-function updatePartlySavedFromUploadResults(
+function updatePartialOnlineFromUploadResults(
   stateProxy: Draft<StateMachine>,
   createEntries: (UploadAllUnsavedsMutation_createEntries | null)[] | null,
   successState: ExperiencesUploadedResultState,
@@ -301,7 +301,7 @@ function updatePartlySavedFromUploadResults(
   const localState = successState as PartialUploadSuccessState;
   let hasSuccess = false;
   let hasError = false;
-  const { partlyOfflineMap } = stateProxy;
+  const { partialOfflineMap } = stateProxy;
 
   localState.partial = localState.partial || {
     states: {},
@@ -320,7 +320,7 @@ function updatePartlySavedFromUploadResults(
     const { errors, experienceId, entries = [] } = element;
     hasSuccess = entries.length > 0;
 
-    const map = partlyOfflineMap[experienceId];
+    const map = partialOfflineMap[experienceId];
     map.newlySavedEntries = entries as ExperienceFragment_entries_edges_node[];
 
     map.offlineEntries = replacePartlyUnsavedEntriesWithNewlySaved(
@@ -359,7 +359,7 @@ function updatePartlySavedFromUploadResults(
   }
 }
 
-function updateNeverSavedFromUploadResults(
+function updateCompleteOfflineFromUploadResults(
   stateProxy: Draft<StateMachine>,
   uploadResults:
     | (UploadAllUnsavedsMutation_saveOfflineExperiences | null)[]
@@ -567,13 +567,13 @@ export function onUploadResultsReceived(
 
     const { saveOfflineExperiences, createEntries } = payload;
 
-    updateNeverSavedFromUploadResults(
+    updateCompleteOfflineFromUploadResults(
       proxy,
       saveOfflineExperiences,
       uploadedStates.experiences,
     );
 
-    updatePartlySavedFromUploadResults(
+    updatePartialOnlineFromUploadResults(
       proxy,
       createEntries,
       uploadedStates.experiences,
@@ -634,7 +634,7 @@ export interface UploadResultPayloadThirdArg {
 
 interface DeleteActionPayload {
   id: string;
-  mode: CreationMode
+  mode: CreationMode;
 }
 
 export type Props = RouteComponentProps;
@@ -642,7 +642,7 @@ export type Props = RouteComponentProps;
 export interface StateMachine {
   readonly partlyOfflineCount: number;
   readonly completelyOfflineCount: number;
-  readonly partlyOfflineMap: ExperiencesIdsToObjectMap;
+  readonly partialOfflineMap: ExperiencesIdsToObjectMap;
   readonly completelyOfflineMap: ExperiencesIdsToObjectMap;
   readonly shouldRedirect?: boolean;
 
@@ -677,14 +677,14 @@ interface TabTwo {
 
   states: {
     two: {
-      value: "partlySaved" | "neverSaved";
+      value: CreationMode.offline | CreationMode.online;
     };
   };
 }
 
 interface TabStateContext {
-  partlySaved?: boolean;
-  neverSaved?: boolean;
+  online?: boolean;
+  offline?: boolean;
 }
 
 interface TabStateTogglePayload {

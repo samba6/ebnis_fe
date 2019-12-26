@@ -54,6 +54,10 @@ jest.mock("../state/connections");
 jest.mock("../components/scroll-into-view");
 jest.mock("../components/NewEntry/new-entry.injectables");
 
+jest.mock("../components/SidebarHeader/sidebar-header.component", () => ({
+  SidebarHeader: jest.fn(() => null),
+}));
+
 const mockIsConnected = isConnected as jest.Mock;
 const mockUpdate = updateExperienceWithNewEntry as jest.Mock;
 const mockScrollIntoView = scrollIntoView as jest.Mock;

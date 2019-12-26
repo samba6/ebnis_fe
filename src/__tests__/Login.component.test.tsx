@@ -20,8 +20,11 @@ import { isConnected } from "../state/connections";
 import { useMutation } from "@apollo/react-hooks";
 import { scrollIntoView } from "../components/scroll-into-view";
 import { WindowLocation } from "@reach/router";
-import { LocationProvider } from "../components/Layout/layout-providers1";
+import { LocationProvider } from "../components/Layout/layout-providers";
 
+jest.mock("../components/SidebarHeader/sidebar-header.component", () => ({
+  SidebarHeader: jest.fn(() => null),
+}));
 jest.mock("../state/connections");
 jest.mock("../refresh-to-app");
 jest.mock("../state/users");

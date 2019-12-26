@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import "./experience-route.styles.scss";
+import { SidebarHeader } from "../SidebarHeader/sidebar-header.component";
 import { setDocumentTitle, makeSiteTitle } from "../../constants";
 import { Experience, getTitle } from "../Experience/experience.component";
 import { UPDATE_EXPERIENCE_MUTATION } from "../../graphql/update-experience.mutation";
@@ -10,7 +11,6 @@ import {
 import { useMutation } from "@apollo/react-hooks";
 import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragment";
 import { IMenuOptions } from "../Experience/experience.utils";
-import { HeaderSemantic } from "../Header/header-semantic.component";
 
 export function ExperienceRoute(props: Props) {
   const { experience } = props;
@@ -33,7 +33,7 @@ export function ExperienceRoute(props: Props) {
 
   return (
     <div className="components-experience-route">
-      <HeaderSemantic title={title} sidebar={true} />
+      <SidebarHeader title={title} sidebar={true} />
 
       <div className="main">
         <Experience

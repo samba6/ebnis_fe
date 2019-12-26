@@ -3,7 +3,7 @@ import { Router, RouteComponentProps } from "@reach/router";
 import { AuthRequired } from "../../components/AuthRequired/auth-required.componnet";
 import { EXPERIENCE_DEFINITION_URL, EXPERIENCES_URL } from "../../routes";
 import { NotFound } from "../../components/NotFound";
-import { Layout } from "../../components/Layout/layout.component1";
+import { Layout } from "../../components/Layout/layout.component";
 import { EXPERIENCE_URL } from "../../constants/experience-route";
 import { NEW_ENTRY_URL } from "../../constants/new-entry-route";
 import Loadable from "react-loadable";

@@ -25,6 +25,10 @@ jest.mock("../state/users");
 jest.mock("@apollo/react-hooks");
 jest.mock("../components/scroll-into-view");
 
+jest.mock("../components/SidebarHeader/sidebar-header.component", () => ({
+  SidebarHeader: jest.fn(() => null),
+}));
+
 const mockIsConnected = isConnected as jest.Mock;
 const mockRefreshToHome = refreshToHome as jest.Mock;
 const mockStoreUser = storeUser as jest.Mock;

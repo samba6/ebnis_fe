@@ -38,6 +38,9 @@ jest.mock(
   "../components/ExperienceDefinition/experience-definition.injectables",
 );
 jest.mock("@apollo/react-hooks");
+jest.mock("../components/SidebarHeader/sidebar-header.component", () => ({
+  SidebarHeader: jest.fn(() => null),
+}));
 
 const mockIsConnected = isConnected as jest.Mock;
 const mockScrollIntoView = scrollIntoView as jest.Mock;

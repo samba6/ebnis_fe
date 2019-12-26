@@ -61,7 +61,13 @@ import {
   useUploadOnlineEntriesMutation,
 } from "../components/UploadOfflineItems/upload-offline.injectables";
 import { act } from "react-dom/test-utils";
-import { makeCompletelyOfflineExperienceTitleId } from "../components/UploadOfflineItems/upload-offline.dom";
+import {
+  makeExperienceComponentId,
+  createdOnlineExperiencesContainerId,
+  createdOfflineExperiencesContainerId,
+  makeExperienceUploadStatusClassNames,
+  makeUploadStatusIconId,
+} from "../components/UploadOfflineItems/upload-offline.dom";
 
 const mockLoadingId = "a-lo";
 jest.mock("../components/Loading/loading", () => ({
@@ -250,7 +256,7 @@ describe("components", () => {
       mockUploadAllUnsaveds,
     } = makeComp({
       getOfflineItems: {
-        partlyOfflineMap: {
+        partialOfflineMap: {
           "1": {
             experience,
             offlineEntries: [unsavedEntry],
@@ -273,7 +279,7 @@ describe("components", () => {
       },
     });
 
-    const domOfflineTitle1Id = makeCompletelyOfflineExperienceTitleId(
+    const domOfflineTitle1Id = makeExperienceComponentId(
       1,
       CreationMode.online,
     );
@@ -290,7 +296,7 @@ describe("components", () => {
     ).not.toBeNull();
 
     expect(
-      document.getElementById("upload-unsaved-container-never-saved"),
+      document.getElementById(createdOfflineExperiencesContainerId),
     ).toBeNull();
 
     expect(
@@ -299,10 +305,10 @@ describe("components", () => {
 
     expect(
       (document.getElementById(domOfflineTitle1Id) as any).classList,
-    ).not.toContain("experience-title--success");
+    ).not.toContain("success");
 
     expect(
-      document.getElementById("upload-triggered-icon-success-1"),
+      document.getElementById(makeUploadStatusIconId(1, "success")),
     ).toBeNull();
 
     expect(
@@ -332,17 +338,14 @@ describe("components", () => {
      */
 
     expect(
-      document.getElementById("upload-unsaved-container-partly-saved"),
+      document.getElementById(createdOnlineExperiencesContainerId),
     ).not.toBeNull();
 
     fireEvent.click(document.getElementById(
       "upload-unsaved-upload-btn",
     ) as any);
 
-    const domOnlineTitle1Id = makeCompletelyOfflineExperienceTitleId(
-      1,
-      CreationMode.online,
-    );
+    const domOnlineTitle1Id = makeExperienceComponentId(1, CreationMode.online);
 
     const $elm = await waitForElement(() => {
       return document.getElementById(domOnlineTitle1Id) as HTMLElement;
@@ -350,7 +353,9 @@ describe("components", () => {
 
     expect(mockUploadSavedExperiencesEntries).toHaveBeenCalled();
 
-    expect($elm.classList).toContain("experience-title--success");
+    expect($elm.classList).toContain(
+      makeExperienceUploadStatusClassNames(true)[1],
+    );
 
     const uploadedEntry = ((mockUploadSavedExperiencesEntries.mock
       .calls[0][0] as any).variables as CreateEntryMutationVariables).input[0];
@@ -363,7 +368,7 @@ describe("components", () => {
     expect(document.getElementById("upload-unsaved-upload-btn")).toBeNull();
 
     expect(
-      document.getElementById("upload-triggered-icon-success-1"),
+      document.getElementById(makeUploadStatusIconId(1, "success")),
     ).not.toBeNull();
 
     expect(
@@ -447,7 +452,7 @@ describe("components", () => {
     });
 
     expect(
-      document.getElementById("upload-unsaved-container-partly-saved"),
+      document.getElementById(createdOnlineExperiencesContainerId),
     ).toBeNull();
 
     expect(
@@ -455,7 +460,7 @@ describe("components", () => {
     ).toBeNull();
 
     expect(
-      document.getElementById("upload-unsaved-container-never-saved"),
+      document.getElementById(createdOfflineExperiencesContainerId),
     ).not.toBeNull();
 
     expect(
@@ -466,19 +471,18 @@ describe("components", () => {
       document.getElementById("uploaded-success-tab-icon-never-saved"),
     ).toBeNull();
 
-    const domTitle1Id = makeCompletelyOfflineExperienceTitleId(
-      1,
-      CreationMode.offline,
-    );
+    const domTitle1Id = makeExperienceComponentId(1, CreationMode.offline);
 
     expect(
       (document.getElementById(domTitle1Id) as any).classList,
-    ).not.toContain("experience-title--success");
-
-    expect(document.getElementById("upload-triggered-icon-error-1")).toBeNull();
+    ).not.toContain("success");
 
     expect(
-      document.getElementById("upload-triggered-icon-success-1"),
+      document.getElementById(makeUploadStatusIconId(1, "error")),
+    ).toBeNull();
+
+    expect(
+      document.getElementById(makeUploadStatusIconId(1, "success")),
     ).toBeNull();
 
     const tabsMenuClassList = (document.getElementById(
@@ -504,7 +508,7 @@ describe("components", () => {
      */
 
     expect(
-      document.getElementById("upload-unsaved-container-never-saved"),
+      document.getElementById(createdOfflineExperiencesContainerId),
     ).not.toBeNull();
 
     fireEvent.click(document.getElementById(
@@ -538,11 +542,11 @@ describe("components", () => {
     expect(document.getElementById("upload-unsaved-upload-btn")).toBeNull();
 
     expect((document.getElementById(domTitle1Id) as any).classList).toContain(
-      "experience-title--success",
+      makeExperienceUploadStatusClassNames(true)[1],
     );
 
     expect(
-      document.getElementById("upload-triggered-icon-success-1"),
+      document.getElementById(makeUploadStatusIconId(1, "success")),
     ).not.toBeNull();
 
     expect(mockUpdateCache).toHaveBeenCalled();
@@ -597,7 +601,7 @@ describe("components", () => {
 
         partlyOfflineCount: 1,
 
-        partlyOfflineMap: {
+        partialOfflineMap: {
           "2": {
             experience: {
               id: "2",
@@ -666,7 +670,7 @@ describe("components", () => {
      */
 
     expect(
-      document.getElementById("upload-unsaved-container-partly-saved"),
+      document.getElementById(createdOnlineExperiencesContainerId),
     ).not.toBeNull();
 
     /**
@@ -674,7 +678,7 @@ describe("components", () => {
      */
 
     expect(
-      document.getElementById("upload-unsaved-container-never-saved"),
+      document.getElementById(createdOfflineExperiencesContainerId),
     ).toBeNull();
 
     const tabsMenuClassList = (document.getElementById(
@@ -705,7 +709,7 @@ describe("components", () => {
      */
 
     expect(
-      document.getElementById("upload-unsaved-container-never-saved"),
+      document.getElementById(createdOfflineExperiencesContainerId),
     ).not.toBeNull();
 
     /**
@@ -713,21 +717,18 @@ describe("components", () => {
      */
 
     expect(
-      document.getElementById("upload-unsaved-container-partly-saved"),
+      document.getElementById(createdOnlineExperiencesContainerId),
     ).toBeNull();
 
     /**
      * And should not contain any error UI
      */
 
-    const domTitle1Id = makeCompletelyOfflineExperienceTitleId(
-      1,
-      CreationMode.offline,
-    );
+    const domTitle1Id = makeExperienceComponentId(1, CreationMode.offline);
 
     expect(
       (document.getElementById(domTitle1Id) as any).classList,
-    ).not.toContain("experience-title--error");
+    ).not.toContain("error");
 
     /**
      * When we click on partly saved tab menu
@@ -746,7 +747,7 @@ describe("components", () => {
      */
 
     expect(
-      document.getElementById("upload-unsaved-container-partly-saved"),
+      document.getElementById(createdOnlineExperiencesContainerId),
     ).not.toBeNull();
 
     /**
@@ -754,17 +755,14 @@ describe("components", () => {
      */
 
     expect(
-      document.getElementById("upload-unsaved-container-never-saved"),
+      document.getElementById(createdOfflineExperiencesContainerId),
     ).toBeNull();
 
-    const domTitle2Id = makeCompletelyOfflineExperienceTitleId(
-      2,
-      CreationMode.online,
-    );
+    const domTitle2Id = makeExperienceComponentId(2, CreationMode.online);
 
     expect(
       (document.getElementById(domTitle2Id) as any).classList,
-    ).not.toContain("experience-title--error");
+    ).not.toContain("error");
 
     const $entry = document.getElementById(
       `upload-unsaved-entry-${entryId}`,
@@ -772,9 +770,13 @@ describe("components", () => {
 
     expect($entry.classList).not.toContain("entry--error");
 
-    expect(document.getElementById("upload-triggered-icon-error-1")).toBeNull();
+    expect(
+      document.getElementById(makeUploadStatusIconId(1, "error")),
+    ).toBeNull();
 
-    expect(document.getElementById("upload-triggered-icon-error-2")).toBeNull();
+    expect(
+      document.getElementById(makeUploadStatusIconId(2, "error")),
+    ).toBeNull();
 
     expect(
       document.getElementById("upload-triggered-error-icon-partly-saved"),
@@ -791,7 +793,7 @@ describe("components", () => {
     ) as any);
 
     const $error = await waitForElement(() =>
-      document.getElementById("upload-triggered-icon-error-2"),
+      document.getElementById(makeUploadStatusIconId(2, "error")),
     );
 
     expect($error).not.toBeNull();
@@ -807,11 +809,11 @@ describe("components", () => {
 
     // we are currently showing saved experiences - we confirm it has error class
     expect(
-      document.getElementById("upload-unsaved-container-partly-saved"),
+      document.getElementById(createdOnlineExperiencesContainerId),
     ).not.toBeNull();
 
     expect((document.getElementById(domTitle2Id) as any).classList).toContain(
-      "experience-title--error",
+      makeExperienceUploadStatusClassNames(false, true)[1],
     );
 
     // we also check to see that correct class has been applied to the entry
@@ -823,15 +825,15 @@ describe("components", () => {
     jest.runAllTimers();
 
     expect(
-      document.getElementById("upload-unsaved-container-never-saved"),
+      document.getElementById(createdOfflineExperiencesContainerId),
     ).not.toBeNull();
 
     expect((document.getElementById(domTitle1Id) as any).classList).toContain(
-      "experience-title--error",
+      makeExperienceUploadStatusClassNames(false, true)[1],
     );
 
     expect(
-      document.getElementById("upload-triggered-icon-error-1"),
+      document.getElementById(makeUploadStatusIconId(1, "error")),
     ).not.toBeNull();
 
     expect(
@@ -886,7 +888,7 @@ describe("components", () => {
 
         partlyOfflineCount: 1,
 
-        partlyOfflineMap: {
+        partialOfflineMap: {
           "2": {
             experience: {
               id: "2",
@@ -1067,7 +1069,7 @@ describe("components", () => {
 
         partlyOfflineCount: 1,
 
-        partlyOfflineMap: {
+        partialOfflineMap: {
           "1": {
             experience: {
               id: "1",
@@ -1215,7 +1217,9 @@ describe("components", () => {
       document.getElementById("uploaded-success-tab-icon-never-saved"),
     ).toBeNull();
 
-    expect(document.getElementById("upload-triggered-icon-error-2")).toBeNull();
+    expect(
+      document.getElementById(makeUploadStatusIconId(2, "error")),
+    ).toBeNull();
 
     const $uploadBtn = await waitForElement(() => {
       return document.getElementById("upload-unsaved-upload-btn") as any;
@@ -1224,7 +1228,7 @@ describe("components", () => {
     fireEvent.click($uploadBtn);
 
     const $errorIcon = await waitForElement(() =>
-      document.getElementById("upload-triggered-icon-error-2"),
+      document.getElementById(makeUploadStatusIconId(2, "error")),
     );
 
     expect($errorIcon).not.toBeNull();
@@ -1232,7 +1236,7 @@ describe("components", () => {
     expect(document.getElementById("upload-unsaved-upload-btn")).not.toBeNull();
 
     expect(
-      document.getElementById("upload-triggered-icon-success-1"),
+      document.getElementById(makeUploadStatusIconId(1, "success")),
     ).toBeNull();
 
     const { entry } = mockEntry.mock.calls[
@@ -1325,7 +1329,7 @@ describe("non components", () => {
         } as ExperienceObjectMap,
       } as ExperiencesIdsToObjectMap,
 
-      partlyOfflineMap: {
+      partialOfflineMap: {
         "1": {
           offlineEntries: [
             {
@@ -1445,7 +1449,7 @@ describe("non components", () => {
         } as ExperienceObjectMap,
       } as ExperiencesIdsToObjectMap,
 
-      partlyOfflineMap: {
+      partialOfflineMap: {
         "1": {
           offlineEntries: [
             {

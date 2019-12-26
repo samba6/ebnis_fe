@@ -63,7 +63,13 @@ import {
   useUploadOnlineEntriesMutation,
   addUploadOfflineItemsResolvers,
 } from "./upload-offline.injectables";
-import { makeCompletelyOfflineExperienceTitleId } from "./upload-offline.dom";
+import {
+  makeExperienceComponentId,
+  createdOnlineExperiencesContainerId,
+  createdOfflineExperiencesContainerId,
+  makeExperienceUploadStatusClassNames,
+  makeUploadStatusIconId,
+} from "./upload-offline.dom";
 
 const timeoutMs = 500;
 const REDIRECT_ROUTE = makeSiteTitle(MY_EXPERIENCES_TITLE);
@@ -87,7 +93,7 @@ export function UploadOfflineItems(props: Props) {
   const {
     completelyOfflineCount,
     partlyOfflineCount,
-    partlyOfflineMap,
+    partialOfflineMap,
     completelyOfflineMap,
     shouldRedirect,
     states: { upload, dataLoaded, tabs: tabsState },
@@ -98,22 +104,15 @@ export function UploadOfflineItems(props: Props) {
   const { layoutDispatch } = useContext(LayoutUnchangingContext);
 
   useLayoutEffect(() => {
+    if (!isConnected()) {
+      (navigate as NavigateFn)(REDIRECT_ROUTE);
+      return;
+    }
+    setDocumentTitle(makeSiteTitle(UPLOAD_OFFLINE_ITEMS_TITLE));
     addUploadOfflineItemsResolvers(client);
-  }, [client]);
-
-  useEffect(
-    function setCompTitle() {
-      if (!isConnected()) {
-        (navigate as NavigateFn)(REDIRECT_ROUTE);
-        return;
-      }
-
-      setDocumentTitle(makeSiteTitle(UPLOAD_OFFLINE_ITEMS_TITLE));
-
-      return setDocumentTitle;
-    },
-    [navigate],
-  );
+    return setDocumentTitle;
+    /* eslint-disable-next-line react-hooks/exhaustive-deps*/
+  }, []);
 
   useEffect(() => {
     if (getOfflineItems && dataLoaded.value === "no") {
@@ -134,7 +133,7 @@ export function UploadOfflineItems(props: Props) {
   useEffect(() => {
     if (shouldRedirect) {
       layoutDispatch({
-        type: LayoutActionType.SET_UNSAVED_COUNT,
+        type: LayoutActionType.SET_OFFLINE_ITEMS_COUNT,
         count: 0,
       });
 
@@ -165,23 +164,23 @@ export function UploadOfflineItems(props: Props) {
         uploadFunction = uploadAllUnsaveds;
 
         variables = {
-          offlineExperiencesInput: unsavedExperiencesToUploadData(
+          offlineExperiencesInput: completelyOfflineExperiencesToUploadData(
             completelyOfflineMap,
           ),
 
-          offlineEntriesInput: savedExperiencesToUploadData(partlyOfflineMap),
+          offlineEntriesInput: onlineExperiencesToUploadData(partialOfflineMap),
         };
       } else if (completelyOfflineCount !== 0) {
         uploadFunction = uploadUnsavedExperiences;
 
         variables = ({
-          input: unsavedExperiencesToUploadData(completelyOfflineMap),
+          input: completelyOfflineExperiencesToUploadData(completelyOfflineMap),
         } as unknown) as UploadOfflineItemsMutationVariables;
       } else {
         uploadFunction = uploadSavedExperiencesEntries;
 
         variables = ({
-          input: savedExperiencesToUploadData(partlyOfflineMap),
+          input: onlineExperiencesToUploadData(partialOfflineMap),
         } as unknown) as UploadOfflineItemsMutationVariables;
       }
 
@@ -194,7 +193,7 @@ export function UploadOfflineItems(props: Props) {
         result && result.data,
       );
 
-      let outstandingUnsavedCount: number | null = null;
+      let outstandingOfflineCount: number | null = null;
 
       if (
         newState.states.upload.value === "uploaded" &&
@@ -202,8 +201,8 @@ export function UploadOfflineItems(props: Props) {
         (newState.states.upload.uploaded.states
           .experiences as ExperiencesUploadedResultState).context.anySuccess
       ) {
-        outstandingUnsavedCount = updateCache({
-          partlyOfflineMap: newState.partlyOfflineMap,
+        outstandingOfflineCount = updateCache({
+          partialOfflineMap: newState.partialOfflineMap,
           completelyOfflineMap: newState.completelyOfflineMap,
           cache,
           client,
@@ -217,10 +216,10 @@ export function UploadOfflineItems(props: Props) {
         stateMachine: newState,
       });
 
-      if (outstandingUnsavedCount !== null) {
+      if (outstandingOfflineCount !== null) {
         layoutDispatch({
-          type: LayoutActionType.SET_UNSAVED_COUNT,
-          count: outstandingUnsavedCount,
+          type: LayoutActionType.SET_OFFLINE_ITEMS_COUNT,
+          count: outstandingOfflineCount,
         });
       }
     } catch (errors) {
@@ -246,20 +245,20 @@ export function UploadOfflineItems(props: Props) {
   const tabsValue = tabsState.value;
   const twoTabsValue = tabsState.value === "two" && tabsState.states.two.value;
 
-  const partlySavedTabActive =
-    (tabsValue === "one" && tabsState.context.partlySaved) ||
-    (twoTabsValue && twoTabsValue === "partlySaved");
+  const offlineTabActive =
+    (tabsValue === "one" && tabsState.context.offline) ||
+    (twoTabsValue && twoTabsValue === CreationMode.offline);
 
-  const neverSavedTabActive =
-    (tabsValue === "one" && tabsState.context.neverSaved) ||
-    (twoTabsValue && twoTabsValue === "neverSaved");
+  const onlineTabActive =
+    (tabsValue === "one" && tabsState.context.online) ||
+    (twoTabsValue && twoTabsValue === CreationMode.online);
 
   return (
-    <div className="components-upload-unsaved">
+    <div className="components-upload-offline-items">
       <ModalComponent open={upload.value === "uploading"} />
 
-      <SidebarHeader sidebar={false}>
-        <div className="components-upload-unsaved-header">
+      <SidebarHeader sidebar={true}>
+        <div className="components-upload-offline-items-header">
           <span>Offline Items Preview</span>
 
           {!(uploadSomeSuccess && uploadSomeSuccess.value === "allSuccess") && (
@@ -284,20 +283,20 @@ export function UploadOfflineItems(props: Props) {
         )}
 
         <TransitionGroup className="offline-items">
-          {partlySavedTabActive && (
+          {onlineTabActive && (
             <CSSTransition
               timeout={timeoutMs}
-              key="saved-experiences"
+              key="created-online-experiences"
               classNames="pane-animation-left"
             >
               <div
                 className={makeClassNames({
                   tab: true,
-                  active: partlySavedTabActive,
+                  active: onlineTabActive,
                 })}
-                id="upload-unsaved-container-partly-saved"
+                id={createdOnlineExperiencesContainerId}
               >
-                {Object.entries(partlyOfflineMap).map(([id, map]) => {
+                {Object.entries(partialOfflineMap).map(([id, map]) => {
                   return (
                     <ExperienceComponent
                       key={id}
@@ -311,18 +310,18 @@ export function UploadOfflineItems(props: Props) {
             </CSSTransition>
           )}
 
-          {neverSavedTabActive && (
+          {offlineTabActive && (
             <CSSTransition
               timeout={timeoutMs}
-              key="unsaved-experiences"
+              key="created-offline-experiences"
               classNames="pane-animation-right"
             >
               <div
                 className={makeClassNames({
                   tab: true,
-                  active: neverSavedTabActive,
+                  active: offlineTabActive,
                 })}
-                id="upload-unsaved-container-never-saved"
+                id={createdOfflineExperiencesContainerId}
               >
                 {Object.entries(completelyOfflineMap).map(([id, map]) => {
                   return (
@@ -368,44 +367,43 @@ function ExperienceComponent({
   } = experienceObjectMap;
 
   experience = newlySavedExperience || experience;
-  const hasError = entriesErrors || experienceError;
-
+  const hasError = !!(entriesErrors || experienceError);
   const experienceId = experience.id;
-  const typePrefix = mode + "-experience";
-  let uploadStatusIndicatorSuffix = "";
-  let experienceClassName = "";
 
-  let iconProps: IconProps | null = null;
+  const [
+    uploadStatusClassName,
+    uploadStatusTitleClassName,
+  ] = makeExperienceUploadStatusClassNames(didUploadSucceed, hasError);
 
-  if (didUploadSucceed) {
-    uploadStatusIndicatorSuffix = "--success";
-    experienceClassName = typePrefix + uploadStatusIndicatorSuffix;
-
-    iconProps = {
-      name: "check",
-      className:
-        "experience-title__success-icon upload-success-icon upload-result-icon",
-      id: "upload-triggered-icon-success-" + experienceId,
-    };
-  } else if (hasError) {
-    uploadStatusIndicatorSuffix = "--error";
-    experienceClassName = typePrefix + uploadStatusIndicatorSuffix;
-
-    iconProps = {
-      name: "ban",
-      className:
-        "experience-title__error-icon upload-error-icon upload-result-icon",
-      id: "upload-triggered-icon-error-" + experienceId,
-    };
-  }
+  const iconProps: IconProps | null = didUploadSucceed
+    ? {
+        name: "check",
+        className:
+          "experience-title--success-icon upload-success-icon upload-result-icon",
+        id: makeUploadStatusIconId(experienceId, "success"),
+      }
+    : hasError
+    ? {
+        name: "ban",
+        className:
+          "experience-title--error-icon upload-error-icon upload-result-icon",
+        id: makeUploadStatusIconId(experienceId, "error"),
+      }
+    : null;
 
   return (
     <Experience
-      className={experienceClassName}
+      className={makeClassNames({
+        [uploadStatusClassName]: !!uploadStatusClassName,
+      })}
       experience={experience}
       headerProps={{
-        id: makeCompletelyOfflineExperienceTitleId(experienceId, mode),
-        className: `experience-title--uploads experience-title${uploadStatusIndicatorSuffix}`,
+        id: makeExperienceComponentId(experienceId, mode),
+
+        className: makeClassNames({
+          "experience-title--uploads": true,
+          [uploadStatusTitleClassName]: !!uploadStatusTitleClassName,
+        }),
 
         children: iconProps ? <Icon {...iconProps} /> : null,
       }}
@@ -506,11 +504,11 @@ function TabsMenuComponent({
     />
   ) : null;
 
-  const partlySavedTabIcon = context.partlySaved ? (
+  const partlySavedTabIcon = context.online ? (
     <a
       className={makeClassNames({
         item: true,
-        active: tabActive || twoTabsValue === "partlySaved",
+        active: tabActive || twoTabsValue === CreationMode.online,
         "tab-menu": true,
       })}
       id="upload-unsaved-tab-menu-partly-saved"
@@ -542,11 +540,11 @@ function TabsMenuComponent({
     />
   ) : null;
 
-  const neverSavedTabIcon = context.neverSaved ? (
+  const neverSavedTabIcon = context.offline ? (
     <a
       className={makeClassNames({
         item: true,
-        active: tabActive || twoTabsValue === "neverSaved",
+        active: tabActive || twoTabsValue === CreationMode.offline,
         "tab-menu": true,
       })}
       id="upload-unsaved-tab-menu-never-saved"
@@ -663,7 +661,7 @@ function toUploadableEntry(entry: ExperienceFragment_entries_edges_node) {
   };
 }
 
-function unsavedExperiencesToUploadData(
+function completelyOfflineExperiencesToUploadData(
   experiencesIdsToObjectMap: ExperiencesIdsToObjectMap,
 ) {
   return Object.values(experiencesIdsToObjectMap).map(
@@ -683,7 +681,7 @@ function unsavedExperiencesToUploadData(
   );
 }
 
-function savedExperiencesToUploadData(
+function onlineExperiencesToUploadData(
   experiencesIdsToObjectMap: ExperiencesIdsToObjectMap,
 ) {
   return Object.entries(experiencesIdsToObjectMap).reduce(

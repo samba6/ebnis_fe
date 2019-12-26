@@ -24,7 +24,6 @@ import { preFetchExperiences } from "./pre-fetch-experiences";
 import { useUser } from "../use-user";
 import { isConnected } from "../../state/connections";
 import { WindowLocation, NavigateFn } from "@reach/router";
-import { SidebarSemantic } from "../Sidebar/sidebar-semantic.component";
 
 export function Layout(props: Props) {
   const { children } = props;
@@ -50,11 +49,7 @@ export function Layout(props: Props) {
   );
 
   const {
-    states: {
-      prefetchExperiences,
-      sidebar: { value: sidebarValue },
-    },
-
+    states: { prefetchExperiences },
     context: {
       offlineItemsCount,
       renderChildren,
@@ -153,12 +148,11 @@ export function Layout(props: Props) {
             {
               offlineItemsCount,
               hasConnection: hasConnection,
-              sidebarVisible: sidebarValue === "opened",
             } as ILayoutContextHeaderValue
           }
         >
           <LocationProvider value={{ ...location, navigate }}>
-            <SidebarSemantic>{children}</SidebarSemantic>
+            {children}
           </LocationProvider>
         </LayoutProvider>
       </LayoutExperienceProvider>

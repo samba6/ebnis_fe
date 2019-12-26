@@ -19,7 +19,7 @@ import {
 import {
   LayoutUnchangingProvider,
   LayoutExperienceProvider,
-} from "../components/Layout/layout-providers1";
+} from "../components/Layout/layout-providers";
 import {
   ILayoutUnchangingContextValue,
   ILayoutContextExperienceValue,
@@ -31,6 +31,10 @@ import {
 } from "../graphql/apollo-types/GetExperienceConnectionMini";
 import { useQuery } from "@apollo/react-hooks";
 import { GetExperienceConnectionMiniQueryResult } from "../graphql/get-experience-connection-mini.query";
+
+jest.mock("../components/SidebarHeader/sidebar-header.component", () => ({
+  SidebarHeader: jest.fn(() => null),
+}));
 
 jest.mock("../components/Loading/loading", () => ({
   Loading: () => <div id="loading-a-a" />,

@@ -6,12 +6,11 @@ import { ConnectionStatus, isConnected } from "../../state/connections";
 import { UserFragment } from "../../graphql/apollo-types/UserFragment";
 
 export enum LayoutActionType {
-  SET_UNSAVED_COUNT = "@layout/set-unsaved-count",
+  SET_OFFLINE_ITEMS_COUNT = "@layout/set-offline-items-count",
   CACHE_PERSISTED = "@layout/render-children",
   EXPERIENCES_TO_PREFETCH = "@layout/experiences-to-pre-fetch",
   CONNECTION_CHANGED = "@layout/connection-changed",
   DONE_FETCHING_EXPERIENCES = "@layout/experiences-already-fetched",
-  TOGGLE_SIDEBAR = "@layout/toggle-sidebar",
 }
 
 export const reducer: Reducer<StateMachine, LayoutAction> = (state, action) =>
@@ -106,21 +105,10 @@ export const reducer: Reducer<StateMachine, LayoutAction> = (state, action) =>
           }
           break;
 
-        case LayoutActionType.SET_UNSAVED_COUNT:
+        case LayoutActionType.SET_OFFLINE_ITEMS_COUNT:
           {
             proxy.context.offlineItemsCount = (payload as { count: number }).count;
           }
-          break;
-
-        case LayoutActionType.TOGGLE_SIDEBAR:
-          {
-            const {
-              states: { sidebar },
-            } = proxy;
-
-            sidebar.value = sidebar.value === "closed" ? "opened" : "closed";
-          }
-
           break;
       }
     });
@@ -146,10 +134,6 @@ export function initState(args: {
       prefetchExperiences: {
         value: "never-fetched",
       },
-
-      sidebar: {
-        value: "closed",
-      },
     },
   };
 }
@@ -174,7 +158,7 @@ export const LocationContext = createContext<ILocationContextValue>(
 
 export type LayoutAction =
   | {
-      type: LayoutActionType.SET_UNSAVED_COUNT;
+      type: LayoutActionType.SET_OFFLINE_ITEMS_COUNT;
       count: number;
     }
   | {
@@ -191,9 +175,6 @@ export type LayoutAction =
     } & ConnectionChangedPayload
   | {
       type: LayoutActionType.DONE_FETCHING_EXPERIENCES;
-    }
-  | {
-      type: LayoutActionType.TOGGLE_SIDEBAR;
     };
 
 interface ConnectionChangedPayload {
@@ -211,9 +192,6 @@ export interface StateMachine {
 
   states: {
     prefetchExperiences: IPrefetchExperiencesState;
-    sidebar: {
-      value: "opened" | "closed";
-    };
   };
 }
 
@@ -240,7 +218,6 @@ export interface Props extends PropsWithChildren<{}>, RouteComponentProps {}
 export interface ILayoutContextHeaderValue {
   offlineItemsCount: number;
   hasConnection: boolean;
-  sidebarVisible: boolean;
 }
 
 export interface ILayoutUnchangingContextValue {

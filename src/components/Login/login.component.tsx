@@ -28,7 +28,7 @@ import { isConnected } from "../../state/connections";
 import { noop } from "../../constants";
 import { LoginMutationFn } from "../../graphql/login.mutation";
 import { LoginMutation_login } from "../../graphql/apollo-types/LoginMutation";
-import { SidebarHeader } from "../SidebarHeader/sidebar-header.component1";
+import { SidebarHeader } from "../SidebarHeader/sidebar-header.component";
 import { ToOtherAuthLink } from "../ToOtherAuthLink";
 import { EXPERIENCES_URL, LOGOUT_URL } from "../../routes";
 import { storeUser, getLoggedOutUser, logoutUser } from "../../state/users";
@@ -41,7 +41,7 @@ import {
 import { LOGIN_MUTATION } from "../../graphql/login.mutation";
 import { useMutation } from "@apollo/react-hooks";
 import { scrollIntoView } from "../scroll-into-view";
-import { LocationContext } from "../Layout/layout.utils1";
+import { LocationContext } from "../Layout/layout.utils";
 
 const scrollToTopId = makeScrollIntoViewId("login");
 

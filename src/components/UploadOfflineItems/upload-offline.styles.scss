@@ -4,10 +4,10 @@
 $translateLen: 50px;
 $transitionTime: 500ms;
 
-.components-upload-unsaved {
+.components-upload-offline-items {
   @extend %route-main;
 
-  .components-upload-unsaved-header {
+  .components-upload-offline-items-header {
     margin-top: -10px;
     color: $app-color;
     font-weight: bolder;
@@ -38,7 +38,7 @@ $transitionTime: 500ms;
   }
 
   .offline-items {
-    // position: relative;
+    position: relative;
   }
 
   .tab-menu {
@@ -114,6 +114,7 @@ $transitionTime: 500ms;
     position: relative;
   }
 
+  // makeExperienceUploadStatusClassNames
   .experience-title--error {
     background-color: $error-bg-color !important;
     color: $error-color;
@@ -124,6 +125,7 @@ $transitionTime: 500ms;
     }
   }
 
+  // makeExperienceUploadStatusClassNames
   .experience-title--success {
     background-color: $success-bg-color !important;
     color: $success-color;
@@ -134,8 +136,8 @@ $transitionTime: 500ms;
     }
   }
 
-  .experience-title__success-icon,
-  .experience-title__error-icon {
+  .experience-title--success-icon,
+  .experience-title--error-icon {
     position: absolute;
     top: 0;
     right: 0;
@@ -146,13 +148,13 @@ $transitionTime: 500ms;
     font-weight: 600;
   }
 
-  .unsaved-experience--success,
-  .saved-experience--success {
+  // makeExperienceUploadStatusClassNames
+  .upload-experience-status--success {
     box-shadow: 0px 1px 3px 0px $success-color, 0px 0px 0px 1px $success-color;
   }
 
-  .unsaved-experience--error,
-  .saved-experience--error {
+  // makeExperienceUploadStatusClassNames
+  .upload-experience-status--error {
     box-shadow: 0px 1px 3px 0px $error-color, 0px 0px 0px 1px $error-color;
   }
 }

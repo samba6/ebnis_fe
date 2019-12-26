@@ -36,7 +36,7 @@ import {
   LayoutUnchangingContext,
   LayoutActionType,
   LayoutContextExperience,
-} from "../Layout/layout.utils1";
+} from "../Layout/layout.utils";
 import { ExperienceMiniFragment } from "../../graphql/apollo-types/ExperienceMiniFragment";
 import SemanticSearch from "semantic-ui-react/dist/commonjs/modules/Search";
 import { SearchResultProps, SearchProps } from "semantic-ui-react";
@@ -52,7 +52,7 @@ import {
   searchDebounceTimeoutMs,
   cleanUpOnSearchExit,
 } from "./my-experiences.injectables";
-import { SidebarHeader } from "../SidebarHeader/sidebar-header.component1";
+import { SidebarHeader } from "../SidebarHeader/sidebar-header.component";
 
 const SearchComponent = memo(SearchComponentUnMemo, SearchComponentPropsDiffFn);
 

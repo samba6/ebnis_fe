@@ -17,6 +17,10 @@ jest.mock("@apollo/react-hooks", () => ({
   useMutation: () => [],
 }));
 
+jest.mock("../components/SidebarHeader/sidebar-header.component", () => ({
+  SidebarHeader: jest.fn(() => null),
+}));
+
 it("renders correctly", () => {
   const { ui } = makeComp({
     props: {},

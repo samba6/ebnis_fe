@@ -40,7 +40,7 @@ import {
   updateExperienceWithNewEntry,
 } from "./new-entry.injectables";
 import { EbnisAppContext } from "../../context";
-import { HeaderSemantic } from "../Header/header-semantic.component";
+import { SidebarHeader } from "../SidebarHeader/sidebar-header.component"
 
 export function NewEntry(props: Props) {
   const { navigate, experience } = props;
@@ -222,7 +222,7 @@ export function NewEntry(props: Props) {
 
   return (
     <div className="component-new-entry">
-      <HeaderSemantic title={pageTitle} sidebar={true} />
+      <SidebarHeader title={pageTitle} sidebar={true} />
 
       {renderMain()}
     </div>

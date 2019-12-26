@@ -17,22 +17,34 @@ $header-border-bottom: 5px solid;
   // covered by sidebar
   position: relative;
 
+  .logo-container {
+    padding: 5px !important;
+
+    &.with-pointer {
+      cursor: pointer;
+    }
+
+    &.center-children {
+      justify-content: center;
+      width: 100%;
+    }
+  }
+
   .app-header-title {
     text-overflow: ellipsis;
     overflow: hidden;
     max-width: 400px;
+    font-weight: bolder;
     color: $app-color;
-    padding: 0 0 1px 5px;
-    font-size: 0.8em;
-    margin-top: -20px;
+    padding: 0 0 1px 10px;
+    font-size: 1.2em;
+    margin-top: -10px;
     white-space: nowrap;
 
     &.no-sidebar {
       text-align: center;
       margin-left: auto;
       margin-right: auto;
-      font-weight: bolder;
-      font-size: 1.2em;
     }
   }
 
@@ -69,8 +81,8 @@ $header-border-bottom: 5px solid;
     border-color: green !important;
     color: #ffffff !important;
     position: absolute;
-    left: 5px;
-    top: 5px;
+    left: -0.5px;
+    bottom: -10px;
     display: flex;
     align-items: center;
     justify-content: center;
