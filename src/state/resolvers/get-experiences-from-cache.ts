@@ -1,6 +1,6 @@
 import {
-  ALL_EXPERIENCES_QUERY,
-  AllExperiencesQueryReturned,
+  OFFLINE_ITEMS_QUERY,
+  OfflineItemsQueryReturned,
 } from "../offline-resolvers";
 import ApolloClient from "apollo-client";
 
@@ -8,11 +8,11 @@ export async function getExperiencesFromCache(
   dataProxy: ApolloClient<{}>,
 ) {
   const { data } = await dataProxy.query<
-    AllExperiencesQueryReturned
+    OfflineItemsQueryReturned
   >({
-    query: ALL_EXPERIENCES_QUERY,
+    query: OFFLINE_ITEMS_QUERY,
     fetchPolicy: "cache-only",
   });
 
-  return (data && data.allExperiences) || [];
+  return (data && data.offlineItems) || [];
 }

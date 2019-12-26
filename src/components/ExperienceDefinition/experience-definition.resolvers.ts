@@ -13,7 +13,7 @@ import {
 import { EXPERIENCE_FRAGMENT } from "../../graphql/experience.fragment";
 import { writeGetExperienceFullQueryToCache } from "../../state/resolvers/write-get-experience-full-query-to-cache";
 import { insertExperienceInGetExperiencesMiniQuery } from "../../state/resolvers/update-get-experiences-mini-query";
-import { updateEntriesCountInCache } from "../../state/resolvers/update-experiences-in-cache";
+import { updateCacheExperienceOfflineEntriesCount } from "../../state/resolvers/update-experiences-in-cache";
 
 const createOfflineExperienceResolver: LocalResolverFn<
   CreateExperienceMutationVariables,
@@ -76,7 +76,7 @@ const createOfflineExperienceResolver: LocalResolverFn<
     force: true,
   });
 
-  updateEntriesCountInCache(client, experienceId);
+  updateCacheExperienceOfflineEntriesCount(client, experienceId);
 
   return experience;
 };

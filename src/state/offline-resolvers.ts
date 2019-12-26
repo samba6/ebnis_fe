@@ -11,9 +11,9 @@ import { getExperiencesFromCache } from "./resolvers/get-experiences-from-cache"
 import ApolloClient from "apollo-client";
 import { QueryResult } from "@apollo/react-common";
 
-export const ALL_EXPERIENCES_QUERY = gql`
+export const OFFLINE_ITEMS_QUERY = gql`
   {
-    allExperiences @client {
+    offlineItems @client {
       id
       offlineEntriesCount
     }
@@ -43,18 +43,18 @@ export function entryNodesFromExperience({ entries }: ExperienceFragment) {
   );
 }
 
-type AllExperiencesTypeName = "AllExperiences";
+type OfflineItemsTypeName = "OfflineItems";
 
-export const ALL_EXPERIENCES_TYPENAME = "AllExperiences" as AllExperiencesTypeName;
+export const OFFLINE_ITEMS_TYPENAME = "OfflineItems" as OfflineItemsTypeName;
 
-export interface AllExperiences {
+export interface OfflineItem {
   id: string;
   offlineEntriesCount: number;
-  __typename: AllExperiencesTypeName;
+  __typename: OfflineItemsTypeName;
 }
 
-export interface AllExperiencesQueryReturned {
-  allExperiences: AllExperiences[];
+export interface OfflineItemsQueryReturned {
+  offlineItems: OfflineItem[];
 }
 
 export const GET_OFFLINE_ITEMS_QUERY = gql`
@@ -76,10 +76,10 @@ const getOfflineItemsResolver: LocalResolverFn<
   Promise<GetOfflineItemsSummary>
 > = async (_root, _variables, { cache, client }) => {
   let completelyOfflineCount = 0;
-  let partlyOfflineCount = 0;
+  let partialOnlineCount = 0;
 
   const completelyOfflineMap = {} as OfflineExperienceSummaryMap;
-  const partialOfflineMap = {} as OfflineExperienceSummaryMap;
+  const partialOnlineMap = {} as OfflineExperienceSummaryMap;
 
   (await getExperiencesFromCache(client)).forEach(({ id: id }) => {
     const experience = readGetExperienceFullQueryFromCache(cache, id);
@@ -93,9 +93,9 @@ const getOfflineItemsResolver: LocalResolverFn<
           offlineEntries: entryNodesFromExperience(experience),
         };
       } else {
-        ++partlyOfflineCount;
+        ++partialOnlineCount;
 
-        partialOfflineMap[id] = {
+        partialOnlineMap[id] = {
           experience,
           ...getOnlineAndOfflineEntriesFromExperience(experience),
         };
@@ -105,9 +105,9 @@ const getOfflineItemsResolver: LocalResolverFn<
 
   return {
     completelyOfflineMap,
-    partialOfflineMap,
+    partialOnlineMap,
     completelyOfflineCount,
-    partlyOfflineCount,
+    partlyOfflineCount: partialOnlineCount,
   };
 };
 
@@ -133,7 +133,7 @@ function getOnlineAndOfflineEntriesFromExperience({
 }
 
 export const DEFAULT_OFFLINE_STATES = {
-  allExperiences: [],
+  offlineItems: [],
 };
 
 export const offlineItemsResolvers = {
@@ -144,16 +144,16 @@ export const offlineItemsResolvers = {
 
 export interface GetOfflineItemsSummary {
   completelyOfflineMap: OfflineExperienceSummaryMap;
-  partialOfflineMap: OfflineExperienceSummaryMap;
+  partialOnlineMap: OfflineExperienceSummaryMap;
   completelyOfflineCount: number;
   partlyOfflineCount: number;
 }
 
 interface OfflineExperienceSummaryMap {
-  [K: string]: AllExperienceSummary;
+  [K: string]: OfflineItemsSummary;
 }
 
-export interface AllExperienceSummary {
+export interface OfflineItemsSummary {
   offlineEntries: ExperienceFragment_entries_edges_node[];
   experience: ExperienceFragment;
   onlineEntries: ExperienceFragment_entries_edges_node[];

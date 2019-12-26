@@ -1,6 +1,6 @@
 import {
   GetOfflineItemsSummary,
-  AllExperienceSummary,
+  OfflineItemsSummary,
 } from "../../state/offline-resolvers";
 import immer, { Draft } from "immer";
 import { Reducer } from "react";
@@ -64,7 +64,7 @@ export function stateInitializerFn(getOfflineItems?: GetOfflineItemsSummary) {
     return {
       ...initial,
       completelyOfflineMap: {},
-      partialOfflineMap: {},
+      partialOnlineMap: {},
     } as StateMachine;
   }
 
@@ -242,7 +242,7 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
                 delete proxy.completelyOfflineMap[id];
                 --proxy.completelyOfflineCount;
               } else {
-                delete proxy.partialOfflineMap[id];
+                delete proxy.partialOnlineMap[id];
                 --proxy.partlyOfflineCount;
               }
 
@@ -266,7 +266,7 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
         }
       });
     },
-    //    true,
+    // true,
   );
 
 export function definitionToUnsavedData(
@@ -301,7 +301,7 @@ function updatePartialOnlineFromUploadResults(
   const localState = successState as PartialUploadSuccessState;
   let hasSuccess = false;
   let hasError = false;
-  const { partialOfflineMap } = stateProxy;
+  const { partialOnlineMap } = stateProxy;
 
   localState.partial = localState.partial || {
     states: {},
@@ -320,12 +320,12 @@ function updatePartialOnlineFromUploadResults(
     const { errors, experienceId, entries = [] } = element;
     hasSuccess = entries.length > 0;
 
-    const map = partialOfflineMap[experienceId];
-    map.newlySavedEntries = entries as ExperienceFragment_entries_edges_node[];
+    const map = partialOnlineMap[experienceId];
+    map.newlyOnlineEntries = entries as ExperienceFragment_entries_edges_node[];
 
     map.offlineEntries = replacePartlyUnsavedEntriesWithNewlySaved(
       map.offlineEntries,
-      map.newlySavedEntries,
+      map.newlyOnlineEntries,
     );
 
     if (errors) {
@@ -454,13 +454,13 @@ function updateCompleteOfflineFromUploadResults(
 
 function replacePartlyUnsavedEntriesWithNewlySaved(
   offlineEntries: EntryFragment[],
-  newlySavedEntries: EntryFragment[],
+  newlyOnlineEntries: EntryFragment[],
 ) {
-  if (newlySavedEntries.length === 0) {
+  if (newlyOnlineEntries.length === 0) {
     return offlineEntries;
   }
 
-  const newlySavedEntriesMap = newlySavedEntries.reduce(
+  const newlySavedEntriesMap = newlyOnlineEntries.reduce(
     (acc, item) => {
       acc[item.clientId as string] = item;
       return acc;
@@ -615,14 +615,14 @@ export interface ExperiencesIdsToObjectMap {
   [k: string]: ExperienceObjectMap;
 }
 
-export interface ExperienceObjectMap extends AllExperienceSummary {
+export interface ExperienceObjectMap extends OfflineItemsSummary {
   didUploadSucceed?: boolean;
   experienceError?: string;
   entriesErrors?: {
     [K: string]: CreateEntriesErrorsFragment_errors;
   };
   newlySavedExperience?: ExperienceFragment;
-  newlySavedEntries?: ExperienceFragment_entries_edges_node[];
+  newlyOnlineEntries?: ExperienceFragment_entries_edges_node[];
 }
 
 export interface UploadResultPayloadThirdArg {
@@ -642,7 +642,7 @@ export type Props = RouteComponentProps;
 export interface StateMachine {
   readonly partlyOfflineCount: number;
   readonly completelyOfflineCount: number;
-  readonly partialOfflineMap: ExperiencesIdsToObjectMap;
+  readonly partialOnlineMap: ExperiencesIdsToObjectMap;
   readonly completelyOfflineMap: ExperiencesIdsToObjectMap;
   readonly shouldRedirect?: boolean;
 

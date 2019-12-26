@@ -21,7 +21,7 @@ import {
 } from "../graphql/apollo-types/CreateExperienceMutation";
 import { isConnected } from "../state/connections";
 import { scrollIntoView } from "../components/scroll-into-view";
-import { CreateOfflineExperienceMutationData } from "../components/ExperienceDefinition/resolvers";
+import { CreateOfflineExperienceMutationData } from "../components/ExperienceDefinition/experience-definition.resolvers";
 import { ApolloError } from "apollo-client";
 import { GraphQLError } from "graphql";
 import { EbnisAppProvider } from "../context";

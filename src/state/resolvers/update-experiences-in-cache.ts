@@ -1,69 +1,75 @@
 import { DataProxy } from "apollo-cache";
 import {
-  AllExperiencesQueryReturned,
-  ALL_EXPERIENCES_QUERY,
-  AllExperiences,
-  ALL_EXPERIENCES_TYPENAME,
+  OfflineItemsQueryReturned,
+  OFFLINE_ITEMS_QUERY,
+  OfflineItem,
+  OFFLINE_ITEMS_TYPENAME,
 } from "../offline-resolvers";
 import { isOfflineId } from "../../constants";
 import { getExperiencesFromCache } from "./get-experiences-from-cache";
 import ApolloClient from "apollo-client";
 import immer from "immer";
 
-export function writeAllExperiencesToCache(
+export function writeOfflineItemsToCache(
   dataProxy: DataProxy,
-  data: AllExperiences[],
+  data: OfflineItem[],
 ) {
-  dataProxy.writeQuery<AllExperiencesQueryReturned>({
-    query: ALL_EXPERIENCES_QUERY,
+  dataProxy.writeQuery<OfflineItemsQueryReturned>({
+    query: OFFLINE_ITEMS_QUERY,
 
     data: {
-      allExperiences: data,
+      offlineItems: data,
     },
   });
 }
 
-export async function updateEntriesCountInCache(
+function newOfflineExperienceInCache(experienceId: string) {
+  return {
+    id: experienceId,
+    offlineEntriesCount: isOfflineId(experienceId) ? 0 : 1,
+    __typename: OFFLINE_ITEMS_TYPENAME,
+  };
+}
+
+export async function updateCacheExperienceOfflineEntriesCount(
   client: ApolloClient<{}>,
-  id: string,
+  experienceId: string,
 ) {
   let cacheData = await getExperiencesFromCache(client);
 
   if (cacheData.length === 0) {
-    cacheData = [
-      {
-        id: id,
-        offlineEntriesCount: isOfflineId(id) ? 0 : 1,
-        __typename: ALL_EXPERIENCES_TYPENAME,
-      },
-    ];
+    cacheData = [newOfflineExperienceInCache(experienceId)];
   } else {
     cacheData = immer(cacheData, proxy => {
       let index = 0;
       let len = proxy.length;
+      let experienceFound = false;
 
       for (; index < len; index++) {
-        const map = proxy[index];
+        const experience = proxy[index];
 
-        if (map.id === id) {
-          ++map.offlineEntriesCount;
+        if (experience.id === experienceId) {
+          ++experience.offlineEntriesCount;
+          proxy[index] = experience;
+          experienceFound = true;
+          break;
         }
+      }
 
-        proxy[index] = map;
+      if (!experienceFound) {
+        proxy.push(newOfflineExperienceInCache(experienceId));
       }
     });
   }
 
-  writeAllExperiencesToCache(client, cacheData);
+  writeOfflineItemsToCache(client, cacheData);
 }
 
-export async function deleteExperiencesIdsFromAllExperiencesInCache(
+export async function deleteExperiencesIdsFromOfflineItemsInCache(
   client: ApolloClient<{}>,
   ids: string[],
 ) {
-  const cacheData = (await getExperiencesFromCache(
-    client,
-  )).reduce(
+  const cacheData = (await getExperiencesFromCache(client)).reduce(
     (acc, map) => {
       if (ids.includes(map.id)) {
         return acc;
@@ -73,8 +79,8 @@ export async function deleteExperiencesIdsFromAllExperiencesInCache(
 
       return acc;
     },
-    [] as AllExperiences[],
+    [] as OfflineItem[],
   );
 
-  writeAllExperiencesToCache(client, cacheData);
+  writeOfflineItemsToCache(client, cacheData);
 }

@@ -37,4 +37,12 @@ export function makeUploadStatusIconId(id: Id, status: "success" | "error") {
   return `${domPrefix}-upload-status-${status}-icon-${id}`;
 }
 
+export function makeEntryId(entryId: Id) {
+  return `${domPrefix}-entry-${entryId}`;
+}
+
+export function makeExperienceErrorId(id: Id) {
+  return `${domPrefix}-experience-error-${id}`;
+}
+
 type Id = string | number;

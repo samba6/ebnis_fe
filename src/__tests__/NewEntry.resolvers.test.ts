@@ -7,14 +7,14 @@ import { makeTestCache } from "./test_utils";
 import { EntryFragment } from "../graphql/apollo-types/EntryFragment";
 import { updateExperienceWithNewEntry } from "../components/NewEntry/new-entry.injectables";
 import { ExperienceFragment } from "../graphql/apollo-types/ExperienceFragment";
-import { updateEntriesCountInCache } from "../state/resolvers/update-experiences-in-cache";
+import { updateCacheExperienceOfflineEntriesCount } from "../state/resolvers/update-experiences-in-cache";
 
 jest.mock("../components/NewEntry/new-entry.injectables");
 jest.mock("../state/resolvers/update-experiences-in-cache");
 
 const mockUpdateExperienceWithNewEntry = updateExperienceWithNewEntry as jest.Mock;
 
-const mockUpdateEntriesCountSavedAndUnsavedExperiencesInCache = updateEntriesCountInCache as jest.Mock;
+const mockUpdateEntriesCountSavedAndUnsavedExperiencesInCache = updateCacheExperienceOfflineEntriesCount as jest.Mock;
 
 const { createOfflineEntry } = newEntryResolvers.Mutation;
 

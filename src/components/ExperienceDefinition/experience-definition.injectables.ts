@@ -9,7 +9,7 @@ import {
   experienceDefinitionResolvers,
   CREATE_OFFLINE_EXPERIENCE_MUTATION,
   CreateOfflineExperienceMutationData,
-} from "./resolvers";
+} from "./experience-definition.resolvers";
 import { CreateExpUpdateFn } from "./experience-definition.utils";
 import { insertExperienceInGetExperiencesMiniQuery } from "../../state/resolvers/update-get-experiences-mini-query";
 

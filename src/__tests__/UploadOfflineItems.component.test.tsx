@@ -53,7 +53,7 @@ import {
   deleteIdsFromCache,
   removeQueriesAndMutationsFromCache,
 } from "../state/resolvers/delete-references-from-cache";
-import { deleteExperiencesIdsFromAllExperiencesInCache } from "../state/resolvers/update-experiences-in-cache";
+import { deleteExperiencesIdsFromOfflineItemsInCache } from "../state/resolvers/update-experiences-in-cache";
 import { EbnisAppProvider } from "../context";
 import {
   useUploadOfflineExperiencesMutation,
@@ -67,6 +67,8 @@ import {
   createdOfflineExperiencesContainerId,
   makeExperienceUploadStatusClassNames,
   makeUploadStatusIconId,
+  makeEntryId,
+  makeExperienceErrorId,
 } from "../components/UploadOfflineItems/upload-offline.dom";
 
 const mockLoadingId = "a-lo";
@@ -131,7 +133,7 @@ const mockScrollIntoView = scrollIntoView as jest.Mock;
 const mockUpdateCache = updateCache as jest.Mock;
 const mockReplaceExperiencesInGetExperiencesMiniQuery = replaceExperiencesInGetExperiencesMiniQuery as jest.Mock;
 const mockDeleteIdsFromCache = deleteIdsFromCache as jest.Mock;
-const mockDeleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache = deleteExperiencesIdsFromAllExperiencesInCache as jest.Mock;
+const mockDeleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache = deleteExperiencesIdsFromOfflineItemsInCache as jest.Mock;
 const mockUseUploadUnsavedExperiencesMutation = useUploadOfflineExperiencesMutation as jest.Mock;
 const mockUseUploadAllUnsavedsMutation = useUploadOfflineItemsMutation as jest.Mock;
 const mockUseUploadSavedExperiencesEntriesMutation = useUploadOnlineEntriesMutation as jest.Mock;
@@ -256,7 +258,7 @@ describe("components", () => {
       mockUploadAllUnsaveds,
     } = makeComp({
       getOfflineItems: {
-        partialOfflineMap: {
+        partialOnlineMap: {
           "1": {
             experience,
             offlineEntries: [unsavedEntry],
@@ -601,7 +603,7 @@ describe("components", () => {
 
         partlyOfflineCount: 1,
 
-        partialOfflineMap: {
+        partialOnlineMap: {
           "2": {
             experience: {
               id: "2",
@@ -764,11 +766,11 @@ describe("components", () => {
       (document.getElementById(domTitle2Id) as any).classList,
     ).not.toContain("error");
 
-    const $entry = document.getElementById(
-      `upload-unsaved-entry-${entryId}`,
-    ) as any;
+    const domEntry = document.getElementById(
+      makeEntryId(entryId),
+    ) as HTMLElement;
 
-    expect($entry.classList).not.toContain("entry--error");
+    expect(domEntry.classList).not.toContain("entry--error");
 
     expect(
       document.getElementById(makeUploadStatusIconId(1, "error")),
@@ -817,7 +819,7 @@ describe("components", () => {
     );
 
     // we also check to see that correct class has been applied to the entry
-    expect($entry.classList).toContain("entry--error");
+    expect(domEntry.classList).toContain("entry--error");
 
     // we toggle to show unsaved experiences and confirm they also have error
     // class
@@ -842,9 +844,7 @@ describe("components", () => {
 
     expect(document.getElementById("upload-unsaved-upload-btn")).not.toBeNull();
 
-    expect(
-      document.getElementById("unsaved-experience-errors-1"),
-    ).not.toBeNull();
+    expect(document.getElementById(makeExperienceErrorId(1))).not.toBeNull();
 
     expect(mockUpdateCache).not.toHaveBeenCalled();
   });
@@ -888,7 +888,7 @@ describe("components", () => {
 
         partlyOfflineCount: 1,
 
-        partialOfflineMap: {
+        partialOnlineMap: {
           "2": {
             experience: {
               id: "2",
@@ -1069,7 +1069,7 @@ describe("components", () => {
 
         partlyOfflineCount: 1,
 
-        partialOfflineMap: {
+        partialOnlineMap: {
           "1": {
             experience: {
               id: "1",
@@ -1329,7 +1329,7 @@ describe("non components", () => {
         } as ExperienceObjectMap,
       } as ExperiencesIdsToObjectMap,
 
-      partialOfflineMap: {
+      partialOnlineMap: {
         "1": {
           offlineEntries: [
             {
@@ -1449,7 +1449,7 @@ describe("non components", () => {
         } as ExperienceObjectMap,
       } as ExperiencesIdsToObjectMap,
 
-      partialOfflineMap: {
+      partialOnlineMap: {
         "1": {
           offlineEntries: [
             {
@@ -1457,7 +1457,7 @@ describe("non components", () => {
               clientId: "1",
             },
           ],
-          newlySavedEntries: [
+          newlyOnlineEntries: [
             {
               id: "a",
               clientId: "1",

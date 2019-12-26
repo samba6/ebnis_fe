@@ -46,7 +46,7 @@ import {
 } from "../Layout/layout.utils";
 import { replaceExperiencesInGetExperiencesMiniQuery } from "../../state/resolvers/update-get-experiences-mini-query";
 import { deleteIdsFromCache } from "../../state/resolvers/delete-references-from-cache";
-import { deleteExperiencesIdsFromAllExperiencesInCache } from "../../state/resolvers/update-experiences-in-cache";
+import { deleteExperiencesIdsFromOfflineItemsInCache } from "../../state/resolvers/update-experiences-in-cache";
 import { EXPERIENCES_URL } from "../../routes";
 import { updateCache } from "./update-cache";
 import { useDeleteMutationsOnExit } from "../use-delete-mutations-on-exit";
@@ -69,6 +69,8 @@ import {
   createdOfflineExperiencesContainerId,
   makeExperienceUploadStatusClassNames,
   makeUploadStatusIconId,
+  makeEntryId,
+  makeExperienceErrorId,
 } from "./upload-offline.dom";
 
 const timeoutMs = 500;
@@ -93,7 +95,7 @@ export function UploadOfflineItems(props: Props) {
   const {
     completelyOfflineCount,
     partlyOfflineCount,
-    partialOfflineMap,
+    partialOnlineMap,
     completelyOfflineMap,
     shouldRedirect,
     states: { upload, dataLoaded, tabs: tabsState },
@@ -168,7 +170,7 @@ export function UploadOfflineItems(props: Props) {
             completelyOfflineMap,
           ),
 
-          offlineEntriesInput: onlineExperiencesToUploadData(partialOfflineMap),
+          offlineEntriesInput: onlineExperiencesToUploadData(partialOnlineMap),
         };
       } else if (completelyOfflineCount !== 0) {
         uploadFunction = uploadUnsavedExperiences;
@@ -180,7 +182,7 @@ export function UploadOfflineItems(props: Props) {
         uploadFunction = uploadSavedExperiencesEntries;
 
         variables = ({
-          input: onlineExperiencesToUploadData(partialOfflineMap),
+          input: onlineExperiencesToUploadData(partialOnlineMap),
         } as unknown) as UploadOfflineItemsMutationVariables;
       }
 
@@ -202,7 +204,7 @@ export function UploadOfflineItems(props: Props) {
           .experiences as ExperiencesUploadedResultState).context.anySuccess
       ) {
         outstandingOfflineCount = updateCache({
-          partialOfflineMap: newState.partialOfflineMap,
+          partialOnlineMap: newState.partialOnlineMap,
           completelyOfflineMap: newState.completelyOfflineMap,
           cache,
           client,
@@ -296,7 +298,7 @@ export function UploadOfflineItems(props: Props) {
                 })}
                 id={createdOnlineExperiencesContainerId}
               >
-                {Object.entries(partialOfflineMap).map(([id, map]) => {
+                {Object.entries(partialOnlineMap).map(([id, map]) => {
                   return (
                     <ExperienceComponent
                       key={id}
@@ -421,7 +423,7 @@ function ExperienceComponent({
             ),
           );
 
-          await deleteExperiencesIdsFromAllExperiencesInCache(client, [
+          await deleteExperiencesIdsFromOfflineItemsInCache(client, [
             experienceId,
           ]);
 
@@ -444,7 +446,7 @@ function ExperienceComponent({
             experience={experience}
             entriesLen={offlineEntries.length}
             index={index}
-            id={`upload-unsaved-entry-${entryId}`}
+            id={makeEntryId(entryId)}
             className={makeClassNames({ "entry--error": !!error })}
           />
         );
@@ -453,7 +455,7 @@ function ExperienceComponent({
       {experienceError && (
         <FormCtrlError
           className="experience-error"
-          id={`unsaved-experience-errors-${experienceId}`}
+          id={makeExperienceErrorId(experienceId)}
         >
           <div>Error while saving experience ::</div>
           <div>{experienceError}</div>
@@ -490,7 +492,7 @@ function TabsMenuComponent({
   const twoTabsValue = tabsState.value === "two" && tabsState.states.two.value;
   const tabActive = tabsValue === "one";
 
-  const partlySavedUploadedIcon = savedAllSuccess ? (
+  const partialOnlineUploadedIcon = savedAllSuccess ? (
     <Icon
       name="check"
       id="upload-triggered-success-icon-partly-saved"
@@ -522,7 +524,7 @@ function TabsMenuComponent({
       }}
     >
       Entries
-      {partlySavedUploadedIcon}
+      {partialOnlineUploadedIcon}
     </a>
   ) : null;
 

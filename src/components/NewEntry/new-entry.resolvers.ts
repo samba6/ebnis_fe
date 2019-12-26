@@ -9,7 +9,7 @@ import { updateExperienceWithNewEntry } from "./new-entry.injectables";
 import { ENTRY_FRAGMENT } from "../../graphql/entry.fragment";
 import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragment";
 import { EntryFragment } from "../../graphql/apollo-types/EntryFragment";
-import { updateEntriesCountInCache } from "../../state/resolvers/update-experiences-in-cache";
+import { updateCacheExperienceOfflineEntriesCount } from "../../state/resolvers/update-experiences-in-cache";
 import { CreateEntryMutation_createEntry } from "../../graphql/apollo-types/CreateEntryMutation";
 
 export const CREATE_OFFLINE_ENTRY_MUTATION = gql`
@@ -79,7 +79,7 @@ const createOfflineEntryResolver: LocalResolverFn<
     data: { createEntry: { entry } as CreateEntryMutation_createEntry },
   })) as ExperienceFragment;
 
-  updateEntriesCountInCache(client, experienceId);
+  updateCacheExperienceOfflineEntriesCount(client, experienceId);
 
   return { id, experience, entry, __typename: "Entry" };
 };

@@ -5,10 +5,10 @@ import {
   ExperienceFragment_dataDefinitions,
 } from "../../graphql/apollo-types/ExperienceFragment";
 import {
-  AllExperiences,
-  ALL_EXPERIENCES_TYPENAME,
+  OfflineItem,
+  OFFLINE_ITEMS_TYPENAME,
 } from "../../state/offline-resolvers";
-import { writeAllExperiencesToCache } from "../../state/resolvers/update-experiences-in-cache";
+import { writeOfflineItemsToCache } from "../../state/resolvers/update-experiences-in-cache";
 import immer from "immer";
 import { entryToEdge } from "../../state/resolvers/entry-to-edge";
 import { ExperiencesIdsToObjectMap } from "./upload-offline.utils";
@@ -27,24 +27,23 @@ import { EntryFragment } from "../../graphql/apollo-types/EntryFragment";
 
 export function updateCache({
   completelyOfflineMap,
-  partialOfflineMap,
+  partialOnlineMap,
   cache,
   client,
 }: Args) {
-  const unsavedExperiences = handleUnsavedExperiences(completelyOfflineMap);
+  const offlineExperiences = handleOfflineExperiences(completelyOfflineMap);
+  const onlineExperiences = handleOnlineExperiences(partialOnlineMap);
 
-  const savedExperiences = handleSavedExperiences(partialOfflineMap);
-
-  // PLEASE DO ALL DELETES BEFORE UNSAVED EXPERIENCES NOW SAVED WRITES !!!!!!
+  // PLEASE DO ALL DELETES BEFORE OFFLINE EXPERIENCES NOW ONLINE WRITES !!!!!!
   // This is because if now saved experience contains unsaved entries, those
   // will be deleted if write occurs before delete. But if write happens after
   // delete, we are guaranteed to rewrite those unsaved entries back when we
   // write the newly saved experience.
-  const unsavedExperiencesNowSaved = unsavedExperiences.unsavedExperiencesNowSaved.concat(
-    savedExperiences.unsavedExperiencesNowSaved,
+  const offlineExperiencesNowOnline = offlineExperiences.offlineExperiencesNowOnline.concat(
+    onlineExperiences.offlineExperiencesNowOnline,
   );
 
-  const nowSaved = unsavedExperiences.unsavedExperiencesNowSaved.reduce(
+  const nowOnline = offlineExperiences.offlineExperiencesNowOnline.reduce(
     (acc, e) => {
       acc[e.clientId as string] = e;
       return acc;
@@ -52,43 +51,43 @@ export function updateCache({
     {},
   );
 
-  if (unsavedExperiencesNowSaved.length !== 0) {
+  if (offlineExperiencesNowOnline.length !== 0) {
     // replacement must run before delete because after delete, apollo will
     // return an empty object ({}) for the deleted experience.
     replaceExperiencesInGetExperiencesMiniQuery(
       client,
-      savedExperiences.unsavedExperiencesNowSaved.reduce((acc, e) => {
+      onlineExperiences.offlineExperiencesNowOnline.reduce((acc, e) => {
         acc[e.id] = e;
         return acc;
-      }, nowSaved),
+      }, nowOnline),
     );
   }
 
-  const toDeletes = unsavedExperiences.toDeletes.concat(
-    savedExperiences.toDeletes,
+  const toDeletes = offlineExperiences.toDeletes.concat(
+    onlineExperiences.toDeletes,
   );
 
   if (toDeletes.length !== 0) {
     // we need to do all deletes before writing.
     deleteIdsFromCache(cache, toDeletes, {
-      mutations: unsavedExperiences.mutations.concat(
-        savedExperiences.mutations,
+      mutations: offlineExperiences.mutations.concat(
+        onlineExperiences.mutations,
       ),
-      queries: unsavedExperiences.queries,
+      queries: offlineExperiences.queries,
     });
   }
 
-  const allExperiences = unsavedExperiences.allExperiences.concat(
-    savedExperiences.allExperiences,
+  const offlineItems = offlineExperiences.offlineItems.concat(
+    onlineExperiences.offlineItems,
   );
 
-  if (allExperiences.length !== 0 || toDeletes.length !== 0) {
-    writeAllExperiencesToCache(cache, allExperiences);
+  if (offlineItems.length !== 0 || toDeletes.length !== 0) {
+    writeOfflineItemsToCache(cache, offlineItems);
   }
 
   // Now if we have unsaved entries, we are sure they will be re-created if
   // we accidentally delete above.
-  unsavedExperiencesNowSaved.forEach(updatedExperience => {
+  offlineExperiencesNowOnline.forEach(updatedExperience => {
     // notice we are not writing the fragment for newly saved experience like
     // we did with for existing saved experience
     // this is because the `GetExperienceFullQuery` already exists for those
@@ -105,22 +104,22 @@ export function updateCache({
   });
 
   return (
-    unsavedExperiences.outstandingUnsavedCount +
-    savedExperiences.outstandingUnsavedCount
+    offlineExperiences.outstandingUnsavedCount +
+    onlineExperiences.outstandingUnsavedCount
   );
 }
 
-function handleUnsavedExperiences(
-  unsavedExperiencesMap: ExperiencesIdsToObjectMap,
+function handleOfflineExperiences(
+  oflineExperiencesMap: ExperiencesIdsToObjectMap,
 ) {
-  const allExperiences: AllExperiences[] = [];
+  const offlineItems: OfflineItem[] = [];
   let outstandingUnsavedCount = 0;
   let toDeletes: string[] = [];
   const mutations: [string, string][] = [];
   const queries: [string, string][] = [];
-  const unsavedExperiencesNowSaved: ExperienceFragment[] = [];
+  const offlineExperiencesNowOnline: ExperienceFragment[] = [];
 
-  Object.entries(unsavedExperiencesMap).forEach(([unsavedId, map]) => {
+  Object.entries(oflineExperiencesMap).forEach(([unsavedId, map]) => {
     const {
       newlySavedExperience,
       offlineEntries,
@@ -132,10 +131,10 @@ function handleUnsavedExperiences(
       const errorsLen = offlineEntries.length;
       outstandingUnsavedCount += 1 + errorsLen;
 
-      allExperiences.push({
+      offlineItems.push({
         id: experience.id,
         offlineEntriesCount: errorsLen,
-        __typename: ALL_EXPERIENCES_TYPENAME,
+        __typename: OFFLINE_ITEMS_TYPENAME,
       });
 
       return;
@@ -179,10 +178,10 @@ function handleUnsavedExperiences(
         outstandingUnsavedCount += errorsLen;
 
         // we now replace unsaved experience version with saved version
-        allExperiences.push({
+        offlineItems.push({
           id: newlySavedExperience.id,
           offlineEntriesCount: errorsLen,
-          __typename: ALL_EXPERIENCES_TYPENAME,
+          __typename: OFFLINE_ITEMS_TYPENAME,
         });
 
         // we merge unsaved entries into saved entries received from server.
@@ -197,51 +196,51 @@ function handleUnsavedExperiences(
           }
         });
       } else {
-        toDeletes.push(`${ALL_EXPERIENCES_TYPENAME}:${unsavedId}`);
+        toDeletes.push(`${OFFLINE_ITEMS_TYPENAME}:${unsavedId}`);
       }
 
       entries.edges = edges;
       proxy.entries = entries;
     });
 
-    unsavedExperiencesNowSaved.push(updatedExperience);
+    offlineExperiencesNowOnline.push(updatedExperience);
   });
 
   return {
-    allExperiences,
+    offlineItems,
     outstandingUnsavedCount,
     toDeletes,
     mutations,
-    unsavedExperiencesNowSaved,
+    offlineExperiencesNowOnline,
     queries,
   };
 }
 
-function handleSavedExperiences(
-  savedExperiencesMap: ExperiencesIdsToObjectMap,
+function handleOnlineExperiences(
+  onlineExperiencesMap: ExperiencesIdsToObjectMap,
 ) {
-  const allExperiences: AllExperiences[] = [];
+  const offlineItems: OfflineItem[] = [];
   let outstandingUnsavedCount = 0;
   let toDeletes: string[] = [];
   const mutations: [string, string][] = [];
-  const unsavedExperiencesNowSaved: ExperienceFragment[] = [];
+  const offlineExperiencesNowOnline: ExperienceFragment[] = [];
 
-  Object.entries(savedExperiencesMap).forEach(([experienceId, map]) => {
+  Object.entries(onlineExperiencesMap).forEach(([experienceId, map]) => {
     const {
-      newlySavedEntries,
+      newlyOnlineEntries,
       experience,
       entriesErrors,
       offlineEntries,
     } = map;
 
-    if (!newlySavedEntries || newlySavedEntries.length === 0) {
+    if (!newlyOnlineEntries || newlyOnlineEntries.length === 0) {
       const errorsLen = offlineEntries.length;
       outstandingUnsavedCount += errorsLen;
 
-      allExperiences.push({
+      offlineItems.push({
         id: experience.id,
         offlineEntriesCount: errorsLen,
-        __typename: ALL_EXPERIENCES_TYPENAME,
+        __typename: OFFLINE_ITEMS_TYPENAME,
       });
 
       return;
@@ -251,7 +250,7 @@ function handleSavedExperiences(
       const entries = proxy.entries;
       const edges = entries.edges as ExperienceFragment_entries_edges[];
 
-      const newlySavedEntriesMap = newlySavedEntries.reduce(
+      const newlySavedEntriesMap = newlyOnlineEntries.reduce(
         (acc, entry) => {
           const clientId = entry.clientId as string;
           acc[clientId] = entry;
@@ -272,7 +271,7 @@ function handleSavedExperiences(
         },
       );
 
-      entries.edges = swapUnsavedEntriesWithNewlySaved(
+      entries.edges = swapOfflineEntriesWithNewlyOnline(
         edges,
         newlySavedEntriesMap,
       );
@@ -288,43 +287,41 @@ function handleSavedExperiences(
 
       outstandingUnsavedCount += errorsLen;
 
-      allExperiences.push({
+      offlineItems.push({
         id: experienceId,
         offlineEntriesCount: errorsLen,
-        __typename: ALL_EXPERIENCES_TYPENAME,
+        __typename: OFFLINE_ITEMS_TYPENAME,
       });
     } else {
-      toDeletes.push(
-        `${ALL_EXPERIENCES_TYPENAME}:${experienceId}`,
-      );
+      toDeletes.push(`${OFFLINE_ITEMS_TYPENAME}:${experienceId}`);
     }
-    unsavedExperiencesNowSaved.push(updatedExperience);
+    offlineExperiencesNowOnline.push(updatedExperience);
   });
 
   return {
-    allExperiences,
+    offlineItems,
     outstandingUnsavedCount,
     toDeletes,
     mutations,
-    unsavedExperiencesNowSaved,
+    offlineExperiencesNowOnline,
   };
 }
 
-function swapUnsavedEntriesWithNewlySaved(
+function swapOfflineEntriesWithNewlyOnline(
   edges: ExperienceFragment_entries_edges[],
-  newlySavedEntriesMap: {
+  newlyOnlineEntriesMap: {
     [k: string]: ExperienceFragment_entries_edges_node;
   },
 ) {
   return edges.map(edge => {
     const entry = edge.node as ExperienceFragment_entries_edges_node;
 
-    const mayBeNewlySavedEntryNode =
-      newlySavedEntriesMap[entry.clientId as string];
+    const mayBeNewlyOnlineEntryNode =
+      newlyOnlineEntriesMap[entry.clientId as string];
 
-    if (mayBeNewlySavedEntryNode) {
+    if (mayBeNewlyOnlineEntryNode) {
       // swap
-      edge.node = mayBeNewlySavedEntryNode;
+      edge.node = mayBeNewlyOnlineEntryNode;
     }
 
     return edge;
@@ -338,21 +335,21 @@ function deleteDataObjectsFromEntry(entry: EntryFragment, toDeletes: string[]) {
   });
 }
 
-export interface SavedStatuses {
-  [k: string]: SavedStatus;
+export interface OnlineStatues {
+  [k: string]: OnlineStatus;
 }
 
-export interface SavedStatus {
-  savedExperience: ExperienceFragment;
+export interface OnlineStatus {
+  onlineExperience: ExperienceFragment;
   offlineEntries: ExperienceFragment_entries_edges_node[];
   clientIdsOfEntriesWithErrors: string[];
-  isUnsavedExperience: boolean;
-  savedExperienceSavedEntries?: ExperienceFragment_entries_edges_node[];
+  isOfflineExperience: boolean;
+  onlineExperienceOnlineEntries?: ExperienceFragment_entries_edges_node[];
 }
 
 export interface Args {
   completelyOfflineMap: ExperiencesIdsToObjectMap;
-  partialOfflineMap: ExperiencesIdsToObjectMap;
+  partialOnlineMap: ExperiencesIdsToObjectMap;
   cache: InMemoryCache;
   client: ApolloClient<{}>;
 }
