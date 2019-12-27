@@ -12,7 +12,7 @@ export default function IndexPage(props: RouteComponentProps) {
         <title>{SITE_TITLE}</title>
       </Helmet>
 
-      <Login {...props} />
+      <Login />
     </Layout>
   );
 }
