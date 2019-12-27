@@ -3,9 +3,9 @@ import React from "react";
 import { ApolloProvider } from "@apollo/react-hooks";
 import { HelmetProvider } from "react-helmet-async";
 import { Workbox } from "workbox-window";
-
 import "./src/styles/semantic-theme/semantic.less";
 import "./src/styles/globals.scss";
+import "./src/styles/tailwind.css";
 import {
   buildClientCache,
   restoreCacheOrPurgeStorage,

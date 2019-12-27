@@ -46,6 +46,9 @@ export function Sidebar(props: Props) {
       className={makeClassNames({ "components-sidebar": true, visible: show })}
       onClick={hideSidebar}
     >
+      {
+        // container animated
+      }
       <nav className="container" id="sidebar-container" onClick={blockClicks}>
         <div
           className="sidebar-hide item"

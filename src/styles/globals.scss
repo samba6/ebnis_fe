@@ -7,10 +7,12 @@ li {
   list-style-type: none;
 }
 
+/*! purgecss start ignore */
 .ui.label,
 .ui.labels .label {
   color: white;
 }
+/*! purgecss end ignore */
 
 .ui.dropdown .scrolling.menu {
   width: 100% !important;

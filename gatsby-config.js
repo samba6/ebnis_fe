@@ -62,6 +62,20 @@ let plugins = [
   "gatsby-plugin-sass",
 
   "gatsby-plugin-less",
+
+  "gatsby-plugin-postcss",
+
+  {
+    resolve: `gatsby-plugin-purgecss`,
+    options: {
+      printRejected: true, // Print removed selectors and processed file names
+      // develop: true, // Enable while using `gatsby develop`
+      tailwind: true, // Enable tailwindcss support
+      // whitelist: [//], // Don't remove this selector
+      ignore: ["src/styles/semantic-theme/semantic.less"], // Ignore files/folders
+      // purgeOnly : ['components/', '/main.css', 'bootstrap/'], // Purge only these files/folders
+    },
+  },
 ];
 
 if (!process.env.IS_E2E) {

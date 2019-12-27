@@ -4,6 +4,50 @@
 $translateLen: 50px;
 $transitionTime: 500ms;
 
+/*! purgecss start ignore */
+.components-upload-offline-items {
+  .pane-animation-left-enter,
+  .pane-animation-right-enter {
+    opacity: 0.01;
+  }
+
+  .pane-animation-left-enter {
+    transform: translate(-$translateLen, 0);
+  }
+
+  .pane-animation-right-enter {
+    transform: translate($translateLen, 0);
+  }
+
+  .pane-animation-left-enter-active,
+  .pane-animation-right-enter-active {
+    opacity: 1;
+    transform: translate(0, 0);
+    transition: all $transitionTime ease-in;
+  }
+
+  .pane-animation-left-exit,
+  .pane-animation-right-exit {
+    opacity: 1;
+    transform: translate(0, 0);
+  }
+
+  .pane-animation-left-exit-active,
+  .pane-animation-right-exit-active {
+    opacity: 0.01;
+    transition: all $transitionTime ease-in;
+  }
+
+  .pane-animation-left-exit-active {
+    transform: translate($translateLen, 0);
+  }
+
+  .pane-animation-right-exit-active {
+    transform: translate(-$translateLen, 0);
+  }
+}
+/*! purgecss end ignore */
+
 .components-upload-offline-items {
   @extend %route-main;
 
@@ -56,46 +100,6 @@ $transitionTime: 500ms;
     position: absolute;
     left: 0;
     right: 0;
-  }
-
-  .pane-animation-left-enter,
-  .pane-animation-right-enter {
-    opacity: 0.01;
-  }
-
-  .pane-animation-left-enter {
-    transform: translate(-$translateLen, 0);
-  }
-
-  .pane-animation-right-enter {
-    transform: translate($translateLen, 0);
-  }
-
-  .pane-animation-left-enter-active,
-  .pane-animation-right-enter-active {
-    opacity: 1;
-    transform: translate(0, 0);
-    transition: all $transitionTime ease-in;
-  }
-
-  .pane-animation-left-exit,
-  .pane-animation-right-exit {
-    opacity: 1;
-    transform: translate(0, 0);
-  }
-
-  .pane-animation-left-exit-active,
-  .pane-animation-right-exit-active {
-    opacity: 0.01;
-    transition: all $transitionTime ease-in;
-  }
-
-  .pane-animation-left-exit-active {
-    transform: translate($translateLen, 0);
-  }
-
-  .pane-animation-right-exit-active {
-    transform: translate(-$translateLen, 0);
   }
 
   .upload-result-icon {

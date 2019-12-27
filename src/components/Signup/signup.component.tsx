@@ -36,7 +36,7 @@ import {
   UserRegMutationVariables,
 } from "../../graphql/apollo-types/UserRegMutation";
 import { REGISTER_USER_MUTATION } from "../../graphql/user-registration.mutation";
-import { SidebarHeader } from "../SidebarHeader/sidebar-header.component"
+import { SidebarHeader } from "../SidebarHeader/sidebar-header.component";
 
 const scrollToTopId = makeScrollIntoViewId("signup");
 
@@ -61,6 +61,7 @@ export function SignUp(props: Props) {
     ...formikBag
   }: FormikProps<Registration>) {
     return (
+      // .routes-sign-up-route .main .card
       <Card id={scrollToTopId}>
         <ErrorsSummary
           errors={{
@@ -163,11 +164,9 @@ export function SignUp(props: Props) {
     );
   }
 
-
-
   return (
     <div className="routes-sign-up-route">
-      <SidebarHeader    title="Sign up for Ebnis" />
+      <SidebarHeader title="Sign up for Ebnis" />
 
       <div className="main" id="components-signup-main">
         <Formik

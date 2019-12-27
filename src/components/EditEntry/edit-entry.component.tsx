@@ -730,9 +730,17 @@ function getNodesFromObject(obj: { [k: string]: string }) {
     (acc, [k, v]) => {
       if (k !== "__typename" && v) {
         acc.push(
-          <span key={k}>
-            {k}: {v}
-          </span>,
+          <div key={k}>
+            <div className="font-extrabold">{capitalize(k)}:</div>
+
+            {v.split("\n").map((part, index) => {
+              return (
+                <div className="ml-2" key={index}>
+                  {part}
+                </div>
+              );
+            })}
+          </div>,
         );
       }
 
@@ -740,6 +748,10 @@ function getNodesFromObject(obj: { [k: string]: string }) {
     },
     [] as JSX.Element[],
   );
+}
+
+function capitalize(word: string) {
+  return word.charAt(0).toUpperCase() + word.slice(1);
 }
 
 interface SubmitDefinitionsArgs {

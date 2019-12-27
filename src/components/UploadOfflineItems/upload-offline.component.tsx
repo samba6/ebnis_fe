@@ -408,6 +408,8 @@ function ExperienceComponent({
 
   return (
     <Experience
+      // upload-experience-status--error
+      // upload-experience-status--success
       className={makeClassNames({
         [uploadStatusClassName]: !!uploadStatusClassName,
       })}
@@ -417,6 +419,7 @@ function ExperienceComponent({
 
         className: makeClassNames({
           "experience-title--uploads": true,
+          // experience-title--success
           [uploadStatusTitleClassName]: !!uploadStatusTitleClassName,
         }),
 

@@ -17,9 +17,9 @@ export function RootHelmet() {
 
       <meta
         name="description"
-        content="Take control of your wallet, purse. Manage your expenses"
+        content="Measure everything, record your experiences"
       />
-      <meta name="application" content="nina" />
+      <meta name="application" content="ebnis" />
     </Helmet>
   );
 }
