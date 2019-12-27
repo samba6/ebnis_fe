@@ -68,6 +68,6 @@ export type UseCreateOnlineEntryMutation = [
 ];
 
 // component's props should extend this
-export interface CreateOnlineEntryProps {
+export interface CreateOnlineEntryComponentProps {
   createOnlineEntry: CreateOnlineEntryMutationFn;
 }
