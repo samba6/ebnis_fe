@@ -347,14 +347,15 @@ function DefinitionComponent(props: DefinitionComponentProps) {
       id={idPrefix}
       className={makeClassNames({
         "definition--success": hasSuccess,
+        "definition-field": true,
       })}
       error={!!error}
     >
+      <label htmlFor={`${idPrefix}-input`}>{typeText}</label>
+
       {state.value === "idle" && (
         <>
-          <label>{typeText}</label>
-
-          <Input className="idle-definition-name">
+          <Input className="definition-input">
             <input
               id={`${idPrefix}-name`}
               value={defaultFormValue}
@@ -385,8 +386,6 @@ function DefinitionComponent(props: DefinitionComponentProps) {
 
       {state.value === "editing" && (
         <>
-          <label htmlFor={`${idPrefix}-input`}>{typeText}</label>
-
           <Input
             onChange={(_, { value }) => {
               dispatch({

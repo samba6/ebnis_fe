@@ -1,5 +1,4 @@
 @import "../../styles/variables";
-@import "../../styles/extensions";
 
 .components-edit-entry {
   .experience-title {
@@ -30,12 +29,10 @@
     }
   }
 
-  .idle-definition-name,
   .definition-input {
     margin-bottom: 10px;
   }
 
-  .definition-dismiss,
   .definition-reset {
     margin-right: 3px !important;
   }
@@ -48,10 +45,34 @@
   .definition-dismiss {
     border-top-left-radius: 0;
     border-bottom-left-radius: 0;
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
   }
 
   .definition-edit--success {
     border-color: $success-color !important;
     background-color: $success-color !important;
+  }
+
+  @media (max-width: 22rem) {
+    .definition-field {
+      position: relative;
+      margin-top: 0.5rem !important;
+    }
+
+    .field + .definition-field {
+      margin-top: 2rem !important;
+    }
+
+    .definition-input {
+      position: static;
+    }
+
+    .definition-dismiss,
+    .definition-edit {
+      position: absolute;
+      right: 0;
+      top: -0.6rem;
+    }
   }
 }
