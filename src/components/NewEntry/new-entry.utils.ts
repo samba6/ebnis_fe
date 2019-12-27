@@ -9,11 +9,13 @@ import immer from "immer";
 import { ApolloError } from "apollo-client";
 import { DataTypes } from "../../graphql/apollo-types/globalTypes";
 import {
-  CreateEntryMutation_createEntry_errors,
-  CreateEntryMutation_createEntry_errors_dataObjectsErrors,
-} from "../../graphql/apollo-types/CreateEntryMutation";
+  CreateOnlineEntryMutation_createEntry_errors,
+  CreateOnlineEntryMutation_createEntry_errors_dataObjectsErrors,
+} from "../../graphql/apollo-types/CreateOnlineEntryMutation";
 import dateFnFormat from "date-fns/format";
 import parseISO from "date-fns/parseISO";
+import { CreateOnlineEntryProps } from "../../graphql/create-entry.mutation";
+import { CreateOfflineEntryMutationComponentProps } from "./new-entry.resolvers";
 
 const NEW_LINE_REGEX = /\n/g;
 export const ISO_DATE_FORMAT = "yyyy-MM-dd";
@@ -71,9 +73,14 @@ export function formObjToString(type: DataTypes, val: FormObjVal) {
   return (toString as string).trim();
 }
 
-export interface Props extends RouteComponentProps<NewEntryRouteParams> {
+export interface NewEntryCallerProps
+  extends RouteComponentProps<NewEntryRouteParams> {
   experience: ExperienceFragment;
 }
+
+export type NewEntryComponentProps = NewEntryCallerProps &
+  CreateOnlineEntryProps &
+  CreateOfflineEntryMutationComponentProps;
 
 export type FormObjVal = Date | string | number;
 
@@ -161,7 +168,10 @@ type Action =
   | [ActionTypes.setFormObjField, SetFormObjFieldPayload]
   | [ActionTypes.setServerErrors, ServerErrors]
   | [ActionTypes.removeServerErrors]
-  | [ActionTypes.setCreateEntryErrors, CreateEntryMutation_createEntry_errors];
+  | [
+      ActionTypes.setCreateEntryErrors,
+      CreateOnlineEntryMutation_createEntry_errors,
+    ];
 
 export const reducer: Reducer<State, Action> = (prevState, [type, payload]) => {
   return immer(prevState, proxy => {
@@ -179,7 +189,7 @@ export const reducer: Reducer<State, Action> = (prevState, [type, payload]) => {
         {
           const {
             dataObjectsErrors,
-          } = payload as CreateEntryMutation_createEntry_errors;
+          } = payload as CreateOnlineEntryMutation_createEntry_errors;
 
           if (!dataObjectsErrors) {
             return;
@@ -189,7 +199,7 @@ export const reducer: Reducer<State, Action> = (prevState, [type, payload]) => {
             const {
               errors,
               index,
-            } = field as CreateEntryMutation_createEntry_errors_dataObjectsErrors;
+            } = field as CreateOnlineEntryMutation_createEntry_errors_dataObjectsErrors;
 
             acc[index] = Object.entries(errors).reduce((a, [k, v]) => {
               if (v && k !== "__typename") {

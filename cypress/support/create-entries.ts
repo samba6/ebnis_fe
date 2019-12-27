@@ -7,7 +7,7 @@ import {
 import { CREATE_ENTRIES_MUTATION } from "../../src/graphql/create-entries.mutation";
 import { EntryFragment } from "../../src/graphql/apollo-types/EntryFragment";
 import {
-  CreateEntryOfflineVariables,
+  CreateOfflineEntryMutationVariables,
   CreateOfflineEntryMutationReturned,
   CREATE_OFFLINE_ENTRY_MUTATION,
 } from "../../src/components/NewEntry/new-entry.resolvers";
@@ -33,12 +33,12 @@ export function createExperienceEntries(input: CreateEntriesInput[]) {
 }
 
 export function createOfflineEntry(
-  variables: CreateEntryOfflineVariables,
+  variables: CreateOfflineEntryMutationVariables,
   persist?: boolean,
 ) {
   return mutate<
     CreateOfflineEntryMutationReturned,
-    CreateEntryOfflineVariables
+    CreateOfflineEntryMutationVariables
   >({
     mutation: CREATE_OFFLINE_ENTRY_MUTATION,
     variables,

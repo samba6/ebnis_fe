@@ -30,7 +30,7 @@ import {
   makeEntryNode,
   closeMessage,
 } from "./test_utils";
-import { CreateEntryMutationVariables } from "../graphql/apollo-types/CreateEntryMutation";
+import { CreateOnlineEntryMutationVariables } from "../graphql/apollo-types/CreateOnlineEntryMutation";
 import {
   UploadOfflineItemsMutation,
   UploadOfflineItemsMutation_createEntries,
@@ -358,7 +358,7 @@ describe("components", () => {
     );
 
     const uploadedEntry = ((mockUploadOnlineExperiencesOfflineEntries.mock
-      .calls[0][0] as any).variables as CreateEntryMutationVariables).input[0];
+      .calls[0][0] as any).variables as CreateOnlineEntryMutationVariables).input[0];
 
     expect(uploadedEntry).toEqual(entry);
 

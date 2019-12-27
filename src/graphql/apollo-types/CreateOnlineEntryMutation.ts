@@ -5,10 +5,10 @@
 import { CreateEntryInput } from "./globalTypes";
 
 // ====================================================
-// GraphQL mutation operation: CreateEntryMutation
+// GraphQL mutation operation: CreateOnlineEntryMutation
 // ====================================================
 
-export interface CreateEntryMutation_createEntry_entry_dataObjects {
+export interface CreateOnlineEntryMutation_createEntry_entry_dataObjects {
   __typename: "DataObject";
   id: string;
   data: any;
@@ -21,7 +21,7 @@ export interface CreateEntryMutation_createEntry_entry_dataObjects {
   updatedAt: any;
 }
 
-export interface CreateEntryMutation_createEntry_entry {
+export interface CreateOnlineEntryMutation_createEntry_entry {
   __typename: "Entry";
   /**
    * Entry ID
@@ -43,23 +43,23 @@ export interface CreateEntryMutation_createEntry_entry {
   /**
    * The list of data belonging to this entry.
    */
-  dataObjects: (CreateEntryMutation_createEntry_entry_dataObjects | null)[];
+  dataObjects: (CreateOnlineEntryMutation_createEntry_entry_dataObjects | null)[];
 }
 
-export interface CreateEntryMutation_createEntry_errors_dataObjectsErrors_errors {
+export interface CreateOnlineEntryMutation_createEntry_errors_dataObjectsErrors_errors {
   __typename: "DataObjectError";
   data: string | null;
   definition: string | null;
   definitionId: string | null;
 }
 
-export interface CreateEntryMutation_createEntry_errors_dataObjectsErrors {
+export interface CreateOnlineEntryMutation_createEntry_errors_dataObjectsErrors {
   __typename: "DataObjectsErrors";
   index: number;
-  errors: CreateEntryMutation_createEntry_errors_dataObjectsErrors_errors;
+  errors: CreateOnlineEntryMutation_createEntry_errors_dataObjectsErrors_errors;
 }
 
-export interface CreateEntryMutation_createEntry_errors {
+export interface CreateOnlineEntryMutation_createEntry_errors {
   __typename: "CreateEntryErrors";
   /**
    * May be because client ID is not unique for experience
@@ -81,22 +81,22 @@ export interface CreateEntryMutation_createEntry_errors {
   /**
    * Did we fail because there are errors in the data object object?
    */
-  dataObjectsErrors: (CreateEntryMutation_createEntry_errors_dataObjectsErrors | null)[] | null;
+  dataObjectsErrors: (CreateOnlineEntryMutation_createEntry_errors_dataObjectsErrors | null)[] | null;
 }
 
-export interface CreateEntryMutation_createEntry {
+export interface CreateOnlineEntryMutation_createEntry {
   __typename: "CreateEntryResponse";
-  entry: CreateEntryMutation_createEntry_entry | null;
-  errors: CreateEntryMutation_createEntry_errors | null;
+  entry: CreateOnlineEntryMutation_createEntry_entry | null;
+  errors: CreateOnlineEntryMutation_createEntry_errors | null;
 }
 
-export interface CreateEntryMutation {
+export interface CreateOnlineEntryMutation {
   /**
    * Create an experience entry
    */
-  createEntry: CreateEntryMutation_createEntry | null;
+  createEntry: CreateOnlineEntryMutation_createEntry | null;
 }
 
-export interface CreateEntryMutationVariables {
+export interface CreateOnlineEntryMutationVariables {
   input: CreateEntryInput;
 }

@@ -1,18 +1,7 @@
 /* eslint-disable react-hooks/rules-of-hooks */
-
 import { ApolloClient } from "apollo-client";
-import { useMutation } from "@apollo/react-hooks";
-import { CREATE_ENTRY_MUTATION } from "../../graphql/create-entry.mutation";
-import {
-  CreateEntryMutation,
-  CreateEntryMutationVariables,
-} from "../../graphql/apollo-types/CreateEntryMutation";
-import {
-  CREATE_OFFLINE_ENTRY_MUTATION,
-  CreateOfflineEntryMutationReturned,
-  CreateEntryOfflineVariables,
-  newEntryResolvers,
-} from "./new-entry.resolvers";
+import { CreateOnlineEntryMutation } from "../../graphql/apollo-types/CreateOnlineEntryMutation";
+import { newEntryResolvers } from "./new-entry.resolvers";
 import immer from "immer";
 import {
   ExperienceFragment,
@@ -34,24 +23,11 @@ export function addResolvers(client: ApolloClient<{}>) {
   window.____ebnis.newEntryResolversAdded = true;
 }
 
-export function useCreateOnlineEntry() {
-  return useMutation<CreateEntryMutation, CreateEntryMutationVariables>(
-    CREATE_ENTRY_MUTATION,
-  );
-}
-
-export function useCreateEntryOffline() {
-  return useMutation<
-    CreateOfflineEntryMutationReturned,
-    CreateEntryOfflineVariables
-  >(CREATE_OFFLINE_ENTRY_MUTATION);
-}
-
 type Fn<T = string | ExperienceFragment> = (
   arg: T,
 ) => (
   proxy: DataProxy,
-  mutationResult: FetchResult<CreateEntryMutation>,
+  mutationResult: FetchResult<CreateOnlineEntryMutation>,
 ) => T extends ExperienceFragment
   ? Promise<ExperienceFragment>
   : Promise<ExperienceFragment | undefined>;

@@ -10,7 +10,7 @@ import Button from "semantic-ui-react/dist/commonjs/elements/Button";
 import { NavigateFn } from "@reach/router";
 import "./new-entry.styles.scss";
 import {
-  Props,
+  NewEntryComponentProps,
   FormObj,
   FormObjVal,
   makePageTitle,
@@ -22,6 +22,7 @@ import {
   initialStateFromProps,
   State,
   formObjToString,
+  NewEntryCallerProps,
 } from "./new-entry.utils";
 import { makeExperienceRoute } from "../../constants/experience-route";
 import { setDocumentTitle, makeSiteTitle } from "../../constants";
@@ -34,26 +35,28 @@ import {
   DataTypes,
   CreateDataObject,
 } from "../../graphql/apollo-types/globalTypes";
-import { CreateEntryMutation_createEntry } from "../../graphql/apollo-types/CreateEntryMutation";
-import { CreateOfflineEntryMutationReturned } from "./new-entry.resolvers";
+import { CreateOnlineEntryMutation_createEntry } from "../../graphql/apollo-types/CreateOnlineEntryMutation";
+import {
+  CreateOfflineEntryMutationReturned,
+  useCreateOfflineEntryMutation,
+} from "./new-entry.resolvers";
 import { componentFromDataType } from "./component-from-data-type";
 import { InputOnChangeData } from "semantic-ui-react";
 import {
   addResolvers,
-  useCreateOnlineEntry,
-  useCreateEntryOffline,
   updateExperienceWithNewEntry,
 } from "./new-entry.injectables";
 import { EbnisAppContext } from "../../context";
 import { SidebarHeader } from "../SidebarHeader/sidebar-header.component";
 import { useDeleteCachedQueriesAndMutationsOnUnmount } from "../use-delete-cached-queries-mutations-on-unmount";
-import { MUTATION_NAME_createEntry } from "../../graphql/create-entry.mutation";
+import {
+  MUTATION_NAME_createEntry,
+  useCreateOnlineEntryMutation,
+} from "../../graphql/create-entry.mutation";
 import { MUTATION_NAME_createOfflineEntry } from "../../state/resolvers";
 
-export function NewEntry(props: Props) {
-  const { navigate, experience } = props;
-  const [createEntry] = useCreateOnlineEntry();
-  const [createOfflineEntry] = useCreateEntryOffline();
+export function NewEntryComponent(props: NewEntryComponentProps) {
+  const { navigate, experience, createOnlineEntry, createOfflineEntry } = props;
   const { client } = useContext(EbnisAppContext);
 
   const [state, dispatch] = useReducer(
@@ -117,10 +120,10 @@ export function NewEntry(props: Props) {
     );
 
     try {
-      let createResult: CreateEntryMutation_createEntry;
+      let createResult: CreateOnlineEntryMutation_createEntry;
 
       if (isConnected()) {
-        const result = await createEntry({
+        const result = await createOnlineEntry({
           variables: {
             input: {
               experienceId,
@@ -132,7 +135,7 @@ export function NewEntry(props: Props) {
         });
 
         createResult = ((result && result.data && result.data.createEntry) ||
-          {}) as CreateEntryMutation_createEntry;
+          {}) as CreateOnlineEntryMutation_createEntry;
       } else {
         const result = await createOfflineEntry({
           variables: {
@@ -146,7 +149,7 @@ export function NewEntry(props: Props) {
           result.data
             .createOfflineEntry) as CreateOfflineEntryMutationReturned["createOfflineEntry"];
 
-        createResult = { entry } as CreateEntryMutation_createEntry;
+        createResult = { entry } as CreateOnlineEntryMutation_createEntry;
       }
 
       const { entry, errors } = createResult;
@@ -247,8 +250,6 @@ export function NewEntry(props: Props) {
     </div>
   );
 }
-
-export default NewEntry;
 
 const DataComponent = React.memo(
   function FieldComponentFn(props: DataComponentProps) {
@@ -356,3 +357,17 @@ interface DataComponentProps {
 }
 
 type E = React.ChangeEvent<HTMLInputElement>;
+
+// istanbul ignore next:
+export default (props: NewEntryCallerProps) => {
+  const [createOnlineEntry] = useCreateOnlineEntryMutation();
+  const [createOfflineEntry] = useCreateOfflineEntryMutation();
+
+  return (
+    <NewEntryComponent
+      createOnlineEntry={createOnlineEntry}
+      createOfflineEntry={createOfflineEntry}
+      {...props}
+    />
+  );
+};

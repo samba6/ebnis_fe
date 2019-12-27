@@ -13,8 +13,8 @@ import formatDate from "date-fns/format";
 import differenceInDays from "date-fns/differenceInDays";
 import differenceInHours from "date-fns/differenceInHours";
 import parseISO from "date-fns/parseISO";
-import { NewEntry } from "../components/NewEntry/new-entry.component";
-import { Props } from "../components/NewEntry/new-entry.utils";
+import { NewEntryComponent } from "../components/NewEntry/new-entry.component";
+import { NewEntryComponentProps } from "../components/NewEntry/new-entry.utils";
 import {
   renderWithRouter,
   fillField,
@@ -33,22 +33,18 @@ import {
 } from "../graphql/apollo-types/ExperienceFragment";
 import { ApolloError } from "apollo-client";
 import {
-  CreateEntryMutation_createEntry_errors,
-  CreateEntryMutation,
-  CreateEntryMutationVariables,
-} from "../graphql/apollo-types/CreateEntryMutation";
+  CreateOnlineEntryMutation_createEntry_errors,
+  CreateOnlineEntryMutation,
+  CreateOnlineEntryMutationVariables,
+} from "../graphql/apollo-types/CreateOnlineEntryMutation";
 import { isConnected } from "../state/connections";
 import { scrollIntoView } from "../components/scroll-into-view";
 import {
-  CreateEntryOfflineVariables,
+  CreateOfflineEntryMutationVariables,
   CreateOfflineEntryMutationReturned,
 } from "../components/NewEntry/new-entry.resolvers";
 import { GraphQLError } from "graphql";
-import {
-  useCreateOnlineEntry,
-  useCreateEntryOffline,
-  updateExperienceWithNewEntry,
-} from "../components/NewEntry/new-entry.injectables";
+import { updateExperienceWithNewEntry } from "../components/NewEntry/new-entry.injectables";
 
 jest.mock("../state/connections");
 jest.mock("../components/scroll-into-view");
@@ -63,15 +59,11 @@ jest.mock("../components/use-delete-cached-queries-mutations-on-unmount");
 const mockIsConnected = isConnected as jest.Mock;
 const mockUpdate = updateExperienceWithNewEntry as jest.Mock;
 const mockScrollIntoView = scrollIntoView as jest.Mock;
-const mockUseCreateOnlineEntry = useCreateOnlineEntry as jest.Mock;
-const mockUseCreateUnsavedEntry = useCreateEntryOffline as jest.Mock;
 
 beforeEach(() => {
   mockScrollIntoView.mockReset();
   mockIsConnected.mockReset();
   mockUpdate.mockReset();
-  mockUseCreateOnlineEntry.mockReset();
-  mockUseCreateUnsavedEntry.mockReset();
 });
 
 const title = "ww";
@@ -104,7 +96,7 @@ it("creates new experience entry when online", async () => {
     entries: {} as ExperienceFragment_entries,
   } as ExperienceFragment;
 
-  const { ui, mockCreateEntry } = makeComp({
+  const { ui, mockCreateOnlineEntry } = makeComp({
     experience: experience,
   });
 
@@ -147,8 +139,8 @@ it("creates new experience entry when online", async () => {
       variables: {
         input: { experienceId, dataObjects },
       },
-    } = mockCreateEntry.mock.calls[0][0] as ToVariables<
-      CreateEntryMutationVariables
+    } = mockCreateOnlineEntry.mock.calls[0][0] as ToVariables<
+      CreateOnlineEntryMutationVariables
     >;
 
     expect(experienceId).toBe("1");
@@ -184,17 +176,17 @@ it("sets decimal and integer fields to default to 0", async () => {
     ] as ExperienceFragment_dataDefinitions[],
   } as ExperienceFragment;
 
-  const { ui, mockCreateEntry, mockNavigate } = makeComp({
+  const { ui, mockCreateOnlineEntry, mockNavigate } = makeComp({
     experience: exp,
   });
 
-  mockCreateEntry.mockResolvedValue({
+  mockCreateOnlineEntry.mockResolvedValue({
     data: {
       createEntry: {
         entry: {},
       },
     },
-  } as ToData<CreateEntryMutation>);
+  } as ToData<CreateOnlineEntryMutation>);
 
   /**
    * While we are on new entry page
@@ -218,8 +210,8 @@ it("sets decimal and integer fields to default to 0", async () => {
     variables: {
       input: { dataObjects },
     },
-  } = mockCreateEntry.mock.calls[0][0] as ToVariables<
-    CreateEntryMutationVariables
+  } = mockCreateOnlineEntry.mock.calls[0][0] as ToVariables<
+    CreateOnlineEntryMutationVariables
   >;
 
   const [f1, f2] = dataObjects as CreateDataObject[];
@@ -259,7 +251,7 @@ it("sets values of date and datetime fields", async () => {
     entries: {} as ExperienceFragment_entries,
   } as ExperienceFragment;
 
-  const { ui, mockCreateEntry } = makeComp({
+  const { ui, mockCreateOnlineEntry } = makeComp({
     experience: experience,
   });
 
@@ -334,8 +326,8 @@ it("sets values of date and datetime fields", async () => {
       variables: {
         input: { dataObjects },
       },
-    } = mockCreateEntry.mock.calls[0][0] as ToVariables<
-      CreateEntryMutationVariables
+    } = mockCreateOnlineEntry.mock.calls[0][0] as ToVariables<
+      CreateOnlineEntryMutationVariables
     >;
 
     const [f1, f2] = dataObjects as CreateDataObject[];
@@ -374,8 +366,8 @@ it("creates new entry when offline", async () => {
 
   const {
     ui,
-    mockCreateUnsavedEntry,
-    mockCreateEntry,
+    mockCreateOfflineEntry,
+    mockCreateOnlineEntry,
     mockNavigate,
   } = makeComp(
     {
@@ -384,7 +376,7 @@ it("creates new entry when offline", async () => {
     false,
   );
 
-  mockCreateUnsavedEntry.mockResolvedValue({
+  mockCreateOfflineEntry.mockResolvedValue({
     data: {
       createOfflineEntry: {
         entry: {},
@@ -420,8 +412,8 @@ it("creates new entry when offline", async () => {
 
   const {
     variables: { experience, dataObjects },
-  } = mockCreateUnsavedEntry.mock.calls[0][0] as ToVariables<
-    CreateEntryOfflineVariables
+  } = mockCreateOfflineEntry.mock.calls[0][0] as ToVariables<
+    CreateOfflineEntryMutationVariables
   >;
 
   expect(experience.id).toBe("1");
@@ -434,7 +426,7 @@ it("creates new entry when offline", async () => {
   /**
    * No values should be uploaded to the server
    */
-  expect(mockCreateEntry).not.toBeCalled();
+  expect(mockCreateOnlineEntry).not.toBeCalled();
 });
 
 it("renders error when entry creation fails", async () => {
@@ -454,7 +446,7 @@ it("renders error when entry creation fails", async () => {
     entries: {},
   } as ExperienceFragment;
 
-  const { ui, mockCreateEntry, mockNavigate } = makeComp({
+  const { ui, mockCreateOnlineEntry, mockNavigate } = makeComp({
     experience,
   });
 
@@ -469,12 +461,12 @@ it("renders error when entry creation fails", async () => {
         },
       },
     ],
-  } as CreateEntryMutation_createEntry_errors;
+  } as CreateOnlineEntryMutation_createEntry_errors;
 
-  mockCreateEntry.mockResolvedValue({
+  mockCreateOnlineEntry.mockResolvedValue({
     data: {
       createEntry: { errors },
-    } as CreateEntryMutation,
+    } as CreateOnlineEntryMutation,
   });
 
   render(ui);
@@ -499,8 +491,8 @@ it("renders error when entry creation fails", async () => {
     variables: {
       input: { experienceId, dataObjects },
     },
-  } = mockCreateEntry.mock.calls[0][0] as {
-    variables: CreateEntryMutationVariables;
+  } = mockCreateOnlineEntry.mock.calls[0][0] as {
+    variables: CreateOnlineEntryMutationVariables;
   };
 
   expect(experienceId).toBe("1");
@@ -532,11 +524,11 @@ it("renders network error", async () => {
     entries: {},
   } as ExperienceFragment;
 
-  const { ui, mockCreateEntry, mockNavigate } = makeComp({
+  const { ui, mockCreateOnlineEntry, mockNavigate } = makeComp({
     experience,
   });
 
-  mockCreateEntry.mockRejectedValue(
+  mockCreateOnlineEntry.mockRejectedValue(
     new ApolloError({
       networkError: new Error(),
     }),
@@ -582,11 +574,11 @@ it("treats non field graphql errors as network error", async () => {
     entries: {},
   } as ExperienceFragment;
 
-  const { ui, mockCreateEntry, mockNavigate } = makeComp({
+  const { ui, mockCreateOnlineEntry, mockNavigate } = makeComp({
     experience,
   });
 
-  mockCreateEntry.mockRejectedValue(
+  mockCreateOnlineEntry.mockRejectedValue(
     new ApolloError({
       graphQLErrors: [new GraphQLError("error")],
     }),
@@ -617,21 +609,30 @@ it("treats non field graphql errors as network error", async () => {
 
 ////////////////////////// HELPER FUNCTIONS ///////////////////////////////////
 
-const NewEntryP = NewEntry as ComponentType<Partial<Props>>;
+const NewEntryP = NewEntryComponent as ComponentType<
+  Partial<NewEntryComponentProps>
+>;
 
-function makeComp(props: Partial<Props>, connectionStatus: boolean = true) {
+function makeComp(
+  props: Partial<NewEntryComponentProps>,
+  connectionStatus: boolean = true,
+) {
   mockIsConnected.mockReturnValue(connectionStatus);
-  const mockCreateEntry = jest.fn();
-  const mockCreateUnsavedEntry = jest.fn();
-  mockUseCreateOnlineEntry.mockReturnValue([mockCreateEntry]);
-  mockUseCreateUnsavedEntry.mockReturnValue([mockCreateUnsavedEntry]);
+  const mockCreateOnlineEntry = jest.fn();
+  const mockCreateOfflineEntry = jest.fn();
 
   const { Ui, ...rest } = renderWithRouter(NewEntryP);
 
   return {
-    ui: <Ui {...props} />,
-    mockCreateEntry,
-    mockCreateUnsavedEntry,
+    ui: (
+      <Ui
+        createOfflineEntry={mockCreateOfflineEntry}
+        createOnlineEntry={mockCreateOnlineEntry}
+        {...props}
+      />
+    ),
+    mockCreateOnlineEntry,
+    mockCreateOfflineEntry,
     ...rest,
   };
 }

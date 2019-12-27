@@ -1,3 +1,9 @@
+import { useMutation } from "@apollo/react-hooks";
+import {
+  MutationFunction,
+  MutationFunctionOptions,
+  MutationResult,
+} from "@apollo/react-common";
 import {
   LocalResolverFn,
   MUTATION_NAME_createOfflineEntry,
@@ -10,7 +16,7 @@ import { ENTRY_FRAGMENT } from "../../graphql/entry.fragment";
 import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragment";
 import { EntryFragment } from "../../graphql/apollo-types/EntryFragment";
 import { updateCacheExperienceOfflineEntriesCount } from "../../state/resolvers/update-experiences-in-cache";
-import { CreateEntryMutation_createEntry } from "../../graphql/apollo-types/CreateEntryMutation";
+import { CreateOnlineEntryMutation_createEntry } from "../../graphql/apollo-types/CreateOnlineEntryMutation";
 
 export const CREATE_OFFLINE_ENTRY_MUTATION = gql`
   mutation CreateOfflineEntry(
@@ -37,8 +43,8 @@ export interface CreateOfflineEntryMutationReturned {
   };
 }
 
-const createOfflineEntryResolver: LocalResolverFn<
-  CreateEntryOfflineVariables,
+const createOfflineEntryMutationResolver: LocalResolverFn<
+  CreateOfflineEntryMutationVariables,
   Promise<CreateOfflineEntryMutationReturned["createOfflineEntry"]>
 > = async (_, variables, context) => {
   const { client } = context;
@@ -76,7 +82,7 @@ const createOfflineEntryResolver: LocalResolverFn<
   };
 
   experience = (await updateExperienceWithNewEntry(experience)(client, {
-    data: { createEntry: { entry } as CreateEntryMutation_createEntry },
+    data: { createEntry: { entry } as CreateOnlineEntryMutation_createEntry },
   })) as ExperienceFragment;
 
   updateCacheExperienceOfflineEntriesCount(client, experienceId);
@@ -84,15 +90,40 @@ const createOfflineEntryResolver: LocalResolverFn<
   return { id, experience, entry, __typename: "Entry" };
 };
 
-export interface CreateEntryOfflineVariables {
+export interface CreateOfflineEntryMutationVariables {
   dataObjects: (CreateDataObject)[];
   experience: ExperienceFragment;
 }
 
 export const newEntryResolvers = {
   Mutation: {
-    [MUTATION_NAME_createOfflineEntry]: createOfflineEntryResolver,
+    [MUTATION_NAME_createOfflineEntry]: createOfflineEntryMutationResolver,
   },
 
   Query: {},
 };
+
+export function useCreateOfflineEntryMutation(): UseCreateOfflineEntryMutation {
+  return useMutation(CREATE_OFFLINE_ENTRY_MUTATION);
+}
+
+export type CreateOfflineEntryMutationFn = MutationFunction<
+  CreateOfflineEntryMutationReturned,
+  CreateOfflineEntryMutationVariables
+>;
+
+// used to type check test mock calls
+export type CreateOfflineEntryMutationFnOptions = MutationFunctionOptions<
+  CreateOfflineEntryMutationReturned,
+  CreateOfflineEntryMutationVariables
+>;
+
+export type UseCreateOfflineEntryMutation = [
+  CreateOfflineEntryMutationFn,
+  MutationResult<CreateOfflineEntryMutationReturned>,
+];
+
+// component's props should extend this
+export interface CreateOfflineEntryMutationComponentProps {
+  createOfflineEntry: CreateOfflineEntryMutationFn;
+}
