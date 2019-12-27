@@ -1,12 +1,13 @@
 import { useContext, useEffect } from "react";
-import { removeQueriesAndMutationsFromCache } from "../state/resolvers/delete-references-from-cache";
 import { EbnisAppContext } from "../context";
+import { deleteCachedQueriesAndMutationsCleanupFn } from "./delete-cached-queries-and-mutations-cleanup";
 
-export function useDeleteCachedQueriesMutationsOnExit(
+export function useDeleteCachedQueriesAndMutationsOnUnmount(
   mutations: string[],
   shouldDelete?: boolean,
 ) {
   const { cache, persistor } = useContext(EbnisAppContext);
+
 
   useEffect(() => {
     if (!shouldDelete) {
@@ -14,8 +15,7 @@ export function useDeleteCachedQueriesMutationsOnExit(
     }
 
     return () => {
-      removeQueriesAndMutationsFromCache(cache, mutations);
-      persistor.persist();
+      deleteCachedQueriesAndMutationsCleanupFn(cache, mutations, persistor);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shouldDelete]);

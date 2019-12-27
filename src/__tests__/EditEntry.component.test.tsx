@@ -36,6 +36,7 @@ import {
 import { ApolloError } from "apollo-client";
 import { GraphQLError } from "graphql";
 import { toISODatetimeString } from "../components/NewEntry/new-entry.utils";
+import { deleteCachedQueriesAndMutationsCleanupFn } from "../components/delete-cached-queries-and-mutations-cleanup";
 
 ////////////////////////// MOCKS ////////////////////////////
 
@@ -49,7 +50,8 @@ jest.mock("../components/DateField/date-field.component", () => ({
 
 jest.mock("../components/EditEntry/edit-entry.injectables");
 
-jest.mock("../components/use-delete-mutations-on-exit");
+jest.mock("../components/delete-cached-queries-and-mutations-cleanup");
+const mockDeleteCachedQueriesAndMutationsCleanup = deleteCachedQueriesAndMutationsCleanupFn as jest.Mock;
 
 let errorConsoleSpy: jest.SpyInstance;
 
@@ -59,6 +61,10 @@ beforeAll(() => {
 
 afterAll(() => {
   errorConsoleSpy.mockReset();
+});
+
+beforeEach(() => {
+  mockDeleteCachedQueriesAndMutationsCleanup.mockReset();
 });
 
 it("destroys the UI", () => {
@@ -80,13 +86,17 @@ it("destroys the UI", () => {
     },
   });
 
-  render(ui);
+  const { unmount } = render(ui);
+  expect(mockDeleteCachedQueriesAndMutationsCleanup).not.toHaveBeenCalled();
 
   destroyModal();
 
   expect((mockParentDispatch.mock.calls[0][0] as any).type).toEqual(
     ActionTypes.DESTROYED,
   );
+
+  unmount();
+  expect(mockDeleteCachedQueriesAndMutationsCleanup).toHaveBeenCalled();
 });
 
 test("not editing data, no siblings, form errors, server success", async () => {

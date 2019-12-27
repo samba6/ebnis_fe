@@ -46,7 +46,7 @@ import {
 } from "./new-entry.injectables";
 import { EbnisAppContext } from "../../context";
 import { SidebarHeader } from "../SidebarHeader/sidebar-header.component";
-import { useDeleteCachedQueriesMutationsOnExit } from "../use-delete-mutations-on-exit";
+import { useDeleteCachedQueriesAndMutationsOnUnmount } from "../use-delete-cached-queries-mutations-on-unmount";
 import { MUTATION_NAME_createEntry } from "../../graphql/create-entry.mutation";
 import { MUTATION_NAME_createOfflineEntry } from "../../state/resolvers";
 
@@ -95,7 +95,7 @@ export function NewEntry(props: Props) {
 
   // we use getExperience( instead of getExperience so that getExperiences does
   // not get deleted
-  useDeleteCachedQueriesMutationsOnExit(
+  useDeleteCachedQueriesAndMutationsOnUnmount(
     [
       "getExperience(",
       MUTATION_NAME_createEntry,

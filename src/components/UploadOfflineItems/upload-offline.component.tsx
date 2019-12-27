@@ -49,7 +49,7 @@ import { deleteIdsFromCache } from "../../state/resolvers/delete-references-from
 import { deleteExperiencesIdsFromOfflineItemsInCache } from "../../state/resolvers/update-experiences-in-cache";
 import { EXPERIENCES_URL } from "../../routes";
 import { updateCache } from "./update-cache";
-import { useDeleteCachedQueriesMutationsOnExit } from "../use-delete-mutations-on-exit";
+import { useDeleteCachedQueriesAndMutationsOnUnmount } from "../use-delete-cached-queries-mutations-on-unmount";
 import { makeSiteTitle, setDocumentTitle } from "../../constants";
 import { UPLOAD_OFFLINE_ITEMS_TITLE } from "../../constants/upload-offline-title";
 import { IconProps } from "semantic-ui-react";
@@ -146,7 +146,7 @@ export function UploadOfflineItems(props: Props) {
     }
   }, [shouldRedirect, navigate, layoutDispatch]);
 
-  useDeleteCachedQueriesMutationsOnExit(
+  useDeleteCachedQueriesAndMutationsOnUnmount(
     [
       "saveOfflineExperiences",
       "createEntries",

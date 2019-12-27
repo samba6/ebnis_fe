@@ -62,7 +62,7 @@ import {
   useCreateUnsavedExperience,
   ExperienceDefinitionUpdate,
 } from "./experience-definition.injectables";
-import { useDeleteCachedQueriesMutationsOnExit } from "../use-delete-mutations-on-exit";
+import { useDeleteCachedQueriesAndMutationsOnUnmount } from "../use-delete-cached-queries-mutations-on-unmount";
 
 const mainComponentId = "components-experience-definition";
 
@@ -87,7 +87,7 @@ export function ExperienceDefinition(props: Props) {
 
   // we use getExperience( instead of getExperience so that getExperiences does
   // not get deleted
-  useDeleteCachedQueriesMutationsOnExit(["getExperience("], true);
+  useDeleteCachedQueriesAndMutationsOnUnmount(["getExperience("], true);
 
   const DataDefinitionsComponent = (values: FormValues) => (
     arrayHelpers: ArrayHelpers,

@@ -47,7 +47,7 @@ import {
   UpdateDefinitionsOnlineProps,
   UpdateDefinitionsOnlineMutationFn,
 } from "./edit-entry.injectables";
-import { useDeleteCachedQueriesMutationsOnExit } from "../use-delete-mutations-on-exit";
+import { useDeleteCachedQueriesAndMutationsOnUnmount } from "../use-delete-cached-queries-mutations-on-unmount";
 import {
   MUTATION_NAME_updateDataObjects,
   MUTATION_NAME_updateDefinitions,
@@ -76,7 +76,7 @@ export function EditEntryComponent(props: Props) {
     dataStates,
   } = state;
 
-  useDeleteCachedQueriesMutationsOnExit(
+  useDeleteCachedQueriesAndMutationsOnUnmount(
     [MUTATION_NAME_updateDataObjects, MUTATION_NAME_updateDefinitions],
     true,
   );
