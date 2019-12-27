@@ -13,8 +13,8 @@ import {
 } from "../../graphql/apollo-types/ExperienceFragment";
 import {
   UploadOfflineItemsMutation,
-  UploadAllUnsavedsMutation_saveOfflineExperiences,
-  UploadAllUnsavedsMutation_createEntries,
+  UploadOfflineItemsMutation_saveOfflineExperiences,
+  UploadOfflineItemsMutation_createEntries,
 } from "../../graphql/apollo-types/UploadOfflineItemsMutation";
 import ApolloClient, { ApolloError } from "apollo-client";
 import { Dispatch } from "react";
@@ -291,7 +291,7 @@ function entriesErrorsToMap(errors: CreateEntriesErrorsFragment[]) {
 
 function updatePartialOnlineFromUploadResults(
   stateProxy: Draft<StateMachine>,
-  createEntries: (UploadAllUnsavedsMutation_createEntries | null)[] | null,
+  createEntries: (UploadOfflineItemsMutation_createEntries | null)[] | null,
   successState: ExperiencesUploadedResultState,
 ) {
   if (!createEntries) {
@@ -362,7 +362,7 @@ function updatePartialOnlineFromUploadResults(
 function updateCompleteOfflineFromUploadResults(
   stateProxy: Draft<StateMachine>,
   uploadResults:
-    | (UploadAllUnsavedsMutation_saveOfflineExperiences | null)[]
+    | (UploadOfflineItemsMutation_saveOfflineExperiences | null)[]
     | null,
   successState: ExperiencesUploadedResultState,
 ) {

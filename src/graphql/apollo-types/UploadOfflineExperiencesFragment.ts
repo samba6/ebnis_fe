@@ -8,7 +8,7 @@ import { DataTypes } from "./globalTypes";
 // GraphQL fragment: UploadOfflineExperiencesFragment
 // ====================================================
 
-export interface UploadUnsavedExperiencesFragment_experience_dataDefinitions {
+export interface UploadOfflineExperiencesFragment_experience_dataDefinitions {
   __typename: "DataDefinition";
   id: string;
   /**
@@ -28,7 +28,7 @@ export interface UploadUnsavedExperiencesFragment_experience_dataDefinitions {
   clientId: string | null;
 }
 
-export interface UploadUnsavedExperiencesFragment_experience_entries_pageInfo {
+export interface UploadOfflineExperiencesFragment_experience_entries_pageInfo {
   __typename: "PageInfo";
   /**
    * When paginating forwards, are there more items?
@@ -40,7 +40,7 @@ export interface UploadUnsavedExperiencesFragment_experience_entries_pageInfo {
   hasPreviousPage: boolean;
 }
 
-export interface UploadUnsavedExperiencesFragment_experience_entries_edges_node_dataObjects {
+export interface UploadOfflineExperiencesFragment_experience_entries_edges_node_dataObjects {
   __typename: "DataObject";
   id: string;
   data: any;
@@ -53,7 +53,7 @@ export interface UploadUnsavedExperiencesFragment_experience_entries_edges_node_
   updatedAt: any;
 }
 
-export interface UploadUnsavedExperiencesFragment_experience_entries_edges_node {
+export interface UploadOfflineExperiencesFragment_experience_entries_edges_node {
   __typename: "Entry";
   /**
    * Entry ID
@@ -75,10 +75,10 @@ export interface UploadUnsavedExperiencesFragment_experience_entries_edges_node 
   /**
    * The list of data belonging to this entry.
    */
-  dataObjects: (UploadUnsavedExperiencesFragment_experience_entries_edges_node_dataObjects | null)[];
+  dataObjects: (UploadOfflineExperiencesFragment_experience_entries_edges_node_dataObjects | null)[];
 }
 
-export interface UploadUnsavedExperiencesFragment_experience_entries_edges {
+export interface UploadOfflineExperiencesFragment_experience_entries_edges {
   __typename: "EntryEdge";
   /**
    * A cursor for use in pagination
@@ -87,16 +87,16 @@ export interface UploadUnsavedExperiencesFragment_experience_entries_edges {
   /**
    * The item at the end of the edge
    */
-  node: UploadUnsavedExperiencesFragment_experience_entries_edges_node | null;
+  node: UploadOfflineExperiencesFragment_experience_entries_edges_node | null;
 }
 
-export interface UploadUnsavedExperiencesFragment_experience_entries {
+export interface UploadOfflineExperiencesFragment_experience_entries {
   __typename: "EntryConnection";
-  pageInfo: UploadUnsavedExperiencesFragment_experience_entries_pageInfo;
-  edges: (UploadUnsavedExperiencesFragment_experience_entries_edges | null)[] | null;
+  pageInfo: UploadOfflineExperiencesFragment_experience_entries_pageInfo;
+  edges: (UploadOfflineExperiencesFragment_experience_entries_edges | null)[] | null;
 }
 
-export interface UploadUnsavedExperiencesFragment_experience {
+export interface UploadOfflineExperiencesFragment_experience {
   __typename: "Experience";
   /**
    * The title of the experience
@@ -120,34 +120,34 @@ export interface UploadUnsavedExperiencesFragment_experience {
   /**
    * The field definitions used for the experience entries
    */
-  dataDefinitions: (UploadUnsavedExperiencesFragment_experience_dataDefinitions | null)[];
+  dataDefinitions: (UploadOfflineExperiencesFragment_experience_dataDefinitions | null)[];
   /**
    * The entries of the experience - can be paginated
    */
-  entries: UploadUnsavedExperiencesFragment_experience_entries;
+  entries: UploadOfflineExperiencesFragment_experience_entries;
 }
 
-export interface UploadUnsavedExperiencesFragment_experienceErrors_errors_dataDefinitionsErrors_errors {
+export interface UploadOfflineExperiencesFragment_experienceErrors_errors_dataDefinitionsErrors_errors {
   __typename: "DataDefinitionError";
   name: string | null;
   type: string | null;
 }
 
-export interface UploadUnsavedExperiencesFragment_experienceErrors_errors_dataDefinitionsErrors {
+export interface UploadOfflineExperiencesFragment_experienceErrors_errors_dataDefinitionsErrors {
   __typename: "DataDefinitionErrors";
   index: number;
-  errors: UploadUnsavedExperiencesFragment_experienceErrors_errors_dataDefinitionsErrors_errors;
+  errors: UploadOfflineExperiencesFragment_experienceErrors_errors_dataDefinitionsErrors_errors;
 }
 
-export interface UploadUnsavedExperiencesFragment_experienceErrors_errors {
+export interface UploadOfflineExperiencesFragment_experienceErrors_errors {
   __typename: "CreateExperienceErrors";
   clientId: string | null;
   title: string | null;
   user: string | null;
-  dataDefinitionsErrors: (UploadUnsavedExperiencesFragment_experienceErrors_errors_dataDefinitionsErrors | null)[] | null;
+  dataDefinitionsErrors: (UploadOfflineExperiencesFragment_experienceErrors_errors_dataDefinitionsErrors | null)[] | null;
 }
 
-export interface UploadUnsavedExperiencesFragment_experienceErrors {
+export interface UploadOfflineExperiencesFragment_experienceErrors {
   __typename: "CreateOfflineExperienceErrors";
   /**
    * The client ID of the failing experience. As user may not have provided a
@@ -162,23 +162,23 @@ export interface UploadUnsavedExperiencesFragment_experienceErrors {
   /**
    * The error object representing the insert failure reasons
    */
-  errors: UploadUnsavedExperiencesFragment_experienceErrors_errors;
+  errors: UploadOfflineExperiencesFragment_experienceErrors_errors;
 }
 
-export interface UploadUnsavedExperiencesFragment_entriesErrors_errors_dataObjectsErrors_errors {
+export interface UploadOfflineExperiencesFragment_entriesErrors_errors_dataObjectsErrors_errors {
   __typename: "DataObjectError";
   data: string | null;
   definition: string | null;
   definitionId: string | null;
 }
 
-export interface UploadUnsavedExperiencesFragment_entriesErrors_errors_dataObjectsErrors {
+export interface UploadOfflineExperiencesFragment_entriesErrors_errors_dataObjectsErrors {
   __typename: "DataObjectsErrors";
   index: number;
-  errors: UploadUnsavedExperiencesFragment_entriesErrors_errors_dataObjectsErrors_errors;
+  errors: UploadOfflineExperiencesFragment_entriesErrors_errors_dataObjectsErrors_errors;
 }
 
-export interface UploadUnsavedExperiencesFragment_entriesErrors_errors {
+export interface UploadOfflineExperiencesFragment_entriesErrors_errors {
   __typename: "CreateEntryErrors";
   /**
    * May be because client ID is not unique for experience
@@ -200,10 +200,10 @@ export interface UploadUnsavedExperiencesFragment_entriesErrors_errors {
   /**
    * Did we fail because there are errors in the data object object?
    */
-  dataObjectsErrors: (UploadUnsavedExperiencesFragment_entriesErrors_errors_dataObjectsErrors | null)[] | null;
+  dataObjectsErrors: (UploadOfflineExperiencesFragment_entriesErrors_errors_dataObjectsErrors | null)[] | null;
 }
 
-export interface UploadUnsavedExperiencesFragment_entriesErrors {
+export interface UploadOfflineExperiencesFragment_entriesErrors {
   __typename: "CreateEntriesErrors";
   /**
    * The experience ID of the entry which fails to save
@@ -213,7 +213,7 @@ export interface UploadUnsavedExperiencesFragment_entriesErrors {
    * The client ID of the entry which fails to save
    */
   clientId: string;
-  errors: UploadUnsavedExperiencesFragment_entriesErrors_errors;
+  errors: UploadOfflineExperiencesFragment_entriesErrors_errors;
 }
 
 export interface UploadOfflineExperiencesFragment {
@@ -222,14 +222,14 @@ export interface UploadOfflineExperiencesFragment {
    * The experience which was successfully inserted
    *   - will be null if experience fails to insert
    */
-  experience: UploadUnsavedExperiencesFragment_experience | null;
+  experience: UploadOfflineExperiencesFragment_experience | null;
   /**
    * If the experience fails to insert, then this is the error object
    *   returned
    */
-  experienceErrors: UploadUnsavedExperiencesFragment_experienceErrors | null;
+  experienceErrors: UploadOfflineExperiencesFragment_experienceErrors | null;
   /**
    * A list of error objects denoting entries which fail to insert
    */
-  entriesErrors: (UploadUnsavedExperiencesFragment_entriesErrors | null)[] | null;
+  entriesErrors: (UploadOfflineExperiencesFragment_entriesErrors | null)[] | null;
 }

@@ -60,7 +60,7 @@ import {
   useGetAllUnsavedQuery,
   useUploadOfflineExperiencesMutation,
   useUploadOfflineItemsMutation,
-  useUploadOnlineEntriesMutation,
+  useUploadOfflineEntriesMutation,
   addUploadOfflineItemsResolvers,
 } from "./upload-offline.injectables";
 import {
@@ -84,7 +84,7 @@ export function UploadOfflineItems(props: Props) {
   const [uploadUnsavedExperiences] = useUploadOfflineExperiencesMutation();
   const [uploadAllUnsaveds] = useUploadOfflineItemsMutation();
 
-  const [uploadSavedExperiencesEntries] = useUploadOnlineEntriesMutation();
+  const [uploadSavedExperiencesEntries] = useUploadOfflineEntriesMutation();
 
   const { data, loading } = useGetAllUnsavedQuery();
   const getOfflineItems = data && data.getOfflineItems;

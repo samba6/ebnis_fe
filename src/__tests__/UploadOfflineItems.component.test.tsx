@@ -33,8 +33,8 @@ import {
 import { CreateEntryMutationVariables } from "../graphql/apollo-types/CreateEntryMutation";
 import {
   UploadOfflineItemsMutation,
-  UploadAllUnsavedsMutation_createEntries,
-  UploadAllUnsavedsMutation_saveOfflineExperiences,
+  UploadOfflineItemsMutation_createEntries,
+  UploadOfflineItemsMutation_saveOfflineExperiences,
 } from "../graphql/apollo-types/UploadOfflineItemsMutation";
 import { Props as EntryProps } from "../components/Entry/entry.utils";
 import { DataObjectFragment } from "../graphql/apollo-types/DataObjectFragment";
@@ -58,7 +58,7 @@ import { EbnisAppProvider } from "../context";
 import {
   useUploadOfflineExperiencesMutation,
   useUploadOfflineItemsMutation,
-  useUploadOnlineEntriesMutation,
+  useUploadOfflineEntriesMutation,
 } from "../components/UploadOfflineItems/upload-offline.injectables";
 import { act } from "react-dom/test-utils";
 import {
@@ -124,7 +124,7 @@ jest.mock(
 
     useUploadOfflineExperiencesMutation: jest.fn(),
     useUploadOfflineItemsMutation: jest.fn(),
-    useUploadOnlineEntriesMutation: jest.fn(),
+    useUploadOfflineEntriesMutation: jest.fn(),
     addUploadOfflineItemsResolvers: jest.fn(),
   }),
 );
@@ -138,7 +138,7 @@ const mockDeleteIdsFromCache = deleteIdsFromCache as jest.Mock;
 const mockDeleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache = deleteExperiencesIdsFromOfflineItemsInCache as jest.Mock;
 const mockUseUploadUnsavedExperiencesMutation = useUploadOfflineExperiencesMutation as jest.Mock;
 const mockUseUploadAllUnsavedsMutation = useUploadOfflineItemsMutation as jest.Mock;
-const mockUseUploadSavedExperiencesEntriesMutation = useUploadOnlineEntriesMutation as jest.Mock;
+const mockUseUploadOnlineExperiencesOfflineEntriesMutation = useUploadOfflineEntriesMutation as jest.Mock;
 const mockRemoveQueriesAndMutationsFromCache = removeQueriesAndMutationsFromCache as jest.Mock;
 
 ////////////////////////// END MOCK ////////////////////////////
@@ -151,7 +151,7 @@ beforeEach(() => {
   mockIsConnected.mockReset();
   mockEntry.mockClear();
   mockGetAllUnsavedQueryReturnValue = null;
-  mockUseUploadSavedExperiencesEntriesMutation.mockReset();
+  mockUseUploadOnlineExperiencesOfflineEntriesMutation.mockReset();
   mockUseUploadUnsavedExperiencesMutation.mockReset();
   mockUseUploadAllUnsavedsMutation.mockReset();
   mockDeleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache.mockReset();
@@ -256,7 +256,7 @@ describe("components", () => {
     const {
       ui,
       mockUploadOfflineExperiences,
-      mockUploadSavedExperiencesEntries,
+      mockUploadOnlineExperiencesOfflineEntries,
       mockUploadAllUnsaveds,
     } = makeComp({
       getOfflineItems: {
@@ -272,7 +272,7 @@ describe("components", () => {
       } as GetOfflineItemsSummary,
     });
 
-    mockUploadSavedExperiencesEntries.mockResolvedValue({
+    mockUploadOnlineExperiencesOfflineEntries.mockResolvedValue({
       data: {
         createEntries: [
           {
@@ -351,13 +351,13 @@ describe("components", () => {
       return document.getElementById(domOnlineTitle1Id) as HTMLElement;
     });
 
-    expect(mockUploadSavedExperiencesEntries).toHaveBeenCalled();
+    expect(mockUploadOnlineExperiencesOfflineEntries).toHaveBeenCalled();
 
     expect($elm.classList).toContain(
       makeExperienceUploadStatusClassNames(true)[1],
     );
 
-    const uploadedEntry = ((mockUploadSavedExperiencesEntries.mock
+    const uploadedEntry = ((mockUploadOnlineExperiencesOfflineEntries.mock
       .calls[0][0] as any).variables as CreateEntryMutationVariables).input[0];
 
     expect(uploadedEntry).toEqual(entry);
@@ -417,7 +417,7 @@ describe("components", () => {
     const {
       ui,
       mockUploadOfflineExperiences,
-      mockUploadSavedExperiencesEntries,
+      mockUploadOnlineExperiencesOfflineEntries,
       mockUploadAllUnsaveds,
     } = makeComp({
       getOfflineItems: {
@@ -532,7 +532,7 @@ describe("components", () => {
 
     expect(uploadedEntries[0]).toEqual(entry);
 
-    expect(mockUploadSavedExperiencesEntries).not.toHaveBeenCalled();
+    expect(mockUploadOnlineExperiencesOfflineEntries).not.toHaveBeenCalled();
     expect(mockUploadAllUnsaveds).not.toHaveBeenCalled();
 
     expect(document.getElementById(uploadBtnDomId)).toBeNull();
@@ -566,7 +566,7 @@ describe("components", () => {
     const {
       ui,
       mockUploadOfflineExperiences,
-      mockUploadSavedExperiencesEntries,
+      mockUploadOnlineExperiencesOfflineEntries,
       mockUploadAllUnsaveds,
     } = makeComp({
       getOfflineItems: {
@@ -636,7 +636,7 @@ describe("components", () => {
 
             experienceId: "2",
           },
-        ] as UploadAllUnsavedsMutation_createEntries[],
+        ] as UploadOfflineItemsMutation_createEntries[],
 
         saveOfflineExperiences: [
           {
@@ -649,7 +649,7 @@ describe("components", () => {
               },
             },
           },
-        ] as UploadAllUnsavedsMutation_saveOfflineExperiences[],
+        ] as UploadOfflineItemsMutation_saveOfflineExperiences[],
       } as UploadOfflineItemsMutation,
     });
 
@@ -795,7 +795,7 @@ describe("components", () => {
     expect(mockUploadAllUnsaveds).toHaveBeenCalled();
 
     expect(mockUploadOfflineExperiences).not.toHaveBeenCalled();
-    expect(mockUploadSavedExperiencesEntries).not.toHaveBeenCalled();
+    expect(mockUploadOnlineExperiencesOfflineEntries).not.toHaveBeenCalled();
 
     expect(
       document.getElementById("upload-triggered-error-icon-partly-saved"),
@@ -1195,7 +1195,7 @@ describe("components", () => {
                 },
               },
             ],
-          } as UploadAllUnsavedsMutation_saveOfflineExperiences,
+          } as UploadOfflineItemsMutation_saveOfflineExperiences,
         ],
       },
     });
@@ -1498,10 +1498,10 @@ function makeComp(args: Args = {}) {
     mockUploadOfflineExperiences,
   ]);
 
-  const mockUploadSavedExperiencesEntries = jest.fn();
+  const mockUploadOnlineExperiencesOfflineEntries = jest.fn();
 
-  mockUseUploadSavedExperiencesEntriesMutation.mockReturnValue([
-    mockUploadSavedExperiencesEntries,
+  mockUseUploadOnlineExperiencesOfflineEntriesMutation.mockReturnValue([
+    mockUploadOnlineExperiencesOfflineEntries,
   ]);
 
   const mockUploadAllUnsaveds = jest.fn();
@@ -1535,7 +1535,7 @@ function makeComp(args: Args = {}) {
     ),
 
     mockUploadOfflineExperiences,
-    mockUploadSavedExperiencesEntries,
+    mockUploadOnlineExperiencesOfflineEntries,
     mockUploadAllUnsaveds,
     mockLayoutDispatch,
     ...routerProps,

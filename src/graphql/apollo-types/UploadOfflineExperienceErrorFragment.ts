@@ -6,24 +6,24 @@
 // GraphQL fragment: UploadOfflineExperienceErrorFragment
 // ====================================================
 
-export interface UploadUnsavedExperiencesExperienceErrorFragment_errors_dataDefinitionsErrors_errors {
+export interface UploadOfflineExperienceErrorFragment_errors_dataDefinitionsErrors_errors {
   __typename: "DataDefinitionError";
   name: string | null;
   type: string | null;
 }
 
-export interface UploadUnsavedExperiencesExperienceErrorFragment_errors_dataDefinitionsErrors {
+export interface UploadOfflineExperienceErrorFragment_errors_dataDefinitionsErrors {
   __typename: "DataDefinitionErrors";
   index: number;
-  errors: UploadUnsavedExperiencesExperienceErrorFragment_errors_dataDefinitionsErrors_errors;
+  errors: UploadOfflineExperienceErrorFragment_errors_dataDefinitionsErrors_errors;
 }
 
-export interface UploadUnsavedExperiencesExperienceErrorFragment_errors {
+export interface UploadOfflineExperienceErrorFragment_errors {
   __typename: "CreateExperienceErrors";
   clientId: string | null;
   title: string | null;
   user: string | null;
-  dataDefinitionsErrors: (UploadUnsavedExperiencesExperienceErrorFragment_errors_dataDefinitionsErrors | null)[] | null;
+  dataDefinitionsErrors: (UploadOfflineExperienceErrorFragment_errors_dataDefinitionsErrors | null)[] | null;
 }
 
 export interface UploadOfflineExperienceErrorFragment {
@@ -41,5 +41,5 @@ export interface UploadOfflineExperienceErrorFragment {
   /**
    * The error object representing the insert failure reasons
    */
-  errors: UploadUnsavedExperiencesExperienceErrorFragment_errors;
+  errors: UploadOfflineExperienceErrorFragment_errors;
 }
