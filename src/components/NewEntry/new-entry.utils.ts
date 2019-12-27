@@ -14,7 +14,7 @@ import {
 } from "../../graphql/apollo-types/CreateOnlineEntryMutation";
 import dateFnFormat from "date-fns/format";
 import parseISO from "date-fns/parseISO";
-import { CreateOnlineEntryComponentProps } from "../../graphql/create-entry.mutation";
+import { CreateOnlineEntryMutationComponentProps } from "../../graphql/create-entry.mutation";
 import { CreateOfflineEntryMutationComponentProps } from "./new-entry.resolvers";
 
 const NEW_LINE_REGEX = /\n/g;
@@ -79,7 +79,7 @@ export interface NewEntryCallerProps
 }
 
 export type NewEntryComponentProps = NewEntryCallerProps &
-  CreateOnlineEntryComponentProps &
+  CreateOnlineEntryMutationComponentProps &
   CreateOfflineEntryMutationComponentProps;
 
 export type FormObjVal = Date | string | number;
