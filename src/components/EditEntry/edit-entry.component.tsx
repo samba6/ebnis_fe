@@ -1,4 +1,10 @@
-import React, { useReducer, useContext, Fragment, useEffect } from "react";
+import React, {
+  useReducer,
+  useContext,
+  Fragment,
+  useEffect,
+  useCallback,
+} from "react";
 import {
   EditEntryComponentProps,
   ActionTypes,
@@ -92,6 +98,17 @@ export function EditEntryComponent(props: EditEntryComponentProps) {
     }
   }, [effects]);
 
+  const onSubmit = useCallback(function onSubmitCallback() {
+    dispatch({
+      type: ActionTypes.SUBMITTING,
+      createOnlineEntry,
+      updateDefinitionsOnline,
+      updateDefinitionsAndDataOnline,
+      updateDataObjectsOnline,
+      dispatch,
+    });
+  }, []);
+
   useDeleteCachedQueriesAndMutationsOnUnmount(
     [MUTATION_NAME_updateDataObjects, MUTATION_NAME_updateDefinitions],
     true,
@@ -155,15 +172,7 @@ export function EditEntryComponent(props: EditEntryComponentProps) {
                           editingData,
                           editingDefinition,
                         )}
-                        onSubmit={submit({
-                          dispatch,
-                          globalState: state,
-                          updateDataObjectsOnline,
-                          updateDefinitionsAndDataOnline,
-                          updateDefinitionsOnline,
-                          editEntryUpdateProp,
-                          createOnlineEntry,
-                        })}
+                        onSubmit={onSubmit}
                       />
                     )}
 
@@ -185,15 +194,7 @@ export function EditEntryComponent(props: EditEntryComponentProps) {
                   type="submit"
                   id="edit-entry-submit"
                   className="edit-entry-definition-submit"
-                  onClick={submit({
-                    dispatch,
-                    globalState: state,
-                    updateDataObjectsOnline,
-                    updateDefinitionsAndDataOnline,
-                    updateDefinitionsOnline,
-                    editEntryUpdateProp,
-                    createOnlineEntry,
-                  })}
+                  onClick={onSubmit}
                 >
                   Submit
                 </Button>
@@ -285,7 +286,7 @@ function DataComponent(props: DataComponentProps) {
 
   const idPrefix = `edit-entry-data-${id}`;
 
-  const component = getDataComponent(
+  const component = getComponentFromDataType(
     state.context.defaults.type,
     id,
     dispatch,
@@ -293,7 +294,7 @@ function DataComponent(props: DataComponentProps) {
     formValue,
   );
 
-  const errors = getDataFormErrors(state);
+  const formErrorsComponent = getFormErrorsComponent(state);
 
   return (
     <Form.Field
@@ -302,18 +303,20 @@ function DataComponent(props: DataComponentProps) {
         "data--success":
           state.value === "unchanged" && state.unchanged.context.anyEditSuccess,
       })}
-      error={!!errors}
+      error={!!formErrorsComponent}
     >
       {component}
 
-      {!!errors && (
-        <FormCtrlError id={`${idPrefix}-error`}>{errors}</FormCtrlError>
+      {!!formErrorsComponent && (
+        <FormCtrlError id={`${idPrefix}-error`}>
+          {formErrorsComponent}
+        </FormCtrlError>
       )}
     </Form.Field>
   );
 }
 
-function getDataComponent(
+function getComponentFromDataType(
   type: DataTypes,
   id: string,
   dispatch: DispatchType,
@@ -519,27 +522,6 @@ function SubmissionErrorsComponent({
   ) : null;
 }
 
-function submit(args: SubmitArgs) {
-  return async function submitAllInner() {
-    const {
-      dispatch,
-      updateDefinitionsOnline,
-      createOnlineEntry,
-      updateDefinitionsAndDataOnline,
-      updateDataObjectsOnline,
-    } = args;
-
-    dispatch({
-      type: ActionTypes.SUBMITTING,
-      createOnlineEntry,
-      updateDefinitionsOnline,
-      updateDefinitionsAndDataOnline,
-      updateDataObjectsOnline,
-      dispatch,
-    });
-  };
-}
-
 function getIdOfSubmittingDefinition(
   id: string,
   editingData: PrimaryState["editingData"],
@@ -576,7 +558,7 @@ function getDefinitionFormError(state: DefinitionState) {
   return null;
 }
 
-function getDataFormErrors(state: DataState) {
+function getFormErrorsComponent(state: DataState) {
   if (state.value === "changed") {
     const { changed } = state;
 
@@ -642,16 +624,6 @@ interface DataComponentProps {
 }
 
 type E = React.ChangeEvent<HTMLInputElement>;
-
-interface SubmitArgs
-  extends UpdateDefinitionsAndDataOnlineMutationComponentProps,
-    UpdateDataObjectsOnlineMutationComponentProps,
-    UpdateDefinitionsOnlineMutationComponentProps,
-    CreateOnlineEntryMutationComponentProps,
-    EditEntryUpdateProps {
-  dispatch: DispatchType;
-  globalState: IStateMachine;
-}
 
 // istanbul ignore next:
 export function EditEntry(props: EditEntryCallerProps) {
