@@ -46,6 +46,7 @@ import {
   CreateOnlineEntryMutationFnOptions,
   CreateEntryOnlineMutationResult,
 } from "../graphql/create-entry.mutation";
+import { editEntryUpdate } from "../components/EditEntry/edit-entry.injectables";
 
 ////////////////////////// MOCKS ////////////////////////////
 
@@ -58,6 +59,7 @@ jest.mock("../components/DateField/date-field.component", () => ({
 }));
 
 jest.mock("../components/EditEntry/edit-entry.injectables");
+const mockEditEntryUpdate = editEntryUpdate as jest.Mock;
 
 jest.mock("../components/delete-cached-queries-and-mutations-cleanup");
 const mockDeleteCachedQueriesAndMutationsCleanup = deleteCachedQueriesAndMutationsCleanupFn as jest.Mock;
@@ -1274,8 +1276,8 @@ function makeComp({
   const mockParentDispatch = jest.fn();
   const mockUpdateDefinitionsAndDataOnline = jest.fn();
   const mockUpdateDataOnline = jest.fn();
-  const mockEditEntryUpdate = jest.fn();
   const mockCreateEntryOnline = jest.fn();
+  mockEditEntryUpdate.mockReset();
 
   return {
     ui: (

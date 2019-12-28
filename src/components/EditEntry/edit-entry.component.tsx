@@ -10,7 +10,6 @@ import {
   DataState,
   EditEnryContext,
   IStateMachine,
-  DataStates,
   SubmissionResponseState,
   PrimaryState,
   EditEntryCallerProps,
@@ -24,20 +23,14 @@ import Input from "semantic-ui-react/dist/commonjs/elements/Input";
 import Modal from "semantic-ui-react/dist/commonjs/modules/Modal";
 import makeClassNames from "classnames";
 import { FormCtrlError } from "../FormCtrlError/form-ctrl-error.component";
-import {
-  UpdateDefinitionInput,
-  UpdateDataObjectInput,
-} from "../../graphql/apollo-types/globalTypes";
 import "./edit-entry.styles.scss";
 import { SubmittingOverlay } from "../SubmittingOverlay/submitting-overlay";
 import { componentFromDataType } from "../NewEntry/component-from-data-type";
 import { FormObjVal } from "../Experience/experience.utils";
 import { InputOnChangeData } from "semantic-ui-react";
 import { DataTypes } from "../../graphql/apollo-types/globalTypes";
-import { formObjToString } from "../NewEntry/new-entry.utils";
 import { UpdateDataObjectsResponseFragment_fieldErrors } from "../../graphql/apollo-types/UpdateDataObjectsResponseFragment";
 import { ErrorBoundary } from "../ErrorBoundary/error-boundary.component";
-import { ApolloError } from "apollo-client";
 import {
   editEntryUpdate,
   useUpdateDataObjectsOnlineMutation,
@@ -93,7 +86,8 @@ export function EditEntryComponent(props: EditEntryComponentProps) {
     if (effects.value === EFFECT_VALUE_HAS_EFFECTS) {
       for (const { func, args } of effects[EFFECT_VALUE_HAS_EFFECTS].context
         .effects) {
-        func(args);
+        /* eslint-disable-next-line @typescript-eslint/no-explicit-any*/
+        func(args as any);
       }
     }
   }, [effects]);
@@ -525,178 +519,25 @@ function SubmissionErrorsComponent({
   ) : null;
 }
 
-function getDefinitionsToSubmit(allDefinitionsStates: DefinitionsStates) {
-  const input: UpdateDefinitionInput[] = [];
-  const withErrors: string[] = [];
-
-  for (const [id, state] of Object.entries(allDefinitionsStates)) {
-    if (state.value === "editing" && state.editing.value === "changed") {
-      const name = state.editing.context.formValue.trim();
-
-      if (name.length < 2) {
-        withErrors.push(id);
-      } else {
-        input.push({
-          id,
-          name,
-        });
-      }
-    }
-  }
-
-  return [input, withErrors];
-}
-
 function submit(args: SubmitArgs) {
   return async function submitAllInner() {
     const {
       dispatch,
-      globalState,
-      updateDefinitionsAndDataOnline,
-      editEntryUpdateProp,
-      updateDataObjectsOnline,
       updateDefinitionsOnline,
       createOnlineEntry,
+      updateDefinitionsAndDataOnline,
+      updateDataObjectsOnline,
     } = args;
-
-    const [
-      definitionsInput,
-      definitionsWithFormErrors,
-    ] = getDefinitionsToSubmit(globalState.definitionsStates) as [
-      UpdateDefinitionInput[],
-      string[],
-    ];
-
-    const [dataInput] = getDataObjectsToSubmit(globalState.dataStates);
 
     dispatch({
       type: ActionTypes.SUBMITTING,
-      submittedCount:
-        definitionsInput.length +
-        definitionsWithFormErrors.length +
-        dataInput.length,
       createOnlineEntry,
+      updateDefinitionsOnline,
+      updateDefinitionsAndDataOnline,
+      updateDataObjectsOnline,
       dispatch,
     });
-
-    if (definitionsWithFormErrors.length !== 0) {
-      dispatch({
-        type: ActionTypes.DEFINITION_FORM_ERRORS,
-        ids: definitionsWithFormErrors,
-      });
-
-      return;
-    }
-
-    let success = false;
-
-    try {
-      const { experienceId } = globalState.primaryState.context;
-
-      if (dataInput.length === 0) {
-        const result = await updateDefinitionsOnline({
-          variables: {
-            input: {
-              experienceId,
-              definitions: definitionsInput,
-            },
-          },
-          update: editEntryUpdateProp,
-        });
-
-        const data = result && result.data;
-
-        if (data) {
-          success = true;
-          dispatch({
-            type: ActionTypes.DEFINITIONS_SUBMISSION_RESPONSE,
-            ...data,
-          });
-        }
-      } else if (definitionsInput.length === 0) {
-        const result1 = await updateDataObjectsOnline({
-          variables: {
-            input: dataInput,
-          },
-
-          update: editEntryUpdateProp,
-        });
-
-        const successResult = result1 && result1.data;
-
-        if (successResult) {
-          success = true;
-          dispatch({
-            type: ActionTypes.DATA_OBJECTS_SUBMISSION_RESPONSE,
-            ...successResult,
-          });
-        }
-      } else {
-        const result = await updateDefinitionsAndDataOnline({
-          variables: {
-            definitionsInput: {
-              experienceId,
-
-              definitions: definitionsInput,
-            },
-            dataInput,
-          },
-
-          update: editEntryUpdateProp,
-        });
-
-        const successResult = result && result.data;
-
-        if (successResult) {
-          success = true;
-          dispatch({
-            type: ActionTypes.DEFINITION_AND_DATA_SUBMISSION_RESPONSE,
-            ...successResult,
-          });
-        }
-      }
-
-      if (success === false) {
-        dispatch({
-          type: ActionTypes.OTHER_ERRORS,
-        });
-      }
-    } catch (errors) {
-      if (errors instanceof ApolloError) {
-        dispatch({
-          type: ActionTypes.APOLLO_ERRORS,
-          errors,
-        });
-      } else {
-        dispatch({
-          type: ActionTypes.OTHER_ERRORS,
-        });
-      }
-    }
   };
-}
-
-function getDataObjectsToSubmit(states: DataStates) {
-  const inputs: UpdateDataObjectInput[] = [];
-
-  for (const [id, state] of Object.entries(states)) {
-    if (state.value === "changed") {
-      const {
-        context: {
-          defaults: { type },
-        },
-        changed: {
-          context: { formValue },
-        },
-      } = state;
-      inputs.push({
-        id,
-        data: `{"${type.toLowerCase()}":"${formObjToString(type, formValue)}"}`,
-      });
-    }
-  }
-
-  return [inputs];
 }
 
 function getIdOfSubmittingDefinition(
