@@ -5,7 +5,7 @@ import { render, wait, waitForElement } from "@testing-library/react";
 import { EditEntryComponent } from "../components/EditEntry/edit-entry.component";
 import {
   EditEntryComponentProps,
-  ActionTypes,
+  ActionType,
 } from "../components/EditEntry/edit-entry-utils";
 import { EntryFragment } from "../graphql/apollo-types/EntryFragment";
 import { DataDefinitionFragment } from "../graphql/apollo-types/DataDefinitionFragment";
@@ -103,7 +103,7 @@ it("destroys the UI", () => {
   destroyModal();
 
   expect((mockParentDispatch.mock.calls[0][0] as any).type).toEqual(
-    ActionTypes.DESTROYED,
+    ActionType.DESTROYED,
   );
 
   unmount();
@@ -1156,16 +1156,38 @@ test("not editing data apollo errors", async () => {
   expect($response).not.toBeNull();
 });
 
-test.skip("editing offline entry, submitting online", async () => {
-  const experienceId = "ex";
-  const definitionId = "int";
-  const dataOnlineId = "don";
-  const dataOfflineId = "dof";
+test.only("editing offline entry, one data object updated, one not updated, submitting online", async () => {
+  const definition1Id = "int";
+  const data1OnlineId = "d1on";
+  const data1OfflineId = "d1of";
+
+  const definition2Id = "dec";
+  const data2OnlineId = "d2on";
+  const data2OfflineId = "d2of";
 
   /**
-   * Given there is entry created offline
+   * Given there is entry created offline with 2 data objects:
+   * 1 - will be updated using the component
+   * 2 - will be submitted unchanged
    */
   const offlineEntryId = makeOfflineId(1);
+  const experienceId = "ex";
+  const offlineEntry = {
+    id: offlineEntryId,
+    experienceId,
+    dataObjects: [
+      {
+        id: data1OfflineId,
+        definitionId: definition1Id,
+        data: `{"integer":1}`,
+      },
+      {
+        id: data2OfflineId,
+        definitionId: definition2Id,
+        data: `{"decimal":1.1}`,
+      },
+    ] as DataObjectFragment[],
+  };
 
   /**
    * And server will respond with success on submission
@@ -1180,10 +1202,16 @@ test.skip("editing offline entry, submitting online", async () => {
 
           dataObjects: [
             {
-              definitionId,
-              id: dataOnlineId,
-              clientId: dataOfflineId,
+              definitionId: definition1Id,
+              id: data1OnlineId,
+              clientId: data1OfflineId,
               data: `{"integer":2}`,
+            },
+            {
+              definitionId: definition2Id,
+              id: data2OnlineId,
+              clientId: data2OfflineId,
+              data: `{"decimal":1.1}`,
             },
           ],
         },
@@ -1193,25 +1221,21 @@ test.skip("editing offline entry, submitting online", async () => {
 
   const { ui, mockCreateEntryOnline } = makeComp({
     props: {
-      entry: {
-        id: offlineEntryId,
-        dataObjects: [
-          {
-            id: dataOfflineId,
-            definitionId,
-            data: `{"integer":1}`,
-          },
-        ] as DataObjectFragment[],
-      } as EntryFragment,
+      entry: offlineEntry as EntryFragment,
 
       experience: {
         id: experienceId,
 
         dataDefinitions: [
           {
-            id: definitionId,
+            id: definition1Id,
             type: DataTypes.INTEGER,
             name: "int",
+          },
+          {
+            id: definition2Id,
+            type: DataTypes.DECIMAL,
+            name: "dec",
           },
         ] as DataDefinitionFragment[],
       } as ExperienceFragment,
@@ -1219,16 +1243,16 @@ test.skip("editing offline entry, submitting online", async () => {
   });
 
   /**
-   * Which we edit entry with the component
+   * When the component is launched
    */
   render(ui);
 
   mockCreateEntryOnline.mockResolvedValue(serverResponse);
 
   /**
-   * When we update entry data
+   * And we update entry data 1 to a new value
    */
-  getDataInput(dataOfflineId, "2");
+  getDataInput(data1OfflineId, "2");
 
   /**
    * And submit the form
@@ -1239,24 +1263,33 @@ test.skip("editing offline entry, submitting online", async () => {
   // expect(getDataError(dataOfflineId)).toBeNull();
   // expect(domDataInput.classList).toContain("data--success");
 
+  /**
+   * Then message showing successful submission should be visible
+   */
   await waitForElement(getSubmissionSuccessResponseDom);
 
+  /**
+   * And correct data should have been uploaded to the server
+   */
   const mock = mockCreateEntryOnline.mock.calls[0][0] as ToVariables<
     CreateOnlineEntryMutationVariables
   >;
 
-  const variables: CreateOnlineEntryMutationFnOptions = {
-    variables: {
-      input: {
-        experienceId,
-        dataObjects: [
-          {
-            definitionId,
-            clientId: "offline-id",
-            data: `{"int":"2"}`,
-          },
-        ],
-      },
+  const variables: CreateOnlineEntryMutationFnOptions["variables"] = {
+    input: {
+      experienceId,
+      dataObjects: [
+        {
+          definitionId: definition1Id,
+          clientId: data1OfflineId,
+          data: `{"integer":"2"}`,
+        },
+        {
+          definitionId: definition2Id,
+          clientId: data2OfflineId,
+          data: `{"decimal":"1.1"}`,
+        },
+      ],
     },
   };
 
@@ -1286,7 +1319,6 @@ function makeComp({
         updateDefinitionsOnline={mockUpdateDefinitionsOnline}
         updateDataObjectsOnline={mockUpdateDataOnline}
         updateDefinitionsAndDataOnline={mockUpdateDefinitionsAndDataOnline}
-        editEntryUpdateProp={mockEditEntryUpdate}
         dispatch={mockParentDispatch}
         {...props}
       />

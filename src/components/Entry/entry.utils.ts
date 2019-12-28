@@ -3,11 +3,11 @@ import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragmen
 import { EntryFragment } from "../../graphql/apollo-types/EntryFragment";
 import { Reducer, Dispatch } from "react";
 import {
-  ActionTypes as EditEntryActionTypes,
+  ActionType as EditEntryActionTypes,
   Action as EditEntryAction,
 } from "../EditEntry/edit-entry-utils";
 
-export enum ActionTypes {
+export enum ActionType {
   editClicked = "@components/entry/edit-clicked",
 }
 
@@ -16,7 +16,7 @@ export const reducer: Reducer<State, EntryAction> = (
   { type },
 ) => {
   switch (type) {
-    case ActionTypes.editClicked: {
+    case ActionType.editClicked: {
       return {
         ...previousState,
         stateValue: "editing",
@@ -45,7 +45,7 @@ export type DispatchType = Dispatch<EntryAction>;
 export type EntryAction =
   | EditEntryAction
   | {
-      type: ActionTypes.editClicked;
+      type: ActionType.editClicked;
     };
 
 export interface Props extends EbnisComponentProps {

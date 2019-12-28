@@ -7,7 +7,7 @@ import React, {
 } from "react";
 import {
   EditEntryComponentProps,
-  ActionTypes,
+  ActionType,
   initStateFromProps,
   reducer,
   DefinitionState,
@@ -38,7 +38,6 @@ import { DataTypes } from "../../graphql/apollo-types/globalTypes";
 import { UpdateDataObjectsResponseFragment_fieldErrors } from "../../graphql/apollo-types/UpdateDataObjectsResponseFragment";
 import { ErrorBoundary } from "../ErrorBoundary/error-boundary.component";
 import {
-  editEntryUpdate,
   useUpdateDataObjectsOnlineMutation,
   useUpdateDefinitionsOnline,
   useUpdateDefinitionAndDataOnline,
@@ -63,7 +62,6 @@ export function EditEntryComponent(props: EditEntryComponentProps) {
     updateDataObjectsOnline,
     updateDefinitionsOnline,
     updateDefinitionsAndDataOnline,
-    editEntryUpdateProp,
     createOnlineEntry,
   } = props;
 
@@ -93,7 +91,7 @@ export function EditEntryComponent(props: EditEntryComponentProps) {
 
   const onSubmit = useCallback(function onSubmitCallback() {
     dispatch({
-      type: ActionTypes.SUBMITTING,
+      type: ActionType.SUBMITTING,
       createOnlineEntry,
       updateDefinitionsOnline,
       updateDefinitionsAndDataOnline,
@@ -111,7 +109,6 @@ export function EditEntryComponent(props: EditEntryComponentProps) {
   return (
     <EditEnryContext.Provider
       value={{
-        editEntryUpdateProp,
         dispatch,
         updateDataObjectsOnline,
         updateDefinitionsAndDataOnline,
@@ -129,7 +126,7 @@ export function EditEntryComponent(props: EditEntryComponentProps) {
           }
 
           parentDispatch({
-            type: ActionTypes.DESTROYED,
+            type: ActionType.DESTROYED,
           });
         }}
         dimmer="inverted"
@@ -235,7 +232,7 @@ function SubmissionSuccessResponseComponent({
         <Message
           onDismiss={() => {
             dispatch({
-              type: ActionTypes.DISMISS_SUBMISSION_RESPONSE_MESSAGE,
+              type: ActionType.DISMISS_SUBMISSION_RESPONSE_MESSAGE,
             });
           }}
         >
@@ -321,14 +318,14 @@ function getComponentFromDataType(
     type === DataTypes.DATE || type === DataTypes.DATETIME
       ? (_: string, val: FormObjVal) => {
           dispatch({
-            type: ActionTypes.DATA_CHANGED,
+            type: ActionType.DATA_CHANGED,
             id,
             rawFormVal: val,
           });
         }
       : (_: E, { value: rawFormVal }: InputOnChangeData) => {
           dispatch({
-            type: ActionTypes.DATA_CHANGED,
+            type: ActionType.DATA_CHANGED,
             id,
             rawFormVal,
           });
@@ -388,7 +385,7 @@ function DefinitionComponent(props: DefinitionComponentProps) {
               id={`${idPrefix}-edit-btn`}
               onClick={() =>
                 dispatch({
-                  type: ActionTypes.EDIT_BTN_CLICKED,
+                  type: ActionType.EDIT_BTN_CLICKED,
                   id,
                 })
               }
@@ -404,7 +401,7 @@ function DefinitionComponent(props: DefinitionComponentProps) {
           <Input
             onChange={(_, { value }) => {
               dispatch({
-                type: ActionTypes.DEFINITION_NAME_CHANGED,
+                type: ActionType.DEFINITION_NAME_CHANGED,
                 id,
                 formValue: value,
               });
@@ -429,7 +426,7 @@ function DefinitionComponent(props: DefinitionComponentProps) {
               id={`${idPrefix}-dismiss`}
               onClick={() => {
                 dispatch({
-                  type: ActionTypes.STOP_DEFINITION_EDIT,
+                  type: ActionType.STOP_DEFINITION_EDIT,
                   id,
                 });
               }}
@@ -448,7 +445,7 @@ function DefinitionComponent(props: DefinitionComponentProps) {
                 id={`${idPrefix}-reset`}
                 onClick={() => {
                   dispatch({
-                    type: ActionTypes.UNDO_DEFINITION_EDITS,
+                    type: ActionType.UNDO_DEFINITION_EDITS,
                     id,
                   });
                 }}
@@ -506,7 +503,7 @@ function SubmissionErrorsComponent({
       <Message
         onDismiss={() => {
           dispatch({
-            type: ActionTypes.DISMISS_SUBMISSION_RESPONSE_MESSAGE,
+            type: ActionType.DISMISS_SUBMISSION_RESPONSE_MESSAGE,
           });
         }}
       >
@@ -632,7 +629,6 @@ export function EditEntry(props: EditEntryCallerProps) {
       updateDataObjectsOnline={updateDataObjectsOnline}
       updateDefinitionsOnline={updateDefinitionsOnline}
       updateDefinitionsAndDataOnline={updateDefinitionsAndDataOnline}
-      editEntryUpdateProp={editEntryUpdate}
       {...props}
     />
   );

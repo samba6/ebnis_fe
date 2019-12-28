@@ -1,13 +1,12 @@
+/* eslint-disable @typescript-eslint/no-explicit-any*/
 import { Reducer, useEffect } from "react";
 import lodashIsEqual from "lodash/isEqual";
 
 const isDevEnv = process.env.NODE_ENV === "development";
 const isTestEnv = process.env.NODE_ENV === "test";
 
-// tslint:disable-next-line:no-any
 export const logger = async (prefix: keyof Console, tag: any, ...data: any) => {
   if (isDevEnv) {
-    // tslint:disable-next-line:no-console
     console[prefix](
       "\n\n     =======logging starts======\n",
       tag,

@@ -11,7 +11,7 @@ import {
 } from "../../graphql/apollo-types/ExperienceFragment";
 import Icon from "semantic-ui-react/dist/commonjs/elements/Icon";
 import Dropdown from "semantic-ui-react/dist/commonjs/modules/Dropdown";
-import { Props, ActionTypes, reducer, DispatchType } from "./entry.utils";
+import { Props, ActionType, reducer, DispatchType } from "./entry.utils";
 import {
   EntryFragment_dataObjects,
   EntryFragment,
@@ -128,7 +128,7 @@ function DataComponent(props: {
                     id={`${entryIdPrefix}-edit-trigger`}
                     onClick={() => {
                       dispatch({
-                        type: ActionTypes.editClicked,
+                        type: ActionType.editClicked,
                       });
                     }}
                     style={

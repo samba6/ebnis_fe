@@ -11,8 +11,8 @@ import {
 } from "../graphql/apollo-types/ExperienceFragment";
 import { DataTypes } from "../graphql/apollo-types/globalTypes";
 import {
-  Props as EditEntryProps,
-  ActionTypes as EditEntryActionTypes,
+  EditEntryCallerProps,
+  ActionType as EditEntryActionType,
 } from "../components/EditEntry/edit-entry-utils";
 import { EditEntry } from "../components/EditEntry/edit-entry.component";
 
@@ -59,7 +59,7 @@ it("renders single line text", () => {
   const lastRender = mockEditEntry.mock.calls.length - 1;
 
   expect(
-    (mockEditEntry.mock.calls[lastRender][0] as EditEntryProps).entry.id,
+    (mockEditEntry.mock.calls[lastRender][0] as EditEntryCallerProps).entry.id,
   ).toEqual("1");
 });
 
@@ -232,7 +232,7 @@ test("reducer", () => {
     stateValue: "idle",
   };
 
-  state = reducer(state, { type: EditEntryActionTypes.DESTROYED });
+  state = reducer(state, { type: EditEntryActionType.DESTROYED });
   expect(state.stateValue).toEqual("idle");
 
   state = reducer(state, { type: "bogus" } as any);
