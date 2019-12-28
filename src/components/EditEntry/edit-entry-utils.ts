@@ -128,6 +128,7 @@ export const initStateFromProps = (
       const definitionAndDataIdsMap = {
         definitionId,
       } as DefinitionAndDataIds;
+
       definitionAndDataIdsMapList.push(definitionAndDataIdsMap);
 
       const dataId = dataIdsMap[definitionId];
@@ -481,7 +482,7 @@ export const reducer: Reducer<IStateMachine, Action> = (state, action) =>
       });
     },
 
-    true,
+    // true,
   );
 
 ////////////////////////// REDUCER STATE UPDATE FUNCTIONS //////////////////
@@ -499,16 +500,26 @@ function handleOnlineEntryCreatedAction(
   }
 
   const { dataStates } = globalState;
-  globalState.primaryState.context.entry = entry;
+  const {
+    primaryState: { context: globalContext },
+  } = globalState;
 
-  entry.dataObjects.forEach(obj => {
+  globalContext.entry = entry;
+  const definitionAndDataIdsMapList = globalContext.definitionAndDataIdsMapList;
+
+  entry.dataObjects.forEach((obj, index) => {
     const dataObject = obj as DataObjectFragment;
-    const { clientId, id } = dataObject;
+    const { clientId, id: dataId, definitionId } = dataObject;
     const offlineId = clientId as string;
     const dataState = dataStates[offlineId];
     updateDataStateWithUpdatedDataObject(dataState, dataObject);
-    dataStates[id] = dataState;
+    dataStates[dataId] = dataState;
     delete dataStates[offlineId];
+
+    definitionAndDataIdsMapList[index] = {
+      definitionId,
+      dataId,
+    };
   });
 
   return [1, 0, "valid"];

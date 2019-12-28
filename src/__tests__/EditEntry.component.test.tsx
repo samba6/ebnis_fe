@@ -110,7 +110,7 @@ it("destroys the UI", () => {
   expect(mockDeleteCachedQueriesAndMutationsCleanup).toHaveBeenCalled();
 });
 
-test("not editing data, no siblings, form errors, server success", async () => {
+test("not editing data, editing single definition, form errors, server success", async () => {
   const { ui, mockUpdateDefinitionsOnline, mockEditEntryUpdate } = makeComp({
     props: {
       entry: {
@@ -298,7 +298,7 @@ test("not editing data, no siblings, form errors, server success", async () => {
   expect(getDefinitionName("a").value).toEqual("g1");
 });
 
-test("not editing data, editing siblings, server error", async () => {
+test("not editing data, editing multiple definitions, server error", async () => {
   /**
    * Given experience has 3 definitions: a, b, c
    */
@@ -1122,7 +1122,7 @@ test("submitting only data objects, apollo errors, runtime errors", async () => 
   expect(getSubmit()).not.toBeNull();
 });
 
-test("not editing data apollo errors", async () => {
+test("not editing data, editing definition, apollo errors", async () => {
   const { ui, mockUpdateDefinitionsOnline } = makeComp({
     props: {
       entry: {
@@ -1156,7 +1156,7 @@ test("not editing data apollo errors", async () => {
   expect($response).not.toBeNull();
 });
 
-test.only("editing offline entry, one data object updated, one not updated, submitting online", async () => {
+test("editing offline entry, one data object updated, one not updated, submitting online", async () => {
   const definition1Id = "int";
   const data1OnlineId = "d1on";
   const data1OfflineId = "d1of";
@@ -1259,8 +1259,6 @@ test.only("editing offline entry, one data object updated, one not updated, subm
    */
   getSubmit().click();
 
-  // const domDataInput = getDataField(dataOfflineId);
-  // expect(getDataError(dataOfflineId)).toBeNull();
   // expect(domDataInput.classList).toContain("data--success");
 
   /**
@@ -1294,6 +1292,20 @@ test.only("editing offline entry, one data object updated, one not updated, subm
   };
 
   expect(mock.variables).toEqual(variables);
+
+  /**
+   * And the old data fields have been replaced with updated data from server
+   */
+  expect(getDataInput(data1OfflineId)).toBeNull();
+  expect(getDataInput(data2OfflineId)).toBeNull();
+  expect(getDataInput(data1OnlineId)).not.toBeNull();
+  expect(getDataInput(data2OnlineId)).not.toBeNull();
+
+  /**
+   * And the fields should show success colours
+   */
+  expect(getDataField(data1OnlineId).classList).toContain("data--success");
+  expect(getDataField(data2OnlineId).classList).toContain("data--success");
 });
 
 ////////////////////////// HELPER FUNCTIONS ///////////////////////////
