@@ -306,7 +306,7 @@ export const reducer: Reducer<IStateMachine, Action> = (state, action) =>
                 return;
               }
 
-              sendToServer({
+              writeSendToServerEffects({
                 payload: payload as SubmittingPayload,
                 globalState: proxy,
                 effectObjects,
@@ -490,50 +490,9 @@ export const reducer: Reducer<IStateMachine, Action> = (state, action) =>
     // true,
   );
 
-function getDataObjectsToSubmit(states: DataStates) {
-  const inputs: UpdateDataObjectInput[] = [];
-
-  for (const [id, state] of Object.entries(states)) {
-    if (state.value === "changed") {
-      const {
-        context: {
-          defaults: { type },
-        },
-        changed: {
-          context: { formValue },
-        },
-      } = state;
-      inputs.push({
-        id,
-        data: `{"${type.toLowerCase()}":"${formObjToString(type, formValue)}"}`,
-      });
-    }
-  }
-
-  return [inputs];
-}
-
-function getDefinitionsToSubmit(allDefinitionsStates: DefinitionsStates) {
-  const input: UpdateDefinitionInput[] = [];
-  const withErrors: string[] = [];
-
-  for (const [id, state] of Object.entries(allDefinitionsStates)) {
-    if (state.value === "editing" && state.editing.value === "changed") {
-      const name = state.editing.context.formValue.trim();
-
-      if (name.length < 2) {
-        withErrors.push(id);
-      } else {
-        input.push({
-          id,
-          name,
-        });
-      }
-    }
-  }
-
-  return [input, withErrors];
-}
+////////////////////////// REDUCER STATE UPDATE FUNCTIONS //////////////////
+// you can write to state, but can not use dispatch - every call to dispatch
+// must be put inside a function and added to effects
 
 function prepareSubmissionResponse(
   proxy: IStateMachine,
@@ -683,103 +642,6 @@ function setEditingDefinitionState(
   }
 }
 
-function formObjFromRawString(val: string): FormObjVal {
-  const [[k, v]] = Object.entries(JSON.parse(val));
-
-  switch (k) {
-    case "datetime":
-      return parseISO(v);
-
-    case "date":
-      return parse(v, ISO_DATE_FORMAT, new Date());
-
-    default:
-      return (("" + v) as string).trim();
-  }
-}
-
-function formObjToCompareString(type: DataTypes, val: FormObjVal) {
-  const stringVal = formObjToString(type, val);
-
-  return [val, stringVal];
-}
-
-export const EditEnryContext = createContext<ContextValue>({} as ContextValue);
-
-function setEditingData(proxy: IStateMachine) {
-  let dataChangedCount = 0;
-
-  for (const state of Object.values(proxy.dataStates)) {
-    if (state.value === "changed") {
-      ++dataChangedCount;
-    }
-  }
-
-  if (dataChangedCount !== 0) {
-    proxy.primaryState.editingData.value = EDITING_DATA_ACTIVE;
-  } else {
-    proxy.primaryState.editingData.value = EDITING_DATA_INACTIVE;
-  }
-}
-
-function handleDefinitionsSubmissionResponse(
-  proxy: IStateMachine,
-  context: SubmissionSuccessStateContext,
-  updateDefinitions: UpdateDefinitionAndData["updateDefinitions"],
-) {
-  if (!updateDefinitions) {
-    putDefinitionInvalidErrors(context);
-    return [0, 0];
-  }
-
-  const { definitions } = updateDefinitions;
-
-  if (!definitions) {
-    putDefinitionInvalidErrors(context);
-    return [0, 0];
-  }
-
-  const { definitionsStates } = proxy;
-  let successCount = 0;
-  let failureCount = 0;
-
-  definitions.forEach(def => {
-    const {
-      definition,
-      errors,
-    } = def as UpdateDefinitions_updateDefinitions_definitions;
-
-    if (definition) {
-      ++successCount;
-
-      const { id, name } = definition;
-      const state = definitionsStates[id];
-      state.context.defaults.name = name;
-
-      state.value = "idle";
-
-      (state as DefinitionIdleState).idle.context.anyEditSuccess = true;
-
-      return;
-    } else {
-      ++failureCount;
-
-      const {
-        id,
-        ...errorsContext
-      } = errors as UpdateDefinitions_updateDefinitions_definitions_errors;
-      const state = definitionsStates[id] as DefinitionEditingState;
-
-      (state.editing as DefinitionChangedState).changed = {
-        value: "serverErrors",
-        context: { ...errorsContext },
-      };
-    }
-  });
-
-  return [successCount, failureCount, "valid"];
-}
-
 function handleDataSubmissionResponse(
   proxy: IStateMachine,
   context: SubmissionSuccessStateContext,
@@ -851,29 +713,65 @@ function putDataServerErrors(
   };
 }
 
-function handleFormSubmissionException({
-  dispatch,
-  errors,
-}: {
-  dispatch: DispatchType;
-  errors: Error;
-}) {
-  if (errors instanceof ApolloError) {
-    dispatch({
-      type: ActionTypes.APOLLO_ERRORS,
-      errors,
-    });
-  } else {
-    dispatch({
-      type: ActionTypes.OTHER_ERRORS,
-    });
+function handleDefinitionsSubmissionResponse(
+  proxy: IStateMachine,
+  context: SubmissionSuccessStateContext,
+  updateDefinitions: UpdateDefinitionAndData["updateDefinitions"],
+) {
+  if (!updateDefinitions) {
+    putDefinitionInvalidErrors(context);
+    return [0, 0];
   }
+
+  const { definitions } = updateDefinitions;
+
+  if (!definitions) {
+    putDefinitionInvalidErrors(context);
+    return [0, 0];
+  }
+
+  const { definitionsStates } = proxy;
+  let successCount = 0;
+  let failureCount = 0;
+
+  definitions.forEach(def => {
+    const {
+      definition,
+      errors,
+    } = def as UpdateDefinitions_updateDefinitions_definitions;
+
+    if (definition) {
+      ++successCount;
+
+      const { id, name } = definition;
+      const state = definitionsStates[id];
+      state.context.defaults.name = name;
+
+      state.value = "idle";
+
+      (state as DefinitionIdleState).idle.context.anyEditSuccess = true;
+
+      return;
+    } else {
+      ++failureCount;
+
+      const {
+        id,
+        ...errorsContext
+      } = errors as UpdateDefinitions_updateDefinitions_definitions_errors;
+      const state = definitionsStates[id] as DefinitionEditingState;
+
+      (state.editing as DefinitionChangedState).changed = {
+        value: "serverErrors",
+        context: { ...errorsContext },
+      };
+    }
+  });
+
+  return [successCount, failureCount, "valid"];
 }
 
-/**
- * This is a state update function and not and effectful function
- */
-async function sendToServer({
+async function writeSendToServerEffects({
   payload,
   globalState,
   effectObjects,
@@ -960,6 +858,92 @@ async function sendToServer({
     },
   });
 }
+
+function setEditingData(proxy: IStateMachine) {
+  let dataChangedCount = 0;
+
+  for (const state of Object.values(proxy.dataStates)) {
+    if (state.value === "changed") {
+      ++dataChangedCount;
+    }
+  }
+
+  if (dataChangedCount !== 0) {
+    proxy.primaryState.editingData.value = EDITING_DATA_ACTIVE;
+  } else {
+    proxy.primaryState.editingData.value = EDITING_DATA_INACTIVE;
+  }
+}
+
+///// STATE UPDATE... HELPERS
+
+function formObjFromRawString(val: string): FormObjVal {
+  const [[k, v]] = Object.entries(JSON.parse(val));
+
+  switch (k) {
+    case "datetime":
+      return parseISO(v);
+
+    case "date":
+      return parse(v, ISO_DATE_FORMAT, new Date());
+
+    default:
+      return (("" + v) as string).trim();
+  }
+}
+
+function formObjToCompareString(type: DataTypes, val: FormObjVal) {
+  const stringVal = formObjToString(type, val);
+
+  return [val, stringVal];
+}
+
+function getDataObjectsToSubmit(states: DataStates) {
+  const inputs: UpdateDataObjectInput[] = [];
+
+  for (const [id, state] of Object.entries(states)) {
+    if (state.value === "changed") {
+      const {
+        context: {
+          defaults: { type },
+        },
+        changed: {
+          context: { formValue },
+        },
+      } = state;
+      inputs.push({
+        id,
+        data: `{"${type.toLowerCase()}":"${formObjToString(type, formValue)}"}`,
+      });
+    }
+  }
+
+  return [inputs];
+}
+
+function getDefinitionsToSubmit(allDefinitionsStates: DefinitionsStates) {
+  const input: UpdateDefinitionInput[] = [];
+  const withErrors: string[] = [];
+
+  for (const [id, state] of Object.entries(allDefinitionsStates)) {
+    if (state.value === "editing" && state.editing.value === "changed") {
+      const name = state.editing.context.formValue.trim();
+
+      if (name.length < 2) {
+        withErrors.push(id);
+      } else {
+        input.push({
+          id,
+          name,
+        });
+      }
+    }
+  }
+
+  return [input, withErrors];
+}
+
+////////////////////////// END STATE UPDATE FUNCTIONS /////////////////////
 
 ////////////////////////// EFFECT FUNCTIONS ////////////////////////////
 
@@ -1174,6 +1158,30 @@ interface UpdateDefinitionsAndDataOnlineEffect {
   func: typeof updateDefinitionsAndDataOnlineEffectFn;
   args: UpdateDefinitionsAndDataOnlineEffectFnArgs;
 }
+
+//// EFFECT HELPERS
+function handleFormSubmissionException({
+  dispatch,
+  errors,
+}: {
+  dispatch: DispatchType;
+  errors: Error;
+}) {
+  if (errors instanceof ApolloError) {
+    dispatch({
+      type: ActionTypes.APOLLO_ERRORS,
+      errors,
+    });
+  } else {
+    dispatch({
+      type: ActionTypes.OTHER_ERRORS,
+    });
+  }
+}
+
+////////////////////////// END EFFECT FUNCTIONS ////////////////////////////
+
+export const EditEnryContext = createContext<ContextValue>({} as ContextValue);
 
 ////////////////////////// TYPES ////////////////////////////
 

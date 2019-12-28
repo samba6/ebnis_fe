@@ -42,10 +42,6 @@ import {
   useUpdateDataObjectsOnlineMutation,
   useUpdateDefinitionsOnline,
   useUpdateDefinitionAndDataOnline,
-  EditEntryUpdateProps,
-  UpdateDefinitionsAndDataOnlineMutationComponentProps,
-  UpdateDataObjectsOnlineMutationComponentProps,
-  UpdateDefinitionsOnlineMutationComponentProps,
   UpdateDefinitionsOnlineMutationFn,
 } from "./edit-entry.injectables";
 import { useDeleteCachedQueriesAndMutationsOnUnmount } from "../use-delete-cached-queries-mutations-on-unmount";
@@ -58,10 +54,7 @@ import {
   otherErrorsDomId,
   apolloErrorsDomId,
 } from "./edit-entry-dom";
-import {
-  useCreateOnlineEntryMutation,
-  CreateOnlineEntryMutationComponentProps,
-} from "../../graphql/create-entry.mutation";
+import { useCreateOnlineEntryMutation } from "../../graphql/create-entry.mutation";
 
 export function EditEntryComponent(props: EditEntryComponentProps) {
   const {
@@ -107,6 +100,7 @@ export function EditEntryComponent(props: EditEntryComponentProps) {
       updateDataObjectsOnline,
       dispatch,
     });
+    /* eslint-disable-next-line react-hooks/exhaustive-deps*/
   }, []);
 
   useDeleteCachedQueriesAndMutationsOnUnmount(
