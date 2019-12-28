@@ -11,7 +11,10 @@ import {
 import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragment";
 import { DataObjectFragment } from "../../graphql/apollo-types/DataObjectFragment";
 import { FormObjVal } from "../Experience/experience.utils";
-import { DataTypes } from "../../graphql/apollo-types/globalTypes";
+import {
+  DataTypes,
+  CreateEntryInput,
+} from "../../graphql/apollo-types/globalTypes";
 import { UpdateDefinitionAndData } from "../../graphql/apollo-types/UpdateDefinitionAndData";
 import {
   UpdateDataObjects_updateDataObjects,
@@ -25,11 +28,14 @@ import { formObjToString, ISO_DATE_FORMAT } from "../NewEntry/new-entry.utils";
 import parseISO from "date-fns/parseISO";
 import parse from "date-fns/parse";
 import {
-  UpdateDataObjectsOnlineMutationProps,
-  UpdateDefinitionsOnlineProps,
-  UpdateDefinitionsAndDataOnlineProps,
+  UpdateDataObjectsOnlineMutationComponentProps,
+  UpdateDefinitionsOnlineMutationComponentProps,
+  UpdateDefinitionsAndDataOnlineMutationComponentProps,
   EditEntryUpdateProps,
 } from "./edit-entry.injectables";
+import { CreateOnlineEntryMutationComponentProps } from "../../graphql/create-entry.mutation";
+import { isOfflineId } from "../../constants";
+import { updateExperienceWithNewEntry } from "../NewEntry/new-entry.injectables";
 
 export enum ActionTypes {
   EDIT_BTN_CLICKED = "@component/edit-entry/edit-btn-clicked",
@@ -42,13 +48,24 @@ export enum ActionTypes {
   DATA_OBJECTS_SUBMISSION_RESPONSE = "@component/edit-entry/data-objects-submission-response",
   DEFINITION_FORM_ERRORS = "@component/edit-entry/definition-form-errors",
   DATA_CHANGED = "@component/edit-entry/data-changed",
-  SUBMISSION_RESPONSE = "@component/edit-entry/submission-response",
+  DEFINITION_AND_DATA_SUBMISSION_RESPONSE = "@component/edit-entry/submission-response",
   DISMISS_SUBMISSION_RESPONSE_MESSAGE = "@component/edit-entry/dismiss-submission-response-message",
   OTHER_ERRORS = "@component/edit-entry/other-errors",
   APOLLO_ERRORS = "@component/edit-entry/apollo-errors",
 }
 
-export const initStateFromProps = (props: Props): IStateMachine => {
+export const EFFECT_VALUE_NO_EFFECT: EffectValueNoEffect = "noEffect";
+export const EFFECT_VALUE_HAS_EFFECTS: EffectValueHasEffects = "hasEffects";
+
+export const EDITING_DEFINITION_INACTIVE: EditingDefinitionInactive =
+  "inactive";
+export const EDITING_DEFINITION_SINGLE: EditingDefinitionSingle = "single";
+export const EDITING_DEFINITION_MULTIPLE: EditingDefinitionMultiple =
+  "multiple";
+
+export const initStateFromProps = (
+  props: EditEntryComponentProps,
+): IStateMachine => {
   const { entry, experience } = props;
 
   const [dataStates, dataIdsMap, dataIds] = entry.dataObjects.reduce(
@@ -128,11 +145,16 @@ export const initStateFromProps = (props: Props): IStateMachine => {
   }
 
   const state = {
+    effects: {
+      value: EFFECT_VALUE_NO_EFFECT,
+    },
+
     primaryState: {
       context: {
         lenDefinitions,
         definitionAndDataIdsMapList,
         experienceId: experience.id,
+        entry,
       },
 
       common: {
@@ -143,8 +165,8 @@ export const initStateFromProps = (props: Props): IStateMachine => {
         value: "inactive" as "inactive",
       },
 
-      editingMultipleDefinitions: {
-        value: "inactive" as "inactive",
+      editingDefinition: {
+        value: EDITING_DEFINITION_INACTIVE,
       },
 
       submissionResponse: {
@@ -166,6 +188,10 @@ export const reducer: Reducer<IStateMachine, Action> = (state, action) =>
     action,
     (prevState, { type, ...payload }) => {
       return immer(prevState, proxy => {
+        proxy.effects = {
+          value: EFFECT_VALUE_NO_EFFECT,
+        };
+
         switch (type) {
           case ActionTypes.EDIT_BTN_CLICKED:
             {
@@ -178,7 +204,7 @@ export const reducer: Reducer<IStateMachine, Action> = (state, action) =>
             {
               const { id } = payload as IdString;
               setDefinitionEditingUnchangedState(proxy, id);
-              setEditingMultipleDefinitionsState(proxy);
+              setEditingDefinitionState(proxy, id);
             }
             break;
 
@@ -213,7 +239,7 @@ export const reducer: Reducer<IStateMachine, Action> = (state, action) =>
                 };
               }
 
-              setEditingMultipleDefinitionsState(proxy);
+              setEditingDefinitionState(proxy, id);
             }
 
             break;
@@ -225,7 +251,7 @@ export const reducer: Reducer<IStateMachine, Action> = (state, action) =>
 
               definitionsStates[id].value = "idle";
 
-              setEditingMultipleDefinitionsState(proxy);
+              setEditingDefinitionState(proxy, id);
             }
 
             break;
@@ -234,12 +260,44 @@ export const reducer: Reducer<IStateMachine, Action> = (state, action) =>
             {
               proxy.primaryState.common.value = "submitting";
 
+              const {
+                submittedCount,
+                createOnlineEntry,
+                dispatch,
+              } = payload as SubmittingPayload;
+
+              const { entry, experienceId } = proxy.primaryState.context;
+
+              if (isOfflineId(entry.id)) {
+                const effects: EffectState = {
+                  value: EFFECT_VALUE_HAS_EFFECTS,
+                  [EFFECT_VALUE_HAS_EFFECTS]: {
+                    context: {
+                      effects: [
+                        {
+                          key: "createEntryOnline",
+                          args: {
+                            createOnlineEntry,
+                            entry: {
+                              experienceId,
+                              dataObjects: entry.dataObjects,
+                            },
+                            dispatch,
+                          },
+                          func: createEntryOnlineEffectFn,
+                        },
+                      ],
+                    },
+                  },
+                };
+
+                proxy.effects = effects;
+              }
+
               (proxy.primaryState
                 .common as PrimaryStateSubmitting).submitting = {
                 context: {
-                  submittedCount: (payload as {
-                    submittedCount: number;
-                  }).submittedCount,
+                  submittedCount,
                 },
               };
             }
@@ -379,7 +437,7 @@ export const reducer: Reducer<IStateMachine, Action> = (state, action) =>
             }
             break;
 
-          case ActionTypes.SUBMISSION_RESPONSE:
+          case ActionTypes.DEFINITION_AND_DATA_SUBMISSION_RESPONSE:
             {
               const {
                 updateDefinitions,
@@ -418,6 +476,7 @@ export const reducer: Reducer<IStateMachine, Action> = (state, action) =>
         }
       });
     },
+    // true,
   );
 
 function prepareSubmissionResponse(
@@ -524,36 +583,46 @@ function setDefinitionEditingUnchangedState(proxy: IStateMachine, id: string) {
   proxy.definitionsStates[id] = { ...definitionsStates[id], ...state };
 }
 
-function setEditingMultipleDefinitionsState(proxy: IStateMachine) {
+function setEditingDefinitionState(
+  proxy: IStateMachine,
+  mostRecentlyInterractedWithDefinitionId: string,
+) {
   const { primaryState } = proxy;
-  const len = primaryState.context.lenDefinitions;
-
-  if (len < 2) {
-    return;
-  }
-
-  let firstChangedDefinitionId = "";
   let changedDefinitionsCount = 0;
+  let previousMostRecentlyChangedDefinitionId = "";
+
+  if (primaryState.editingDefinition.value === EDITING_DEFINITION_MULTIPLE) {
+    previousMostRecentlyChangedDefinitionId =
+      primaryState.editingDefinition[EDITING_DEFINITION_MULTIPLE].context
+        .mostRecentlyChangedDefinitionId;
+  }
 
   for (const [id, state] of Object.entries(proxy.definitionsStates)) {
     if (state.value === "editing" && state.editing.value === "changed") {
       ++changedDefinitionsCount;
-
-      if (firstChangedDefinitionId === "") {
-        firstChangedDefinitionId = id;
-      }
+    } else if (id === mostRecentlyInterractedWithDefinitionId) {
+      // if the definition is not editing.changed, then it can not be set as
+      // mostRecentlyChangedDefinitionId
+      mostRecentlyInterractedWithDefinitionId = "";
     }
   }
 
-  const { editingMultipleDefinitions } = primaryState;
+  const mostRecentlyChangedDefinitionId = mostRecentlyInterractedWithDefinitionId
+    ? mostRecentlyInterractedWithDefinitionId
+    : previousMostRecentlyChangedDefinitionId;
 
-  if (changedDefinitionsCount < 2) {
-    editingMultipleDefinitions.value = "inactive";
+  if (changedDefinitionsCount === 0) {
+    primaryState.editingDefinition.value = EDITING_DEFINITION_INACTIVE;
+  } else if (changedDefinitionsCount === 1) {
+    primaryState.editingDefinition.value = EDITING_DEFINITION_SINGLE;
   } else {
-    editingMultipleDefinitions.value = "active";
-
-    (editingMultipleDefinitions as EditingMultipleDefinitionsActiveState).context = {
-      firstChangedDefinitionId,
+    (primaryState.editingDefinition as EditingMultipleDefinitionsState) = {
+      value: EDITING_DEFINITION_MULTIPLE,
+      [EDITING_DEFINITION_MULTIPLE]: {
+        context: {
+          mostRecentlyChangedDefinitionId,
+        },
+      },
     };
   }
 }
@@ -726,19 +795,72 @@ function putDataServerErrors(
   };
 }
 
+async function createEntryOnlineEffectFn({
+  createOnlineEntry,
+  entry,
+}: CreateEntryOnlineEffectFnArg) {
+  const { dataObjects, experienceId } = entry;
+
+  const response = await createOnlineEntry({
+    variables: {
+      input: {
+        dataObjects,
+        experienceId,
+      },
+    },
+    update: updateExperienceWithNewEntry(entry.experienceId),
+  });
+
+  const validResponse = response && response.data && response.data.createEntry;
+
+  if (validResponse) {
+    const { entry: onlineEntry } = validResponse;
+    console.log(
+      `\n\t\tLogging start\n\n\n\n onlineEntry\n`,
+      onlineEntry,
+      `\n\n\n\n\t\tLogging ends\n`,
+    );
+  }
+}
+
 ////////////////////////// TYPES ////////////////////////////
 
+interface CreateEntryOnlineEffectFnArg
+  extends CreateOnlineEntryMutationComponentProps {
+  entry: CreateEntryInput;
+  dispatch: DispatchType;
+}
+
+interface CreateEntryOnlineEffect {
+  key: "createEntryOnline";
+  args: CreateEntryOnlineEffectFnArg;
+  func: typeof createEntryOnlineEffectFn;
+}
+
 interface ContextValue
-  extends UpdateDefinitionsAndDataOnlineProps,
-    UpdateDataObjectsOnlineMutationProps,
+  extends UpdateDefinitionsAndDataOnlineMutationComponentProps,
+    UpdateDataObjectsOnlineMutationComponentProps,
     EditEntryUpdateProps {
   dispatch: DispatchType;
 }
+
+type EffectValueNoEffect = "noEffect";
+type EffectValueHasEffects = "hasEffects";
 
 export interface IStateMachine {
   readonly dataStates: DataStates;
   readonly definitionsStates: DefinitionsStates;
   readonly primaryState: PrimaryState;
+  readonly effects: EffectState | { value: EffectValueNoEffect };
+}
+
+interface EffectState {
+  value: EffectValueHasEffects;
+  [EFFECT_VALUE_HAS_EFFECTS]: {
+    context: {
+      effects: CreateEntryOnlineEffect[];
+    };
+  };
 }
 
 interface DefinitionAndDataIds {
@@ -746,11 +868,16 @@ interface DefinitionAndDataIds {
   dataId: string;
 }
 
+type EditingDefinitionInactive = "inactive";
+type EditingDefinitionSingle = "single";
+type EditingDefinitionMultiple = "multiple";
+
 export interface PrimaryState {
   context: {
     lenDefinitions: number;
     definitionAndDataIdsMapList: DefinitionAndDataIds[];
     experienceId: string;
+    entry: EntryFragment;
   };
 
   common: PrimaryStateEditing | PrimaryStateSubmitting;
@@ -759,11 +886,14 @@ export interface PrimaryState {
     value: "active" | "inactive";
   };
 
-  editingMultipleDefinitions:
+  editingDefinition:
     | {
-        value: "inactive";
+        value: EditingDefinitionSingle;
       }
-    | EditingMultipleDefinitionsActiveState;
+    | {
+        value: EditingDefinitionInactive;
+      }
+    | EditingMultipleDefinitionsState;
 
   submissionResponse: SubmissionResponseState;
 }
@@ -839,12 +969,19 @@ interface SubmissionInvalidResponse {
   definitions?: string;
 }
 
-export interface EditingMultipleDefinitionsActiveState {
-  value: "active";
+export interface EditingMultipleDefinitionsState {
+  value: EditingDefinitionMultiple;
 
-  context: {
-    firstChangedDefinitionId: string;
+  [EDITING_DEFINITION_MULTIPLE]: {
+    context: {
+      mostRecentlyChangedDefinitionId: string;
+    };
   };
+}
+
+interface SubmittingPayload extends CreateOnlineEntryMutationComponentProps {
+  submittedCount: number;
+  dispatch: DispatchType;
 }
 
 export type Action =
@@ -863,10 +1000,9 @@ export type Action =
       type: ActionTypes.STOP_DEFINITION_EDIT;
       id: string;
     }
-  | {
+  | ({
       type: ActionTypes.SUBMITTING;
-      submittedCount: number;
-    }
+    } & SubmittingPayload)
   | {
       type: ActionTypes.DESTROYED;
     }
@@ -880,7 +1016,7 @@ export type Action =
       type: ActionTypes.DATA_CHANGED;
     } & DataChangedPayload
   | {
-      type: ActionTypes.SUBMISSION_RESPONSE;
+      type: ActionTypes.DEFINITION_AND_DATA_SUBMISSION_RESPONSE;
     } & UpdateDefinitionAndData
   | {
       type: ActionTypes.DISMISS_SUBMISSION_RESPONSE_MESSAGE;
@@ -913,13 +1049,14 @@ interface DefinitionFormErrorsPayload {
   ids: string[];
 }
 
-export type Props = UpdateDefinitionsOnlineProps &
-  UpdateDataObjectsOnlineMutationProps &
-  UpdateDefinitionsAndDataOnlineProps &
+export type EditEntryComponentProps = UpdateDefinitionsOnlineMutationComponentProps &
+  UpdateDataObjectsOnlineMutationComponentProps &
+  UpdateDefinitionsAndDataOnlineMutationComponentProps &
   EditEntryUpdateProps &
-  OwnProps;
+  EditEntryCallerProps &
+  CreateOnlineEntryMutationComponentProps;
 
-export interface OwnProps {
+export interface EditEntryCallerProps {
   entry: EntryFragment;
   experience: ExperienceFragment;
   dispatch: DispatchType;

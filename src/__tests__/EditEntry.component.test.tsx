@@ -3,7 +3,10 @@ import React, { ComponentType } from "react";
 import "@marko/testing-library/cleanup-after-each";
 import { render, wait, waitForElement } from "@testing-library/react";
 import { EditEntryComponent } from "../components/EditEntry/edit-entry.component";
-import { Props, ActionTypes } from "../components/EditEntry/edit-entry-utils";
+import {
+  EditEntryComponentProps,
+  ActionTypes,
+} from "../components/EditEntry/edit-entry-utils";
 import { EntryFragment } from "../graphql/apollo-types/EntryFragment";
 import { DataDefinitionFragment } from "../graphql/apollo-types/DataDefinitionFragment";
 import {
@@ -37,6 +40,12 @@ import { ApolloError } from "apollo-client";
 import { GraphQLError } from "graphql";
 import { toISODatetimeString } from "../components/NewEntry/new-entry.utils";
 import { deleteCachedQueriesAndMutationsCleanupFn } from "../components/delete-cached-queries-and-mutations-cleanup";
+import { makeOfflineId } from "../constants";
+import { CreateOnlineEntryMutationVariables } from "../graphql/apollo-types/CreateOnlineEntryMutation";
+import {
+  CreateOnlineEntryMutationFnOptions,
+  CreateEntryOnlineMutationResult,
+} from "../graphql/create-entry.mutation";
 
 ////////////////////////// MOCKS ////////////////////////////
 
@@ -288,6 +297,9 @@ test("not editing data, no siblings, form errors, server success", async () => {
 });
 
 test("not editing data, editing siblings, server error", async () => {
+  /**
+   * Given experience has 3 definitions: a, b, c
+   */
   const { ui, mockUpdateDefinitionsOnline } = makeComp({
     props: {
       entry: {
@@ -330,7 +342,7 @@ test("not editing data, editing siblings, server error", async () => {
 
           {
             errors: {
-              id: "c",
+              id: "b",
 
               errors: {
                 name: "n",
@@ -343,88 +355,271 @@ test("not editing data, editing siblings, server error", async () => {
     } as UpdateDefinitions,
   });
 
+  /**
+   * Which we wish to update using the component
+   */
   render(ui);
   // const { debug } = render(ui);
 
+  /**
+   * Then definition 'a' should not have an input field
+   */
   expect(getDefinitionInput("a")).toBeNull();
+
+  /**
+   * And definition 'b' should not have an input field
+   */
+  expect(getDefinitionInput("b")).toBeNull();
+
+  /**
+   * And 'c' should not have an input field
+   */
+  expect(getDefinitionInput("c")).toBeNull();
+
+  /**
+   * When we click on edit button of 'a'
+   */
   getDefinitionEdit("a").click();
 
-  // a = editing.unchanged
+  /**
+   * Then submit button should not be visible near 'a'
+   */
   expect(getDefinitionSubmit("a")).toBeNull();
-  fillField(getDefinitionInput("a"), "g1");
-  // a = editing.changed
-  expect(getDefinitionSubmit("a")).not.toBeNull();
 
-  expect(getDefinitionInput("b")).toBeNull();
-  getDefinitionEdit("b").click();
-  // b = editing.unchanged
-  fillField(getDefinitionInput("b"), "g2");
-  // b = editing.changed.editingSiblings
-  expect(getDefinitionSubmit("b")).toBeNull();
-
-  // a = editing.changed.editingSiblings.firstEditableSibling
-  expect(getDefinitionSubmit("a")).not.toBeNull();
-
-  expect(getDefinitionReset("a")).not.toBeNull();
-  fillField(getDefinitionInput("a"), "f1");
-
-  // a = editing.unchanged
+  /**
+   * And reset button of 'a' should not be visible
+   */
   expect(getDefinitionReset("a")).toBeNull();
 
-  // b = editing.changed.notEditingSiblings
-  expect(getDefinitionSubmit("b")).not.toBeNull();
+  /**
+   * But an input field should appear where 'a' is
+   */
 
-  expect(getDefinitionInput("c")).toBeNull();
-  getDefinitionEdit("c").click();
-  fillField(getDefinitionInput("c"), "g3");
-  // c = editing.changed.editingSiblings
-  expect(getDefinitionSubmit("c")).toBeNull();
-  // b = ediitng.changed.editingSiblings.firstEditableSiblings
-  expect(getDefinitionSubmit("b")).not.toBeNull();
+  /**
+   * When we change value of definition 'a'
+   */
+  fillField(getDefinitionInput("a"), "g1");
 
-  getDefinitionDismiss("b").click();
-  // b = idle
+  /**
+   * Then a submit button should be visible near 'a'
+   */
+  expect(getDefinitionSubmit("a")).not.toBeNull();
+
+  /**
+   * And reset button of 'a' should be visible
+   */
+  expect(getDefinitionReset("a")).not.toBeNull();
+
+  /**
+   * And definition 'b' should not have an input field
+   */
   expect(getDefinitionInput("b")).toBeNull();
-  // c = editing.changed.notEditingSiblings
-  expect(getDefinitionSubmit("c")).not.toBeNull();
 
-  fillField(getDefinitionInput("a"), "g");
-  // c = editing.changed.editingSiblings
-  expect(getDefinitionSubmit("c")).toBeNull();
+  /**
+   * And submit button should not be visible near 'b'
+   */
+  expect(getDefinitionSubmit("b")).toBeNull();
 
+  /**
+   * When edit button of 'b' is clicked
+   */
   getDefinitionEdit("b").click();
-  // b should be unchanged because adding only whitespace does not count
-  fillField(getDefinitionInput("b"), "f2     ");
-  // b = editing.unchanged
+
+  /**
+   * Then reset button of 'b' should not be visible
+   */
   expect(getDefinitionReset("b")).toBeNull();
 
-  const $fieldA = getDefinitionField("a");
-  expect($fieldA.classList).not.toContain("error");
+  /**
+   * But an input box should appear where 'b' is
+   */
 
-  const $fieldC = getDefinitionField("c");
+  /**
+   * When value of definition 'b' is changed
+   */
+  fillField(getDefinitionInput("b"), "g2");
 
-  // a = editing.changed.editingSiblings.firstEditableSibling
-  const $submit = getDefinitionSubmit("a");
-  $submit.click();
+  /**
+   * Then a submit button should appear where 'b' is
+   */
+  expect(getDefinitionSubmit("b")).not.toBeNull();
 
-  // a = editing.changed.form.formErrors
+  /**
+   * And reset button of 'b' should be visible
+   */
+  expect(getDefinitionReset("b")).not.toBeNull();
+
+  /**
+   * And submit button should no longer be visible near 'a'
+   */
+  expect(getDefinitionSubmit("a")).toBeNull();
+
+  /**
+   * When value of 'a' is changed back to original
+   */
+  fillField(getDefinitionInput("a"), "f1");
+
+  /**
+   * Then reset button of 'a' should no longer be visible
+   */
+  expect(getDefinitionReset("a")).toBeNull();
+
+  /**
+   * And reset button of 'c' should not be visible
+   */
+  expect(getDefinitionReset("c")).toBeNull();
+
+  /**
+   * When edit button of 'c' is clicked
+   */
+  getDefinitionEdit("c").click();
+
+  /**
+   * Then reset button of 'c' should still not be visible
+   */
+  expect(getDefinitionReset("c")).toBeNull();
+
+  /**
+   * And submit button of 'b' should still be visible
+   */
+  expect(getDefinitionSubmit("b")).not.toBeNull();
+
+  /**
+   * But input field of 'c' should now be visible
+   */
+
+  /**
+   * When value of 'c' is changed
+   */
+  fillField(getDefinitionInput("c"), "g3");
+
+  /**
+   * Then reset button of 'c' should now be visible
+   */
+  expect(getDefinitionReset("c")).not.toBeNull();
+
+  /**
+   * And submit button of 'c' should now be visible
+   */
+  expect(getDefinitionSubmit("c")).not.toBeNull();
+
+  /**
+   * But submit button of 'b' should no longer be visible
+   */
+  expect(getDefinitionSubmit("b")).toBeNull();
+
+  /**
+   * When dismiss button of 'c' is cliked
+   */
+  getDefinitionDismiss("c").click();
+
+  /**
+   * Then input field of 'c' should not be visible
+   */
+  expect(getDefinitionInput("c")).toBeNull();
+
+  /**
+   * And submit button of 'b' should be visible
+   */
+  expect(getDefinitionSubmit("b")).not.toBeNull();
+
+  /**
+   * When value of 'a' is changed to an invalid value (must be at least 2
+   * characters long to be valid)
+   */
+  fillField(getDefinitionInput("a"), "g");
+
+  /**
+   * Then submit button of 'b' should no longer be visible
+   */
+  expect(getDefinitionSubmit("b")).toBeNull();
+
+  /**
+   * And submit button of 'a' should be visible
+   */
+  expect(getDefinitionSubmit("a")).not.toBeNull();
+
+  /**
+   * When edit button of 'c' is clicked
+   */
+  getDefinitionEdit("c").click();
+
+  /**
+   * Then reset button of 'c' should not be visible
+   */
+  expect(getDefinitionReset("c")).toBeNull();
+
+  /**
+   * When value of 'c' is changed by appending white space to original value
+   */
+  fillField(getDefinitionInput("c"), "f3     ");
+
+  /**
+   * Then reset button of 'c' should still not be visible (because changing a
+   * definition value by adding white space before or after the original value
+   * and nothing else does not count as a valid change)
+   */
+  expect(getDefinitionReset("c")).toBeNull();
+
+  /**
+   * And error UI of 'a'  should not be visible
+   */
+  const domInputA = getDefinitionField("a");
+  expect(domInputA.classList).not.toContain("error");
+
+  /**
+   * When submit button of 'a' is clicked
+   */
+  const domSubmitBtnA = getDefinitionSubmit("a");
+  domSubmitBtnA.click();
+
+  /**
+   * Then error UI of 'a' should be visible
+   */
   await wait(() => {
-    expect($fieldA.classList).toContain("error");
+    expect(domInputA.classList).toContain("error");
   });
 
-  expect($fieldC.classList).not.toContain("error");
-  expect($fieldA.classList).not.toContain("definition--success");
+  /**
+   * But error UI of 'b' should not be visible
+   */
+  const domInputB = getDefinitionField("b");
+  expect(domInputB.classList).not.toContain("error");
 
+  /**
+   * And success UI of 'a' should not be visible
+   */
+  expect(domInputA.classList).not.toContain("definition--success");
+
+  /**
+   * When value of 'a' is changed to a valid value
+   */
   fillField(getDefinitionInput("a"), "g1");
-  $submit.click();
 
+  /**
+   * And submit button of 'a' is clicked
+   */
+  domSubmitBtnA.click();
+
+  /**
+   * Then error success UI of 'a' should be visible
+   */
   await wait(() => {
-    expect($fieldA.classList).toContain("definition--success");
+    expect(domInputA.classList).toContain("definition--success");
   });
 
-  expect($fieldA.classList).not.toContain("error");
-  expect($fieldC.classList).toContain("error");
-  expect($fieldC.classList).not.toContain("definition--success");
+  /**
+   * And error UI of 'a' should no longer be visible
+   */
+  expect(domInputA.classList).not.toContain("error");
+
+  /** And error UI of 'b' should be visible
+   */
+  expect(domInputB.classList).toContain("error");
+
+  /** And success UI of 'b' should not be visible
+   */
+  expect(domInputB.classList).not.toContain("definition--success");
 });
 
 test("editing data, editing definitions", async () => {
@@ -959,20 +1154,133 @@ test("not editing data apollo errors", async () => {
   expect($response).not.toBeNull();
 });
 
+test.skip("editing offline entry, submitting online", async () => {
+  const experienceId = "ex";
+  const definitionId = "int";
+  const dataOnlineId = "don";
+  const dataOfflineId = "dof";
+
+  /**
+   * Given there is entry created offline
+   */
+  const offlineEntryId = makeOfflineId(1);
+
+  /**
+   * And server will respond with success on submission
+   */
+  const serverResponse = {
+    data: {
+      createEntry: {
+        entry: {
+          id: "en",
+          experienceId,
+          clientId: offlineEntryId,
+
+          dataObjects: [
+            {
+              definitionId,
+              id: dataOnlineId,
+              clientId: dataOfflineId,
+              data: `{"integer":2}`,
+            },
+          ],
+        },
+      },
+    },
+  } as CreateEntryOnlineMutationResult;
+
+  const { ui, mockCreateEntryOnline } = makeComp({
+    props: {
+      entry: {
+        id: offlineEntryId,
+        dataObjects: [
+          {
+            id: dataOfflineId,
+            definitionId,
+            data: `{"integer":1}`,
+          },
+        ] as DataObjectFragment[],
+      } as EntryFragment,
+
+      experience: {
+        id: experienceId,
+
+        dataDefinitions: [
+          {
+            id: definitionId,
+            type: DataTypes.INTEGER,
+            name: "int",
+          },
+        ] as DataDefinitionFragment[],
+      } as ExperienceFragment,
+    },
+  });
+
+  /**
+   * Which we edit entry with the component
+   */
+  render(ui);
+
+  mockCreateEntryOnline.mockResolvedValue(serverResponse);
+
+  /**
+   * When we update entry data
+   */
+  getDataInput(dataOfflineId, "2");
+
+  /**
+   * And submit the form
+   */
+  getSubmit().click();
+
+  // const domDataInput = getDataField(dataOfflineId);
+  // expect(getDataError(dataOfflineId)).toBeNull();
+  // expect(domDataInput.classList).toContain("data--success");
+
+  await waitForElement(getSubmissionSuccessResponseDom);
+
+  const mock = mockCreateEntryOnline.mock.calls[0][0] as ToVariables<
+    CreateOnlineEntryMutationVariables
+  >;
+
+  const variables: CreateOnlineEntryMutationFnOptions = {
+    variables: {
+      input: {
+        experienceId,
+        dataObjects: [
+          {
+            definitionId,
+            clientId: "offline-id",
+            data: `{"int":"2"}`,
+          },
+        ],
+      },
+    },
+  };
+
+  expect(mock.variables).toEqual(variables);
+});
+
 ////////////////////////// HELPER FUNCTIONS ///////////////////////////
 
-const EditEntryP = EditEntryComponent as ComponentType<Partial<Props>>;
+const EditEntryP = EditEntryComponent as ComponentType<
+  Partial<EditEntryComponentProps>
+>;
 
-function makeComp({ props = {} }: { props?: Partial<Props> } = {}) {
+function makeComp({
+  props = {},
+}: { props?: Partial<EditEntryComponentProps> } = {}) {
   const mockUpdateDefinitionsOnline = jest.fn();
   const mockParentDispatch = jest.fn();
   const mockUpdateDefinitionsAndDataOnline = jest.fn();
   const mockUpdateDataOnline = jest.fn();
   const mockEditEntryUpdate = jest.fn();
+  const mockCreateEntryOnline = jest.fn();
 
   return {
     ui: (
       <EditEntryP
+        createOnlineEntry={mockCreateEntryOnline}
         updateDefinitionsOnline={mockUpdateDefinitionsOnline}
         updateDataObjectsOnline={mockUpdateDataOnline}
         updateDefinitionsAndDataOnline={mockUpdateDefinitionsAndDataOnline}
@@ -986,6 +1294,7 @@ function makeComp({ props = {} }: { props?: Partial<Props> } = {}) {
     mockUpdateDefinitionsAndDataOnline,
     mockUpdateDataOnline,
     mockEditEntryUpdate,
+    mockCreateEntryOnline,
   };
 }
 

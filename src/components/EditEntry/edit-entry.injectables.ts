@@ -77,14 +77,14 @@ export type UpdateDataObjectsMutationFnOptions = MutationFunctionOptions<
 >;
 
 // component's props should extend this
-export interface UpdateDataObjectsOnlineMutationProps {
+export interface UpdateDataObjectsOnlineMutationComponentProps {
   updateDataObjectsOnline: UpdateDataObjectsMutationFn;
 }
 
-export interface UpdateDefinitionsOnlineProps {
+export interface UpdateDefinitionsOnlineMutationComponentProps {
   updateDefinitionsOnline: UpdateDefinitionsOnlineMutationFn;
 }
 
-export interface UpdateDefinitionsAndDataOnlineProps {
+export interface UpdateDefinitionsAndDataOnlineMutationComponentProps {
   updateDefinitionsAndDataOnline: UpdateDefinitionsAndDataOnlineMutationFn;
 }

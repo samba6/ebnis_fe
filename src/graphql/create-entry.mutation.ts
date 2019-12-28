@@ -46,7 +46,6 @@ export const CREATE_ONLINE_ENTRY_MUTATION = gql`
 
 export const MUTATION_NAME_createEntry = "createEntry";
 
-
 export function useCreateOnlineEntryMutation(): UseCreateOnlineEntryMutation {
   return useMutation(CREATE_ONLINE_ENTRY_MUTATION);
 }
@@ -64,8 +63,13 @@ export type CreateOnlineEntryMutationFnOptions = MutationFunctionOptions<
 
 export type UseCreateOnlineEntryMutation = [
   CreateOnlineEntryMutationFn,
-  MutationResult<CreateOnlineEntryMutation>,
+  CreateEntryOnlineMutationResult,
 ];
+
+// use to type check server response
+export type CreateEntryOnlineMutationResult = MutationResult<
+  CreateOnlineEntryMutation
+>;
 
 // component's props should extend this
 export interface CreateOnlineEntryMutationComponentProps {

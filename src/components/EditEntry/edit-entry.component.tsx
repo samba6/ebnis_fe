@@ -1,6 +1,6 @@
-import React, { useReducer, useContext, Fragment } from "react";
+import React, { useReducer, useContext, Fragment, useEffect } from "react";
 import {
-  Props,
+  EditEntryComponentProps,
   ActionTypes,
   initStateFromProps,
   reducer,
@@ -13,7 +13,9 @@ import {
   DataStates,
   SubmissionResponseState,
   PrimaryState,
-  OwnProps,
+  EditEntryCallerProps,
+  EFFECT_VALUE_HAS_EFFECTS,
+  EDITING_DEFINITION_MULTIPLE,
 } from "./edit-entry-utils";
 import Form from "semantic-ui-react/dist/commonjs/collections/Form";
 import Message from "semantic-ui-react/dist/commonjs/collections/Message";
@@ -42,9 +44,9 @@ import {
   useUpdateDefinitionsOnline,
   useUpdateDefinitionAndDataOnline,
   EditEntryUpdateProps,
-  UpdateDefinitionsAndDataOnlineProps,
-  UpdateDataObjectsOnlineMutationProps,
-  UpdateDefinitionsOnlineProps,
+  UpdateDefinitionsAndDataOnlineMutationComponentProps,
+  UpdateDataObjectsOnlineMutationComponentProps,
+  UpdateDefinitionsOnlineMutationComponentProps,
   UpdateDefinitionsOnlineMutationFn,
 } from "./edit-entry.injectables";
 import { useDeleteCachedQueriesAndMutationsOnUnmount } from "../use-delete-cached-queries-mutations-on-unmount";
@@ -52,8 +54,17 @@ import {
   MUTATION_NAME_updateDataObjects,
   MUTATION_NAME_updateDefinitions,
 } from "../../graphql/update-definition-and-data.mutation";
+import {
+  formErrorsDomId,
+  otherErrorsDomId,
+  apolloErrorsDomId,
+} from "./edit-entry-dom";
+import {
+  useCreateOnlineEntryMutation,
+  CreateOnlineEntryMutationComponentProps,
+} from "../../graphql/create-entry.mutation";
 
-export function EditEntryComponent(props: Props) {
+export function EditEntryComponent(props: EditEntryComponentProps) {
   const {
     dispatch: parentDispatch,
     experience,
@@ -61,20 +72,31 @@ export function EditEntryComponent(props: Props) {
     updateDefinitionsOnline,
     updateDefinitionsAndDataOnline,
     editEntryUpdateProp,
+    createOnlineEntry,
   } = props;
 
   const [state, dispatch] = useReducer(reducer, props, initStateFromProps);
   const {
+    effects,
     primaryState: {
       context: { definitionAndDataIdsMapList },
       common: commonState,
       editingData,
-      editingMultipleDefinitions,
+      editingDefinition,
       submissionResponse,
     },
     definitionsStates,
     dataStates,
   } = state;
+
+  useEffect(() => {
+    if (effects.value === EFFECT_VALUE_HAS_EFFECTS) {
+      for (const { func, args } of effects[EFFECT_VALUE_HAS_EFFECTS].context
+        .effects) {
+        func(args);
+      }
+    }
+  }, [effects]);
 
   useDeleteCachedQueriesAndMutationsOnUnmount(
     [MUTATION_NAME_updateDataObjects, MUTATION_NAME_updateDefinitions],
@@ -137,7 +159,7 @@ export function EditEntryComponent(props: Props) {
                         shouldSubmit={getIdOfSubmittingDefinition(
                           definitionId,
                           editingData,
-                          editingMultipleDefinitions,
+                          editingDefinition,
                         )}
                         onSubmit={submit({
                           dispatch,
@@ -146,6 +168,7 @@ export function EditEntryComponent(props: Props) {
                           updateDefinitionsAndDataOnline,
                           updateDefinitionsOnline,
                           editEntryUpdateProp,
+                          createOnlineEntry,
                         })}
                       />
                     )}
@@ -175,6 +198,7 @@ export function EditEntryComponent(props: Props) {
                     updateDefinitionsAndDataOnline,
                     updateDefinitionsOnline,
                     editEntryUpdateProp,
+                    createOnlineEntry,
                   })}
                 >
                   Submit
@@ -477,13 +501,13 @@ function SubmissionErrorsComponent({
 
   if (state.value === "formErrors") {
     errors = state.formErrors.context.errors;
-    id = "edit-entry-form-errors-message";
+    id = formErrorsDomId;
   } else if (state.value === "otherErrors") {
     errors = state.otherErrors.context.errors;
-    id = "edit-entry-other-errors-message";
+    id = otherErrorsDomId;
   } else if (state.value === "apolloErrors") {
     errors = state.apolloErrors.context.errors;
-    id = "edit-entry-apollo-errors-message";
+    id = apolloErrorsDomId;
   }
 
   return errors ? (
@@ -532,6 +556,7 @@ function submit(args: SubmitArgs) {
       editEntryUpdateProp,
       updateDataObjectsOnline,
       updateDefinitionsOnline,
+      createOnlineEntry,
     } = args;
 
     const [
@@ -550,6 +575,8 @@ function submit(args: SubmitArgs) {
         definitionsInput.length +
         definitionsWithFormErrors.length +
         dataInput.length,
+      createOnlineEntry,
+      dispatch,
     });
 
     if (definitionsWithFormErrors.length !== 0) {
@@ -623,7 +650,7 @@ function submit(args: SubmitArgs) {
         if (successResult) {
           success = true;
           dispatch({
-            type: ActionTypes.SUBMISSION_RESPONSE,
+            type: ActionTypes.DEFINITION_AND_DATA_SUBMISSION_RESPONSE,
             ...successResult,
           });
         }
@@ -675,21 +702,21 @@ function getDataObjectsToSubmit(states: DataStates) {
 function getIdOfSubmittingDefinition(
   id: string,
   editingData: PrimaryState["editingData"],
-  editingMultipleDefinitions: IStateMachine["primaryState"]["editingMultipleDefinitions"],
+  editingDefinition: IStateMachine["primaryState"]["editingDefinition"],
 ) {
   if (editingData.value === "active") {
     return false;
   }
 
-  if (editingMultipleDefinitions.value === "inactive") {
+  if (editingDefinition.value !== EDITING_DEFINITION_MULTIPLE) {
     return true;
   }
 
   const {
-    context: { firstChangedDefinitionId },
-  } = editingMultipleDefinitions;
+    context: { mostRecentlyChangedDefinitionId },
+  } = editingDefinition[EDITING_DEFINITION_MULTIPLE];
 
-  return id === firstChangedDefinitionId;
+  return id === mostRecentlyChangedDefinitionId;
 }
 
 function getDefinitionFormError(state: DefinitionState) {
@@ -776,22 +803,25 @@ interface DataComponentProps {
 type E = React.ChangeEvent<HTMLInputElement>;
 
 interface SubmitArgs
-  extends UpdateDefinitionsAndDataOnlineProps,
-    UpdateDataObjectsOnlineMutationProps,
-    UpdateDefinitionsOnlineProps,
+  extends UpdateDefinitionsAndDataOnlineMutationComponentProps,
+    UpdateDataObjectsOnlineMutationComponentProps,
+    UpdateDefinitionsOnlineMutationComponentProps,
+    CreateOnlineEntryMutationComponentProps,
     EditEntryUpdateProps {
   dispatch: DispatchType;
   globalState: IStateMachine;
 }
 
 // istanbul ignore next:
-export function EditEntry(props: OwnProps) {
+export function EditEntry(props: EditEntryCallerProps) {
   const [updateDataObjectsOnline] = useUpdateDataObjectsOnlineMutation();
   const [updateDefinitionsOnline] = useUpdateDefinitionsOnline();
   const [updateDefinitionsAndDataOnline] = useUpdateDefinitionAndDataOnline();
+  const [createOnlineEntry] = useCreateOnlineEntryMutation();
 
   return (
     <EditEntryComponent
+      createOnlineEntry={createOnlineEntry}
       updateDataObjectsOnline={updateDataObjectsOnline}
       updateDefinitionsOnline={updateDefinitionsOnline}
       updateDefinitionsAndDataOnline={updateDefinitionsAndDataOnline}
