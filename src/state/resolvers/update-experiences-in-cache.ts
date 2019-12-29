@@ -31,7 +31,7 @@ function newOfflineExperienceInCache(experienceId: string) {
   };
 }
 
-export async function updateCacheExperienceOfflineEntriesCount(
+export async function incrementOfflineEntriesCountForExperience(
   client: ApolloClient<{}>,
   experienceId: string,
 ) {
@@ -58,6 +58,45 @@ export async function updateCacheExperienceOfflineEntriesCount(
 
       if (!experienceFound) {
         proxy.push(newOfflineExperienceInCache(experienceId));
+      }
+    });
+  }
+
+  writeOfflineItemsToCache(client, cacheData);
+}
+
+export interface DecrementOfflineEntriesCountForExperienceArgs {
+  client: ApolloClient<{}>;
+  experienceId: string;
+  howMany: number;
+}
+
+export async function decrementOfflineEntriesCountForExperience({
+  client,
+  experienceId,
+  howMany,
+}: DecrementOfflineEntriesCountForExperienceArgs) {
+  let cacheData = await getExperiencesFromCache(client);
+
+  if (cacheData.length === 0) {
+    return;
+  } else {
+    cacheData = immer(cacheData, proxy => {
+      let index = 0;
+      let newIndex = 0;
+      let len = proxy.length;
+
+      for (; index < len; index++) {
+        const experience = proxy[index];
+
+        if (experience.id === experienceId) {
+          const offlineEntriesCount = experience.offlineEntriesCount - howMany;
+
+          if (offlineEntriesCount !== 0) {
+            experience.offlineEntriesCount = offlineEntriesCount;
+            proxy[newIndex++] = experience;
+          }
+        }
       }
     });
   }

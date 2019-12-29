@@ -39,6 +39,10 @@ import { CreateOnlineEntryMutationComponentProps } from "../../graphql/create-en
 import { isOfflineId } from "../../constants";
 import { updateExperienceWithNewEntry } from "../NewEntry/new-entry.injectables";
 import { CreateOnlineEntryMutation_createEntry } from "../../graphql/apollo-types/CreateOnlineEntryMutation";
+import {
+  DecrementOfflineEntriesCountForExperienceArgs,
+  decrementOfflineEntriesCountForExperience,
+} from "../../state/resolvers/update-experiences-in-cache";
 
 export enum ActionType {
   EDIT_BTN_CLICKED = "@component/edit-entry/edit-btn-clicked",
@@ -56,6 +60,7 @@ export enum ActionType {
   OTHER_ERRORS = "@component/edit-entry/other-errors",
   APOLLO_ERRORS = "@component/edit-entry/apollo-errors",
   ONLINE_ENTRY_CREATED = "@component/edit-entry/online-entry-created",
+  PUT_EFFECT_META_FUNCTIONS = "@component/edit-entry/put-effect-meta-functions",
 }
 
 export const EFFECT_VALUE_NO_EFFECT: EffectValueNoEffect = "noEffect";
@@ -155,6 +160,9 @@ export const initStateFromProps = (
   const state = {
     effects: {
       value: EFFECT_VALUE_NO_EFFECT,
+      context: {
+        metaFunctions: {} as PutEffectMetaFunctionsPayload,
+      },
     },
 
     primaryState: {
@@ -196,287 +204,84 @@ export const reducer: Reducer<IStateMachine, Action> = (state, action) =>
     action,
     (prevState, { type, ...payload }) => {
       return immer(prevState, proxy => {
-        proxy.effects = {
-          value: EFFECT_VALUE_NO_EFFECT,
-        };
+        proxy.effects.value = EFFECT_VALUE_NO_EFFECT;
 
         switch (type) {
-          case ActionType.EDIT_BTN_CLICKED:
-            {
-              const { id } = payload as IdString;
-              setDefinitionEditingUnchangedState(proxy, id);
-            }
-            break;
-
-          case ActionType.UNDO_DEFINITION_EDITS:
-            {
-              const { id } = payload as IdString;
-              setDefinitionEditingUnchangedState(proxy, id);
-              setEditingDefinitionState(proxy, id);
-            }
+          case ActionType.DATA_CHANGED:
+            handleDataChangedAction(proxy, payload as DataChangedPayload);
             break;
 
           case ActionType.DEFINITION_NAME_CHANGED:
-            {
-              const { id, formValue } = payload as DefinitionNameChangedPayload;
-              const state = proxy.definitionsStates[id];
-              state.value = "editing";
-              const { name: defaultName } = state.context.defaults;
-              const editingState = state as DefinitionEditingState;
+            handleDefinitionNameChangedAction(
+              proxy,
+              payload as DefinitionNameChangedPayload,
+            );
+            break;
 
-              if (defaultName === formValue.trim()) {
-                editingState.editing = {
-                  value: "unchanged",
+          case ActionType.EDIT_BTN_CLICKED:
+            setDefinitionEditingUnchangedState(proxy, (payload as IdString).id);
+            break;
 
-                  context: {
-                    formValue: defaultName,
-                  },
-                };
-                setDefinitionEditingUnchangedState(proxy, id);
-              } else {
-                editingState.editing = {
-                  value: "changed",
-
-                  context: {
-                    formValue,
-                  },
-
-                  changed: {
-                    value: "regular",
-                  },
-                };
-              }
-
-              setEditingDefinitionState(proxy, id);
-            }
-
+          case ActionType.UNDO_DEFINITION_EDITS:
+            handleUndoDefinitionEdits(proxy, payload as IdString);
             break;
 
           case ActionType.STOP_DEFINITION_EDIT:
-            {
-              const { id } = payload as IdString;
-              const { definitionsStates } = proxy;
-
-              definitionsStates[id].value = "idle";
-
-              setEditingDefinitionState(proxy, id);
-            }
-
+            handleStopDefinitionEdit(proxy, payload as IdString);
             break;
 
           case ActionType.SUBMITTING:
-            {
-              proxy.primaryState.common.value = "submitting";
-              const userPayload = payload as SubmittingPayload;
-
-              const effects = (proxy.effects as unknown) as EffectState;
-              effects.value = EFFECT_VALUE_HAS_EFFECTS;
-              const effectObjects: EffectObject = [];
-              effects[EFFECT_VALUE_HAS_EFFECTS] = {
-                context: {
-                  effects: effectObjects,
-                },
-              };
-
-              const { entry } = proxy.primaryState.context;
-
-              if (isOfflineId(entry.id)) {
-                handleSubmittingCreateEntryOnlineAction(
-                  proxy,
-                  userPayload,
-                  effectObjects,
-                );
-                return;
-              }
-
-              handleSubmittingUpdateDataAndOrDefinitionAction({
-                payload: userPayload,
-                globalState: proxy,
-                effectObjects,
-              });
-            }
-
-            break;
-
-          case ActionType.ONLINE_ENTRY_CREATED:
-            {
-              const { serverResult } = payload as OnlineEntryCreatedPayload;
-
-              prepareSubmissionResponse(proxy, {
-                key: "onlineEntry",
-                onlineEntryResults: serverResult,
-              });
-            }
-
+            handleSubmittingAction(proxy, payload as SubmittingPayload);
             break;
 
           case ActionType.DEFINITIONS_SUBMISSION_RESPONSE:
-            {
-              prepareSubmissionResponse(proxy, {
-                key: "definitions",
-                definitionsResults: payload as UpdateDefinitions,
-              });
-            }
-
-            break;
-
-          case ActionType.DEFINITION_FORM_ERRORS:
-            {
-              const { primaryState } = proxy;
-              primaryState.common.value = "editing";
-
-              const primaryStateFormErrors = {
-                isActive: true,
-                value: "formErrors",
-                formErrors: {
-                  context: {
-                    errors:
-                      "please correct the highlighted errors and resubmit",
-                  },
-                },
-              } as SubmissionResponseState;
-
-              primaryState.submissionResponse = {
-                ...primaryState.submissionResponse,
-                ...primaryStateFormErrors,
-              };
-
-              const { ids } = payload as DefinitionFormErrorsPayload;
-
-              const errors = {
-                name: "should be at least 2 characters long.",
-              };
-
-              for (const id of ids) {
-                const definitionState = proxy.definitionsStates[id];
-
-                ((definitionState as DefinitionEditingState)
-                  .editing as DefinitionChangedState).changed = {
-                  value: "formErrors",
-                  context: {
-                    errors,
-                  },
-                };
-              }
-            }
-
-            break;
-
-          case ActionType.OTHER_ERRORS:
-            {
-              const { primaryState } = proxy;
-              primaryState.common.value = "editing";
-
-              const otherErrorsState = {
-                isActive: true,
-                value: "otherErrors",
-                otherErrors: {
-                  context: {
-                    errors:
-                      "We apologize, we are unable to fulfill your request this time",
-                  },
-                },
-              } as SubmissionResponseState;
-
-              primaryState.submissionResponse = {
-                ...primaryState.submissionResponse,
-                ...otherErrorsState,
-              };
-            }
-
-            break;
-
-          case ActionType.APOLLO_ERRORS:
-            {
-              const { primaryState } = proxy;
-              primaryState.common.value = "editing";
-              const {
-                errors: { graphQLErrors, networkError },
-              } = payload as ApolloErrorsPayload;
-
-              const apolloErrorsState = {
-                isActive: true,
-                value: "apolloErrors",
-                apolloErrors: {
-                  context: {
-                    errors: networkError
-                      ? networkError.message
-                      : graphQLErrors[0].message,
-                  },
-                },
-              } as SubmissionResponseState;
-
-              primaryState.submissionResponse = {
-                ...primaryState.submissionResponse,
-                ...apolloErrorsState,
-              };
-            }
-
-            break;
-
-          case ActionType.DATA_CHANGED:
-            {
-              const { dataStates } = proxy;
-              const { id, rawFormVal } = payload as DataChangedPayload;
-              const state = dataStates[id];
-              let { parsedVal, type } = state.context.defaults;
-
-              const [original, stringed] = formObjToCompareString(
-                type,
-                rawFormVal,
-              );
-
-              if (formObjToCompareString(type, parsedVal)[1] === stringed) {
-                state.value = "unchanged";
-              } else {
-                state.value = "changed";
-                const changedState = state as DataChangedState;
-
-                changedState.changed = {
-                  context: {
-                    formValue: original,
-                    formValueString: stringed as string,
-                  },
-
-                  value: "normal",
-                };
-              }
-
-              setEditingData(proxy);
-            }
-            break;
-
-          case ActionType.DEFINITION_AND_DATA_SUBMISSION_RESPONSE:
-            {
-              const {
-                updateDefinitions,
-                updateDataObjects,
-              } = payload as UpdateDefinitionAndData;
-
-              prepareSubmissionResponse(proxy, {
-                key: "definitions and dataObjects",
-                definitionsResults: { updateDefinitions },
-                dataObjectsResults: { updateDataObjects },
-              });
-            }
-            break;
-
-          case ActionType.DISMISS_SUBMISSION_RESPONSE_MESSAGE:
-            {
-              (proxy.primaryState
-                .submissionResponse as SubmissionResponseState).value =
-                "inactive";
-            }
+            prepareSubmissionResponse(proxy, {
+              key: "definitions",
+              definitionsResults: payload as UpdateDefinitions,
+            });
             break;
 
           case ActionType.DATA_OBJECTS_SUBMISSION_RESPONSE:
-            {
-              prepareSubmissionResponse(proxy, {
-                key: "dataObjects",
-                dataObjectsResults: payload as UpdateDataObjects,
-              });
-            }
+            prepareSubmissionResponse(proxy, {
+              key: "dataObjects",
+              dataObjectsResults: payload as UpdateDataObjects,
+            });
+            break;
 
+          case ActionType.ONLINE_ENTRY_CREATED:
+            prepareSubmissionResponse(proxy, {
+              key: "onlineEntry",
+              onlineEntryResults: (payload as OnlineEntryCreatedPayload)
+                .serverResult,
+            });
+            break;
+
+          case ActionType.DEFINITION_FORM_ERRORS:
+            handleDefinitionFormErrorsAction(
+              proxy,
+              payload as DefinitionFormErrorsPayload,
+            );
+            break;
+
+          case ActionType.OTHER_ERRORS:
+            handleOtherErrorsAction(proxy);
+            break;
+
+          case ActionType.APOLLO_ERRORS:
+            handleApolloErrorsAction(proxy, payload as ApolloErrorsPayload);
+            break;
+
+          case ActionType.DEFINITION_AND_DATA_SUBMISSION_RESPONSE:
+            handleDefinitionAndDataSubmissionResponse(
+              proxy,
+              payload as UpdateDefinitionAndData,
+            );
+            break;
+
+          case ActionType.DISMISS_SUBMISSION_RESPONSE_MESSAGE:
+            (proxy.primaryState
+              .submissionResponse as SubmissionResponseState).value =
+              "inactive";
             break;
         }
       });
@@ -489,10 +294,224 @@ export const reducer: Reducer<IStateMachine, Action> = (state, action) =>
 // you can write to state, but can not use dispatch - every call to dispatch
 // must be put inside a function and added to effects
 
-function handleOnlineEntryCreatedAction(
+function handleDefinitionNameChangedAction(
+  globalState: IStateMachine,
+  payload: DefinitionNameChangedPayload,
+) {
+  const { id, formValue } = payload;
+  const state = globalState.definitionsStates[id];
+  state.value = "editing";
+  const { name: defaultName } = state.context.defaults;
+  const editingState = state as DefinitionEditingState;
+
+  if (defaultName === formValue.trim()) {
+    editingState.editing = {
+      value: "unchanged",
+
+      context: {
+        formValue: defaultName,
+      },
+    };
+    setDefinitionEditingUnchangedState(globalState, id);
+  } else {
+    editingState.editing = {
+      value: "changed",
+
+      context: {
+        formValue,
+      },
+
+      changed: {
+        value: "regular",
+      },
+    };
+  }
+
+  setEditingDefinitionState(globalState, id);
+}
+
+function handleSubmittingAction(
+  globalState: IStateMachine,
+  payload: SubmittingPayload,
+) {
+  globalState.primaryState.common.value = "submitting";
+
+  const userPayload = payload as SubmittingPayload;
+
+  const effectObjects = prepareToAddEffect(globalState);
+
+  const { entry } = globalState.primaryState.context;
+
+  if (isOfflineId(entry.id)) {
+    handleSubmittingCreateEntryOnlineAction(
+      globalState,
+      userPayload,
+      effectObjects,
+    );
+    return;
+  }
+
+  handleSubmittingUpdateDataAndOrDefinitionAction({
+    payload: userPayload,
+    globalState: globalState,
+    effectObjects,
+  });
+}
+
+function handleDefinitionFormErrorsAction(
+  proxy: IStateMachine,
+  payload: DefinitionFormErrorsPayload,
+) {
+  const { primaryState } = proxy;
+  primaryState.common.value = "editing";
+
+  const primaryStateFormErrors = {
+    isActive: true,
+    value: "formErrors",
+    formErrors: {
+      context: {
+        errors: "please correct the highlighted errors and resubmit",
+      },
+    },
+  } as SubmissionResponseState;
+
+  primaryState.submissionResponse = {
+    ...primaryState.submissionResponse,
+    ...primaryStateFormErrors,
+  };
+
+  const { ids } = payload as DefinitionFormErrorsPayload;
+
+  const errors = {
+    name: "should be at least 2 characters long.",
+  };
+
+  for (const id of ids) {
+    const definitionState = proxy.definitionsStates[id];
+
+    ((definitionState as DefinitionEditingState)
+      .editing as DefinitionChangedState).changed = {
+      value: "formErrors",
+      context: {
+        errors,
+      },
+    };
+  }
+}
+
+function handleOtherErrorsAction(proxy: IStateMachine) {
+  const { primaryState } = proxy;
+  primaryState.common.value = "editing";
+
+  const otherErrorsState = {
+    isActive: true,
+    value: "otherErrors",
+    otherErrors: {
+      context: {
+        errors: "We apologize, we are unable to fulfill your request this time",
+      },
+    },
+  } as SubmissionResponseState;
+
+  primaryState.submissionResponse = {
+    ...primaryState.submissionResponse,
+    ...otherErrorsState,
+  };
+}
+
+function handleStopDefinitionEdit(proxy: IStateMachine, payload: IdString) {
+  const { id } = payload as IdString;
+  const { definitionsStates } = proxy;
+
+  definitionsStates[id].value = "idle";
+
+  setEditingDefinitionState(proxy, id);
+}
+
+function handleDefinitionAndDataSubmissionResponse(
+  proxy: IStateMachine,
+  payload: UpdateDefinitionAndData,
+) {
+  const {
+    updateDefinitions,
+    updateDataObjects,
+  } = payload as UpdateDefinitionAndData;
+
+  prepareSubmissionResponse(proxy, {
+    key: "definitions and dataObjects",
+    definitionsResults: { updateDefinitions },
+    dataObjectsResults: { updateDataObjects },
+  });
+}
+
+function handleUndoDefinitionEdits(proxy: IStateMachine, payload: IdString) {
+  const { id } = payload as IdString;
+  setDefinitionEditingUnchangedState(proxy, id);
+  setEditingDefinitionState(proxy, id);
+}
+
+function handleDataChangedAction(
+  proxy: IStateMachine,
+  payload: DataChangedPayload,
+) {
+  const { dataStates } = proxy;
+  const { id, rawFormVal } = payload as DataChangedPayload;
+  const state = dataStates[id];
+  let { parsedVal, type } = state.context.defaults;
+
+  const [original, stringed] = formObjToCompareString(type, rawFormVal);
+
+  if (formObjToCompareString(type, parsedVal)[1] === stringed) {
+    state.value = "unchanged";
+  } else {
+    state.value = "changed";
+    const changedState = state as DataChangedState;
+
+    changedState.changed = {
+      context: {
+        formValue: original,
+        formValueString: stringed as string,
+      },
+
+      value: "normal",
+    };
+  }
+
+  setEditingData(proxy);
+}
+
+function handleApolloErrorsAction(
+  proxy: IStateMachine,
+  payload: ApolloErrorsPayload,
+) {
+  const { primaryState } = proxy;
+  primaryState.common.value = "editing";
+  const {
+    errors: { graphQLErrors, networkError },
+  } = payload as ApolloErrorsPayload;
+
+  const apolloErrorsState = {
+    isActive: true,
+    value: "apolloErrors",
+    apolloErrors: {
+      context: {
+        errors: networkError ? networkError.message : graphQLErrors[0].message,
+      },
+    },
+  } as SubmissionResponseState;
+
+  primaryState.submissionResponse = {
+    ...primaryState.submissionResponse,
+    ...apolloErrorsState,
+  };
+}
+
+function handleOnlineEntryCreatedServerResponseAction(
   globalState: IStateMachine,
   response: CreateOnlineEntryMutation_createEntry,
 ) {
+  // const effectObjects = handlePrepareToAddEffect(globalState);
+
   const { entry } = response;
 
   if (!entry) {
@@ -522,33 +541,26 @@ function handleOnlineEntryCreatedAction(
     };
   });
 
+  // effectObjects.push({
+  //   key: "decrementOfflineEntriesCount",
+  //   func: decrementOfflineEntriesCountEffectFn,
+  //   args: {} as DecrementOfflineEntriesCountForExperienceArgs,
+  // });
+
   return [1, 0, "valid"];
 }
 
-interface UpdateWithDefinitionsSubmissionResponse {
-  key: "definitions";
-  definitionsResults: UpdateDefinitions;
-}
+function prepareToAddEffect(globalState: IStateMachine) {
+  const effects = (globalState.effects as unknown) as EffectState;
+  effects.value = EFFECT_VALUE_HAS_EFFECTS;
+  const effectObjects: EffectObject = [];
+  effects[EFFECT_VALUE_HAS_EFFECTS] = {
+    context: {
+      effects: effectObjects,
+    },
+  };
 
-interface UpdateWithDataObjectsSubmissionResponse {
-  key: "dataObjects";
-  dataObjectsResults: UpdateDataObjects;
-}
-
-interface UpdateWithDefinitionsAndDataObjectsSubmissionResponse {
-  key: "definitions and dataObjects";
-  definitionsResults: UpdateDefinitions;
-  dataObjectsResults: UpdateDataObjects;
-}
-
-interface UpdateWithDataObjectsSubmissionResponse {
-  key: "dataObjects";
-  dataObjectsResults: UpdateDataObjects;
-}
-
-interface UpdateWithOnlineEntrySubmissionResponse {
-  key: "onlineEntry";
-  onlineEntryResults: CreateOnlineEntryMutation_createEntry;
+  return effectObjects;
 }
 
 function prepareSubmissionResponse(
@@ -608,7 +620,7 @@ function prepareSubmissionResponse(
   }
 
   if (props.key === "onlineEntry") {
-    const [s, f, t] = handleOnlineEntryCreatedAction(
+    const [s, f, t] = handleOnlineEntryCreatedServerResponseAction(
       proxy,
       props.onlineEntryResults,
     ) as [number, number, string];
@@ -1087,6 +1099,18 @@ function getDefinitionsToSubmit(allDefinitionsStates: DefinitionsStates) {
 
 ////////////////////////// EFFECT FUNCTIONS ////////////////////////////
 
+function decrementOfflineEntriesCountEffectFn(
+  args: DecrementOfflineEntriesCountForExperienceArgs,
+) {
+  decrementOfflineEntriesCountForExperience(args);
+}
+
+interface DecrementOfflineEntriesCountEffect {
+  key: "decrementOfflineEntriesCount";
+  func: typeof decrementOfflineEntriesCountEffectFn;
+  args: {}; //DecrementOfflineEntriesCountForExperienceArgs;
+}
+
 async function createEntryOnlineEffectFn({
   createOnlineEntry,
   input,
@@ -1337,7 +1361,13 @@ export interface IStateMachine {
   readonly dataStates: DataStates;
   readonly definitionsStates: DefinitionsStates;
   readonly primaryState: PrimaryState;
-  readonly effects: EffectState | { value: EffectValueNoEffect };
+  readonly effects: (EffectState | { value: EffectValueNoEffect }) & {
+    context: EffectContext;
+  };
+}
+
+interface EffectContext {
+  metaFunctions: PutEffectMetaFunctionsPayload;
 }
 
 interface EffectState {
@@ -1354,7 +1384,8 @@ type EffectObject = (
   | CreateEntryOnlineEffect
   | DefinitionsFormErrorsEffect
   | UpdateDataObjectsOnlineEffect
-  | UpdateDefinitionsAndDataOnlineEffect)[];
+  | UpdateDefinitionsAndDataOnlineEffect
+  | DecrementOfflineEntriesCountEffect)[];
 
 interface DefinitionAndDataIds {
   definitionId: string;
@@ -1523,10 +1554,21 @@ export type Action =
     }
   | {
       type: ActionType.APOLLO_ERRORS;
-    } & ApolloErrorsPayload;
+    } & ApolloErrorsPayload
+  | {
+      type: ActionType.PUT_EFFECT_META_FUNCTIONS;
+    } & PutEffectMetaFunctionsPayload;
 
 interface ApolloErrorsPayload {
   errors: ApolloError;
+}
+
+interface PutEffectMetaFunctionsPayload
+  extends CreateOnlineEntryMutationComponentProps,
+    UpdateDefinitionsOnlineMutationComponentProps,
+    UpdateDefinitionsAndDataOnlineMutationComponentProps,
+    UpdateDataObjectsOnlineMutationComponentProps {
+  dispatch: DispatchType;
 }
 
 interface SubmittingPayload
@@ -1694,4 +1736,30 @@ interface DataServerErrorsState {
       errors: UpdateDataObjects_updateDataObjects_fieldErrors;
     };
   };
+}
+
+interface UpdateWithDefinitionsSubmissionResponse {
+  key: "definitions";
+  definitionsResults: UpdateDefinitions;
+}
+
+interface UpdateWithDataObjectsSubmissionResponse {
+  key: "dataObjects";
+  dataObjectsResults: UpdateDataObjects;
+}
+
+interface UpdateWithDefinitionsAndDataObjectsSubmissionResponse {
+  key: "definitions and dataObjects";
+  definitionsResults: UpdateDefinitions;
+  dataObjectsResults: UpdateDataObjects;
+}
+
+interface UpdateWithDataObjectsSubmissionResponse {
+  key: "dataObjects";
+  dataObjectsResults: UpdateDataObjects;
+}
+
+interface UpdateWithOnlineEntrySubmissionResponse {
+  key: "onlineEntry";
+  onlineEntryResults: CreateOnlineEntryMutation_createEntry;
 }

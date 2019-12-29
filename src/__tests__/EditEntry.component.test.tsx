@@ -64,6 +64,8 @@ const mockEditEntryUpdate = editEntryUpdate as jest.Mock;
 jest.mock("../components/delete-cached-queries-and-mutations-cleanup");
 const mockDeleteCachedQueriesAndMutationsCleanup = deleteCachedQueriesAndMutationsCleanupFn as jest.Mock;
 
+jest.mock("../state/resolvers/update-experiences-in-cache");
+
 let errorConsoleSpy: jest.SpyInstance;
 
 beforeAll(() => {

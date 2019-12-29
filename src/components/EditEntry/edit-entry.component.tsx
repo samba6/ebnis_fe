@@ -4,6 +4,7 @@ import React, {
   Fragment,
   useEffect,
   useCallback,
+  useLayoutEffect,
 } from "react";
 import {
   EditEntryComponentProps,
@@ -78,6 +79,18 @@ export function EditEntryComponent(props: EditEntryComponentProps) {
     definitionsStates,
     dataStates,
   } = state;
+
+  useLayoutEffect(() => {
+    dispatch({
+      type: ActionType.PUT_EFFECT_META_FUNCTIONS,
+      createOnlineEntry,
+      updateDefinitionsOnline,
+      updateDefinitionsAndDataOnline,
+      updateDataObjectsOnline,
+      dispatch,
+    });
+    /* eslint-disable-next-line react-hooks/exhaustive-deps*/
+  }, []);
 
   useEffect(() => {
     if (effects.value === EFFECT_VALUE_HAS_EFFECTS) {
