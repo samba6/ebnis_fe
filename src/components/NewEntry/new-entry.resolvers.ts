@@ -15,7 +15,7 @@ import { updateExperienceWithNewEntry } from "./new-entry.injectables";
 import { ENTRY_FRAGMENT } from "../../graphql/entry.fragment";
 import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragment";
 import { EntryFragment } from "../../graphql/apollo-types/EntryFragment";
-import { incrementOfflineEntriesCountForExperience } from "../../state/resolvers/update-experiences-in-cache";
+import { incrementOfflineEntriesCountForExperience } from "../../apollo-cache/increment-offline-entries-count";
 import { CreateOnlineEntryMutation_createEntry } from "../../graphql/apollo-types/CreateOnlineEntryMutation";
 
 export const CREATE_OFFLINE_ENTRY_MUTATION = gql`

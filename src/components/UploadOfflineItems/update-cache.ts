@@ -8,7 +8,7 @@ import {
   OfflineItem,
   OFFLINE_ITEMS_TYPENAME,
 } from "../../state/offline-resolvers";
-import { writeOfflineItemsToCache } from "../../state/resolvers/update-experiences-in-cache";
+import { writeOfflineItemsToCache } from "../../apollo-cache/write-offline-items-to-cache";
 import immer from "immer";
 import { entryToEdge } from "../../state/resolvers/entry-to-edge";
 import { ExperiencesIdsToObjectMap } from "./upload-offline.utils";

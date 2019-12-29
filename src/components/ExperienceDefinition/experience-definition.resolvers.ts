@@ -13,7 +13,7 @@ import {
 import { EXPERIENCE_FRAGMENT } from "../../graphql/experience.fragment";
 import { writeGetExperienceFullQueryToCache } from "../../state/resolvers/write-get-experience-full-query-to-cache";
 import { insertExperienceInGetExperiencesMiniQuery } from "../../state/resolvers/update-get-experiences-mini-query";
-import { incrementOfflineEntriesCountForExperience } from "../../state/resolvers/update-experiences-in-cache";
+import { incrementOfflineEntriesCountForExperience } from "../../apollo-cache/increment-offline-entries-count";
 
 const createOfflineExperienceResolver: LocalResolverFn<
   CreateExperienceMutationVariables,

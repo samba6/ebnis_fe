@@ -7,10 +7,10 @@ import { makeTestCache } from "./test_utils";
 import { EntryFragment } from "../graphql/apollo-types/EntryFragment";
 import { updateExperienceWithNewEntry } from "../components/NewEntry/new-entry.injectables";
 import { ExperienceFragment } from "../graphql/apollo-types/ExperienceFragment";
-import { incrementOfflineEntriesCountForExperience } from "../state/resolvers/update-experiences-in-cache";
+import { incrementOfflineEntriesCountForExperience } from "../apollo-cache/increment-offline-entries-count";
 
 jest.mock("../components/NewEntry/new-entry.injectables");
-jest.mock("../state/resolvers/update-experiences-in-cache");
+jest.mock("../apollo-cache/increment-offline-entries-count");
 
 const mockUpdateExperienceWithNewEntry = updateExperienceWithNewEntry as jest.Mock;
 

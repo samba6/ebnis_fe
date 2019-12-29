@@ -8,16 +8,10 @@ import {
   ExperienceFragment_entries_edges,
   ExperienceFragment_dataDefinitions,
 } from "../graphql/apollo-types/ExperienceFragment";
-
-jest.mock("../state/resolvers/update-get-experiences-mini-query");
-jest.mock("../state/resolvers/write-get-experience-full-query-to-cache");
-jest.mock("../state/resolvers/delete-references-from-cache");
-jest.mock("../state/resolvers/update-experiences-in-cache");
-
 import { deleteIdsFromCache } from "../state/resolvers/delete-references-from-cache";
 import { replaceExperiencesInGetExperiencesMiniQuery } from "../state/resolvers/update-get-experiences-mini-query";
 import { writeGetExperienceFullQueryToCache } from "../state/resolvers/write-get-experience-full-query-to-cache";
-import { writeOfflineItemsToCache } from "../state/resolvers/update-experiences-in-cache";
+import { writeOfflineItemsToCache } from "../apollo-cache/write-offline-items-to-cache";
 import {
   MUTATION_NAME_createOfflineEntry,
   MUTATION_NAME_createExperienceOffline,
@@ -27,6 +21,11 @@ import { OFFLINE_ITEMS_TYPENAME } from "../state/offline-resolvers";
 import { CreateEntriesErrorsFragment_errors } from "../graphql/apollo-types/CreateEntriesErrorsFragment";
 import { EntryFragment_dataObjects } from "../graphql/apollo-types/EntryFragment";
 import { DataObjectFragment } from "../graphql/apollo-types/DataObjectFragment";
+
+jest.mock("../state/resolvers/update-get-experiences-mini-query");
+jest.mock("../state/resolvers/write-get-experience-full-query-to-cache");
+jest.mock("../state/resolvers/delete-references-from-cache");
+jest.mock("../apollo-cache/write-offline-items-to-cache");
 
 const mockDeleteIdsFromCache = deleteIdsFromCache as jest.Mock;
 

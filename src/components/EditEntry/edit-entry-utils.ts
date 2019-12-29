@@ -39,7 +39,7 @@ import { CreateOnlineEntryMutationComponentProps } from "../../graphql/create-en
 import { isOfflineId } from "../../constants";
 import { updateExperienceWithNewEntry } from "../NewEntry/new-entry.injectables";
 import { CreateOnlineEntryMutation_createEntry } from "../../graphql/apollo-types/CreateOnlineEntryMutation";
-import { decrementOfflineEntriesCountForExperience } from "../../state/resolvers/update-experiences-in-cache";
+import { decrementOfflineEntriesCountForExperience } from "../../apollo-cache/drecrement-offline-entries-count";
 
 export enum ActionType {
   EDIT_BTN_CLICKED = "@component/edit-entry/edit-btn-clicked",

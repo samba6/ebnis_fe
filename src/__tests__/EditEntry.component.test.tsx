@@ -47,7 +47,7 @@ import {
   CreateEntryOnlineMutationResult,
 } from "../graphql/create-entry.mutation";
 import { editEntryUpdate } from "../components/EditEntry/edit-entry.injectables";
-import { decrementOfflineEntriesCountForExperience } from "../state/resolvers/update-experiences-in-cache";
+import { decrementOfflineEntriesCountForExperience } from "../apollo-cache/drecrement-offline-entries-count";
 
 ////////////////////////// MOCKS ////////////////////////////
 
@@ -65,7 +65,7 @@ const mockEditEntryUpdate = editEntryUpdate as jest.Mock;
 jest.mock("../components/delete-cached-queries-and-mutations-cleanup");
 const mockDeleteCachedQueriesAndMutationsCleanup = deleteCachedQueriesAndMutationsCleanupFn as jest.Mock;
 
-jest.mock("../state/resolvers/update-experiences-in-cache");
+jest.mock("../apollo-cache/drecrement-offline-entries-count");
 const mockDecrementOfflineEntriesCountForExperience = decrementOfflineEntriesCountForExperience as jest.Mock;
 
 let errorConsoleSpy: jest.SpyInstance;

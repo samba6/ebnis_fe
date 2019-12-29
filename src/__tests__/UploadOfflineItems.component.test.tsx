@@ -53,7 +53,7 @@ import {
   deleteIdsFromCache,
   removeQueriesAndMutationsFromCache,
 } from "../state/resolvers/delete-references-from-cache";
-import { deleteExperiencesIdsFromOfflineItemsInCache } from "../state/resolvers/update-experiences-in-cache";
+import { deleteExperiencesIdsFromOfflineItemsInCache } from "../apollo-cache/delete-experiences-ids-from-offline-items";
 import { EbnisAppProvider } from "../context";
 import {
   useUploadOfflineExperiencesMutation,
@@ -101,7 +101,7 @@ jest.mock("../components/scroll-into-view");
 jest.mock("../components/UploadOfflineItems/update-cache");
 jest.mock("../state/resolvers/update-get-experiences-mini-query");
 jest.mock("../state/resolvers/delete-references-from-cache");
-jest.mock("../state/resolvers/update-experiences-in-cache");
+jest.mock("../apollo-cache/delete-experiences-ids-from-offline-items.ts");
 
 const mockUseState = useState;
 const mockUseEffect = useEffect;
@@ -358,7 +358,8 @@ describe("components", () => {
     );
 
     const uploadedEntry = ((mockUploadOnlineExperiencesOfflineEntries.mock
-      .calls[0][0] as any).variables as CreateOnlineEntryMutationVariables).input[0];
+      .calls[0][0] as any).variables as CreateOnlineEntryMutationVariables)
+      .input[0];
 
     expect(uploadedEntry).toEqual(entry);
 

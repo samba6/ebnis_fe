@@ -46,7 +46,7 @@ import {
 } from "../Layout/layout.utils";
 import { replaceExperiencesInGetExperiencesMiniQuery } from "../../state/resolvers/update-get-experiences-mini-query";
 import { deleteIdsFromCache } from "../../state/resolvers/delete-references-from-cache";
-import { deleteExperiencesIdsFromOfflineItemsInCache } from "../../state/resolvers/update-experiences-in-cache";
+import { deleteExperiencesIdsFromOfflineItemsInCache } from "../../apollo-cache/delete-experiences-ids-from-offline-items";
 import { EXPERIENCES_URL } from "../../routes";
 import { updateCache } from "./update-cache";
 import { useDeleteCachedQueriesAndMutationsOnUnmount } from "../use-delete-cached-queries-mutations-on-unmount";
