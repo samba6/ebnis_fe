@@ -39,10 +39,7 @@ import { CreateOnlineEntryMutationComponentProps } from "../../graphql/create-en
 import { isOfflineId } from "../../constants";
 import { updateExperienceWithNewEntry } from "../NewEntry/new-entry.injectables";
 import { CreateOnlineEntryMutation_createEntry } from "../../graphql/apollo-types/CreateOnlineEntryMutation";
-import {
-  DecrementOfflineEntriesCountForExperienceArgs,
-  decrementOfflineEntriesCountForExperience,
-} from "../../state/resolvers/update-experiences-in-cache";
+import { decrementOfflineEntriesCountForExperience } from "../../state/resolvers/update-experiences-in-cache";
 
 export enum ActionType {
   EDIT_BTN_CLICKED = "@component/edit-entry/edit-btn-clicked",
@@ -231,7 +228,7 @@ export const reducer: Reducer<IStateMachine, Action> = (state, action) =>
             break;
 
           case ActionType.SUBMITTING:
-            handleSubmittingAction(proxy, payload as SubmittingPayload);
+            handleSubmittingAction(proxy);
             break;
 
           case ActionType.DEFINITIONS_SUBMISSION_RESPONSE:
@@ -283,12 +280,244 @@ export const reducer: Reducer<IStateMachine, Action> = (state, action) =>
               .submissionResponse as SubmissionResponseState).value =
               "inactive";
             break;
+
+          case ActionType.PUT_EFFECT_META_FUNCTIONS:
+            proxy.effects.context.metaFunctions = payload as PutEffectMetaFunctionsPayload;
+            break;
         }
       });
     },
 
     // true,
   );
+
+////////////////////////// EFFECT FUNCTIONS ////////////////////////////
+
+const decrementOfflineEntriesCountEffect: DecrementOfflineEntriesCountEffect["func"] = (
+  { client },
+  { experienceId },
+) => {
+  decrementOfflineEntriesCountForExperience({
+    client,
+    experienceId,
+    howMany: 1,
+  });
+};
+
+type DecrementOfflineEntriesCountEffect = EffectDef<
+  "decrementOfflineEntriesCount",
+  "client",
+  {
+    experienceId: string;
+  }
+>;
+
+const createEntryOnlineEffectFn: CreateEntryOnlineEffect["func"] = async (
+  { createOnlineEntry, dispatch },
+  { input },
+) => {
+  try {
+    const response = await createOnlineEntry({
+      variables: {
+        input,
+      },
+      update: updateExperienceWithNewEntry(input.experienceId),
+    });
+
+    const validResponse =
+      response && response.data && response.data.createEntry;
+
+    if (validResponse) {
+      dispatch({
+        type: ActionType.ONLINE_ENTRY_CREATED,
+        serverResult: validResponse,
+      });
+
+      return;
+    }
+  } catch (errors) {}
+};
+
+type CreateEntryOnlineEffect = EffectDef<
+  "createOnlineEntry",
+  "createOnlineEntry" | "dispatch",
+  {
+    input: CreateEntryInput;
+  }
+>;
+
+const definitionsFormErrorsEffectFn: DefinitionsFormErrorsEffect["func"] = (
+  { dispatch },
+  { definitionsWithFormErrors },
+) => {
+  dispatch({
+    type: ActionType.DEFINITION_FORM_ERRORS,
+    ids: definitionsWithFormErrors,
+  });
+};
+
+type DefinitionsFormErrorsEffect = EffectDef<
+  "definitionsFormErrors",
+  "dispatch",
+  {
+    definitionsWithFormErrors: string[];
+  }
+>;
+
+const updateDefinitionsOnlineEffectFn: UpdateDefinitionsOnlineEffect["func"] = async (
+  { updateDefinitionsOnline, dispatch },
+  { experienceId, definitionsInput },
+) => {
+  try {
+    const result = await updateDefinitionsOnline({
+      variables: {
+        input: {
+          experienceId,
+          definitions: definitionsInput,
+        },
+      },
+      update: editEntryUpdate,
+    });
+
+    const validResponse = result && result.data && result.data;
+
+    if (validResponse) {
+      dispatch({
+        type: ActionType.DEFINITIONS_SUBMISSION_RESPONSE,
+        ...validResponse,
+      });
+
+      return;
+    }
+
+    dispatch({
+      type: ActionType.OTHER_ERRORS,
+    });
+  } catch (errors) {
+    handleFormSubmissionException({
+      dispatch,
+      errors,
+    });
+  }
+};
+
+type UpdateDefinitionsOnlineEffect = EffectDef<
+  "updateDefinitionsOnline",
+  "dispatch" | "updateDefinitionsOnline",
+  {
+    experienceId: string;
+    definitionsInput: UpdateDefinitionInput[];
+  }
+>;
+
+const updateDataObjectsOnlineEffectFn: UpdateDataObjectsOnlineEffect["func"] = async (
+  { dispatch, updateDataObjectsOnline },
+  { dataInput },
+) => {
+  try {
+    const response = await updateDataObjectsOnline({
+      variables: {
+        input: dataInput,
+      },
+
+      update: editEntryUpdate,
+    });
+
+    const successResult = response && response.data;
+
+    if (successResult) {
+      dispatch({
+        type: ActionType.DATA_OBJECTS_SUBMISSION_RESPONSE,
+        ...successResult,
+      });
+
+      return;
+    }
+
+    dispatch({
+      type: ActionType.OTHER_ERRORS,
+    });
+  } catch (errors) {
+    handleFormSubmissionException({ dispatch, errors });
+  }
+};
+
+type UpdateDataObjectsOnlineEffect = EffectDef<
+  "updateDataObjectsOnline",
+  "dispatch" | "updateDataObjectsOnline",
+  {
+    dataInput: UpdateDataObjectInput[];
+  }
+>;
+
+const updateDefinitionsAndDataOnlineEffectFn: UpdateDefinitionsAndDataOnlineEffect["func"] = async (
+  { dispatch, updateDefinitionsAndDataOnline },
+  { experienceId, definitionsInput, dataInput },
+) => {
+  try {
+    const response = await updateDefinitionsAndDataOnline({
+      variables: {
+        definitionsInput: {
+          experienceId,
+
+          definitions: definitionsInput,
+        },
+        dataInput,
+      },
+
+      update: editEntryUpdate,
+    });
+
+    const validResponse = response && response.data;
+
+    if (validResponse) {
+      dispatch({
+        type: ActionType.DEFINITION_AND_DATA_SUBMISSION_RESPONSE,
+        ...validResponse,
+      });
+
+      return;
+    }
+
+    dispatch({
+      type: ActionType.OTHER_ERRORS,
+    });
+  } catch (errors) {
+    handleFormSubmissionException({ errors, dispatch });
+  }
+};
+
+type UpdateDefinitionsAndDataOnlineEffect = EffectDef<
+  "updateDefinitionsAndDataOnline",
+  "dispatch" | "updateDefinitionsAndDataOnline",
+  {
+    dataInput: UpdateDataObjectInput[];
+    experienceId: string;
+    definitionsInput: UpdateDefinitionInput[];
+  }
+>;
+
+//// EFFECT HELPERS
+function handleFormSubmissionException({
+  dispatch,
+  errors,
+}: {
+  dispatch: DispatchType;
+  errors: Error;
+}) {
+  if (errors instanceof ApolloError) {
+    dispatch({
+      type: ActionType.APOLLO_ERRORS,
+      errors,
+    });
+  } else {
+    dispatch({
+      type: ActionType.OTHER_ERRORS,
+    });
+  }
+}
+
+////////////////////////// END EFFECT FUNCTIONS ////////////////////////////
 
 ////////////////////////// REDUCER STATE UPDATE FUNCTIONS //////////////////
 // you can write to state, but can not use dispatch - every call to dispatch
@@ -330,29 +559,19 @@ function handleDefinitionNameChangedAction(
   setEditingDefinitionState(globalState, id);
 }
 
-function handleSubmittingAction(
-  globalState: IStateMachine,
-  payload: SubmittingPayload,
-) {
+function handleSubmittingAction(globalState: IStateMachine) {
   globalState.primaryState.common.value = "submitting";
-
-  const userPayload = payload as SubmittingPayload;
 
   const effectObjects = prepareToAddEffect(globalState);
 
   const { entry } = globalState.primaryState.context;
 
   if (isOfflineId(entry.id)) {
-    handleSubmittingCreateEntryOnlineAction(
-      globalState,
-      userPayload,
-      effectObjects,
-    );
+    handleSubmittingCreateEntryOnlineAction(globalState, effectObjects);
     return;
   }
 
   handleSubmittingUpdateDataAndOrDefinitionAction({
-    payload: userPayload,
     globalState: globalState,
     effectObjects,
   });
@@ -510,7 +729,7 @@ function handleOnlineEntryCreatedServerResponseAction(
   globalState: IStateMachine,
   response: CreateOnlineEntryMutation_createEntry,
 ) {
-  // const effectObjects = handlePrepareToAddEffect(globalState);
+  const effectObjects = prepareToAddEffect(globalState);
 
   const { entry } = response;
 
@@ -541,11 +760,12 @@ function handleOnlineEntryCreatedServerResponseAction(
     };
   });
 
-  // effectObjects.push({
-  //   key: "decrementOfflineEntriesCount",
-  //   func: decrementOfflineEntriesCountEffectFn,
-  //   args: {} as DecrementOfflineEntriesCountForExperienceArgs,
-  // });
+  effectObjects.push({
+    key: "decrementOfflineEntriesCount",
+    effectArgKeys: ["client"],
+    func: decrementOfflineEntriesCountEffect,
+    ownArgs: { experienceId: entry.experienceId },
+  });
 
   return [1, 0, "valid"];
 }
@@ -554,7 +774,7 @@ function prepareToAddEffect(globalState: IStateMachine) {
   const effects = (globalState.effects as unknown) as EffectState;
   effects.value = EFFECT_VALUE_HAS_EFFECTS;
   const effectObjects: EffectObject = [];
-  effects[EFFECT_VALUE_HAS_EFFECTS] = {
+  effects.hasEffects = {
     context: {
       effects: effectObjects,
     },
@@ -861,21 +1081,12 @@ function handleDefinitionsSubmissionResponse(
 }
 
 async function handleSubmittingUpdateDataAndOrDefinitionAction({
-  payload,
   globalState,
   effectObjects,
 }: {
   globalState: IStateMachine;
-  payload: SubmittingPayload;
   effectObjects: EffectObject;
 }) {
-  const {
-    updateDefinitionsOnline,
-    updateDefinitionsAndDataOnline,
-    updateDataObjectsOnline,
-    dispatch,
-  } = payload;
-
   const [definitionsInput, definitionsWithFormErrors] = getDefinitionsToSubmit(
     globalState.definitionsStates,
   ) as [UpdateDefinitionInput[], string[]];
@@ -895,8 +1106,8 @@ async function handleSubmittingUpdateDataAndOrDefinitionAction({
     effectObjects.push({
       key: "definitionsFormErrors",
       func: definitionsFormErrorsEffectFn,
-      args: {
-        dispatch,
+      effectArgKeys: ["dispatch"],
+      ownArgs: {
         definitionsWithFormErrors,
       },
     });
@@ -910,12 +1121,11 @@ async function handleSubmittingUpdateDataAndOrDefinitionAction({
     effectObjects.push({
       key: "updateDefinitionsOnline",
       func: updateDefinitionsOnlineEffectFn,
-      args: {
-        dispatch,
-        updateDefinitionsOnline,
+      ownArgs: {
         definitionsInput,
         experienceId,
       },
+      effectArgKeys: ["dispatch", "updateDefinitionsOnline"],
     });
 
     return;
@@ -925,11 +1135,10 @@ async function handleSubmittingUpdateDataAndOrDefinitionAction({
     effectObjects.push({
       key: "updateDataObjectsOnline",
       func: updateDataObjectsOnlineEffectFn,
-      args: {
-        dispatch,
-        updateDataObjectsOnline,
+      ownArgs: {
         dataInput,
       },
+      effectArgKeys: ["dispatch", "updateDataObjectsOnline"],
     });
 
     return;
@@ -938,13 +1147,12 @@ async function handleSubmittingUpdateDataAndOrDefinitionAction({
   effectObjects.push({
     key: "updateDefinitionsAndDataOnline",
     func: updateDefinitionsAndDataOnlineEffectFn,
-    args: {
-      dispatch,
-      updateDefinitionsAndDataOnline,
+    ownArgs: {
       experienceId,
       dataInput,
       definitionsInput,
     },
+    effectArgKeys: ["dispatch", "updateDefinitionsAndDataOnline"],
   });
 }
 
@@ -966,7 +1174,6 @@ function setEditingData(proxy: IStateMachine) {
 
 function handleSubmittingCreateEntryOnlineAction(
   globalState: IStateMachine,
-  payload: SubmittingPayload,
   effectObjects: EffectObject,
 ) {
   (globalState.primaryState.common as PrimaryStateSubmitting).submitting = {
@@ -974,8 +1181,6 @@ function handleSubmittingCreateEntryOnlineAction(
       submittedCount: 1,
     },
   };
-
-  const { createOnlineEntry, dispatch } = payload;
 
   const {
     primaryState: {
@@ -1007,14 +1212,13 @@ function handleSubmittingCreateEntryOnlineAction(
   });
 
   effectObjects.push({
-    key: "createEntryOnline",
-    args: {
-      createOnlineEntry,
+    key: "createOnlineEntry",
+    effectArgKeys: ["createOnlineEntry", "dispatch"],
+    ownArgs: {
       input: {
         dataObjects,
         experienceId,
       },
-      dispatch,
     },
     func: createEntryOnlineEffectFn,
   });
@@ -1097,253 +1301,6 @@ function getDefinitionsToSubmit(allDefinitionsStates: DefinitionsStates) {
 
 ////////////////////////// END STATE UPDATE FUNCTIONS /////////////////////
 
-////////////////////////// EFFECT FUNCTIONS ////////////////////////////
-
-function decrementOfflineEntriesCountEffectFn(
-  args: DecrementOfflineEntriesCountForExperienceArgs,
-) {
-  decrementOfflineEntriesCountForExperience(args);
-}
-
-interface DecrementOfflineEntriesCountEffect {
-  key: "decrementOfflineEntriesCount";
-  func: typeof decrementOfflineEntriesCountEffectFn;
-  args: {}; //DecrementOfflineEntriesCountForExperienceArgs;
-}
-
-async function createEntryOnlineEffectFn({
-  createOnlineEntry,
-  input,
-  dispatch,
-}: CreateEntryOnlineEffectFnArg) {
-  try {
-    const response = await createOnlineEntry({
-      variables: {
-        input,
-      },
-      update: updateExperienceWithNewEntry(input.experienceId),
-    });
-
-    const validResponse =
-      response && response.data && response.data.createEntry;
-
-    if (validResponse) {
-      dispatch({
-        type: ActionType.ONLINE_ENTRY_CREATED,
-        serverResult: validResponse,
-      });
-
-      return;
-    }
-  } catch (errors) {}
-}
-
-interface CreateEntryOnlineEffectFnArg
-  extends CreateOnlineEntryMutationComponentProps {
-  input: CreateEntryInput;
-  dispatch: DispatchType;
-}
-
-interface CreateEntryOnlineEffect {
-  key: "createEntryOnline";
-  args: CreateEntryOnlineEffectFnArg;
-  func: typeof createEntryOnlineEffectFn;
-}
-
-function definitionsFormErrorsEffectFn({
-  dispatch,
-  definitionsWithFormErrors,
-}: DefinitionsFormErrorsEffectFnArgs) {
-  dispatch({
-    type: ActionType.DEFINITION_FORM_ERRORS,
-    ids: definitionsWithFormErrors,
-  });
-}
-
-interface DefinitionsFormErrorsEffectFnArgs {
-  dispatch: DispatchType;
-  definitionsWithFormErrors: string[];
-}
-
-interface DefinitionsFormErrorsEffect {
-  key: "definitionsFormErrors";
-  args: DefinitionsFormErrorsEffectFnArgs;
-  func: typeof definitionsFormErrorsEffectFn;
-}
-
-async function updateDefinitionsOnlineEffectFn({
-  updateDefinitionsOnline,
-  experienceId,
-  definitionsInput,
-  dispatch,
-}: UpdateDefinitionsOnlineEffectFnArgs) {
-  try {
-    const result = await updateDefinitionsOnline({
-      variables: {
-        input: {
-          experienceId,
-          definitions: definitionsInput,
-        },
-      },
-      update: editEntryUpdate,
-    });
-
-    const validResponse = result && result.data && result.data;
-
-    if (validResponse) {
-      dispatch({
-        type: ActionType.DEFINITIONS_SUBMISSION_RESPONSE,
-        ...validResponse,
-      });
-
-      return;
-    }
-
-    dispatch({
-      type: ActionType.OTHER_ERRORS,
-    });
-  } catch (errors) {
-    handleFormSubmissionException({
-      dispatch,
-      errors,
-    });
-  }
-}
-
-interface UpdateDefinitionsOnlineEffect {
-  key: "updateDefinitionsOnline";
-  args: UpdateDefinitionsOnlineEffectFnArgs;
-  func: typeof updateDefinitionsOnlineEffectFn;
-}
-
-interface UpdateDefinitionsOnlineEffectFnArgs
-  extends UpdateDefinitionsOnlineMutationComponentProps {
-  experienceId: string;
-  definitionsInput: UpdateDefinitionInput[];
-  dispatch: DispatchType;
-}
-
-async function updateDataObjectsOnlineEffectFn({
-  dispatch,
-  updateDataObjectsOnline,
-  dataInput,
-}: UpdateDataObjectsOnlineEffectFnArgs) {
-  try {
-    const response = await updateDataObjectsOnline({
-      variables: {
-        input: dataInput,
-      },
-
-      update: editEntryUpdate,
-    });
-
-    const successResult = response && response.data;
-
-    if (successResult) {
-      dispatch({
-        type: ActionType.DATA_OBJECTS_SUBMISSION_RESPONSE,
-        ...successResult,
-      });
-
-      return;
-    }
-
-    dispatch({
-      type: ActionType.OTHER_ERRORS,
-    });
-  } catch (errors) {
-    handleFormSubmissionException({ dispatch, errors });
-  }
-}
-
-interface UpdateDataObjectsOnlineEffectFnArgs
-  extends UpdateDataObjectsOnlineMutationComponentProps {
-  dataInput: UpdateDataObjectInput[];
-  dispatch: DispatchType;
-}
-
-interface UpdateDataObjectsOnlineEffect {
-  key: "updateDataObjectsOnline";
-  func: typeof updateDataObjectsOnlineEffectFn;
-  args: UpdateDataObjectsOnlineEffectFnArgs;
-}
-
-async function updateDefinitionsAndDataOnlineEffectFn({
-  dispatch,
-  experienceId,
-  definitionsInput,
-  dataInput,
-  updateDefinitionsAndDataOnline,
-}: UpdateDefinitionsAndDataOnlineEffectFnArgs) {
-  try {
-    const response = await updateDefinitionsAndDataOnline({
-      variables: {
-        definitionsInput: {
-          experienceId,
-
-          definitions: definitionsInput,
-        },
-        dataInput,
-      },
-
-      update: editEntryUpdate,
-    });
-
-    const validResponse = response && response.data;
-
-    if (validResponse) {
-      dispatch({
-        type: ActionType.DEFINITION_AND_DATA_SUBMISSION_RESPONSE,
-        ...validResponse,
-      });
-
-      return;
-    }
-
-    dispatch({
-      type: ActionType.OTHER_ERRORS,
-    });
-  } catch (errors) {
-    handleFormSubmissionException({ errors, dispatch });
-  }
-}
-
-interface UpdateDefinitionsAndDataOnlineEffectFnArgs
-  extends UpdateDefinitionsAndDataOnlineMutationComponentProps {
-  dataInput: UpdateDataObjectInput[];
-  dispatch: DispatchType;
-  experienceId: string;
-  definitionsInput: UpdateDefinitionInput[];
-}
-
-interface UpdateDefinitionsAndDataOnlineEffect {
-  key: "updateDefinitionsAndDataOnline";
-  func: typeof updateDefinitionsAndDataOnlineEffectFn;
-  args: UpdateDefinitionsAndDataOnlineEffectFnArgs;
-}
-
-//// EFFECT HELPERS
-function handleFormSubmissionException({
-  dispatch,
-  errors,
-}: {
-  dispatch: DispatchType;
-  errors: Error;
-}) {
-  if (errors instanceof ApolloError) {
-    dispatch({
-      type: ActionType.APOLLO_ERRORS,
-      errors,
-    });
-  } else {
-    dispatch({
-      type: ActionType.OTHER_ERRORS,
-    });
-  }
-}
-
-////////////////////////// END EFFECT FUNCTIONS ////////////////////////////
-
 export const EditEnryContext = createContext<ContextValue>({} as ContextValue);
 
 ////////////////////////// TYPES ////////////////////////////
@@ -1372,7 +1329,7 @@ interface EffectContext {
 
 interface EffectState {
   value: EffectValueHasEffects;
-  [EFFECT_VALUE_HAS_EFFECTS]: {
+  hasEffects: {
     context: {
       effects: EffectObject;
     };
@@ -1386,6 +1343,20 @@ type EffectObject = (
   | UpdateDataObjectsOnlineEffect
   | UpdateDefinitionsAndDataOnlineEffect
   | DecrementOfflineEntriesCountEffect)[];
+
+interface EffectDef<
+  Key extends string,
+  EffectArgKeys extends keyof PutEffectMetaFunctionsPayload,
+  OwnArgs = {}
+> {
+  key: Key;
+  effectArgKeys: EffectArgKeys[];
+  ownArgs: OwnArgs;
+  func: (
+    effectArgs: { [k in EffectArgKeys]: PutEffectMetaFunctionsPayload[k] },
+    ownArgs: OwnArgs,
+  ) => void | Promise<void>;
+}
 
 interface DefinitionAndDataIds {
   definitionId: string;
@@ -1527,7 +1498,7 @@ export type Action =
     }
   | ({
       type: ActionType.SUBMITTING;
-    } & SubmittingPayload)
+    })
   | {
       type: ActionType.DESTROYED;
     }
@@ -1563,20 +1534,14 @@ interface ApolloErrorsPayload {
   errors: ApolloError;
 }
 
-interface PutEffectMetaFunctionsPayload
+export interface PutEffectMetaFunctionsPayload
   extends CreateOnlineEntryMutationComponentProps,
     UpdateDefinitionsOnlineMutationComponentProps,
     UpdateDefinitionsAndDataOnlineMutationComponentProps,
     UpdateDataObjectsOnlineMutationComponentProps {
   dispatch: DispatchType;
-}
-
-interface SubmittingPayload
-  extends CreateOnlineEntryMutationComponentProps,
-    UpdateDefinitionsOnlineMutationComponentProps,
-    UpdateDefinitionsAndDataOnlineMutationComponentProps,
-    UpdateDataObjectsOnlineMutationComponentProps {
-  dispatch: DispatchType;
+  /* eslint-disable-next-line @typescript-eslint/no-explicit-any*/
+  client: any; // ApolloClient<{}> //- it's giving error
 }
 
 interface OnlineEntryCreatedPayload {

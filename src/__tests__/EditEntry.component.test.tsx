@@ -47,6 +47,7 @@ import {
   CreateEntryOnlineMutationResult,
 } from "../graphql/create-entry.mutation";
 import { editEntryUpdate } from "../components/EditEntry/edit-entry.injectables";
+import { decrementOfflineEntriesCountForExperience } from "../state/resolvers/update-experiences-in-cache";
 
 ////////////////////////// MOCKS ////////////////////////////
 
@@ -65,6 +66,7 @@ jest.mock("../components/delete-cached-queries-and-mutations-cleanup");
 const mockDeleteCachedQueriesAndMutationsCleanup = deleteCachedQueriesAndMutationsCleanupFn as jest.Mock;
 
 jest.mock("../state/resolvers/update-experiences-in-cache");
+const mockDecrementOfflineEntriesCountForExperience = decrementOfflineEntriesCountForExperience as jest.Mock;
 
 let errorConsoleSpy: jest.SpyInstance;
 
@@ -78,6 +80,8 @@ afterAll(() => {
 
 beforeEach(() => {
   mockDeleteCachedQueriesAndMutationsCleanup.mockReset();
+  mockDecrementOfflineEntriesCountForExperience.mockReset();
+  mockEditEntryUpdate.mockReset();
 });
 
 it("destroys the UI", () => {
@@ -1296,6 +1300,11 @@ test("editing offline entry, one data object updated, one not updated, submittin
   expect(mock.variables).toEqual(variables);
 
   /**
+   * And offline entry counts should decrease
+   */
+  expect(mockDecrementOfflineEntriesCountForExperience).toHaveBeenCalled();
+
+  /**
    * And the old data fields have been replaced with updated data from server
    */
   expect(getDataInput(data1OfflineId)).toBeNull();
@@ -1324,7 +1333,6 @@ function makeComp({
   const mockUpdateDefinitionsAndDataOnline = jest.fn();
   const mockUpdateDataOnline = jest.fn();
   const mockCreateEntryOnline = jest.fn();
-  mockEditEntryUpdate.mockReset();
 
   return {
     ui: (

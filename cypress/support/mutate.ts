@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import ApolloClient from "apollo-client";
+import { ApolloClient } from "apollo-client";
 import { CachePersistor } from "apollo-cache-persist";
 import { MutationOptions } from "apollo-client/core/watchQueryOptions";
 import { CYPRESS_APOLLO_KEY } from "../../src/state/apollo-setup";

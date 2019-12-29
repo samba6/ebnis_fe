@@ -1,5 +1,5 @@
 import { DEFAULT_OFFLINE_STATES } from "./offline-resolvers";
-import ApolloClient from "apollo-client";
+import { ApolloClient } from "apollo-client";
 import { InMemoryCache } from "apollo-cache-inmemory";
 
 export interface CacheContext {

@@ -1,6 +1,6 @@
 import { createContext } from "react";
 import { InMemoryCache, NormalizedCacheObject } from "apollo-cache-inmemory";
-import ApolloClient from "apollo-client";
+import { ApolloClient } from "apollo-client";
 import {
   RestoreCacheOrPurgeStorageFn,
   E2EWindowObject,

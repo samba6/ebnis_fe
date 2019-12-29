@@ -22,6 +22,7 @@ import {
   EditEntryCallerProps,
   EFFECT_VALUE_HAS_EFFECTS,
   EDITING_DEFINITION_MULTIPLE,
+  PutEffectMetaFunctionsPayload,
 } from "./edit-entry-utils";
 import Form from "semantic-ui-react/dist/commonjs/collections/Form";
 import Message from "semantic-ui-react/dist/commonjs/collections/Message";
@@ -54,7 +55,12 @@ import {
   otherErrorsDomId,
   apolloErrorsDomId,
 } from "./edit-entry-dom";
-import { useCreateOnlineEntryMutation } from "../../graphql/create-entry.mutation";
+import {
+  useCreateOnlineEntryMutation,
+  MUTATION_NAME_createEntry,
+} from "../../graphql/create-entry.mutation";
+// import ApolloClient from "apollo-client";
+import { EbnisAppContext } from "../../context";
 
 export function EditEntryComponent(props: EditEntryComponentProps) {
   const {
@@ -80,6 +86,8 @@ export function EditEntryComponent(props: EditEntryComponentProps) {
     dataStates,
   } = state;
 
+  const { client } = useContext(EbnisAppContext);
+
   useLayoutEffect(() => {
     dispatch({
       type: ActionType.PUT_EFFECT_META_FUNCTIONS,
@@ -88,16 +96,30 @@ export function EditEntryComponent(props: EditEntryComponentProps) {
       updateDefinitionsAndDataOnline,
       updateDataObjectsOnline,
       dispatch,
+      client,
     });
     /* eslint-disable-next-line react-hooks/exhaustive-deps*/
   }, []);
 
   useEffect(() => {
     if (effects.value === EFFECT_VALUE_HAS_EFFECTS) {
-      for (const { func, args } of effects[EFFECT_VALUE_HAS_EFFECTS].context
-        .effects) {
+      const {
+        context: { metaFunctions },
+        hasEffects: { context },
+      } = effects;
+
+      for (const { func, ownArgs, effectArgKeys } of context.effects) {
+        const effectArgKeys1 = effectArgKeys as (keyof PutEffectMetaFunctionsPayload)[];
+        const args = effectArgKeys1.reduce(
+          (acc, k) => {
+            acc[k] = metaFunctions[k];
+            return acc;
+          },
+          {} as PutEffectMetaFunctionsPayload,
+        );
+
         /* eslint-disable-next-line @typescript-eslint/no-explicit-any*/
-        func(args as any);
+        func(args, ownArgs as any);
       }
     }
   }, [effects]);
@@ -105,17 +127,16 @@ export function EditEntryComponent(props: EditEntryComponentProps) {
   const onSubmit = useCallback(function onSubmitCallback() {
     dispatch({
       type: ActionType.SUBMITTING,
-      createOnlineEntry,
-      updateDefinitionsOnline,
-      updateDefinitionsAndDataOnline,
-      updateDataObjectsOnline,
-      dispatch,
     });
     /* eslint-disable-next-line react-hooks/exhaustive-deps*/
   }, []);
 
   useDeleteCachedQueriesAndMutationsOnUnmount(
-    [MUTATION_NAME_updateDataObjects, MUTATION_NAME_updateDefinitions],
+    [
+      MUTATION_NAME_updateDataObjects,
+      MUTATION_NAME_updateDefinitions,
+      MUTATION_NAME_createEntry,
+    ],
     true,
   );
 
