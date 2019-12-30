@@ -23,3 +23,7 @@ export function makeOfflineId(id: string | number = new Date().getTime()) {
 export function isOfflineId(id?: string) {
   return id ? id.startsWith(OFFLINE_ID_PREFIX) : false;
 }
+
+export function makeApolloCacheRef(typeName: string, id: string | number) {
+  return `${typeName}:${id}`;
+}

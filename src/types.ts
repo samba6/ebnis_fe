@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any*/
 import { PropsWithChildren } from "react";
 
 export type EbnisComponentProps = any &
@@ -10,4 +11,3 @@ export type EbnisComponentProps = any &
   };
 
 export type IEnum<T extends object> = T[keyof T];
-

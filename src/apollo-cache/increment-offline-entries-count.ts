@@ -1,15 +1,15 @@
 import immer from "immer";
-import { ApolloClient } from "apollo-client";
-import { getExperiencesFromCache } from "../state/resolvers/get-experiences-from-cache";
+import { queryCacheOfflineItems } from "../state/resolvers/get-experiences-from-cache";
 import { OFFLINE_ITEMS_TYPENAME } from "../state/offline-resolvers";
 import { isOfflineId } from "../constants";
-import {writeOfflineItemsToCache} from './write-offline-items-to-cache';
+import { writeOfflineItemsToCache } from "./write-offline-items-to-cache";
+import { InMemoryCache } from "apollo-cache-inmemory";
 
-export async function incrementOfflineEntriesCountForExperience(
-  client: ApolloClient<{}>,
+export function incrementOfflineEntriesCountForExperience(
+  cache: InMemoryCache,
   experienceId: string,
 ) {
-  let cacheData = await getExperiencesFromCache(client);
+  let cacheData = queryCacheOfflineItems(cache);
 
   if (cacheData.length === 0) {
     cacheData = [newOfflineExperienceInCache(experienceId)];
@@ -35,7 +35,7 @@ export async function incrementOfflineEntriesCountForExperience(
     });
   }
 
-  writeOfflineItemsToCache(client, cacheData);
+  writeOfflineItemsToCache(cache, cacheData);
 }
 
 export function newOfflineExperienceInCache(experienceId: string) {
@@ -45,4 +45,3 @@ export function newOfflineExperienceInCache(experienceId: string) {
     __typename: OFFLINE_ITEMS_TYPENAME,
   };
 }
-

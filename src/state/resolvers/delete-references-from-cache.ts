@@ -1,6 +1,6 @@
 import { InMemoryCache } from "apollo-cache-inmemory";
 
-export function deleteIdsFromCache(
+export function wipeReferencesFromCache(
   dataProxy: InMemoryCache,
   ids: string[],
   mutationsAndQueries?: {

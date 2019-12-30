@@ -7,9 +7,9 @@ import gql from "graphql-tag";
 import { LocalResolverFn } from "./resolvers";
 import { isOfflineId } from "../constants";
 import { readGetExperienceFullQueryFromCache } from "./resolvers/read-get-experience-full-query-from-cache";
-import { getExperiencesFromCache } from "./resolvers/get-experiences-from-cache";
-import ApolloClient from "apollo-client";
+import { queryCacheOfflineItems } from "./resolvers/get-experiences-from-cache";
 import { QueryResult } from "@apollo/react-common";
+import { InMemoryCache } from "apollo-cache-inmemory";
 
 export const OFFLINE_ITEMS_QUERY = gql`
   {
@@ -20,8 +20,8 @@ export const OFFLINE_ITEMS_QUERY = gql`
   }
 `;
 
-export async function getOfflineItemsCount(client: ApolloClient<{}>) {
-  return (await getExperiencesFromCache(client)).reduce(
+export function getOfflineItemsCount(cache: InMemoryCache) {
+  return queryCacheOfflineItems(cache).reduce(
     (acc, { id, offlineEntriesCount }) => {
       acc += offlineEntriesCount;
 
@@ -67,21 +67,24 @@ export interface GetOfflineItemsQueryReturned {
   getOfflineItems: GetOfflineItemsSummary;
 }
 
+export const QUERY_NAME_getOfflineItems = "getOfflineItems";
+
 export type GetOfflineItemsQueryResult = QueryResult<
   GetOfflineItemsQueryReturned
 >;
 
-const getOfflineItemsResolver: LocalResolverFn<
-  {},
-  Promise<GetOfflineItemsSummary>
-> = async (_root, _variables, { cache, client }) => {
+const getOfflineItemsResolver: LocalResolverFn<{}, GetOfflineItemsSummary> = (
+  _root,
+  _variables,
+  { cache },
+) => {
   let completelyOfflineCount = 0;
   let partialOnlineCount = 0;
 
   const completelyOfflineMap = {} as OfflineExperienceSummaryMap;
   const partialOnlineMap = {} as OfflineExperienceSummaryMap;
 
-  (await getExperiencesFromCache(client)).forEach(({ id: id }) => {
+  queryCacheOfflineItems(cache).forEach(({ id: id }) => {
     const experience = readGetExperienceFullQueryFromCache(cache, id);
 
     if (experience) {

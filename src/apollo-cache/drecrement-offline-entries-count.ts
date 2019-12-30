@@ -1,26 +1,30 @@
-import { getExperiencesFromCache } from "../state/resolvers/get-experiences-from-cache";
-import { ApolloClient } from "apollo-client";
+import { queryCacheOfflineItems } from "../state/resolvers/get-experiences-from-cache";
 import immer from "immer";
 import { writeOfflineItemsToCache } from "./write-offline-items-to-cache";
+import { wipeReferencesFromCache } from "../state/resolvers/delete-references-from-cache";
+import { OFFLINE_ITEMS_TYPENAME } from "../state/offline-resolvers";
+import { InMemoryCache } from "apollo-cache-inmemory";
+import { makeApolloCacheRef } from "../constants";
 
 export interface DecrementOfflineEntriesCountForExperienceArgs {
-  client: ApolloClient<{}>;
+  cache: InMemoryCache;
   experienceId: string;
   howMany: number;
 }
 
-export async function decrementOfflineEntriesCountForExperience({
-  client,
+export function decrementOfflineEntriesCountForExperience({
+  cache,
   experienceId,
   howMany,
 }: DecrementOfflineEntriesCountForExperienceArgs) {
-  let cacheData = await getExperiencesFromCache(client);
+  let cacheData = queryCacheOfflineItems(cache);
 
   if (cacheData.length === 0) {
     return;
   }
 
   let updated = false;
+  let wipeFromCacheId = "";
 
   cacheData = immer(cacheData, proxy => {
     let index = 0;
@@ -38,6 +42,7 @@ export async function decrementOfflineEntriesCountForExperience({
           experience.offlineEntriesCount = offlineEntriesCount;
           proxy[index] = experience;
         } else {
+          wipeFromCacheId = id;
           proxy.splice(index, 1);
         }
 
@@ -46,7 +51,13 @@ export async function decrementOfflineEntriesCountForExperience({
     }
   });
 
+  if (wipeFromCacheId) {
+    wipeReferencesFromCache(cache, [
+      makeApolloCacheRef(OFFLINE_ITEMS_TYPENAME, wipeFromCacheId),
+    ]);
+  }
+
   if (updated) {
-    writeOfflineItemsToCache(client, cacheData);
+    writeOfflineItemsToCache(cache, cacheData);
   }
 }

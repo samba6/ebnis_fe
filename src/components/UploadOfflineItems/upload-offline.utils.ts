@@ -303,9 +303,11 @@ function updatePartialOnlineFromUploadResults(
   let hasError = false;
   const { partialOnlineMap } = stateProxy;
 
-  localState.partial = localState.partial || {
-    states: {},
-  };
+  localState.partial =
+    localState.partial ||
+    ({
+      states: {},
+    } as PartialUploadSuccessState["partial"]);
 
   const context = (localState as ExperiencesUploadedResultState).context;
 
@@ -375,9 +377,11 @@ function updateCompleteOfflineFromUploadResults(
   let hasError = false;
   const localState = successState as PartialUploadSuccessState;
 
-  localState.partial = localState.partial || {
-    states: {},
-  };
+  localState.partial =
+    localState.partial ||
+    ({
+      states: {},
+    } as PartialUploadSuccessState["partial"]);
 
   const context = (localState as ExperiencesUploadedResultState).context;
 

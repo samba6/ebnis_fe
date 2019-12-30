@@ -61,6 +61,9 @@ import {
 } from "../../graphql/create-entry.mutation";
 // import ApolloClient from "apollo-client";
 import { EbnisAppContext } from "../../context";
+import { QUERY_NAME_getOfflineItems } from "../../state/offline-resolvers";
+import { QUERY_NAME_getExperienceFull } from "../../graphql/get-experience-full.query";
+import { LayoutUnchangingContext } from "../Layout/layout.utils";
 
 export function EditEntryComponent(props: EditEntryComponentProps) {
   const {
@@ -70,6 +73,10 @@ export function EditEntryComponent(props: EditEntryComponentProps) {
     updateDefinitionsOnline,
     updateDefinitionsAndDataOnline,
     createOnlineEntry,
+    client,
+    persistor,
+    cache,
+    layoutDispatch,
   } = props;
 
   const [state, dispatch] = useReducer(reducer, props, initStateFromProps);
@@ -86,8 +93,6 @@ export function EditEntryComponent(props: EditEntryComponentProps) {
     dataStates,
   } = state;
 
-  const { client } = useContext(EbnisAppContext);
-
   useLayoutEffect(() => {
     dispatch({
       type: ActionType.PUT_EFFECT_META_FUNCTIONS,
@@ -97,6 +102,9 @@ export function EditEntryComponent(props: EditEntryComponentProps) {
       updateDataObjectsOnline,
       dispatch,
       client,
+      persistor,
+      cache,
+      layoutDispatch,
     });
     /* eslint-disable-next-line react-hooks/exhaustive-deps*/
   }, []);
@@ -136,6 +144,8 @@ export function EditEntryComponent(props: EditEntryComponentProps) {
       MUTATION_NAME_updateDataObjects,
       MUTATION_NAME_updateDefinitions,
       MUTATION_NAME_createEntry,
+      QUERY_NAME_getOfflineItems,
+      QUERY_NAME_getExperienceFull + "(",
     ],
     true,
   );
@@ -652,6 +662,9 @@ type E = React.ChangeEvent<HTMLInputElement>;
 
 // istanbul ignore next:
 export function EditEntry(props: EditEntryCallerProps) {
+  const { client, persistor, cache } = useContext(EbnisAppContext);
+  const { layoutDispatch } = useContext(LayoutUnchangingContext);
+
   const [updateDataObjectsOnline] = useUpdateDataObjectsOnlineMutation();
   const [updateDefinitionsOnline] = useUpdateDefinitionsOnline();
   const [updateDefinitionsAndDataOnline] = useUpdateDefinitionAndDataOnline();
@@ -663,6 +676,10 @@ export function EditEntry(props: EditEntryCallerProps) {
       updateDataObjectsOnline={updateDataObjectsOnline}
       updateDefinitionsOnline={updateDefinitionsOnline}
       updateDefinitionsAndDataOnline={updateDefinitionsAndDataOnline}
+      client={client}
+      persistor={persistor}
+      cache={cache}
+      layoutDispatch={layoutDispatch}
       {...props}
     />
   );

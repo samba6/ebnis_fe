@@ -45,7 +45,7 @@ import {
   LayoutUnchangingContext,
 } from "../Layout/layout.utils";
 import { replaceExperiencesInGetExperiencesMiniQuery } from "../../state/resolvers/update-get-experiences-mini-query";
-import { deleteIdsFromCache } from "../../state/resolvers/delete-references-from-cache";
+import { wipeReferencesFromCache } from "../../state/resolvers/delete-references-from-cache";
 import { deleteExperiencesIdsFromOfflineItemsInCache } from "../../apollo-cache/delete-experiences-ids-from-offline-items";
 import { EXPERIENCES_URL } from "../../routes";
 import { updateCache } from "./update-cache";
@@ -432,14 +432,14 @@ function ExperienceComponent({
             [experienceId]: null,
           });
 
-          deleteIdsFromCache(
+          wipeReferencesFromCache(
             cache,
             [experienceId].concat(
               offlineEntries.map(e => e.clientId as string),
             ),
           );
 
-          await deleteExperiencesIdsFromOfflineItemsInCache(client, [
+          await deleteExperiencesIdsFromOfflineItemsInCache(cache, [
             experienceId,
           ]);
 

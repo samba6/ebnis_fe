@@ -50,7 +50,7 @@ import { scrollIntoView } from "../components/scroll-into-view";
 import { updateCache } from "../components/UploadOfflineItems/update-cache";
 import { replaceExperiencesInGetExperiencesMiniQuery } from "../state/resolvers/update-get-experiences-mini-query";
 import {
-  deleteIdsFromCache,
+  wipeReferencesFromCache,
   removeQueriesAndMutationsFromCache,
 } from "../state/resolvers/delete-references-from-cache";
 import { deleteExperiencesIdsFromOfflineItemsInCache } from "../apollo-cache/delete-experiences-ids-from-offline-items";
@@ -134,7 +134,7 @@ const mockEntry = Entry as jest.Mock;
 const mockScrollIntoView = scrollIntoView as jest.Mock;
 const mockUpdateCache = updateCache as jest.Mock;
 const mockReplaceExperiencesInGetExperiencesMiniQuery = replaceExperiencesInGetExperiencesMiniQuery as jest.Mock;
-const mockDeleteIdsFromCache = deleteIdsFromCache as jest.Mock;
+const mockWipeReferencesFromCache = wipeReferencesFromCache as jest.Mock;
 const mockDeleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache = deleteExperiencesIdsFromOfflineItemsInCache as jest.Mock;
 const mockUseUploadUnsavedExperiencesMutation = useUploadOfflineExperiencesMutation as jest.Mock;
 const mockUseUploadAllUnsavedsMutation = useUploadOfflineItemsMutation as jest.Mock;
@@ -145,7 +145,7 @@ const mockRemoveQueriesAndMutationsFromCache = removeQueriesAndMutationsFromCach
 
 beforeEach(() => {
   jest.useFakeTimers();
-  mockDeleteIdsFromCache.mockReset();
+  mockWipeReferencesFromCache.mockReset();
   mockUpdateCache.mockReset();
   mockScrollIntoView.mockReset();
   mockIsConnected.mockReset();
@@ -1015,7 +1015,7 @@ describe("components", () => {
       mockReplaceExperiencesInGetExperiencesMiniQuery.mock.calls[0][1],
     ).toEqual({ "1": null });
 
-    expect(mockDeleteIdsFromCache).toHaveBeenCalledWith({}, ["1", "10"]);
+    expect(mockWipeReferencesFromCache).toHaveBeenCalledWith({}, ["1", "10"]);
 
     expect(
       mockDeleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache,
@@ -1099,7 +1099,7 @@ describe("components", () => {
       mockReplaceExperiencesInGetExperiencesMiniQuery.mock.calls[0][1],
     ).toEqual({ "1": null });
 
-    expect(mockDeleteIdsFromCache.mock.calls[0][1]).toEqual(["1"]);
+    expect(mockWipeReferencesFromCache.mock.calls[0][1]).toEqual(["1"]);
 
     expect(
       mockDeleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache.mock

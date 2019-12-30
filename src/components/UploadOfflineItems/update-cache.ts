@@ -12,7 +12,7 @@ import { writeOfflineItemsToCache } from "../../apollo-cache/write-offline-items
 import immer from "immer";
 import { entryToEdge } from "../../state/resolvers/entry-to-edge";
 import { ExperiencesIdsToObjectMap } from "./upload-offline.utils";
-import { deleteIdsFromCache } from "../../state/resolvers/delete-references-from-cache";
+import { wipeReferencesFromCache } from "../../state/resolvers/delete-references-from-cache";
 import { writeGetExperienceFullQueryToCache } from "../../state/resolvers/write-get-experience-full-query-to-cache";
 import { replaceExperiencesInGetExperiencesMiniQuery } from "../../state/resolvers/update-get-experiences-mini-query";
 import { InMemoryCache } from "apollo-cache-inmemory";
@@ -69,7 +69,7 @@ export function updateCache({
 
   if (toDeletes.length !== 0) {
     // we need to do all deletes before writing.
-    deleteIdsFromCache(cache, toDeletes, {
+    wipeReferencesFromCache(cache, toDeletes, {
       mutations: offlineExperiences.mutations.concat(
         onlineExperiences.mutations,
       ),

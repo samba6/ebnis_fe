@@ -76,7 +76,7 @@ const createOfflineExperienceResolver: LocalResolverFn<
     force: true,
   });
 
-  incrementOfflineEntriesCountForExperience(client, experienceId);
+  incrementOfflineEntriesCountForExperience(cache, experienceId);
 
   return experience;
 };

@@ -25,7 +25,7 @@ import {
 } from "../../graphql/apollo-types/UpdateDataObjects";
 import { UpdateDataObjectsResponseFragment_fieldErrors } from "../../graphql/apollo-types/UpdateDataObjectsResponseFragment";
 import { wrapReducer } from "../../logger";
-import { ApolloError } from "apollo-client";
+import { ApolloError, ApolloClient } from "apollo-client";
 import { formObjToString, ISO_DATE_FORMAT } from "../NewEntry/new-entry.utils";
 import parseISO from "date-fns/parseISO";
 import parse from "date-fns/parse";
@@ -40,6 +40,9 @@ import { isOfflineId } from "../../constants";
 import { updateExperienceWithNewEntry } from "../NewEntry/new-entry.injectables";
 import { CreateOnlineEntryMutation_createEntry } from "../../graphql/apollo-types/CreateOnlineEntryMutation";
 import { decrementOfflineEntriesCountForExperience } from "../../apollo-cache/drecrement-offline-entries-count";
+import { AppPersistor } from "../../context";
+import { InMemoryCache } from "apollo-cache-inmemory";
+import { LayoutDispatchType, LayoutActionType } from "../Layout/layout.utils";
 
 export enum ActionType {
   EDIT_BTN_CLICKED = "@component/edit-entry/edit-btn-clicked",
@@ -293,20 +296,26 @@ export const reducer: Reducer<IStateMachine, Action> = (state, action) =>
 
 ////////////////////////// EFFECT FUNCTIONS ////////////////////////////
 
-const decrementOfflineEntriesCountEffect: DecrementOfflineEntriesCountEffect["func"] = (
-  { client },
+const decrementOfflineEntriesCountEffect: DecrementOfflineEntriesCountEffect["func"] = async (
+  { cache, persistor, layoutDispatch },
   { experienceId },
 ) => {
-  decrementOfflineEntriesCountForExperience({
-    client,
+  await decrementOfflineEntriesCountForExperience({
+    cache,
     experienceId,
     howMany: 1,
   });
+
+  await persistor.persist();
+
+  layoutDispatch({
+    type: LayoutActionType.REFETCH_OFFLINE_ITEMS_COUNT,
+  });
 };
 
-type DecrementOfflineEntriesCountEffect = EffectDef<
+type DecrementOfflineEntriesCountEffect = EditEntryEffectDefinition<
   "decrementOfflineEntriesCount",
-  "client",
+  "cache" | "persistor" | "layoutDispatch",
   {
     experienceId: string;
   }
@@ -338,7 +347,7 @@ const createEntryOnlineEffectFn: CreateEntryOnlineEffect["func"] = async (
   } catch (errors) {}
 };
 
-type CreateEntryOnlineEffect = EffectDef<
+type CreateEntryOnlineEffect = EditEntryEffectDefinition<
   "createOnlineEntry",
   "createOnlineEntry" | "dispatch",
   {
@@ -356,7 +365,7 @@ const definitionsFormErrorsEffectFn: DefinitionsFormErrorsEffect["func"] = (
   });
 };
 
-type DefinitionsFormErrorsEffect = EffectDef<
+type DefinitionsFormErrorsEffect = EditEntryEffectDefinition<
   "definitionsFormErrors",
   "dispatch",
   {
@@ -401,7 +410,7 @@ const updateDefinitionsOnlineEffectFn: UpdateDefinitionsOnlineEffect["func"] = a
   }
 };
 
-type UpdateDefinitionsOnlineEffect = EffectDef<
+type UpdateDefinitionsOnlineEffect = EditEntryEffectDefinition<
   "updateDefinitionsOnline",
   "dispatch" | "updateDefinitionsOnline",
   {
@@ -442,7 +451,7 @@ const updateDataObjectsOnlineEffectFn: UpdateDataObjectsOnlineEffect["func"] = a
   }
 };
 
-type UpdateDataObjectsOnlineEffect = EffectDef<
+type UpdateDataObjectsOnlineEffect = EditEntryEffectDefinition<
   "updateDataObjectsOnline",
   "dispatch" | "updateDataObjectsOnline",
   {
@@ -487,7 +496,7 @@ const updateDefinitionsAndDataOnlineEffectFn: UpdateDefinitionsAndDataOnlineEffe
   }
 };
 
-type UpdateDefinitionsAndDataOnlineEffect = EffectDef<
+type UpdateDefinitionsAndDataOnlineEffect = EditEntryEffectDefinition<
   "updateDefinitionsAndDataOnline",
   "dispatch" | "updateDefinitionsAndDataOnline",
   {
@@ -561,9 +570,7 @@ function handleDefinitionNameChangedAction(
 
 function handleSubmittingAction(globalState: IStateMachine) {
   globalState.primaryState.common.value = "submitting";
-
   const effectObjects = prepareToAddEffect(globalState);
-
   const { entry } = globalState.primaryState.context;
 
   if (isOfflineId(entry.id)) {
@@ -762,7 +769,7 @@ function handleOnlineEntryCreatedServerResponseAction(
 
   effectObjects.push({
     key: "decrementOfflineEntriesCount",
-    effectArgKeys: ["client"],
+    effectArgKeys: ["cache", "persistor", "layoutDispatch"],
     func: decrementOfflineEntriesCountEffect,
     ownArgs: { experienceId: entry.experienceId },
   });
@@ -1344,7 +1351,7 @@ type EffectObject = (
   | UpdateDefinitionsAndDataOnlineEffect
   | DecrementOfflineEntriesCountEffect)[];
 
-interface EffectDef<
+interface EditEntryEffectDefinition<
   Key extends string,
   EffectArgKeys extends keyof PutEffectMetaFunctionsPayload,
   OwnArgs = {}
@@ -1540,8 +1547,12 @@ export interface PutEffectMetaFunctionsPayload
     UpdateDefinitionsAndDataOnlineMutationComponentProps,
     UpdateDataObjectsOnlineMutationComponentProps {
   dispatch: DispatchType;
+  layoutDispatch: LayoutDispatchType;
   /* eslint-disable-next-line @typescript-eslint/no-explicit-any*/
   client: any; // ApolloClient<{}> //- it's giving error
+  persistor: AppPersistor;
+  /* eslint-disable-next-line @typescript-eslint/no-explicit-any*/
+  cache: any; // InMemoryCache;
 }
 
 interface OnlineEntryCreatedPayload {
@@ -1566,7 +1577,12 @@ export type EditEntryComponentProps = UpdateDefinitionsOnlineMutationComponentPr
   UpdateDataObjectsOnlineMutationComponentProps &
   UpdateDefinitionsAndDataOnlineMutationComponentProps &
   EditEntryCallerProps &
-  CreateOnlineEntryMutationComponentProps;
+  CreateOnlineEntryMutationComponentProps & {
+    client: ApolloClient<{}>;
+    persistor: AppPersistor;
+    cache: InMemoryCache;
+    layoutDispatch: LayoutDispatchType;
+  };
 
 export interface EditEntryCallerProps {
   entry: EntryFragment;

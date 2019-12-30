@@ -2,22 +2,29 @@ import {
   decrementOfflineEntriesCountForExperience,
   DecrementOfflineEntriesCountForExperienceArgs,
 } from "../apollo-cache/drecrement-offline-entries-count";
-import { getExperiencesFromCache } from "../state/resolvers/get-experiences-from-cache";
+import { queryCacheOfflineItems } from "../state/resolvers/get-experiences-from-cache";
 import { writeOfflineItemsToCache } from "../apollo-cache/write-offline-items-to-cache";
+import { wipeReferencesFromCache } from "../state/resolvers/delete-references-from-cache";
+import { makeApolloCacheRef } from "../constants";
+import { OFFLINE_ITEMS_TYPENAME } from "../state/offline-resolvers";
 
 jest.mock("../state/resolvers/get-experiences-from-cache");
-const mockGetExperiencesFromCache = getExperiencesFromCache as jest.Mock;
+const mockQueryCacheOfflineItems = queryCacheOfflineItems as jest.Mock;
 
 jest.mock("../apollo-cache/write-offline-items-to-cache");
 const mockWriteOfflineItemsToCache = writeOfflineItemsToCache as jest.Mock;
 
+jest.mock("../state/resolvers/delete-references-from-cache");
+const mockWipeReferencesFromCache = wipeReferencesFromCache as jest.Mock;
+
 beforeEach(() => {
-  mockGetExperiencesFromCache.mockReset();
+  mockQueryCacheOfflineItems.mockReset();
   mockWriteOfflineItemsToCache.mockReset();
+  mockWipeReferencesFromCache.mockReset();
 });
 
-test("no offline items", async () => {
-  mockGetExperiencesFromCache.mockResolvedValue([]);
+test("no offline items", () => {
+  mockQueryCacheOfflineItems.mockReturnValue([]);
 
   decrementOfflineEntriesCountForExperience(
     {} as DecrementOfflineEntriesCountForExperienceArgs,
@@ -26,12 +33,12 @@ test("no offline items", async () => {
   expect(mockWriteOfflineItemsToCache).not.toHaveBeenCalled();
 });
 
-test("experienceId not in cache", async () => {
-  mockGetExperiencesFromCache.mockResolvedValue([
+test("experienceId not in cache", () => {
+  mockQueryCacheOfflineItems.mockReturnValue([
     { id: "1", offlineEntriesCount: 2 },
   ]);
 
-  await decrementOfflineEntriesCountForExperience({
+  decrementOfflineEntriesCountForExperience({
     experienceId: "x",
     howMany: 1,
   } as DecrementOfflineEntriesCountForExperienceArgs);
@@ -39,12 +46,12 @@ test("experienceId not in cache", async () => {
   expect(mockWriteOfflineItemsToCache).not.toHaveBeenCalled();
 });
 
-test("decrement offline entry", async () => {
-  mockGetExperiencesFromCache.mockResolvedValue([
+test("decrement offline entry", () => {
+  mockQueryCacheOfflineItems.mockReturnValue([
     { id: "1", offlineEntriesCount: 2 },
   ]);
 
-  await decrementOfflineEntriesCountForExperience({
+  decrementOfflineEntriesCountForExperience({
     experienceId: "1",
     howMany: 1,
   } as DecrementOfflineEntriesCountForExperienceArgs);
@@ -54,14 +61,14 @@ test("decrement offline entry", async () => {
   ]);
 });
 
-test("decrement last offline entry removes experience", async () => {
-  mockGetExperiencesFromCache.mockResolvedValue([
+test("decrement last offline entry removes experience", () => {
+  mockQueryCacheOfflineItems.mockReturnValue([
     { id: "1", offlineEntriesCount: 1 },
     { id: "2", offlineEntriesCount: 1 },
     { id: "3", offlineEntriesCount: 1 },
   ]);
 
-  await decrementOfflineEntriesCountForExperience({
+  decrementOfflineEntriesCountForExperience({
     experienceId: "2",
     howMany: 1,
   } as DecrementOfflineEntriesCountForExperienceArgs);
@@ -69,5 +76,9 @@ test("decrement last offline entry removes experience", async () => {
   expect(mockWriteOfflineItemsToCache.mock.calls[0][1]).toEqual([
     { id: "1", offlineEntriesCount: 1 },
     { id: "3", offlineEntriesCount: 1 },
+  ]);
+
+  expect(mockWipeReferencesFromCache.mock.calls[0][1]).toEqual([
+    makeApolloCacheRef(OFFLINE_ITEMS_TYPENAME, "2"),
   ]);
 });

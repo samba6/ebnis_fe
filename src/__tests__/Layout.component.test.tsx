@@ -10,12 +10,14 @@ import {
   ILayoutContextHeaderValue,
   Props,
   LayoutActionType,
-  StateMachine,
   reducer,
   LayoutAction,
   LayoutDispatchType,
   ILayoutUnchangingContextValue,
   ILayoutContextExperienceValue,
+  initState,
+  StateValue,
+  InitStateArgs,
 } from "../components/Layout/layout.utils";
 import { getOfflineItemsCount } from "../state/offline-resolvers";
 import { isConnected } from "../state/connections";
@@ -26,11 +28,12 @@ import {
   PreFetchExperiencesFnArgs,
 } from "../components/Layout/pre-fetch-experiences";
 import { WindowLocation } from "@reach/router";
+import { act } from "react-dom/test-utils";
 
 ////////////////////////// MOCKS ////////////////////////////
 
 jest.mock("../state/offline-resolvers");
-const mockGetUnsavedCount = getOfflineItemsCount as jest.Mock;
+const mockOfflineItemsCount = getOfflineItemsCount as jest.Mock;
 
 jest.mock("../state/connections");
 const mockIsConnected = isConnected as jest.Mock;
@@ -87,7 +90,7 @@ describe("components", () => {
   beforeEach(() => {
     jest.useFakeTimers();
 
-    mockGetUnsavedCount.mockReset();
+    mockOfflineItemsCount.mockReset();
     mockUseUser.mockReset();
     mockIsConnected.mockReset();
     mockPrefetchExperiences.mockReset();
@@ -240,7 +243,7 @@ describe("components", () => {
     /**
      * Then component should query for unsaved data
      */
-    expect(mockGetUnsavedCount).toHaveBeenCalled();
+    expect(mockOfflineItemsCount).toHaveBeenCalled();
   });
 
   it("queries unsaved when connection returns", async () => {
@@ -256,7 +259,7 @@ describe("components", () => {
     });
 
     mockUseUser.mockReturnValue({});
-    mockGetUnsavedCount.mockResolvedValue(5);
+    mockOfflineItemsCount.mockReturnValue(5);
     mockIsConnected.mockReturnValue(false);
 
     expect(layoutContextValue).toBeNull();
@@ -285,17 +288,18 @@ describe("components", () => {
     /**
      * When connection event occurs
      */
-    emitData({
-      type: EmitActionType.connectionChanged,
-      hasConnection: true,
+
+    act(() => {
+      emitData({
+        type: EmitActionType.connectionChanged,
+        hasConnection: true,
+      });
     });
 
     /**
      * Then component should query for unsaved data after some pause
      */
-    await wait(() => {
-      context1 = layoutContextValue as ILayoutContextHeaderValue;
-    });
+    context1 = layoutContextValue as ILayoutContextHeaderValue;
 
     expect(context1.offlineItemsCount).toBe(5);
 
@@ -319,10 +323,7 @@ describe("components", () => {
      * Then nothing should have changed
      */
 
-    await wait(() => {
-      context2 = layoutContextValue as ILayoutContextHeaderValue;
-    });
-
+    context2 = layoutContextValue as ILayoutContextHeaderValue;
     expect(context2).toBe(context1);
     expect(context2.offlineItemsCount).toBe(5);
   });
@@ -331,7 +332,7 @@ describe("components", () => {
     const { ui, emitData } = makeComp();
     mockUseUser.mockReturnValue({});
     mockIsConnected.mockReturnValue(true);
-    mockGetUnsavedCount.mockResolvedValue(2);
+    mockOfflineItemsCount.mockReturnValue(2);
 
     /**
      * Given the component is rendered
@@ -367,14 +368,14 @@ describe("components", () => {
      * When disconnect event occurs
      */
 
-    emitData({
-      type: EmitActionType.connectionChanged,
-      hasConnection: false,
+    act(() => {
+      emitData({
+        type: EmitActionType.connectionChanged,
+        hasConnection: false,
+      });
     });
 
-    await wait(() => {
-      context = layoutContextValue as ILayoutContextHeaderValue;
-    });
+    context = layoutContextValue as ILayoutContextHeaderValue;
 
     /**
      * Then we should reset unsaved data count
@@ -501,7 +502,7 @@ describe("components", () => {
      * And there unsaved data in the system
      */
 
-    mockGetUnsavedCount.mockResolvedValue(2);
+    mockOfflineItemsCount.mockResolvedValue(2);
 
     const { ui, emitData } = makeComp({
       props: {
@@ -555,9 +556,11 @@ describe("components", () => {
      * When connection event occurs
      */
 
-    emitData({
-      type: EmitActionType.connectionChanged,
-      hasConnection: true,
+    act(() => {
+      emitData({
+        type: EmitActionType.connectionChanged,
+        hasConnection: true,
+      });
     });
 
     /**
@@ -577,7 +580,7 @@ describe("components", () => {
     const { ui, emitData } = makeComp();
     mockUseUser.mockReturnValue({});
     mockIsConnected.mockReturnValue(true);
-    mockGetUnsavedCount.mockResolvedValue(2);
+    mockOfflineItemsCount.mockReturnValue(2);
 
     /**
      * Given the component is rendered
@@ -613,9 +616,11 @@ describe("components", () => {
      * When disconnect event occurs
      */
 
-    emitData({
-      type: EmitActionType.connectionChanged,
-      hasConnection: false,
+    act(() => {
+      emitData({
+        type: EmitActionType.connectionChanged,
+        hasConnection: false,
+      });
     });
 
     await wait(() => {
@@ -632,17 +637,10 @@ describe("components", () => {
 
 describe("reducer", () => {
   test("experiences to prefetch - set to never fetch if no user", () => {
-    const state = {
-      states: {
-        prefetchExperiences: {
-          value: "fetch-now",
-        },
-      },
-
-      context: {
-        user: null,
-      },
-    } as StateMachine;
+    const state = initState(({
+      connectionStatus: false,
+    } as unknown) as InitStateArgs);
+    state.states.prefetchExperiences.value = StateValue.prefetchValFetchNow;
 
     const action = {
       type: LayoutActionType.EXPERIENCES_TO_PREFETCH,
@@ -654,17 +652,12 @@ describe("reducer", () => {
   });
 
   test("experiences to prefetch - set to never fetch if ids is null", () => {
-    const state = {
-      states: {
-        prefetchExperiences: {
-          value: "fetch-now",
-        },
-      },
+    const state = initState(({
+      connectionStatus: false,
+      user: {},
+    } as unknown) as InitStateArgs);
 
-      context: {
-        user: {},
-      },
-    } as StateMachine;
+    state.states.prefetchExperiences.value = StateValue.prefetchValFetchNow;
 
     const action = {
       type: LayoutActionType.EXPERIENCES_TO_PREFETCH,
@@ -676,17 +669,12 @@ describe("reducer", () => {
   });
 
   test("experiences to prefetch - set to never fetch if ids is empty array", () => {
-    const state = {
-      states: {
-        prefetchExperiences: {
-          value: "fetch-now",
-        },
-      },
+    const state = initState(({
+      connectionStatus: false,
+      user: {},
+    } as unknown) as InitStateArgs);
 
-      context: {
-        user: {},
-      },
-    } as StateMachine;
+    state.states.prefetchExperiences.value = StateValue.prefetchValFetchNow;
 
     const action = {
       type: LayoutActionType.EXPERIENCES_TO_PREFETCH,
@@ -702,15 +690,11 @@ describe("reducer", () => {
      * Given we have never fetched experiences and there is no user
      */
 
-    const state = {
-      states: {
-        prefetchExperiences: {
-          value: "never-fetched",
-        },
-      },
+    const state = initState(({
+      connectionStatus: false,
+    } as unknown) as InitStateArgs);
 
-      context: {},
-    } as StateMachine;
+    state.states.prefetchExperiences.value = StateValue.prefetchValNeverFetched;
 
     /**
      * When connection changes
@@ -736,11 +720,11 @@ describe("reducer", () => {
      * Given we have some unsaved data
      */
 
-    const state = {
-      context: {
-        offlineItemsCount: 5,
-      },
-    } as StateMachine;
+    const state = initState(({
+      connectionStatus: false,
+    } as unknown) as InitStateArgs);
+
+    state.context.offlineItemsCount = 5;
 
     /**
      * When we update count of unsaved data
@@ -759,7 +743,6 @@ describe("reducer", () => {
 
     expect(nextState.context.offlineItemsCount).toBe(17);
   });
-
 });
 
 ////////////////////////// HELPER FUNCTIONS ///////////////////////////////////
@@ -779,7 +762,7 @@ function makeComp({
   layoutExperienceContextValue = null;
 
   const mockRestoreCacheOrPurgeStorage = jest.fn();
-  const cache = jest.fn();
+  const cache = { readQuery: jest.fn() };
   const client = { query: jest.fn };
 
   const defaultContext = {

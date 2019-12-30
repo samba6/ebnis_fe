@@ -48,6 +48,8 @@ import {
 } from "../graphql/create-entry.mutation";
 import { editEntryUpdate } from "../components/EditEntry/edit-entry.injectables";
 import { decrementOfflineEntriesCountForExperience } from "../apollo-cache/drecrement-offline-entries-count";
+import { AppPersistor } from "../context";
+import { LayoutActionType } from "../components/Layout/layout.utils";
 
 ////////////////////////// MOCKS ////////////////////////////
 
@@ -69,6 +71,7 @@ jest.mock("../apollo-cache/drecrement-offline-entries-count");
 const mockDecrementOfflineEntriesCountForExperience = decrementOfflineEntriesCountForExperience as jest.Mock;
 
 let errorConsoleSpy: jest.SpyInstance;
+const mockPersistFunc = jest.fn();
 
 beforeAll(() => {
   errorConsoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
@@ -82,6 +85,7 @@ beforeEach(() => {
   mockDeleteCachedQueriesAndMutationsCleanup.mockReset();
   mockDecrementOfflineEntriesCountForExperience.mockReset();
   mockEditEntryUpdate.mockReset();
+  mockPersistFunc.mockReset();
 });
 
 it("destroys the UI", () => {
@@ -1196,6 +1200,10 @@ test("editing offline entry, one data object updated, one not updated, submittin
   };
 
   /**
+   * And there are other offline items in the system
+   */
+
+  /**
    * And server will respond with success on submission
    */
   const serverResponse = {
@@ -1225,7 +1233,7 @@ test("editing offline entry, one data object updated, one not updated, submittin
     },
   } as CreateEntryOnlineMutationResult;
 
-  const { ui, mockCreateEntryOnline } = makeComp({
+  const { ui, mockCreateEntryOnline, mockLayoutDispatch } = makeComp({
     props: {
       entry: offlineEntry as EntryFragment,
 
@@ -1300,9 +1308,21 @@ test("editing offline entry, one data object updated, one not updated, submittin
   expect(mock.variables).toEqual(variables);
 
   /**
-   * And offline entry counts should decrease
+   * And offline entry counts should decrease in cache
    */
   expect(mockDecrementOfflineEntriesCountForExperience).toHaveBeenCalled();
+
+  /**
+   * And cache should be flushed from memory
+   */
+  expect(mockPersistFunc).toHaveBeenCalledTimes(1);
+
+  /**
+   * And offline items count has been properly drawn down
+   */
+  expect(mockLayoutDispatch).toHaveBeenCalledWith({
+    type: LayoutActionType.REFETCH_OFFLINE_ITEMS_COUNT,
+  });
 
   /**
    * And the old data fields have been replaced with updated data from server
@@ -1333,6 +1353,10 @@ function makeComp({
   const mockUpdateDefinitionsAndDataOnline = jest.fn();
   const mockUpdateDataOnline = jest.fn();
   const mockCreateEntryOnline = jest.fn();
+  const mockLayoutDispatch = jest.fn();
+  const persistor = {
+    persist: mockPersistFunc as any,
+  } as AppPersistor;
 
   return {
     ui: (
@@ -1342,6 +1366,8 @@ function makeComp({
         updateDataObjectsOnline={mockUpdateDataOnline}
         updateDefinitionsAndDataOnline={mockUpdateDefinitionsAndDataOnline}
         dispatch={mockParentDispatch}
+        persistor={persistor}
+        layoutDispatch={mockLayoutDispatch}
         {...props}
       />
     ),
@@ -1351,6 +1377,8 @@ function makeComp({
     mockUpdateDataOnline,
     mockEditEntryUpdate,
     mockCreateEntryOnline,
+    mockPersistFunc,
+    mockLayoutDispatch,
   };
 }
 

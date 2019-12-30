@@ -2,16 +2,11 @@ import {
   OFFLINE_ITEMS_QUERY,
   OfflineItemsQueryReturned,
 } from "../offline-resolvers";
-import ApolloClient from "apollo-client";
+import { InMemoryCache } from "apollo-cache-inmemory";
 
-export async function getExperiencesFromCache(
-  dataProxy: ApolloClient<{}>,
-) {
-  const { data } = await dataProxy.query<
-    OfflineItemsQueryReturned
-  >({
+export function queryCacheOfflineItems(dataProxy: InMemoryCache) {
+  const data = dataProxy.readQuery<OfflineItemsQueryReturned>({
     query: OFFLINE_ITEMS_QUERY,
-    fetchPolicy: "cache-only",
   });
 
   return (data && data.offlineItems) || [];

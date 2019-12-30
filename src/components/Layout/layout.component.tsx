@@ -1,4 +1,10 @@
-import React, { useContext, useEffect, useRef, useReducer } from "react";
+import React, {
+  useContext,
+  useEffect,
+  useRef,
+  useReducer,
+  useLayoutEffect,
+} from "react";
 import { EbnisAppContext } from "../../context";
 import { Loading } from "../Loading/loading";
 import {
@@ -7,6 +13,9 @@ import {
   LayoutActionType,
   Props,
   initState,
+  StateValue,
+  EffectFunctionsArgs,
+  effectFunctions,
 } from "./layout.utils";
 import {
   EmitActionType,
@@ -55,7 +64,39 @@ export function Layout(props: Props) {
       renderChildren,
       hasConnection: hasConnection,
     },
+    effects,
   } = stateMachine;
+
+  useEffect(() => {
+    if (effects.value === StateValue.effectValHasEffects) {
+      const {
+        context: { metaFunctions },
+        hasEffects: { context },
+      } = effects;
+
+      for (const { key, ownArgs, effectArgKeys } of context.effects) {
+        const effectArgKeys1 = effectArgKeys as (keyof EffectFunctionsArgs)[];
+        const args = effectArgKeys1.reduce(
+          (acc, k) => {
+            acc[k] = metaFunctions[k];
+            return acc;
+          },
+          {} as EffectFunctionsArgs,
+        );
+
+        effectFunctions[key](args, ownArgs);
+      }
+    }
+  }, [effects]);
+
+  useLayoutEffect(() => {
+    dispatch({
+      type: LayoutActionType.PUT_EFFECT_FUNCTIONS_ARGS,
+      cache,
+      dispatch,
+    });
+    /* eslint-disable-next-line react-hooks/exhaustive-deps*/
+  }, []);
 
   useEffect(() => {
     subscriptionRef.current = observable.subscribe({
@@ -65,12 +106,10 @@ export function Layout(props: Props) {
             hasConnection: isConnected,
           } = payload as ConnectionChangedPayload;
 
-          getOfflineItemsCount(client).then(newUnsavedCount => {
-            dispatch({
-              type: LayoutActionType.CONNECTION_CHANGED,
-              offlineItemsCount: newUnsavedCount,
-              isConnected,
-            });
+          dispatch({
+            type: LayoutActionType.CONNECTION_CHANGED,
+            offlineItemsCount: getOfflineItemsCount(cache),
+            isConnected,
           });
         }
       },
@@ -79,7 +118,7 @@ export function Layout(props: Props) {
     return () => {
       (subscriptionRef.current as ZenObservable.Subscription).unsubscribe();
     };
-  }, [client, observable]);
+  }, [cache, observable]);
 
   useEffect(
     function persistCacheEffect() {
@@ -94,7 +133,7 @@ export function Layout(props: Props) {
 
         dispatch({
           type: LayoutActionType.CACHE_PERSISTED,
-          offlineItemsCount: await getOfflineItemsCount(client),
+          offlineItemsCount: getOfflineItemsCount(cache),
           hasConnection: !!isConnected(),
         });
       })();

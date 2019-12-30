@@ -1,13 +1,13 @@
-import { ApolloClient } from "apollo-client";
 import { OfflineItem } from "../state/offline-resolvers";
 import { writeOfflineItemsToCache } from "./write-offline-items-to-cache";
-import { getExperiencesFromCache } from "../state/resolvers/get-experiences-from-cache";
+import { queryCacheOfflineItems } from "../state/resolvers/get-experiences-from-cache";
+import { InMemoryCache } from "apollo-cache-inmemory";
 
-export async function deleteExperiencesIdsFromOfflineItemsInCache(
-  client: ApolloClient<{}>,
+export function deleteExperiencesIdsFromOfflineItemsInCache(
+  client: InMemoryCache,
   ids: string[],
 ) {
-  const cacheData = (await getExperiencesFromCache(client)).reduce(
+  const cacheData = queryCacheOfflineItems(client).reduce(
     (acc, map) => {
       if (ids.includes(map.id)) {
         return acc;

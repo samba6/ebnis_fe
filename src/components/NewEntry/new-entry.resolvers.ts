@@ -47,7 +47,7 @@ const createOfflineEntryMutationResolver: LocalResolverFn<
   CreateOfflineEntryMutationVariables,
   Promise<CreateOfflineEntryMutationReturned["createOfflineEntry"]>
 > = async (_, variables, context) => {
-  const { client } = context;
+  const { client, cache } = context;
 
   let experience = { ...variables.experience };
   experience.hasUnsaved = true;
@@ -85,7 +85,7 @@ const createOfflineEntryMutationResolver: LocalResolverFn<
     data: { createEntry: { entry } as CreateOnlineEntryMutation_createEntry },
   })) as ExperienceFragment;
 
-  incrementOfflineEntriesCountForExperience(client, experienceId);
+  incrementOfflineEntriesCountForExperience(cache, experienceId);
 
   return { id, experience, entry, __typename: "Entry" };
 };

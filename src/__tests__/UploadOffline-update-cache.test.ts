@@ -8,7 +8,7 @@ import {
   ExperienceFragment_entries_edges,
   ExperienceFragment_dataDefinitions,
 } from "../graphql/apollo-types/ExperienceFragment";
-import { deleteIdsFromCache } from "../state/resolvers/delete-references-from-cache";
+import { wipeReferencesFromCache } from "../state/resolvers/delete-references-from-cache";
 import { replaceExperiencesInGetExperiencesMiniQuery } from "../state/resolvers/update-get-experiences-mini-query";
 import { writeGetExperienceFullQueryToCache } from "../state/resolvers/write-get-experience-full-query-to-cache";
 import { writeOfflineItemsToCache } from "../apollo-cache/write-offline-items-to-cache";
@@ -27,7 +27,7 @@ jest.mock("../state/resolvers/write-get-experience-full-query-to-cache");
 jest.mock("../state/resolvers/delete-references-from-cache");
 jest.mock("../apollo-cache/write-offline-items-to-cache");
 
-const mockDeleteIdsFromCache = deleteIdsFromCache as jest.Mock;
+const mockWipeReferencesFromCache = wipeReferencesFromCache as jest.Mock;
 
 const mockReplaceExperiencesInGetExperiencesMiniQuery = replaceExperiencesInGetExperiencesMiniQuery as jest.Mock;
 
@@ -82,7 +82,7 @@ test("completely saved unsaved experience", () => {
   expect(outstandingUnsavedCount).toBe(0);
   expect(mockWriteGetExperienceFullQueryToCache).toHaveBeenCalledTimes(1);
 
-  expect(mockDeleteIdsFromCache).toHaveBeenCalledWith(
+  expect(mockWipeReferencesFromCache).toHaveBeenCalledWith(
     {},
     ["Experience:1", "DataDefinition:1", `${OFFLINE_ITEMS_TYPENAME}:1`],
     {
@@ -180,7 +180,7 @@ test("partially saved unsaved experience", () => {
   expect(outstandingUnsavedCount).toBe(1);
   expect(mockWriteGetExperienceFullQueryToCache).toHaveBeenCalledTimes(1);
 
-  expect(mockDeleteIdsFromCache).toHaveBeenCalledWith(
+  expect(mockWipeReferencesFromCache).toHaveBeenCalledWith(
     {},
     [
       "Experience:2",
@@ -267,7 +267,7 @@ test("unsaved experience not saved", () => {
   expect(outstandingUnsavedCount).toBe(2);
   expect(mockWriteGetExperienceFullQueryToCache).not.toHaveBeenCalled();
 
-  expect(mockDeleteIdsFromCache).not.toHaveBeenCalled();
+  expect(mockWipeReferencesFromCache).not.toHaveBeenCalled();
 
   expect(
     mockReplaceExperiencesInGetExperiencesMiniQuery,
@@ -361,7 +361,7 @@ test("saved experience with unsaved entry not saved", () => {
 
   expect(outstandingUnsavedCount).toBe(1);
 
-  expect(mockDeleteIdsFromCache).toHaveBeenCalledWith({}, ["Entry:22-c"], {
+  expect(mockWipeReferencesFromCache).toHaveBeenCalledWith({}, ["Entry:22-c"], {
     mutations: [[MUTATION_NAME_createOfflineEntry, "Entry:22-c"]],
 
     queries: [],
@@ -408,7 +408,7 @@ test("saved experience with no 'newlyOnlineEntries' ", () => {
   expect(mockWriteGetExperienceFullQueryToCache).not.toHaveBeenCalled();
 
   expect(outstandingUnsavedCount).toBe(1);
-  expect(mockDeleteIdsFromCache).not.toHaveBeenCalled();
+  expect(mockWipeReferencesFromCache).not.toHaveBeenCalled();
 
   expect(
     mockReplaceExperiencesInGetExperiencesMiniQuery,
@@ -444,7 +444,7 @@ test("saved experience with empty 'newlyOnlineEntries' ", () => {
   expect(mockWriteGetExperienceFullQueryToCache).not.toHaveBeenCalled();
 
   expect(outstandingUnsavedCount).toBe(1);
-  expect(mockDeleteIdsFromCache).not.toHaveBeenCalled();
+  expect(mockWipeReferencesFromCache).not.toHaveBeenCalled();
 
   expect(
     mockReplaceExperiencesInGetExperiencesMiniQuery,
@@ -499,7 +499,7 @@ test("saved experience completely saved", () => {
 
   expect(outstandingUnsavedCount).toBe(0);
 
-  expect(mockDeleteIdsFromCache).toHaveBeenCalledWith(
+  expect(mockWipeReferencesFromCache).toHaveBeenCalledWith(
     {},
     ["Entry:71-c", "DataObject:1", `${OFFLINE_ITEMS_TYPENAME}:7`],
     {
@@ -534,7 +534,7 @@ it("is a noop when updating and there is nothing to update", () => {
 
   expect(outstandingUnsavedCount).toBe(0);
 
-  expect(mockDeleteIdsFromCache).not.toHaveBeenCalled();
+  expect(mockWipeReferencesFromCache).not.toHaveBeenCalled();
 
   expect(
     mockReplaceExperiencesInGetExperiencesMiniQuery,

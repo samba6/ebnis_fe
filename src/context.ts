@@ -7,15 +7,17 @@ import {
 } from "./state/apollo-setup";
 import { CachePersistor } from "apollo-cache-persist";
 
-export interface EbnisContextProps extends E2EWindowObject {
-  cache: InMemoryCache;
-  client: ApolloClient<{}>;
-  restoreCacheOrPurgeStorage?: RestoreCacheOrPurgeStorageFn;
-  persistor: CachePersistor<NormalizedCacheObject>;
-}
-
 export const EbnisAppContext = createContext<EbnisContextProps>(
   {} as EbnisContextProps,
 );
 
 export const EbnisAppProvider = EbnisAppContext.Provider;
+
+export interface EbnisContextProps extends E2EWindowObject {
+  cache: InMemoryCache;
+  client: ApolloClient<{}>;
+  restoreCacheOrPurgeStorage?: RestoreCacheOrPurgeStorageFn;
+  persistor: AppPersistor;
+}
+
+export type AppPersistor = CachePersistor<NormalizedCacheObject>;
