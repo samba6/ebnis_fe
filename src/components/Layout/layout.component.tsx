@@ -14,6 +14,9 @@ import {
   initState,
   StateValue,
   runEffects,
+  SubscribeToObservableState,
+  getEffectArgsFromKeys,
+  effectFunctions,
 } from "./layout.utils";
 import {
   LayoutProvider,
@@ -53,18 +56,24 @@ export function Layout(props: Props) {
       renderChildren,
       hasConnection: hasConnection,
     },
-    effects,
+    effects: {
+      runOnRenders,
+      context: { effectsArgsObj },
+      runOnce: { subscribeToObservable },
+    },
   } = stateMachine;
 
+  const runSubscribeToObservable =
+    subscribeToObservable && subscribeToObservable.run;
+
   useEffect(() => {
-    if (effects.value !== StateValue.effectValHasEffects) {
+    if (runOnRenders.value !== StateValue.effectValHasEffects) {
       return;
     }
 
     const {
-      context: { effectsArgsObj },
       hasEffects: { context },
-    } = effects;
+    } = runOnRenders;
 
     runEffects(context.effects, effectsArgsObj);
 
@@ -78,7 +87,28 @@ export function Layout(props: Props) {
 
     // redundant - [tsserver 7030] [W] Not all code paths return a value.
     return;
-  }, [effects]);
+    /* eslint-disable-next-line react-hooks/exhaustive-deps*/
+  }, [runOnRenders]);
+
+  useEffect(() => {
+    if (runSubscribeToObservable) {
+      const {
+        effect: { key, effectArgKeys, ownArgs },
+      } = subscribeToObservable as SubscribeToObservableState;
+
+      const args = getEffectArgsFromKeys(effectArgKeys, effectsArgsObj);
+
+      return effectFunctions[key](
+        args,
+        /* eslint-disable-next-line @typescript-eslint/no-explicit-any*/
+        ownArgs as any,
+      ) as (() => void);
+    }
+
+    return;
+
+    /* eslint-disable-next-line react-hooks/exhaustive-deps*/
+  }, [runSubscribeToObservable]);
 
   useLayoutEffect(() => {
     dispatch({

@@ -29,6 +29,7 @@ import {
 } from "../components/Layout/pre-fetch-experiences";
 import { WindowLocation } from "@reach/router";
 import { act } from "react-dom/test-utils";
+import { cleanupObservableSubscription } from "../components/Layout/layout-injectables";
 
 ////////////////////////// MOCKS ////////////////////////////
 
@@ -82,6 +83,9 @@ jest.mock("../components/Layout/pre-fetch-experiences", () => ({
 }));
 const mockPrefetchExperiences = preFetchExperiences as jest.Mock;
 
+jest.mock("../components/Layout/layout-injectables");
+const mockCleanupObservableSubscription = cleanupObservableSubscription as jest.Mock;
+
 ////////////////////////// END MOCKS ////////////////////////////
 
 const browserRenderedUiId = "layout-loaded";
@@ -95,6 +99,7 @@ describe("components", () => {
     mockIsConnected.mockReset();
     mockPrefetchExperiences.mockReset();
     locationContextValue = null;
+    mockCleanupObservableSubscription.mockReset();
   });
 
   afterEach(() => {
@@ -134,7 +139,7 @@ describe("components", () => {
     /**
      * Given component was rendered with all context props
      */
-    render(ui);
+    const { unmount } = render(ui);
 
     /**
      * Then we should not see component's children
@@ -176,6 +181,22 @@ describe("components", () => {
      * And location context should have been set
      */
     expect(locationContextValue).toMatchObject({});
+
+    /**
+     * And cleanup codes should not have ran
+     */
+
+    expect(mockCleanupObservableSubscription).not.toHaveBeenCalled();
+
+    /**
+     * When component unmounts
+     */
+    unmount();
+
+    /**
+     * Then cleanup codes should run
+     */
+    expect(mockCleanupObservableSubscription).toHaveBeenCalledTimes(1);
   });
 
   it("renders browser hydrated children if cache persist succeeds", async () => {

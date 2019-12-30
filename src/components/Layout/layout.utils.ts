@@ -15,6 +15,7 @@ import {
   EmitActionType,
   EmitActionConnectionChangedPayload,
 } from "../../state/observable-manager";
+import { cleanupObservableSubscription } from "./layout-injectables";
 
 export enum LayoutActionType {
   SET_OFFLINE_ITEMS_COUNT = "@layout/set-offline-items-count",
@@ -24,7 +25,6 @@ export enum LayoutActionType {
   DONE_FETCHING_EXPERIENCES = "@layout/experiences-already-fetched",
   REFETCH_OFFLINE_ITEMS_COUNT = "@layout/refetch-offline-items-count",
   PUT_EFFECT_FUNCTIONS_ARGS = "@layout/put-effects-functions-args",
-  CLEAN_UP_OBSERVABLE_SUBSCRIPTION = "@layout/cleanup-observable-subscription",
 }
 
 export const StateValue = {
@@ -41,7 +41,7 @@ export const reducer: Reducer<StateMachine, LayoutAction> = (state, action) =>
     action,
     (prevState, { type, ...payload }) => {
       return immer(prevState, proxy => {
-        proxy.effects.value = StateValue.effectValNoEffect;
+        proxy.effects.runOnRenders.value = StateValue.effectValNoEffect;
 
         switch (type) {
           case LayoutActionType.CONNECTION_CHANGED:
@@ -79,13 +79,6 @@ export const reducer: Reducer<StateMachine, LayoutAction> = (state, action) =>
 
           case LayoutActionType.PUT_EFFECT_FUNCTIONS_ARGS:
             handlePutEffectFunctionsArgs(proxy, payload as EffectFunctionsArgs);
-            break;
-
-          case LayoutActionType.CLEAN_UP_OBSERVABLE_SUBSCRIPTION:
-            handleCleanupObservableSubscription(
-              proxy,
-              payload as CleanupObservableSubscriptionPayload,
-            );
             break;
         }
       });
@@ -139,9 +132,31 @@ type PrefetchExperiencesEffect = LayoutEffectDefinition<
 const firstEffect: FirstEffect["func"] = async ({
   cache,
   dispatch,
-  observable,
   restoreCacheOrPurgeStorage,
   persistor,
+}) => {
+  if (cache && restoreCacheOrPurgeStorage) {
+    try {
+      await restoreCacheOrPurgeStorage(persistor);
+    } catch (error) {}
+
+    dispatch({
+      type: LayoutActionType.CACHE_PERSISTED,
+      offlineItemsCount: getOfflineItemsCount(cache),
+      hasConnection: !!isConnected(),
+    });
+  }
+};
+
+type FirstEffect = LayoutEffectDefinition<
+  "firstEffect",
+  "dispatch" | "cache" | "restoreCacheOrPurgeStorage" | "persistor"
+>;
+
+const subscribeToObservableEffect: SubscribeToObservableEffect["func"] = ({
+  dispatch,
+  observable,
+  cache,
 }) => {
   const subscription = observable.subscribe({
     next({ type, ...payload }) {
@@ -157,53 +172,21 @@ const firstEffect: FirstEffect["func"] = async ({
     },
   });
 
-  if (cache && restoreCacheOrPurgeStorage) {
-    try {
-      await restoreCacheOrPurgeStorage(persistor);
-    } catch (error) {}
-
-    dispatch({
-      type: LayoutActionType.CACHE_PERSISTED,
-      offlineItemsCount: getOfflineItemsCount(cache),
-      hasConnection: !!isConnected(),
-    });
-  }
-
-  dispatch({
-    type: LayoutActionType.CLEAN_UP_OBSERVABLE_SUBSCRIPTION,
-    subscription,
-  });
+  return () => {
+    cleanupObservableSubscription(subscription);
+  };
 };
 
-type FirstEffect = LayoutEffectDefinition<
-  "firstEffect",
-  | "dispatch"
-  | "cache"
-  | "observable"
-  | "restoreCacheOrPurgeStorage"
-  | "persistor"
->;
-
-const cleanupObservableSubscriptionEffect: CleanupObservableSubscriptionEffect["func"] = (
-  {},
-  { subscription },
-) => {
-  subscription.unsubscribe();
-};
-
-type CleanupObservableSubscriptionEffect = LayoutEffectDefinition<
-  "cleanupObservableSubscription",
-  "dispatch",
-  {
-    subscription: ZenObservable.Subscription;
-  }
+type SubscribeToObservableEffect = LayoutEffectDefinition<
+  "subscribeToObservable",
+  "dispatch" | "observable" | "cache"
 >;
 
 export const effectFunctions = {
   getOfflineItemsCount: getOfflineItemsCountEffect,
   prefetchExperiences: prefetchExperiencesEffect,
   firstEffect,
-  cleanupObservableSubscription: cleanupObservableSubscriptionEffect,
+  subscribeToObservable: subscribeToObservableEffect,
 };
 
 export function runEffects(
@@ -211,12 +194,9 @@ export function runEffects(
   effectsArgsObj: EffectFunctionsArgs,
 ) {
   for (const { key, ownArgs, effectArgKeys } of effects) {
-    const effectArgs = (effectArgKeys as (keyof EffectFunctionsArgs)[]).reduce(
-      (acc, k) => {
-        acc[k] = effectsArgsObj[k];
-        return acc;
-      },
-      {} as EffectFunctionsArgs,
+    const effectArgs = getEffectArgsFromKeys(
+      effectArgKeys as (keyof EffectFunctionsArgs)[],
+      effectsArgsObj,
     );
 
     effectFunctions[key](
@@ -225,6 +205,19 @@ export function runEffects(
       ownArgs as any,
     );
   }
+}
+
+export function getEffectArgsFromKeys(
+  effectArgKeys: (keyof EffectFunctionsArgs)[],
+  effectsArgsObj: EffectFunctionsArgs,
+) {
+  return effectArgKeys.reduce(
+    (acc, k) => {
+      acc[k] = effectsArgsObj[k];
+      return acc;
+    },
+    {} as EffectFunctionsArgs,
+  );
 }
 
 ////////////////////////// END EFFECT FUNCTIONS SECTION /////////////////
@@ -236,18 +229,26 @@ function handlePutEffectFunctionsArgs(
   payload: EffectFunctionsArgs,
 ) {
   globalState.effects.context.effectsArgsObj = payload;
-  const [effectObjects] = prepareToAddEffect(globalState);
+  const [effectObjects] = prepareToAddRunOnRendersEffects(globalState);
   effectObjects.push({
     key: "firstEffect",
     ownArgs: {},
     effectArgKeys: [
       "cache",
       "dispatch",
-      "observable",
       "restoreCacheOrPurgeStorage",
       "persistor",
     ],
   });
+
+  globalState.effects.runOnce.subscribeToObservable = {
+    run: true,
+    effect: {
+      key: "subscribeToObservable",
+      ownArgs: {},
+      effectArgKeys: ["dispatch", "observable", "cache"],
+    },
+  };
 }
 
 export function initState(args: InitStateArgs): StateMachine {
@@ -270,10 +271,13 @@ export function initState(args: InitStateArgs): StateMachine {
     },
 
     effects: {
-      value: StateValue.effectValNoEffect,
       context: {
         effectsArgsObj: {} as EffectFunctionsArgs,
       },
+      runOnRenders: {
+        value: StateValue.effectValNoEffect,
+      },
+      runOnce: {},
     },
   };
 }
@@ -302,7 +306,7 @@ function handleExperiencesToPrefetch(
     return;
   }
 
-  const [effectObjects] = prepareToAddEffect(globalState);
+  const [effectObjects] = prepareToAddRunOnRendersEffects(globalState);
   effectObjects.push({
     key: "prefetchExperiences",
     effectArgKeys: ["client", "cache", "dispatch"],
@@ -339,7 +343,7 @@ function handleConnectionChangedAction(
     states.prefetchExperiences.value === StateValue.prefetchValNeverFetched
   ) {
     if (yesPrefetch.context) {
-      const [effectObjects] = prepareToAddEffect(globalState);
+      const [effectObjects] = prepareToAddRunOnRendersEffects(globalState);
 
       effectObjects.push({
         key: "prefetchExperiences",
@@ -356,7 +360,7 @@ function handleConnectionChangedAction(
 }
 
 function handleGetOfflineItemsCountAction(globalState: StateMachine) {
-  const [effectObjects] = prepareToAddEffect(globalState);
+  const [effectObjects] = prepareToAddRunOnRendersEffects(globalState);
   effectObjects.push({
     key: "getOfflineItemsCount",
     effectArgKeys: ["cache", "dispatch"],
@@ -381,12 +385,12 @@ function handleCachePersistedAction(
   globalState.context.offlineItemsCount = offlineItemsCount;
 }
 
-function prepareToAddEffect(globalState: StateMachine) {
-  const effects = (globalState.effects as unknown) as EffectState;
-  effects.value = StateValue.effectValHasEffects;
+function prepareToAddRunOnRendersEffects(globalState: StateMachine) {
+  const runOnRendersEffects = globalState.effects.runOnRenders as EffectState;
+  runOnRendersEffects.value = StateValue.effectValHasEffects;
   const effectObjects: EffectObject = [];
   const cleanupEffectObjects: EffectObject = [];
-  effects.hasEffects = {
+  runOnRendersEffects.hasEffects = {
     context: {
       effects: effectObjects,
       cleanupEffects: cleanupEffectObjects,
@@ -396,19 +400,6 @@ function prepareToAddEffect(globalState: StateMachine) {
   return [effectObjects, cleanupEffectObjects];
 }
 
-function handleCleanupObservableSubscription(
-  globalState: StateMachine,
-  payload: CleanupObservableSubscriptionPayload,
-) {
-  const { subscription } = payload;
-  const [, cleanupEffectObjects] = prepareToAddEffect(globalState);
-
-  cleanupEffectObjects.push({
-    key: "cleanupObservableSubscription",
-    effectArgKeys: [],
-    ownArgs: { subscription },
-  });
-}
 ///////////////////// END STATE UPDATE FUNCTIONS SECTION //////////////
 
 export const LayoutContextHeader = createContext<ILayoutContextHeaderValue>({
@@ -429,14 +420,7 @@ export const LocationContext = createContext<ILocationContextValue>(
 
 ////////////////////////// TYPES ////////////////////////////
 
-interface CleanupObservableSubscriptionPayload {
-  subscription: ZenObservable.Subscription;
-}
-
 export type LayoutAction =
-  | {
-      type: LayoutActionType.CLEAN_UP_OBSERVABLE_SUBSCRIPTION;
-    } & CleanupObservableSubscriptionPayload
   | {
       type: LayoutActionType.SET_OFFLINE_ITEMS_COUNT;
       count: number;
@@ -489,9 +473,19 @@ export interface StateMachine {
     prefetchExperiences: PrefetchExperiencesState;
   };
 
-  readonly effects: (EffectState | { value: EffectValueNoEffect }) & {
+  readonly effects: ({
+    runOnRenders: EffectState | { value: EffectValueNoEffect };
+    runOnce: {
+      subscribeToObservable?: SubscribeToObservableState;
+    };
+  }) & {
     context: EffectContext;
   };
+}
+
+export interface SubscribeToObservableState {
+  run: boolean;
+  effect: SubscribeToObservableEffect;
 }
 
 type PrefetchValNeverFetched = "never-fetched";
@@ -546,7 +540,7 @@ type EffectObject = (
   | GetOfflineItemsCountEffect
   | PrefetchExperiencesEffect
   | FirstEffect
-  | CleanupObservableSubscriptionEffect)[];
+  | SubscribeToObservableEffect)[];
 
 interface EffectState {
   value: EffectValueHasEffects;
@@ -580,7 +574,7 @@ interface LayoutEffectDefinition<
   func?: (
     effectArgs: { [k in EffectArgKeys]: EffectFunctionsArgs[k] },
     ownArgs: OwnArgs,
-  ) => void | Promise<void>;
+  ) => void | Promise<void | (() => void)> | (() => void);
 }
 
 export interface InitStateArgs {
