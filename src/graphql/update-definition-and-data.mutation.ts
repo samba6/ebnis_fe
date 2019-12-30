@@ -26,6 +26,9 @@ export const UPDATE_DEFINITIONS_RESPONSE_FRAGMENT = gql`
   ${DEFINITION_FRAGMENT}
 `;
 
+export const FRAGMENT_NAME_UpdateDefinitionsResponse =
+  "UpdateDefinitionsResponse";
+
 export const UPDATE_DEFINITIONS_ONLINE_MUTATION = gql`
   mutation UpdateDefinitions($input: UpdateDefinitionsInput!) {
     updateDefinitions(input: $input) {
@@ -53,6 +56,9 @@ export const UPDATE_DATA_OBJECTS_RESPONSE_FRAGMENT = gql`
   }
   ${DATA_OBJECT_FRAGMENT}
 `;
+
+export const FRAGMENT_NAME_UpdateDataObjectsResponse =
+  "UpdateDataObjectsResponse";
 
 export const UPDATE_DATA_OBJECTS_ONLINE_MUTATION = gql`
   mutation UpdateDataObjects($input: [UpdateDataObjectInput!]!) {

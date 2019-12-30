@@ -60,11 +60,10 @@ export enum ActionType {
   OTHER_ERRORS = "@component/edit-entry/other-errors",
   APOLLO_ERRORS = "@component/edit-entry/apollo-errors",
   ONLINE_ENTRY_CREATED = "@component/edit-entry/online-entry-created",
-  PUT_EFFECT_META_FUNCTIONS = "@component/edit-entry/put-effect-meta-functions",
+  PUT_EFFECT_FUNCTIONS_ARGS = "@component/edit-entry/put-effects-functions-args",
 }
 
 export const EFFECT_VALUE_NO_EFFECT: EffectValueNoEffect = "noEffect";
-export const EFFECT_VALUE_HAS_EFFECTS: EffectValueHasEffects = "hasEffects";
 
 export const EDITING_DEFINITION_INACTIVE: EditingDefinitionInactive =
   "inactive";
@@ -75,9 +74,14 @@ export const EDITING_DEFINITION_MULTIPLE: EditingDefinitionMultiple =
 export const EDITING_DATA_ACTIVE: EditingDataActive = "active";
 export const EDITING_DATA_INACTIVE: EditingDataInactive = "inactive";
 
+export const StateValue = {
+  effectValNoEffect: "noEffect" as EffectValueNoEffect,
+  effectValHasEffects: "hasEffects" as EffectValueHasEffects,
+};
+
 export const initStateFromProps = (
   props: EditEntryComponentProps,
-): IStateMachine => {
+): StateMachine => {
   const { entry, experience } = props;
 
   const [dataStates, dataIdsMap, dataIds] = entry.dataObjects.reduce(
@@ -161,7 +165,7 @@ export const initStateFromProps = (
     effects: {
       value: EFFECT_VALUE_NO_EFFECT,
       context: {
-        metaFunctions: {} as PutEffectMetaFunctionsPayload,
+        metaFunctions: {} as EffectFunctionsArgs,
       },
     },
 
@@ -198,8 +202,8 @@ export const initStateFromProps = (
   return state;
 };
 
-export const reducer: Reducer<IStateMachine, Action> = (state, action) =>
-  wrapReducer<IStateMachine, Action>(
+export const reducer: Reducer<StateMachine, Action> = (state, action) =>
+  wrapReducer<StateMachine, Action>(
     state,
     action,
     (prevState, { type, ...payload }) => {
@@ -284,8 +288,8 @@ export const reducer: Reducer<IStateMachine, Action> = (state, action) =>
               "inactive";
             break;
 
-          case ActionType.PUT_EFFECT_META_FUNCTIONS:
-            proxy.effects.context.metaFunctions = payload as PutEffectMetaFunctionsPayload;
+          case ActionType.PUT_EFFECT_FUNCTIONS_ARGS:
+            proxy.effects.context.metaFunctions = payload as EffectFunctionsArgs;
             break;
         }
       });
@@ -294,7 +298,7 @@ export const reducer: Reducer<IStateMachine, Action> = (state, action) =>
     // true,
   );
 
-////////////////////////// EFFECT FUNCTIONS ////////////////////////////
+////////////////////////// EFFECT FUNCTIONS SECTION //////////////////
 
 const decrementOfflineEntriesCountEffect: DecrementOfflineEntriesCountEffect["func"] = async (
   { cache, persistor, layoutDispatch },
@@ -321,7 +325,7 @@ type DecrementOfflineEntriesCountEffect = EditEntryEffectDefinition<
   }
 >;
 
-const createEntryOnlineEffectFn: CreateEntryOnlineEffect["func"] = async (
+const createEntryOnlineEffect: CreateEntryOnlineEffect["func"] = async (
   { createOnlineEntry, dispatch },
   { input },
 ) => {
@@ -355,7 +359,7 @@ type CreateEntryOnlineEffect = EditEntryEffectDefinition<
   }
 >;
 
-const definitionsFormErrorsEffectFn: DefinitionsFormErrorsEffect["func"] = (
+const definitionsFormErrorsEffect: DefinitionsFormErrorsEffect["func"] = (
   { dispatch },
   { definitionsWithFormErrors },
 ) => {
@@ -373,7 +377,7 @@ type DefinitionsFormErrorsEffect = EditEntryEffectDefinition<
   }
 >;
 
-const updateDefinitionsOnlineEffectFn: UpdateDefinitionsOnlineEffect["func"] = async (
+const updateDefinitionsOnlineEffect: UpdateDefinitionsOnlineEffect["func"] = async (
   { updateDefinitionsOnline, dispatch },
   { experienceId, definitionsInput },
 ) => {
@@ -403,7 +407,7 @@ const updateDefinitionsOnlineEffectFn: UpdateDefinitionsOnlineEffect["func"] = a
       type: ActionType.OTHER_ERRORS,
     });
   } catch (errors) {
-    handleFormSubmissionException({
+    processFormSubmissionException({
       dispatch,
       errors,
     });
@@ -419,7 +423,7 @@ type UpdateDefinitionsOnlineEffect = EditEntryEffectDefinition<
   }
 >;
 
-const updateDataObjectsOnlineEffectFn: UpdateDataObjectsOnlineEffect["func"] = async (
+const updateDataObjectsOnlineEffect: UpdateDataObjectsOnlineEffect["func"] = async (
   { dispatch, updateDataObjectsOnline },
   { dataInput },
 ) => {
@@ -447,7 +451,7 @@ const updateDataObjectsOnlineEffectFn: UpdateDataObjectsOnlineEffect["func"] = a
       type: ActionType.OTHER_ERRORS,
     });
   } catch (errors) {
-    handleFormSubmissionException({ dispatch, errors });
+    processFormSubmissionException({ dispatch, errors });
   }
 };
 
@@ -459,7 +463,7 @@ type UpdateDataObjectsOnlineEffect = EditEntryEffectDefinition<
   }
 >;
 
-const updateDefinitionsAndDataOnlineEffectFn: UpdateDefinitionsAndDataOnlineEffect["func"] = async (
+const updateDefinitionsAndDataOnlineEffect: UpdateDefinitionsAndDataOnlineEffect["func"] = async (
   { dispatch, updateDefinitionsAndDataOnline },
   { experienceId, definitionsInput, dataInput },
 ) => {
@@ -492,7 +496,7 @@ const updateDefinitionsAndDataOnlineEffectFn: UpdateDefinitionsAndDataOnlineEffe
       type: ActionType.OTHER_ERRORS,
     });
   } catch (errors) {
-    handleFormSubmissionException({ errors, dispatch });
+    processFormSubmissionException({ errors, dispatch });
   }
 };
 
@@ -507,7 +511,7 @@ type UpdateDefinitionsAndDataOnlineEffect = EditEntryEffectDefinition<
 >;
 
 //// EFFECT HELPERS
-function handleFormSubmissionException({
+function processFormSubmissionException({
   dispatch,
   errors,
 }: {
@@ -526,14 +530,21 @@ function handleFormSubmissionException({
   }
 }
 
-////////////////////////// END EFFECT FUNCTIONS ////////////////////////////
+export const effectFunctions = {
+  updateDefinitionsAndDataOnline: updateDefinitionsAndDataOnlineEffect,
+  updateDataObjectsOnline: updateDataObjectsOnlineEffect,
+  updateDefinitionsOnline: updateDefinitionsOnlineEffect,
+  definitionsFormErrors: definitionsFormErrorsEffect,
+  createOnlineEntry: createEntryOnlineEffect,
+  decrementOfflineEntriesCount: decrementOfflineEntriesCountEffect,
+};
 
-////////////////////////// REDUCER STATE UPDATE FUNCTIONS //////////////////
-// you can write to state, but can not use dispatch - every call to dispatch
-// must be put inside a function and added to effects
+////////////////////////// END EFFECT FUNCTIONS SECTION /////////////////
+
+/////////////////// STATE UPDATE FUNCTIONS SECTION /////////////
 
 function handleDefinitionNameChangedAction(
-  globalState: IStateMachine,
+  globalState: StateMachine,
   payload: DefinitionNameChangedPayload,
 ) {
   const { id, formValue } = payload;
@@ -568,7 +579,7 @@ function handleDefinitionNameChangedAction(
   setEditingDefinitionState(globalState, id);
 }
 
-function handleSubmittingAction(globalState: IStateMachine) {
+function handleSubmittingAction(globalState: StateMachine) {
   globalState.primaryState.common.value = "submitting";
   const effectObjects = prepareToAddEffect(globalState);
   const { entry } = globalState.primaryState.context;
@@ -585,7 +596,7 @@ function handleSubmittingAction(globalState: IStateMachine) {
 }
 
 function handleDefinitionFormErrorsAction(
-  proxy: IStateMachine,
+  proxy: StateMachine,
   payload: DefinitionFormErrorsPayload,
 ) {
   const { primaryState } = proxy;
@@ -625,7 +636,7 @@ function handleDefinitionFormErrorsAction(
   }
 }
 
-function handleOtherErrorsAction(proxy: IStateMachine) {
+function handleOtherErrorsAction(proxy: StateMachine) {
   const { primaryState } = proxy;
   primaryState.common.value = "editing";
 
@@ -645,7 +656,7 @@ function handleOtherErrorsAction(proxy: IStateMachine) {
   };
 }
 
-function handleStopDefinitionEdit(proxy: IStateMachine, payload: IdString) {
+function handleStopDefinitionEdit(proxy: StateMachine, payload: IdString) {
   const { id } = payload as IdString;
   const { definitionsStates } = proxy;
 
@@ -655,7 +666,7 @@ function handleStopDefinitionEdit(proxy: IStateMachine, payload: IdString) {
 }
 
 function handleDefinitionAndDataSubmissionResponse(
-  proxy: IStateMachine,
+  proxy: StateMachine,
   payload: UpdateDefinitionAndData,
 ) {
   const {
@@ -670,14 +681,14 @@ function handleDefinitionAndDataSubmissionResponse(
   });
 }
 
-function handleUndoDefinitionEdits(proxy: IStateMachine, payload: IdString) {
+function handleUndoDefinitionEdits(proxy: StateMachine, payload: IdString) {
   const { id } = payload as IdString;
   setDefinitionEditingUnchangedState(proxy, id);
   setEditingDefinitionState(proxy, id);
 }
 
 function handleDataChangedAction(
-  proxy: IStateMachine,
+  proxy: StateMachine,
   payload: DataChangedPayload,
 ) {
   const { dataStates } = proxy;
@@ -707,7 +718,7 @@ function handleDataChangedAction(
 }
 
 function handleApolloErrorsAction(
-  proxy: IStateMachine,
+  proxy: StateMachine,
   payload: ApolloErrorsPayload,
 ) {
   const { primaryState } = proxy;
@@ -733,7 +744,7 @@ function handleApolloErrorsAction(
 }
 
 function handleOnlineEntryCreatedServerResponseAction(
-  globalState: IStateMachine,
+  globalState: StateMachine,
   response: CreateOnlineEntryMutation_createEntry,
 ) {
   const effectObjects = prepareToAddEffect(globalState);
@@ -770,16 +781,15 @@ function handleOnlineEntryCreatedServerResponseAction(
   effectObjects.push({
     key: "decrementOfflineEntriesCount",
     effectArgKeys: ["cache", "persistor", "layoutDispatch"],
-    func: decrementOfflineEntriesCountEffect,
     ownArgs: { experienceId: entry.experienceId },
   });
 
   return [1, 0, "valid"];
 }
 
-function prepareToAddEffect(globalState: IStateMachine) {
+function prepareToAddEffect(globalState: StateMachine) {
   const effects = (globalState.effects as unknown) as EffectState;
-  effects.value = EFFECT_VALUE_HAS_EFFECTS;
+  effects.value = StateValue.effectValHasEffects;
   const effectObjects: EffectObject = [];
   effects.hasEffects = {
     context: {
@@ -791,7 +801,7 @@ function prepareToAddEffect(globalState: IStateMachine) {
 }
 
 function prepareSubmissionResponse(
-  proxy: IStateMachine,
+  proxy: StateMachine,
   props:
     | UpdateWithDefinitionsAndDataObjectsSubmissionResponse
     | UpdateWithDefinitionsSubmissionResponse
@@ -891,7 +901,7 @@ function prepareSubmissionResponse(
   return { primaryState, submissionSuccessResponse, context };
 }
 
-function setDefinitionEditingUnchangedState(proxy: IStateMachine, id: string) {
+function setDefinitionEditingUnchangedState(proxy: StateMachine, id: string) {
   const { definitionsStates } = proxy;
   const state = definitionsStates[id];
   state.value = "editing";
@@ -906,7 +916,7 @@ function setDefinitionEditingUnchangedState(proxy: IStateMachine, id: string) {
 }
 
 function setEditingDefinitionState(
-  proxy: IStateMachine,
+  proxy: StateMachine,
   mostRecentlyInterractedWithDefinitionId: string,
 ) {
   const { primaryState } = proxy;
@@ -966,7 +976,7 @@ function updateDataStateWithUpdatedDataObject(
 }
 
 function handleDataObjectSubmissionResponse(
-  proxy: IStateMachine,
+  proxy: StateMachine,
   context: SubmissionSuccessStateContext,
   updateDataObjectsResults: UpdateDataObjects,
 ) {
@@ -1031,7 +1041,7 @@ function putDataServerErrors(
 }
 
 function handleDefinitionsSubmissionResponse(
-  globalState: IStateMachine,
+  globalState: StateMachine,
   context: SubmissionSuccessStateContext,
   updateDefinitionsResults: UpdateDefinitions,
 ) {
@@ -1091,7 +1101,7 @@ async function handleSubmittingUpdateDataAndOrDefinitionAction({
   globalState,
   effectObjects,
 }: {
-  globalState: IStateMachine;
+  globalState: StateMachine;
   effectObjects: EffectObject;
 }) {
   const [definitionsInput, definitionsWithFormErrors] = getDefinitionsToSubmit(
@@ -1112,7 +1122,6 @@ async function handleSubmittingUpdateDataAndOrDefinitionAction({
   if (definitionsWithFormErrors.length !== 0) {
     effectObjects.push({
       key: "definitionsFormErrors",
-      func: definitionsFormErrorsEffectFn,
       effectArgKeys: ["dispatch"],
       ownArgs: {
         definitionsWithFormErrors,
@@ -1127,7 +1136,6 @@ async function handleSubmittingUpdateDataAndOrDefinitionAction({
   if (dataInput.length === 0) {
     effectObjects.push({
       key: "updateDefinitionsOnline",
-      func: updateDefinitionsOnlineEffectFn,
       ownArgs: {
         definitionsInput,
         experienceId,
@@ -1141,7 +1149,6 @@ async function handleSubmittingUpdateDataAndOrDefinitionAction({
   if (definitionsInput.length === 0) {
     effectObjects.push({
       key: "updateDataObjectsOnline",
-      func: updateDataObjectsOnlineEffectFn,
       ownArgs: {
         dataInput,
       },
@@ -1153,7 +1160,6 @@ async function handleSubmittingUpdateDataAndOrDefinitionAction({
 
   effectObjects.push({
     key: "updateDefinitionsAndDataOnline",
-    func: updateDefinitionsAndDataOnlineEffectFn,
     ownArgs: {
       experienceId,
       dataInput,
@@ -1163,7 +1169,7 @@ async function handleSubmittingUpdateDataAndOrDefinitionAction({
   });
 }
 
-function setEditingData(proxy: IStateMachine) {
+function setEditingData(proxy: StateMachine) {
   let dataChangedCount = 0;
 
   for (const state of Object.values(proxy.dataStates)) {
@@ -1180,7 +1186,7 @@ function setEditingData(proxy: IStateMachine) {
 }
 
 function handleSubmittingCreateEntryOnlineAction(
-  globalState: IStateMachine,
+  globalState: StateMachine,
   effectObjects: EffectObject,
 ) {
   (globalState.primaryState.common as PrimaryStateSubmitting).submitting = {
@@ -1227,7 +1233,6 @@ function handleSubmittingCreateEntryOnlineAction(
         experienceId,
       },
     },
-    func: createEntryOnlineEffectFn,
   });
 
   return;
@@ -1306,7 +1311,7 @@ function getDefinitionsToSubmit(allDefinitionsStates: DefinitionsStates) {
   return [input, withErrors];
 }
 
-////////////////////////// END STATE UPDATE FUNCTIONS /////////////////////
+////////////////////// END STATE UPDATE FUNCTIONS SECTION ///////////////////
 
 export const EditEnryContext = createContext<ContextValue>({} as ContextValue);
 
@@ -1321,7 +1326,7 @@ interface ContextValue
 type EffectValueNoEffect = "noEffect";
 type EffectValueHasEffects = "hasEffects";
 
-export interface IStateMachine {
+export interface StateMachine {
   readonly dataStates: DataStates;
   readonly definitionsStates: DefinitionsStates;
   readonly primaryState: PrimaryState;
@@ -1331,7 +1336,7 @@ export interface IStateMachine {
 }
 
 interface EffectContext {
-  metaFunctions: PutEffectMetaFunctionsPayload;
+  metaFunctions: EffectFunctionsArgs;
 }
 
 interface EffectState {
@@ -1353,16 +1358,16 @@ type EffectObject = (
 
 interface EditEntryEffectDefinition<
   Key extends string,
-  EffectArgKeys extends keyof PutEffectMetaFunctionsPayload,
+  EffectArgKeys extends keyof EffectFunctionsArgs,
   OwnArgs = {}
 > {
   key: Key;
   effectArgKeys: EffectArgKeys[];
   ownArgs: OwnArgs;
-  func: (
-    effectArgs: { [k in EffectArgKeys]: PutEffectMetaFunctionsPayload[k] },
+  func?: (
+    effectArgs: { [k in EffectArgKeys]: EffectFunctionsArgs[k] },
     ownArgs: OwnArgs,
-  ) => void | Promise<void>;
+  ) => void | Promise<void | (() => void)> | (() => void);
 }
 
 interface DefinitionAndDataIds {
@@ -1534,14 +1539,14 @@ export type Action =
       type: ActionType.APOLLO_ERRORS;
     } & ApolloErrorsPayload
   | {
-      type: ActionType.PUT_EFFECT_META_FUNCTIONS;
-    } & PutEffectMetaFunctionsPayload;
+      type: ActionType.PUT_EFFECT_FUNCTIONS_ARGS;
+    } & EffectFunctionsArgs;
 
 interface ApolloErrorsPayload {
   errors: ApolloError;
 }
 
-export interface PutEffectMetaFunctionsPayload
+export interface EffectFunctionsArgs
   extends CreateOnlineEntryMutationComponentProps,
     UpdateDefinitionsOnlineMutationComponentProps,
     UpdateDefinitionsAndDataOnlineMutationComponentProps,

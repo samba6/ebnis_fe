@@ -16,13 +16,14 @@ import {
   DefinitionsStates,
   DataState,
   EditEnryContext,
-  IStateMachine,
+  StateMachine,
   SubmissionResponseState,
   PrimaryState,
   EditEntryCallerProps,
-  EFFECT_VALUE_HAS_EFFECTS,
+  StateValue,
   EDITING_DEFINITION_MULTIPLE,
-  PutEffectMetaFunctionsPayload,
+  EffectFunctionsArgs,
+  effectFunctions,
 } from "./edit-entry-utils";
 import Form from "semantic-ui-react/dist/commonjs/collections/Form";
 import Message from "semantic-ui-react/dist/commonjs/collections/Message";
@@ -93,9 +94,53 @@ export function EditEntryComponent(props: EditEntryComponentProps) {
     dataStates,
   } = state;
 
+  useEffect(() => {
+    if (effects.value !== StateValue.effectValHasEffects) {
+      return;
+    }
+
+    const {
+      context: { metaFunctions },
+      hasEffects: { context },
+    } = effects;
+
+    const cleanupEffects: (() => void)[] = [];
+
+    (async function runEffects() {
+      for (const { key, ownArgs, effectArgKeys } of context.effects) {
+        const args = (effectArgKeys as (keyof EffectFunctionsArgs)[]).reduce(
+          (acc, k) => {
+            acc[k] = metaFunctions[k];
+            return acc;
+          },
+          {} as EffectFunctionsArgs,
+        );
+
+        const maybeCleanupEffect = await effectFunctions[key](
+          args,
+          /* eslint-disable-next-line @typescript-eslint/no-explicit-any*/
+          ownArgs as any,
+        );
+
+        if ("function" === typeof maybeCleanupEffect) {
+          cleanupEffects.push(maybeCleanupEffect);
+        }
+      }
+    })();
+
+    if (cleanupEffects.length) {
+      return () => {
+        cleanupEffects.forEach(f => f());
+      };
+    }
+
+    // redundant - [tsserver 7030] [W] Not all code paths return a value.
+    return;
+  }, [effects]);
+
   useLayoutEffect(() => {
     dispatch({
-      type: ActionType.PUT_EFFECT_META_FUNCTIONS,
+      type: ActionType.PUT_EFFECT_FUNCTIONS_ARGS,
       createOnlineEntry,
       updateDefinitionsOnline,
       updateDefinitionsAndDataOnline,
@@ -108,29 +153,6 @@ export function EditEntryComponent(props: EditEntryComponentProps) {
     });
     /* eslint-disable-next-line react-hooks/exhaustive-deps*/
   }, []);
-
-  useEffect(() => {
-    if (effects.value === EFFECT_VALUE_HAS_EFFECTS) {
-      const {
-        context: { metaFunctions },
-        hasEffects: { context },
-      } = effects;
-
-      for (const { func, ownArgs, effectArgKeys } of context.effects) {
-        const effectArgKeys1 = effectArgKeys as (keyof PutEffectMetaFunctionsPayload)[];
-        const args = effectArgKeys1.reduce(
-          (acc, k) => {
-            acc[k] = metaFunctions[k];
-            return acc;
-          },
-          {} as PutEffectMetaFunctionsPayload,
-        );
-
-        /* eslint-disable-next-line @typescript-eslint/no-explicit-any*/
-        func(args, ownArgs as any);
-      }
-    }
-  }, [effects]);
 
   const onSubmit = useCallback(function onSubmitCallback() {
     dispatch({
@@ -560,7 +582,7 @@ function SubmissionErrorsComponent({
 function getIdOfSubmittingDefinition(
   id: string,
   editingData: PrimaryState["editingData"],
-  editingDefinition: IStateMachine["primaryState"]["editingDefinition"],
+  editingDefinition: StateMachine["primaryState"]["editingDefinition"],
 ) {
   if (editingData.value === "active") {
     return false;
