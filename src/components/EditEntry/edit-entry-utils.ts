@@ -35,7 +35,10 @@ import {
   UpdateDefinitionsAndDataOnlineMutationComponentProps,
   editEntryUpdate,
 } from "./edit-entry.injectables";
-import { CreateOnlineEntryMutationComponentProps } from "../../graphql/create-entry.mutation";
+import {
+  CreateOnlineEntryMutationComponentProps,
+  MUTATION_NAME_createEntry,
+} from "../../graphql/create-entry.mutation";
 import { isOfflineId } from "../../constants";
 import { updateExperienceWithNewEntry } from "../NewEntry/new-entry.injectables";
 import { CreateOnlineEntryMutation_createEntry } from "../../graphql/apollo-types/CreateOnlineEntryMutation";
@@ -43,6 +46,13 @@ import { decrementOfflineEntriesCountForExperience } from "../../apollo-cache/dr
 import { AppPersistor } from "../../context";
 import { InMemoryCache } from "apollo-cache-inmemory";
 import { LayoutDispatchType, LayoutActionType } from "../Layout/layout.utils";
+import { deleteCachedQueriesAndMutationsCleanupFn } from "../delete-cached-queries-and-mutations-cleanup";
+import {
+  MUTATION_NAME_updateDataObjects,
+  MUTATION_NAME_updateDefinitions,
+} from "../../graphql/update-definition-and-data.mutation";
+import { QUERY_NAME_getOfflineItems } from "../../state/offline-resolvers";
+import { QUERY_NAME_getExperienceFull } from "../../graphql/get-experience-full.query";
 
 export enum ActionType {
   EDIT_BTN_CLICKED = "@component/edit-entry/edit-btn-clicked",
@@ -165,7 +175,7 @@ export const initStateFromProps = (
     effects: {
       value: EFFECT_VALUE_NO_EFFECT,
       context: {
-        metaFunctions: {} as EffectFunctionsArgs,
+        effectsArgsObj: {} as EffectFunctionsArgs,
       },
     },
 
@@ -289,7 +299,7 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
             break;
 
           case ActionType.PUT_EFFECT_FUNCTIONS_ARGS:
-            proxy.effects.context.metaFunctions = payload as EffectFunctionsArgs;
+            handlePutEffectFunctionsArgs(proxy, payload as EffectFunctionsArgs);
             break;
         }
       });
@@ -510,7 +520,40 @@ type UpdateDefinitionsAndDataOnlineEffect = EditEntryEffectDefinition<
   }
 >;
 
+const cleanupQueriesEffect: CleanUpQueriesEffect["func"] = ({
+  cache,
+  persistor,
+}) => {
+  deleteCachedQueriesAndMutationsCleanupFn(
+    cache,
+    [
+      MUTATION_NAME_updateDataObjects,
+      MUTATION_NAME_updateDefinitions,
+      MUTATION_NAME_createEntry,
+      QUERY_NAME_getOfflineItems,
+      QUERY_NAME_getExperienceFull + "(",
+    ],
+    persistor,
+  );
+};
+
+type CleanUpQueriesEffect = EditEntryEffectDefinition<
+  "cleanupQueries",
+  "cache" | "persistor"
+>;
+
+export const effectFunctions = {
+  updateDefinitionsAndDataOnline: updateDefinitionsAndDataOnlineEffect,
+  updateDataObjectsOnline: updateDataObjectsOnlineEffect,
+  updateDefinitionsOnline: updateDefinitionsOnlineEffect,
+  definitionsFormErrors: definitionsFormErrorsEffect,
+  createOnlineEntry: createEntryOnlineEffect,
+  decrementOfflineEntriesCount: decrementOfflineEntriesCountEffect,
+  cleanupQueries: cleanupQueriesEffect,
+};
+
 //// EFFECT HELPERS
+
 function processFormSubmissionException({
   dispatch,
   errors,
@@ -530,18 +573,44 @@ function processFormSubmissionException({
   }
 }
 
-export const effectFunctions = {
-  updateDefinitionsAndDataOnline: updateDefinitionsAndDataOnlineEffect,
-  updateDataObjectsOnline: updateDataObjectsOnlineEffect,
-  updateDefinitionsOnline: updateDefinitionsOnlineEffect,
-  definitionsFormErrors: definitionsFormErrorsEffect,
-  createOnlineEntry: createEntryOnlineEffect,
-  decrementOfflineEntriesCount: decrementOfflineEntriesCountEffect,
-};
+export function runEffects(
+  effects: EffectObject,
+  effectsArgsObj: EffectFunctionsArgs,
+) {
+  for (const { key, ownArgs, effectArgKeys } of effects) {
+    const effectArgs = (effectArgKeys as (keyof EffectFunctionsArgs)[]).reduce(
+      (acc, k) => {
+        acc[k] = effectsArgsObj[k];
+        return acc;
+      },
+      {} as EffectFunctionsArgs,
+    );
+
+    effectFunctions[key](
+      effectArgs,
+      /* eslint-disable-next-line @typescript-eslint/no-explicit-any*/
+      ownArgs as any,
+    );
+  }
+}
 
 ////////////////////////// END EFFECT FUNCTIONS SECTION /////////////////
 
 /////////////////// STATE UPDATE FUNCTIONS SECTION /////////////
+
+function handlePutEffectFunctionsArgs(
+  globalState: StateMachine,
+  payload: EffectFunctionsArgs,
+) {
+  globalState.effects.context.effectsArgsObj = payload;
+  const [, cleanupEffectObjects] = prepareToAddEffect(globalState);
+
+  cleanupEffectObjects.push({
+    key: "cleanupQueries",
+    effectArgKeys: ["persistor", "cache"],
+    ownArgs: {},
+  });
+}
 
 function handleDefinitionNameChangedAction(
   globalState: StateMachine,
@@ -581,7 +650,7 @@ function handleDefinitionNameChangedAction(
 
 function handleSubmittingAction(globalState: StateMachine) {
   globalState.primaryState.common.value = "submitting";
-  const effectObjects = prepareToAddEffect(globalState);
+  const [effectObjects] = prepareToAddEffect(globalState);
   const { entry } = globalState.primaryState.context;
 
   if (isOfflineId(entry.id)) {
@@ -747,7 +816,7 @@ function handleOnlineEntryCreatedServerResponseAction(
   globalState: StateMachine,
   response: CreateOnlineEntryMutation_createEntry,
 ) {
-  const effectObjects = prepareToAddEffect(globalState);
+  const [effectObjects] = prepareToAddEffect(globalState);
 
   const { entry } = response;
 
@@ -791,13 +860,15 @@ function prepareToAddEffect(globalState: StateMachine) {
   const effects = (globalState.effects as unknown) as EffectState;
   effects.value = StateValue.effectValHasEffects;
   const effectObjects: EffectObject = [];
+  const cleanupEffectObjects: EffectObject = [];
   effects.hasEffects = {
     context: {
       effects: effectObjects,
+      cleanupEffects: cleanupEffectObjects,
     },
   };
 
-  return effectObjects;
+  return [effectObjects, cleanupEffectObjects];
 }
 
 function prepareSubmissionResponse(
@@ -1336,7 +1407,7 @@ export interface StateMachine {
 }
 
 interface EffectContext {
-  metaFunctions: EffectFunctionsArgs;
+  effectsArgsObj: EffectFunctionsArgs;
 }
 
 interface EffectState {
@@ -1344,6 +1415,7 @@ interface EffectState {
   hasEffects: {
     context: {
       effects: EffectObject;
+      cleanupEffects: EffectObject;
     };
   };
 }
@@ -1354,7 +1426,8 @@ type EffectObject = (
   | DefinitionsFormErrorsEffect
   | UpdateDataObjectsOnlineEffect
   | UpdateDefinitionsAndDataOnlineEffect
-  | DecrementOfflineEntriesCountEffect)[];
+  | DecrementOfflineEntriesCountEffect
+  | CleanUpQueriesEffect)[];
 
 interface EditEntryEffectDefinition<
   Key extends string,

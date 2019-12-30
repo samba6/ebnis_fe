@@ -88,7 +88,7 @@ beforeEach(() => {
   mockPersistFunc.mockReset();
 });
 
-it("destroys the UI", () => {
+it("destroys the UI", async () => {
   const { ui, mockParentDispatch } = makeComp({
     props: {
       entry: {
@@ -117,7 +117,7 @@ it("destroys the UI", () => {
   );
 
   unmount();
-  expect(mockDeleteCachedQueriesAndMutationsCleanup).toHaveBeenCalled();
+  expect(mockDeleteCachedQueriesAndMutationsCleanup).toHaveBeenCalledTimes(1);
 });
 
 test("not editing data, editing single definition, form errors, server success", async () => {

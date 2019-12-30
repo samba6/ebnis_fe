@@ -13,8 +13,7 @@ import {
   Props,
   initState,
   StateValue,
-  EffectFunctionsArgs,
-  effectFunctions,
+  runEffects,
 } from "./layout.utils";
 import {
   LayoutProvider,
@@ -63,37 +62,17 @@ export function Layout(props: Props) {
     }
 
     const {
-      context: { metaFunctions },
+      context: { effectsArgsObj },
       hasEffects: { context },
     } = effects;
 
-    const cleanupEffects: (() => void)[] = [];
+    runEffects(context.effects, effectsArgsObj);
 
-    (async function runEffects() {
-      for (const { key, ownArgs, effectArgKeys } of context.effects) {
-        const args = (effectArgKeys as (keyof EffectFunctionsArgs)[]).reduce(
-          (acc, k) => {
-            acc[k] = metaFunctions[k];
-            return acc;
-          },
-          {} as EffectFunctionsArgs,
-        );
-
-        const maybeCleanupEffect = await effectFunctions[key](
-          args,
-          /* eslint-disable-next-line @typescript-eslint/no-explicit-any*/
-          ownArgs as any,
-        );
-
-        if ("function" === typeof maybeCleanupEffect) {
-          cleanupEffects.push(maybeCleanupEffect);
-        }
-      }
-    })();
+    const { cleanupEffects } = context;
 
     if (cleanupEffects.length) {
       return () => {
-        cleanupEffects.forEach(f => f());
+        runEffects(cleanupEffects, effectsArgsObj);
       };
     }
 

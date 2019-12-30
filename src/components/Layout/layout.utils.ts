@@ -24,6 +24,7 @@ export enum LayoutActionType {
   DONE_FETCHING_EXPERIENCES = "@layout/experiences-already-fetched",
   REFETCH_OFFLINE_ITEMS_COUNT = "@layout/refetch-offline-items-count",
   PUT_EFFECT_FUNCTIONS_ARGS = "@layout/put-effects-functions-args",
+  CLEAN_UP_OBSERVABLE_SUBSCRIPTION = "@layout/cleanup-observable-subscription",
 }
 
 export const StateValue = {
@@ -78,6 +79,13 @@ export const reducer: Reducer<StateMachine, LayoutAction> = (state, action) =>
 
           case LayoutActionType.PUT_EFFECT_FUNCTIONS_ARGS:
             handlePutEffectFunctionsArgs(proxy, payload as EffectFunctionsArgs);
+            break;
+
+          case LayoutActionType.CLEAN_UP_OBSERVABLE_SUBSCRIPTION:
+            handleCleanupObservableSubscription(
+              proxy,
+              payload as CleanupObservableSubscriptionPayload,
+            );
             break;
         }
       });
@@ -161,9 +169,10 @@ const firstEffect: FirstEffect["func"] = async ({
     });
   }
 
-  return () => {
-    subscription.unsubscribe();
-  };
+  dispatch({
+    type: LayoutActionType.CLEAN_UP_OBSERVABLE_SUBSCRIPTION,
+    subscription,
+  });
 };
 
 type FirstEffect = LayoutEffectDefinition<
@@ -175,11 +184,48 @@ type FirstEffect = LayoutEffectDefinition<
   | "persistor"
 >;
 
+const cleanupObservableSubscriptionEffect: CleanupObservableSubscriptionEffect["func"] = (
+  {},
+  { subscription },
+) => {
+  subscription.unsubscribe();
+};
+
+type CleanupObservableSubscriptionEffect = LayoutEffectDefinition<
+  "cleanupObservableSubscription",
+  "dispatch",
+  {
+    subscription: ZenObservable.Subscription;
+  }
+>;
+
 export const effectFunctions = {
   getOfflineItemsCount: getOfflineItemsCountEffect,
   prefetchExperiences: prefetchExperiencesEffect,
   firstEffect,
+  cleanupObservableSubscription: cleanupObservableSubscriptionEffect,
 };
+
+export function runEffects(
+  effects: EffectObject,
+  effectsArgsObj: EffectFunctionsArgs,
+) {
+  for (const { key, ownArgs, effectArgKeys } of effects) {
+    const effectArgs = (effectArgKeys as (keyof EffectFunctionsArgs)[]).reduce(
+      (acc, k) => {
+        acc[k] = effectsArgsObj[k];
+        return acc;
+      },
+      {} as EffectFunctionsArgs,
+    );
+
+    effectFunctions[key](
+      effectArgs,
+      /* eslint-disable-next-line @typescript-eslint/no-explicit-any*/
+      ownArgs as any,
+    );
+  }
+}
 
 ////////////////////////// END EFFECT FUNCTIONS SECTION /////////////////
 
@@ -189,8 +235,8 @@ function handlePutEffectFunctionsArgs(
   globalState: StateMachine,
   payload: EffectFunctionsArgs,
 ) {
-  globalState.effects.context.metaFunctions = payload;
-  const effectObjects = prepareToAddEffect(globalState);
+  globalState.effects.context.effectsArgsObj = payload;
+  const [effectObjects] = prepareToAddEffect(globalState);
   effectObjects.push({
     key: "firstEffect",
     ownArgs: {},
@@ -226,7 +272,7 @@ export function initState(args: InitStateArgs): StateMachine {
     effects: {
       value: StateValue.effectValNoEffect,
       context: {
-        metaFunctions: {} as EffectFunctionsArgs,
+        effectsArgsObj: {} as EffectFunctionsArgs,
       },
     },
   };
@@ -256,7 +302,7 @@ function handleExperiencesToPrefetch(
     return;
   }
 
-  const effectObjects = prepareToAddEffect(globalState);
+  const [effectObjects] = prepareToAddEffect(globalState);
   effectObjects.push({
     key: "prefetchExperiences",
     effectArgKeys: ["client", "cache", "dispatch"],
@@ -293,7 +339,7 @@ function handleConnectionChangedAction(
     states.prefetchExperiences.value === StateValue.prefetchValNeverFetched
   ) {
     if (yesPrefetch.context) {
-      const effectObjects = prepareToAddEffect(globalState);
+      const [effectObjects] = prepareToAddEffect(globalState);
 
       effectObjects.push({
         key: "prefetchExperiences",
@@ -310,7 +356,7 @@ function handleConnectionChangedAction(
 }
 
 function handleGetOfflineItemsCountAction(globalState: StateMachine) {
-  const effectObjects = prepareToAddEffect(globalState);
+  const [effectObjects] = prepareToAddEffect(globalState);
   effectObjects.push({
     key: "getOfflineItemsCount",
     effectArgKeys: ["cache", "dispatch"],
@@ -339,15 +385,31 @@ function prepareToAddEffect(globalState: StateMachine) {
   const effects = (globalState.effects as unknown) as EffectState;
   effects.value = StateValue.effectValHasEffects;
   const effectObjects: EffectObject = [];
+  const cleanupEffectObjects: EffectObject = [];
   effects.hasEffects = {
     context: {
       effects: effectObjects,
+      cleanupEffects: cleanupEffectObjects,
     },
   };
 
-  return effectObjects;
+  return [effectObjects, cleanupEffectObjects];
 }
-////////////////////////// END STATE UPDATE FUNCTIONS /////////////////
+
+function handleCleanupObservableSubscription(
+  globalState: StateMachine,
+  payload: CleanupObservableSubscriptionPayload,
+) {
+  const { subscription } = payload;
+  const [, cleanupEffectObjects] = prepareToAddEffect(globalState);
+
+  cleanupEffectObjects.push({
+    key: "cleanupObservableSubscription",
+    effectArgKeys: [],
+    ownArgs: { subscription },
+  });
+}
+///////////////////// END STATE UPDATE FUNCTIONS SECTION //////////////
 
 export const LayoutContextHeader = createContext<ILayoutContextHeaderValue>({
   offlineItemsCount: 0,
@@ -367,7 +429,14 @@ export const LocationContext = createContext<ILocationContextValue>(
 
 ////////////////////////// TYPES ////////////////////////////
 
+interface CleanupObservableSubscriptionPayload {
+  subscription: ZenObservable.Subscription;
+}
+
 export type LayoutAction =
+  | {
+      type: LayoutActionType.CLEAN_UP_OBSERVABLE_SUBSCRIPTION;
+    } & CleanupObservableSubscriptionPayload
   | {
       type: LayoutActionType.SET_OFFLINE_ITEMS_COUNT;
       count: number;
@@ -470,19 +539,21 @@ type EffectValueNoEffect = "noEffect";
 type EffectValueHasEffects = "hasEffects";
 
 interface EffectContext {
-  metaFunctions: EffectFunctionsArgs;
+  effectsArgsObj: EffectFunctionsArgs;
 }
 
 type EffectObject = (
   | GetOfflineItemsCountEffect
   | PrefetchExperiencesEffect
-  | FirstEffect)[];
+  | FirstEffect
+  | CleanupObservableSubscriptionEffect)[];
 
 interface EffectState {
   value: EffectValueHasEffects;
   hasEffects: {
     context: {
       effects: EffectObject;
+      cleanupEffects: EffectObject;
     };
   };
 }
@@ -509,7 +580,7 @@ interface LayoutEffectDefinition<
   func?: (
     effectArgs: { [k in EffectArgKeys]: EffectFunctionsArgs[k] },
     ownArgs: OwnArgs,
-  ) => void | Promise<void | (() => void)> | (() => void);
+  ) => void | Promise<void>;
 }
 
 export interface InitStateArgs {

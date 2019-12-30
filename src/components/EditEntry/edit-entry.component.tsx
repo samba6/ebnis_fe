@@ -22,8 +22,7 @@ import {
   EditEntryCallerProps,
   StateValue,
   EDITING_DEFINITION_MULTIPLE,
-  EffectFunctionsArgs,
-  effectFunctions,
+  runEffects,
 } from "./edit-entry-utils";
 import Form from "semantic-ui-react/dist/commonjs/collections/Form";
 import Message from "semantic-ui-react/dist/commonjs/collections/Message";
@@ -46,24 +45,14 @@ import {
   useUpdateDefinitionAndDataOnline,
   UpdateDefinitionsOnlineMutationFn,
 } from "./edit-entry.injectables";
-import { useDeleteCachedQueriesAndMutationsOnUnmount } from "../use-delete-cached-queries-mutations-on-unmount";
-import {
-  MUTATION_NAME_updateDataObjects,
-  MUTATION_NAME_updateDefinitions,
-} from "../../graphql/update-definition-and-data.mutation";
 import {
   formErrorsDomId,
   otherErrorsDomId,
   apolloErrorsDomId,
 } from "./edit-entry-dom";
-import {
-  useCreateOnlineEntryMutation,
-  MUTATION_NAME_createEntry,
-} from "../../graphql/create-entry.mutation";
+import { useCreateOnlineEntryMutation } from "../../graphql/create-entry.mutation";
 // import ApolloClient from "apollo-client";
 import { EbnisAppContext } from "../../context";
-import { QUERY_NAME_getOfflineItems } from "../../state/offline-resolvers";
-import { QUERY_NAME_getExperienceFull } from "../../graphql/get-experience-full.query";
 import { LayoutUnchangingContext } from "../Layout/layout.utils";
 
 export function EditEntryComponent(props: EditEntryComponentProps) {
@@ -100,37 +89,17 @@ export function EditEntryComponent(props: EditEntryComponentProps) {
     }
 
     const {
-      context: { metaFunctions },
+      context: { effectsArgsObj },
       hasEffects: { context },
     } = effects;
 
-    const cleanupEffects: (() => void)[] = [];
+    runEffects(context.effects, effectsArgsObj);
 
-    (async function runEffects() {
-      for (const { key, ownArgs, effectArgKeys } of context.effects) {
-        const args = (effectArgKeys as (keyof EffectFunctionsArgs)[]).reduce(
-          (acc, k) => {
-            acc[k] = metaFunctions[k];
-            return acc;
-          },
-          {} as EffectFunctionsArgs,
-        );
-
-        const maybeCleanupEffect = await effectFunctions[key](
-          args,
-          /* eslint-disable-next-line @typescript-eslint/no-explicit-any*/
-          ownArgs as any,
-        );
-
-        if ("function" === typeof maybeCleanupEffect) {
-          cleanupEffects.push(maybeCleanupEffect);
-        }
-      }
-    })();
+    const { cleanupEffects } = context;
 
     if (cleanupEffects.length) {
       return () => {
-        cleanupEffects.forEach(f => f());
+        runEffects(cleanupEffects, effectsArgsObj);
       };
     }
 
@@ -160,17 +129,6 @@ export function EditEntryComponent(props: EditEntryComponentProps) {
     });
     /* eslint-disable-next-line react-hooks/exhaustive-deps*/
   }, []);
-
-  useDeleteCachedQueriesAndMutationsOnUnmount(
-    [
-      MUTATION_NAME_updateDataObjects,
-      MUTATION_NAME_updateDefinitions,
-      MUTATION_NAME_createEntry,
-      QUERY_NAME_getOfflineItems,
-      QUERY_NAME_getExperienceFull + "(",
-    ],
-    true,
-  );
 
   return (
     <EditEnryContext.Provider
