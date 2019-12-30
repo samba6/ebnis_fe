@@ -483,10 +483,14 @@ export interface StateMachine {
   };
 }
 
-export interface SubscribeToObservableState {
+interface RunOnceEffectState<IEffect> {
   run: boolean;
-  effect: SubscribeToObservableEffect;
+  effect: IEffect;
 }
+
+export type SubscribeToObservableState = RunOnceEffectState<
+  SubscribeToObservableEffect
+>;
 
 type PrefetchValNeverFetched = "never-fetched";
 type PrefetchValFetchNow = "fetch-now";
