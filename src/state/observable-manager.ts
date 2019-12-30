@@ -29,12 +29,12 @@ export type EmitData = (params: EmitPayload) => void;
 export type EmitPayload =
   | {
       type: EmitActionType.connectionChanged;
-    } & ConnectionChangedPayload
+    } & EmitActionConnectionChangedPayload
   | {
       type: EmitActionType.random;
     };
 
-export interface ConnectionChangedPayload {
+export interface EmitActionConnectionChangedPayload {
   hasConnection: boolean;
 }
 

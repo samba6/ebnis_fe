@@ -1,7 +1,6 @@
 import React, {
   useContext,
   useEffect,
-  useRef,
   useReducer,
   useLayoutEffect,
 } from "react";
@@ -17,12 +16,6 @@ import {
   EffectFunctionsArgs,
   effectFunctions,
 } from "./layout.utils";
-import {
-  EmitActionType,
-  ConnectionChangedPayload,
-} from "../../state/observable-manager";
-import { ZenObservable } from "zen-observable-ts";
-import { getOfflineItemsCount } from "../../state/offline-resolvers";
 import {
   LayoutProvider,
   LayoutUnchangingProvider,
@@ -46,7 +39,6 @@ export function Layout(props: Props) {
     observable,
   } = useContext(EbnisAppContext);
 
-  const subscriptionRef = useRef<ZenObservable.Subscription | null>(null);
   const user = useUser();
 
   const [stateMachine, dispatch] = useReducer(
@@ -66,15 +58,20 @@ export function Layout(props: Props) {
   } = stateMachine;
 
   useEffect(() => {
-    if (effects.value === StateValue.effectValHasEffects) {
-      const {
-        context: { metaFunctions },
-        hasEffects: { context },
-      } = effects;
+    if (effects.value !== StateValue.effectValHasEffects) {
+      return;
+    }
 
+    const {
+      context: { metaFunctions },
+      hasEffects: { context },
+    } = effects;
+
+    const cleanupEffects: (() => void)[] = [];
+
+    (async function runEffects() {
       for (const { key, ownArgs, effectArgKeys } of context.effects) {
-        const effectArgKeys1 = effectArgKeys as (keyof EffectFunctionsArgs)[];
-        const args = effectArgKeys1.reduce(
+        const args = (effectArgKeys as (keyof EffectFunctionsArgs)[]).reduce(
           (acc, k) => {
             acc[k] = metaFunctions[k];
             return acc;
@@ -82,10 +79,26 @@ export function Layout(props: Props) {
           {} as EffectFunctionsArgs,
         );
 
-        /* eslint-disable-next-line @typescript-eslint/no-explicit-any*/
-        effectFunctions[key](args, ownArgs as any);
+        const maybeCleanupEffect = await effectFunctions[key](
+          args,
+          /* eslint-disable-next-line @typescript-eslint/no-explicit-any*/
+          ownArgs as any,
+        );
+
+        if ("function" === typeof maybeCleanupEffect) {
+          cleanupEffects.push(maybeCleanupEffect);
+        }
       }
+    })();
+
+    if (cleanupEffects.length) {
+      return () => {
+        cleanupEffects.forEach(f => f());
+      };
     }
+
+    // redundant - [tsserver 7030] [W] Not all code paths return a value.
+    return;
   }, [effects]);
 
   useLayoutEffect(() => {
@@ -96,32 +109,10 @@ export function Layout(props: Props) {
       client,
       restoreCacheOrPurgeStorage,
       persistor,
+      observable,
     });
     /* eslint-disable-next-line react-hooks/exhaustive-deps*/
   }, []);
-
-  useEffect(() => {
-    subscriptionRef.current = observable.subscribe({
-      next({ type, ...payload }) {
-        if (type === EmitActionType.connectionChanged) {
-          const {
-            hasConnection: isConnected,
-          } = payload as ConnectionChangedPayload;
-
-          dispatch({
-            type: LayoutActionType.CONNECTION_CHANGED,
-            offlineItemsCount: getOfflineItemsCount(cache),
-            isConnected,
-          });
-        }
-      },
-    });
-
-    return () => {
-      (subscriptionRef.current as ZenObservable.Subscription).unsubscribe();
-    };
-  }, [cache, observable]);
-
 
   // this will be true if we are server rendering in gatsby build
   if (!(cache && restoreCacheOrPurgeStorage && client)) {

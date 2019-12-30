@@ -9,6 +9,12 @@ import { getOfflineItemsCount } from "../../state/offline-resolvers";
 import { preFetchExperiences } from "./pre-fetch-experiences";
 import { RestoreCacheOrPurgeStorageFn } from "../../state/apollo-setup";
 import { AppPersistor } from "../../context";
+import { Observable } from "zen-observable-ts";
+import {
+  EmitPayload,
+  EmitActionType,
+  EmitActionConnectionChangedPayload,
+} from "../../state/observable-manager";
 
 export enum LayoutActionType {
   SET_OFFLINE_ITEMS_COUNT = "@layout/set-offline-items-count",
@@ -29,78 +35,57 @@ export const StateValue = {
 };
 
 export const reducer: Reducer<StateMachine, LayoutAction> = (state, action) =>
-  wrapReducer(state, action, (prevState, { type, ...payload }) => {
-    return immer(prevState, proxy => {
-      proxy.effects.value = StateValue.effectValNoEffect;
+  wrapReducer(
+    state,
+    action,
+    (prevState, { type, ...payload }) => {
+      return immer(prevState, proxy => {
+        proxy.effects.value = StateValue.effectValNoEffect;
 
-      switch (type) {
-        case LayoutActionType.CONNECTION_CHANGED:
-          handleConnectionChangedAction(
-            proxy,
-            payload as ConnectionChangedPayload,
-          );
-          break;
+        switch (type) {
+          case LayoutActionType.CONNECTION_CHANGED:
+            handleConnectionChangedAction(
+              proxy,
+              payload as ConnectionChangedPayload,
+            );
+            break;
 
-        case LayoutActionType.CACHE_PERSISTED:
-          handleCachePersistedAction(proxy, payload as CachePersistedPayload);
-          break;
+          case LayoutActionType.CACHE_PERSISTED:
+            handleCachePersistedAction(proxy, payload as CachePersistedPayload);
+            break;
 
-        case LayoutActionType.EXPERIENCES_TO_PREFETCH:
-          handleExperiencesToPrefetch(
-            proxy,
-            payload as ExperiencesToPrefetchPayload,
-          );
-          break;
+          case LayoutActionType.EXPERIENCES_TO_PREFETCH:
+            handleExperiencesToPrefetch(
+              proxy,
+              payload as ExperiencesToPrefetchPayload,
+            );
+            break;
 
-        case LayoutActionType.DONE_FETCHING_EXPERIENCES:
-          proxy.states.prefetchExperiences.value =
-            StateValue.prefetchValAlreadyFetched;
-          break;
+          case LayoutActionType.DONE_FETCHING_EXPERIENCES:
+            proxy.states.prefetchExperiences.value =
+              StateValue.prefetchValAlreadyFetched;
+            break;
 
-        case LayoutActionType.SET_OFFLINE_ITEMS_COUNT:
-          proxy.context.offlineItemsCount = (payload as {
-            count: number;
-          }).count;
-          break;
+          case LayoutActionType.SET_OFFLINE_ITEMS_COUNT:
+            proxy.context.offlineItemsCount = (payload as {
+              count: number;
+            }).count;
+            break;
 
-        case LayoutActionType.REFETCH_OFFLINE_ITEMS_COUNT:
-          handleGetOfflineItemsCountAction(proxy);
-          break;
+          case LayoutActionType.REFETCH_OFFLINE_ITEMS_COUNT:
+            handleGetOfflineItemsCountAction(proxy);
+            break;
 
-        case LayoutActionType.PUT_EFFECT_FUNCTIONS_ARGS:
-          handlePutEffectFunctionsArgs(proxy, payload as EffectFunctionsArgs);
-          break;
-      }
-    });
-  });
+          case LayoutActionType.PUT_EFFECT_FUNCTIONS_ARGS:
+            handlePutEffectFunctionsArgs(proxy, payload as EffectFunctionsArgs);
+            break;
+        }
+      });
+    },
+    // true,
+  );
 
 ////////////////////////// EFFECT FUNCTIONS SECTION ///////////////////////
-
-const persistCacheEffect: PersistCacheEffect["func"] = async ({
-  cache,
-  restoreCacheOrPurgeStorage,
-  persistor,
-  dispatch,
-}) => {
-  if (!(cache && restoreCacheOrPurgeStorage)) {
-    return;
-  }
-
-  try {
-    await restoreCacheOrPurgeStorage(persistor);
-  } catch (error) {}
-
-  dispatch({
-    type: LayoutActionType.CACHE_PERSISTED,
-    offlineItemsCount: getOfflineItemsCount(cache),
-    hasConnection: !!isConnected(),
-  });
-};
-
-type PersistCacheEffect = LayoutEffectDefinition<
-  "persistCache",
-  "cache" | "restoreCacheOrPurgeStorage" | "persistor" | "dispatch"
->;
 
 const getOfflineItemsCountEffect: GetOfflineItemsCountEffect["func"] = ({
   cache,
@@ -143,10 +128,57 @@ type PrefetchExperiencesEffect = LayoutEffectDefinition<
   }
 >;
 
+const firstEffect: FirstEffect["func"] = async ({
+  cache,
+  dispatch,
+  observable,
+  restoreCacheOrPurgeStorage,
+  persistor,
+}) => {
+  const subscription = observable.subscribe({
+    next({ type, ...payload }) {
+      if (type === EmitActionType.connectionChanged) {
+        const { hasConnection } = payload as EmitActionConnectionChangedPayload;
+
+        dispatch({
+          type: LayoutActionType.CONNECTION_CHANGED,
+          offlineItemsCount: getOfflineItemsCount(cache),
+          isConnected: hasConnection,
+        });
+      }
+    },
+  });
+
+  if (cache && restoreCacheOrPurgeStorage) {
+    try {
+      await restoreCacheOrPurgeStorage(persistor);
+    } catch (error) {}
+
+    dispatch({
+      type: LayoutActionType.CACHE_PERSISTED,
+      offlineItemsCount: getOfflineItemsCount(cache),
+      hasConnection: !!isConnected(),
+    });
+  }
+
+  return () => {
+    subscription.unsubscribe();
+  };
+};
+
+type FirstEffect = LayoutEffectDefinition<
+  "firstEffect",
+  | "dispatch"
+  | "cache"
+  | "observable"
+  | "restoreCacheOrPurgeStorage"
+  | "persistor"
+>;
+
 export const effectFunctions = {
   getOfflineItemsCount: getOfflineItemsCountEffect,
   prefetchExperiences: prefetchExperiencesEffect,
-  persistCache: persistCacheEffect,
+  firstEffect,
 };
 
 ////////////////////////// END EFFECT FUNCTIONS SECTION /////////////////
@@ -157,16 +189,17 @@ function handlePutEffectFunctionsArgs(
   globalState: StateMachine,
   payload: EffectFunctionsArgs,
 ) {
-  globalState.effects.context.metaFunctions = payload as EffectFunctionsArgs;
+  globalState.effects.context.metaFunctions = payload;
   const effectObjects = prepareToAddEffect(globalState);
   effectObjects.push({
-    key: "persistCache",
+    key: "firstEffect",
     ownArgs: {},
     effectArgKeys: [
       "cache",
+      "dispatch",
+      "observable",
       "restoreCacheOrPurgeStorage",
       "persistor",
-      "dispatch",
     ],
   });
 }
@@ -443,7 +476,7 @@ interface EffectContext {
 type EffectObject = (
   | GetOfflineItemsCountEffect
   | PrefetchExperiencesEffect
-  | PersistCacheEffect)[];
+  | FirstEffect)[];
 
 interface EffectState {
   value: EffectValueHasEffects;
@@ -462,6 +495,7 @@ export interface EffectFunctionsArgs {
   dispatch: LayoutDispatchType;
   restoreCacheOrPurgeStorage: RestoreCacheOrPurgeStorageFn | undefined;
   persistor: AppPersistor;
+  observable: Observable<EmitPayload>;
 }
 
 interface LayoutEffectDefinition<
@@ -475,7 +509,7 @@ interface LayoutEffectDefinition<
   func?: (
     effectArgs: { [k in EffectArgKeys]: EffectFunctionsArgs[k] },
     ownArgs: OwnArgs,
-  ) => void | Promise<void>;
+  ) => void | Promise<void | (() => void)> | (() => void);
 }
 
 export interface InitStateArgs {
