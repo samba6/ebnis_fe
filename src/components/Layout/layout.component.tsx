@@ -29,9 +29,7 @@ import {
   LayoutExperienceProvider,
   LocationProvider,
 } from "./layout-providers";
-import { preFetchExperiences } from "./pre-fetch-experiences";
 import { useUser } from "../use-user";
-import { isConnected } from "../../state/connections";
 import { WindowLocation, NavigateFn } from "@reach/router";
 
 export function Layout(props: Props) {
@@ -84,7 +82,8 @@ export function Layout(props: Props) {
           {} as EffectFunctionsArgs,
         );
 
-        effectFunctions[key](args, ownArgs);
+        /* eslint-disable-next-line @typescript-eslint/no-explicit-any*/
+        effectFunctions[key](args, ownArgs as any);
       }
     }
   }, [effects]);
@@ -94,6 +93,9 @@ export function Layout(props: Props) {
       type: LayoutActionType.PUT_EFFECT_FUNCTIONS_ARGS,
       cache,
       dispatch,
+      client,
+      restoreCacheOrPurgeStorage,
+      persistor,
     });
     /* eslint-disable-next-line react-hooks/exhaustive-deps*/
   }, []);
@@ -120,49 +122,6 @@ export function Layout(props: Props) {
     };
   }, [cache, observable]);
 
-  useEffect(
-    function persistCacheEffect() {
-      if (!(cache && restoreCacheOrPurgeStorage)) {
-        return;
-      }
-
-      (async function doPersistCache() {
-        try {
-          await restoreCacheOrPurgeStorage(persistor);
-        } catch (error) {}
-
-        dispatch({
-          type: LayoutActionType.CACHE_PERSISTED,
-          offlineItemsCount: getOfflineItemsCount(cache),
-          hasConnection: !!isConnected(),
-        });
-      })();
-    },
-    [restoreCacheOrPurgeStorage, dispatch, persistor, client, cache],
-  );
-
-  useEffect(() => {
-    if (prefetchExperiences.value !== "fetch-now") {
-      return;
-    }
-
-    const {
-      context: { ids },
-    } = prefetchExperiences;
-
-    setTimeout(() => {
-      preFetchExperiences({
-        ids,
-        client,
-        cache,
-        onDone: () => {
-          dispatch({
-            type: LayoutActionType.DONE_FETCHING_EXPERIENCES,
-          });
-        },
-      });
-    }, 500);
-  }, [prefetchExperiences, cache, client]);
 
   // this will be true if we are server rendering in gatsby build
   if (!(cache && restoreCacheOrPurgeStorage && client)) {
