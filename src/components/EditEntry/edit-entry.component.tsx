@@ -23,6 +23,9 @@ import {
   StateValue,
   EDITING_DEFINITION_MULTIPLE,
   runEffects,
+  getEffectArgsFromKeys,
+  effectFunctions,
+  CleanUpQueriesState,
 } from "./edit-entry-utils";
 import Form from "semantic-ui-react/dist/commonjs/collections/Form";
 import Message from "semantic-ui-react/dist/commonjs/collections/Message";
@@ -69,9 +72,12 @@ export function EditEntryComponent(props: EditEntryComponentProps) {
     layoutDispatch,
   } = props;
 
-  const [state, dispatch] = useReducer(reducer, props, initStateFromProps);
+  const [stateMachine, dispatch] = useReducer(
+    reducer,
+    props,
+    initStateFromProps,
+  );
   const {
-    effects,
     primaryState: {
       context: { definitionAndDataIdsMapList },
       common: commonState,
@@ -81,17 +87,23 @@ export function EditEntryComponent(props: EditEntryComponentProps) {
     },
     definitionsStates,
     dataStates,
-  } = state;
+    effects: {
+      runOnRenders,
+      context: { effectsArgsObj },
+      runOnce: { cleanupQueries },
+    },
+  } = stateMachine;
+
+  const runCleanupQueries = cleanupQueries && cleanupQueries.run;
 
   useEffect(() => {
-    if (effects.value !== StateValue.effectValHasEffects) {
+    if (runOnRenders.value !== StateValue.effectValHasEffects) {
       return;
     }
 
     const {
-      context: { effectsArgsObj },
       hasEffects: { context },
-    } = effects;
+    } = runOnRenders;
 
     runEffects(context.effects, effectsArgsObj);
 
@@ -105,7 +117,30 @@ export function EditEntryComponent(props: EditEntryComponentProps) {
 
     // redundant - [tsserver 7030] [W] Not all code paths return a value.
     return;
-  }, [effects]);
+
+    /* eslint-disable-next-line react-hooks/exhaustive-deps*/
+  }, [runOnRenders]);
+
+  useEffect(() => {
+    if (runCleanupQueries) {
+      const {
+        effect: { key, effectArgKeys, ownArgs },
+      } = cleanupQueries as CleanUpQueriesState;
+
+      const args = getEffectArgsFromKeys(effectArgKeys, effectsArgsObj);
+
+      return effectFunctions[key](
+        args,
+        /* eslint-disable-next-line @typescript-eslint/no-explicit-any*/
+        ownArgs as any,
+      ) as (() => void);
+    }
+
+    // redundant - [tsserver 7030] [W] Not all code paths return a value.
+    return;
+
+    /* eslint-disable-next-line react-hooks/exhaustive-deps*/
+  }, [runCleanupQueries]);
 
   useLayoutEffect(() => {
     dispatch({

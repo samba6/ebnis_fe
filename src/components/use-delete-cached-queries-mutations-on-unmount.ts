@@ -1,6 +1,6 @@
 import { useContext, useEffect } from "react";
 import { EbnisAppContext } from "../context";
-import { deleteCachedQueriesAndMutationsCleanupFn } from "./delete-cached-queries-and-mutations-cleanup";
+import { cleanupRanQueriesFromCache } from "../apollo-cache/cleanup-ran-queries-from-cache";
 
 export function useDeleteCachedQueriesAndMutationsOnUnmount(
   mutations: string[],
@@ -15,7 +15,7 @@ export function useDeleteCachedQueriesAndMutationsOnUnmount(
     }
 
     return () => {
-      deleteCachedQueriesAndMutationsCleanupFn(cache, mutations, persistor);
+      cleanupRanQueriesFromCache(cache, mutations, persistor);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shouldDelete]);

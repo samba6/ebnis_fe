@@ -39,7 +39,7 @@ import {
 import { ApolloError } from "apollo-client";
 import { GraphQLError } from "graphql";
 import { toISODatetimeString } from "../components/NewEntry/new-entry.utils";
-import { deleteCachedQueriesAndMutationsCleanupFn } from "../components/delete-cached-queries-and-mutations-cleanup";
+import { cleanupRanQueriesFromCache } from "../apollo-cache/cleanup-ran-queries-from-cache";
 import { makeOfflineId } from "../constants";
 import { CreateOnlineEntryMutationVariables } from "../graphql/apollo-types/CreateOnlineEntryMutation";
 import {
@@ -64,8 +64,8 @@ jest.mock("../components/DateField/date-field.component", () => ({
 jest.mock("../components/EditEntry/edit-entry.injectables");
 const mockEditEntryUpdate = editEntryUpdate as jest.Mock;
 
-jest.mock("../components/delete-cached-queries-and-mutations-cleanup");
-const mockDeleteCachedQueriesAndMutationsCleanup = deleteCachedQueriesAndMutationsCleanupFn as jest.Mock;
+jest.mock("../apollo-cache/cleanup-ran-queries-from-cache");
+const mockCleanupRanQueriesFromCache = cleanupRanQueriesFromCache as jest.Mock;
 
 jest.mock("../apollo-cache/drecrement-offline-entries-count");
 const mockDecrementOfflineEntriesCountForExperience = decrementOfflineEntriesCountForExperience as jest.Mock;
@@ -82,7 +82,7 @@ afterAll(() => {
 });
 
 beforeEach(() => {
-  mockDeleteCachedQueriesAndMutationsCleanup.mockReset();
+  mockCleanupRanQueriesFromCache.mockReset();
   mockDecrementOfflineEntriesCountForExperience.mockReset();
   mockEditEntryUpdate.mockReset();
   mockPersistFunc.mockReset();
@@ -108,7 +108,6 @@ it("destroys the UI", async () => {
   });
 
   const { unmount } = render(ui);
-  expect(mockDeleteCachedQueriesAndMutationsCleanup).not.toHaveBeenCalled();
 
   destroyModal();
 
@@ -116,8 +115,10 @@ it("destroys the UI", async () => {
     ActionType.DESTROYED,
   );
 
+  expect(mockCleanupRanQueriesFromCache).not.toHaveBeenCalled();
+
   unmount();
-  expect(mockDeleteCachedQueriesAndMutationsCleanup).toHaveBeenCalledTimes(1);
+  expect(mockCleanupRanQueriesFromCache).toHaveBeenCalledTimes(1);
 });
 
 test("not editing data, editing single definition, form errors, server success", async () => {
@@ -295,16 +296,40 @@ test("not editing data, editing single definition, form errors, server success",
     } as UpdateDefinitions,
   });
 
+  /**
+   * While submitting the form
+   */
   $submit.click();
+
+  /**
+   * We should not be able to interract with the UI
+   */
   destroyModal();
   expect(getSubmittingOverlay()).not.toBeNull();
-  // submitting
+
+  /**
+   * And when form has successfully submitted, we should see response
+   */
   await waitForElement(getSubmissionSuccessResponseDom);
 
-  // back to idle, with success
+  /**
+   * And success color should show on form fields
+   */
   expect($field.classList).toContain("definition--success");
+
+  /**
+   * And error color should not show on form fields
+   */
   expect($field.classList).not.toContain("error");
+
+  /**
+   * And form submitting overlay should no longer be visible
+   */
   expect(getSubmittingOverlay()).toBeNull();
+
+  /**
+   * And field value should be updated with new new value
+   */
   expect(getDefinitionName("a").value).toEqual("g1");
 });
 

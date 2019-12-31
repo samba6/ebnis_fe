@@ -46,7 +46,7 @@ import { decrementOfflineEntriesCountForExperience } from "../../apollo-cache/dr
 import { AppPersistor } from "../../context";
 import { InMemoryCache } from "apollo-cache-inmemory";
 import { LayoutDispatchType, LayoutActionType } from "../Layout/layout.utils";
-import { deleteCachedQueriesAndMutationsCleanupFn } from "../delete-cached-queries-and-mutations-cleanup";
+import { cleanupRanQueriesFromCache } from "../../apollo-cache/cleanup-ran-queries-from-cache";
 import {
   MUTATION_NAME_updateDataObjects,
   MUTATION_NAME_updateDefinitions,
@@ -173,7 +173,10 @@ export const initStateFromProps = (
 
   const state = {
     effects: {
-      value: EFFECT_VALUE_NO_EFFECT,
+      runOnRenders: {
+        value: EFFECT_VALUE_NO_EFFECT,
+      },
+      runOnce: {},
       context: {
         effectsArgsObj: {} as EffectFunctionsArgs,
       },
@@ -218,7 +221,7 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
     action,
     (prevState, { type, ...payload }) => {
       return immer(prevState, proxy => {
-        proxy.effects.value = EFFECT_VALUE_NO_EFFECT;
+        proxy.effects.runOnRenders.value = EFFECT_VALUE_NO_EFFECT;
 
         switch (type) {
           case ActionType.DATA_CHANGED:
@@ -524,17 +527,18 @@ const cleanupQueriesEffect: CleanUpQueriesEffect["func"] = ({
   cache,
   persistor,
 }) => {
-  deleteCachedQueriesAndMutationsCleanupFn(
-    cache,
-    [
-      MUTATION_NAME_updateDataObjects,
-      MUTATION_NAME_updateDefinitions,
-      MUTATION_NAME_createEntry,
-      QUERY_NAME_getOfflineItems,
-      QUERY_NAME_getExperienceFull + "(",
-    ],
-    persistor,
-  );
+  return () =>
+    cleanupRanQueriesFromCache(
+      cache,
+      [
+        MUTATION_NAME_updateDataObjects,
+        MUTATION_NAME_updateDefinitions,
+        MUTATION_NAME_createEntry,
+        QUERY_NAME_getOfflineItems,
+        QUERY_NAME_getExperienceFull + "(",
+      ],
+      persistor,
+    );
 };
 
 type CleanUpQueriesEffect = EditEntryEffectDefinition<
@@ -578,12 +582,9 @@ export function runEffects(
   effectsArgsObj: EffectFunctionsArgs,
 ) {
   for (const { key, ownArgs, effectArgKeys } of effects) {
-    const effectArgs = (effectArgKeys as (keyof EffectFunctionsArgs)[]).reduce(
-      (acc, k) => {
-        acc[k] = effectsArgsObj[k];
-        return acc;
-      },
-      {} as EffectFunctionsArgs,
+    const effectArgs = getEffectArgsFromKeys(
+      effectArgKeys as (keyof EffectFunctionsArgs)[],
+      effectsArgsObj,
     );
 
     effectFunctions[key](
@@ -592,6 +593,19 @@ export function runEffects(
       ownArgs as any,
     );
   }
+}
+
+export function getEffectArgsFromKeys(
+  effectArgKeys: (keyof EffectFunctionsArgs)[],
+  effectsArgsObj: EffectFunctionsArgs,
+) {
+  return effectArgKeys.reduce(
+    (acc, k) => {
+      acc[k] = effectsArgsObj[k];
+      return acc;
+    },
+    {} as EffectFunctionsArgs,
+  );
 }
 
 ////////////////////////// END EFFECT FUNCTIONS SECTION /////////////////
@@ -603,13 +617,15 @@ function handlePutEffectFunctionsArgs(
   payload: EffectFunctionsArgs,
 ) {
   globalState.effects.context.effectsArgsObj = payload;
-  const [, cleanupEffectObjects] = prepareToAddEffect(globalState);
 
-  cleanupEffectObjects.push({
-    key: "cleanupQueries",
-    effectArgKeys: ["persistor", "cache"],
-    ownArgs: {},
-  });
+  globalState.effects.runOnce.cleanupQueries = {
+    run: true,
+    effect: {
+      key: "cleanupQueries",
+      effectArgKeys: ["persistor", "cache"],
+      ownArgs: {},
+    },
+  };
 }
 
 function handleDefinitionNameChangedAction(
@@ -650,7 +666,7 @@ function handleDefinitionNameChangedAction(
 
 function handleSubmittingAction(globalState: StateMachine) {
   globalState.primaryState.common.value = "submitting";
-  const [effectObjects] = prepareToAddEffect(globalState);
+  const [effectObjects] = prepareToAddRunOnRendersEffects(globalState);
   const { entry } = globalState.primaryState.context;
 
   if (isOfflineId(entry.id)) {
@@ -816,7 +832,7 @@ function handleOnlineEntryCreatedServerResponseAction(
   globalState: StateMachine,
   response: CreateOnlineEntryMutation_createEntry,
 ) {
-  const [effectObjects] = prepareToAddEffect(globalState);
+  const [effectObjects] = prepareToAddRunOnRendersEffects(globalState);
 
   const { entry } = response;
 
@@ -856,12 +872,12 @@ function handleOnlineEntryCreatedServerResponseAction(
   return [1, 0, "valid"];
 }
 
-function prepareToAddEffect(globalState: StateMachine) {
-  const effects = (globalState.effects as unknown) as EffectState;
-  effects.value = StateValue.effectValHasEffects;
+function prepareToAddRunOnRendersEffects(globalState: StateMachine) {
+  const runOnRendersEffects = globalState.effects.runOnRenders as EffectState;
+  runOnRendersEffects.value = StateValue.effectValHasEffects;
   const effectObjects: EffectObject = [];
   const cleanupEffectObjects: EffectObject = [];
-  effects.hasEffects = {
+  runOnRendersEffects.hasEffects = {
     context: {
       effects: effectObjects,
       cleanupEffects: cleanupEffectObjects,
@@ -1401,9 +1417,21 @@ export interface StateMachine {
   readonly dataStates: DataStates;
   readonly definitionsStates: DefinitionsStates;
   readonly primaryState: PrimaryState;
-  readonly effects: (EffectState | { value: EffectValueNoEffect }) & {
+  readonly effects: ({
+    runOnRenders: EffectState | { value: EffectValueNoEffect };
+    runOnce: {
+      cleanupQueries?: CleanUpQueriesState;
+    };
+  }) & {
     context: EffectContext;
   };
+}
+
+export type CleanUpQueriesState = RunOnceEffectState<CleanUpQueriesEffect>;
+
+interface RunOnceEffectState<IEffect> {
+  run: boolean;
+  effect: IEffect;
 }
 
 interface EffectContext {
@@ -1426,8 +1454,7 @@ type EffectObject = (
   | DefinitionsFormErrorsEffect
   | UpdateDataObjectsOnlineEffect
   | UpdateDefinitionsAndDataOnlineEffect
-  | DecrementOfflineEntriesCountEffect
-  | CleanUpQueriesEffect)[];
+  | DecrementOfflineEntriesCountEffect)[];
 
 interface EditEntryEffectDefinition<
   Key extends string,

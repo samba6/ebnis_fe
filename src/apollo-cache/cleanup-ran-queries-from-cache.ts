@@ -2,7 +2,7 @@ import { removeQueriesAndMutationsFromCache } from "../state/resolvers/delete-re
 import { InMemoryCache, NormalizedCacheObject } from "apollo-cache-inmemory";
 import { CachePersistor } from "apollo-cache-persist";
 
-export function deleteCachedQueriesAndMutationsCleanupFn(
+export function cleanupRanQueriesFromCache(
   cache: InMemoryCache,
   mutations: string[],
   persistor: CachePersistor<NormalizedCacheObject>,
