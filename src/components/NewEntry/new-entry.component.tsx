@@ -3,6 +3,7 @@ import React, {
   useReducer,
   useContext,
   useLayoutEffect,
+  useCallback,
 } from "react";
 import Form from "semantic-ui-react/dist/commonjs/collections/Form";
 import Message from "semantic-ui-react/dist/commonjs/collections/Message";
@@ -17,35 +18,25 @@ import {
   formFieldNameFromIndex,
   reducer,
   DispatchType,
-  ActionTypes,
-  parseApolloErrors,
+  ActionType,
   initialStateFromProps,
-  State,
-  formObjToString,
   NewEntryCallerProps,
+  EffectFunctionsArgs,
+  StateValue,
+  runEffects,
+  // getEffectArgsFromKeys,
 } from "./new-entry.utils";
 import { makeExperienceRoute } from "../../constants/experience-route";
 import { setDocumentTitle, makeSiteTitle } from "../../constants";
-import { isConnected } from "../../state/connections";
 import { ExperienceFragment_dataDefinitions } from "../../graphql/apollo-types/ExperienceFragment";
 import makeClassNames from "classnames";
 import { FormCtrlError } from "../FormCtrlError/form-ctrl-error.component";
-import { makeScrollIntoViewId, scrollIntoView } from "../scroll-into-view";
-import {
-  DataTypes,
-  CreateDataObject,
-} from "../../graphql/apollo-types/globalTypes";
-import { CreateOnlineEntryMutation_createEntry } from "../../graphql/apollo-types/CreateOnlineEntryMutation";
-import {
-  CreateOfflineEntryMutationReturned,
-  useCreateOfflineEntryMutation,
-} from "./new-entry.resolvers";
+import { makeScrollIntoViewId } from "../scroll-into-view";
+import { DataTypes } from "../../graphql/apollo-types/globalTypes";
+import { useCreateOfflineEntryMutation } from "./new-entry.resolvers";
 import { componentFromDataType } from "./component-from-data-type";
 import { InputOnChangeData } from "semantic-ui-react";
-import {
-  addResolvers,
-  updateExperienceWithNewEntry,
-} from "./new-entry.injectables";
+import { addResolvers } from "./new-entry.injectables";
 import { EbnisAppContext } from "../../context";
 import { SidebarHeader } from "../SidebarHeader/sidebar-header.component";
 import { useDeleteCachedQueriesAndMutationsOnUnmount } from "../use-delete-cached-queries-mutations-on-unmount";
@@ -53,25 +44,85 @@ import {
   MUTATION_NAME_createEntry,
   useCreateOnlineEntryMutation,
 } from "../../graphql/create-entry.mutation";
-import { MUTATION_NAME_createOfflineEntry } from "../../state/resolvers";
+import {
+  MUTATION_NAME_createOfflineEntry,
+  QUERY_NAME_getExperience,
+} from "../../state/resolvers";
 
 export function NewEntryComponent(props: NewEntryComponentProps) {
-  const { navigate, experience, createOnlineEntry, createOfflineEntry } = props;
-  const { client } = useContext(EbnisAppContext);
-
-  const [state, dispatch] = useReducer(
-    reducer,
+  const {
+    client,
+    navigate,
     experience,
+    createOnlineEntry,
+    createOfflineEntry,
+  } = props;
+
+  const [stateMachine, dispatch] = useReducer(
+    reducer,
+    {
+      experience,
+      effectsArgsObj: {
+        client,
+        createOnlineEntry,
+        createOfflineEntry,
+      } as EffectFunctionsArgs,
+    },
     initialStateFromProps,
   );
 
-  const { fieldErrors, networkError } = state;
+  const {
+    fieldErrors,
+    networkError,
+
+    effects: {
+      runOnRenders,
+      context: { effectsArgsObj },
+    },
+  } = stateMachine;
 
   const pageTitle = makePageTitle(experience);
 
+  useEffect(() => {
+    if (runOnRenders.value !== StateValue.effectValHasEffects) {
+      return;
+    }
+
+    const {
+      hasEffects: { context },
+    } = runOnRenders;
+
+    runEffects(context.effects, effectsArgsObj);
+
+    const { cleanupEffects } = context;
+
+    if (cleanupEffects.length) {
+      return () => {
+        runEffects(cleanupEffects, effectsArgsObj);
+      };
+    }
+
+    // redundant - [tsserver 7030] [W] Not all code paths return a value.
+    return;
+
+    /* eslint-disable-next-line react-hooks/exhaustive-deps*/
+  }, [runOnRenders]);
+
+  const goToExperience = useCallback(() => {
+    (navigate as NavigateFn)(makeExperienceRoute(experience.id));
+    /* eslint-disable-next-line react-hooks/exhaustive-deps*/
+  }, []);
+
   useLayoutEffect(() => {
+    const args = { dispatch, goToExperience } as EffectFunctionsArgs;
+
+    dispatch({
+      type: ActionType.PUT_EFFECT_FUNCTIONS_ARGS,
+      ...args,
+    });
     addResolvers(client);
-  }, [client]);
+    /* eslint-disable-next-line react-hooks/exhaustive-deps*/
+  }, []);
 
   useEffect(
     function setRouteTitle() {
@@ -82,96 +133,22 @@ export function NewEntryComponent(props: NewEntryComponentProps) {
     [pageTitle],
   );
 
-  useEffect(() => {
-    const [keyVal] = Object.entries(fieldErrors);
-
-    if (!keyVal) {
-      return;
-    }
-
-    const [id] = keyVal;
-
-    scrollIntoView(makeScrollIntoViewId(id), {
-      behavior: "smooth",
-    });
-  }, [fieldErrors]);
-
   // we use getExperience( instead of getExperience so that getExperiences does
   // not get deleted
   useDeleteCachedQueriesAndMutationsOnUnmount(
     [
-      "getExperience(",
+      QUERY_NAME_getExperience + "(",
       MUTATION_NAME_createEntry,
       MUTATION_NAME_createOfflineEntry,
     ],
     true,
   );
 
-  function goToExperience() {
-    (navigate as NavigateFn)(makeExperienceRoute(experience.id));
-  }
-
-  async function onSubmit() {
-    const { dataDefinitions, id: experienceId } = experience;
-
-    const dataObjects = dataObjectsFromFormValues(
-      state.formObj,
-      dataDefinitions as ExperienceFragment_dataDefinitions[],
-    );
-
-    try {
-      let createResult: CreateOnlineEntryMutation_createEntry;
-
-      if (isConnected()) {
-        const result = await createOnlineEntry({
-          variables: {
-            input: {
-              experienceId,
-              dataObjects,
-            },
-          },
-
-          update: updateExperienceWithNewEntry(experienceId),
-        });
-
-        createResult = ((result && result.data && result.data.createEntry) ||
-          {}) as CreateOnlineEntryMutation_createEntry;
-      } else {
-        const result = await createOfflineEntry({
-          variables: {
-            experience,
-            dataObjects,
-          },
-        });
-
-        const { entry } = (result &&
-          result.data &&
-          result.data
-            .createOfflineEntry) as CreateOfflineEntryMutationReturned["createOfflineEntry"];
-
-        createResult = { entry } as CreateOnlineEntryMutation_createEntry;
-      }
-
-      const { entry, errors } = createResult;
-
-      if (errors) {
-        dispatch([ActionTypes.setCreateEntryErrors, errors]);
-        return;
-      }
-
-      if (entry) {
-        goToExperience();
-      }
-    } catch (errors) {
-      const parsedErrors = parseApolloErrors(errors);
-
-      dispatch([ActionTypes.setServerErrors, parsedErrors]);
-
-      if (parsedErrors.networkError) {
-        scrollIntoView("js-scroll-into-view-network-error");
-      }
-    }
-  }
+  const onSubmit = useCallback(() => {
+    dispatch({
+      type: ActionType.SUBMITTING,
+    });
+  }, []);
 
   function renderMain() {
     const { dataDefinitions, title } = experience;
@@ -197,7 +174,7 @@ export function NewEntryComponent(props: NewEntryComponentProps) {
             id="new-entry-network-error"
             error={true}
             onDismiss={function onDismiss() {
-              dispatch([ActionTypes.removeServerErrors]);
+              dispatch({ type: ActionType.removeServerErrors });
             }}
           >
             <Message.Content>
@@ -220,7 +197,7 @@ export function NewEntryComponent(props: NewEntryComponentProps) {
                 key={definition.id}
                 definition={definition}
                 index={index}
-                formValues={state.formObj}
+                formValues={stateMachine.formObj}
                 dispatch={dispatch}
                 error={fieldErrors[index]}
               />
@@ -269,16 +246,14 @@ const DataComponent = React.memo(
         type === DataTypes.DATE || type === DataTypes.DATETIME
           ? makeDateChangedFn(dispatch)
           : (_: E, { value: inputVal }: InputOnChangeData) => {
-              dispatch([
-                ActionTypes.setFormObjField,
-                {
-                  formFieldName,
-                  value:
-                    type === DataTypes.DECIMAL || type === DataTypes.INTEGER
-                      ? Number(inputVal)
-                      : inputVal,
-                },
-              ]);
+              dispatch({
+                type: ActionType.setFormObjField,
+                formFieldName,
+                value:
+                  type === DataTypes.DECIMAL || type === DataTypes.INTEGER
+                    ? Number(inputVal)
+                    : inputVal,
+              });
             },
     };
 
@@ -316,36 +291,12 @@ const DataComponent = React.memo(
 
 function makeDateChangedFn(dispatch: DispatchType) {
   return function makeDateChangedFnInner(fieldName: string, value: FormObjVal) {
-    dispatch([
-      ActionTypes.setFormObjField,
-      { formFieldName: fieldName, value },
-    ]);
+    dispatch({
+      type: ActionType.setFormObjField,
+      formFieldName: fieldName,
+      value,
+    });
   };
-}
-
-function dataObjectsFromFormValues(
-  formObj: State["formObj"],
-  dataDefinitions: ExperienceFragment_dataDefinitions[],
-) {
-  return Object.entries(formObj).reduce(
-    (acc, [stringIndex, val]) => {
-      const index = Number(stringIndex);
-      const definition = dataDefinitions[
-        index
-      ] as ExperienceFragment_dataDefinitions;
-
-      const { type, id: definitionId } = definition;
-
-      acc.push({
-        definitionId,
-
-        data: `{"${type.toLowerCase()}":"${formObjToString(type, val)}"}`,
-      });
-
-      return acc;
-    },
-    [] as CreateDataObject[],
-  );
 }
 
 interface DataComponentProps {
@@ -362,11 +313,13 @@ type E = React.ChangeEvent<HTMLInputElement>;
 export default (props: NewEntryCallerProps) => {
   const [createOnlineEntry] = useCreateOnlineEntryMutation();
   const [createOfflineEntry] = useCreateOfflineEntryMutation();
+  const { client } = useContext(EbnisAppContext);
 
   return (
     <NewEntryComponent
       createOnlineEntry={createOnlineEntry}
       createOfflineEntry={createOfflineEntry}
+      client={client}
       {...props}
     />
   );

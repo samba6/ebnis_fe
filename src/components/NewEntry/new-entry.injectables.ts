@@ -13,6 +13,7 @@ import { DataProxy } from "apollo-cache";
 import { FetchResult } from "apollo-link";
 import { readGetExperienceFullQueryFromCache } from "../../state/resolvers/read-get-experience-full-query-from-cache";
 import { entryToEdge } from "../../state/resolvers/entry-to-edge";
+import { AppPersistor } from "../../context";
 
 export function addResolvers(client: ApolloClient<{}>) {
   if (window.____ebnis.newEntryResolversAdded) {
@@ -24,7 +25,8 @@ export function addResolvers(client: ApolloClient<{}>) {
 }
 
 type Fn<T = string | ExperienceFragment> = (
-  arg: T,
+  experienceOrId: T,
+  persistor?: AppPersistor,
 ) => (
   proxy: DataProxy,
   mutationResult: FetchResult<CreateOnlineEntryMutation>,
@@ -38,6 +40,7 @@ type Fn<T = string | ExperienceFragment> = (
  */
 export const updateExperienceWithNewEntry: Fn = function updateFn(
   experienceOrId,
+  persistor,
 ) {
   return async function updateFnInner(
     dataProxy,
@@ -84,6 +87,10 @@ export const updateExperienceWithNewEntry: Fn = function updateFn(
     writeGetExperienceFullQueryToCache(dataProxy, updatedExperience, {
       writeFragment: true,
     });
+
+    if (persistor) {
+      persistor.persist();
+    }
 
     return updatedExperience;
   };

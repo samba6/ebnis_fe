@@ -432,9 +432,7 @@ it("creates new entry when offline", async () => {
 it("renders error when entry creation fails", async () => {
   const experience = {
     id: "1",
-
     title,
-
     dataDefinitions: [
       {
         id: "f1",
@@ -442,7 +440,6 @@ it("renders error when entry creation fails", async () => {
         type: DataTypes.MULTI_LINE_TEXT,
       },
     ],
-
     entries: {},
   } as ExperienceFragment;
 
