@@ -24,6 +24,9 @@ import {
   EffectFunctionsArgs,
   StateValue,
   runEffects,
+  CleanUpQueriesState,
+  getEffectArgsFromKeys,
+  effectFunctions,
   // getEffectArgsFromKeys,
 } from "./new-entry.utils";
 import { makeExperienceRoute } from "../../constants/experience-route";
@@ -50,23 +53,14 @@ import {
 } from "../../state/resolvers";
 
 export function NewEntryComponent(props: NewEntryComponentProps) {
-  const {
-    client,
-    navigate,
-    experience,
-    createOnlineEntry,
-    createOfflineEntry,
-  } = props;
+  const { navigate, experience, ...rest } = props;
+  const { client } = rest;
 
   const [stateMachine, dispatch] = useReducer(
     reducer,
     {
       experience,
-      effectsArgsObj: {
-        client,
-        createOnlineEntry,
-        createOfflineEntry,
-      } as EffectFunctionsArgs,
+      effectsArgsObj: rest as EffectFunctionsArgs,
     },
     initialStateFromProps,
   );
@@ -76,12 +70,14 @@ export function NewEntryComponent(props: NewEntryComponentProps) {
     networkError,
 
     effects: {
-      runOnRenders,
+      onRender: runOnRenders,
+      runOnce: { cleanupQueries },
       context: { effectsArgsObj },
     },
   } = stateMachine;
 
   const pageTitle = makePageTitle(experience);
+  const runCleanupQueriesEffect = cleanupQueries && cleanupQueries.run;
 
   useEffect(() => {
     if (runOnRenders.value !== StateValue.effectValHasEffects) {
@@ -108,6 +104,27 @@ export function NewEntryComponent(props: NewEntryComponentProps) {
     /* eslint-disable-next-line react-hooks/exhaustive-deps*/
   }, [runOnRenders]);
 
+  useEffect(() => {
+    if (runCleanupQueriesEffect) {
+      const {
+        effect: { key, effectArgKeys, ownArgs },
+      } = cleanupQueries as CleanUpQueriesState;
+
+      const args = getEffectArgsFromKeys(effectArgKeys, effectsArgsObj);
+
+      return effectFunctions[key](
+        args,
+        /* eslint-disable-next-line @typescript-eslint/no-explicit-any*/
+        ownArgs as any,
+      ) as (() => void);
+    }
+
+    // redundant - [tsserver 7030] [W] Not all code paths return a value.
+    return;
+
+    /* eslint-disable-next-line react-hooks/exhaustive-deps*/
+  }, [runCleanupQueriesEffect]);
+
   const goToExperience = useCallback(() => {
     (navigate as NavigateFn)(makeExperienceRoute(experience.id));
     /* eslint-disable-next-line react-hooks/exhaustive-deps*/
@@ -131,17 +148,6 @@ export function NewEntryComponent(props: NewEntryComponentProps) {
       return setDocumentTitle;
     },
     [pageTitle],
-  );
-
-  // we use getExperience( instead of getExperience so that getExperiences does
-  // not get deleted
-  useDeleteCachedQueriesAndMutationsOnUnmount(
-    [
-      QUERY_NAME_getExperience + "(",
-      MUTATION_NAME_createEntry,
-      MUTATION_NAME_createOfflineEntry,
-    ],
-    true,
   );
 
   const onSubmit = useCallback(() => {
@@ -313,13 +319,15 @@ type E = React.ChangeEvent<HTMLInputElement>;
 export default (props: NewEntryCallerProps) => {
   const [createOnlineEntry] = useCreateOnlineEntryMutation();
   const [createOfflineEntry] = useCreateOfflineEntryMutation();
-  const { client } = useContext(EbnisAppContext);
+  const { cache, client, persistor } = useContext(EbnisAppContext);
 
   return (
     <NewEntryComponent
       createOnlineEntry={createOnlineEntry}
       createOfflineEntry={createOfflineEntry}
       client={client}
+      persistor={persistor}
+      cache={cache}
       {...props}
     />
   );

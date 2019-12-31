@@ -330,7 +330,7 @@ const decrementOfflineEntriesCountEffect: DecrementOfflineEntriesCountEffect["fu
   });
 };
 
-type DecrementOfflineEntriesCountEffect = EditEntryEffectDefinition<
+type DecrementOfflineEntriesCountEffect = EffectDefinition<
   "decrementOfflineEntriesCount",
   "cache" | "persistor" | "layoutDispatch",
   {
@@ -364,7 +364,7 @@ const createEntryOnlineEffect: CreateEntryOnlineEffect["func"] = async (
   } catch (errors) {}
 };
 
-type CreateEntryOnlineEffect = EditEntryEffectDefinition<
+type CreateEntryOnlineEffect = EffectDefinition<
   "createOnlineEntry",
   "createOnlineEntry" | "dispatch",
   {
@@ -382,7 +382,7 @@ const definitionsFormErrorsEffect: DefinitionsFormErrorsEffect["func"] = (
   });
 };
 
-type DefinitionsFormErrorsEffect = EditEntryEffectDefinition<
+type DefinitionsFormErrorsEffect = EffectDefinition<
   "definitionsFormErrors",
   "dispatch",
   {
@@ -427,7 +427,7 @@ const updateDefinitionsOnlineEffect: UpdateDefinitionsOnlineEffect["func"] = asy
   }
 };
 
-type UpdateDefinitionsOnlineEffect = EditEntryEffectDefinition<
+type UpdateDefinitionsOnlineEffect = EffectDefinition<
   "updateDefinitionsOnline",
   "dispatch" | "updateDefinitionsOnline",
   {
@@ -468,7 +468,7 @@ const updateDataObjectsOnlineEffect: UpdateDataObjectsOnlineEffect["func"] = asy
   }
 };
 
-type UpdateDataObjectsOnlineEffect = EditEntryEffectDefinition<
+type UpdateDataObjectsOnlineEffect = EffectDefinition<
   "updateDataObjectsOnline",
   "dispatch" | "updateDataObjectsOnline",
   {
@@ -513,7 +513,7 @@ const updateDefinitionsAndDataOnlineEffect: UpdateDefinitionsAndDataOnlineEffect
   }
 };
 
-type UpdateDefinitionsAndDataOnlineEffect = EditEntryEffectDefinition<
+type UpdateDefinitionsAndDataOnlineEffect = EffectDefinition<
   "updateDefinitionsAndDataOnline",
   "dispatch" | "updateDefinitionsAndDataOnline",
   {
@@ -541,7 +541,7 @@ const cleanupQueriesEffect: CleanUpQueriesEffect["func"] = ({
     );
 };
 
-type CleanUpQueriesEffect = EditEntryEffectDefinition<
+type CleanUpQueriesEffect = EffectDefinition<
   "cleanupQueries",
   "cache" | "persistor"
 >;
@@ -578,7 +578,7 @@ function processFormSubmissionException({
 }
 
 export function runEffects(
-  effects: EffectObject,
+  effects: EffectsList,
   effectsArgsObj: EffectFunctionsArgs,
 ) {
   for (const { key, ownArgs, effectArgKeys } of effects) {
@@ -666,7 +666,7 @@ function handleDefinitionNameChangedAction(
 
 function handleSubmittingAction(globalState: StateMachine) {
   globalState.primaryState.common.value = "submitting";
-  const [effectObjects] = prepareToAddRunOnRendersEffects(globalState);
+  const [effectObjects] = getRenderEffects(globalState);
   const { entry } = globalState.primaryState.context;
 
   if (isOfflineId(entry.id)) {
@@ -832,7 +832,7 @@ function handleOnlineEntryCreatedServerResponseAction(
   globalState: StateMachine,
   response: CreateOnlineEntryMutation_createEntry,
 ) {
-  const [effectObjects] = prepareToAddRunOnRendersEffects(globalState);
+  const [effectObjects] = getRenderEffects(globalState);
 
   const { entry } = response;
 
@@ -872,11 +872,11 @@ function handleOnlineEntryCreatedServerResponseAction(
   return [1, 0, "valid"];
 }
 
-function prepareToAddRunOnRendersEffects(globalState: StateMachine) {
+function getRenderEffects(globalState: StateMachine) {
   const runOnRendersEffects = globalState.effects.runOnRenders as EffectState;
   runOnRendersEffects.value = StateValue.effectValHasEffects;
-  const effectObjects: EffectObject = [];
-  const cleanupEffectObjects: EffectObject = [];
+  const effectObjects: EffectsList = [];
+  const cleanupEffectObjects: EffectsList = [];
   runOnRendersEffects.hasEffects = {
     context: {
       effects: effectObjects,
@@ -1189,7 +1189,7 @@ async function handleSubmittingUpdateDataAndOrDefinitionAction({
   effectObjects,
 }: {
   globalState: StateMachine;
-  effectObjects: EffectObject;
+  effectObjects: EffectsList;
 }) {
   const [definitionsInput, definitionsWithFormErrors] = getDefinitionsToSubmit(
     globalState.definitionsStates,
@@ -1274,7 +1274,7 @@ function setEditingData(proxy: StateMachine) {
 
 function handleSubmittingCreateEntryOnlineAction(
   globalState: StateMachine,
-  effectObjects: EffectObject,
+  effectObjects: EffectsList,
 ) {
   (globalState.primaryState.common as PrimaryStateSubmitting).submitting = {
     context: {
@@ -1442,13 +1442,13 @@ interface EffectState {
   value: EffectValueHasEffects;
   hasEffects: {
     context: {
-      effects: EffectObject;
-      cleanupEffects: EffectObject;
+      effects: EffectsList;
+      cleanupEffects: EffectsList;
     };
   };
 }
 
-type EffectObject = (
+type EffectsList = (
   | UpdateDefinitionsOnlineEffect
   | CreateEntryOnlineEffect
   | DefinitionsFormErrorsEffect
@@ -1456,7 +1456,7 @@ type EffectObject = (
   | UpdateDefinitionsAndDataOnlineEffect
   | DecrementOfflineEntriesCountEffect)[];
 
-interface EditEntryEffectDefinition<
+interface EffectDefinition<
   Key extends string,
   EffectArgKeys extends keyof EffectFunctionsArgs,
   OwnArgs = {}

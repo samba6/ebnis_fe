@@ -190,7 +190,7 @@ export const effectFunctions = {
 };
 
 export function runEffects(
-  effects: EffectObject,
+  effects: EffectsList,
   effectsArgsObj: EffectFunctionsArgs,
 ) {
   for (const { key, ownArgs, effectArgKeys } of effects) {
@@ -229,7 +229,7 @@ function handlePutEffectFunctionsArgs(
   payload: EffectFunctionsArgs,
 ) {
   globalState.effects.context.effectsArgsObj = payload;
-  const [effectObjects] = prepareToAddRunOnRendersEffects(globalState);
+  const [effectObjects] = getRenderEffects(globalState);
   effectObjects.push({
     key: "firstEffect",
     ownArgs: {},
@@ -306,7 +306,7 @@ function handleExperiencesToPrefetch(
     return;
   }
 
-  const [effectObjects] = prepareToAddRunOnRendersEffects(globalState);
+  const [effectObjects] = getRenderEffects(globalState);
   effectObjects.push({
     key: "prefetchExperiences",
     effectArgKeys: ["client", "cache", "dispatch"],
@@ -343,7 +343,7 @@ function handleConnectionChangedAction(
     states.prefetchExperiences.value === StateValue.prefetchValNeverFetched
   ) {
     if (yesPrefetch.context) {
-      const [effectObjects] = prepareToAddRunOnRendersEffects(globalState);
+      const [effectObjects] = getRenderEffects(globalState);
 
       effectObjects.push({
         key: "prefetchExperiences",
@@ -360,7 +360,7 @@ function handleConnectionChangedAction(
 }
 
 function handleGetOfflineItemsCountAction(globalState: StateMachine) {
-  const [effectObjects] = prepareToAddRunOnRendersEffects(globalState);
+  const [effectObjects] = getRenderEffects(globalState);
   effectObjects.push({
     key: "getOfflineItemsCount",
     effectArgKeys: ["cache", "dispatch"],
@@ -385,11 +385,11 @@ function handleCachePersistedAction(
   globalState.context.offlineItemsCount = offlineItemsCount;
 }
 
-function prepareToAddRunOnRendersEffects(globalState: StateMachine) {
+function getRenderEffects(globalState: StateMachine) {
   const runOnRendersEffects = globalState.effects.runOnRenders as EffectState;
   runOnRendersEffects.value = StateValue.effectValHasEffects;
-  const effectObjects: EffectObject = [];
-  const cleanupEffectObjects: EffectObject = [];
+  const effectObjects: EffectsList = [];
+  const cleanupEffectObjects: EffectsList = [];
   runOnRendersEffects.hasEffects = {
     context: {
       effects: effectObjects,
@@ -540,7 +540,7 @@ interface EffectContext {
   effectsArgsObj: EffectFunctionsArgs;
 }
 
-type EffectObject = (
+type EffectsList = (
   | GetOfflineItemsCountEffect
   | PrefetchExperiencesEffect
   | FirstEffect
@@ -550,8 +550,8 @@ interface EffectState {
   value: EffectValueHasEffects;
   hasEffects: {
     context: {
-      effects: EffectObject;
-      cleanupEffects: EffectObject;
+      effects: EffectsList;
+      cleanupEffects: EffectsList;
     };
   };
 }

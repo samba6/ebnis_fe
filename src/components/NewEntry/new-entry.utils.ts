@@ -19,7 +19,10 @@ import {
 } from "../../graphql/apollo-types/CreateOnlineEntryMutation";
 import dateFnFormat from "date-fns/format";
 import parseISO from "date-fns/parseISO";
-import { CreateOnlineEntryMutationComponentProps } from "../../graphql/create-entry.mutation";
+import {
+  CreateOnlineEntryMutationComponentProps,
+  MUTATION_NAME_createEntry,
+} from "../../graphql/create-entry.mutation";
 import {
   CreateOfflineEntryMutationComponentProps,
   CreateOfflineEntryMutationReturned,
@@ -28,6 +31,13 @@ import { wrapReducer } from "../../logger";
 import { isConnected } from "../../state/connections";
 import { updateExperienceWithNewEntry } from "./new-entry.injectables";
 import { scrollIntoView, makeScrollIntoViewId } from "../scroll-into-view";
+import { AppPersistor } from "../../context";
+import { cleanupRanQueriesFromCache } from "../../apollo-cache/cleanup-ran-queries-from-cache";
+import { InMemoryCache } from "apollo-cache-inmemory";
+import {
+  QUERY_NAME_getExperience,
+  MUTATION_NAME_createOfflineEntry,
+} from "../../state/resolvers";
 
 const NEW_LINE_REGEX = /\n/g;
 export const ISO_DATE_FORMAT = "yyyy-MM-dd";
@@ -119,7 +129,7 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
     action,
     (prevState, { type, ...payload }) => {
       return immer(prevState, proxy => {
-        proxy.effects.runOnRenders.value = StateValue.effectValNoEffect;
+        proxy.effects.onRender.value = StateValue.effectValNoEffect;
 
         switch (type) {
           case ActionType.setFormObjField:
@@ -177,8 +187,37 @@ export function parseApolloErrors(payload: ApolloError) {
 
 ////////////////////////// EFFECTS SECTION ////////////////////////////
 
+export type CleanUpQueriesState = RunOnceEffectState<CleanUpQueriesEffect>;
+
+const cleanupQueriesEffect: CleanUpQueriesEffect["func"] = ({
+  cache,
+  persistor,
+}) => {
+  return () =>
+    cleanupRanQueriesFromCache(
+      cache,
+      [
+        QUERY_NAME_getExperience + "(",
+        MUTATION_NAME_createEntry,
+        MUTATION_NAME_createOfflineEntry,
+      ],
+      persistor,
+    );
+};
+
+type CleanUpQueriesEffect = EffectDefinition<
+  "cleanupQueries",
+  "cache" | "persistor"
+>;
+
 const createEntryEffect: CreateEntryEffect["func"] = async (
-  { createOnlineEntry, createOfflineEntry, dispatch, goToExperience },
+  {
+    createOnlineEntry,
+    createOfflineEntry,
+    persistor,
+    dispatch,
+    goToExperience,
+  },
   { experience, input },
 ) => {
   const experienceId = experience.id;
@@ -192,7 +231,7 @@ const createEntryEffect: CreateEntryEffect["func"] = async (
           input,
         },
 
-        update: updateExperienceWithNewEntry(experienceId),
+        update: updateExperienceWithNewEntry(experienceId, persistor),
       });
 
       createResult = ((result && result.data && result.data.createEntry) ||
@@ -236,7 +275,11 @@ const createEntryEffect: CreateEntryEffect["func"] = async (
 
 type CreateEntryEffect = EffectDefinition<
   "createEntry",
-  "dispatch" | "createOnlineEntry" | "createOfflineEntry" | "goToExperience",
+  | "persistor"
+  | "dispatch"
+  | "createOnlineEntry"
+  | "createOfflineEntry"
+  | "goToExperience",
   {
     experience: ExperienceFragment;
     input: CreateEntryInput;
@@ -271,10 +314,11 @@ type ScrollToFirstFieldErrorEffect = EffectDefinition<
 export const effectFunctions = {
   createEntry: createEntryEffect,
   scrollToFirstFieldError: scrollToFirstFieldErrorEffect,
+  cleanupQueries: cleanupQueriesEffect,
 };
 
 export function runEffects(
-  effects: EffectObject,
+  effects: EffectsList,
   effectsArgsObj: EffectFunctionsArgs,
 ) {
   for (const { key, ownArgs, effectArgKeys } of effects) {
@@ -336,7 +380,7 @@ export function initialStateFromProps({
     formObj,
     fieldErrors: {},
     effects: {
-      runOnRenders: {
+      onRender: {
         value: StateValue.effectValNoEffect,
       },
       runOnce: {},
@@ -356,9 +400,18 @@ function handlePutEffectFunctionsArgs(
     ...effectsArgsObj,
     ...payload,
   };
+
+  globalState.effects.runOnce.cleanupQueries = {
+    run: true,
+    effect: {
+      key: "cleanupQueries",
+      effectArgKeys: ["cache", "persistor"],
+      ownArgs: {},
+    },
+  };
 }
 
-async function handleSubmittingAction(globalState: StateMachine) {
+async function handleSubmittingAction(globalState: DraftState) {
   const {
     context: { experience },
     formObj,
@@ -371,7 +424,7 @@ async function handleSubmittingAction(globalState: StateMachine) {
     dataDefinitions as ExperienceFragment_dataDefinitions[],
   );
 
-  const [effects] = prepareToAddRunOnRendersEffects(globalState);
+  const [effects] = getRenderEffects(globalState);
 
   effects.push({
     key: "createEntry",
@@ -380,6 +433,7 @@ async function handleSubmittingAction(globalState: StateMachine) {
       "createOnlineEntry",
       "createOfflineEntry",
       "goToExperience",
+      "persistor",
     ],
     ownArgs: {
       experience,
@@ -422,7 +476,7 @@ function handleOnCreateEntryErrors(
 
   globalState.fieldErrors = fieldErrors;
 
-  const [effects] = prepareToAddRunOnRendersEffects(globalState);
+  const [effects] = getRenderEffects(globalState);
 
   effects.push({
     key: "scrollToFirstFieldError",
@@ -439,7 +493,7 @@ function handleOnServerErrors(globalState: DraftState, payload: ServerErrors) {
   if (fieldErrors) {
     globalState.fieldErrors = fieldErrors;
 
-    const [effects] = prepareToAddRunOnRendersEffects(globalState);
+    const [effects] = getRenderEffects(globalState);
 
     effects.push({
       key: "scrollToFirstFieldError",
@@ -453,19 +507,19 @@ function handleOnServerErrors(globalState: DraftState, payload: ServerErrors) {
   }
 }
 
-function prepareToAddRunOnRendersEffects(globalState: StateMachine) {
-  const runOnRendersEffects = globalState.effects.runOnRenders as EffectState;
-  runOnRendersEffects.value = StateValue.effectValHasEffects;
-  const effectObjects: EffectObject = [];
-  const cleanupEffectObjects: EffectObject = [];
-  runOnRendersEffects.hasEffects = {
+function getRenderEffects(globalState: StateMachine) {
+  const renderEffects = globalState.effects.onRender as EffectState;
+  renderEffects.value = StateValue.effectValHasEffects;
+  const effects: EffectsList = [];
+  const cleanupEffects: EffectsList = [];
+  renderEffects.hasEffects = {
     context: {
-      effects: effectObjects,
-      cleanupEffects: cleanupEffectObjects,
+      effects: effects,
+      cleanupEffects: cleanupEffects,
     },
   };
 
-  return [effectObjects, cleanupEffectObjects];
+  return [effects, cleanupEffects];
 }
 
 function dataObjectsFromFormValues(
@@ -506,6 +560,8 @@ export type NewEntryComponentProps = NewEntryCallerProps &
   CreateOnlineEntryMutationComponentProps &
   CreateOfflineEntryMutationComponentProps & {
     client: ApolloClient<{}>;
+    persistor: AppPersistor;
+    cache: InMemoryCache;
   };
 
 export type FormObjVal = Date | string | number;
@@ -548,8 +604,10 @@ export interface StateMachine {
   readonly fieldErrors: FieldErrors;
   readonly networkError?: string | null;
   readonly effects: ({
-    runOnRenders: EffectState | { value: EffectValueNoEffect };
-    runOnce: {};
+    onRender: EffectState | { value: EffectValueNoEffect };
+    runOnce: {
+      cleanupQueries?: CleanUpQueriesState;
+    };
   }) & {
     context: EffectContext;
   };
@@ -585,14 +643,17 @@ interface EffectContext {
   effectsArgsObj: EffectFunctionsArgs;
 }
 
-type EffectObject = (ScrollToFirstFieldErrorEffect | CreateEntryEffect)[];
+type EffectsList = (
+  | CleanUpQueriesEffect
+  | ScrollToFirstFieldErrorEffect
+  | CreateEntryEffect)[];
 
 interface EffectState {
   value: EffectValueHasEffects;
   hasEffects: {
     context: {
-      effects: EffectObject;
-      cleanupEffects: EffectObject;
+      effects: EffectsList;
+      cleanupEffects: EffectsList;
     };
   };
 }
@@ -602,8 +663,11 @@ export interface EffectFunctionsArgs
     CreateOfflineEntryMutationComponentProps {
   /* eslint-disable-next-line @typescript-eslint/no-explicit-any*/
   client: any;
+  /* eslint-disable-next-line @typescript-eslint/no-explicit-any*/
+  cache: any;
   dispatch: DispatchType;
   goToExperience: () => void;
+  persistor: AppPersistor;
 }
 
 interface EffectDefinition<

@@ -45,6 +45,7 @@ import {
 } from "../components/NewEntry/new-entry.resolvers";
 import { GraphQLError } from "graphql";
 import { updateExperienceWithNewEntry } from "../components/NewEntry/new-entry.injectables";
+import { cleanupRanQueriesFromCache } from "../apollo-cache/cleanup-ran-queries-from-cache";
 
 jest.mock("../state/connections");
 jest.mock("../components/scroll-into-view");
@@ -56,6 +57,9 @@ jest.mock("../components/SidebarHeader/sidebar-header.component", () => ({
 
 jest.mock("../components/use-delete-cached-queries-mutations-on-unmount");
 
+jest.mock("../apollo-cache/cleanup-ran-queries-from-cache");
+const mockCleanupRanQueriesFromCache = cleanupRanQueriesFromCache as jest.Mock;
+
 const mockIsConnected = isConnected as jest.Mock;
 const mockUpdate = updateExperienceWithNewEntry as jest.Mock;
 const mockScrollIntoView = scrollIntoView as jest.Mock;
@@ -64,6 +68,7 @@ beforeEach(() => {
   mockScrollIntoView.mockReset();
   mockIsConnected.mockReset();
   mockUpdate.mockReset();
+  mockCleanupRanQueriesFromCache.mockReset();
 });
 
 const title = "ww";
@@ -103,7 +108,7 @@ it("creates new experience entry when online", async () => {
   /**
    * While we are on new entry page
    */
-  render(ui);
+  const { unmount } = render(ui);
 
   /**
    * And DECIMAL field should be empty
@@ -154,6 +159,22 @@ it("creates new experience entry when online", async () => {
     expect(f4.definitionId).toBe("f4");
     expect(JSON.parse(f4.data).integer).toBe("1");
   });
+
+  /**
+   * And cleanup codes should not have ran
+   */
+
+  expect(mockCleanupRanQueriesFromCache).not.toHaveBeenCalled();
+
+  /**
+   * When component is unmounted
+   */
+  unmount();
+
+  /**
+   * Then cleanup codes should run
+   */
+  expect(mockCleanupRanQueriesFromCache).toHaveBeenCalledTimes(1);
 });
 
 it("sets decimal and integer fields to default to 0", async () => {
