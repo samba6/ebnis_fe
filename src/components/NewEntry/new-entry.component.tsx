@@ -19,7 +19,7 @@ import {
   reducer,
   DispatchType,
   ActionType,
-  initialState,
+  initState,
   NewEntryCallerProps,
   EffectFunctionsArgs,
   StateValue,
@@ -49,6 +49,7 @@ import {
   makeFieldErrorDomId,
   networkErrorDomId,
   scrollIntoViewNonFieldErrorDomId,
+  makeFieldInputId,
 } from "./new-entry.dom";
 import { Loading } from "../Loading/loading";
 
@@ -62,7 +63,7 @@ export function NewEntryComponent(props: NewEntryComponentProps) {
       experience,
       effectsArgsObj: rest as EffectFunctionsArgs,
     },
-    initialState,
+    initState,
   );
 
   const {
@@ -150,7 +151,7 @@ export function NewEntryComponent(props: NewEntryComponentProps) {
 
   const onSubmit = useCallback(() => {
     dispatch({
-      type: ActionType.SUBMITTING,
+      type: ActionType.ON_SUBMIT,
     });
   }, []);
 
@@ -206,7 +207,7 @@ export function NewEntryComponent(props: NewEntryComponentProps) {
                 key={definition.id}
                 definition={definition}
                 index={index}
-                formValues={stateMachine.formObj}
+                formValues={stateMachine.states.form}
                 dispatch={dispatch}
                 submittingState={submitting}
               />
@@ -236,8 +237,7 @@ const DataComponent = React.memo(
     const { name: fieldTitle, type, id } = definition;
     const formFieldName = formFieldNameFromIndex(index);
     const value = formValues[index] as FormObjVal;
-
-    let inputId = `new-entry-${type}-input`;
+    const inputId = makeFieldInputId(type);
 
     const generic = {
       id: inputId,
@@ -248,7 +248,7 @@ const DataComponent = React.memo(
           ? makeDateChangedFn(dispatch)
           : (_: E, { value: inputVal }: InputOnChangeData) => {
               dispatch({
-                type: ActionType.setFormObjField,
+                type: ActionType.ON_FORM_FIELD_CHANGED,
                 formFieldName,
                 value:
                   type === DataTypes.DECIMAL || type === DataTypes.INTEGER
@@ -279,7 +279,9 @@ const DataComponent = React.memo(
 
         {component}
 
-        {error && <FormCtrlError error={error} id={makeFieldErrorDomId(index)} />}
+        {error && (
+          <FormCtrlError error={error} id={makeFieldErrorDomId(index)} />
+        )}
       </Form.Field>
     );
   },
@@ -296,7 +298,7 @@ const DataComponent = React.memo(
 function makeDateChangedFn(dispatch: DispatchType) {
   return function makeDateChangedFnInner(fieldName: string, value: FormObjVal) {
     dispatch({
-      type: ActionType.setFormObjField,
+      type: ActionType.ON_FORM_FIELD_CHANGED,
       formFieldName: fieldName,
       value,
     });

@@ -48,12 +48,12 @@ export const ISO_DATE_FORMAT = "yyyy-MM-dd";
 const ISO_DATE_TIME_FORMAT = ISO_DATE_FORMAT + "'T'HH:mm:ssXXX";
 
 export enum ActionType {
-  setFormObjField = "@components/new-entry/set-form-obj-field",
+  ON_FORM_FIELD_CHANGED = "@components/new-entry/on-form-field-changed",
   ON_CREATE_ENTRY_EXCEPTION = "@components/new-entry/set-server-errors",
   ON_CREATE_ENTRY_ERRORS = "@components/new-entry/set-create-entry-errors",
   DISMISS_SERVER_ERRORS = "@components/new-entry/unset-server-errors",
   PUT_EFFECT_FUNCTIONS_ARGS = "@components/new-entry/put-effects-functions-args",
-  SUBMITTING = "@components/new-entry/submitting",
+  ON_SUBMIT = "@components/new-entry/on-submit",
 }
 
 export const StateValue = {
@@ -141,19 +141,11 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
         proxy.effects.onRender.value = StateValue.effectValNoEffect;
 
         switch (type) {
-          case ActionType.setFormObjField:
-            {
-              const {
-                formFieldName,
-                value,
-              } = payload as SetFormObjFieldPayload;
-
-              proxy.formObj[formFieldNameToIndex(formFieldName)] = value;
-            }
-
+          case ActionType.ON_FORM_FIELD_CHANGED:
+            handleFormFieldChangedAction(proxy, payload as FieldChangedPayload);
             break;
 
-          case ActionType.SUBMITTING:
+          case ActionType.ON_SUBMIT:
             handleSubmittingAction(proxy);
             break;
 
@@ -348,7 +340,7 @@ export function getEffectArgsFromKeys(
 
 ////////////////////////// STATE UPDATE SECTION ////////////////////////////
 
-export function initialState({
+export function initState({
   experience,
   effectsArgsObj,
 }: {
@@ -358,7 +350,7 @@ export function initialState({
   const dataDefinitions = experience.dataDefinitions as ExperienceFragment_dataDefinitions[];
 
   const formObj = dataDefinitions.reduce(
-    function fieldDefReducer(acc, definition, index) {
+    (acc, definition, index) => {
       const value =
         definition.type === DataTypes.DATE ||
         definition.type === DataTypes.DATETIME
@@ -377,9 +369,9 @@ export function initialState({
       submitting: {
         value: StateValue.inactive,
       },
+      form: formObj,
     },
     context: { experience },
-    formObj,
     effects: {
       onRender: {
         value: StateValue.effectValNoEffect,
@@ -412,18 +404,18 @@ function handlePutEffectFunctionsArgs(
   };
 }
 
-async function handleSubmittingAction(stateMachine: DraftState) {
+async function handleSubmittingAction(stateMachine: ProxyState) {
   const {
     context: { experience },
-    formObj,
+    states,
   } = stateMachine;
 
-  const { states } = stateMachine;
   states.submitting.value = StateValue.active;
   const { dataDefinitions, id: experienceId } = experience;
+  const { form } = states;
 
   const dataObjects = dataObjectsFromFormValues(
-    formObj,
+    form,
     dataDefinitions as ExperienceFragment_dataDefinitions[],
   );
 
@@ -449,7 +441,7 @@ async function handleSubmittingAction(stateMachine: DraftState) {
 }
 
 function handleOnCreateEntryErrors(
-  stateMachine: DraftState,
+  stateMachine: ProxyState,
   payload: CreateOnlineEntryMutation_createEntry_errors,
 ) {
   const { states } = stateMachine;
@@ -501,7 +493,7 @@ function handleOnCreateEntryErrors(
 }
 
 function handleOnServerErrorsAction(
-  stateMachine: DraftState,
+  stateMachine: ProxyState,
   payload: ServerErrors,
 ) {
   const { states } = stateMachine;
@@ -574,7 +566,7 @@ function getRenderEffects(globalState: StateMachine) {
 }
 
 function dataObjectsFromFormValues(
-  formObj: StateMachine["formObj"],
+  formObj: StateMachine["states"]["form"],
   dataDefinitions: ExperienceFragment_dataDefinitions[],
 ) {
   return Object.entries(formObj).reduce(
@@ -596,6 +588,15 @@ function dataObjectsFromFormValues(
     },
     [] as CreateDataObject[],
   );
+}
+
+function handleFormFieldChangedAction(
+  proxy: ProxyState,
+  payload: FieldChangedPayload,
+) {
+  const { formFieldName, value } = payload;
+
+  proxy.states.form[formFieldNameToIndex(formFieldName)] = value;
 }
 
 ////////////////////////// END STATE UPDATE SECTION /////////////////////
@@ -631,7 +632,7 @@ export interface FieldComponentProps {
 }
 
 export type ToString = (val: FormObjVal) => string;
-interface SetFormObjFieldPayload {
+interface FieldChangedPayload {
   formFieldName: string;
   value: FormObjVal;
 }
@@ -644,13 +645,12 @@ type ServerErrors =
   | { key: FieldErrorsValue; value: FieldErrors }
   | { key: NonFieldErrorsValue; value: string };
 
-type DraftState = Draft<StateMachine>;
+type ProxyState = Draft<StateMachine>;
 
 export interface StateMachine {
   readonly context: {
     readonly experience: ExperienceFragment;
   };
-  readonly formObj: FormObj;
   readonly effects: ({
     readonly onRender: EffectState | { value: EffectValueNoEffect };
     readonly runOnce: {
@@ -661,6 +661,7 @@ export interface StateMachine {
   };
   readonly states: {
     readonly submitting: SubmittingState;
+    readonly form: FormObj;
   };
 }
 
@@ -700,7 +701,7 @@ interface RunOnceEffectState<IEffect> {
 }
 
 type Action =
-  | { type: ActionType.SUBMITTING }
+  | { type: ActionType.ON_SUBMIT }
   | { type: ActionType.DISMISS_SERVER_ERRORS }
   | {
       type: ActionType.ON_CREATE_ENTRY_ERRORS;
@@ -709,8 +710,8 @@ type Action =
       type: ActionType.PUT_EFFECT_FUNCTIONS_ARGS;
     } & EffectFunctionsArgs
   | {
-      type: ActionType.setFormObjField;
-    } & SetFormObjFieldPayload
+      type: ActionType.ON_FORM_FIELD_CHANGED;
+    } & FieldChangedPayload
   | {
       type: ActionType.ON_CREATE_ENTRY_EXCEPTION;
     } & ServerErrors;

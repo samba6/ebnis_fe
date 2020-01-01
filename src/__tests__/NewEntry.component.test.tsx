@@ -52,6 +52,7 @@ import {
   makeFieldErrorDomId,
   networkErrorDomId,
   scrollIntoViewNonFieldErrorDomId,
+  makeFieldInputId,
 } from "../components/NewEntry/new-entry.dom";
 
 jest.mock("../components/SidebarHeader/sidebar-header.component", () => ({
@@ -127,7 +128,7 @@ it("creates new experience entry when online", async () => {
    * And DECIMAL field should be empty
    */
   const $decimal = document.getElementById(
-    "new-entry-DECIMAL-input",
+    makeFieldInputId(DataTypes.DECIMAL),
   ) as HTMLInputElement;
 
   expect($decimal.value).toBe("");
@@ -136,7 +137,7 @@ it("creates new experience entry when online", async () => {
    * And INTEGER field should be empty
    */
   const $integer = document.getElementById(
-    "new-entry-INTEGER-input",
+    makeFieldInputId(DataTypes.INTEGER),
   ) as HTMLInputElement;
 
   expect($integer.value).toBe("");
@@ -426,7 +427,7 @@ it("creates new entry when offline", async () => {
    * When we complete and submit the form
    */
   const $singleText = document.getElementById(
-    "new-entry-SINGLE_LINE_TEXT-input",
+    makeFieldInputId(DataTypes.SINGLE_LINE_TEXT),
   ) as HTMLInputElement;
 
   expect($singleText.value).toBe("");
@@ -514,7 +515,7 @@ it("renders error when entry creation fails", async () => {
    * Then the multi text input field should be empty
    */
   const multiTextInput = document.getElementById(
-    "new-entry-MULTI_LINE_TEXT-input",
+    makeFieldInputId(DataTypes.MULTI_LINE_TEXT),
   ) as HTMLInputElement;
 
   expect(multiTextInput.value).toBe("");
@@ -636,7 +637,9 @@ it("treats all exceptions as network error", async () => {
    * And we complete the form
    */
   fillField(
-    document.getElementById("new-entry-SINGLE_LINE_TEXT-input") as any,
+    document.getElementById(
+      makeFieldInputId(DataTypes.SINGLE_LINE_TEXT),
+    ) as any,
     "s",
   );
 
