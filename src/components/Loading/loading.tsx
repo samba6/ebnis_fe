@@ -2,6 +2,7 @@ import React, { PropsWithChildren, useRef, useState, useEffect } from "react";
 import "./loading.styles.scss";
 import makeClassNames from "classnames";
 import { LoadingComponentProps } from "react-loadable";
+import {  domPrefix } from "./loading-dom";
 
 export function LoadableLoading(props: LoadingComponentProps) {
   return <Loading loadableProps={props} />;
@@ -41,7 +42,7 @@ export function Loading({
   }, [loading]);
 
   return shouldShow ? (
-    <div className="components-loading" id="loading-spinner">
+    <div className="components-loading" id={domPrefix}>
       <div
         className={makeClassNames({
           "components-loading__spinner": true,

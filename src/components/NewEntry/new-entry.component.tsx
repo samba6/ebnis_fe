@@ -19,7 +19,7 @@ import {
   reducer,
   DispatchType,
   ActionType,
-  initialStateFromProps,
+  initialState,
   NewEntryCallerProps,
   EffectFunctionsArgs,
   StateValue,
@@ -27,6 +27,7 @@ import {
   CleanUpQueriesState,
   getEffectArgsFromKeys,
   effectFunctions,
+  SubmittingState,
   // getEffectArgsFromKeys,
 } from "./new-entry.utils";
 import { makeExperienceRoute } from "../../constants/experience-route";
@@ -42,15 +43,14 @@ import { InputOnChangeData } from "semantic-ui-react";
 import { addResolvers } from "./new-entry.injectables";
 import { EbnisAppContext } from "../../context";
 import { SidebarHeader } from "../SidebarHeader/sidebar-header.component";
-import { useDeleteCachedQueriesAndMutationsOnUnmount } from "../use-delete-cached-queries-mutations-on-unmount";
+import { useCreateOnlineEntryMutation } from "../../graphql/create-entry.mutation";
 import {
-  MUTATION_NAME_createEntry,
-  useCreateOnlineEntryMutation,
-} from "../../graphql/create-entry.mutation";
-import {
-  MUTATION_NAME_createOfflineEntry,
-  QUERY_NAME_getExperience,
-} from "../../state/resolvers";
+  submitBtnDomId,
+  makeFieldErrorDomId,
+  networkErrorDomId,
+  scrollIntoViewNonFieldErrorDomId,
+} from "./new-entry.dom";
+import { Loading } from "../Loading/loading";
 
 export function NewEntryComponent(props: NewEntryComponentProps) {
   const { navigate, experience, ...rest } = props;
@@ -62,13 +62,11 @@ export function NewEntryComponent(props: NewEntryComponentProps) {
       experience,
       effectsArgsObj: rest as EffectFunctionsArgs,
     },
-    initialStateFromProps,
+    initialState,
   );
 
   const {
-    fieldErrors,
-    networkError,
-
+    states: { submitting },
     effects: {
       onRender: runOnRenders,
       runOnce: { cleanupQueries },
@@ -156,10 +154,14 @@ export function NewEntryComponent(props: NewEntryComponentProps) {
     });
   }, []);
 
-  function renderMain() {
-    const { dataDefinitions, title } = experience;
+  const { dataDefinitions, title } = experience;
 
-    return (
+  return (
+    <div className="component-new-entry">
+      {submitting.value === StateValue.active && <Loading />}
+
+      <SidebarHeader title={pageTitle} sidebar={true} />
+
       <div className="main">
         <Button
           type="button"
@@ -170,29 +172,30 @@ export function NewEntryComponent(props: NewEntryComponentProps) {
           {title}
         </Button>
 
-        {networkError && (
-          <Message
-            style={{
-              minHeight: "auto",
-              position: "relative",
-              marginTop: 0,
-            }}
-            id="new-entry-network-error"
-            error={true}
-            onDismiss={function onDismiss() {
-              dispatch({ type: ActionType.removeServerErrors });
-            }}
-          >
-            <Message.Content>
-              <span
-                className="js-scroll-into-view"
-                id="js-scroll-into-view-network-error"
-              />
+        {submitting.value === StateValue.errors &&
+          submitting.errors.value === StateValue.nonFieldErrors && (
+            <Message
+              style={{
+                minHeight: "auto",
+                position: "relative",
+                marginTop: 0,
+              }}
+              id={networkErrorDomId}
+              error={true}
+              onDismiss={function onDismiss() {
+                dispatch({ type: ActionType.DISMISS_SERVER_ERRORS });
+              }}
+            >
+              <Message.Content>
+                <span
+                  className="js-scroll-into-view"
+                  id={scrollIntoViewNonFieldErrorDomId}
+                />
 
-              {networkError}
-            </Message.Content>
-          </Message>
-        )}
+                {submitting.errors.nonFieldErrors.context.errors}
+              </Message.Content>
+            </Message>
+          )}
 
         <Form onSubmit={onSubmit}>
           {dataDefinitions.map((obj, index) => {
@@ -205,14 +208,14 @@ export function NewEntryComponent(props: NewEntryComponentProps) {
                 index={index}
                 formValues={stateMachine.formObj}
                 dispatch={dispatch}
-                error={fieldErrors[index]}
+                submittingState={submitting}
               />
             );
           })}
 
           <Button
             className="submit-btn"
-            id="new-entry-submit-btn"
+            id={submitBtnDomId}
             type="submit"
             inverted={true}
             color="green"
@@ -222,21 +225,13 @@ export function NewEntryComponent(props: NewEntryComponentProps) {
           </Button>
         </Form>
       </div>
-    );
-  }
-
-  return (
-    <div className="component-new-entry">
-      <SidebarHeader title={pageTitle} sidebar={true} />
-
-      {renderMain()}
     </div>
   );
 }
 
 const DataComponent = React.memo(
   function FieldComponentFn(props: DataComponentProps) {
-    const { definition, index, dispatch, formValues, error } = props;
+    const { definition, index, dispatch, formValues, submittingState } = props;
 
     const { name: fieldTitle, type, id } = definition;
     const formFieldName = formFieldNameFromIndex(index);
@@ -264,6 +259,14 @@ const DataComponent = React.memo(
     };
 
     const component = componentFromDataType(type, generic);
+    let error = "";
+
+    if (
+      submittingState.value === StateValue.errors &&
+      submittingState.errors.value === StateValue.fieldErrors
+    ) {
+      error = submittingState.errors.fieldErrors.context.errors[index];
+    }
 
     return (
       <Form.Field
@@ -276,22 +279,17 @@ const DataComponent = React.memo(
 
         {component}
 
-        {error && (
-          <FormCtrlError error={error} id={`new-entry-field-error-${id}`} />
-        )}
+        {error && <FormCtrlError error={error} id={makeFieldErrorDomId(index)} />}
       </Form.Field>
     );
   },
 
-  function FieldComponentDiff(prevProps, nextProps) {
-    const { formValues: prevFormValues, error: currentError } = prevProps;
-    const { formValues: nextFormValues, error: nextError } = nextProps;
-
-    const prevVal = prevFormValues[prevProps.index];
-
-    const nextVal = nextFormValues[nextProps.index];
-
-    return prevVal === nextVal && currentError === nextError;
+  function DataComponentDiff(prevProps, nextProps) {
+    return (
+      prevProps.formValues[prevProps.index] ===
+        nextProps.formValues[nextProps.index] &&
+      prevProps.submittingState === nextProps.submittingState
+    );
   },
 );
 
@@ -310,12 +308,12 @@ interface DataComponentProps {
   index: number;
   formValues: FormObj;
   dispatch: DispatchType;
-  error?: string;
+  submittingState: SubmittingState;
 }
 
 type E = React.ChangeEvent<HTMLInputElement>;
 
-// istanbul ignore next:
+// ist ignore next:
 export default (props: NewEntryCallerProps) => {
   const [createOnlineEntry] = useCreateOnlineEntryMutation();
   const [createOfflineEntry] = useCreateOfflineEntryMutation();

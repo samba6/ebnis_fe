@@ -30,7 +30,7 @@ import {
 import { wrapReducer } from "../../logger";
 import { isConnected } from "../../state/connections";
 import { updateExperienceWithNewEntry } from "./new-entry.injectables";
-import { scrollIntoView, makeScrollIntoViewId } from "../scroll-into-view";
+import { scrollIntoView } from "../scroll-into-view";
 import { AppPersistor } from "../../context";
 import { cleanupRanQueriesFromCache } from "../../apollo-cache/cleanup-ran-queries-from-cache";
 import { InMemoryCache } from "apollo-cache-inmemory";
@@ -38,6 +38,10 @@ import {
   QUERY_NAME_getExperience,
   MUTATION_NAME_createOfflineEntry,
 } from "../../state/resolvers";
+import {
+  scrollIntoViewNonFieldErrorDomId,
+  makeFieldErrorDomId,
+} from "./new-entry.dom";
 
 const NEW_LINE_REGEX = /\n/g;
 export const ISO_DATE_FORMAT = "yyyy-MM-dd";
@@ -45,9 +49,9 @@ const ISO_DATE_TIME_FORMAT = ISO_DATE_FORMAT + "'T'HH:mm:ssXXX";
 
 export enum ActionType {
   setFormObjField = "@components/new-entry/set-form-obj-field",
-  ON_SERVER_ERRORS = "@components/new-entry/set-server-errors",
+  ON_CREATE_ENTRY_EXCEPTION = "@components/new-entry/set-server-errors",
   ON_CREATE_ENTRY_ERRORS = "@components/new-entry/set-create-entry-errors",
-  removeServerErrors = "@components/new-entry/unset-server-errors",
+  DISMISS_SERVER_ERRORS = "@components/new-entry/unset-server-errors",
   PUT_EFFECT_FUNCTIONS_ARGS = "@components/new-entry/put-effects-functions-args",
   SUBMITTING = "@components/new-entry/submitting",
 }
@@ -55,6 +59,11 @@ export enum ActionType {
 export const StateValue = {
   effectValNoEffect: "noEffect" as EffectValueNoEffect,
   effectValHasEffects: "hasEffects" as EffectValueHasEffects,
+  active: "active" as ActiveValue,
+  inactive: "inactive" as InActiveValue,
+  errors: "errors" as ErrorsStateValue,
+  fieldErrors: "fieldErrors" as FieldErrorsValue,
+  nonFieldErrors: "nonFieldErrors" as NonFieldErrorsValue,
 };
 
 export function toISODateString(date: Date) {
@@ -155,15 +164,12 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
             );
             break;
 
-          case ActionType.ON_SERVER_ERRORS:
-            handleOnServerErrors(proxy, payload as ServerErrors);
+          case ActionType.ON_CREATE_ENTRY_EXCEPTION:
+            handleOnServerErrorsAction(proxy, payload as ServerErrors);
             break;
 
-          case ActionType.removeServerErrors:
-            {
-              proxy.networkError = null;
-              proxy.fieldErrors = {};
-            }
+          case ActionType.DISMISS_SERVER_ERRORS:
+            proxy.states.submitting.value = StateValue.inactive;
             break;
 
           case ActionType.PUT_EFFECT_FUNCTIONS_ARGS:
@@ -176,13 +182,17 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
     // true,
   );
 
-export function parseApolloErrors(payload: ApolloError) {
-  const { graphQLErrors, networkError } = payload as ApolloError;
+export function interpretMutationException(payload: Error) {
+  if (payload instanceof ApolloError) {
+    const { graphQLErrors, networkError } = payload;
 
-  if (networkError) {
-    return { networkError: "Network error!" };
+    if (networkError) {
+      return "Network error!";
+    }
+    return graphQLErrors[0].message;
   }
-  return { networkError: graphQLErrors[0].message };
+
+  return "Unknown error!";
 }
 
 ////////////////////////// EFFECTS SECTION ////////////////////////////
@@ -263,13 +273,11 @@ const createEntryEffect: CreateEntryEffect["func"] = async (
       goToExperience();
     }
   } catch (errors) {
-    const parsedErrors = parseApolloErrors(errors);
-
-    dispatch({ type: ActionType.ON_SERVER_ERRORS, ...parsedErrors });
-
-    if (parsedErrors.networkError) {
-      scrollIntoView("js-scroll-into-view-network-error");
-    }
+    dispatch({
+      type: ActionType.ON_CREATE_ENTRY_EXCEPTION,
+      key: StateValue.nonFieldErrors,
+      value: interpretMutationException(errors),
+    });
   }
 };
 
@@ -286,34 +294,23 @@ type CreateEntryEffect = EffectDefinition<
   }
 >;
 
-const scrollToFirstFieldErrorEffect: ScrollToFirstFieldErrorEffect["func"] = (
-  {},
-  { fieldErrors },
-) => {
-  const [keyVal] = Object.entries(fieldErrors);
-
-  if (!keyVal) {
-    return;
-  }
-
-  const [id] = keyVal;
-
-  scrollIntoView(makeScrollIntoViewId(id), {
+const scrollToViewEffect: ScrollToViewEffect["func"] = ({}, { id }) => {
+  scrollIntoView(id, {
     behavior: "smooth",
   });
 };
 
-type ScrollToFirstFieldErrorEffect = EffectDefinition<
-  "scrollToFirstFieldError",
+type ScrollToViewEffect = EffectDefinition<
+  "scrollToView",
   "dispatch",
   {
-    fieldErrors: FieldErrors;
+    id: string;
   }
 >;
 
 export const effectFunctions = {
   createEntry: createEntryEffect,
-  scrollToFirstFieldError: scrollToFirstFieldErrorEffect,
+  scrollToView: scrollToViewEffect,
   cleanupQueries: cleanupQueriesEffect,
 };
 
@@ -351,7 +348,7 @@ export function getEffectArgsFromKeys(
 
 ////////////////////////// STATE UPDATE SECTION ////////////////////////////
 
-export function initialStateFromProps({
+export function initialState({
   experience,
   effectsArgsObj,
 }: {
@@ -376,9 +373,13 @@ export function initialStateFromProps({
   );
 
   return {
+    states: {
+      submitting: {
+        value: StateValue.inactive,
+      },
+    },
     context: { experience },
     formObj,
-    fieldErrors: {},
     effects: {
       onRender: {
         value: StateValue.effectValNoEffect,
@@ -411,12 +412,14 @@ function handlePutEffectFunctionsArgs(
   };
 }
 
-async function handleSubmittingAction(globalState: DraftState) {
+async function handleSubmittingAction(stateMachine: DraftState) {
   const {
     context: { experience },
     formObj,
-  } = globalState;
+  } = stateMachine;
 
+  const { states } = stateMachine;
+  states.submitting.value = StateValue.active;
   const { dataDefinitions, id: experienceId } = experience;
 
   const dataObjects = dataObjectsFromFormValues(
@@ -424,7 +427,7 @@ async function handleSubmittingAction(globalState: DraftState) {
     dataDefinitions as ExperienceFragment_dataDefinitions[],
   );
 
-  const [effects] = getRenderEffects(globalState);
+  const [effects] = getRenderEffects(stateMachine);
 
   effects.push({
     key: "createEntry",
@@ -446,9 +449,12 @@ async function handleSubmittingAction(globalState: DraftState) {
 }
 
 function handleOnCreateEntryErrors(
-  globalState: DraftState,
+  stateMachine: DraftState,
   payload: CreateOnlineEntryMutation_createEntry_errors,
 ) {
+  const { states } = stateMachine;
+  const submitting = states.submitting as SubmittingErrors;
+  submitting.value = StateValue.errors;
   const {
     dataObjectsErrors,
   } = payload as CreateOnlineEntryMutation_createEntry_errors;
@@ -474,37 +480,82 @@ function handleOnCreateEntryErrors(
     return acc;
   }, {});
 
-  globalState.fieldErrors = fieldErrors;
+  submitting.errors = {
+    value: StateValue.fieldErrors,
+    fieldErrors: {
+      context: {
+        errors: fieldErrors,
+      },
+    },
+  };
 
-  const [effects] = getRenderEffects(globalState);
+  const [effects] = getRenderEffects(stateMachine);
 
   effects.push({
-    key: "scrollToFirstFieldError",
+    key: "scrollToView",
     effectArgKeys: [],
     ownArgs: {
-      fieldErrors,
+      id: getFieldErrorScrollToId(fieldErrors),
     },
   });
 }
 
-function handleOnServerErrors(globalState: DraftState, payload: ServerErrors) {
-  const { fieldErrors, networkError } = payload as ServerErrors;
+function handleOnServerErrorsAction(
+  stateMachine: DraftState,
+  payload: ServerErrors,
+) {
+  const { states } = stateMachine;
+  const submitting = states.submitting as SubmittingErrors;
+  submitting.value = StateValue.errors;
+  const [effects] = getRenderEffects(stateMachine);
 
-  if (fieldErrors) {
-    globalState.fieldErrors = fieldErrors;
-
-    const [effects] = getRenderEffects(globalState);
+  if (payload.key === StateValue.fieldErrors) {
+    const fieldErrors = payload.value;
+    submitting.errors = {
+      value: StateValue.fieldErrors,
+      fieldErrors: {
+        context: {
+          errors: fieldErrors,
+        },
+      },
+    };
 
     effects.push({
-      key: "scrollToFirstFieldError",
+      key: "scrollToView",
       effectArgKeys: [],
       ownArgs: {
-        fieldErrors,
+        id: getFieldErrorScrollToId(fieldErrors),
       },
     });
-  } else if (networkError) {
-    globalState.networkError = networkError;
+
+    return;
   }
+
+  if (payload.key === StateValue.nonFieldErrors) {
+    submitting.errors = {
+      value: StateValue.nonFieldErrors,
+      nonFieldErrors: {
+        context: {
+          errors: payload.value,
+        },
+      },
+    };
+
+    effects.push({
+      key: "scrollToView",
+      effectArgKeys: [],
+      ownArgs: {
+        id: scrollIntoViewNonFieldErrorDomId,
+      },
+    });
+  }
+}
+
+function getFieldErrorScrollToId(fieldErrors: FieldErrors) {
+  const [keyVal] = Object.entries(fieldErrors);
+
+  const [id] = keyVal;
+  return makeFieldErrorDomId(id);
 }
 
 function getRenderEffects(globalState: StateMachine) {
@@ -589,10 +640,9 @@ interface FieldErrors {
   [k: string]: string;
 }
 
-interface ServerErrors {
-  networkError?: string;
-  fieldErrors?: FieldErrors;
-}
+type ServerErrors =
+  | { key: FieldErrorsValue; value: FieldErrors }
+  | { key: NonFieldErrorsValue; value: string };
 
 type DraftState = Draft<StateMachine>;
 
@@ -601,15 +651,46 @@ export interface StateMachine {
     readonly experience: ExperienceFragment;
   };
   readonly formObj: FormObj;
-  readonly fieldErrors: FieldErrors;
-  readonly networkError?: string | null;
   readonly effects: ({
-    onRender: EffectState | { value: EffectValueNoEffect };
-    runOnce: {
+    readonly onRender: EffectState | { value: EffectValueNoEffect };
+    readonly runOnce: {
       cleanupQueries?: CleanUpQueriesState;
     };
   }) & {
-    context: EffectContext;
+    readonly context: EffectContext;
+  };
+  readonly states: {
+    readonly submitting: SubmittingState;
+  };
+}
+
+export type SubmittingState =
+  | SubmittingErrors
+  | { value: ActiveValue }
+  | {
+      value: InActiveValue;
+    };
+
+interface SubmittingErrors {
+  value: ErrorsStateValue;
+  errors: SubmittingFieldErrors | SubmittingNonFieldErrors;
+}
+
+interface SubmittingNonFieldErrors {
+  value: NonFieldErrorsValue;
+  nonFieldErrors: {
+    context: {
+      errors: string;
+    };
+  };
+}
+
+interface SubmittingFieldErrors {
+  value: FieldErrorsValue;
+  fieldErrors: {
+    context: {
+      errors: FieldErrors;
+    };
   };
 }
 
@@ -620,7 +701,7 @@ interface RunOnceEffectState<IEffect> {
 
 type Action =
   | { type: ActionType.SUBMITTING }
-  | { type: ActionType.removeServerErrors }
+  | { type: ActionType.DISMISS_SERVER_ERRORS }
   | {
       type: ActionType.ON_CREATE_ENTRY_ERRORS;
     } & CreateOnlineEntryMutation_createEntry_errors
@@ -631,13 +712,20 @@ type Action =
       type: ActionType.setFormObjField;
     } & SetFormObjFieldPayload
   | {
-      type: ActionType.ON_SERVER_ERRORS;
+      type: ActionType.ON_CREATE_ENTRY_EXCEPTION;
     } & ServerErrors;
 
 export type DispatchType = Dispatch<Action>;
 
+////////////////////////// STRINGY TYPES SECTION /////////////
 type EffectValueNoEffect = "noEffect";
 type EffectValueHasEffects = "hasEffects";
+type InActiveValue = "inactive";
+type ActiveValue = "active";
+type FieldErrorsValue = "fieldErrors";
+type NonFieldErrorsValue = "nonFieldErrors";
+type ErrorsStateValue = "errors";
+/////////////////////// END STRINGY TYPES SECTION /////////////
 
 interface EffectContext {
   effectsArgsObj: EffectFunctionsArgs;
@@ -645,7 +733,7 @@ interface EffectContext {
 
 type EffectsList = (
   | CleanUpQueriesEffect
-  | ScrollToFirstFieldErrorEffect
+  | ScrollToViewEffect
   | CreateEntryEffect)[];
 
 interface EffectState {
