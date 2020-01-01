@@ -68,10 +68,10 @@ export function NewEntryComponent(props: NewEntryComponentProps) {
 
   const {
     states: { submitting, form },
+    effectsArgsObj,
     effects: {
       onRender: runOnRenders,
       runOnce: { cleanupQueries },
-      context: { effectsArgsObj },
     },
   } = stateMachine;
 

@@ -7,6 +7,10 @@ import {
 } from "../support/create-experience";
 import { ExperienceFragment } from "../../src/graphql/apollo-types/ExperienceFragment";
 import { OFFLINE_ID_PREFIX } from "../../src/constants";
+import {
+  submitBtnDomId,
+  makeFieldInputId,
+} from "../../src/components/NewEntry/new-entry.dom";
 
 context("new entry page", () => {
   beforeEach(() => {
@@ -33,6 +37,8 @@ context("new entry page", () => {
     });
 
     cy.wrap(p).then((experience: ExperienceFragment) => {
+      const { id: definitionId } = experience.dataDefinitions[0];
+
       /**
        * When we visit new entry page
        */
@@ -46,8 +52,8 @@ context("new entry page", () => {
       /**
        * When user completes and submits the form
        */
-      cy.get("#new-entry-INTEGER-input").type("3");
-      cy.get("#new-entry-submit-btn").click();
+      cy.get("#" + makeFieldInputId(definitionId)).type("3");
+      cy.get("#" + submitBtnDomId).click();
 
       /**
        * Then user should redirected to experience page
@@ -81,6 +87,7 @@ context("new entry page", () => {
     });
 
     cy.wrap(p).then((experience: ExperienceFragment) => {
+      const { id: definitionId } = experience.dataDefinitions[0];
       /**
        * When we visit new entry page
        */
@@ -96,8 +103,8 @@ context("new entry page", () => {
       /**
        * When user completes and submits the form
        */
-      cy.get("#new-entry-INTEGER-input").type("4");
-      cy.get("#new-entry-submit-btn").click();
+      cy.get("#" + makeFieldInputId(definitionId)).type("4");
+      cy.get("#" + submitBtnDomId).click();
 
       /**
        * Then data user just created should exist on page
@@ -130,6 +137,7 @@ context("new entry page", () => {
     );
 
     cy.wrap(p).then((experience: ExperienceFragment) => {
+      const { id: definitionId } = experience.dataDefinitions[0];
       /**
        * When we visit new entry page
        */
@@ -145,8 +153,8 @@ context("new entry page", () => {
       /**
        * When user completes and submits the form
        */
-      cy.get("#new-entry-INTEGER-input").type("2");
-      cy.get("#new-entry-submit-btn").click();
+      cy.get("#" + makeFieldInputId(definitionId)).type("2");
+      cy.get("#" + submitBtnDomId).click();
 
       /**
        * Then user should redirected to experience page

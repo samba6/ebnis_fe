@@ -7,8 +7,8 @@ export function makeFieldErrorDomId(id: Id) {
   return `${domPrefix}-field-error-${id}`;
 }
 
-export function makeFieldInputId(id: Id) {
-  return `${domPrefix}-input-${id}`;
+export function makeFieldInputId(definitionId: Id) {
+  return `${domPrefix}-input-${definitionId}`;
 }
 
 export function makeFormFieldSelectorClass(id: Id) {

@@ -131,7 +131,17 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
     state,
     action,
     (prevState, { type, ...payload }) => {
-      return immer(prevState, proxy => {
+      if (type === ActionType.PUT_EFFECT_FUNCTIONS_ARGS) {
+        return handlePutEffectFunctionsArgs(
+          prevState,
+          payload as EffectFunctionsArgs,
+        );
+      }
+
+      /* eslint-disable-next-line @typescript-eslint/no-unused-vars*/
+      const { effectsArgsObj, ...rest } = prevState;
+
+      const nextState = immer(rest, proxy => {
         proxy.effects.onRender.value = StateValue.effectValNoEffect;
 
         switch (type) {
@@ -157,12 +167,10 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
           case ActionType.DISMISS_SERVER_ERRORS:
             proxy.states.submitting.value = StateValue.inactive;
             break;
-
-          case ActionType.PUT_EFFECT_FUNCTIONS_ARGS:
-            handlePutEffectFunctionsArgs(proxy, payload as EffectFunctionsArgs);
-            break;
         }
       });
+
+      return { ...prevState, ...nextState };
     },
 
     // true,
@@ -322,13 +330,10 @@ export function getEffectArgsFromKeys(
   effectArgKeys: (keyof EffectFunctionsArgs)[],
   effectsArgsObj: EffectFunctionsArgs,
 ) {
-  return effectArgKeys.reduce(
-    (acc, k) => {
-      acc[k] = effectsArgsObj[k];
-      return acc;
-    },
-    {} as EffectFunctionsArgs,
-  );
+  return effectArgKeys.reduce((acc, k) => {
+    acc[k] = effectsArgsObj[k];
+    return acc;
+  }, {} as EffectFunctionsArgs);
 }
 ////////////////////////// END EFFECTS SECTION ////////////////////////////
 
@@ -343,22 +348,19 @@ export function initState({
 }): StateMachine {
   const dataDefinitions = experience.dataDefinitions as ExperienceFragment_dataDefinitions[];
 
-  const formFields = dataDefinitions.reduce(
-    (acc, definition, index) => {
-      const value =
-        definition.type === DataTypes.DATE ||
-        definition.type === DataTypes.DATETIME
-          ? new Date()
-          : "";
+  const formFields = dataDefinitions.reduce((acc, definition, index) => {
+    const value =
+      definition.type === DataTypes.DATE ||
+      definition.type === DataTypes.DATETIME
+        ? new Date()
+        : "";
 
-      acc[index] = {
-        context: { definition, value },
-      };
+    acc[index] = {
+      context: { definition, value },
+    };
 
-      return acc;
-    },
-    {} as FormFields,
-  );
+    return acc;
+  }, {} as FormFields);
 
   return {
     states: {
@@ -375,38 +377,40 @@ export function initState({
         value: StateValue.effectValNoEffect,
       },
       runOnce: {},
-      context: {
-        effectsArgsObj,
-      },
     },
+    effectsArgsObj,
   };
 }
 
 function handlePutEffectFunctionsArgs(
   globalState: StateMachine,
   payload: EffectFunctionsArgs,
-) {
-  const effectsArgsObj = globalState.effects.context.effectsArgsObj;
-  globalState.effects.context.effectsArgsObj = {
+): StateMachine {
+  const { effectsArgsObj, ...rest } = globalState;
+
+  globalState.effectsArgsObj = {
     ...effectsArgsObj,
     ...payload,
   };
 
-  globalState.effects.runOnce.cleanupQueries = {
-    run: true,
-    effect: {
-      key: "cleanupQueries",
-      effectArgKeys: ["cache", "persistor"],
-      ownArgs: {},
-    },
+  return {
+    ...globalState,
+    ...(rest.effects.runOnce.cleanupQueries = {
+      run: true,
+      effect: {
+        key: "cleanupQueries",
+        effectArgKeys: ["cache", "persistor"],
+        ownArgs: {},
+      },
+    }),
   };
 }
 
-async function handleSubmittingAction(stateMachine: ProxyState) {
+async function handleSubmittingAction(proxy: ProxyState) {
   const {
     context: { experience },
     states,
-  } = stateMachine;
+  } = proxy;
 
   states.submitting.value = StateValue.active;
   const { dataDefinitions, id: experienceId } = experience;
@@ -417,7 +421,7 @@ async function handleSubmittingAction(stateMachine: ProxyState) {
     dataDefinitions as ExperienceFragment_dataDefinitions[],
   );
 
-  const [effects] = getRenderEffects(stateMachine);
+  const [effects] = getRenderEffects(proxy);
 
   effects.push({
     key: "createEntry",
@@ -548,8 +552,8 @@ function getFieldErrorScrollToId(fieldErrors: FieldErrors) {
   return makeFieldErrorDomId(id);
 }
 
-function getRenderEffects(globalState: StateMachine) {
-  const renderEffects = globalState.effects.onRender as EffectState;
+function getRenderEffects(proxy: ProxyState) {
+  const renderEffects = proxy.effects.onRender as EffectState;
   renderEffects.value = StateValue.effectValHasEffects;
   const effects: EffectsList = [];
   const cleanupEffects: EffectsList = [];
@@ -567,28 +571,25 @@ function dataObjectsFromFormValues(
   formFields: StateMachine["states"]["form"]["fields"],
   dataDefinitions: ExperienceFragment_dataDefinitions[],
 ) {
-  return Object.entries(formFields).reduce(
-    (acc, [stringIndex, field]) => {
-      const index = Number(stringIndex);
-      const definition = dataDefinitions[
-        index
-      ] as ExperienceFragment_dataDefinitions;
+  return Object.entries(formFields).reduce((acc, [stringIndex, field]) => {
+    const index = Number(stringIndex);
+    const definition = dataDefinitions[
+      index
+    ] as ExperienceFragment_dataDefinitions;
 
-      const { type, id: definitionId } = definition;
+    const { type, id: definitionId } = definition;
 
-      acc.push({
-        definitionId,
+    acc.push({
+      definitionId,
 
-        data: `{"${type.toLowerCase()}":"${formObjToString(
-          type,
-          field.context.value,
-        )}"}`,
-      });
+      data: `{"${type.toLowerCase()}":"${formObjToString(
+        type,
+        field.context.value,
+      )}"}`,
+    });
 
-      return acc;
-    },
-    [] as CreateDataObject[],
-  );
+    return acc;
+  }, [] as CreateDataObject[]);
 }
 
 function handleFormFieldChangedAction(
@@ -653,19 +654,21 @@ type ServerErrors =
   | { key: FieldErrorsValue; value: FieldErrors }
   | { key: NonFieldErrorsValue; value: string };
 
-type ProxyState = Draft<StateMachine>;
+type ProxyState = Draft<Rest>;
 
-export interface StateMachine {
+export type StateMachine = {
+  effectsArgsObj: EffectFunctionsArgs;
+} & Rest;
+
+interface Rest {
   readonly context: {
     readonly experience: ExperienceFragment;
   };
-  readonly effects: ({
+  readonly effects: {
     readonly onRender: EffectState | { value: EffectValueNoEffect };
     readonly runOnce: {
       cleanupQueries?: CleanUpQueriesState;
     };
-  }) & {
-    readonly context: EffectContext;
   };
   readonly states: {
     readonly submitting: SubmittingState;
@@ -674,7 +677,6 @@ export interface StateMachine {
     };
   };
 }
-
 export type SubmittingState =
   | SubmittingErrors
   | { value: ActiveValue }
@@ -713,18 +715,18 @@ interface RunOnceEffectState<IEffect> {
 type Action =
   | { type: ActionType.ON_SUBMIT }
   | { type: ActionType.DISMISS_SERVER_ERRORS }
-  | {
+  | ({
       type: ActionType.ON_CREATE_ENTRY_ERRORS;
-    } & CreateOnlineEntryMutation_createEntry_errors
-  | {
+    } & CreateOnlineEntryMutation_createEntry_errors)
+  | ({
       type: ActionType.PUT_EFFECT_FUNCTIONS_ARGS;
-    } & EffectFunctionsArgs
-  | {
+    } & EffectFunctionsArgs)
+  | ({
       type: ActionType.ON_FORM_FIELD_CHANGED;
-    } & FieldChangedPayload
-  | {
+    } & FieldChangedPayload)
+  | ({
       type: ActionType.ON_CREATE_ENTRY_EXCEPTION;
-    } & ServerErrors;
+    } & ServerErrors);
 
 export type DispatchType = Dispatch<Action>;
 
@@ -745,7 +747,8 @@ interface EffectContext {
 type EffectsList = (
   | CleanUpQueriesEffect
   | ScrollToViewEffect
-  | CreateEntryEffect)[];
+  | CreateEntryEffect
+)[];
 
 interface EffectState {
   value: EffectValueHasEffects;

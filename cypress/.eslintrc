@@ -1,15 +1,19 @@
 {
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
+    "ecmaFeatures": {
+      "jsx": true
+    },
     "useJSXTextNode": true,
     "project": "./tsconfig.json"
   },
   "extends": [
     "plugin:@typescript-eslint/recommended",
     "prettier",
-    "prettier/@typescript-eslint"
+    "prettier/@typescript-eslint",
+    "plugin:react/recommended"
   ],
-  "plugins": ["@typescript-eslint"],
+  "plugins": ["react", "@typescript-eslint", "react-hooks"],
   "rules": {
     "@typescript-eslint/explicit-function-return-type": "off",
     "@typescript-eslint/camelcase": "off",
@@ -21,7 +25,15 @@
         "classes": true
       }
     ],
-    "@typescript-eslint/interface-name-prefix": "off"
+    "@typescript-eslint/interface-name-prefix": "off",
+    "react-hooks/rules-of-hooks": "error",
+    "react-hooks/exhaustive-deps": "warn",
+    "react/display-name": "off",
+    "react/prop-types": "off"
   },
-  "settings": {}
+  "settings": {
+    "react": {
+      "version": "detect"
+    }
+  }
 }

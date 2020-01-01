@@ -5,6 +5,10 @@ import { ExperienceFragment } from "../../src/graphql/apollo-types/ExperienceFra
 import { createSavedExperience } from "../support/create-experience";
 import { createExperienceEntries } from "../support/create-entries";
 import { DataDefinitionFragment } from "../../src/graphql/apollo-types/DataDefinitionFragment";
+import {
+  getDefinitionControlId,
+  ControlName,
+} from "../../src/components/EditEntry/edit-entry-dom";
 
 const title = "ex";
 
@@ -91,24 +95,43 @@ context("EditEntryComponent", () => {
         experience.title,
       );
 
-      const definitionIdPrefix1 = `#edit-entry-definition-${definition1.id}`;
-      cy.get(definitionIdPrefix1).as("$field");
+      const definitionId1 = definition1.id;
 
-      cy.get(`${definitionIdPrefix1}-edit-btn`).click();
-      cy.get(`${definitionIdPrefix1}-input`).type("b");
-      cy.get(`${definitionIdPrefix1}-name`).should("not.exist");
+      cy.get(
+        "#" + getDefinitionControlId(definitionId1, ControlName.edit),
+      ).click();
 
-      const definitionIdPrefix2 = `#edit-entry-definition-${definition2.id}`;
+      cy.get(
+        "#" + getDefinitionControlId(definitionId1, ControlName.input),
+      ).type("b");
 
-      cy.get(`${definitionIdPrefix2}-edit-btn`).click();
-      cy.get(`${definitionIdPrefix2}-input`)
+      cy.get(
+        "#" + getDefinitionControlId(definitionId1, ControlName.name),
+      ).should("not.exist");
+
+      const definitionId2 = definition2.id;
+
+      cy.get(
+        "#" + getDefinitionControlId(definitionId2, ControlName.edit),
+      ).click();
+
+      cy.get("#" + getDefinitionControlId(definitionId2, ControlName.input))
         .clear()
         .type(definition3.name);
-      cy.get(`${definitionIdPrefix2}-error`).should("not.exist");
+
+      cy.get(
+        "#" + getDefinitionControlId(definitionId2, ControlName.error),
+      ).should("not.exist");
+
       cy.get(`.edit-entry-definition-submit`).click();
 
-      cy.get(`${definitionIdPrefix1}-name`).should("have.value", "a1b");
-      cy.get(`${definitionIdPrefix2}-error`).should("exist");
+      cy.get(
+        "#" + getDefinitionControlId(definitionId1, ControlName.name),
+      ).should("have.value", "a1b");
+
+      cy.get(
+        "#" + getDefinitionControlId(definitionId2, ControlName.error),
+      ).should("exist");
     });
   });
 });

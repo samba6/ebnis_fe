@@ -9,7 +9,6 @@ import {
 } from "@testing-library/react";
 import addHours from "date-fns/addHours";
 import addDays from "date-fns/addDays";
-import formatDate from "date-fns/format";
 import differenceInDays from "date-fns/differenceInDays";
 import differenceInHours from "date-fns/differenceInHours";
 import parseISO from "date-fns/parseISO";
@@ -296,8 +295,8 @@ it("sets values of date and datetime fields", async () => {
   /**
    * While we are on new entry page
    */
-  // render(ui);
-  const { debug } = render(ui);
+  render(ui);
+  // const { debug } = render(ui);
   // debug();
 
   /**
@@ -725,7 +724,7 @@ function makeComp(
   };
 }
 
-function MockDateTimeField(props: DateTimeProps) {
+function MockDateTimeField(props: DateTimeProps & { id: string }) {
   const { value, id, onChange } = props;
 
   const comp = (

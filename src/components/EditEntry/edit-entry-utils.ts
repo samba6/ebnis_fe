@@ -1,7 +1,7 @@
 import { EntryFragment } from "../../graphql/apollo-types/EntryFragment";
 import { DataDefinitionFragment } from "../../graphql/apollo-types/DataDefinitionFragment";
 import { Dispatch, Reducer, createContext } from "react";
-import immer from "immer";
+import immer, { Draft } from "immer";
 import {
   UpdateDefinitions_updateDefinitions_definitions,
   UpdateDefinitions_updateDefinitions_definitions_errors_errors,
@@ -127,41 +127,38 @@ export const initStateFromProps = (
   let lenDefinitions = 0;
   const definitionAndDataIdsMapList: DefinitionAndDataIds[] = [];
 
-  const definitionsStates = definitions.reduce(
-    (acc, definition) => {
-      const { id: definitionId, type } = definition;
-      ++lenDefinitions;
+  const definitionsStates = definitions.reduce((acc, definition) => {
+    const { id: definitionId, type } = definition;
+    ++lenDefinitions;
 
-      acc[definitionId] = {
-        value: "idle",
+    acc[definitionId] = {
+      value: "idle",
 
-        idle: {
-          context: {},
-        },
+      idle: {
+        context: {},
+      },
 
-        context: {
-          defaults: definition,
-        },
-      };
+      context: {
+        defaults: definition,
+      },
+    };
 
-      const definitionAndDataIdsMap = {
-        definitionId,
-      } as DefinitionAndDataIds;
+    const definitionAndDataIdsMap = {
+      definitionId,
+    } as DefinitionAndDataIds;
 
-      definitionAndDataIdsMapList.push(definitionAndDataIdsMap);
+    definitionAndDataIdsMapList.push(definitionAndDataIdsMap);
 
-      const dataId = dataIdsMap[definitionId];
+    const dataId = dataIdsMap[definitionId];
 
-      if (dataId) {
-        definitionAndDataIdsMap.dataId = dataId;
-        const dataState = dataStates[dataId];
-        dataState.context.defaults.type = type;
-      }
+    if (dataId) {
+      definitionAndDataIdsMap.dataId = dataId;
+      const dataState = dataStates[dataId];
+      dataState.context.defaults.type = type;
+    }
 
-      return acc;
-    },
-    {} as DefinitionsStates,
-  );
+    return acc;
+  }, {} as DefinitionsStates);
 
   if (definitionAndDataIdsMapList.length === 0) {
     dataIds.forEach(id =>
@@ -177,11 +174,7 @@ export const initStateFromProps = (
         value: EFFECT_VALUE_NO_EFFECT,
       },
       runOnce: {},
-      context: {
-        effectsArgsObj: {} as EffectFunctionsArgs,
-      },
     },
-
     primaryState: {
       context: {
         lenDefinitions,
@@ -208,8 +201,8 @@ export const initStateFromProps = (
     },
 
     definitionsStates,
-
     dataStates,
+    effectsArgsObj: {} as EffectFunctionsArgs,
   };
 
   return state;
@@ -220,7 +213,17 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
     state,
     action,
     (prevState, { type, ...payload }) => {
-      return immer(prevState, proxy => {
+      if (type === ActionType.PUT_EFFECT_FUNCTIONS_ARGS) {
+        return handlePutEffectFunctionsArgs(
+          prevState,
+          payload as EffectFunctionsArgs,
+        );
+      }
+
+      /* eslint-disable-next-line @typescript-eslint/no-unused-vars*/
+      const { effectsArgsObj, ...rest } = prevState;
+
+      const nextState = immer(rest, proxy => {
         proxy.effects.runOnRenders.value = EFFECT_VALUE_NO_EFFECT;
 
         switch (type) {
@@ -300,12 +303,10 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
               .submissionResponse as SubmissionResponseState).value =
               "inactive";
             break;
-
-          case ActionType.PUT_EFFECT_FUNCTIONS_ARGS:
-            handlePutEffectFunctionsArgs(proxy, payload as EffectFunctionsArgs);
-            break;
         }
       });
+
+      return { ...prevState, ...nextState };
     },
 
     // true,
@@ -599,13 +600,10 @@ export function getEffectArgsFromKeys(
   effectArgKeys: (keyof EffectFunctionsArgs)[],
   effectsArgsObj: EffectFunctionsArgs,
 ) {
-  return effectArgKeys.reduce(
-    (acc, k) => {
-      acc[k] = effectsArgsObj[k];
-      return acc;
-    },
-    {} as EffectFunctionsArgs,
-  );
+  return effectArgKeys.reduce((acc, k) => {
+    acc[k] = effectsArgsObj[k];
+    return acc;
+  }, {} as EffectFunctionsArgs);
 }
 
 ////////////////////////// END EFFECT FUNCTIONS SECTION /////////////////
@@ -616,9 +614,14 @@ function handlePutEffectFunctionsArgs(
   globalState: StateMachine,
   payload: EffectFunctionsArgs,
 ) {
-  globalState.effects.context.effectsArgsObj = payload;
+  const { effectsArgsObj, ...rest } = globalState;
 
-  globalState.effects.runOnce.cleanupQueries = {
+  globalState.effectsArgsObj = {
+    ...effectsArgsObj,
+    ...payload,
+  };
+
+  rest.effects.runOnce.cleanupQueries = {
     run: true,
     effect: {
       key: "cleanupQueries",
@@ -626,14 +629,16 @@ function handlePutEffectFunctionsArgs(
       ownArgs: {},
     },
   };
+
+  return { ...globalState, ...rest };
 }
 
 function handleDefinitionNameChangedAction(
-  globalState: StateMachine,
+  proxy: DraftState,
   payload: DefinitionNameChangedPayload,
 ) {
   const { id, formValue } = payload;
-  const state = globalState.definitionsStates[id];
+  const state = proxy.definitionsStates[id];
   state.value = "editing";
   const { name: defaultName } = state.context.defaults;
   const editingState = state as DefinitionEditingState;
@@ -646,7 +651,7 @@ function handleDefinitionNameChangedAction(
         formValue: defaultName,
       },
     };
-    setDefinitionEditingUnchangedState(globalState, id);
+    setDefinitionEditingUnchangedState(proxy, id);
   } else {
     editingState.editing = {
       value: "changed",
@@ -661,27 +666,27 @@ function handleDefinitionNameChangedAction(
     };
   }
 
-  setEditingDefinitionState(globalState, id);
+  setEditingDefinitionState(proxy, id);
 }
 
-function handleSubmittingAction(globalState: StateMachine) {
-  globalState.primaryState.common.value = "submitting";
-  const [effectObjects] = getRenderEffects(globalState);
-  const { entry } = globalState.primaryState.context;
+function handleSubmittingAction(proxy: DraftState) {
+  proxy.primaryState.common.value = "submitting";
+  const [effectObjects] = getRenderEffects(proxy);
+  const { entry } = proxy.primaryState.context;
 
   if (isOfflineId(entry.id)) {
-    handleSubmittingCreateEntryOnlineAction(globalState, effectObjects);
+    handleSubmittingCreateEntryOnlineAction(proxy, effectObjects);
     return;
   }
 
   handleSubmittingUpdateDataAndOrDefinitionAction({
-    globalState: globalState,
+    proxy,
     effectObjects,
   });
 }
 
 function handleDefinitionFormErrorsAction(
-  proxy: StateMachine,
+  proxy: DraftState,
   payload: DefinitionFormErrorsPayload,
 ) {
   const { primaryState } = proxy;
@@ -721,7 +726,7 @@ function handleDefinitionFormErrorsAction(
   }
 }
 
-function handleOtherErrorsAction(proxy: StateMachine) {
+function handleOtherErrorsAction(proxy: DraftState) {
   const { primaryState } = proxy;
   primaryState.common.value = "editing";
 
@@ -741,7 +746,7 @@ function handleOtherErrorsAction(proxy: StateMachine) {
   };
 }
 
-function handleStopDefinitionEdit(proxy: StateMachine, payload: IdString) {
+function handleStopDefinitionEdit(proxy: DraftState, payload: IdString) {
   const { id } = payload as IdString;
   const { definitionsStates } = proxy;
 
@@ -751,7 +756,7 @@ function handleStopDefinitionEdit(proxy: StateMachine, payload: IdString) {
 }
 
 function handleDefinitionAndDataSubmissionResponse(
-  proxy: StateMachine,
+  proxy: DraftState,
   payload: UpdateDefinitionAndData,
 ) {
   const {
@@ -766,20 +771,20 @@ function handleDefinitionAndDataSubmissionResponse(
   });
 }
 
-function handleUndoDefinitionEdits(proxy: StateMachine, payload: IdString) {
+function handleUndoDefinitionEdits(proxy: DraftState, payload: IdString) {
   const { id } = payload as IdString;
   setDefinitionEditingUnchangedState(proxy, id);
   setEditingDefinitionState(proxy, id);
 }
 
 function handleDataChangedAction(
-  proxy: StateMachine,
+  proxy: DraftState,
   payload: DataChangedPayload,
 ) {
   const { dataStates } = proxy;
   const { id, rawFormVal } = payload as DataChangedPayload;
   const state = dataStates[id];
-  let { parsedVal, type } = state.context.defaults;
+  const { parsedVal, type } = state.context.defaults;
 
   const [original, stringed] = formObjToCompareString(type, rawFormVal);
 
@@ -803,7 +808,7 @@ function handleDataChangedAction(
 }
 
 function handleApolloErrorsAction(
-  proxy: StateMachine,
+  proxy: DraftState,
   payload: ApolloErrorsPayload,
 ) {
   const { primaryState } = proxy;
@@ -829,10 +834,10 @@ function handleApolloErrorsAction(
 }
 
 function handleOnlineEntryCreatedServerResponseAction(
-  globalState: StateMachine,
+  proxy: DraftState,
   response: CreateOnlineEntryMutation_createEntry,
 ) {
-  const [effectObjects] = getRenderEffects(globalState);
+  const [effectObjects] = getRenderEffects(proxy);
 
   const { entry } = response;
 
@@ -840,10 +845,10 @@ function handleOnlineEntryCreatedServerResponseAction(
     return [0, 0];
   }
 
-  const { dataStates } = globalState;
+  const { dataStates } = proxy;
   const {
     primaryState: { context: globalContext },
-  } = globalState;
+  } = proxy;
 
   globalContext.entry = entry;
   const definitionAndDataIdsMapList = globalContext.definitionAndDataIdsMapList;
@@ -872,8 +877,8 @@ function handleOnlineEntryCreatedServerResponseAction(
   return [1, 0, "valid"];
 }
 
-function getRenderEffects(globalState: StateMachine) {
-  const runOnRendersEffects = globalState.effects.runOnRenders as EffectState;
+function getRenderEffects(proxy: DraftState) {
+  const runOnRendersEffects = proxy.effects.runOnRenders as EffectState;
   runOnRendersEffects.value = StateValue.effectValHasEffects;
   const effectObjects: EffectsList = [];
   const cleanupEffectObjects: EffectsList = [];
@@ -888,7 +893,7 @@ function getRenderEffects(globalState: StateMachine) {
 }
 
 function prepareSubmissionResponse(
-  proxy: StateMachine,
+  proxy: DraftState,
   props:
     | UpdateWithDefinitionsAndDataObjectsSubmissionResponse
     | UpdateWithDefinitionsSubmissionResponse
@@ -917,7 +922,7 @@ function prepareSubmissionResponse(
     props.key === "dataObjects" ||
     props.key == "definitions and dataObjects"
   ) {
-    let [s, f, t] = handleDataObjectSubmissionResponse(
+    const [s, f, t] = handleDataObjectSubmissionResponse(
       proxy,
       context,
       props.dataObjectsResults,
@@ -988,7 +993,7 @@ function prepareSubmissionResponse(
   return { primaryState, submissionSuccessResponse, context };
 }
 
-function setDefinitionEditingUnchangedState(proxy: StateMachine, id: string) {
+function setDefinitionEditingUnchangedState(proxy: DraftState, id: string) {
   const { definitionsStates } = proxy;
   const state = definitionsStates[id];
   state.value = "editing";
@@ -1003,7 +1008,7 @@ function setDefinitionEditingUnchangedState(proxy: StateMachine, id: string) {
 }
 
 function setEditingDefinitionState(
-  proxy: StateMachine,
+  proxy: DraftState,
   mostRecentlyInterractedWithDefinitionId: string,
 ) {
   const { primaryState } = proxy;
@@ -1063,7 +1068,7 @@ function updateDataStateWithUpdatedDataObject(
 }
 
 function handleDataObjectSubmissionResponse(
-  proxy: StateMachine,
+  proxy: DraftState,
   context: SubmissionSuccessStateContext,
   updateDataObjectsResults: UpdateDataObjects,
 ) {
@@ -1128,7 +1133,7 @@ function putDataServerErrors(
 }
 
 function handleDefinitionsSubmissionResponse(
-  globalState: StateMachine,
+  proxy: DraftState,
   context: SubmissionSuccessStateContext,
   updateDefinitionsResults: UpdateDefinitions,
 ) {
@@ -1143,7 +1148,7 @@ function handleDefinitionsSubmissionResponse(
     return [0, 0];
   }
 
-  const { definitionsStates } = globalState;
+  const { definitionsStates } = proxy;
   let successCount = 0;
   let failureCount = 0;
 
@@ -1185,19 +1190,19 @@ function handleDefinitionsSubmissionResponse(
 }
 
 async function handleSubmittingUpdateDataAndOrDefinitionAction({
-  globalState,
+  proxy,
   effectObjects,
 }: {
-  globalState: StateMachine;
+  proxy: DraftState;
   effectObjects: EffectsList;
 }) {
   const [definitionsInput, definitionsWithFormErrors] = getDefinitionsToSubmit(
-    globalState.definitionsStates,
+    proxy.definitionsStates,
   ) as [UpdateDefinitionInput[], string[]];
 
-  const [dataInput] = getDataObjectsToSubmit(globalState.dataStates);
+  const [dataInput] = getDataObjectsToSubmit(proxy.dataStates);
 
-  (globalState.primaryState.common as PrimaryStateSubmitting).submitting = {
+  (proxy.primaryState.common as PrimaryStateSubmitting).submitting = {
     context: {
       submittedCount:
         definitionsInput.length +
@@ -1218,7 +1223,7 @@ async function handleSubmittingUpdateDataAndOrDefinitionAction({
     return;
   }
 
-  const { experienceId } = globalState.primaryState.context;
+  const { experienceId } = proxy.primaryState.context;
 
   if (dataInput.length === 0) {
     effectObjects.push({
@@ -1256,7 +1261,7 @@ async function handleSubmittingUpdateDataAndOrDefinitionAction({
   });
 }
 
-function setEditingData(proxy: StateMachine) {
+function setEditingData(proxy: DraftState) {
   let dataChangedCount = 0;
 
   for (const state of Object.values(proxy.dataStates)) {
@@ -1273,10 +1278,10 @@ function setEditingData(proxy: StateMachine) {
 }
 
 function handleSubmittingCreateEntryOnlineAction(
-  globalState: StateMachine,
+  proxy: DraftState,
   effectObjects: EffectsList,
 ) {
-  (globalState.primaryState.common as PrimaryStateSubmitting).submitting = {
+  (proxy.primaryState.common as PrimaryStateSubmitting).submitting = {
     context: {
       submittedCount: 1,
     },
@@ -1287,7 +1292,7 @@ function handleSubmittingCreateEntryOnlineAction(
       context: { experienceId, entry },
     },
     dataStates,
-  } = globalState;
+  } = proxy;
 
   const dataObjects = entry.dataObjects.map(obj => {
     const { id, definitionId } = obj as DataObjectFragment;
@@ -1413,17 +1418,21 @@ interface ContextValue
 type EffectValueNoEffect = "noEffect";
 type EffectValueHasEffects = "hasEffects";
 
-export interface StateMachine {
+export interface StateMachine extends Rest {
+  effectsArgsObj: EffectFunctionsArgs;
+}
+
+type DraftState = Draft<Rest>;
+
+interface Rest {
   readonly dataStates: DataStates;
   readonly definitionsStates: DefinitionsStates;
   readonly primaryState: PrimaryState;
-  readonly effects: ({
+  readonly effects: {
     runOnRenders: EffectState | { value: EffectValueNoEffect };
     runOnce: {
       cleanupQueries?: CleanUpQueriesState;
     };
-  }) & {
-    context: EffectContext;
   };
 }
 
@@ -1432,10 +1441,6 @@ export type CleanUpQueriesState = RunOnceEffectState<CleanUpQueriesEffect>;
 interface RunOnceEffectState<IEffect> {
   run: boolean;
   effect: IEffect;
-}
-
-interface EffectContext {
-  effectsArgsObj: EffectFunctionsArgs;
 }
 
 interface EffectState {
@@ -1454,7 +1459,8 @@ type EffectsList = (
   | DefinitionsFormErrorsEffect
   | UpdateDataObjectsOnlineEffect
   | UpdateDefinitionsAndDataOnlineEffect
-  | DecrementOfflineEntriesCountEffect)[];
+  | DecrementOfflineEntriesCountEffect
+)[];
 
 interface EffectDefinition<
   Key extends string,
@@ -1545,7 +1551,8 @@ export type SubmissionResponseState =
             };
           };
         }
-      | SubmissionFormErrorsState);
+      | SubmissionFormErrorsState
+    );
 
 interface SubmissionFormErrorsState {
   value: "formErrors";
@@ -1597,9 +1604,9 @@ export type Action =
       type: ActionType.EDIT_BTN_CLICKED;
       id: string;
     }
-  | {
+  | ({
       type: ActionType.DEFINITION_NAME_CHANGED;
-    } & DefinitionNameChangedPayload
+    } & DefinitionNameChangedPayload)
   | {
       type: ActionType.UNDO_DEFINITION_EDITS;
       id: string;
@@ -1608,39 +1615,39 @@ export type Action =
       type: ActionType.STOP_DEFINITION_EDIT;
       id: string;
     }
-  | ({
+  | {
       type: ActionType.SUBMITTING;
-    })
+    }
   | {
       type: ActionType.DESTROYED;
     }
-  | {
+  | ({
       type: ActionType.DEFINITIONS_SUBMISSION_RESPONSE;
-    } & UpdateDefinitions
-  | {
+    } & UpdateDefinitions)
+  | ({
       type: ActionType.DEFINITION_FORM_ERRORS;
-    } & DefinitionFormErrorsPayload
-  | {
+    } & DefinitionFormErrorsPayload)
+  | ({
       type: ActionType.DATA_CHANGED;
-    } & DataChangedPayload
-  | {
+    } & DataChangedPayload)
+  | ({
       type: ActionType.DEFINITION_AND_DATA_SUBMISSION_RESPONSE;
-    } & UpdateDefinitionAndData
+    } & UpdateDefinitionAndData)
   | {
       type: ActionType.DISMISS_SUBMISSION_RESPONSE_MESSAGE;
     }
-  | {
+  | ({
       type: ActionType.DATA_OBJECTS_SUBMISSION_RESPONSE;
-    } & UpdateDataObjects
+    } & UpdateDataObjects)
   | {
       type: ActionType.OTHER_ERRORS;
     }
-  | {
+  | ({
       type: ActionType.APOLLO_ERRORS;
-    } & ApolloErrorsPayload
-  | {
+    } & ApolloErrorsPayload)
+  | ({
       type: ActionType.PUT_EFFECT_FUNCTIONS_ARGS;
-    } & EffectFunctionsArgs;
+    } & EffectFunctionsArgs);
 
 interface ApolloErrorsPayload {
   errors: ApolloError;
@@ -1733,7 +1740,8 @@ interface DefinitionEditingState {
     | {
         value: "unchanged";
       }
-    | DefinitionChangedState) & {
+    | DefinitionChangedState
+  ) & {
     context: {
       formValue: string;
     };
@@ -1811,7 +1819,8 @@ interface DataChangedState {
           errors: {};
         };
       }
-    | DataServerErrorsState);
+    | DataServerErrorsState
+  );
 }
 
 interface DataServerErrorsState {

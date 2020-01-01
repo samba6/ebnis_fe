@@ -93,9 +93,9 @@ export function EditEntryComponent(props: EditEntryComponentProps) {
     dataStates,
     effects: {
       runOnRenders,
-      context: { effectsArgsObj },
       runOnce: { cleanupQueries },
     },
+    effectsArgsObj,
   } = stateMachine;
 
   const runCleanupQueries = cleanupQueries && cleanupQueries.run;
