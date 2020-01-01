@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
 import React, { ComponentType } from "react";
 import "@marko/testing-library/cleanup-after-each";
 import { render, fireEvent, act } from "@testing-library/react";
@@ -349,7 +348,7 @@ describe("component", () => {
 
     expect(document.getElementById("search-result-id1")).toBeNull();
 
-    let $searchContainer = document.getElementsByClassName(
+    const $searchContainer = document.getElementsByClassName(
       "my-search",
     )[0] as HTMLDivElement;
 
@@ -393,7 +392,7 @@ describe("component", () => {
      * Then search result for experience 1 should be visible
      */
 
-    let $result = document.getElementById("search-result-id1") as HTMLElement;
+    const $result = document.getElementById("search-result-id1") as HTMLElement;
 
     /**
      * When we click on the search result

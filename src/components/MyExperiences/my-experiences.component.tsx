@@ -59,7 +59,8 @@ import { SidebarHeader } from "../SidebarHeader/sidebar-header.component";
 
 const SearchComponent = memo(SearchComponentUnMemo, SearchComponentPropsDiffFn);
 
-export const MyExperiences = (props: Props) => {
+export function MyExperiences(props: Props) {
+  const { navigate } = props;
   const { data, loading } = useQuery<
     GetExperienceConnectionMini,
     GetExperienceConnectionMiniVariables
@@ -149,7 +150,7 @@ export const MyExperiences = (props: Props) => {
       <div id="experiences-container" className="experiences-container">
         <SearchComponent
           {...states.search}
-          navigate={props.navigate as NavigateFn}
+          navigate={navigate as NavigateFn}
           dispatch={dispatch}
         />
 
@@ -206,7 +207,7 @@ export const MyExperiences = (props: Props) => {
       </DispatchProvider>
     </div>
   );
-};
+}
 
 export default MyExperiences;
 

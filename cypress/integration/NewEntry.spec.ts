@@ -26,7 +26,7 @@ context("new entry page", () => {
      */
     const fieldName = "aa";
 
-    let p = createSavedExperience({
+    const p = createSavedExperience({
       title,
       dataDefinitions: [
         {
@@ -76,7 +76,7 @@ context("new entry page", () => {
      */
     const fieldName = "Total purchases";
 
-    let p = createSavedExperience({
+    const p = createSavedExperience({
       title,
       dataDefinitions: [
         {
@@ -122,7 +122,7 @@ context("new entry page", () => {
      */
     const fieldName = "tt";
 
-    let p = createOfflineExperience(
+    const p = createOfflineExperience(
       {
         title,
         dataDefinitions: [

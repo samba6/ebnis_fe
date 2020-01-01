@@ -1,15 +1,16 @@
 {
+  "root": true,
   "parser": "@typescript-eslint/parser",
-  "parserOptions": {
-    "useJSXTextNode": true,
-    "project": "./tsconfig.json"
-  },
   "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/eslint-recommended",
     "plugin:@typescript-eslint/recommended",
     "prettier",
-    "prettier/@typescript-eslint"
+    "prettier/@typescript-eslint",
+    "plugin:jest/recommended",
+    "plugin:react/recommended"
   ],
-  "plugins": ["@typescript-eslint"],
+  "plugins": ["@typescript-eslint", "jest", "react", "react-hooks"],
   "rules": {
     "@typescript-eslint/explicit-function-return-type": "off",
     "@typescript-eslint/camelcase": "off",
@@ -21,7 +22,28 @@
         "classes": true
       }
     ],
-    "@typescript-eslint/interface-name-prefix": "off"
+    "@typescript-eslint/interface-name-prefix": "off",
+    "jest/no-disabled-tests": "warn",
+    "jest/no-focused-tests": "error",
+    "jest/no-identical-title": "error",
+    "jest/prefer-to-have-length": "warn",
+    "jest/valid-expect": "error",
+    "react-hooks/rules-of-hooks": "error",
+    "react-hooks/exhaustive-deps": "warn",
+    "react/display-name": "off"
   },
-  "settings": {}
+  "overrides": [
+    {
+      "files": ["cypress/**/*.spec.ts"],
+      "rules": {
+        "jest/expect-expect": "off",
+        "jest/valid-expect-in-promise": "off",
+        "jest/valid-expect": "off"
+      }
+    }
+  ],
+  "settings": {},
+  "env": {
+    "jest/globals": true
+  }
 }

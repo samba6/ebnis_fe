@@ -62,7 +62,7 @@ export const reducer: Reducer<IStateMachine, Action> = (state, action) =>
           {
             const { searchText } = payload as { searchText: string };
 
-            let searching = proxy.states.search as SearchResults;
+            const searching = proxy.states.search as SearchResults;
 
             const searchResultsState =
               searching.results || ({} as SearchResults["results"]);

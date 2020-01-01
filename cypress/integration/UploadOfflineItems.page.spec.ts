@@ -91,7 +91,7 @@ context("Upload offline items page", () => {
       });
     });
 
-    let experiencesPromises = Promise.all([
+    const experiencesPromises = Promise.all([
       onlineExperiencePromise,
       offlineExperiencePromise,
     ]).then(result => {
