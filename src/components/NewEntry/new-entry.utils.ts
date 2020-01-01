@@ -126,12 +126,6 @@ export function formFieldNameFromIndex(index: number) {
   return `fields[${index}]`;
 }
 
-function formFieldNameToIndex(formFieldName: string) {
-  const index = (/fields.+(\d+)/.exec(formFieldName) as RegExpExecArray)[1];
-
-  return index;
-}
-
 export const reducer: Reducer<StateMachine, Action> = (state, action) =>
   wrapReducer<StateMachine, Action>(
     state,
@@ -171,7 +165,7 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
       });
     },
 
-    // true,
+    true,
   );
 
 export function interpretMutationException(payload: Error) {
@@ -349,7 +343,7 @@ export function initState({
 }): StateMachine {
   const dataDefinitions = experience.dataDefinitions as ExperienceFragment_dataDefinitions[];
 
-  const formObj = dataDefinitions.reduce(
+  const formFields = dataDefinitions.reduce(
     (acc, definition, index) => {
       const value =
         definition.type === DataTypes.DATE ||
@@ -357,11 +351,13 @@ export function initState({
           ? new Date()
           : "";
 
-      acc[index] = value;
+      acc[index] = {
+        context: { definition, value },
+      };
 
       return acc;
     },
-    {} as FormObj,
+    {} as FormFields,
   );
 
   return {
@@ -369,7 +365,9 @@ export function initState({
       submitting: {
         value: StateValue.inactive,
       },
-      form: formObj,
+      form: {
+        fields: formFields,
+      },
     },
     context: { experience },
     effects: {
@@ -415,7 +413,7 @@ async function handleSubmittingAction(stateMachine: ProxyState) {
   const { form } = states;
 
   const dataObjects = dataObjectsFromFormValues(
-    form,
+    form.fields,
     dataDefinitions as ExperienceFragment_dataDefinitions[],
   );
 
@@ -566,11 +564,11 @@ function getRenderEffects(globalState: StateMachine) {
 }
 
 function dataObjectsFromFormValues(
-  formObj: StateMachine["states"]["form"],
+  formFields: StateMachine["states"]["form"]["fields"],
   dataDefinitions: ExperienceFragment_dataDefinitions[],
 ) {
-  return Object.entries(formObj).reduce(
-    (acc, [stringIndex, val]) => {
+  return Object.entries(formFields).reduce(
+    (acc, [stringIndex, field]) => {
       const index = Number(stringIndex);
       const definition = dataDefinitions[
         index
@@ -581,7 +579,10 @@ function dataObjectsFromFormValues(
       acc.push({
         definitionId,
 
-        data: `{"${type.toLowerCase()}":"${formObjToString(type, val)}"}`,
+        data: `{"${type.toLowerCase()}":"${formObjToString(
+          type,
+          field.context.value,
+        )}"}`,
       });
 
       return acc;
@@ -594,9 +595,9 @@ function handleFormFieldChangedAction(
   proxy: ProxyState,
   payload: FieldChangedPayload,
 ) {
-  const { formFieldName, value } = payload;
+  const { fieldIndex, value } = payload;
 
-  proxy.states.form[formFieldNameToIndex(formFieldName)] = value;
+  proxy.states.form.fields[fieldIndex].context.value = value;
 }
 
 ////////////////////////// END STATE UPDATE SECTION /////////////////////
@@ -621,8 +622,15 @@ export type FormObjVal = Date | string | number;
 // the keys are the indices of the field definitions and the values are the
 // default values for each field data type e.g number for integer and date
 // for date
-export interface FormObj {
-  [k: string]: FormObjVal;
+export interface FormFields {
+  [k: string]: FieldState;
+}
+
+export interface FieldState {
+  context: {
+    value: FormObjVal;
+    definition: ExperienceFragment_dataDefinitions;
+  };
 }
 
 export interface FieldComponentProps {
@@ -633,7 +641,7 @@ export interface FieldComponentProps {
 
 export type ToString = (val: FormObjVal) => string;
 interface FieldChangedPayload {
-  formFieldName: string;
+  fieldIndex: string | number;
   value: FormObjVal;
 }
 
@@ -661,7 +669,9 @@ export interface StateMachine {
   };
   readonly states: {
     readonly submitting: SubmittingState;
-    readonly form: FormObj;
+    readonly form: {
+      readonly fields: FormFields;
+    };
   };
 }
 

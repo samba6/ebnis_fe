@@ -87,7 +87,7 @@ beforeEach(() => {
 
 const title = "ww";
 
-it("creates new experience entry when online", async () => {
+it.only("creates new experience entry when online", async () => {
   /**
    * Given we have received experiences from server
    */

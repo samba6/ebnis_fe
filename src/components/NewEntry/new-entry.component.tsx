@@ -12,10 +12,8 @@ import { NavigateFn } from "@reach/router";
 import "./new-entry.styles.scss";
 import {
   NewEntryComponentProps,
-  FormObj,
   FormObjVal,
   makePageTitle,
-  formFieldNameFromIndex,
   reducer,
   DispatchType,
   ActionType,
@@ -28,6 +26,7 @@ import {
   getEffectArgsFromKeys,
   effectFunctions,
   SubmittingState,
+  FieldState,
   // getEffectArgsFromKeys,
 } from "./new-entry.utils";
 import { makeExperienceRoute } from "../../constants/experience-route";
@@ -67,7 +66,7 @@ export function NewEntryComponent(props: NewEntryComponentProps) {
   );
 
   const {
-    states: { submitting },
+    states: { submitting, form },
     effects: {
       onRender: runOnRenders,
       runOnce: { cleanupQueries },
@@ -207,7 +206,7 @@ export function NewEntryComponent(props: NewEntryComponentProps) {
                 key={definition.id}
                 definition={definition}
                 index={index}
-                formValues={stateMachine.states.form}
+                fieldState={form.fields[index]}
                 dispatch={dispatch}
                 submittingState={submitting}
               />
@@ -232,24 +231,22 @@ export function NewEntryComponent(props: NewEntryComponentProps) {
 
 const DataComponent = React.memo(
   function FieldComponentFn(props: DataComponentProps) {
-    const { definition, index, dispatch, formValues, submittingState } = props;
+    const { definition, index, dispatch, fieldState, submittingState } = props;
 
     const { name: fieldTitle, type, id } = definition;
-    const formFieldName = formFieldNameFromIndex(index);
-    const value = formValues[index] as FormObjVal;
+    const currentValue = fieldState.context.value;
     const inputId = makeFieldInputId(type);
 
     const generic = {
       id: inputId,
-      name: formFieldName,
-      value,
+      value: currentValue,
       onChange:
         type === DataTypes.DATE || type === DataTypes.DATETIME
           ? makeDateChangedFn(dispatch)
           : (_: E, { value: inputVal }: InputOnChangeData) => {
               dispatch({
                 type: ActionType.ON_FORM_FIELD_CHANGED,
-                formFieldName,
+                fieldIndex: index,
                 value:
                   type === DataTypes.DECIMAL || type === DataTypes.INTEGER
                     ? Number(inputVal)
@@ -288,8 +285,7 @@ const DataComponent = React.memo(
 
   function DataComponentDiff(prevProps, nextProps) {
     return (
-      prevProps.formValues[prevProps.index] ===
-        nextProps.formValues[nextProps.index] &&
+      prevProps.fieldState === nextProps.fieldState &&
       prevProps.submittingState === nextProps.submittingState
     );
   },
@@ -299,7 +295,7 @@ function makeDateChangedFn(dispatch: DispatchType) {
   return function makeDateChangedFnInner(fieldName: string, value: FormObjVal) {
     dispatch({
       type: ActionType.ON_FORM_FIELD_CHANGED,
-      formFieldName: fieldName,
+      fieldIndex: fieldName,
       value,
     });
   };
@@ -308,7 +304,7 @@ function makeDateChangedFn(dispatch: DispatchType) {
 interface DataComponentProps {
   definition: ExperienceFragment_dataDefinitions;
   index: number;
-  formValues: FormObj;
+  fieldState: FieldState;
   dispatch: DispatchType;
   submittingState: SubmittingState;
 }
