@@ -49,6 +49,7 @@ import {
   networkErrorDomId,
   scrollIntoViewNonFieldErrorDomId,
   makeFieldInputId,
+  makeFormFieldSelectorClass,
 } from "./new-entry.dom";
 import { Loading } from "../Loading/loading";
 
@@ -114,7 +115,7 @@ export function NewEntryComponent(props: NewEntryComponentProps) {
         args,
         /* eslint-disable-next-line @typescript-eslint/no-explicit-any*/
         ownArgs as any,
-      ) as (() => void);
+      ) as () => void;
     }
 
     // redundant - [tsserver 7030] [W] Not all code paths return a value.
@@ -230,19 +231,20 @@ export function NewEntryComponent(props: NewEntryComponentProps) {
 }
 
 const DataComponent = React.memo(
-  function FieldComponentFn(props: DataComponentProps) {
+  function DataComponentFn(props: DataComponentProps) {
     const { definition, index, dispatch, fieldState, submittingState } = props;
 
     const { name: fieldTitle, type, id } = definition;
     const currentValue = fieldState.context.value;
-    const inputId = makeFieldInputId(type);
+    const inputId = makeFieldInputId(id);
 
     const generic = {
       id: inputId,
+      name: inputId,
       value: currentValue,
       onChange:
         type === DataTypes.DATE || type === DataTypes.DATETIME
-          ? makeDateChangedFn(dispatch)
+          ? makeDateChangedFn(dispatch, index)
           : (_: E, { value: inputVal }: InputOnChangeData) => {
               dispatch({
                 type: ActionType.ON_FORM_FIELD_CHANGED,
@@ -267,8 +269,11 @@ const DataComponent = React.memo(
 
     return (
       <Form.Field
-        key={id}
-        className={makeClassNames({ error: !!error, "form-field": true })}
+        className={makeClassNames({
+          error: !!error,
+          "form-field": true,
+          [makeFormFieldSelectorClass(id)]: true,
+        })}
       >
         <span id={makeScrollIntoViewId(id)} className="js-scroll-into-view" />
 
@@ -291,11 +296,11 @@ const DataComponent = React.memo(
   },
 );
 
-function makeDateChangedFn(dispatch: DispatchType) {
+function makeDateChangedFn(dispatch: DispatchType, index: number) {
   return function makeDateChangedFnInner(fieldName: string, value: FormObjVal) {
     dispatch({
       type: ActionType.ON_FORM_FIELD_CHANGED,
-      fieldIndex: fieldName,
+      fieldIndex: index,
       value,
     });
   };

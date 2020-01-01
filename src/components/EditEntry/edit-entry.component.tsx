@@ -52,6 +52,10 @@ import {
   formErrorsDomId,
   otherErrorsDomId,
   apolloErrorsDomId,
+  getDefinitionFieldSelectorClass,
+  getDefinitionControlId,
+  ControlName,
+  getDataControlDomId,
 } from "./edit-entry-dom";
 import { useCreateOnlineEntryMutation } from "../../graphql/create-entry.mutation";
 // import ApolloClient from "apollo-client";
@@ -133,7 +137,7 @@ export function EditEntryComponent(props: EditEntryComponentProps) {
         args,
         /* eslint-disable-next-line @typescript-eslint/no-explicit-any*/
         ownArgs as any,
-      ) as (() => void);
+      ) as () => void;
     }
 
     // redundant - [tsserver 7030] [W] Not all code paths return a value.
@@ -334,7 +338,7 @@ function DataComponent(props: DataComponentProps) {
       ? state.changed.context.formValue
       : state.context.defaults.parsedVal;
 
-  const idPrefix = `edit-entry-data-${id}`;
+  const idPrefix = getDataControlDomId(id, ControlName.input);
 
   const component = getComponentFromDataType(
     state.context.defaults.type,
@@ -348,7 +352,6 @@ function DataComponent(props: DataComponentProps) {
 
   return (
     <Form.Field
-      id={idPrefix}
       className={makeClassNames({
         "data--success":
           state.value === "unchanged" && state.unchanged.context.anyEditSuccess,
@@ -358,7 +361,7 @@ function DataComponent(props: DataComponentProps) {
       {component}
 
       {!!formErrorsComponent && (
-        <FormCtrlError id={`${idPrefix}-error`}>
+        <FormCtrlError id={getDataControlDomId(id, ControlName.error)}>
           {formErrorsComponent}
         </FormCtrlError>
       )}
@@ -370,7 +373,7 @@ function getComponentFromDataType(
   type: DataTypes,
   id: string,
   dispatch: DispatchType,
-  fieldName: string,
+  domId: string,
   fieldValue: FormObjVal,
 ) {
   const onChange =
@@ -390,12 +393,10 @@ function getComponentFromDataType(
           });
         };
 
-  const name = `${fieldName}-input`;
-
   const props = {
-    id: name,
+    id: domId,
     value: fieldValue,
-    name,
+    name: domId,
     onChange,
   };
 
@@ -404,31 +405,30 @@ function getComponentFromDataType(
 
 function DefinitionComponent(props: DefinitionComponentProps) {
   const { id, state, onSubmit, dispatch, shouldSubmit } = props;
-  const idPrefix = `edit-entry-definition-${id}`;
 
   const { type, name: defaultFormValue } = state.context.defaults;
   const typeText = `[${type}]`;
-
+  const inputId = getDefinitionControlId(id, ControlName.input);
   const error = getDefinitionFormError(state);
   const hasSuccess =
     state.value === "idle" && state.idle.context.anyEditSuccess;
 
   return (
     <Form.Field
-      id={idPrefix}
       className={makeClassNames({
         "definition--success": hasSuccess,
         "definition-field": true,
+        [getDefinitionFieldSelectorClass(id)]: true,
       })}
       error={!!error}
     >
-      <label htmlFor={`${idPrefix}-input`}>{typeText}</label>
+      <label htmlFor={inputId}>{typeText}</label>
 
       {state.value === "idle" && (
         <>
           <Input className="definition-input">
             <input
-              id={`${idPrefix}-name`}
+              id={getDefinitionControlId(id, ControlName.name)}
               value={defaultFormValue}
               disabled={true}
             />
@@ -441,7 +441,7 @@ function DefinitionComponent(props: DefinitionComponentProps) {
               primary={true}
               compact={true}
               type="button"
-              id={`${idPrefix}-edit-btn`}
+              id={getDefinitionControlId(id, ControlName.edit)}
               onClick={() =>
                 dispatch({
                   type: ActionType.EDIT_BTN_CLICKED,
@@ -468,8 +468,8 @@ function DefinitionComponent(props: DefinitionComponentProps) {
             className="definition-input"
           >
             <input
-              id={`${idPrefix}-input`}
-              name={`${idPrefix}-input`}
+              id={inputId}
+              name={inputId}
               value={state.editing.context.formValue}
               autoComplete="off"
               className={makeClassNames({
@@ -482,7 +482,7 @@ function DefinitionComponent(props: DefinitionComponentProps) {
               primary={true}
               compact={true}
               type="button"
-              id={`${idPrefix}-dismiss`}
+              id={getDefinitionControlId(id, ControlName.dismiss)}
               onClick={() => {
                 dispatch({
                   type: ActionType.STOP_DEFINITION_EDIT,
@@ -501,7 +501,7 @@ function DefinitionComponent(props: DefinitionComponentProps) {
                 negative={true}
                 compact={true}
                 type="button"
-                id={`${idPrefix}-reset`}
+                id={getDefinitionControlId(id, ControlName.reset)}
                 onClick={() => {
                   dispatch({
                     type: ActionType.UNDO_DEFINITION_EDITS,
@@ -518,7 +518,7 @@ function DefinitionComponent(props: DefinitionComponentProps) {
                   positive={true}
                   compact={true}
                   type="submit"
-                  id={`${idPrefix}-submit`}
+                  id={getDefinitionControlId(id, ControlName.submit)}
                   onClick={onSubmit}
                   className="edit-entry-definition-submit"
                 >
@@ -529,7 +529,9 @@ function DefinitionComponent(props: DefinitionComponentProps) {
           )}
 
           {!!error && (
-            <FormCtrlError id={`${idPrefix}-error`}>{error}</FormCtrlError>
+            <FormCtrlError id={getDefinitionControlId(id, ControlName.error)}>
+              {error}
+            </FormCtrlError>
           )}
         </>
       )}
@@ -625,28 +627,25 @@ function getFormErrorsComponent(state: DataState) {
 }
 
 function getNodesFromObject(obj: { [k: string]: string }) {
-  return Object.entries(obj).reduce(
-    (acc, [k, v]) => {
-      if (k !== "__typename" && v) {
-        acc.push(
-          <div key={k}>
-            <div className="font-extrabold">{capitalize(k)}:</div>
+  return Object.entries(obj).reduce((acc, [k, v]) => {
+    if (k !== "__typename" && v) {
+      acc.push(
+        <div key={k}>
+          <div className="font-extrabold">{capitalize(k)}:</div>
 
-            {v.split("\n").map((part, index) => {
-              return (
-                <div className="ml-2" key={index}>
-                  {part}
-                </div>
-              );
-            })}
-          </div>,
-        );
-      }
+          {v.split("\n").map((part, index) => {
+            return (
+              <div className="ml-2" key={index}>
+                {part}
+              </div>
+            );
+          })}
+        </div>,
+      );
+    }
 
-      return acc;
-    },
-    [] as JSX.Element[],
-  );
+    return acc;
+  }, [] as JSX.Element[]);
 }
 
 function capitalize(word: string) {

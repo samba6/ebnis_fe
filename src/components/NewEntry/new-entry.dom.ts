@@ -1,5 +1,3 @@
-import { DataTypes } from "../../graphql/apollo-types/globalTypes";
-
 export const domPrefix = "new-entry";
 export const submitBtnDomId = `${domPrefix}-submit-btn`;
 export const networkErrorDomId = `${domPrefix}-network-error`;
@@ -9,8 +7,12 @@ export function makeFieldErrorDomId(id: Id) {
   return `${domPrefix}-field-error-${id}`;
 }
 
-export function makeFieldInputId(type: DataTypes) {
-  return `${domPrefix}-input-${type}`;
+export function makeFieldInputId(id: Id) {
+  return `${domPrefix}-input-${id}`;
+}
+
+export function makeFormFieldSelectorClass(id: Id) {
+  return `${domPrefix}-field-${id}`;
 }
 
 type Id = string | number;

@@ -54,6 +54,8 @@ import {
   scrollIntoViewNonFieldErrorDomId,
   makeFieldInputId,
 } from "../components/NewEntry/new-entry.dom";
+import { Props as DateTimeProps } from "../components/DateTimeField/date-time-field.utils";
+import { toISODatetimeString } from "../components/NewEntry/new-entry.utils";
 
 jest.mock("../components/SidebarHeader/sidebar-header.component", () => ({
   SidebarHeader: jest.fn(() => null),
@@ -78,6 +80,14 @@ jest.mock("../components/Loading/loading", () => ({
   Loading: () => <div id={mockLoadingId} />,
 }));
 
+jest.mock("../components/DateTimeField/date-time-field.component", () => ({
+  DateTimeField: MockDateTimeField,
+}));
+
+jest.mock("../components/DateField/date-field.component", () => ({
+  DateField: MockDateTimeField,
+}));
+
 beforeEach(() => {
   mockScrollIntoView.mockReset();
   mockIsConnected.mockReset();
@@ -87,22 +97,19 @@ beforeEach(() => {
 
 const title = "ww";
 
-it.only("creates new experience entry when online", async () => {
+it("creates new experience entry when online", async () => {
   /**
    * Given we have received experiences from server
    */
   const experience = {
     id: "1",
-
     title,
-
     dataDefinitions: [
       {
         id: "f3",
         name: "f3",
         type: DataTypes.DECIMAL,
       },
-
       {
         id: "f4",
         name: "f4",
@@ -128,7 +135,7 @@ it.only("creates new experience entry when online", async () => {
    * And DECIMAL field should be empty
    */
   const $decimal = document.getElementById(
-    makeFieldInputId(DataTypes.DECIMAL),
+    makeFieldInputId("f3"),
   ) as HTMLInputElement;
 
   expect($decimal.value).toBe("");
@@ -137,7 +144,7 @@ it.only("creates new experience entry when online", async () => {
    * And INTEGER field should be empty
    */
   const $integer = document.getElementById(
-    makeFieldInputId(DataTypes.INTEGER),
+    makeFieldInputId("f4"),
   ) as HTMLInputElement;
 
   expect($integer.value).toBe("");
@@ -263,19 +270,16 @@ it("sets values of date and datetime fields", async () => {
    */
   const experience = {
     id: "1",
-
     title,
-
     dataDefinitions: [
       {
-        id: "f1",
-        name: "f1",
+        id: "dt",
+        name: "dt",
         type: DataTypes.DATE,
       },
-
       {
-        id: "f2",
-        name: "f2",
+        id: "tm",
+        name: "tm",
         type: DataTypes.DATETIME,
       },
     ] as ExperienceFragment_dataDefinitions[],
@@ -292,60 +296,26 @@ it("sets values of date and datetime fields", async () => {
   /**
    * While we are on new entry page
    */
-  render(ui);
+  // render(ui);
+  const { debug } = render(ui);
+  // debug();
 
   /**
    * When we change datetime field to 2 hours ago
    */
-  const datetime = addHours(now, -2);
 
-  const [y, m, d, h, mi] = formatDate(datetime, "yyyy MMM d HH mm").split(" ");
-
-  const $datetimeField = document.getElementById(
-    "datetime-field-input-fields[1]",
-  ) as HTMLDivElement;
-
-  (document.getElementById(
-    `date-field-input-fields[1].date.year-${y}`,
-  ) as any).click();
-
-  ($datetimeField.getElementsByClassName(
-    `js-date-field-input-month-${m}`,
-  )[0] as any).click();
-
-  ($datetimeField.getElementsByClassName(
-    `js-date-field-input-day-${d}`,
-  )[0] as any).click();
-
-  ($datetimeField.getElementsByClassName(
-    `js-datetime-field-input-hour-${h}`,
-  )[0] as any).click();
-
-  ($datetimeField.getElementsByClassName(
-    `js-datetime-field-input-minute-${mi}`,
-  )[0] as any).click();
+  fillField(
+    document.getElementById(makeFieldInputId("tm")) as HTMLElement,
+    toISODatetimeString(addHours(now, -2)),
+  );
 
   /**
    * And we change date to 2 days ago
    */
-  const date = addDays(now, -2);
-  const [y1, m1, d1] = formatDate(date, "yyyy MMM d").split(" ");
-
-  const $dateField = document.getElementById(
-    `date-field-input-fields[0]`,
-  ) as HTMLDivElement;
-
-  (document.getElementById(
-    `date-field-input-fields[0].year-${y1}`,
-  ) as any).click();
-
-  ($dateField.getElementsByClassName(
-    `js-date-field-input-month-${m1}`,
-  )[0] as any).click();
-
-  ($dateField.getElementsByClassName(
-    `js-date-field-input-day-${d1}`,
-  )[0] as any).click();
+  fillField(
+    document.getElementById(makeFieldInputId("dt")) as HTMLElement,
+    toISODatetimeString(addDays(now, -2)),
+  );
 
   /**
    * And submit the form
@@ -355,27 +325,25 @@ it("sets values of date and datetime fields", async () => {
   /**
    * Then the correct values should be sent to the server
    */
-  await wait(() => {
-    const {
-      variables: {
-        input: { dataObjects },
-      },
-    } = mockCreateOnlineEntry.mock.calls[0][0] as ToVariables<
-      CreateOnlineEntryMutationVariables
-    >;
+  await wait(() => true);
 
-    const [f1, f2] = dataObjects as CreateDataObject[];
+  const {
+    variables: {
+      input: { dataObjects },
+    },
+  } = mockCreateOnlineEntry.mock.calls[0][0] as ToVariables<
+    CreateOnlineEntryMutationVariables
+  >;
 
-    expect(f1.definitionId).toBe("f1");
+  const [f1, f2] = dataObjects as CreateDataObject[];
 
-    expect(f2.definitionId).toBe("f2");
+  expect(f1.definitionId).toBe("dt");
+  expect(f2.definitionId).toBe("tm");
+  expect(differenceInDays(now, parseISO(JSON.parse(f1.data).date))).toBe(2);
 
-    expect(differenceInDays(now, parseISO(JSON.parse(f1.data).date))).toBe(2);
-
-    expect(
-      differenceInHours(now, parseISO(JSON.parse(f2.data).datetime)),
-    ).toBeGreaterThanOrEqual(1);
-  });
+  expect(
+    differenceInHours(now, parseISO(JSON.parse(f2.data).datetime)),
+  ).toBeGreaterThanOrEqual(1);
 });
 
 it("creates new entry when offline", async () => {
@@ -384,9 +352,7 @@ it("creates new entry when offline", async () => {
    */
   const exp = {
     id: "1",
-
     title,
-
     dataDefinitions: [
       {
         id: "f1",
@@ -394,7 +360,6 @@ it("creates new entry when offline", async () => {
         type: DataTypes.SINGLE_LINE_TEXT,
       },
     ],
-
     entries: {},
   };
 
@@ -427,7 +392,7 @@ it("creates new entry when offline", async () => {
    * When we complete and submit the form
    */
   const $singleText = document.getElementById(
-    makeFieldInputId(DataTypes.SINGLE_LINE_TEXT),
+    makeFieldInputId("f1"),
   ) as HTMLInputElement;
 
   expect($singleText.value).toBe("");
@@ -515,7 +480,7 @@ it("renders error when entry creation fails", async () => {
    * Then the multi text input field should be empty
    */
   const multiTextInput = document.getElementById(
-    makeFieldInputId(DataTypes.MULTI_LINE_TEXT),
+    makeFieldInputId("f1"),
   ) as HTMLInputElement;
 
   expect(multiTextInput.value).toBe("");
@@ -593,9 +558,7 @@ it("renders error when entry creation fails", async () => {
 it("treats all exceptions as network error", async () => {
   const experience = {
     id: "1",
-
     title,
-
     dataDefinitions: [
       {
         id: "f1",
@@ -603,7 +566,6 @@ it("treats all exceptions as network error", async () => {
         type: DataTypes.SINGLE_LINE_TEXT,
       },
     ],
-
     entries: {},
   } as ExperienceFragment;
 
@@ -636,12 +598,7 @@ it("treats all exceptions as network error", async () => {
   /**
    * And we complete the form
    */
-  fillField(
-    document.getElementById(
-      makeFieldInputId(DataTypes.SINGLE_LINE_TEXT),
-    ) as any,
-    "s",
-  );
+  fillField(document.getElementById(makeFieldInputId("f1")) as any, "s");
 
   /**
    * Then no loading indicator should be visible
@@ -746,7 +703,7 @@ const NewEntryP = NewEntryComponent as ComponentType<
 
 function makeComp(
   props: Partial<NewEntryComponentProps>,
-  connectionStatus: boolean = true,
+  connectionStatus = true,
 ) {
   mockIsConnected.mockReturnValue(connectionStatus);
   const mockCreateOnlineEntry = jest.fn();
@@ -766,4 +723,22 @@ function makeComp(
     mockCreateOfflineEntry,
     ...rest,
   };
+}
+
+function MockDateTimeField(props: DateTimeProps) {
+  const { value, id, onChange } = props;
+
+  const comp = (
+    <input
+      value={toISODatetimeString(value as Date)}
+      id={id}
+      onChange={evt => {
+        const val = evt.currentTarget.value;
+        const date = new Date(val);
+        onChange(name, isNaN(date.getTime()) ? "invalid" : date);
+      }}
+    />
+  );
+
+  return comp;
 }

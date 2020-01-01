@@ -50,6 +50,12 @@ import { editEntryUpdate } from "../components/EditEntry/edit-entry.injectables"
 import { decrementOfflineEntriesCountForExperience } from "../apollo-cache/drecrement-offline-entries-count";
 import { AppPersistor } from "../context";
 import { LayoutActionType } from "../components/Layout/layout.utils";
+import {
+  getDefinitionControlId,
+  getDefinitionFieldSelectorClass,
+  ControlName,
+  getDataControlDomId,
+} from "../components/EditEntry/edit-entry-dom";
 
 ////////////////////////// MOCKS ////////////////////////////
 
@@ -74,7 +80,7 @@ let errorConsoleSpy: jest.SpyInstance;
 const mockPersistFunc = jest.fn();
 
 beforeAll(() => {
-  errorConsoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+  errorConsoleSpy = jest.spyOn(console, "error").mockImplementation(() => null);
 });
 
 afterAll(() => {
@@ -175,7 +181,7 @@ test("not editing data, editing single definition, form errors, server success",
 
   expect(getDefinitionReset("a")).toBeNull();
 
-  let $input = getDefinitionInput("a");
+  const $input = getDefinitionInput("a");
   fillField($input, "g1");
 
   // editing.changed
@@ -691,7 +697,6 @@ test("editing data, editing definitions", async () => {
           data: `{"date":"2000-01-02"}`,
         },
       },
-
       {
         id: "time",
 
@@ -700,7 +705,6 @@ test("editing data, editing definitions", async () => {
           data: `{"datetime":"2000-01-02T01:01:01.000Z"}`,
         },
       },
-
       {
         id: "multi",
 
@@ -709,13 +713,11 @@ test("editing data, editing definitions", async () => {
           data: `{"multi_line_text":"mu"}`,
         },
       },
-
       {
         id: "text",
 
         stringError: "n",
       } as UpdateDataObjects_updateDataObjects,
-
       {
         id: "dec",
 
@@ -1407,18 +1409,22 @@ function makeComp({
   };
 }
 
-function getDefinitionField(id: string, control?: string) {
-  return document.getElementById(
-    `edit-entry-definition-${id}` + (control ? `-${control}` : ""),
-  ) as HTMLInputElement;
+function getDefinitionField(id: string) {
+  return document.getElementsByClassName(
+    getDefinitionFieldSelectorClass(id),
+  )[0] as HTMLInputElement;
 }
 
 function getDefinitionReset(id: string) {
-  return getDefinitionField(id, "reset");
+  return document.getElementById(
+    getDefinitionControlId(id, ControlName.reset),
+  ) as HTMLInputElement;
 }
 
 function getDefinitionInput(id: string, val?: string) {
-  const $input = getDefinitionField(id, "input");
+  const $input = document.getElementById(
+    getDefinitionControlId(id, ControlName.input),
+  ) as HTMLInputElement;
 
   if (val) {
     fillField($input, val);
@@ -1428,33 +1434,45 @@ function getDefinitionInput(id: string, val?: string) {
 }
 
 function getDefinitionSubmit(id: string) {
-  return getDefinitionField(id, "submit");
-}
-
-function getDefinitionDismiss(id: string) {
-  return getDefinitionField(id, "dismiss");
-}
-
-function getDefinitionEdit(id: string) {
-  return getDefinitionField(id, "edit-btn");
-}
-
-function getDefinitionName(id: string) {
-  return getDefinitionField(id, "name");
-}
-
-function getDefinitionError(id: string) {
-  return getDefinitionField(id, "error");
-}
-
-function getDataField(id: string, suffix?: string) {
   return document.getElementById(
-    `edit-entry-data-${id}` + (suffix ? `-${suffix}` : ""),
+    getDefinitionControlId(id, ControlName.submit),
   ) as HTMLInputElement;
 }
 
+function getDefinitionDismiss(id: string) {
+  return document.getElementById(
+    getDefinitionControlId(id, ControlName.dismiss),
+  ) as HTMLInputElement;
+}
+
+function getDefinitionEdit(id: string) {
+  return document.getElementById(
+    getDefinitionControlId(id, ControlName.edit),
+  ) as HTMLInputElement;
+}
+
+function getDefinitionName(id: string) {
+  return document.getElementById(
+    getDefinitionControlId(id, ControlName.name),
+  ) as HTMLInputElement;
+}
+
+function getDefinitionError(id: string) {
+  return document.getElementById(
+    getDefinitionControlId(id, ControlName.error),
+  ) as HTMLInputElement;
+}
+
+function getDataField(id: string) {
+  return (document.getElementById(
+    getDataControlDomId(id, ControlName.input),
+  ) as HTMLInputElement).closest(".field") as HTMLElement;
+}
+
 function getDataInput(id: string, val?: string) {
-  const $input = getDataField(id, "input");
+  const $input = document.getElementById(
+    getDataControlDomId(id, ControlName.input),
+  ) as HTMLInputElement;
 
   if (val) {
     fillField($input, val);
@@ -1464,7 +1482,9 @@ function getDataInput(id: string, val?: string) {
 }
 
 function getDataError(id: string) {
-  return getDataField(id, "error");
+  return document.getElementById(
+    getDataControlDomId(id, ControlName.error),
+  ) as HTMLInputElement;
 }
 
 function getSubmit() {

@@ -37,6 +37,7 @@ import {
 } from "../../graphql/apollo-types/UserRegMutation";
 import { REGISTER_USER_MUTATION } from "../../graphql/user-registration.mutation";
 import { SidebarHeader } from "../SidebarHeader/sidebar-header.component";
+import { makeFormFieldSelectorClass } from "./signup.dom";
 
 const scrollToTopId = makeScrollIntoViewId("signup");
 
@@ -265,7 +266,7 @@ function InputComponent({
   return (
     <Form.Field
       className={makeClassNames({
-        "form-field": true,
+        [makeFormFieldSelectorClass(name)]: true,
         disabled: isSourceField,
         error: fieldError,
       })}

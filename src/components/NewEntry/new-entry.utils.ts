@@ -165,7 +165,7 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
       });
     },
 
-    true,
+    // true,
   );
 
 export function interpretMutationException(payload: Error) {

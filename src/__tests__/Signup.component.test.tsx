@@ -18,6 +18,7 @@ import { GraphQLError } from "graphql";
 import { storeUser } from "../state/users";
 import { useMutation } from "@apollo/react-hooks";
 import { scrollIntoView } from "../components/scroll-into-view";
+import { makeFormFieldSelectorClass } from "../components/Signup/signup.dom";
 
 jest.mock("../state/connections");
 jest.mock("../refresh-to-app");
@@ -71,14 +72,16 @@ it("renders correctly and submits", async () => {
   /**
    * And source field should be readonly
    */
-  const $source = document.getElementById("sign-up-source") as HTMLInputElement;
-  expect($source.readOnly).toBe(true);
+  const sourceField = document.getElementById(
+    "sign-up-source",
+  ) as HTMLInputElement;
+  expect(sourceField.readOnly).toBe(true);
 
-  const $sourceParent = document.getElementById(
-    "sign-up-source-field",
-  ) as HTMLDivElement;
+  const sourceFieldParent = document.getElementsByClassName(
+    makeFormFieldSelectorClass("source"),
+  )[0] as HTMLDivElement;
 
-  expect($sourceParent.classList).toContain("disabled");
+  expect(sourceFieldParent.classList).toContain("disabled");
 
   /**
    * When we complete the form
@@ -158,11 +161,11 @@ it("renders error if socket not connected", async () => {
   /**
    * Then we should see error UI
    */
-  const $error = await waitForElement(() =>
+  const errorDom = await waitForElement(() =>
     document.getElementById("other-errors"),
   );
 
-  expect($error).not.toBeNull();
+  expect(errorDom).not.toBeNull();
 
   /**
    * And page should be automatically scrolled to the top of page
@@ -190,11 +193,11 @@ it("renders error if password and password confirm are not same", async () => {
     "sign-up-passwordConfirmation",
   ) as HTMLInputElement;
 
-  const $passwordConfirmParent = document.getElementById(
-    "sign-up-passwordConfirmation-field",
-  ) as HTMLElement;
+  const passwordConfirmParentField = document.getElementsByClassName(
+    makeFormFieldSelectorClass("passwordConfirmation"),
+  )[0] as HTMLElement;
 
-  expect($passwordConfirmParent.classList).not.toContain("error");
+  expect(passwordConfirmParentField.classList).not.toContain("error");
 
   /**
    * When complete the form, but the password and password confirm fields
@@ -211,9 +214,9 @@ it("renders error if password and password confirm are not same", async () => {
   /**
    * And we submit the form
    */
-  fireEvent.click(document.getElementById(
-    "sign-up-submit",
-  ) as HTMLButtonElement);
+  fireEvent.click(
+    document.getElementById("sign-up-submit") as HTMLButtonElement,
+  );
 
   /**
    * Then we should see error UI
@@ -224,7 +227,7 @@ it("renders error if password and password confirm are not same", async () => {
 
   expect($error).not.toBeNull();
 
-  expect($passwordConfirmParent.classList).toContain("error");
+  expect(passwordConfirmParentField.classList).toContain("error");
 
   /**
    * And the page should be automatically scrolled up
@@ -262,11 +265,11 @@ it("renders errors if server returns network errors", async () => {
   /**
    * Then we should see error UI
    */
-  const $error = await waitForElement(() =>
+  const errorDom = await waitForElement(() =>
     document.getElementById("network-error"),
   );
 
-  expect($error).not.toBeNull();
+  expect(errorDom).not.toBeNull();
 
   /**
    * And we should be automatically scrolled to top
@@ -303,11 +306,11 @@ it("renders errors if server returns field errors", async () => {
    */
   expect(document.getElementById("error-text-0")).toBeNull();
 
-  const $emailParent = document.getElementById(
-    "sign-up-email-field",
-  ) as HTMLElement;
+  const emailParentField = document.getElementsByClassName(
+    makeFormFieldSelectorClass("email"),
+  )[0] as HTMLElement;
 
-  expect($emailParent.classList).not.toContain("error");
+  expect(emailParentField.classList).not.toContain("error");
 
   /**
    * When we complete and submit the form
@@ -330,7 +333,7 @@ it("renders errors if server returns field errors", async () => {
   /**
    * And field error should visually indicate so
    */
-  expect($emailParent.classList).toContain("error");
+  expect(emailParentField.classList).toContain("error");
 
   /**
    * And we should be automatically scrolled to top
@@ -365,14 +368,14 @@ function fillForm() {
     "awesome pass",
   );
 
-  fireEvent.click(document.getElementById(
-    "sign-up-submit",
-  ) as HTMLButtonElement);
+  fireEvent.click(
+    document.getElementById("sign-up-submit") as HTMLButtonElement,
+  );
 }
 
 const SignUpP = SignUp as ComponentType<Partial<Props>>;
 
-function makeComp(isServerConnected: boolean = true) {
+function makeComp(isServerConnected = true) {
   mockIsConnected.mockReturnValue(isServerConnected);
   const { Ui, ...rest } = renderWithRouter(SignUpP);
 
