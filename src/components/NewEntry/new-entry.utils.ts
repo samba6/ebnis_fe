@@ -442,6 +442,16 @@ async function handleSubmittingAction(proxy: ProxyState) {
   });
 }
 
+export function typedErrorsToString<T extends {}>(errors: T) {
+  return Object.entries(errors).reduce((a, [k, v]) => {
+    if (v && k !== "__typename") {
+      a += `\n${k}: ${v}`;
+    }
+
+    return a;
+  }, "");
+}
+
 function handleOnCreateEntryErrors(
   stateMachine: ProxyState,
   payload: CreateOnlineEntryMutation_createEntry_errors,
@@ -463,13 +473,7 @@ function handleOnCreateEntryErrors(
       index,
     } = field as CreateOnlineEntryMutation_createEntry_errors_dataObjectsErrors;
 
-    acc[index] = Object.entries(errors).reduce((a, [k, v]) => {
-      if (v && k !== "__typename") {
-        a += `\n${k}: ${v}`;
-      }
-
-      return a;
-    }, "");
+    acc[index] = typedErrorsToString(errors);
 
     return acc;
   }, {} as { [k: string]: string });

@@ -308,7 +308,7 @@ function SubmissionSuccessResponseComponent({
               )}
 
               {!!validResponse.failures && (
-                <div>
+                <div className="bg-red-300">
                   <span> {validResponse.failures} </span>
                   <span>failed</span>
                 </div>
@@ -317,7 +317,13 @@ function SubmissionSuccessResponseComponent({
           )}
 
           {invalidResponse && (
-            <div> {invalidResponse.data || invalidResponse.definitions} </div>
+            <div className="bg-red-300">
+              {invalidResponse.data && <span>{invalidResponse.data}</span>}
+
+              {invalidResponse.definitions && (
+                <span>{invalidResponse.definitions}</span>
+              )}
+            </div>
           )}
         </Message>
       </Modal.Content>
@@ -554,10 +560,10 @@ function SubmissionErrorsComponent({
   if (state.value === "formErrors") {
     errors = state.formErrors.context.errors;
     id = formErrorsDomId;
-  } else if (state.value === "otherErrors") {
+  } else if (state.value === StateValue.otherErrors) {
     errors = state.otherErrors.context.errors;
     id = otherErrorsDomId;
-  } else if (state.value === "apolloErrors") {
+  } else if (state.value === StateValue.apolloErrors) {
     errors = state.apolloErrors.context.errors;
     id = apolloErrorsDomId;
   }
@@ -570,6 +576,7 @@ function SubmissionErrorsComponent({
             type: ActionType.DISMISS_SUBMISSION_RESPONSE_MESSAGE,
           });
         }}
+        error={true}
       >
         {errors}
       </Message>

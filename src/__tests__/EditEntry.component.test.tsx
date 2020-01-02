@@ -1306,7 +1306,7 @@ test("not editing data, editing definition, apollo errors", async () => {
   expect($response).not.toBeNull();
 });
 
-test.only("editing offline entry, one data object updated, one not updated, submitting online", async () => {
+test("editing offline entry, one data object updated, one not updated, submitting online", async () => {
   const definition1Id = "int";
   const data1OnlineId = "d1on";
   const data1OfflineId = "d1of";
@@ -1347,7 +1347,6 @@ test.only("editing offline entry, one data object updated, one not updated, subm
       entry: offlineEntry as EntryFragment,
       experience: {
         id: experienceId,
-
         dataDefinitions: [
           {
             id: definition1Id,
@@ -1368,17 +1367,29 @@ test.only("editing offline entry, one data object updated, one not updated, subm
    * And form will be submitted 4 times and server will respond:
    * 1 - invalid response
    * 2 - javascript exception
-   * 3 - entry creation error
-   * 4 - success
+   * 3 - none data entry creation error
+   * 4 - data entry creation error
+   * 5 - success
    */
 
   mockCreateEntryOnline
     .mockResolvedValueOnce({}) // invalid
-    .mockResolvedValueOnce(new Error("")) // exception
+    .mockRejectedValueOnce(new Error("")) // exception
     .mockResolvedValueOnce({
       data: {
         createEntry: {
           errors: {
+            clientId: offlineEntryId,
+            entry: "err",
+          } as CreateOnlineEntryMutation_createEntry_errors,
+        },
+      } as CreateOnlineEntryMutation,
+    }) // none data objects errors
+    .mockResolvedValueOnce({
+      data: {
+        createEntry: {
+          errors: {
+            clientId: offlineEntryId,
             dataObjectsErrors: [
               {
                 index: 0,
@@ -1391,7 +1402,7 @@ test.only("editing offline entry, one data object updated, one not updated, subm
           } as CreateOnlineEntryMutation_createEntry_errors,
         },
       } as CreateOnlineEntryMutation,
-    }) // error
+    }) // data objects errors
     .mockResolvedValueOnce({
       data: {
         createEntry: {
@@ -1459,7 +1470,22 @@ test.only("editing offline entry, one data object updated, one not updated, subm
   await waitForElement(getOtherErrorsResponseDom);
 
   /**
-   * When form is submitted a third time
+   * When form is submitted a 3rd time
+   */
+  getSubmit().click();
+
+  /**
+   * Then error UI should not be visible
+   */
+  expect(getSubmissionSuccessResponseDom()).toBeNull();
+
+  /**
+   * But after a while, error UI should be visible
+   */
+  await waitForElement(getSubmissionSuccessResponseDom);
+
+  /**
+   * When form is submitted a fourth time
    */
   getSubmit().click();
 
@@ -1474,12 +1500,22 @@ test.only("editing offline entry, one data object updated, one not updated, subm
   expect(getDataError(data1OfflineId)).toBeNull();
 
   /**
+   * And success UI should not be visible
+   */
+  expect(getSubmissionSuccessResponseDom()).toBeNull();
+
+  /**
    * But after a while, data 1 error UI should be visible
    */
   await waitForElement(() => getDataError(data1OfflineId));
 
   /**
-   * When form is submitted the fourth time
+   * And success UI should be visible
+   */
+  expect(getSubmissionSuccessResponseDom()).not.toBeNull();
+
+  /**
+   * When form is submitted the fifth time
    */
   getSubmit().click();
 
@@ -1496,7 +1532,7 @@ test.only("editing offline entry, one data object updated, one not updated, subm
   /**
    * And correct data should have been uploaded to the server
    */
-  const mock = mockCreateEntryOnline.mock.calls[3][0] as ToVariables<
+  const mock = mockCreateEntryOnline.mock.calls[4][0] as ToVariables<
     CreateOnlineEntryMutationVariables
   >;
 

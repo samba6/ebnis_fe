@@ -30,6 +30,7 @@ import {
   formObjToString,
   ISO_DATE_FORMAT,
   interpretCreateEntryMutationException,
+  typedErrorsToString,
 } from "../NewEntry/new-entry.utils";
 import parseISO from "date-fns/parseISO";
 import parse from "date-fns/parse";
@@ -275,7 +276,10 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
             break;
 
           case ActionType.OTHER_ERRORS:
-            handleOtherErrorsAction(proxy);
+            handleOtherErrorsAction(
+              proxy,
+              (payload as { error?: string }).error,
+            );
             break;
 
           case ActionType.APOLLO_ERRORS:
@@ -356,7 +360,10 @@ const createEntryOnlineEffect: CreateEntryOnlineEffect["func"] = async (
       type: ActionType.OTHER_ERRORS,
     });
   } catch (errors) {
-    interpretCreateEntryMutationException(errors);
+    dispatch({
+      type: ActionType.OTHER_ERRORS,
+      error: interpretCreateEntryMutationException(errors),
+    });
   }
 };
 
@@ -718,13 +725,16 @@ function handleDefinitionFormErrorsAction(
   }
 }
 
-function handleOtherErrorsAction(proxy: DraftState) {
+function handleOtherErrorsAction(
+  proxy: DraftState,
+  error = "We apologize, we are unable to fulfill your request this time",
+) {
   const otherErrorsState = {
     isActive: true,
     value: StateValue.otherErrors,
     otherErrors: {
       context: {
-        errors: "We apologize, we are unable to fulfill your request this time",
+        errors: error,
       },
     },
   } as Submission;
@@ -822,14 +832,19 @@ function handleApolloErrorsAction(
 
 function handleOnlineEntryCreatedServerResponseAction(
   proxy: DraftState,
+  context: SubmissionSuccessStateContext,
   response: CreateOnlineEntryMutation_createEntry,
 ) {
   const [effectObjects] = getRenderEffects(proxy);
-
   const { entry: ent, errors } = response;
 
   if (errors) {
-    const { dataObjectsErrors } = errors;
+    let errorString = "Please correct form errors and resubmit";
+    /* eslint-disable-next-line @typescript-eslint/no-unused-vars*/
+    const { dataObjectsErrors, clientId, ...rest } = errors;
+    errorString += typedErrorsToString(rest);
+    const errorContext = context.invalidResponse as SubmissionInvalidResponse;
+    errorContext.entry = errorString;
 
     if (!dataObjectsErrors) {
       return [0, 1];
@@ -964,6 +979,7 @@ function prepareSubmissionResponse(
   if (props.key === "onlineEntry") {
     const [s, f, t] = handleOnlineEntryCreatedServerResponseAction(
       proxy,
+      context,
       props.onlineEntryResults,
     ) as [number, number, string];
 
@@ -1585,6 +1601,7 @@ interface SubmissionSuccessStateContext {
 interface SubmissionInvalidResponse {
   data?: string;
   definitions?: string;
+  entry?: string;
 }
 
 export interface EditingMultipleDefinitionsState {
@@ -1641,6 +1658,7 @@ export type Action =
     } & UpdateDataObjects)
   | {
       type: ActionType.OTHER_ERRORS;
+      error?: string;
     }
   | ({
       type: ActionType.APOLLO_ERRORS;
