@@ -56,6 +56,7 @@ export interface CreateOnlineEntryMutation_createEntry_errors_dataObjectsErrors_
 export interface CreateOnlineEntryMutation_createEntry_errors_dataObjectsErrors {
   __typename: "DataObjectsErrors";
   index: number;
+  clientId: string | null;
   errors: CreateOnlineEntryMutation_createEntry_errors_dataObjectsErrors_errors;
 }
 

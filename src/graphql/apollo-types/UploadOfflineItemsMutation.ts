@@ -175,6 +175,7 @@ export interface UploadOfflineItemsMutation_saveOfflineExperiences_entriesErrors
 export interface UploadOfflineItemsMutation_saveOfflineExperiences_entriesErrors_errors_dataObjectsErrors {
   __typename: "DataObjectsErrors";
   index: number;
+  clientId: string | null;
   errors: UploadOfflineItemsMutation_saveOfflineExperiences_entriesErrors_errors_dataObjectsErrors_errors;
 }
 
@@ -282,6 +283,7 @@ export interface UploadOfflineItemsMutation_createEntries_errors_errors_dataObje
 export interface UploadOfflineItemsMutation_createEntries_errors_errors_dataObjectsErrors {
   __typename: "DataObjectsErrors";
   index: number;
+  clientId: string | null;
   errors: UploadOfflineItemsMutation_createEntries_errors_errors_dataObjectsErrors_errors;
 }
 

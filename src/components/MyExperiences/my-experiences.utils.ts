@@ -141,7 +141,7 @@ export const dispatchContext = createContext<NoneStateContextValue>(
 
 export const DispatchProvider = dispatchContext.Provider;
 
-////////////////////////// TYPES ////////////////////////////
+////////////////////////// TYPES SECTION ////////////////////////////
 
 export interface StateMachine {
   readonly context: {

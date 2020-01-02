@@ -176,7 +176,7 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
     // true,
   );
 
-export function interpretMutationException(payload: Error) {
+export function interpretCreateEntryMutationException(payload: Error) {
   if (payload instanceof ApolloError) {
     const { graphQLErrors, networkError } = payload;
 
@@ -270,7 +270,7 @@ const createEntryEffect: CreateEntryEffect["func"] = async (
     dispatch({
       type: ActionType.ON_CREATE_ENTRY_EXCEPTION,
       key: StateValue.nonFieldErrors,
-      value: interpretMutationException(errors),
+      value: interpretCreateEntryMutationException(errors),
     });
   }
 };
@@ -288,7 +288,7 @@ type CreateEntryEffect = EffectDefinition<
   }
 >;
 
-const scrollToViewEffect: ScrollToViewEffect["func"] = ({}, { id }) => {
+const scrollToViewEffect: ScrollToViewEffect["func"] = (_, { id }) => {
   scrollIntoView(id, {
     behavior: "smooth",
   });
@@ -472,7 +472,7 @@ function handleOnCreateEntryErrors(
     }, "");
 
     return acc;
-  }, {});
+  }, {} as { [k: string]: string });
 
   submitting.errors = {
     value: StateValue.fieldErrors,

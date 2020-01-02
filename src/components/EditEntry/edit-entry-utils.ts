@@ -26,7 +26,11 @@ import {
 import { UpdateDataObjectsResponseFragment_fieldErrors } from "../../graphql/apollo-types/UpdateDataObjectsResponseFragment";
 import { wrapReducer } from "../../logger";
 import { ApolloError, ApolloClient } from "apollo-client";
-import { formObjToString, ISO_DATE_FORMAT } from "../NewEntry/new-entry.utils";
+import {
+  formObjToString,
+  ISO_DATE_FORMAT,
+  interpretCreateEntryMutationException,
+} from "../NewEntry/new-entry.utils";
 import parseISO from "date-fns/parseISO";
 import parse from "date-fns/parse";
 import {
@@ -41,7 +45,10 @@ import {
 } from "../../graphql/create-entry.mutation";
 import { isOfflineId } from "../../constants";
 import { updateExperienceWithNewEntry } from "../NewEntry/new-entry.injectables";
-import { CreateOnlineEntryMutation_createEntry } from "../../graphql/apollo-types/CreateOnlineEntryMutation";
+import {
+  CreateOnlineEntryMutation_createEntry,
+  CreateOnlineEntryMutation_createEntry_errors_dataObjectsErrors,
+} from "../../graphql/apollo-types/CreateOnlineEntryMutation";
 import { decrementOfflineEntriesCountForExperience } from "../../apollo-cache/drecrement-offline-entries-count";
 import { AppPersistor } from "../../context";
 import { InMemoryCache } from "apollo-cache-inmemory";
@@ -73,20 +80,16 @@ export enum ActionType {
   PUT_EFFECT_FUNCTIONS_ARGS = "@component/edit-entry/put-effects-functions-args",
 }
 
-export const EFFECT_VALUE_NO_EFFECT: EffectValueNoEffect = "noEffect";
-
-export const EDITING_DEFINITION_INACTIVE: EditingDefinitionInactive =
-  "inactive";
-export const EDITING_DEFINITION_SINGLE: EditingDefinitionSingle = "single";
-export const EDITING_DEFINITION_MULTIPLE: EditingDefinitionMultiple =
-  "multiple";
-
-export const EDITING_DATA_ACTIVE: EditingDataActive = "active";
-export const EDITING_DATA_INACTIVE: EditingDataInactive = "inactive";
-
 export const StateValue = {
-  effectValNoEffect: "noEffect" as EffectValueNoEffect,
-  effectValHasEffects: "hasEffects" as EffectValueHasEffects,
+  noEffect: "noEffect" as NoEffectVal,
+  hasEffects: "hasEffects" as HasEffectsVal,
+  active: "active" as ActiveVal,
+  inactive: "inactive" as InActiveVal,
+  single: "single" as SingleVal,
+  multiple: "multiple" as MultipleVal,
+  submitting: "submitting" as SubmittingVal,
+  apolloErrors: "apolloErrors" as ApolloErrorValue,
+  otherErrors: "otherErrors" as OtherErrorsVal,
 };
 
 export const initStateFromProps = (
@@ -168,44 +171,32 @@ export const initStateFromProps = (
     );
   }
 
-  const state = {
+  return {
     effects: {
       runOnRenders: {
-        value: EFFECT_VALUE_NO_EFFECT,
+        value: StateValue.noEffect,
       },
       runOnce: {},
     },
-    primaryState: {
-      context: {
-        lenDefinitions,
-        definitionAndDataIdsMapList,
-        experienceId: experience.id,
-        entry,
-      },
-
-      common: {
-        value: "editing" as "editing",
-      },
-
-      editingData: {
-        value: EDITING_DATA_INACTIVE,
-      },
-
-      editingDefinition: {
-        value: EDITING_DEFINITION_INACTIVE,
-      },
-
-      submissionResponse: {
-        value: "inactive" as "inactive",
-      },
+    context: {
+      lenDefinitions,
+      definitionAndDataIdsMapList,
+      experienceId: experience.id,
+      entry,
     },
-
+    editingData: {
+      value: StateValue.inactive,
+    },
+    editingDefinition: {
+      value: StateValue.inactive,
+    },
+    submission: {
+      value: StateValue.inactive,
+    },
     definitionsStates,
     dataStates,
     effectsArgsObj: {} as EffectFunctionsArgs,
   };
-
-  return state;
 };
 
 export const reducer: Reducer<StateMachine, Action> = (state, action) =>
@@ -224,7 +215,7 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
       const { effectsArgsObj, ...rest } = prevState;
 
       const nextState = immer(rest, proxy => {
-        proxy.effects.runOnRenders.value = EFFECT_VALUE_NO_EFFECT;
+        proxy.effects.runOnRenders.value = StateValue.noEffect;
 
         switch (type) {
           case ActionType.DATA_CHANGED:
@@ -299,9 +290,7 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
             break;
 
           case ActionType.DISMISS_SUBMISSION_RESPONSE_MESSAGE:
-            (proxy.primaryState
-              .submissionResponse as SubmissionResponseState).value =
-              "inactive";
+            proxy.submission.value = StateValue.inactive;
             break;
         }
       });
@@ -362,7 +351,13 @@ const createEntryOnlineEffect: CreateEntryOnlineEffect["func"] = async (
 
       return;
     }
-  } catch (errors) {}
+
+    dispatch({
+      type: ActionType.OTHER_ERRORS,
+    });
+  } catch (errors) {
+    interpretCreateEntryMutationException(errors);
+  }
 };
 
 type CreateEntryOnlineEffect = EffectDefinition<
@@ -406,7 +401,7 @@ const updateDefinitionsOnlineEffect: UpdateDefinitionsOnlineEffect["func"] = asy
       update: editEntryUpdate,
     });
 
-    const validResponse = result && result.data && result.data;
+    const validResponse = result && result.data;
 
     if (validResponse) {
       dispatch({
@@ -670,9 +665,9 @@ function handleDefinitionNameChangedAction(
 }
 
 function handleSubmittingAction(proxy: DraftState) {
-  proxy.primaryState.common.value = "submitting";
+  proxy.submission.value = StateValue.submitting;
   const [effectObjects] = getRenderEffects(proxy);
-  const { entry } = proxy.primaryState.context;
+  const { entry } = proxy.context;
 
   if (isOfflineId(entry.id)) {
     handleSubmittingCreateEntryOnlineAction(proxy, effectObjects);
@@ -689,9 +684,6 @@ function handleDefinitionFormErrorsAction(
   proxy: DraftState,
   payload: DefinitionFormErrorsPayload,
 ) {
-  const { primaryState } = proxy;
-  primaryState.common.value = "editing";
-
   const primaryStateFormErrors = {
     isActive: true,
     value: "formErrors",
@@ -700,10 +692,10 @@ function handleDefinitionFormErrorsAction(
         errors: "please correct the highlighted errors and resubmit",
       },
     },
-  } as SubmissionResponseState;
+  } as Submission;
 
-  primaryState.submissionResponse = {
-    ...primaryState.submissionResponse,
+  proxy.submission = {
+    ...proxy.submission,
     ...primaryStateFormErrors,
   };
 
@@ -727,21 +719,18 @@ function handleDefinitionFormErrorsAction(
 }
 
 function handleOtherErrorsAction(proxy: DraftState) {
-  const { primaryState } = proxy;
-  primaryState.common.value = "editing";
-
   const otherErrorsState = {
     isActive: true,
-    value: "otherErrors",
+    value: StateValue.otherErrors,
     otherErrors: {
       context: {
         errors: "We apologize, we are unable to fulfill your request this time",
       },
     },
-  } as SubmissionResponseState;
+  } as Submission;
 
-  primaryState.submissionResponse = {
-    ...primaryState.submissionResponse,
+  proxy.submission = {
+    ...proxy.submission,
     ...otherErrorsState,
   };
 }
@@ -811,24 +800,22 @@ function handleApolloErrorsAction(
   proxy: DraftState,
   payload: ApolloErrorsPayload,
 ) {
-  const { primaryState } = proxy;
-  primaryState.common.value = "editing";
   const {
     errors: { graphQLErrors, networkError },
   } = payload as ApolloErrorsPayload;
 
   const apolloErrorsState = {
     isActive: true,
-    value: "apolloErrors",
+    value: StateValue.apolloErrors,
     apolloErrors: {
       context: {
         errors: networkError ? networkError.message : graphQLErrors[0].message,
       },
     },
-  } as SubmissionResponseState;
+  } as Submission;
 
-  primaryState.submissionResponse = {
-    ...primaryState.submissionResponse,
+  proxy.submission = {
+    ...proxy.submission,
     ...apolloErrorsState,
   };
 }
@@ -839,16 +826,39 @@ function handleOnlineEntryCreatedServerResponseAction(
 ) {
   const [effectObjects] = getRenderEffects(proxy);
 
-  const { entry } = response;
+  const { entry: ent, errors } = response;
 
-  if (!entry) {
-    return [0, 0];
+  if (errors) {
+    const { dataObjectsErrors } = errors;
+
+    if (!dataObjectsErrors) {
+      return [0, 1];
+    }
+
+    let failureCount = 0;
+    const { dataStates } = proxy;
+
+    dataObjectsErrors.forEach(obj => {
+      const {
+        clientId,
+        errors,
+      } = obj as CreateOnlineEntryMutation_createEntry_errors_dataObjectsErrors;
+
+      const dataState = dataStates[clientId as string];
+      ++failureCount;
+
+      putDataServerErrors(
+        dataState as DataChangedState,
+        errors as UpdateDataObjectsResponseFragment_fieldErrors,
+      );
+    });
+
+    return [0, failureCount];
   }
 
+  const entry = ent as EntryFragment;
   const { dataStates } = proxy;
-  const {
-    primaryState: { context: globalContext },
-  } = proxy;
+  const { context: globalContext } = proxy;
 
   globalContext.entry = entry;
   const definitionAndDataIdsMapList = globalContext.definitionAndDataIdsMapList;
@@ -879,7 +889,7 @@ function handleOnlineEntryCreatedServerResponseAction(
 
 function getRenderEffects(proxy: DraftState) {
   const runOnRendersEffects = proxy.effects.runOnRenders as EffectState;
-  runOnRendersEffects.value = StateValue.effectValHasEffects;
+  runOnRendersEffects.value = StateValue.hasEffects;
   const effectObjects: EffectsList = [];
   const cleanupEffectObjects: EffectsList = [];
   runOnRendersEffects.hasEffects = {
@@ -900,8 +910,11 @@ function prepareSubmissionResponse(
     | UpdateWithDataObjectsSubmissionResponse
     | UpdateWithOnlineEntrySubmissionResponse,
 ) {
-  const { primaryState } = proxy;
-  primaryState.common.value = "editing";
+  const {
+    submitting: {
+      context: { submittedCount },
+    },
+  } = proxy.submission as Submitting;
 
   const submissionSuccessResponse = {
     value: "submissionSuccess",
@@ -974,23 +987,17 @@ function prepareSubmissionResponse(
     context,
   };
 
-  primaryState.submissionResponse = {
-    ...primaryState.submissionResponse,
+  proxy.submission = {
+    ...proxy.submission,
     ...submissionSuccessResponse,
     value: "submissionSuccess",
   };
 
-  const {
-    submitting: {
-      context: { submittedCount },
-    },
-  } = primaryState.common as PrimaryStateSubmitting;
-
   if (submittedCount === successCount) {
-    primaryState.editingData.value = EDITING_DATA_INACTIVE;
+    proxy.editingData.value = StateValue.inactive;
   }
 
-  return { primaryState, submissionSuccessResponse, context };
+  return { submissionSuccessResponse, context };
 }
 
 function setDefinitionEditingUnchangedState(proxy: DraftState, id: string) {
@@ -1011,13 +1018,12 @@ function setEditingDefinitionState(
   proxy: DraftState,
   mostRecentlyInterractedWithDefinitionId: string,
 ) {
-  const { primaryState } = proxy;
   let changedDefinitionsCount = 0;
   let previousMostRecentlyChangedDefinitionId = "";
 
-  if (primaryState.editingDefinition.value === EDITING_DEFINITION_MULTIPLE) {
+  if (proxy.editingDefinition.value === StateValue.multiple) {
     previousMostRecentlyChangedDefinitionId =
-      primaryState.editingDefinition[EDITING_DEFINITION_MULTIPLE].context
+      proxy.editingDefinition[StateValue.multiple].context
         .mostRecentlyChangedDefinitionId;
   }
 
@@ -1036,13 +1042,13 @@ function setEditingDefinitionState(
     : previousMostRecentlyChangedDefinitionId;
 
   if (changedDefinitionsCount === 0) {
-    primaryState.editingDefinition.value = EDITING_DEFINITION_INACTIVE;
+    proxy.editingDefinition.value = StateValue.inactive;
   } else if (changedDefinitionsCount === 1) {
-    primaryState.editingDefinition.value = EDITING_DEFINITION_SINGLE;
+    proxy.editingDefinition.value = StateValue.single;
   } else {
-    (primaryState.editingDefinition as EditingMultipleDefinitionsState) = {
-      value: EDITING_DEFINITION_MULTIPLE,
-      [EDITING_DEFINITION_MULTIPLE]: {
+    (proxy.editingDefinition as EditingMultipleDefinitionsState) = {
+      value: StateValue.multiple,
+      multiple: {
         context: {
           mostRecentlyChangedDefinitionId,
         },
@@ -1202,12 +1208,15 @@ async function handleSubmittingUpdateDataAndOrDefinitionAction({
 
   const [dataInput] = getDataObjectsToSubmit(proxy.dataStates);
 
-  (proxy.primaryState.common as PrimaryStateSubmitting).submitting = {
-    context: {
-      submittedCount:
-        definitionsInput.length +
-        definitionsWithFormErrors.length +
-        dataInput.length,
+  proxy.submission = {
+    value: StateValue.submitting,
+    submitting: {
+      context: {
+        submittedCount:
+          definitionsInput.length +
+          definitionsWithFormErrors.length +
+          dataInput.length,
+      },
     },
   };
 
@@ -1223,7 +1232,7 @@ async function handleSubmittingUpdateDataAndOrDefinitionAction({
     return;
   }
 
-  const { experienceId } = proxy.primaryState.context;
+  const { experienceId } = proxy.context;
 
   if (dataInput.length === 0) {
     effectObjects.push({
@@ -1270,10 +1279,10 @@ function setEditingData(proxy: DraftState) {
     }
   }
 
-  if (dataChangedCount !== 0) {
-    proxy.primaryState.editingData.value = EDITING_DATA_ACTIVE;
+  if (dataChangedCount === 0) {
+    proxy.editingData.value = StateValue.inactive;
   } else {
-    proxy.primaryState.editingData.value = EDITING_DATA_INACTIVE;
+    proxy.editingData.value = StateValue.active;
   }
 }
 
@@ -1281,16 +1290,17 @@ function handleSubmittingCreateEntryOnlineAction(
   proxy: DraftState,
   effectObjects: EffectsList,
 ) {
-  (proxy.primaryState.common as PrimaryStateSubmitting).submitting = {
-    context: {
-      submittedCount: 1,
+  proxy.submission = {
+    value: StateValue.submitting,
+    submitting: {
+      context: {
+        submittedCount: 1,
+      },
     },
   };
 
   const {
-    primaryState: {
-      context: { experienceId, entry },
-    },
+    context: { experienceId, entry },
     dataStates,
   } = proxy;
 
@@ -1415,25 +1425,33 @@ interface ContextValue
   dispatch: DispatchType;
 }
 
-type EffectValueNoEffect = "noEffect";
-type EffectValueHasEffects = "hasEffects";
-
 export interface StateMachine extends Rest {
   effectsArgsObj: EffectFunctionsArgs;
 }
 
 type DraftState = Draft<Rest>;
 
-interface Rest {
+interface Rest extends RestContext {
   readonly dataStates: DataStates;
   readonly definitionsStates: DefinitionsStates;
-  readonly primaryState: PrimaryState;
   readonly effects: {
-    runOnRenders: EffectState | { value: EffectValueNoEffect };
+    runOnRenders: EffectState | { value: NoEffectVal };
     runOnce: {
       cleanupQueries?: CleanUpQueriesState;
     };
   };
+  readonly editingData: {
+    value: ActiveVal | InActiveVal;
+  };
+  readonly editingDefinition:
+    | {
+        value: SingleVal;
+      }
+    | {
+        value: InActiveVal;
+      }
+    | EditingMultipleDefinitionsState;
+  readonly submission: Submission;
 }
 
 export type CleanUpQueriesState = RunOnceEffectState<CleanUpQueriesEffect>;
@@ -1444,7 +1462,7 @@ interface RunOnceEffectState<IEffect> {
 }
 
 interface EffectState {
-  value: EffectValueHasEffects;
+  value: HasEffectsVal;
   hasEffects: {
     context: {
       effects: EffectsList;
@@ -1481,46 +1499,29 @@ interface DefinitionAndDataIds {
   dataId: string;
 }
 
-type EditingDefinitionInactive = "inactive";
-type EditingDefinitionSingle = "single";
-type EditingDefinitionMultiple = "multiple";
+////////////////////////// STRINGGY TYPES SECTION //////////////////////
+type NoEffectVal = "noEffect";
+type HasEffectsVal = "hasEffects";
+type InActiveVal = "inactive";
+type SingleVal = "single";
+type MultipleVal = "multiple";
+type ActiveVal = "active";
+type SubmittingVal = "submitting";
+type ApolloErrorValue = "apolloErrors";
+type OtherErrorsVal = "otherErrors";
+////////////////////////// END STRINGGY TYPES SECTION //////////////////
 
-type EditingDataActive = "active";
-type EditingDataInactive = "inactive";
-
-export interface PrimaryState {
+interface RestContext {
   context: {
     lenDefinitions: number;
     definitionAndDataIdsMapList: DefinitionAndDataIds[];
     experienceId: string;
     entry: EntryFragment;
   };
-
-  common: PrimaryStateEditing | PrimaryStateSubmitting;
-
-  editingData: {
-    value: EditingDataActive | EditingDataInactive;
-  };
-
-  editingDefinition:
-    | {
-        value: EditingDefinitionSingle;
-      }
-    | {
-        value: EditingDefinitionInactive;
-      }
-    | EditingMultipleDefinitionsState;
-
-  submissionResponse: SubmissionResponseState;
 }
 
-interface PrimaryStateEditing {
-  value: "editing";
-}
-
-interface PrimaryStateSubmitting {
-  value: "submitting";
-
+interface Submitting {
+  value: SubmittingVal;
   submitting: {
     context: {
       submittedCount: number;
@@ -1528,13 +1529,14 @@ interface PrimaryStateSubmitting {
   };
 }
 
-export type SubmissionResponseState =
+export type Submission =
   | {
-      value: "inactive";
+      value: InActiveVal;
     }
+  | Submitting
   | (
       | {
-          value: "apolloErrors";
+          value: ApolloErrorValue;
           apolloErrors: {
             context: {
               errors: string;
@@ -1543,18 +1545,17 @@ export type SubmissionResponseState =
         }
       | SubmissionSuccessState
       | {
-          value: "otherErrors";
-
+          value: OtherErrorsVal;
           otherErrors: {
             context: {
               errors: string;
             };
           };
         }
-      | SubmissionFormErrorsState
+      | SubmissionFormErrors
     );
 
-interface SubmissionFormErrorsState {
+interface SubmissionFormErrors {
   value: "formErrors";
 
   formErrors: {
@@ -1587,9 +1588,8 @@ interface SubmissionInvalidResponse {
 }
 
 export interface EditingMultipleDefinitionsState {
-  value: EditingDefinitionMultiple;
-
-  [EDITING_DEFINITION_MULTIPLE]: {
+  value: MultipleVal;
+  multiple: {
     context: {
       mostRecentlyChangedDefinitionId: string;
     };

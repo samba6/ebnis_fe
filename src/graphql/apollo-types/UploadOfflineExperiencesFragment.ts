@@ -175,6 +175,7 @@ export interface UploadOfflineExperiencesFragment_entriesErrors_errors_dataObjec
 export interface UploadOfflineExperiencesFragment_entriesErrors_errors_dataObjectsErrors {
   __typename: "DataObjectsErrors";
   index: number;
+  clientId: string | null;
   errors: UploadOfflineExperiencesFragment_entriesErrors_errors_dataObjectsErrors_errors;
 }
 

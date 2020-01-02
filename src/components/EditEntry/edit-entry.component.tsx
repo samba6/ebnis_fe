@@ -17,11 +17,9 @@ import {
   DataState,
   EditEnryContext,
   StateMachine,
-  SubmissionResponseState,
-  PrimaryState,
+  Submission,
   EditEntryCallerProps,
   StateValue,
-  EDITING_DEFINITION_MULTIPLE,
   runEffects,
   getEffectArgsFromKeys,
   effectFunctions,
@@ -82,13 +80,10 @@ export function EditEntryComponent(props: EditEntryComponentProps) {
     initStateFromProps,
   );
   const {
-    primaryState: {
-      context: { definitionAndDataIdsMapList },
-      common: commonState,
-      editingData,
-      editingDefinition,
-      submissionResponse,
-    },
+    context: { definitionAndDataIdsMapList },
+    editingData,
+    editingDefinition,
+    submission,
     definitionsStates,
     dataStates,
     effects: {
@@ -101,7 +96,7 @@ export function EditEntryComponent(props: EditEntryComponentProps) {
   const runCleanupQueries = cleanupQueries && cleanupQueries.run;
 
   useEffect(() => {
-    if (runOnRenders.value !== StateValue.effectValHasEffects) {
+    if (runOnRenders.value !== StateValue.hasEffects) {
       return;
     }
 
@@ -111,13 +106,13 @@ export function EditEntryComponent(props: EditEntryComponentProps) {
 
     runEffects(context.effects, effectsArgsObj);
 
-    const { cleanupEffects } = context;
+    // const { cleanupEffects } = context;
 
-    if (cleanupEffects.length) {
-      return () => {
-        runEffects(cleanupEffects, effectsArgsObj);
-      };
-    }
+    // if (cleanupEffects.length) {
+    //   return () => {
+    //     runEffects(cleanupEffects, effectsArgsObj);
+    //   };
+    // }
 
     // redundant - [tsserver 7030] [W] Not all code paths return a value.
     return;
@@ -177,14 +172,14 @@ export function EditEntryComponent(props: EditEntryComponentProps) {
         updateDefinitionsAndDataOnline,
       }}
     >
-      {commonState.value === "submitting" && <SubmittingOverlay />}
+      {submission.value === StateValue.submitting && <SubmittingOverlay />}
 
       <Modal
         id="edit-entry-modal"
         open={true}
         closeIcon={true}
         onClose={() => {
-          if (commonState.value === "submitting") {
+          if (submission.value === StateValue.submitting) {
             return;
           }
 
@@ -205,8 +200,12 @@ export function EditEntryComponent(props: EditEntryComponentProps) {
             </div>
           </Modal.Header>
 
-          <SubmissionSuccessResponseComponent state={submissionResponse} />
-          <SubmissionErrorsComponent state={submissionResponse} />
+          <SubmissionSuccessResponseComponent
+            state={submission}
+            dispatch={dispatch}
+          />
+
+          <SubmissionErrorsComponent dispatch={dispatch} state={submission} />
 
           <Modal.Content>
             <Form>
@@ -278,11 +277,11 @@ function ErrorBoundaryFallBack() {
 
 function SubmissionSuccessResponseComponent({
   state,
+  dispatch,
 }: {
-  state: SubmissionResponseState;
+  state: Submission;
+  dispatch: DispatchType;
 }) {
-  const { dispatch } = useContext(EditEnryContext);
-
   if (state.value === "submissionSuccess") {
     const {
       submissionSuccess: {
@@ -330,7 +329,6 @@ function SubmissionSuccessResponseComponent({
 
 function DataComponent(props: DataComponentProps) {
   const { id, state } = props;
-
   const { dispatch } = useContext(EditEnryContext);
 
   const formValue =
@@ -541,10 +539,15 @@ function DefinitionComponent(props: DefinitionComponentProps) {
 
 function SubmissionErrorsComponent({
   state,
+  dispatch,
 }: {
-  state: SubmissionResponseState;
+  state: Submission;
+  dispatch: DispatchType;
 }) {
-  const { dispatch } = useContext(EditEnryContext);
+  if (state.value === StateValue.inactive) {
+    return null;
+  }
+
   let errors: string | null = null;
   let id = "";
 
@@ -576,20 +579,20 @@ function SubmissionErrorsComponent({
 
 function getIdOfSubmittingDefinition(
   id: string,
-  editingData: PrimaryState["editingData"],
-  editingDefinition: StateMachine["primaryState"]["editingDefinition"],
+  editingData: StateMachine["editingData"],
+  editingDefinition: StateMachine["editingDefinition"],
 ) {
   if (editingData.value === "active") {
     return false;
   }
 
-  if (editingDefinition.value !== EDITING_DEFINITION_MULTIPLE) {
+  if (editingDefinition.value !== StateValue.multiple) {
     return true;
   }
 
   const {
     context: { mostRecentlyChangedDefinitionId },
-  } = editingDefinition[EDITING_DEFINITION_MULTIPLE];
+  } = editingDefinition.multiple;
 
   return id === mostRecentlyChangedDefinitionId;
 }

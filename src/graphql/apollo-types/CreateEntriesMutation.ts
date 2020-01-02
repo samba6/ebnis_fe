@@ -56,6 +56,7 @@ export interface CreateEntriesMutation_createEntries_errors_errors_dataObjectsEr
 export interface CreateEntriesMutation_createEntries_errors_errors_dataObjectsErrors {
   __typename: "DataObjectsErrors";
   index: number;
+  clientId: string | null;
   errors: CreateEntriesMutation_createEntries_errors_errors_dataObjectsErrors_errors;
 }
 

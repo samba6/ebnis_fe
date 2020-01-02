@@ -175,6 +175,7 @@ export interface UploadOfflineExperiencesMutation_saveOfflineExperiences_entries
 export interface UploadOfflineExperiencesMutation_saveOfflineExperiences_entriesErrors_errors_dataObjectsErrors {
   __typename: "DataObjectsErrors";
   index: number;
+  clientId: string | null;
   errors: UploadOfflineExperiencesMutation_saveOfflineExperiences_entriesErrors_errors_dataObjectsErrors_errors;
 }
 

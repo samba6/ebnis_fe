@@ -41,7 +41,11 @@ import { GraphQLError } from "graphql";
 import { toISODatetimeString } from "../components/NewEntry/new-entry.utils";
 import { cleanupRanQueriesFromCache } from "../apollo-cache/cleanup-ran-queries-from-cache";
 import { makeOfflineId } from "../constants";
-import { CreateOnlineEntryMutationVariables } from "../graphql/apollo-types/CreateOnlineEntryMutation";
+import {
+  CreateOnlineEntryMutationVariables,
+  CreateOnlineEntryMutation,
+  CreateOnlineEntryMutation_createEntry_errors,
+} from "../graphql/apollo-types/CreateOnlineEntryMutation";
 import {
   CreateOnlineEntryMutationFnOptions,
   CreateEntryOnlineMutationResult,
@@ -665,7 +669,7 @@ test("not editing data, editing multiple definitions, server error", async () =>
   expect(domInputB.classList).not.toContain("definition--success");
 });
 
-test("editing data, editing definitions", async () => {
+test("editing data, editing definitions, some data and definitions errors", async () => {
   const serverResponse = {
     updateDefinitions: {
       definitions: [
@@ -674,11 +678,9 @@ test("editing data, editing definitions", async () => {
             id: "int",
           },
         } as UpdateDefinitions_updateDefinitions_definitions,
-
         {
           errors: {
             id: "dec",
-
             errors: {
               name: "n",
               definition: "",
@@ -691,7 +693,6 @@ test("editing data, editing definitions", async () => {
     updateDataObjects: [
       {
         id: "date",
-
         dataObject: {
           id: "date",
           data: `{"date":"2000-01-02"}`,
@@ -699,7 +700,6 @@ test("editing data, editing definitions", async () => {
       },
       {
         id: "time",
-
         dataObject: {
           id: "time",
           data: `{"datetime":"2000-01-02T01:01:01.000Z"}`,
@@ -707,7 +707,6 @@ test("editing data, editing definitions", async () => {
       },
       {
         id: "multi",
-
         dataObject: {
           id: "multi",
           data: `{"multi_line_text":"mu"}`,
@@ -715,12 +714,10 @@ test("editing data, editing definitions", async () => {
       },
       {
         id: "text",
-
         stringError: "n",
       } as UpdateDataObjects_updateDataObjects,
       {
         id: "dec",
-
         fieldErrors: {
           __typename: "DataDefinitionError",
           data: "d",
@@ -824,67 +821,187 @@ test("editing data, editing definitions", async () => {
     },
   });
 
+  /**
+   * And that form will be submitted twice:
+   * first time: server returns invalid response
+   * 2nd time: valid response but with some data and definitions errors
+   */
+  mockUpdateDefinitionsAndDataOnline
+    .mockResolvedValueOnce({})
+    .mockResolvedValueOnce({
+      data: serverResponse,
+    });
+
+  /**
+   * When component is rendered
+   */
   render(ui);
 
+  /**
+   * Then int definition submit button should not be visible
+   */
+  expect(getDefinitionSubmit("int")).toBeNull();
+
+  /**
+   * When edit button of int definition is clicked
+   */
   getDefinitionEdit("int").click();
+
+  /**
+   * And int definition input field is completed with new value
+   */
   getDefinitionInput("int", "in");
-  // primary state.notEdiitngData
+
+  /**
+   * Then int definition submit button should be visible
+   */
   expect(getDefinitionSubmit("int")).not.toBeNull();
 
+  /**
+   * And general submit button should not be visible
+   */
   expect(getSubmit()).toBeNull();
+
+  /**
+   * When int data input is completed with new data
+   */
   const $int = getDataInput("int", "2");
+
+  /**
+   * And date data input is completed with new data
+   */
   const $date = getDataInput("date", "2000-01-02");
-  // primary state editingData
+
+  /**
+   * Then int definition submit button should no longer be visible
+   */
   expect(getDefinitionSubmit("int")).toBeNull();
+
+  /**
+   * And general submit button should now be visible
+   */
   expect(getSubmit()).not.toBeNull();
 
-  // revert back to int default
+  /**
+   * When int data input is completed with its original value
+   */
   fillField($int, "1");
+
+  /**
+   * Then general submit button should remain visible
+   */
   expect(getSubmit()).not.toBeNull();
 
-  // revert back to date default
+  /**
+   * But when date input is completed with its original value
+   */
   fillField($date, date);
 
-  // primary state.notEditingData
+  /**
+   * Then general submit button should no longer be visible
+   */
   expect(getSubmit()).toBeNull();
+
+  /**
+   * And int definition submit button should now be visible again
+   */
   expect(getDefinitionSubmit("int")).not.toBeNull();
 
+  /**
+   * When int definition input is completed with its original value
+   */
   getDefinitionInput("int", "int");
-  // int state.editing.unchanged
+
+  /**
+   * Then int definition submit button should no longer be visible
+   */
   expect(getDefinitionSubmit("int")).toBeNull();
 
+  /**
+   * When datetime data input is completed with new value
+   */
   getDataInput("time", "2000-01-02T01:01:01.000Z");
-  // primary.editingData
+
+  /**
+   * Then general submit button should become visible again
+   */
   const $submit = getSubmit();
 
+  /**
+   * When data inputs for date, multi_line_text, single_line_text and decimal
+   * are completed with new values
+   */
   fillField($date, "2000-01-02");
   getDataInput("multi", "mu");
   getDataInput("text", "te");
   getDataInput("dec", "0.9");
-  const $fieldDate = getDataField("date");
-  const $fieldTime = getDataField("time");
-  const $fieldMulti = getDataField("multi");
-  const $fieldText = getDataField("text");
-  const $fieldDec = getDataField("dec");
+
+  /**
+   * And int definition input is completed with new value
+   */
   getDefinitionInput("int", "in");
+
+  /**
+   * And edit button of decimal definition is clicked
+   */
   getDefinitionEdit("dec").click();
+
+  /**
+   * And decimal definition input is completed with new value
+   */
   getDefinitionInput("dec", "de");
 
-  // let's simulate an unexpected server response
-  mockUpdateDefinitionsAndDataOnline.mockResolvedValue({});
+  /**
+   * Then error response UI should not be visible
+   */
   expect(getOtherErrorsResponseDom()).toBeNull();
+
+  /**
+   * When general submit button is clicked
+   */
   $submit.click();
+
+  /**
+   * Then error UI should now be visible
+   */
   await waitForElement(getOtherErrorsResponseDom);
 
-  const $fieldInt = getDefinitionField("int");
+  /**
+   * And data field date should not show success UI
+   */
+  const $fieldDate = getDataField("date");
+  expect($fieldDate.classList).not.toContain("data--success");
+
+  /**
+   * And data field datetime should not show success UI
+   */
+  const $fieldTime = getDataField("time");
+  expect($fieldTime.classList).not.toContain("data--success");
+
+  /**
+   * And data field multi_line_text should not show success UI
+   */
+  const $fieldMulti = getDataField("multi");
+  expect($fieldMulti.classList).not.toContain("data--success");
+
+  /**
+   * And data field single_line_text should not show error UI
+   */
+  const $fieldText = getDataField("text");
+  expect($fieldText.classList).not.toContain("error");
+
+  /**
+   * And data field decimal should not show error UI
+   */
+  const $fieldDec = getDataField("dec");
+  expect($fieldDec.classList).not.toContain("error");
+
   expect(getDefinitionError("dec")).toBeNull();
   expect(getDataError("dec")).toBeNull();
-  expect($fieldDate.classList).not.toContain("data--success");
-  expect($fieldTime.classList).not.toContain("data--success");
+
+  const $fieldInt = getDefinitionField("int");
   expect($fieldInt.classList).not.toContain("definition--success");
-  expect($fieldMulti.classList).not.toContain("data--success");
-  expect($fieldDec.classList).not.toContain("error");
-  expect($fieldText.classList).not.toContain("error");
+
   expect(getDataError("text")).toBeNull();
 
   // let's simulate form error
@@ -904,10 +1021,6 @@ test("editing data, editing definitions", async () => {
   // we give the right input now, so no form error
   getDefinitionInput("int", "in");
 
-  mockUpdateDefinitionsAndDataOnline.mockResolvedValue({
-    data: serverResponse,
-  });
-
   $submit.click();
   // primary.submitting
   expect(getSubmittingOverlay()).not.toBeNull();
@@ -915,7 +1028,7 @@ test("editing data, editing definitions", async () => {
   $responseMessage = await waitForElement(getSubmissionSuccessResponseDom);
 
   const mock = mockUpdateDefinitionsAndDataOnline.mock
-    .calls[0][0] as ToVariables<UpdateDefinitionAndDataVariables>;
+    .calls[1][0] as ToVariables<UpdateDefinitionAndDataVariables>;
 
   expect(mock.variables).toEqual({
     definitionsInput: {
@@ -1193,7 +1306,7 @@ test("not editing data, editing definition, apollo errors", async () => {
   expect($response).not.toBeNull();
 });
 
-test("editing offline entry, one data object updated, one not updated, submitting online", async () => {
+test.only("editing offline entry, one data object updated, one not updated, submitting online", async () => {
   const definition1Id = "int";
   const data1OnlineId = "d1on";
   const data1OfflineId = "d1of";
@@ -1229,41 +1342,9 @@ test("editing offline entry, one data object updated, one not updated, submittin
   /**
    * And there are other offline items in the system
    */
-
-  /**
-   * And server will respond with success on submission
-   */
-  const serverResponse = {
-    data: {
-      createEntry: {
-        entry: {
-          id: "en",
-          experienceId,
-          clientId: offlineEntryId,
-
-          dataObjects: [
-            {
-              definitionId: definition1Id,
-              id: data1OnlineId,
-              clientId: data1OfflineId,
-              data: `{"integer":2}`,
-            },
-            {
-              definitionId: definition2Id,
-              id: data2OnlineId,
-              clientId: data2OfflineId,
-              data: `{"decimal":1.1}`,
-            },
-          ],
-        },
-      },
-    },
-  } as CreateEntryOnlineMutationResult;
-
   const { ui, mockCreateEntryOnline, mockLayoutDispatch } = makeComp({
     props: {
       entry: offlineEntry as EntryFragment,
-
       experience: {
         id: experienceId,
 
@@ -1284,11 +1365,63 @@ test("editing offline entry, one data object updated, one not updated, submittin
   });
 
   /**
+   * And form will be submitted 4 times and server will respond:
+   * 1 - invalid response
+   * 2 - javascript exception
+   * 3 - entry creation error
+   * 4 - success
+   */
+
+  mockCreateEntryOnline
+    .mockResolvedValueOnce({}) // invalid
+    .mockResolvedValueOnce(new Error("")) // exception
+    .mockResolvedValueOnce({
+      data: {
+        createEntry: {
+          errors: {
+            dataObjectsErrors: [
+              {
+                index: 0,
+                clientId: data1OfflineId,
+                errors: {
+                  data: "is invalid",
+                },
+              },
+            ],
+          } as CreateOnlineEntryMutation_createEntry_errors,
+        },
+      } as CreateOnlineEntryMutation,
+    }) // error
+    .mockResolvedValueOnce({
+      data: {
+        createEntry: {
+          entry: {
+            id: "en",
+            experienceId,
+            clientId: offlineEntryId,
+            dataObjects: [
+              {
+                definitionId: definition1Id,
+                id: data1OnlineId,
+                clientId: data1OfflineId,
+                data: `{"integer":2}`,
+              },
+              {
+                definitionId: definition2Id,
+                id: data2OnlineId,
+                clientId: data2OfflineId,
+                data: `{"decimal":1.1}`,
+              },
+            ],
+          },
+        },
+      },
+    } as CreateEntryOnlineMutationResult); // success
+
+  /**
    * When the component is launched
    */
   render(ui);
-
-  mockCreateEntryOnline.mockResolvedValue(serverResponse);
 
   /**
    * And we update entry data 1 to a new value
@@ -1300,17 +1433,70 @@ test("editing offline entry, one data object updated, one not updated, submittin
    */
   getSubmit().click();
 
-  // expect(domDataInput.classList).toContain("data--success");
+  /**
+   * Then error UI should not be visible
+   */
+  expect(getOtherErrorsResponseDom()).toBeNull();
 
   /**
-   * Then message showing successful submission should be visible
+   * But after a while, error UI should be visible
+   */
+  await waitForElement(getOtherErrorsResponseDom);
+
+  /**
+   * When form is submitted a second time
+   */
+  getSubmit().click();
+
+  /**
+   * Then error UI should not be visible
+   */
+  expect(getOtherErrorsResponseDom()).toBeNull();
+
+  /**
+   * But after a while, error UI should be visible
+   */
+  await waitForElement(getOtherErrorsResponseDom);
+
+  /**
+   * When form is submitted a third time
+   */
+  getSubmit().click();
+
+  /**
+   * Then general error UI should not be visible
+   */
+  expect(getOtherErrorsResponseDom()).toBeNull();
+
+  /**
+   * And data 1 error UI should not be visible
+   */
+  expect(getDataError(data1OfflineId)).toBeNull();
+
+  /**
+   * But after a while, data 1 error UI should be visible
+   */
+  await waitForElement(() => getDataError(data1OfflineId));
+
+  /**
+   * When form is submitted the fourth time
+   */
+  getSubmit().click();
+
+  /**
+   * And success UI should not be visible
+   */
+  expect(getSubmissionSuccessResponseDom()).toBeNull();
+
+  /**
+   * But after a while, success UI should be visible
    */
   await waitForElement(getSubmissionSuccessResponseDom);
 
   /**
    * And correct data should have been uploaded to the server
    */
-  const mock = mockCreateEntryOnline.mock.calls[0][0] as ToVariables<
+  const mock = mockCreateEntryOnline.mock.calls[3][0] as ToVariables<
     CreateOnlineEntryMutationVariables
   >;
 
@@ -1337,7 +1523,9 @@ test("editing offline entry, one data object updated, one not updated, submittin
   /**
    * And offline entry counts should decrease in cache
    */
-  expect(mockDecrementOfflineEntriesCountForExperience).toHaveBeenCalled();
+  expect(mockDecrementOfflineEntriesCountForExperience).toHaveBeenCalledTimes(
+    1,
+  );
 
   /**
    * And cache should be flushed from memory
@@ -1345,14 +1533,14 @@ test("editing offline entry, one data object updated, one not updated, submittin
   expect(mockPersistFunc).toHaveBeenCalledTimes(1);
 
   /**
-   * And offline items count has been properly drawn down
+   * And offline items count should be properly draw down
    */
   expect(mockLayoutDispatch).toHaveBeenCalledWith({
     type: LayoutActionType.REFETCH_OFFLINE_ITEMS_COUNT,
   });
 
   /**
-   * And the old data fields have been replaced with updated data from server
+   * And the old data fields should be replaced with updated data from server
    */
   expect(getDataInput(data1OfflineId)).toBeNull();
   expect(getDataInput(data2OfflineId)).toBeNull();

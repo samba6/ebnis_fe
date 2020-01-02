@@ -16,6 +16,7 @@ export interface CreateEntryErrorsFragment_dataObjectsErrors_errors {
 export interface CreateEntryErrorsFragment_dataObjectsErrors {
   __typename: "DataObjectsErrors";
   index: number;
+  clientId: string | null;
   errors: CreateEntryErrorsFragment_dataObjectsErrors_errors;
 }
 
