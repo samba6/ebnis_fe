@@ -122,10 +122,6 @@ export function makePageTitle(exp: ExperienceFragment | null | undefined) {
   return "[New Entry] " + ((exp && exp.title) || "entry");
 }
 
-export function formFieldNameFromIndex(index: number) {
-  return `fields[${index}]`;
-}
-
 export const reducer: Reducer<StateMachine, Action> = (state, action) =>
   wrapReducer<StateMachine, Action>(
     state,

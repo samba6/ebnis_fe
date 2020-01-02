@@ -669,7 +669,7 @@ test("not editing data, editing multiple definitions, server error", async () =>
   expect(domInputB.classList).not.toContain("definition--success");
 });
 
-test("editing data, editing definitions, some data and definitions errors", async () => {
+test("editing data, editing definitions, some data and definitions errors, exception", async () => {
   const serverResponse = {
     updateDefinitions: {
       definitions: [
@@ -822,12 +822,14 @@ test("editing data, editing definitions, some data and definitions errors", asyn
   });
 
   /**
-   * And that form will be submitted twice:
-   * first time: server returns invalid response
-   * 2nd time: valid response but with some data and definitions errors
+   * And that form will be submitted 3 times and server will respond with:
+   * 1: invalid response
+   * 2: javascript exception
+   * 3: valid response but with some data and definitions errors
    */
   mockUpdateDefinitionsAndDataOnline
     .mockResolvedValueOnce({})
+    .mockRejectedValueOnce(new Error("err"))
     .mockResolvedValueOnce({
       data: serverResponse,
     });
@@ -952,17 +954,33 @@ test("editing data, editing definitions, some data and definitions errors", asyn
   getDefinitionInput("dec", "de");
 
   /**
+   * When form is submitted 1st time
+   */
+  $submit.click();
+
+  /**
    * Then error response UI should not be visible
    */
   expect(getOtherErrorsResponseDom()).toBeNull();
 
   /**
-   * When general submit button is clicked
+   * Then after a while, error UI should now be visible
+   */
+  await waitForElement(getOtherErrorsResponseDom);
+
+
+  /**
+   * When form is submitted 2nd time
    */
   $submit.click();
 
   /**
-   * Then error UI should now be visible
+   * Then error response UI should not be visible
+   */
+  expect(getOtherErrorsResponseDom()).toBeNull();
+
+  /**
+   * Then after a while, error UI should now be visible
    */
   await waitForElement(getOtherErrorsResponseDom);
 

@@ -22,7 +22,7 @@ module.exports = {
     "!src/components/ExperienceNewEntryParent/loadables.ts",
     "!src/components/MyExperiences/preload-entries.ts",
     "!src/constants/apollo-schema.ts",
-    "!src/components/ExperienceDefinition/resolvers.ts",
+    "!src/**/*resolvers.ts",
     "!src/components/Layout/pre-fetch-experiences.ts",
     "!src/components/Experience/loadables.ts",
     "!src/components/EditEntry/edit-entry.ts*",

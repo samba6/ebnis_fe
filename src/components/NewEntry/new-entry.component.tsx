@@ -89,13 +89,13 @@ export function NewEntryComponent(props: NewEntryComponentProps) {
 
     runEffects(context.effects, effectsArgsObj);
 
-    const { cleanupEffects } = context;
+    // const { cleanupEffects } = context;
 
-    if (cleanupEffects.length) {
-      return () => {
-        runEffects(cleanupEffects, effectsArgsObj);
-      };
-    }
+    // if (cleanupEffects.length) {
+    //   return () => {
+    //     runEffects(cleanupEffects, effectsArgsObj);
+    //   };
+    // }
 
     // redundant - [tsserver 7030] [W] Not all code paths return a value.
     return;
@@ -316,7 +316,7 @@ interface DataComponentProps {
 
 type E = React.ChangeEvent<HTMLInputElement>;
 
-// ist ignore next:
+// istanbul ignore next:
 export default (props: NewEntryCallerProps) => {
   const [createOnlineEntry] = useCreateOnlineEntryMutation();
   const [createOfflineEntry] = useCreateOfflineEntryMutation();
