@@ -4,39 +4,26 @@ import "@marko/testing-library/cleanup-after-each";
 import { render, fireEvent, act } from "@testing-library/react";
 import { MyExperiences } from "../components/MyExperiences/my-experiences.component";
 import {
-  Props,
+  ComponentProps,
   reducer,
   ActionTypes,
-  IStateMachine,
+  StateMachine,
   Action,
 } from "../components/MyExperiences/my-experiences.utils";
 import { renderWithRouter, fillField } from "./test_utils";
-import {
-  ExperienceConnectionFragment,
-  ExperienceConnectionFragment_edges_node,
-} from "../graphql/apollo-types/ExperienceConnectionFragment";
-import {
-  LayoutUnchangingProvider,
-  LayoutExperienceProvider,
-} from "../components/Layout/layout-providers";
-import {
-  ILayoutUnchangingContextValue,
-  ILayoutContextExperienceValue,
-} from "../components/Layout/layout.utils";
+import { ExperienceConnectionFragment_edges_node } from "../graphql/apollo-types/ExperienceConnectionFragment";
+import { PrefetchValues } from "../components/Layout/layout.utils";
 import { cleanUpOnSearchExit } from "../components/MyExperiences/my-experiences.injectables";
-import {
-  GetExperienceConnectionMini_getExperiences,
-  GetExperienceConnectionMini_getExperiences_edges,
-} from "../graphql/apollo-types/GetExperienceConnectionMini";
-import { useQuery } from "@apollo/react-hooks";
-import { GetExperienceConnectionMiniQueryResult } from "../graphql/get-experience-connection-mini.query";
+import { ApolloError } from "apollo-client";
+import { defaultLoadingDomId } from "../components/Loading/loading-dom";
 
 jest.mock("../components/SidebarHeader/sidebar-header.component", () => ({
   SidebarHeader: jest.fn(() => null),
 }));
 
+const mockLoadingId = defaultLoadingDomId;
 jest.mock("../components/Loading/loading", () => ({
-  Loading: () => <div id="loading-a-a" />,
+  Loading: () => <div id={mockLoadingId} />,
 }));
 
 jest.mock("../components/MyExperiences/my-experiences.injectables", () => ({
@@ -44,16 +31,12 @@ jest.mock("../components/MyExperiences/my-experiences.injectables", () => ({
   searchDebounceTimeoutMs: 0,
 }));
 
-jest.mock("@apollo/react-hooks");
-
 const mockCleanUpOnSearchExit = cleanUpOnSearchExit as jest.Mock;
-const mockUseQuery = useQuery as jest.Mock;
 
 describe("component", () => {
   beforeEach(() => {
     jest.useFakeTimers();
     mockCleanUpOnSearchExit.mockClear();
-    mockUseQuery.mockReset();
   });
 
   afterEach(() => {
@@ -67,25 +50,16 @@ describe("component", () => {
 
     render(ui);
 
-    expect(document.getElementById("loading-a-a")).not.toBeNull();
+    expect(document.getElementById(mockLoadingId)).not.toBeNull();
     expect(document.getElementById("new-experience-button")).toBeNull();
   });
 
   it("does not render empty experiences", () => {
-    const { ui } = makeComp({
-      queryResults: {
-        getExperiences: {
-          edges: [] as GetExperienceConnectionMini_getExperiences_edges[],
-        } as GetExperienceConnectionMini_getExperiences,
-      },
-    });
+    const { ui } = makeComp();
 
     render(ui);
-
-    expect(document.getElementById("loading-a-a")).toBeNull();
-
+    expect(document.getElementById(mockLoadingId)).toBeNull();
     expect(document.getElementById("experiences-container")).toBeNull();
-
     expect(document.getElementById("no-experiences-info")).not.toBeNull();
   });
 
@@ -94,29 +68,22 @@ describe("component", () => {
      * Given there are experiences in the system
      */
 
-    const getExperiences = {
-      edges: [
-        {
-          node: {
-            id: "1",
-            description: "d1",
-            title: "t1",
-          },
-        },
-
-        {
-          node: {
-            id: "2",
-            title: "t2",
-            description: null,
-          },
-        },
-      ],
-    } as ExperienceConnectionFragment;
+    const experiences = [
+      {
+        id: "1",
+        description: "d1",
+        title: "t1",
+      },
+      {
+        id: "2",
+        title: "t2",
+        description: null,
+      },
+    ] as ExperienceConnectionFragment_edges_node[];
 
     const { ui } = makeComp({
       queryResults: {
-        getExperiences,
+        experiences,
       },
     });
 
@@ -224,28 +191,21 @@ describe("component", () => {
      * Given there is one saved and one unsaved experience in the system
      */
 
-    const getExperiences = {
-      edges: [
-        {
-          node: {
-            id: "1",
-            title: "1",
-          },
-        },
-
-        {
-          node: {
-            id: "2",
-            title: "2",
-            hasUnsaved: true,
-          },
-        },
-      ],
-    } as ExperienceConnectionFragment;
+    const experiences = [
+      {
+        id: "1",
+        title: "1",
+      },
+      {
+        id: "2",
+        title: "2",
+        hasUnsaved: true,
+      },
+    ] as ExperienceConnectionFragment_edges_node[];
 
     const { ui, mockLayoutDispatch } = makeComp({
       queryResults: {
-        getExperiences,
+        experiences,
       },
     });
 
@@ -276,22 +236,18 @@ describe("component", () => {
 
   it("does not load entries in background when experiences are loaded but empty", () => {
     const { ui, mockLayoutDispatch } = makeComp({
-      queryResults: {
-        getExperiences: {
-          edges: [] as GetExperienceConnectionMini_getExperiences_edges[],
-        } as GetExperienceConnectionMini_getExperiences,
-      },
+      queryResults: { experiences: [] },
     });
 
     render(ui);
-
     jest.runAllTimers();
-
     expect(mockLayoutDispatch).not.toHaveBeenCalled();
   });
 
   it("renders error ui if we are unable to get experiences", () => {
-    const { ui } = makeComp();
+    const { ui } = makeComp({
+      queryResults: { error: {} as any },
+    });
 
     /**
      * When we use the component
@@ -310,29 +266,22 @@ describe("component", () => {
      * Given there are experiences in the system
      */
 
-    const getExperiences = {
-      edges: [
-        {
-          node: {
-            id: "id1",
-            description: "d1",
-            title: "t1",
-          },
-        },
-
-        {
-          node: {
-            id: "id2",
-            title: "t2",
-            description: null,
-          },
-        },
-      ],
-    } as ExperienceConnectionFragment;
+    const experiences = [
+      {
+        id: "id1",
+        description: "d1",
+        title: "t1",
+      },
+      {
+        id: "id2",
+        title: "t2",
+        description: null,
+      },
+    ] as ExperienceConnectionFragment_edges_node[];
 
     const { ui, mockNavigate } = makeComp({
       queryResults: {
-        getExperiences,
+        experiences,
       },
     });
 
@@ -430,27 +379,19 @@ describe("component", () => {
      * Given there is saved experience in the system
      */
 
-    const getExperiences = {
-      edges: [
-        {
-          node: {
-            id: "1",
-            title: "1",
-          },
-        },
-      ],
-    } as ExperienceConnectionFragment;
+    const experiences = [
+      {
+        id: "1",
+        title: "1",
+      },
+    ] as ExperienceConnectionFragment_edges_node[];
 
     const { ui, mockLayoutDispatch } = makeComp({
       queryResults: {
-        getExperiences,
+        experiences,
       },
 
-      contexts: {
-        layoutContextMyExpriencesValue: {
-          fetchExperience: "already-fetched",
-        },
-      },
+      fetchExperience: "already-fetched",
     });
 
     /**
@@ -483,7 +424,7 @@ describe("reducer", () => {
   it("prepares experiences for search", () => {
     const state = {
       context: {},
-    } as IStateMachine;
+    } as StateMachine;
 
     const experiences = [
       {
@@ -505,74 +446,34 @@ describe("reducer", () => {
 
 ////////////////////////// helper funcs ////////////////////////////
 
-const MyExperiencesP = MyExperiences as ComponentType<Partial<Props>>;
+const MyExperiencesP = MyExperiences as ComponentType<Partial<ComponentProps>>;
 
-const defaultArgs: Args = {
-  contexts: {
-    layoutContextMyExpriencesValue: {
-      fetchExperience: "never-fetched",
-    },
-  },
-
-  queryResults: {},
-};
-
-function makeComp(args: Args = {} as Args) {
-  args = { ...defaultArgs, ...args };
+function makeComp(
+  { fetchExperience = "never-fetched", queryResults }: Args = {} as Args,
+) {
   const { Ui, ...rest } = renderWithRouter(MyExperiencesP);
+  queryResults = { ...{ experiences: [] }, ...queryResults };
 
   const mockLayoutDispatch = jest.fn();
 
-  const queryResults = args.queryResults as GetExperiencesQueryResult;
-  const results = {
-    ...queryResults,
-  } as GetExperienceConnectionMiniQueryResult;
-
-  if (queryResults.getExperiences) {
-    results.data = {
-      getExperiences: queryResults.getExperiences,
-    };
-  }
-
-  mockUseQuery.mockReturnValue(results);
-
   return {
     ui: (
-      <LayoutUnchangingProvider
-        value={
-          {
-            layoutDispatch: mockLayoutDispatch as any,
-          } as ILayoutUnchangingContextValue
-        }
-      >
-        <LayoutExperienceProvider
-          value={
-            (args.contexts as Contexts)
-              .layoutContextMyExpriencesValue as ILayoutContextExperienceValue
-          }
-        >
-          <Ui />
-        </LayoutExperienceProvider>
-      </LayoutUnchangingProvider>
+      <Ui
+        {...queryResults}
+        fetchExperience={fetchExperience as any}
+        layoutDispatch={mockLayoutDispatch}
+      />
     ),
-
     mockLayoutDispatch,
-
     ...rest,
   };
 }
 
-interface Contexts {
-  layoutContextMyExpriencesValue?: ILayoutContextExperienceValue;
-}
-
 interface Args {
-  contexts?: Contexts;
-
-  queryResults?: GetExperiencesQueryResult;
-}
-
-interface GetExperiencesQueryResult {
-  loading?: boolean;
-  getExperiences?: GetExperienceConnectionMini_getExperiences;
+  fetchExperience?: PrefetchValues;
+  queryResults?: {
+    loading?: boolean;
+    experiences?: ExperienceConnectionFragment_edges_node[];
+    error?: ApolloError;
+  };
 }

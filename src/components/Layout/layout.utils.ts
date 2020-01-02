@@ -138,6 +138,7 @@ const firstEffect: FirstEffect["func"] = async ({
   if (cache && restoreCacheOrPurgeStorage) {
     try {
       await restoreCacheOrPurgeStorage(persistor);
+      /* eslint-disable-next-line no-empty*/
     } catch (error) {}
 
     dispatch({
@@ -211,13 +212,10 @@ export function getEffectArgsFromKeys(
   effectArgKeys: (keyof EffectFunctionsArgs)[],
   effectsArgsObj: EffectFunctionsArgs,
 ) {
-  return effectArgKeys.reduce(
-    (acc, k) => {
-      acc[k] = effectsArgsObj[k];
-      return acc;
-    },
-    {} as EffectFunctionsArgs,
-  );
+  return effectArgKeys.reduce((acc, k) => {
+    acc[k] = effectsArgsObj[k];
+    return acc;
+  }, {} as EffectFunctionsArgs);
 }
 
 ////////////////////////// END EFFECT FUNCTIONS SECTION /////////////////
@@ -434,18 +432,18 @@ export type LayoutAction =
       type: LayoutActionType.EXPERIENCES_TO_PREFETCH;
       ids: string[] | null;
     }
-  | {
+  | ({
       type: LayoutActionType.CONNECTION_CHANGED;
-    } & ConnectionChangedPayload
+    } & ConnectionChangedPayload)
   | {
       type: LayoutActionType.DONE_FETCHING_EXPERIENCES;
     }
   | {
       type: LayoutActionType.REFETCH_OFFLINE_ITEMS_COUNT;
     }
-  | {
+  | ({
       type: LayoutActionType.PUT_EFFECT_FUNCTIONS_ARGS;
-    } & EffectFunctionsArgs;
+    } & EffectFunctionsArgs);
 
 interface ExperiencesToPrefetchPayload {
   ids: string[] | null;
@@ -473,12 +471,12 @@ export interface StateMachine {
     prefetchExperiences: PrefetchExperiencesState;
   };
 
-  readonly effects: ({
+  readonly effects: {
     runOnRenders: EffectState | { value: EffectValueNoEffect };
     runOnce: {
       subscribeToObservable?: SubscribeToObservableState;
     };
-  }) & {
+  } & {
     context: EffectContext;
   };
 }
@@ -495,6 +493,10 @@ export type SubscribeToObservableState = RunOnceEffectState<
 type PrefetchValNeverFetched = "never-fetched";
 type PrefetchValFetchNow = "fetch-now";
 type PrefetchValAlreadyFetched = "already-fetched";
+export type PrefetchValues =
+  | PrefetchValNeverFetched
+  | PrefetchValFetchNow
+  | PrefetchValAlreadyFetched;
 
 type PrefetchExperiencesState =
   | {
@@ -526,7 +528,7 @@ export interface ILayoutUnchangingContextValue {
 }
 
 export interface ILayoutContextExperienceValue {
-  fetchExperience: PrefetchExperiencesState["value"];
+  fetchExperience: PrefetchValues;
 }
 
 interface ILocationContextValue extends WindowLocation {
@@ -544,7 +546,8 @@ type EffectsList = (
   | GetOfflineItemsCountEffect
   | PrefetchExperiencesEffect
   | FirstEffect
-  | SubscribeToObservableEffect)[];
+  | SubscribeToObservableEffect
+)[];
 
 interface EffectState {
   value: EffectValueHasEffects;

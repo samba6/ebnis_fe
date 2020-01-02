@@ -40,6 +40,12 @@
         "jest/valid-expect-in-promise": "off",
         "jest/valid-expect": "off"
       }
+    },
+    {
+      "files": ["**/*.tsx"],
+      "rules": {
+        "react/prop-types": "off"
+      }
     }
   ],
   "settings": {},

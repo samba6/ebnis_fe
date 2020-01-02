@@ -10,7 +10,7 @@ import React, {
 import Icon from "semantic-ui-react/dist/commonjs/elements/Icon";
 import "./my-experiences.styles.scss";
 import {
-  Props,
+  ComponentProps,
   ExperienceProps,
   mapSavedExperiencesToIds,
   DispatchProvider,
@@ -20,6 +20,7 @@ import {
   initState,
   SearchResults,
   SearchComponentProps,
+  CallerProps,
 } from "./my-experiences.utils";
 import { EXPERIENCE_DEFINITION_URL } from "../../routes";
 import { makeExperienceRoute } from "../../constants/experience-route";
@@ -28,7 +29,6 @@ import { setDocumentTitle, makeSiteTitle } from "../../constants";
 import { MY_EXPERIENCES_TITLE } from "../../constants/my-experiences-title";
 import { Link } from "../Link";
 import {
-  ExperienceConnectionFragment,
   ExperienceConnectionFragment_edges,
   ExperienceConnectionFragment_edges_node,
 } from "../../graphql/apollo-types/ExperienceConnectionFragment";
@@ -59,40 +59,27 @@ import { SidebarHeader } from "../SidebarHeader/sidebar-header.component";
 
 const SearchComponent = memo(SearchComponentUnMemo, SearchComponentPropsDiffFn);
 
-export function MyExperiences(props: Props) {
-  const { navigate } = props;
-  const { data, loading } = useQuery<
-    GetExperienceConnectionMini,
-    GetExperienceConnectionMiniVariables
-  >(GET_EXPERIENCES_MINI_QUERY, {
-    variables: getExperienceConnectionMiniVariables,
-  });
-
-  const getExperiences = data && data.getExperiences;
-
-  const experiences = useMemo(() => {
-    if (!getExperiences) {
-      return [];
-    }
-
-    return (getExperiences.edges as ExperienceConnectionFragment_edges[]).map(
-      edge => edge.node as ExperienceConnectionFragment_edges_node,
-    );
-  }, [getExperiences]);
+export function MyExperiences(props: ComponentProps) {
+  const {
+    experiences,
+    navigate,
+    error,
+    loading,
+    layoutDispatch,
+    fetchExperience,
+  } = props;
 
   const [stateMachine, dispatch] = useReducer(
     reducer,
     { experiences },
     initState,
   );
+  const noExperiences = experiences.length === 0;
 
   const {
     context: { descriptionMap, experiencesPrepared },
     states,
   } = stateMachine;
-
-  const { layoutDispatch } = useContext(LayoutUnchangingContext);
-  const { fetchExperience } = useContext(LayoutContextExperience);
 
   useEffect(() => {
     setDocumentTitle(makeSiteTitle(MY_EXPERIENCES_TITLE));
@@ -102,7 +89,7 @@ export function MyExperiences(props: Props) {
 
   // istanbul ignore next:
   useEffect(() => {
-    if (experiences.length === 0 || experiencesPrepared.length !== 0) {
+    if (noExperiences || experiencesPrepared.length !== 0) {
       return;
     }
 
@@ -110,28 +97,24 @@ export function MyExperiences(props: Props) {
       type: ActionTypes.PREPARE_EXPERIENCES_FOR_SEARCH,
       experiences,
     });
-  }, [experiences, experiencesPrepared]);
+    /* eslint-disable-next-line react-hooks/exhaustive-deps*/
+  }, [experiencesPrepared, noExperiences]);
 
   useEffect(() => {
-    if (!getExperiences || fetchExperience !== "never-fetched") {
+    if (noExperiences || fetchExperience !== "never-fetched") {
       return;
     }
 
     setTimeout(() => {
-      const ids = mapSavedExperiencesToIds(
-        getExperiences as ExperienceConnectionFragment,
-      );
-
-      if (ids.length === 0) {
-        return;
-      }
+      const ids = mapSavedExperiencesToIds(experiences);
 
       layoutDispatch({
         type: LayoutActionType.EXPERIENCES_TO_PREFETCH,
         ids,
       });
     }, 1000);
-  }, [fetchExperience, getExperiences, layoutDispatch]);
+    /* eslint-disable-next-line react-hooks/exhaustive-deps*/
+  }, [fetchExperience, noExperiences]);
 
   function renderExperiences() {
     if (experiences.length === 0) {
@@ -150,7 +133,7 @@ export function MyExperiences(props: Props) {
       <div id="experiences-container" className="experiences-container">
         <SearchComponent
           {...states.search}
-          navigate={navigate as NavigateFn}
+          navigate={navigate}
           dispatch={dispatch}
         />
 
@@ -174,7 +157,7 @@ export function MyExperiences(props: Props) {
       return <Loading loading={loading} />;
     }
 
-    if (!getExperiences) {
+    if (error) {
       return <div id="no-experiences-error">Error loading experiences</div>;
     }
 
@@ -208,8 +191,6 @@ export function MyExperiences(props: Props) {
     </div>
   );
 }
-
-export default MyExperiences;
 
 const Experience = React.memo(
   function ExperienceFn({ showingDescription, experience }: ExperienceProps) {
@@ -377,3 +358,39 @@ function SearchComponentPropsDiffFn(
     prevContext.results === nexContext.results
   );
 }
+
+// istanbul ignore next:
+export default (props: CallerProps) => {
+  const { navigate } = props;
+
+  const { data, loading, error } = useQuery<
+    GetExperienceConnectionMini,
+    GetExperienceConnectionMiniVariables
+  >(GET_EXPERIENCES_MINI_QUERY, {
+    variables: getExperienceConnectionMiniVariables,
+  });
+
+  const { layoutDispatch } = useContext(LayoutUnchangingContext);
+  const { fetchExperience } = useContext(LayoutContextExperience);
+  const getExperiences = data && data.getExperiences;
+
+  const experiences = useMemo(() => {
+    if (!getExperiences) {
+      return [];
+    }
+
+    return (getExperiences.edges as ExperienceConnectionFragment_edges[]).map(
+      edge => edge.node as ExperienceConnectionFragment_edges_node,
+    );
+  }, [getExperiences]);
+  return (
+    <MyExperiences
+      experiences={experiences}
+      error={error}
+      loading={loading}
+      navigate={navigate as NavigateFn}
+      layoutDispatch={layoutDispatch}
+      fetchExperience={fetchExperience}
+    />
+  );
+};

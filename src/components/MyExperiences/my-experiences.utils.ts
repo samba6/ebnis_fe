@@ -1,13 +1,14 @@
 import { RouteComponentProps, NavigateFn } from "@reach/router";
-import {
-  ExperienceConnectionFragment_edges_node,
-  ExperienceConnectionFragment,
-  ExperienceConnectionFragment_edges,
-} from "../../graphql/apollo-types/ExperienceConnectionFragment";
+import { ExperienceConnectionFragment_edges_node } from "../../graphql/apollo-types/ExperienceConnectionFragment";
 import { Reducer, Dispatch, createContext } from "react";
 import { wrapReducer } from "../../logger";
 import immer from "immer";
 import fuzzysort from "fuzzysort";
+import { ApolloError } from "apollo-client";
+import {
+  LayoutDispatchType,
+  PrefetchValues,
+} from "../Layout/layout.utils";
 
 export enum ActionTypes {
   TOGGLE_DESCRIPTION = "@my-experiences/toggle-description",
@@ -18,7 +19,7 @@ export enum ActionTypes {
 
 export function initState({
   experiences,
-}: PrepareExperiencesPayload): IStateMachine {
+}: PrepareExperiencesPayload): StateMachine {
   return {
     context: {
       descriptionMap: {},
@@ -37,7 +38,7 @@ export function initState({
   };
 }
 
-export const reducer: Reducer<IStateMachine, Action> = (state, action) =>
+export const reducer: Reducer<StateMachine, Action> = (state, action) =>
   wrapReducer(state, action, (prevState, { type, ...payload }) => {
     return immer(prevState, proxy => {
       switch (type) {
@@ -74,7 +75,7 @@ export const reducer: Reducer<IStateMachine, Action> = (state, action) =>
             searchResultsState.context = context;
             searching.results = searchResultsState;
 
-            const genericSearch = searching as IStateMachine["states"]["search"];
+            const genericSearch = searching as StateMachine["states"]["search"];
             genericSearch.value = "inactive";
 
             const searchResults = fuzzysort.go(
@@ -109,23 +110,17 @@ export const reducer: Reducer<IStateMachine, Action> = (state, action) =>
   });
 
 export function mapSavedExperiencesToIds(
-  experienceConnection: ExperienceConnectionFragment,
+  experiences: ExperienceConnectionFragment_edges_node[],
 ) {
-  return (experienceConnection.edges as ExperienceConnectionFragment_edges[]).reduce(
-    (acc, edge: ExperienceConnectionFragment_edges) => {
-      const {
-        hasUnsaved,
-        id,
-      } = edge.node as ExperienceConnectionFragment_edges_node;
+  return experiences.reduce((acc, experience) => {
+    const { hasUnsaved, id } = experience;
 
-      if (!hasUnsaved) {
-        acc.push(id);
-      }
+    if (!hasUnsaved) {
+      acc.push(id);
+    }
 
-      return acc;
-    },
-    [] as string[],
-  );
+    return acc;
+  }, [] as string[]);
 }
 
 function preExperiencesForSearch(
@@ -148,15 +143,14 @@ export const DispatchProvider = dispatchContext.Provider;
 
 ////////////////////////// TYPES ////////////////////////////
 
-export interface IStateMachine {
+export interface StateMachine {
   readonly context: {
     descriptionMap: DescriptionMap;
-
-    experiencesPrepared: ({
+    experiencesPrepared: {
       target: Fuzzysort.Prepared;
       title: string;
       id: string;
-    })[];
+    }[];
   };
 
   readonly states: {
@@ -169,7 +163,8 @@ export interface IStateMachine {
       | {
           value: "searching";
         }
-      | SearchResults);
+      | SearchResults
+    );
   };
 }
 
@@ -208,7 +203,16 @@ export type Action =
       type: ActionTypes.PREPARE_EXPERIENCES_FOR_SEARCH;
     });
 
-export type Props = RouteComponentProps<{}>;
+export interface ComponentProps {
+  navigate: NavigateFn;
+  experiences: ExperienceConnectionFragment_edges_node[];
+  loading: boolean;
+  error?: ApolloError;
+  layoutDispatch: LayoutDispatchType;
+  fetchExperience: PrefetchValues;
+}
+
+export type CallerProps = RouteComponentProps<{}>;
 
 export interface DescriptionMap {
   [k: string]: boolean;
@@ -228,5 +232,5 @@ interface PrepareExperiencesPayload {
   experiences: ExperienceConnectionFragment_edges_node[];
 }
 
-export type SearchComponentProps = IStateMachine["states"]["search"] &
+export type SearchComponentProps = StateMachine["states"]["search"] &
   NoneStateContextValue;
