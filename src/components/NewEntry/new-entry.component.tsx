@@ -19,15 +19,10 @@ import {
   ActionType,
   initState,
   NewEntryCallerProps,
-  EffectFunctionsArgs,
   StateValue,
-  runEffects,
-  CleanUpQueriesState,
-  getEffectArgsFromKeys,
-  effectFunctions,
   SubmittingState,
   FieldState,
-  // getEffectArgsFromKeys,
+  runEffects,
 } from "./new-entry.utils";
 import { makeExperienceRoute } from "../../constants/experience-route";
 import { setDocumentTitle, makeSiteTitle } from "../../constants";
@@ -52,90 +47,61 @@ import {
   makeFormFieldSelectorClass,
 } from "./new-entry.dom";
 import { Loading } from "../Loading/loading";
+import { MUTATION_NAME_createEntry } from "../../graphql/create-entry.mutation";
+import { cleanupRanQueriesFromCache } from "../../apollo-cache/cleanup-ran-queries-from-cache";
+import {
+  QUERY_NAME_getExperience,
+  MUTATION_NAME_createOfflineEntry,
+} from "../../state/resolvers";
 
 export function NewEntryComponent(props: NewEntryComponentProps) {
   const { navigate, experience, ...rest } = props;
   const { client } = rest;
 
-  const [stateMachine, dispatch] = useReducer(
-    reducer,
-    {
-      experience,
-      effectsArgsObj: rest as EffectFunctionsArgs,
-    },
-    initState,
-  );
+  const [stateMachine, dispatch] = useReducer(reducer, experience, initState);
 
   const {
     states: { submitting, form },
-    effectsArgsObj,
-    effects: {
-      onRender: runOnRenders,
-      runOnce: { cleanupQueries },
-    },
+    effects: { onRender },
   } = stateMachine;
 
   const pageTitle = makePageTitle(experience);
-  const runCleanupQueriesEffect = cleanupQueries && cleanupQueries.run;
-
-  useEffect(() => {
-    if (runOnRenders.value !== StateValue.effectValHasEffects) {
-      return;
-    }
-
-    const {
-      hasEffects: { context },
-    } = runOnRenders;
-
-    runEffects(context.effects, effectsArgsObj);
-
-    // const { cleanupEffects } = context;
-
-    // if (cleanupEffects.length) {
-    //   return () => {
-    //     runEffects(cleanupEffects, effectsArgsObj);
-    //   };
-    // }
-
-    // redundant - [tsserver 7030] [W] Not all code paths return a value.
-    return;
-
-    /* eslint-disable-next-line react-hooks/exhaustive-deps*/
-  }, [runOnRenders]);
-
-  useEffect(() => {
-    if (runCleanupQueriesEffect) {
-      const {
-        effect: { key, effectArgKeys, ownArgs },
-      } = cleanupQueries as CleanUpQueriesState;
-
-      const args = getEffectArgsFromKeys(effectArgKeys, effectsArgsObj);
-
-      return effectFunctions[key](
-        args,
-        /* eslint-disable-next-line @typescript-eslint/no-explicit-any*/
-        ownArgs as any,
-      ) as () => void;
-    }
-
-    // redundant - [tsserver 7030] [W] Not all code paths return a value.
-    return;
-
-    /* eslint-disable-next-line react-hooks/exhaustive-deps*/
-  }, [runCleanupQueriesEffect]);
 
   const goToExperience = useCallback(() => {
     (navigate as NavigateFn)(makeExperienceRoute(experience.id));
     /* eslint-disable-next-line react-hooks/exhaustive-deps*/
   }, []);
 
-  useLayoutEffect(() => {
-    const args = { dispatch, goToExperience } as EffectFunctionsArgs;
+  useEffect(() => {
+    if (onRender.value !== StateValue.hasEffects) {
+      return;
+    }
 
-    dispatch({
-      type: ActionType.PUT_EFFECT_FUNCTIONS_ARGS,
-      ...args,
-    });
+    const {
+      hasEffects: { context },
+    } = onRender;
+
+    runEffects(context.effects, props, { dispatch, goToExperience });
+
+    /* eslint-disable-next-line react-hooks/exhaustive-deps*/
+  }, [onRender]);
+
+  useEffect(() => {
+    const { cache, persistor } = props;
+    return () =>
+      cleanupRanQueriesFromCache(
+        cache,
+        [
+          QUERY_NAME_getExperience + "(",
+          MUTATION_NAME_createEntry,
+          MUTATION_NAME_createOfflineEntry,
+        ],
+        persistor,
+      );
+    /* eslint-disable-next-line react-hooks/exhaustive-deps*/
+  }, []);
+
+  useLayoutEffect(() => {
     addResolvers(client);
     /* eslint-disable-next-line react-hooks/exhaustive-deps*/
   }, []);

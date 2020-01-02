@@ -19,10 +19,7 @@ import {
 } from "../../graphql/apollo-types/CreateOnlineEntryMutation";
 import dateFnFormat from "date-fns/format";
 import parseISO from "date-fns/parseISO";
-import {
-  CreateOnlineEntryMutationComponentProps,
-  MUTATION_NAME_createEntry,
-} from "../../graphql/create-entry.mutation";
+import { CreateOnlineEntryMutationComponentProps } from "../../graphql/create-entry.mutation";
 import {
   CreateOfflineEntryMutationComponentProps,
   CreateOfflineEntryMutationReturned,
@@ -32,12 +29,7 @@ import { isConnected } from "../../state/connections";
 import { updateExperienceWithNewEntry } from "./new-entry.injectables";
 import { scrollIntoView } from "../scroll-into-view";
 import { AppPersistor } from "../../context";
-import { cleanupRanQueriesFromCache } from "../../apollo-cache/cleanup-ran-queries-from-cache";
 import { InMemoryCache } from "apollo-cache-inmemory";
-import {
-  QUERY_NAME_getExperience,
-  MUTATION_NAME_createOfflineEntry,
-} from "../../state/resolvers";
 import {
   scrollIntoViewNonFieldErrorDomId,
   makeFieldErrorDomId,
@@ -52,13 +44,12 @@ export enum ActionType {
   ON_CREATE_ENTRY_EXCEPTION = "@components/new-entry/set-server-errors",
   ON_CREATE_ENTRY_ERRORS = "@components/new-entry/set-create-entry-errors",
   DISMISS_SERVER_ERRORS = "@components/new-entry/unset-server-errors",
-  PUT_EFFECT_FUNCTIONS_ARGS = "@components/new-entry/put-effects-functions-args",
   ON_SUBMIT = "@components/new-entry/on-submit",
 }
 
 export const StateValue = {
-  effectValNoEffect: "noEffect" as EffectValueNoEffect,
-  effectValHasEffects: "hasEffects" as EffectValueHasEffects,
+  noEffect: "noEffect" as NoEffectVal,
+  hasEffects: "hasEffects" as HasEffects,
   active: "active" as ActiveValue,
   inactive: "inactive" as InActiveValue,
   errors: "errors" as ErrorsStateValue,
@@ -127,18 +118,8 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
     state,
     action,
     (prevState, { type, ...payload }) => {
-      if (type === ActionType.PUT_EFFECT_FUNCTIONS_ARGS) {
-        return handlePutEffectFunctionsArgs(
-          prevState,
-          payload as EffectFunctionsArgs,
-        );
-      }
-
-      /* eslint-disable-next-line @typescript-eslint/no-unused-vars*/
-      const { effectsArgsObj, ...rest } = prevState;
-
-      const nextState = immer(rest, proxy => {
-        proxy.effects.onRender.value = StateValue.effectValNoEffect;
+      return immer(prevState, proxy => {
+        proxy.effects.onRender.value = StateValue.noEffect;
 
         switch (type) {
           case ActionType.ON_FORM_FIELD_CHANGED:
@@ -165,8 +146,6 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
             break;
         }
       });
-
-      return { ...prevState, ...nextState };
     },
 
     // true,
@@ -187,38 +166,10 @@ export function interpretCreateEntryMutationException(payload: Error) {
 
 ////////////////////////// EFFECTS SECTION ////////////////////////////
 
-export type CleanUpQueriesState = RunOnceEffectState<CleanUpQueriesEffect>;
-
-const cleanupQueriesEffect: CleanUpQueriesEffect["func"] = ({
-  cache,
-  persistor,
-}) => {
-  return () =>
-    cleanupRanQueriesFromCache(
-      cache,
-      [
-        QUERY_NAME_getExperience + "(",
-        MUTATION_NAME_createEntry,
-        MUTATION_NAME_createOfflineEntry,
-      ],
-      persistor,
-    );
-};
-
-type CleanUpQueriesEffect = EffectDefinition<
-  "cleanupQueries",
-  "cache" | "persistor"
->;
-
 const createEntryEffect: CreateEntryEffect["func"] = async (
-  {
-    createOnlineEntry,
-    createOfflineEntry,
-    persistor,
-    dispatch,
-    goToExperience,
-  },
   { experience, input },
+  { createOnlineEntry, createOfflineEntry, persistor },
+  { dispatch, goToExperience },
 ) => {
   const experienceId = experience.id;
 
@@ -273,18 +224,13 @@ const createEntryEffect: CreateEntryEffect["func"] = async (
 
 type CreateEntryEffect = EffectDefinition<
   "createEntry",
-  | "persistor"
-  | "dispatch"
-  | "createOnlineEntry"
-  | "createOfflineEntry"
-  | "goToExperience",
   {
     experience: ExperienceFragment;
     input: CreateEntryInput;
   }
 >;
 
-const scrollToViewEffect: ScrollToViewEffect["func"] = (_, { id }) => {
+const scrollToViewEffect: ScrollToViewEffect["func"] = ({ id }) => {
   scrollIntoView(id, {
     behavior: "smooth",
   });
@@ -292,7 +238,6 @@ const scrollToViewEffect: ScrollToViewEffect["func"] = (_, { id }) => {
 
 type ScrollToViewEffect = EffectDefinition<
   "scrollToView",
-  "dispatch",
   {
     id: string;
   }
@@ -301,47 +246,28 @@ type ScrollToViewEffect = EffectDefinition<
 export const effectFunctions = {
   createEntry: createEntryEffect,
   scrollToView: scrollToViewEffect,
-  cleanupQueries: cleanupQueriesEffect,
 };
 
 export function runEffects(
   effects: EffectsList,
-  effectsArgsObj: EffectFunctionsArgs,
+  props: NewEntryComponentProps,
+  thirdArgs: ThirdEffectFunctionArgs,
 ) {
-  for (const { key, ownArgs, effectArgKeys } of effects) {
-    const effectArgs = getEffectArgsFromKeys(
-      effectArgKeys as (keyof EffectFunctionsArgs)[],
-      effectsArgsObj,
-    );
-
+  for (const { key, ownArgs } of effects) {
     effectFunctions[key](
-      effectArgs,
       /* eslint-disable-next-line @typescript-eslint/no-explicit-any*/
       ownArgs as any,
+      props,
+      thirdArgs,
     );
   }
 }
 
-export function getEffectArgsFromKeys(
-  effectArgKeys: (keyof EffectFunctionsArgs)[],
-  effectsArgsObj: EffectFunctionsArgs,
-) {
-  return effectArgKeys.reduce((acc, k) => {
-    acc[k] = effectsArgsObj[k];
-    return acc;
-  }, {} as EffectFunctionsArgs);
-}
 ////////////////////////// END EFFECTS SECTION ////////////////////////////
 
 ////////////////////////// STATE UPDATE SECTION ////////////////////////////
 
-export function initState({
-  experience,
-  effectsArgsObj,
-}: {
-  experience: ExperienceFragment;
-  effectsArgsObj: EffectFunctionsArgs;
-}): StateMachine {
+export function initState(experience: ExperienceFragment): StateMachine {
   const dataDefinitions = experience.dataDefinitions as ExperienceFragment_dataDefinitions[];
 
   const formFields = dataDefinitions.reduce((acc, definition, index) => {
@@ -370,35 +296,9 @@ export function initState({
     context: { experience },
     effects: {
       onRender: {
-        value: StateValue.effectValNoEffect,
+        value: StateValue.noEffect,
       },
-      runOnce: {},
     },
-    effectsArgsObj,
-  };
-}
-
-function handlePutEffectFunctionsArgs(
-  globalState: StateMachine,
-  payload: EffectFunctionsArgs,
-): StateMachine {
-  const { effectsArgsObj, ...rest } = globalState;
-
-  globalState.effectsArgsObj = {
-    ...effectsArgsObj,
-    ...payload,
-  };
-
-  return {
-    ...globalState,
-    ...(rest.effects.runOnce.cleanupQueries = {
-      run: true,
-      effect: {
-        key: "cleanupQueries",
-        effectArgKeys: ["cache", "persistor"],
-        ownArgs: {},
-      },
-    }),
   };
 }
 
@@ -417,17 +317,10 @@ async function handleSubmittingAction(proxy: ProxyState) {
     dataDefinitions as ExperienceFragment_dataDefinitions[],
   );
 
-  const [effects] = getRenderEffects(proxy);
+  const effects = getRenderEffects(proxy);
 
   effects.push({
     key: "createEntry",
-    effectArgKeys: [
-      "dispatch",
-      "createOnlineEntry",
-      "createOfflineEntry",
-      "goToExperience",
-      "persistor",
-    ],
     ownArgs: {
       experience,
       input: {
@@ -483,11 +376,10 @@ function handleOnCreateEntryErrors(
     },
   };
 
-  const [effects] = getRenderEffects(stateMachine);
+  const effects = getRenderEffects(stateMachine);
 
   effects.push({
     key: "scrollToView",
-    effectArgKeys: [],
     ownArgs: {
       id: getFieldErrorScrollToId(fieldErrors),
     },
@@ -501,7 +393,7 @@ function handleOnServerErrorsAction(
   const { states } = stateMachine;
   const submitting = states.submitting as SubmittingErrors;
   submitting.value = StateValue.errors;
-  const [effects] = getRenderEffects(stateMachine);
+  const effects = getRenderEffects(stateMachine);
 
   if (payload.key === StateValue.fieldErrors) {
     const fieldErrors = payload.value;
@@ -516,7 +408,6 @@ function handleOnServerErrorsAction(
 
     effects.push({
       key: "scrollToView",
-      effectArgKeys: [],
       ownArgs: {
         id: getFieldErrorScrollToId(fieldErrors),
       },
@@ -537,7 +428,6 @@ function handleOnServerErrorsAction(
 
     effects.push({
       key: "scrollToView",
-      effectArgKeys: [],
       ownArgs: {
         id: scrollIntoViewNonFieldErrorDomId,
       },
@@ -554,17 +444,15 @@ function getFieldErrorScrollToId(fieldErrors: FieldErrors) {
 
 function getRenderEffects(proxy: ProxyState) {
   const renderEffects = proxy.effects.onRender as EffectState;
-  renderEffects.value = StateValue.effectValHasEffects;
+  renderEffects.value = StateValue.hasEffects;
   const effects: EffectsList = [];
-  const cleanupEffects: EffectsList = [];
   renderEffects.hasEffects = {
     context: {
       effects: effects,
-      cleanupEffects: cleanupEffects,
     },
   };
 
-  return [effects, cleanupEffects];
+  return effects;
 }
 
 function dataObjectsFromFormValues(
@@ -654,21 +542,14 @@ type ServerErrors =
   | { key: FieldErrorsValue; value: FieldErrors }
   | { key: NonFieldErrorsValue; value: string };
 
-type ProxyState = Draft<Rest>;
+type ProxyState = Draft<StateMachine>;
 
-export type StateMachine = {
-  effectsArgsObj: EffectFunctionsArgs;
-} & Rest;
-
-interface Rest {
+interface StateMachine {
   readonly context: {
     readonly experience: ExperienceFragment;
   };
   readonly effects: {
-    readonly onRender: EffectState | { value: EffectValueNoEffect };
-    readonly runOnce: {
-      cleanupQueries?: CleanUpQueriesState;
-    };
+    readonly onRender: EffectState | { value: NoEffectVal };
   };
   readonly states: {
     readonly submitting: SubmittingState;
@@ -719,9 +600,6 @@ type Action =
       type: ActionType.ON_CREATE_ENTRY_ERRORS;
     } & CreateOnlineEntryMutation_createEntry_errors)
   | ({
-      type: ActionType.PUT_EFFECT_FUNCTIONS_ARGS;
-    } & EffectFunctionsArgs)
-  | ({
       type: ActionType.ON_FORM_FIELD_CHANGED;
     } & FieldChangedPayload)
   | ({
@@ -731,8 +609,8 @@ type Action =
 export type DispatchType = Dispatch<Action>;
 
 ////////////////////////// STRINGY TYPES SECTION /////////////
-type EffectValueNoEffect = "noEffect";
-type EffectValueHasEffects = "hasEffects";
+type NoEffectVal = "noEffect";
+type HasEffects = "hasEffects";
 type InActiveValue = "inactive";
 type ActiveValue = "active";
 type FieldErrorsValue = "fieldErrors";
@@ -741,47 +619,34 @@ type ErrorsStateValue = "errors";
 /////////////////////// END STRINGY TYPES SECTION /////////////
 
 interface EffectContext {
-  effectsArgsObj: EffectFunctionsArgs;
+  effectsArgsObj: NewEntryComponentProps;
 }
 
-type EffectsList = (
-  | CleanUpQueriesEffect
-  | ScrollToViewEffect
-  | CreateEntryEffect
-)[];
+type EffectsList = (ScrollToViewEffect | CreateEntryEffect)[];
 
 interface EffectState {
-  value: EffectValueHasEffects;
+  value: HasEffects;
   hasEffects: {
     context: {
       effects: EffectsList;
-      cleanupEffects: EffectsList;
     };
   };
 }
 
-export interface EffectFunctionsArgs
-  extends CreateOnlineEntryMutationComponentProps,
-    CreateOfflineEntryMutationComponentProps {
-  /* eslint-disable-next-line @typescript-eslint/no-explicit-any*/
-  client: any;
-  /* eslint-disable-next-line @typescript-eslint/no-explicit-any*/
-  cache: any;
+interface ThirdEffectFunctionArgs {
   dispatch: DispatchType;
   goToExperience: () => void;
-  persistor: AppPersistor;
 }
 
 interface EffectDefinition<
   Key extends keyof typeof effectFunctions,
-  EffectArgKeys extends keyof EffectFunctionsArgs,
   OwnArgs = {}
 > {
   key: Key;
-  effectArgKeys: EffectArgKeys[];
   ownArgs: OwnArgs;
   func?: (
-    effectArgs: { [k in EffectArgKeys]: EffectFunctionsArgs[k] },
     ownArgs: OwnArgs,
+    props: NewEntryComponentProps,
+    thirdArgs: ThirdEffectFunctionArgs,
   ) => void | Promise<void | (() => void)> | (() => void);
 }

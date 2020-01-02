@@ -4,7 +4,6 @@ import React, {
   Fragment,
   useEffect,
   useCallback,
-  useLayoutEffect,
 } from "react";
 import {
   EditEntryComponentProps,
@@ -21,9 +20,6 @@ import {
   EditEntryCallerProps,
   StateValue,
   runEffects,
-  getEffectArgsFromKeys,
-  effectFunctions,
-  CleanUpQueriesState,
 } from "./edit-entry-utils";
 import Form from "semantic-ui-react/dist/commonjs/collections/Form";
 import Message from "semantic-ui-react/dist/commonjs/collections/Message";
@@ -59,20 +55,17 @@ import { useCreateOnlineEntryMutation } from "../../graphql/create-entry.mutatio
 // import ApolloClient from "apollo-client";
 import { EbnisAppContext } from "../../context";
 import { LayoutUnchangingContext } from "../Layout/layout.utils";
+import { MUTATION_NAME_createEntry } from "../../graphql/create-entry.mutation";
+import { cleanupRanQueriesFromCache } from "../../apollo-cache/cleanup-ran-queries-from-cache";
+import { QUERY_NAME_getOfflineItems } from "../../state/offline-resolvers";
+import { QUERY_NAME_getExperienceFull } from "../../graphql/get-experience-full.query";
+import {
+  MUTATION_NAME_updateDataObjects,
+  MUTATION_NAME_updateDefinitions,
+} from "../../graphql/update-definition-and-data.mutation";
 
 export function EditEntryComponent(props: EditEntryComponentProps) {
-  const {
-    dispatch: parentDispatch,
-    experience,
-    updateDataObjectsOnline,
-    updateDefinitionsOnline,
-    updateDefinitionsAndDataOnline,
-    createOnlineEntry,
-    client,
-    persistor,
-    cache,
-    layoutDispatch,
-  } = props;
+  const { dispatch: parentDispatch, experience } = props;
 
   const [stateMachine, dispatch] = useReducer(
     reducer,
@@ -86,14 +79,8 @@ export function EditEntryComponent(props: EditEntryComponentProps) {
     submission,
     definitionsStates,
     dataStates,
-    effects: {
-      runOnRenders,
-      runOnce: { cleanupQueries },
-    },
-    effectsArgsObj,
+    effects: { runOnRenders },
   } = stateMachine;
-
-  const runCleanupQueries = cleanupQueries && cleanupQueries.run;
 
   useEffect(() => {
     if (runOnRenders.value !== StateValue.hasEffects) {
@@ -104,56 +91,26 @@ export function EditEntryComponent(props: EditEntryComponentProps) {
       hasEffects: { context },
     } = runOnRenders;
 
-    runEffects(context.effects, effectsArgsObj);
-
-    // const { cleanupEffects } = context;
-
-    // if (cleanupEffects.length) {
-    //   return () => {
-    //     runEffects(cleanupEffects, effectsArgsObj);
-    //   };
-    // }
-
-    // redundant - [tsserver 7030] [W] Not all code paths return a value.
-    return;
+    runEffects(context.effects, props, { dispatch });
 
     /* eslint-disable-next-line react-hooks/exhaustive-deps*/
   }, [runOnRenders]);
 
   useEffect(() => {
-    if (runCleanupQueries) {
-      const {
-        effect: { key, effectArgKeys, ownArgs },
-      } = cleanupQueries as CleanUpQueriesState;
+    const { cache, persistor } = props;
 
-      const args = getEffectArgsFromKeys(effectArgKeys, effectsArgsObj);
-
-      return effectFunctions[key](
-        args,
-        /* eslint-disable-next-line @typescript-eslint/no-explicit-any*/
-        ownArgs as any,
-      ) as () => void;
-    }
-
-    // redundant - [tsserver 7030] [W] Not all code paths return a value.
-    return;
-
-    /* eslint-disable-next-line react-hooks/exhaustive-deps*/
-  }, [runCleanupQueries]);
-
-  useLayoutEffect(() => {
-    dispatch({
-      type: ActionType.PUT_EFFECT_FUNCTIONS_ARGS,
-      createOnlineEntry,
-      updateDefinitionsOnline,
-      updateDefinitionsAndDataOnline,
-      updateDataObjectsOnline,
-      dispatch,
-      client,
-      persistor,
-      cache,
-      layoutDispatch,
-    });
+    return () =>
+      cleanupRanQueriesFromCache(
+        cache,
+        [
+          MUTATION_NAME_updateDataObjects,
+          MUTATION_NAME_updateDefinitions,
+          MUTATION_NAME_createEntry,
+          QUERY_NAME_getOfflineItems,
+          QUERY_NAME_getExperienceFull + "(",
+        ],
+        persistor,
+      );
     /* eslint-disable-next-line react-hooks/exhaustive-deps*/
   }, []);
 
@@ -168,8 +125,6 @@ export function EditEntryComponent(props: EditEntryComponentProps) {
     <EditEnryContext.Provider
       value={{
         dispatch,
-        updateDataObjectsOnline,
-        updateDefinitionsAndDataOnline,
       }}
     >
       {submission.value === StateValue.submitting && <SubmittingOverlay />}
@@ -299,21 +254,21 @@ function SubmissionSuccessResponseComponent({
           }}
         >
           {validResponse && (
-            <>
+            <div className="mt-5">
               {!!validResponse.successes && (
-                <div>
+                <div className="bg-green-300 pl-2 pt-1">
                   <span>{validResponse.successes} </span>
                   <span>succeeded</span>
                 </div>
               )}
 
               {!!validResponse.failures && (
-                <div className="bg-red-300">
+                <div className="bg-red-300 pl-2 pt-1">
                   <span> {validResponse.failures} </span>
                   <span>failed</span>
                 </div>
               )}
-            </>
+            </div>
           )}
 
           {invalidResponse && (

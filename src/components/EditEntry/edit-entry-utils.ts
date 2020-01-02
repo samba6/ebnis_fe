@@ -42,7 +42,6 @@ import {
 } from "./edit-entry.injectables";
 import {
   CreateOnlineEntryMutationComponentProps,
-  MUTATION_NAME_createEntry,
 } from "../../graphql/create-entry.mutation";
 import { isOfflineId } from "../../constants";
 import { updateExperienceWithNewEntry } from "../NewEntry/new-entry.injectables";
@@ -54,13 +53,6 @@ import { decrementOfflineEntriesCountForExperience } from "../../apollo-cache/dr
 import { AppPersistor } from "../../context";
 import { InMemoryCache } from "apollo-cache-inmemory";
 import { LayoutDispatchType, LayoutActionType } from "../Layout/layout.utils";
-import { cleanupRanQueriesFromCache } from "../../apollo-cache/cleanup-ran-queries-from-cache";
-import {
-  MUTATION_NAME_updateDataObjects,
-  MUTATION_NAME_updateDefinitions,
-} from "../../graphql/update-definition-and-data.mutation";
-import { QUERY_NAME_getOfflineItems } from "../../state/offline-resolvers";
-import { QUERY_NAME_getExperienceFull } from "../../graphql/get-experience-full.query";
 
 export enum ActionType {
   EDIT_BTN_CLICKED = "@component/edit-entry/edit-btn-clicked",
@@ -78,7 +70,6 @@ export enum ActionType {
   OTHER_ERRORS = "@component/edit-entry/other-errors",
   APOLLO_ERRORS = "@component/edit-entry/apollo-errors",
   ONLINE_ENTRY_CREATED = "@component/edit-entry/online-entry-created",
-  PUT_EFFECT_FUNCTIONS_ARGS = "@component/edit-entry/put-effects-functions-args",
 }
 
 export const StateValue = {
@@ -177,7 +168,6 @@ export const initStateFromProps = (
       runOnRenders: {
         value: StateValue.noEffect,
       },
-      runOnce: {},
     },
     context: {
       lenDefinitions,
@@ -196,7 +186,6 @@ export const initStateFromProps = (
     },
     definitionsStates,
     dataStates,
-    effectsArgsObj: {} as EffectFunctionsArgs,
   };
 };
 
@@ -205,17 +194,7 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
     state,
     action,
     (prevState, { type, ...payload }) => {
-      if (type === ActionType.PUT_EFFECT_FUNCTIONS_ARGS) {
-        return handlePutEffectFunctionsArgs(
-          prevState,
-          payload as EffectFunctionsArgs,
-        );
-      }
-
-      /* eslint-disable-next-line @typescript-eslint/no-unused-vars*/
-      const { effectsArgsObj, ...rest } = prevState;
-
-      const nextState = immer(rest, proxy => {
+      return immer(prevState, proxy => {
         proxy.effects.runOnRenders.value = StateValue.noEffect;
 
         switch (type) {
@@ -298,8 +277,6 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
             break;
         }
       });
-
-      return { ...prevState, ...nextState };
     },
 
     // true,
@@ -308,8 +285,8 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
 ////////////////////////// EFFECT FUNCTIONS SECTION //////////////////
 
 const decrementOfflineEntriesCountEffect: DecrementOfflineEntriesCountEffect["func"] = async (
-  { cache, persistor, layoutDispatch },
   { experienceId },
+  { cache, persistor, layoutDispatch },
 ) => {
   await decrementOfflineEntriesCountForExperience({
     cache,
@@ -326,15 +303,15 @@ const decrementOfflineEntriesCountEffect: DecrementOfflineEntriesCountEffect["fu
 
 type DecrementOfflineEntriesCountEffect = EffectDefinition<
   "decrementOfflineEntriesCount",
-  "cache" | "persistor" | "layoutDispatch",
   {
     experienceId: string;
   }
 >;
 
 const createEntryOnlineEffect: CreateEntryOnlineEffect["func"] = async (
-  { createOnlineEntry, dispatch },
   { input },
+  { createOnlineEntry },
+  { dispatch },
 ) => {
   try {
     const response = await createOnlineEntry({
@@ -369,15 +346,15 @@ const createEntryOnlineEffect: CreateEntryOnlineEffect["func"] = async (
 
 type CreateEntryOnlineEffect = EffectDefinition<
   "createOnlineEntry",
-  "createOnlineEntry" | "dispatch",
   {
     input: CreateEntryInput;
   }
 >;
 
 const definitionsFormErrorsEffect: DefinitionsFormErrorsEffect["func"] = (
-  { dispatch },
   { definitionsWithFormErrors },
+  _,
+  { dispatch },
 ) => {
   dispatch({
     type: ActionType.DEFINITION_FORM_ERRORS,
@@ -387,15 +364,15 @@ const definitionsFormErrorsEffect: DefinitionsFormErrorsEffect["func"] = (
 
 type DefinitionsFormErrorsEffect = EffectDefinition<
   "definitionsFormErrors",
-  "dispatch",
   {
     definitionsWithFormErrors: string[];
   }
 >;
 
 const updateDefinitionsOnlineEffect: UpdateDefinitionsOnlineEffect["func"] = async (
-  { updateDefinitionsOnline, dispatch },
   { experienceId, definitionsInput },
+  { updateDefinitionsOnline },
+  { dispatch },
 ) => {
   try {
     const result = await updateDefinitionsOnline({
@@ -432,7 +409,6 @@ const updateDefinitionsOnlineEffect: UpdateDefinitionsOnlineEffect["func"] = asy
 
 type UpdateDefinitionsOnlineEffect = EffectDefinition<
   "updateDefinitionsOnline",
-  "dispatch" | "updateDefinitionsOnline",
   {
     experienceId: string;
     definitionsInput: UpdateDefinitionInput[];
@@ -440,8 +416,9 @@ type UpdateDefinitionsOnlineEffect = EffectDefinition<
 >;
 
 const updateDataObjectsOnlineEffect: UpdateDataObjectsOnlineEffect["func"] = async (
-  { dispatch, updateDataObjectsOnline },
   { dataInput },
+  { updateDataObjectsOnline },
+  { dispatch },
 ) => {
   try {
     const response = await updateDataObjectsOnline({
@@ -473,15 +450,15 @@ const updateDataObjectsOnlineEffect: UpdateDataObjectsOnlineEffect["func"] = asy
 
 type UpdateDataObjectsOnlineEffect = EffectDefinition<
   "updateDataObjectsOnline",
-  "dispatch" | "updateDataObjectsOnline",
   {
     dataInput: UpdateDataObjectInput[];
   }
 >;
 
 const updateDefinitionsAndDataOnlineEffect: UpdateDefinitionsAndDataOnlineEffect["func"] = async (
-  { dispatch, updateDefinitionsAndDataOnline },
   { experienceId, definitionsInput, dataInput },
+  { updateDefinitionsAndDataOnline },
+  { dispatch },
 ) => {
   try {
     const response = await updateDefinitionsAndDataOnline({
@@ -518,35 +495,11 @@ const updateDefinitionsAndDataOnlineEffect: UpdateDefinitionsAndDataOnlineEffect
 
 type UpdateDefinitionsAndDataOnlineEffect = EffectDefinition<
   "updateDefinitionsAndDataOnline",
-  "dispatch" | "updateDefinitionsAndDataOnline",
   {
     dataInput: UpdateDataObjectInput[];
     experienceId: string;
     definitionsInput: UpdateDefinitionInput[];
   }
->;
-
-const cleanupQueriesEffect: CleanUpQueriesEffect["func"] = ({
-  cache,
-  persistor,
-}) => {
-  return () =>
-    cleanupRanQueriesFromCache(
-      cache,
-      [
-        MUTATION_NAME_updateDataObjects,
-        MUTATION_NAME_updateDefinitions,
-        MUTATION_NAME_createEntry,
-        QUERY_NAME_getOfflineItems,
-        QUERY_NAME_getExperienceFull + "(",
-      ],
-      persistor,
-    );
-};
-
-type CleanUpQueriesEffect = EffectDefinition<
-  "cleanupQueries",
-  "cache" | "persistor"
 >;
 
 export const effectFunctions = {
@@ -556,7 +509,6 @@ export const effectFunctions = {
   definitionsFormErrors: definitionsFormErrorsEffect,
   createOnlineEntry: createEntryOnlineEffect,
   decrementOfflineEntriesCount: decrementOfflineEntriesCountEffect,
-  cleanupQueries: cleanupQueriesEffect,
 };
 
 //// EFFECT HELPERS
@@ -582,58 +534,22 @@ function processFormSubmissionException({
 
 export function runEffects(
   effects: EffectsList,
-  effectsArgsObj: EffectFunctionsArgs,
+  props: EditEntryComponentProps,
+  thirdArgs: ThirdEffectFunctionArgs,
 ) {
-  for (const { key, ownArgs, effectArgKeys } of effects) {
-    const effectArgs = getEffectArgsFromKeys(
-      effectArgKeys as (keyof EffectFunctionsArgs)[],
-      effectsArgsObj,
-    );
-
+  for (const { key, ownArgs } of effects) {
     effectFunctions[key](
-      effectArgs,
       /* eslint-disable-next-line @typescript-eslint/no-explicit-any*/
       ownArgs as any,
+      props,
+      thirdArgs,
     );
   }
-}
-
-export function getEffectArgsFromKeys(
-  effectArgKeys: (keyof EffectFunctionsArgs)[],
-  effectsArgsObj: EffectFunctionsArgs,
-) {
-  return effectArgKeys.reduce((acc, k) => {
-    acc[k] = effectsArgsObj[k];
-    return acc;
-  }, {} as EffectFunctionsArgs);
 }
 
 ////////////////////////// END EFFECT FUNCTIONS SECTION /////////////////
 
 /////////////////// STATE UPDATE FUNCTIONS SECTION /////////////
-
-function handlePutEffectFunctionsArgs(
-  globalState: StateMachine,
-  payload: EffectFunctionsArgs,
-) {
-  const { effectsArgsObj, ...rest } = globalState;
-
-  globalState.effectsArgsObj = {
-    ...effectsArgsObj,
-    ...payload,
-  };
-
-  rest.effects.runOnce.cleanupQueries = {
-    run: true,
-    effect: {
-      key: "cleanupQueries",
-      effectArgKeys: ["persistor", "cache"],
-      ownArgs: {},
-    },
-  };
-
-  return { ...globalState, ...rest };
-}
 
 function handleDefinitionNameChangedAction(
   proxy: DraftState,
@@ -692,7 +608,6 @@ function handleDefinitionFormErrorsAction(
   payload: DefinitionFormErrorsPayload,
 ) {
   const primaryStateFormErrors = {
-    isActive: true,
     value: "formErrors",
     formErrors: {
       context: {
@@ -730,7 +645,6 @@ function handleOtherErrorsAction(
   error = "We apologize, we are unable to fulfill your request this time",
 ) {
   const otherErrorsState = {
-    isActive: true,
     value: StateValue.otherErrors,
     otherErrors: {
       context: {
@@ -815,7 +729,6 @@ function handleApolloErrorsAction(
   } = payload as ApolloErrorsPayload;
 
   const apolloErrorsState = {
-    isActive: true,
     value: StateValue.apolloErrors,
     apolloErrors: {
       context: {
@@ -895,7 +808,6 @@ function handleOnlineEntryCreatedServerResponseAction(
 
   effectObjects.push({
     key: "decrementOfflineEntriesCount",
-    effectArgKeys: ["cache", "persistor", "layoutDispatch"],
     ownArgs: { experienceId: entry.experienceId },
   });
 
@@ -1239,7 +1151,6 @@ async function handleSubmittingUpdateDataAndOrDefinitionAction({
   if (definitionsWithFormErrors.length !== 0) {
     effectObjects.push({
       key: "definitionsFormErrors",
-      effectArgKeys: ["dispatch"],
       ownArgs: {
         definitionsWithFormErrors,
       },
@@ -1257,7 +1168,6 @@ async function handleSubmittingUpdateDataAndOrDefinitionAction({
         definitionsInput,
         experienceId,
       },
-      effectArgKeys: ["dispatch", "updateDefinitionsOnline"],
     });
 
     return;
@@ -1269,7 +1179,6 @@ async function handleSubmittingUpdateDataAndOrDefinitionAction({
       ownArgs: {
         dataInput,
       },
-      effectArgKeys: ["dispatch", "updateDataObjectsOnline"],
     });
 
     return;
@@ -1282,7 +1191,6 @@ async function handleSubmittingUpdateDataAndOrDefinitionAction({
       dataInput,
       definitionsInput,
     },
-    effectArgKeys: ["dispatch", "updateDefinitionsAndDataOnline"],
   });
 }
 
@@ -1344,7 +1252,6 @@ function handleSubmittingCreateEntryOnlineAction(
 
   effectObjects.push({
     key: "createOnlineEntry",
-    effectArgKeys: ["createOnlineEntry", "dispatch"],
     ownArgs: {
       input: {
         dataObjects,
@@ -1435,26 +1342,17 @@ export const EditEnryContext = createContext<ContextValue>({} as ContextValue);
 
 ////////////////////////// TYPES ////////////////////////////
 
-interface ContextValue
-  extends UpdateDefinitionsAndDataOnlineMutationComponentProps,
-    UpdateDataObjectsOnlineMutationComponentProps {
+interface ContextValue {
   dispatch: DispatchType;
 }
 
-export interface StateMachine extends Rest {
-  effectsArgsObj: EffectFunctionsArgs;
-}
+type DraftState = Draft<StateMachine>;
 
-type DraftState = Draft<Rest>;
-
-interface Rest extends RestContext {
+export interface StateMachine extends StateMachineContext {
   readonly dataStates: DataStates;
   readonly definitionsStates: DefinitionsStates;
   readonly effects: {
     runOnRenders: EffectState | { value: NoEffectVal };
-    runOnce: {
-      cleanupQueries?: CleanUpQueriesState;
-    };
   };
   readonly editingData: {
     value: ActiveVal | InActiveVal;
@@ -1469,8 +1367,6 @@ interface Rest extends RestContext {
     | EditingMultipleDefinitionsState;
   readonly submission: Submission;
 }
-
-export type CleanUpQueriesState = RunOnceEffectState<CleanUpQueriesEffect>;
 
 interface RunOnceEffectState<IEffect> {
   run: boolean;
@@ -1496,17 +1392,20 @@ type EffectsList = (
   | DecrementOfflineEntriesCountEffect
 )[];
 
+interface ThirdEffectFunctionArgs {
+  dispatch: DispatchType;
+}
+
 interface EffectDefinition<
-  Key extends string,
-  EffectArgKeys extends keyof EffectFunctionsArgs,
+  Key extends keyof typeof effectFunctions,
   OwnArgs = {}
 > {
   key: Key;
-  effectArgKeys: EffectArgKeys[];
   ownArgs: OwnArgs;
   func?: (
-    effectArgs: { [k in EffectArgKeys]: EffectFunctionsArgs[k] },
     ownArgs: OwnArgs,
+    effectArgs: EditEntryComponentProps,
+    lastArgs: ThirdEffectFunctionArgs,
   ) => void | Promise<void | (() => void)> | (() => void);
 }
 
@@ -1527,7 +1426,7 @@ type ApolloErrorValue = "apolloErrors";
 type OtherErrorsVal = "otherErrors";
 ////////////////////////// END STRINGGY TYPES SECTION //////////////////
 
-interface RestContext {
+interface StateMachineContext {
   context: {
     lenDefinitions: number;
     definitionAndDataIdsMapList: DefinitionAndDataIds[];
@@ -1662,27 +1561,10 @@ export type Action =
     }
   | ({
       type: ActionType.APOLLO_ERRORS;
-    } & ApolloErrorsPayload)
-  | ({
-      type: ActionType.PUT_EFFECT_FUNCTIONS_ARGS;
-    } & EffectFunctionsArgs);
+    } & ApolloErrorsPayload);
 
 interface ApolloErrorsPayload {
   errors: ApolloError;
-}
-
-export interface EffectFunctionsArgs
-  extends CreateOnlineEntryMutationComponentProps,
-    UpdateDefinitionsOnlineMutationComponentProps,
-    UpdateDefinitionsAndDataOnlineMutationComponentProps,
-    UpdateDataObjectsOnlineMutationComponentProps {
-  dispatch: DispatchType;
-  layoutDispatch: LayoutDispatchType;
-  /* eslint-disable-next-line @typescript-eslint/no-explicit-any*/
-  client: any; // ApolloClient<{}> //- it's giving error
-  persistor: AppPersistor;
-  /* eslint-disable-next-line @typescript-eslint/no-explicit-any*/
-  cache: any; // InMemoryCache;
 }
 
 interface OnlineEntryCreatedPayload {
