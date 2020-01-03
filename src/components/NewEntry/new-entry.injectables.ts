@@ -28,6 +28,7 @@ export function addNewEntryResolvers(client: ApolloClient<{}>) {
 
 type Fn<T = string | ExperienceFragment> = (
   experienceOrId: T,
+  mode: "online" | "offline",
 ) => (
   proxy: DataProxy,
   mutationResult: FetchResult<CreateOnlineEntryMutation>,
@@ -39,7 +40,10 @@ type Fn<T = string | ExperienceFragment> = (
  * Upsert the entry into the experience and updates the Get full experience
  * query
  */
-export const updateExperienceWithEntry: Fn = function updateFn(experienceOrId) {
+export const upsertExperienceWithEntry: Fn = function updateFn(
+  experienceOrId,
+  mode,
+) {
   return async function updateFnInner(
     dataProxy,
     { data: createEntryResponse },
@@ -77,6 +81,9 @@ export const updateExperienceWithEntry: Fn = function updateFn(experienceOrId) {
 
       if (existingEntry) {
         existingEntry.node = entry;
+        if (mode === "offline") {
+          proxy.hasUnsaved = true;
+        }
       } else {
         edges.unshift(
           entryToEdge(entry as ExperienceFragment_entries_edges_node),

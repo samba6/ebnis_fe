@@ -26,7 +26,7 @@ import {
 } from "./new-entry.resolvers";
 import { wrapReducer } from "../../logger";
 import { isConnected } from "../../state/connections";
-import { updateExperienceWithEntry } from "./new-entry.injectables";
+import { upsertExperienceWithEntry } from "./new-entry.injectables";
 import { scrollIntoView } from "../scroll-into-view";
 import { AppPersistor } from "../../context";
 import { InMemoryCache } from "apollo-cache-inmemory";
@@ -171,11 +171,7 @@ export async function createEntryEffectHelper(
   {
     createOnlineEntry,
     createOfflineEntry,
-    persistor,
-  }: Pick<
-    ComponentProps,
-    "persistor" | "createOfflineEntry" | "createOnlineEntry"
-  >,
+  }: Pick<ComponentProps, "createOfflineEntry" | "createOnlineEntry">,
 ) {
   const experienceId = experience.id;
   let createResult: CreateOnlineEntryMutation_createEntry;
@@ -186,7 +182,7 @@ export async function createEntryEffectHelper(
         input,
       },
 
-      update: updateExperienceWithEntry(experienceId, persistor),
+      update: upsertExperienceWithEntry(experienceId, "online"),
     });
 
     createResult = ((result && result.data && result.data.createEntry) ||
@@ -219,13 +215,14 @@ const createEntryEffect: CreateEntryEffect["func"] = async (
     const { entry, errors } = await createEntryEffectHelper(ownArgs, {
       createOnlineEntry,
       createOfflineEntry,
-      persistor,
     });
 
     if (errors) {
       dispatch({ type: ActionType.ON_CREATE_ENTRY_ERRORS, ...errors });
       return;
     }
+
+    await persistor.persist();
 
     if (entry) {
       goToExperience();

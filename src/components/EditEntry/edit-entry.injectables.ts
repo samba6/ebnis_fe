@@ -22,7 +22,9 @@ import {
   UpdateDefinitionAndData,
 } from "../../graphql/apollo-types/UpdateDefinitionAndData";
 
-export function editEntryUpdate() {}
+export function editEntryUpdate() {
+  return null;
+}
 
 export interface EditEntryUpdateProps {
   editEntryUpdateProp: typeof editEntryUpdate;

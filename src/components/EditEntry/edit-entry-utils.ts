@@ -56,7 +56,7 @@ import {
   LayoutContextValue,
 } from "../Layout/layout.utils";
 import { CreateOfflineEntryMutationComponentProps } from "../NewEntry/new-entry.resolvers";
-import { updateExperienceWithEntry } from "../NewEntry/new-entry.injectables";
+import { upsertExperienceWithEntry } from "../NewEntry/new-entry.injectables";
 
 export enum ActionType {
   EDIT_BTN_CLICKED = "@component/edit-entry/edit-btn-clicked",
@@ -330,8 +330,10 @@ const createEntryEffect: CreateEntryEffect["func"] = async (
   try {
     const validResponse = await createEntryEffectHelper(
       { input, experience },
-      { createOfflineEntry, createOnlineEntry, persistor },
+      { createOfflineEntry, createOnlineEntry },
     );
+
+    persistor.persist();
 
     if (validResponse.entry || validResponse.errors) {
       dispatch({
@@ -365,7 +367,7 @@ const updateEntryOfflineEffect: UpdateEntryOfflineEffect["func"] = async (
   { entry },
   { client, persistor },
 ) => {
-  (await updateExperienceWithEntry(entry.experienceId)(client, {
+  (await upsertExperienceWithEntry(entry.experienceId, "offline")(client, {
     data: { createEntry: { entry } as CreateOnlineEntryMutation_createEntry },
   })) as ExperienceFragment;
   await persistor.persist();
@@ -492,12 +494,10 @@ const updateDefinitionsAndDataOnlineEffect: UpdateDefinitionsAndDataOnlineEffect
       variables: {
         definitionsInput: {
           experienceId,
-
           definitions: definitionsInput,
         },
         dataInput,
       },
-
       update: editEntryUpdate,
     });
 

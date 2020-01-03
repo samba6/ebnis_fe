@@ -43,7 +43,7 @@ import {
   CreateOfflineEntryMutationReturned,
 } from "../components/NewEntry/new-entry.resolvers";
 import { GraphQLError } from "graphql";
-import { updateExperienceWithEntry } from "../components/NewEntry/new-entry.injectables";
+import { upsertExperienceWithEntry } from "../components/NewEntry/new-entry.injectables";
 import { cleanupRanQueriesFromCache } from "../apollo-cache/cleanup-ran-queries-from-cache";
 import { defaultLoadingDomId } from "../components/Loading/loading-dom";
 import {
@@ -69,7 +69,7 @@ jest.mock("../state/connections");
 const mockIsConnected = isConnected as jest.Mock;
 
 jest.mock("../components/NewEntry/new-entry.injectables");
-const mockUpdate = updateExperienceWithEntry as jest.Mock;
+const mockUpdate = upsertExperienceWithEntry as jest.Mock;
 
 jest.mock("../components/scroll-into-view");
 const mockScrollIntoView = scrollIntoView as jest.Mock;

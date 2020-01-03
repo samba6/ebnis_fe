@@ -1,5 +1,5 @@
 import { DataProxy } from "apollo-cache";
-import { updateExperienceWithEntry } from "../components/NewEntry/new-entry.injectables";
+import { upsertExperienceWithEntry } from "../components/NewEntry/new-entry.injectables";
 import { readGetExperienceFullQueryFromCache } from "../state/resolvers/read-get-experience-full-query-from-cache";
 import {
   ExperienceFragment,
@@ -38,7 +38,7 @@ test("replaces experiene entry", async () => {
 
   mockReadGetExperienceFullQueryFromCache.mockReturnValue(experience);
 
-  const result = await updateExperienceWithEntry(experienceId)(
+  const result = (await upsertExperienceWithEntry(experienceId, "offline")(
     {} as DataProxy,
     {
       data: {
@@ -50,13 +50,12 @@ test("replaces experiene entry", async () => {
         } as CreateOnlineEntryMutation_createEntry,
       },
     },
-  );
+  )) as ExperienceFragment;
 
-  const edges = result.entries.edges;
-  const node = (edges[0] as ExperienceFragment_entries_edges)
-    .node as EntryFragment;
+  const edges = result.entries.edges as ExperienceFragment_entries_edges[];
+  const node = edges[0].node as EntryFragment;
+  expect(result.hasUnsaved).toBe(true);
   expect(edges).toHaveLength(1);
-
   expect(result.id).toBe(experienceId);
   expect(node.id).toBe(entryId);
   expect(node.clientId).toBe(newEntryClientId);

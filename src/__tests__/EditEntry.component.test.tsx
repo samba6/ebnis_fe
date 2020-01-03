@@ -65,13 +65,13 @@ import {
 import { isConnected } from "../state/connections";
 /* eslint-disable-next-line @typescript-eslint/no-unused-vars*/
 import { CreateOfflineEntryMutationReturned } from "../components/NewEntry/new-entry.resolvers";
-import { updateExperienceWithEntry } from "../components/NewEntry/new-entry.injectables";
+import { upsertExperienceWithEntry } from "../components/NewEntry/new-entry.injectables";
 
 ////////////////////////// MOCKS ////////////////////////////
 
 jest.mock("../components/NewEntry/new-entry.injectables");
 const mockUpdateExperience = jest.fn();
-(updateExperienceWithEntry as jest.Mock).mockReturnValue(
+(upsertExperienceWithEntry as jest.Mock).mockReturnValue(
   mockUpdateExperience,
 );
 
