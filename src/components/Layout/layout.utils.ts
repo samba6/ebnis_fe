@@ -7,15 +7,7 @@ import { UserFragment } from "../../graphql/apollo-types/UserFragment";
 // import { InMemoryCache } from "apollo-cache-inmemory";
 import { getOfflineItemsCount } from "../../state/offline-resolvers";
 import { preFetchExperiences } from "./pre-fetch-experiences";
-import { RestoreCacheOrPurgeStorageFn } from "../../state/apollo-setup";
-import { AppPersistor } from "../../context";
-import { Observable } from "zen-observable-ts";
-import {
-  EmitPayload,
-  EmitActionType,
-  EmitActionConnectionChangedPayload,
-} from "../../state/observable-manager";
-import { cleanupObservableSubscription } from "./layout-injectables";
+import { EbnisContextProps } from "../../context";
 
 export enum LayoutActionType {
   SET_OFFLINE_ITEMS_COUNT = "@layout/set-offline-items-count",
@@ -24,12 +16,11 @@ export enum LayoutActionType {
   CONNECTION_CHANGED = "@layout/connection-changed",
   DONE_FETCHING_EXPERIENCES = "@layout/experiences-already-fetched",
   REFETCH_OFFLINE_ITEMS_COUNT = "@layout/refetch-offline-items-count",
-  PUT_EFFECT_FUNCTIONS_ARGS = "@layout/put-effects-functions-args",
 }
 
 export const StateValue = {
-  effectValNoEffect: "noEffect" as EffectValueNoEffect,
-  effectValHasEffects: "hasEffects" as EffectValueHasEffects,
+  effectValNoEffect: "noEffect" as NoEffectValue,
+  effectValHasEffects: "hasEffects" as HasEffectsVal,
   prefetchValNeverFetched: "never-fetched" as PrefetchValNeverFetched,
   prefetchValFetchNow: "fetch-now" as PrefetchValFetchNow,
   prefetchValAlreadyFetched: "already-fetched" as PrefetchValAlreadyFetched,
@@ -76,10 +67,6 @@ export const reducer: Reducer<StateMachine, LayoutAction> = (state, action) =>
           case LayoutActionType.REFETCH_OFFLINE_ITEMS_COUNT:
             handleGetOfflineItemsCountAction(proxy);
             break;
-
-          case LayoutActionType.PUT_EFFECT_FUNCTIONS_ARGS:
-            handlePutEffectFunctionsArgs(proxy, payload as EffectFunctionsArgs);
-            break;
         }
       });
     },
@@ -88,10 +75,11 @@ export const reducer: Reducer<StateMachine, LayoutAction> = (state, action) =>
 
 ////////////////////////// EFFECT FUNCTIONS SECTION ///////////////////////
 
-const getOfflineItemsCountEffect: GetOfflineItemsCountEffect["func"] = ({
-  cache,
-  dispatch,
-}) => {
+const getOfflineItemsCountEffect: GetOfflineItemsCountEffect["func"] = (
+  _,
+  { cache },
+  { dispatch },
+) => {
   dispatch({
     type: LayoutActionType.SET_OFFLINE_ITEMS_COUNT,
     count: getOfflineItemsCount(cache),
@@ -99,13 +87,13 @@ const getOfflineItemsCountEffect: GetOfflineItemsCountEffect["func"] = ({
 };
 
 type GetOfflineItemsCountEffect = LayoutEffectDefinition<
-  "getOfflineItemsCount",
-  "cache" | "dispatch"
+  "getOfflineItemsCount"
 >;
 
 const prefetchExperiencesEffect: PrefetchExperiencesEffect["func"] = (
-  { cache, client, dispatch },
   { ids },
+  { cache, client },
+  { dispatch },
 ) => {
   setTimeout(() => {
     preFetchExperiences({
@@ -123,131 +111,34 @@ const prefetchExperiencesEffect: PrefetchExperiencesEffect["func"] = (
 
 type PrefetchExperiencesEffect = LayoutEffectDefinition<
   "prefetchExperiences",
-  "cache" | "client" | "dispatch",
   {
     ids: string[];
   }
 >;
 
-const firstEffect: FirstEffect["func"] = async ({
-  cache,
-  dispatch,
-  restoreCacheOrPurgeStorage,
-  persistor,
-}) => {
-  if (cache && restoreCacheOrPurgeStorage) {
-    try {
-      await restoreCacheOrPurgeStorage(persistor);
-      /* eslint-disable-next-line no-empty*/
-    } catch (error) {}
-
-    dispatch({
-      type: LayoutActionType.CACHE_PERSISTED,
-      offlineItemsCount: getOfflineItemsCount(cache),
-      hasConnection: !!isConnected(),
-    });
-  }
-};
-
-type FirstEffect = LayoutEffectDefinition<
-  "firstEffect",
-  "dispatch" | "cache" | "restoreCacheOrPurgeStorage" | "persistor"
->;
-
-const subscribeToObservableEffect: SubscribeToObservableEffect["func"] = ({
-  dispatch,
-  observable,
-  cache,
-}) => {
-  const subscription = observable.subscribe({
-    next({ type, ...payload }) {
-      if (type === EmitActionType.connectionChanged) {
-        const { hasConnection } = payload as EmitActionConnectionChangedPayload;
-
-        dispatch({
-          type: LayoutActionType.CONNECTION_CHANGED,
-          offlineItemsCount: getOfflineItemsCount(cache),
-          isConnected: hasConnection,
-        });
-      }
-    },
-  });
-
-  return () => {
-    cleanupObservableSubscription(subscription);
-  };
-};
-
-type SubscribeToObservableEffect = LayoutEffectDefinition<
-  "subscribeToObservable",
-  "dispatch" | "observable" | "cache"
->;
-
 export const effectFunctions = {
   getOfflineItemsCount: getOfflineItemsCountEffect,
   prefetchExperiences: prefetchExperiencesEffect,
-  firstEffect,
-  subscribeToObservable: subscribeToObservableEffect,
 };
 
 export function runEffects(
   effects: EffectsList,
-  effectsArgsObj: EffectFunctionsArgs,
+  context: EbnisContextProps,
+  thirdArgs: ThirdEffectFunctionArgs,
 ) {
-  for (const { key, ownArgs, effectArgKeys } of effects) {
-    const effectArgs = getEffectArgsFromKeys(
-      effectArgKeys as (keyof EffectFunctionsArgs)[],
-      effectsArgsObj,
-    );
-
+  for (const { key, ownArgs } of effects) {
     effectFunctions[key](
-      effectArgs,
       /* eslint-disable-next-line @typescript-eslint/no-explicit-any*/
       ownArgs as any,
+      context,
+      thirdArgs,
     );
   }
-}
-
-export function getEffectArgsFromKeys(
-  effectArgKeys: (keyof EffectFunctionsArgs)[],
-  effectsArgsObj: EffectFunctionsArgs,
-) {
-  return effectArgKeys.reduce((acc, k) => {
-    acc[k] = effectsArgsObj[k];
-    return acc;
-  }, {} as EffectFunctionsArgs);
 }
 
 ////////////////////////// END EFFECT FUNCTIONS SECTION /////////////////
 
 ////////////////////////// STATE UPDATE FUNCTIONS SECTION /////////////////
-
-function handlePutEffectFunctionsArgs(
-  globalState: StateMachine,
-  payload: EffectFunctionsArgs,
-) {
-  globalState.effects.context.effectsArgsObj = payload;
-  const [effectObjects] = getRenderEffects(globalState);
-  effectObjects.push({
-    key: "firstEffect",
-    ownArgs: {},
-    effectArgKeys: [
-      "cache",
-      "dispatch",
-      "restoreCacheOrPurgeStorage",
-      "persistor",
-    ],
-  });
-
-  globalState.effects.runOnce.subscribeToObservable = {
-    run: true,
-    effect: {
-      key: "subscribeToObservable",
-      ownArgs: {},
-      effectArgKeys: ["dispatch", "observable", "cache"],
-    },
-  };
-}
 
 export function initState(args: InitStateArgs): StateMachine {
   const {
@@ -269,13 +160,9 @@ export function initState(args: InitStateArgs): StateMachine {
     },
 
     effects: {
-      context: {
-        effectsArgsObj: {} as EffectFunctionsArgs,
-      },
       runOnRenders: {
         value: StateValue.effectValNoEffect,
       },
-      runOnce: {},
     },
   };
 }
@@ -307,7 +194,6 @@ function handleExperiencesToPrefetch(
   const [effectObjects] = getRenderEffects(globalState);
   effectObjects.push({
     key: "prefetchExperiences",
-    effectArgKeys: ["client", "cache", "dispatch"],
     ownArgs: { ids },
   });
 
@@ -345,7 +231,6 @@ function handleConnectionChangedAction(
 
       effectObjects.push({
         key: "prefetchExperiences",
-        effectArgKeys: ["client", "dispatch", "cache"],
         ownArgs: {
           ids: yesPrefetch.context.ids,
         },
@@ -361,7 +246,6 @@ function handleGetOfflineItemsCountAction(globalState: StateMachine) {
   const [effectObjects] = getRenderEffects(globalState);
   effectObjects.push({
     key: "getOfflineItemsCount",
-    effectArgKeys: ["cache", "dispatch"],
     ownArgs: {},
   });
 }
@@ -440,10 +324,7 @@ export type LayoutAction =
     }
   | {
       type: LayoutActionType.REFETCH_OFFLINE_ITEMS_COUNT;
-    }
-  | ({
-      type: LayoutActionType.PUT_EFFECT_FUNCTIONS_ARGS;
-    } & EffectFunctionsArgs);
+    };
 
 interface ExperiencesToPrefetchPayload {
   ids: string[] | null;
@@ -472,12 +353,7 @@ export interface StateMachine {
   };
 
   readonly effects: {
-    runOnRenders: EffectState | { value: EffectValueNoEffect };
-    runOnce: {
-      subscribeToObservable?: SubscribeToObservableState;
-    };
-  } & {
-    context: EffectContext;
+    runOnRenders: EffectState | { value: NoEffectValue };
   };
 }
 
@@ -485,10 +361,6 @@ interface RunOnceEffectState<IEffect> {
   run: boolean;
   effect: IEffect;
 }
-
-export type SubscribeToObservableState = RunOnceEffectState<
-  SubscribeToObservableEffect
->;
 
 type PrefetchValNeverFetched = "never-fetched";
 type PrefetchValFetchNow = "fetch-now";
@@ -535,22 +407,16 @@ interface ILocationContextValue extends WindowLocation {
   navigate: NavigateFn;
 }
 
-type EffectValueNoEffect = "noEffect";
-type EffectValueHasEffects = "hasEffects";
-
-interface EffectContext {
-  effectsArgsObj: EffectFunctionsArgs;
-}
+type NoEffectValue = "noEffect";
+type HasEffectsVal = "hasEffects";
 
 type EffectsList = (
   | GetOfflineItemsCountEffect
   | PrefetchExperiencesEffect
-  | FirstEffect
-  | SubscribeToObservableEffect
 )[];
 
 interface EffectState {
-  value: EffectValueHasEffects;
+  value: HasEffectsVal;
   hasEffects: {
     context: {
       effects: EffectsList;
@@ -559,28 +425,20 @@ interface EffectState {
   };
 }
 
-export interface EffectFunctionsArgs {
-  /* eslint-disable-next-line @typescript-eslint/no-explicit-any*/
-  cache: any; // InMemoryCache;
-  /* eslint-disable-next-line @typescript-eslint/no-explicit-any*/
-  client: any; // ApolloClient
-  dispatch: LayoutDispatchType;
-  restoreCacheOrPurgeStorage: RestoreCacheOrPurgeStorageFn | undefined;
-  persistor: AppPersistor;
-  observable: Observable<EmitPayload>;
+interface ThirdEffectFunctionArgs {
+  dispatch: Dispatch<LayoutAction>;
 }
 
 interface LayoutEffectDefinition<
   Key extends keyof typeof effectFunctions,
-  EffectArgKeys extends keyof EffectFunctionsArgs,
   OwnArgs = {}
 > {
   key: Key;
-  effectArgKeys: EffectArgKeys[];
   ownArgs: OwnArgs;
   func?: (
-    effectArgs: { [k in EffectArgKeys]: EffectFunctionsArgs[k] },
     ownArgs: OwnArgs,
+    props: EbnisContextProps,
+    thirdArgs: ThirdEffectFunctionArgs,
   ) => void | Promise<void | (() => void)> | (() => void);
 }
 

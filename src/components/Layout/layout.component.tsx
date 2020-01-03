@@ -1,9 +1,4 @@
-import React, {
-  useContext,
-  useEffect,
-  useReducer,
-  useLayoutEffect,
-} from "react";
+import React, { useContext, useEffect, useReducer } from "react";
 import { EbnisAppContext } from "../../context";
 import { Loading } from "../Loading/loading";
 import {
@@ -14,9 +9,6 @@ import {
   initState,
   StateValue,
   runEffects,
-  SubscribeToObservableState,
-  getEffectArgsFromKeys,
-  effectFunctions,
 } from "./layout.utils";
 import {
   LayoutProvider,
@@ -26,12 +18,20 @@ import {
 } from "./layout-providers";
 import { useUser } from "../use-user";
 import { WindowLocation, NavigateFn } from "@reach/router";
+import {
+  EmitActionType,
+  EmitActionConnectionChangedPayload,
+} from "../../state/observable-manager";
+import { cleanupObservableSubscription } from "./layout-injectables";
+import { getOfflineItemsCount } from "../../state/offline-resolvers";
+import {isConnected} from '../../state/connections';
 
 export function Layout(props: Props) {
   const { children } = props;
   const location = props.location as WindowLocation;
   const navigate = props.navigate as NavigateFn;
 
+  const context = useContext(EbnisAppContext);
   const {
     cache,
     restoreCacheOrPurgeStorage,
@@ -39,7 +39,7 @@ export function Layout(props: Props) {
     persistor,
     connectionStatus,
     observable,
-  } = useContext(EbnisAppContext);
+  } = context;
 
   const user = useUser();
 
@@ -56,79 +56,61 @@ export function Layout(props: Props) {
       renderChildren,
       hasConnection: hasConnection,
     },
-    effects: {
-      runOnRenders,
-      context: { effectsArgsObj },
-      runOnce: { subscribeToObservable },
-    },
+    effects: { runOnRenders },
   } = stateMachine;
-
-  const runSubscribeToObservable =
-    subscribeToObservable && subscribeToObservable.run;
 
   useEffect(() => {
     if (runOnRenders.value !== StateValue.effectValHasEffects) {
       return;
     }
 
-    const {
-      hasEffects: { context },
-    } = runOnRenders;
+    runEffects(runOnRenders.hasEffects.context.effects, context, { dispatch });
 
-    runEffects(context.effects, effectsArgsObj);
-
-    const { cleanupEffects } = context;
-
-    if (cleanupEffects.length) {
-      return () => {
-        runEffects(cleanupEffects, effectsArgsObj);
-      };
-    }
-
-    // redundant - [tsserver 7030] [W] Not all code paths return a value.
-    return;
     /* eslint-disable-next-line react-hooks/exhaustive-deps*/
   }, [runOnRenders]);
 
   useEffect(() => {
-    if (runSubscribeToObservable) {
-      const {
-        effect: { key, effectArgKeys, ownArgs },
-      } = subscribeToObservable as SubscribeToObservableState;
+    (async function() {
+      if (cache && restoreCacheOrPurgeStorage) {
+        try {
+          await restoreCacheOrPurgeStorage(persistor);
+          /* eslint-disable-next-line no-empty*/
+        } catch (error) {}
 
-      const args = getEffectArgsFromKeys(effectArgKeys, effectsArgsObj);
+        dispatch({
+          type: LayoutActionType.CACHE_PERSISTED,
+          offlineItemsCount: getOfflineItemsCount(cache),
+          hasConnection: !!isConnected(),
+        });
+      }
+    })();
 
-      return effectFunctions[key](
-        args,
-        /* eslint-disable-next-line @typescript-eslint/no-explicit-any*/
-        ownArgs as any,
-      ) as (() => void);
-    }
+    const subscription = observable.subscribe({
+      next({ type, ...payload }) {
+        if (type === EmitActionType.connectionChanged) {
+          const {
+            hasConnection,
+          } = payload as EmitActionConnectionChangedPayload;
 
-    return;
-
-    /* eslint-disable-next-line react-hooks/exhaustive-deps*/
-  }, [runSubscribeToObservable]);
-
-  useLayoutEffect(() => {
-    dispatch({
-      type: LayoutActionType.PUT_EFFECT_FUNCTIONS_ARGS,
-      cache,
-      dispatch,
-      client,
-      restoreCacheOrPurgeStorage,
-      persistor,
-      observable,
+          dispatch({
+            type: LayoutActionType.CONNECTION_CHANGED,
+            offlineItemsCount: getOfflineItemsCount(cache),
+            isConnected: hasConnection,
+          });
+        }
+      },
     });
+
+    return () => {
+      cleanupObservableSubscription(subscription);
+    };
     /* eslint-disable-next-line react-hooks/exhaustive-deps*/
   }, []);
 
   // this will be true if we are server rendering in gatsby build
   if (!(cache && restoreCacheOrPurgeStorage && client)) {
     return (
-      <LayoutProvider
-        value={{ offlineItemsCount: 0 } as LayoutContextValue}
-      >
+      <LayoutProvider value={{ offlineItemsCount: 0 } as LayoutContextValue}>
         {children}
       </LayoutProvider>
     );
