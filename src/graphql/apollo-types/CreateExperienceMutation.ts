@@ -73,6 +73,11 @@ export interface CreateExperienceMutation_createExperience_experience_entries_ed
   insertedAt: any;
   updatedAt: any;
   /**
+   * Indicates whether entry has been modified offline, in which case this
+   *   property will be true, otherwise it will be falsy
+   */
+  modOffline: boolean | null;
+  /**
    * The list of data belonging to this entry.
    */
   dataObjects: (CreateExperienceMutation_createExperience_experience_entries_edges_node_dataObjects | null)[];

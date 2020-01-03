@@ -78,6 +78,7 @@ const createOfflineEntryMutationResolver: LocalResolverFn<
     dataObjects,
     insertedAt: timestamps,
     updatedAt: timestamps,
+    modOffline: true,
   };
 
   experience = (await upsertExperienceWithEntry(experience, "offline")(client, {

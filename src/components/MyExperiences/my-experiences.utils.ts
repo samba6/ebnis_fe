@@ -109,7 +109,7 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
     });
   });
 
-export function mapSavedExperiencesToIds(
+export function mapCompletelyOnlineExperiencesToIds(
   experiences: ExperienceConnectionFragment_edges_node[],
 ) {
   return experiences.reduce((acc, experience) => {

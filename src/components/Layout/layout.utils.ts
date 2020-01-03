@@ -191,7 +191,7 @@ function handleExperiencesToPrefetch(
     return;
   }
 
-  const [effectObjects] = getRenderEffects(globalState);
+  const effectObjects = getRenderEffects(globalState);
   effectObjects.push({
     key: "prefetchExperiences",
     ownArgs: { ids },
@@ -227,7 +227,7 @@ function handleConnectionChangedAction(
     states.prefetchExperiences.value === StateValue.prefetchValNeverFetched
   ) {
     if (yesPrefetch.context) {
-      const [effectObjects] = getRenderEffects(globalState);
+      const effectObjects = getRenderEffects(globalState);
 
       effectObjects.push({
         key: "prefetchExperiences",
@@ -242,8 +242,12 @@ function handleConnectionChangedAction(
   }
 }
 
-function handleGetOfflineItemsCountAction(globalState: StateMachine) {
-  const [effectObjects] = getRenderEffects(globalState);
+function handleGetOfflineItemsCountAction(proxy: StateMachine) {
+  if (!proxy.context.hasConnection) {
+    return;
+  }
+
+  const effectObjects = getRenderEffects(proxy);
   effectObjects.push({
     key: "getOfflineItemsCount",
     ownArgs: {},
@@ -271,15 +275,13 @@ function getRenderEffects(globalState: StateMachine) {
   const runOnRendersEffects = globalState.effects.runOnRenders as EffectState;
   runOnRendersEffects.value = StateValue.effectValHasEffects;
   const effectObjects: EffectsList = [];
-  const cleanupEffectObjects: EffectsList = [];
   runOnRendersEffects.hasEffects = {
     context: {
       effects: effectObjects,
-      cleanupEffects: cleanupEffectObjects,
     },
   };
 
-  return [effectObjects, cleanupEffectObjects];
+  return effectObjects;
 }
 
 ///////////////////// END STATE UPDATE FUNCTIONS SECTION //////////////
@@ -341,17 +343,15 @@ interface CachePersistedPayload {
 }
 
 export interface StateMachine {
-  context: {
+  readonly context: {
     hasConnection: boolean;
     offlineItemsCount: number | null;
     renderChildren: boolean;
     user: UserFragment | null;
   };
-
-  states: {
+  readonly states: {
     prefetchExperiences: PrefetchExperiencesState;
   };
-
   readonly effects: {
     runOnRenders: EffectState | { value: NoEffectValue };
   };
@@ -410,17 +410,13 @@ interface ILocationContextValue extends WindowLocation {
 type NoEffectValue = "noEffect";
 type HasEffectsVal = "hasEffects";
 
-type EffectsList = (
-  | GetOfflineItemsCountEffect
-  | PrefetchExperiencesEffect
-)[];
+type EffectsList = (GetOfflineItemsCountEffect | PrefetchExperiencesEffect)[];
 
-interface EffectState {
+export interface EffectState {
   value: HasEffectsVal;
   hasEffects: {
     context: {
       effects: EffectsList;
-      cleanupEffects: EffectsList;
     };
   };
 }

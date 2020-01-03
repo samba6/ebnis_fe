@@ -12,7 +12,7 @@ import "./my-experiences.styles.scss";
 import {
   ComponentProps,
   ExperienceProps,
-  mapSavedExperiencesToIds,
+  mapCompletelyOnlineExperiencesToIds,
   DispatchProvider,
   reducer,
   dispatchContext,
@@ -106,7 +106,7 @@ export function MyExperiences(props: ComponentProps) {
     }
 
     setTimeout(() => {
-      const ids = mapSavedExperiencesToIds(experiences);
+      const ids = mapCompletelyOnlineExperiencesToIds(experiences);
 
       layoutDispatch({
         type: LayoutActionType.EXPERIENCES_TO_PREFETCH,

@@ -117,14 +117,14 @@ const getOfflineItemsResolver: LocalResolverFn<{}, GetOfflineItemsSummary> = (
 function getOnlineAndOfflineEntriesFromExperience({
   entries,
 }: ExperienceFragment) {
-  let offlineEntries: ExperienceFragment_entries_edges_node[] = [];
-  let onlineEntries: ExperienceFragment_entries_edges_node[] = [];
+  const offlineEntries: ExperienceFragment_entries_edges_node[] = [];
+  const onlineEntries: ExperienceFragment_entries_edges_node[] = [];
 
   ((entries.edges as ExperienceFragment_entries_edges[]) || []).forEach(
     (edge: ExperienceFragment_entries_edges) => {
       const node = edge.node as ExperienceFragment_entries_edges_node;
 
-      if (isOfflineId(node.id)) {
+      if (isOfflineId(node.id) || node.modOffline) {
         offlineEntries.push(node);
       } else {
         onlineEntries.push(node);

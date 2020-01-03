@@ -62,8 +62,9 @@ export function toISODateString(date: Date) {
 }
 
 export function toISODatetimeString(date: Date | string) {
-  date = typeof date === "string" ? parseISO(date) : date;
-  return dateFnFormat(date, ISO_DATE_TIME_FORMAT);
+  const parsedDate = typeof date === "string" ? parseISO(date) : date;
+  const formatedDate = dateFnFormat(parsedDate, ISO_DATE_TIME_FORMAT);
+  return formatedDate;
 }
 
 export function formObjToString(type: DataTypes, val: FormObjVal) {
@@ -71,38 +72,24 @@ export function formObjToString(type: DataTypes, val: FormObjVal) {
 
   switch (type) {
     case DataTypes.DATE:
-      {
-        toString = toISODateString(val as Date);
-      }
-
+      toString = toISODateString(val as Date);
       break;
 
     case DataTypes.DATETIME:
-      {
-        toString = toISODatetimeString(val as Date);
-      }
-
+      toString = toISODatetimeString(val as Date);
       break;
 
     case DataTypes.DECIMAL:
     case DataTypes.INTEGER:
-      {
-        toString = (val || 0) + "";
-      }
-
+      toString = (val || 0) + "";
       break;
 
     case DataTypes.SINGLE_LINE_TEXT:
-      {
-        toString = val;
-      }
+      toString = val;
       break;
 
     case DataTypes.MULTI_LINE_TEXT:
-      {
-        toString = (val as string).replace(NEW_LINE_REGEX, "\\\\n");
-      }
-
+      toString = (val as string).replace(NEW_LINE_REGEX, "\\\\n");
       break;
   }
 

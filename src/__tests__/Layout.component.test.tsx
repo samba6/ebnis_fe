@@ -18,6 +18,8 @@ import {
   initState,
   StateValue,
   InitStateArgs,
+  effectFunctions,
+  EffectState,
 } from "../components/Layout/layout.utils";
 import { getOfflineItemsCount } from "../state/offline-resolvers";
 import { isConnected } from "../state/connections";
@@ -658,9 +660,9 @@ describe("components", () => {
 
 describe("reducer", () => {
   test("experiences to prefetch - set to never fetch if no user", () => {
-    const state = initState(({
-      connectionStatus: false,
-    } as unknown) as InitStateArgs);
+    const state = initState({
+      connectionStatus: {},
+    } as InitStateArgs);
     state.states.prefetchExperiences.value = StateValue.prefetchValFetchNow;
 
     const action = {
@@ -673,10 +675,10 @@ describe("reducer", () => {
   });
 
   test("experiences to prefetch - set to never fetch if ids is null", () => {
-    const state = initState(({
-      connectionStatus: false,
+    const state = initState({
+      connectionStatus: {},
       user: {},
-    } as unknown) as InitStateArgs);
+    } as InitStateArgs);
 
     state.states.prefetchExperiences.value = StateValue.prefetchValFetchNow;
 
@@ -690,10 +692,10 @@ describe("reducer", () => {
   });
 
   test("experiences to prefetch - set to never fetch if ids is empty array", () => {
-    const state = initState(({
-      connectionStatus: false,
+    const state = initState({
+      connectionStatus: {},
       user: {},
-    } as unknown) as InitStateArgs);
+    } as InitStateArgs);
 
     state.states.prefetchExperiences.value = StateValue.prefetchValFetchNow;
 
@@ -711,9 +713,9 @@ describe("reducer", () => {
      * Given we have never fetched experiences and there is no user
      */
 
-    const state = initState(({
-      connectionStatus: false,
-    } as unknown) as InitStateArgs);
+    const state = initState({
+      connectionStatus: { isConnected: false },
+    } as InitStateArgs);
 
     state.states.prefetchExperiences.value = StateValue.prefetchValNeverFetched;
 
@@ -741,9 +743,9 @@ describe("reducer", () => {
      * Given we have some unsaved data
      */
 
-    const state = initState(({
-      connectionStatus: false,
-    } as unknown) as InitStateArgs);
+    const state = initState({
+      connectionStatus: { isConnected: false },
+    } as InitStateArgs);
 
     state.context.offlineItemsCount = 5;
 
@@ -763,6 +765,53 @@ describe("reducer", () => {
      */
 
     expect(nextState.context.offlineItemsCount).toBe(17);
+  });
+
+  it("does not refetch offline items count when no connection", () => {
+    const state = initState({
+      connectionStatus: {},
+    } as InitStateArgs);
+
+    const action = {
+      type: LayoutActionType.REFETCH_OFFLINE_ITEMS_COUNT,
+    } as LayoutAction;
+
+    const nextState = reducer(state, action);
+
+    expect(state).toEqual(nextState);
+  });
+
+  it("refetches offline items count when no connection", () => {
+    const state = initState({
+      connectionStatus: { isConnected: true },
+    } as InitStateArgs);
+
+    const action = {
+      type: LayoutActionType.REFETCH_OFFLINE_ITEMS_COUNT,
+    } as LayoutAction;
+
+    const nextState = reducer(state, action);
+
+    expect(state.effects.runOnRenders.value).toEqual(
+      StateValue.effectValNoEffect,
+    );
+
+    const {
+      effects: { runOnRenders },
+    } = nextState;
+
+    expect(runOnRenders.value).toEqual(StateValue.effectValHasEffects);
+
+    const [effect] = (runOnRenders as EffectState).hasEffects.context.effects;
+    const mockDispatch = jest.fn();
+    mockOfflineItemsCount.mockReturnValue(1);
+    effectFunctions[effect.key]({} as any, {} as any, {
+      dispatch: mockDispatch,
+    });
+    expect(mockDispatch).toHaveBeenCalledWith({
+      type: LayoutActionType.SET_OFFLINE_ITEMS_COUNT,
+      count: 1,
+    });
   });
 });
 

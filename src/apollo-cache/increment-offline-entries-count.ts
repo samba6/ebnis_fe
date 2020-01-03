@@ -8,6 +8,7 @@ import { InMemoryCache } from "apollo-cache-inmemory";
 export function incrementOfflineEntriesCountForExperience(
   cache: InMemoryCache,
   experienceId: string,
+  updateMode: "update" | "noupdate" = "update",
 ) {
   let cacheData = queryCacheOfflineItems(cache);
 
@@ -15,21 +16,12 @@ export function incrementOfflineEntriesCountForExperience(
     cacheData = [newOfflineExperienceInCache(experienceId)];
   } else {
     cacheData = immer(cacheData, proxy => {
-      let index = 0;
-      let len = proxy.length;
-      let experienceFound = false;
-
-      for (; index < len; index++) {
-        const experience = proxy[index];
-
-        if (experience.id === experienceId) {
+      const experience = proxy.find(e => e.id === experienceId);
+      if (experience) {
+        if (updateMode === "update") {
           ++experience.offlineEntriesCount;
-          experienceFound = true;
-          break;
         }
-      }
-
-      if (!experienceFound) {
+      } else {
         proxy.push(newOfflineExperienceInCache(experienceId));
       }
     });

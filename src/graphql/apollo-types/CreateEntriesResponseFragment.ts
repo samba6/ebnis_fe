@@ -39,6 +39,11 @@ export interface CreateEntriesResponseFragment_entries {
   insertedAt: any;
   updatedAt: any;
   /**
+   * Indicates whether entry has been modified offline, in which case this
+   *   property will be true, otherwise it will be falsy
+   */
+  modOffline: boolean | null;
+  /**
    * The list of data belonging to this entry.
    */
   dataObjects: (CreateEntriesResponseFragment_entries_dataObjects | null)[];
@@ -61,7 +66,8 @@ export interface CreateEntriesResponseFragment_errors_errors_dataObjectsErrors {
 export interface CreateEntriesResponseFragment_errors_errors {
   __typename: "CreateEntryErrors";
   /**
-   * May be because client ID is not unique for experience
+   * May be we failed because entry.clientId is already taken by another
+   *   entry belonging to the experience.
    */
   clientId: string | null;
   /**
@@ -69,8 +75,8 @@ export interface CreateEntriesResponseFragment_errors_errors {
    */
   entry: string | null;
   /**
-   * While saving an offline entry, its experience ID must be same as
-   *   experience.clientId if saving entry via offline experience
+   * An offline entry of offline experience must have its experience ID same as
+   *   experience.clientId.
    */
   experienceId: string | null;
   /**

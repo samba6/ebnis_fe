@@ -55,6 +55,7 @@ import {
 } from "../components/NewEntry/new-entry.dom";
 import { Props as DateTimeProps } from "../components/DateTimeField/date-time-field.utils";
 import { toISODatetimeString } from "../components/NewEntry/new-entry.utils";
+import { AppPersistor } from "../context";
 
 jest.mock("../components/SidebarHeader/sidebar-header.component", () => ({
   SidebarHeader: jest.fn(() => null),
@@ -696,14 +697,9 @@ it("treats all exceptions as network error", async () => {
 
 ////////////////////////// HELPER FUNCTIONS ///////////////////////////////////
 
-const NewEntryP = NewEntryComponent as ComponentType<
-  Partial<ComponentProps>
->;
+const NewEntryP = NewEntryComponent as ComponentType<Partial<ComponentProps>>;
 
-function makeComp(
-  props: Partial<ComponentProps>,
-  connectionStatus = true,
-) {
+function makeComp(props: Partial<ComponentProps>, connectionStatus = true) {
   mockIsConnected.mockReturnValue(connectionStatus);
   const mockCreateOnlineEntry = jest.fn();
   const mockCreateOfflineEntry = jest.fn();
@@ -715,6 +711,7 @@ function makeComp(
       <Ui
         createOfflineEntry={mockCreateOfflineEntry}
         createOnlineEntry={mockCreateOnlineEntry}
+        persistor={({ persist: jest.fn() } as unknown) as AppPersistor}
         {...props}
       />
     ),

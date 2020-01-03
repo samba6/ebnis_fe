@@ -18,7 +18,6 @@ const CREATE_ENTRY_ERRORS_FRAGMENT = gql`
     entry
     experience
     experienceId
-
     dataObjectsErrors {
       ...DataObjectsErrorsFragment
     }
@@ -33,7 +32,6 @@ export const CREATE_ONLINE_ENTRY_MUTATION = gql`
       entry {
         ...EntryFragment
       }
-
       errors {
         ...CreateEntryErrorsFragment
       }

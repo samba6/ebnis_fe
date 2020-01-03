@@ -57,6 +57,7 @@ import {
 } from "../Layout/layout.utils";
 import { CreateOfflineEntryMutationComponentProps } from "../NewEntry/new-entry.resolvers";
 import { upsertExperienceWithEntry } from "../NewEntry/new-entry.injectables";
+import { incrementOfflineEntriesCountForExperience } from "../../apollo-cache/increment-offline-entries-count";
 
 export enum ActionType {
   EDIT_BTN_CLICKED = "@component/edit-entry/edit-btn-clicked",
@@ -333,9 +334,8 @@ const createEntryEffect: CreateEntryEffect["func"] = async (
       { createOfflineEntry, createOnlineEntry },
     );
 
-    persistor.persist();
-
     if (validResponse.entry || validResponse.errors) {
+      persistor.persist();
       dispatch({
         type: ActionType.ON_ENTRY_CREATED,
         serverResult: validResponse,
@@ -365,12 +365,20 @@ type CreateEntryEffect = EffectDefinition<
 
 const updateEntryOfflineEffect: UpdateEntryOfflineEffect["func"] = async (
   { entry },
-  { client, persistor },
+  { layoutDispatch, client, persistor, cache },
 ) => {
-  (await upsertExperienceWithEntry(entry.experienceId, "offline")(client, {
+  const { experienceId } = entry;
+
+  (await upsertExperienceWithEntry(experienceId, "offline")(client, {
     data: { createEntry: { entry } as CreateOnlineEntryMutation_createEntry },
   })) as ExperienceFragment;
+
+  incrementOfflineEntriesCountForExperience(cache, experienceId, "noupdate");
   await persistor.persist();
+
+  layoutDispatch({
+    type: LayoutActionType.REFETCH_OFFLINE_ITEMS_COUNT,
+  });
 };
 
 type UpdateEntryOfflineEffect = EffectDefinition<
@@ -1332,6 +1340,7 @@ function formObjToCompareString(type: DataTypes, val: FormObjVal) {
 function getDataObjectsForOfflineUpdate(
   dataObjects: DataObjectFragment[],
   dataStates: DataStates,
+  updateTime: string,
 ) {
   let updatedCount = 0;
 
@@ -1351,6 +1360,7 @@ function getDataObjectsForOfflineUpdate(
       } = dataState;
 
       obj.data = makeDataObjectData(type, formValue);
+      obj.updatedAt = updateTime;
       d.value = "unchanged";
 
       (d as DataUnchangedState).unchanged.context.anyEditSuccess = true;
@@ -1421,9 +1431,14 @@ function handleUpdateEntryOfflineAction(
     context: { entry },
   } = proxy;
 
+  const updateTime = (new Date()).toJSON()
+  entry.updatedAt = updateTime;
+  entry.modOffline = true;
+
   const updatedCount = getDataObjectsForOfflineUpdate(
     entry.dataObjects as DataObjectFragment[],
     states.dataStates,
+    updateTime,
   );
 
   const submissionSuccessResponse = {

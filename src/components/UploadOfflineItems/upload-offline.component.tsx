@@ -83,7 +83,6 @@ export function UploadOfflineItems(props: Props) {
   const { navigate } = props;
   const [uploadUnsavedExperiences] = useUploadOfflineExperiencesMutation();
   const [uploadAllUnsaveds] = useUploadOfflineItemsMutation();
-
   const [uploadSavedExperiencesEntries] = useUploadOfflineEntriesMutation();
 
   const { data, loading } = useGetAllUnsavedQuery();
@@ -367,14 +366,15 @@ function ExperienceComponent({
 }) {
   const { client, cache } = useContext(EbnisAppContext);
 
-  let {
-    experience,
+  const {
     newlySavedExperience,
     didUploadSucceed,
     offlineEntries,
     entriesErrors,
     experienceError,
   } = experienceObjectMap;
+
+  let { experience } = experienceObjectMap;
 
   experience = newlySavedExperience || experience;
   const hasError = !!(entriesErrors || experienceError);
@@ -660,14 +660,11 @@ function toUploadableEntry(entry: ExperienceFragment_entries_edges_node) {
       "updatedAt",
     ];
 
-    return keys.reduce(
-      (acc, k) => {
-        acc[k as keyof DataObjectFragment] =
-          dataObject[k as keyof DataObjectFragment];
-        return acc;
-      },
-      {} as DataObjectFragment,
-    );
+    return keys.reduce((acc, k) => {
+      acc[k as keyof DataObjectFragment] =
+        dataObject[k as keyof DataObjectFragment];
+      return acc;
+    }, {} as DataObjectFragment);
   });
 
   return {

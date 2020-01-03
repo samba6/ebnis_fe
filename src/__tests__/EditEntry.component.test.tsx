@@ -66,14 +66,16 @@ import { isConnected } from "../state/connections";
 /* eslint-disable-next-line @typescript-eslint/no-unused-vars*/
 import { CreateOfflineEntryMutationReturned } from "../components/NewEntry/new-entry.resolvers";
 import { upsertExperienceWithEntry } from "../components/NewEntry/new-entry.injectables";
+import { incrementOfflineEntriesCountForExperience } from "../apollo-cache/increment-offline-entries-count";
 
 ////////////////////////// MOCKS ////////////////////////////
 
+jest.mock("../apollo-cache/increment-offline-entries-count");
+const mockIncrementOfflineEntriesCountForExperience = incrementOfflineEntriesCountForExperience as jest.Mock;
+
 jest.mock("../components/NewEntry/new-entry.injectables");
-const mockUpdateExperience = jest.fn();
-(upsertExperienceWithEntry as jest.Mock).mockReturnValue(
-  mockUpdateExperience,
-);
+const mockUpsertExperience = jest.fn();
+(upsertExperienceWithEntry as jest.Mock).mockReturnValue(mockUpsertExperience);
 
 jest.mock("../components/DateTimeField/date-time-field.component", () => ({
   DateTimeField: MockDateTimeField,
@@ -112,6 +114,8 @@ beforeEach(() => {
   mockEditEntryUpdate.mockReset();
   mockPersistFunc.mockReset();
   mockIsConnected.mockReset();
+  mockIncrementOfflineEntriesCountForExperience.mockReset();
+  mockUpsertExperience.mockReset();
 });
 
 it("destroys the UI", async () => {
@@ -1627,7 +1631,7 @@ test("upload offline entry, one data object updated, one not updated, submitting
   /**
    * And cache should be flushed from memory
    */
-  expect(mockPersistFunc).toHaveBeenCalledTimes(1);
+  expect(mockPersistFunc).toHaveBeenCalled();
 
   /**
    * And offline items count should be properly draw down
@@ -1651,7 +1655,7 @@ test("upload offline entry, one data object updated, one not updated, submitting
   expect(getDataField(data2OnlineId).classList).toContain("data--success");
 });
 
-test("update offline entry - only data objects allowed", async () => {
+test("update offline entry - only data objects can be updated", async () => {
   /**
    * Given user wishes to edit an entry
    */
@@ -1677,7 +1681,7 @@ test("update offline entry - only data objects allowed", async () => {
    * And we are offline
    */
   mockIsConnected.mockReturnValue(false);
-  const { ui } = makeComp({
+  const { ui, mockLayoutDispatch } = makeComp({
     props: {
       entry: offlineEntry as EntryFragment,
       experience: {
@@ -1744,6 +1748,15 @@ test("update offline entry - only data objects allowed", async () => {
    * And the data field should now show success UI
    */
   expect(getDataField("int").classList).toContain("data--success");
+
+  /**
+   * And offline database is updated appropriately
+   */
+  await wait(() => true);
+  expect(mockIncrementOfflineEntriesCountForExperience).toHaveBeenCalled();
+  expect(mockUpsertExperience).toHaveBeenCalled();
+  expect(mockPersistFunc).toHaveBeenCalled();
+  expect(mockLayoutDispatch).toHaveBeenCalled();
 });
 
 ////////////////////////// HELPER FUNCTIONS ///////////////////////////
