@@ -5,7 +5,7 @@ import makeClassnames from "classnames";
 import { Link } from "../Link";
 import "./header.styles.scss";
 import { EXPERIENCES_URL, ROOT_URL } from "../../routes";
-import { LayoutContextHeader, LocationContext } from "../Layout/layout.utils";
+import { LayoutContext, LocationContext } from "../Layout/layout.utils";
 import {
   UPLOAD_OFFLINE_ITEMS_PREVIEW_URL,
   UPLOAD_OFFLINE_ITEMS_URL_START,
@@ -27,7 +27,7 @@ export const Header = (props: Props) => {
   const user = useUser();
   const logoAttrs = useLogo();
   const { navigate, pathname } = useContext(LocationContext);
-  const { offlineItemsCount, hasConnection } = useContext(LayoutContextHeader);
+  const { offlineItemsCount, hasConnection } = useContext(LayoutContext);
   const isHome = pathname === EXPERIENCES_URL || pathname === ROOT_URL;
 
   const asUrlProps = isHome

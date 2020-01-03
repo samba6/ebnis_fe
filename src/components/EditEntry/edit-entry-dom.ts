@@ -2,6 +2,7 @@ export const domPrefix = "edit-entry";
 export const formErrorsDomId = `${domPrefix}-form-errors-message`;
 export const otherErrorsDomId = `${domPrefix}-other-errors-message`;
 export const apolloErrorsDomId = `${domPrefix}-apollo-errors-message`;
+export const offlineSyncButtonId = `${domPrefix}-offline-sync`;
 
 export function getDefinitionFieldSelectorClass(id: Id) {
   return `js-${domPrefix}-definition-field-${id}`;
@@ -23,6 +24,10 @@ export function getDefinitionControlId(id: Id, control: ControlName) {
 
 export function getDataControlDomId(id: Id, control: ControlName) {
   return `${domPrefix}-data-${control}-${id}`;
+}
+
+export function makeOfflineDefinitionLabelId(id: Id) {
+  return `${domPrefix}-offline-def-label-${id}`;
 }
 
 type Id = string | number;

@@ -7,15 +7,17 @@ import {
   ExperienceFragment,
   ExperienceFragment_entries,
   ExperienceFragment_entries_edges_node,
+  ExperienceFragment_entries_edges,
 } from "../../graphql/apollo-types/ExperienceFragment";
 import { writeGetExperienceFullQueryToCache } from "../../state/resolvers/write-get-experience-full-query-to-cache";
 import { DataProxy } from "apollo-cache";
 import { FetchResult } from "apollo-link";
 import { readGetExperienceFullQueryFromCache } from "../../state/resolvers/read-get-experience-full-query-from-cache";
 import { entryToEdge } from "../../state/resolvers/entry-to-edge";
-import { AppPersistor } from "../../context";
+import { EntryFragment } from "../../graphql/apollo-types/EntryFragment";
 
-export function addResolvers(client: ApolloClient<{}>) {
+// istanbul ignore next:
+export function addNewEntryResolvers(client: ApolloClient<{}>) {
   if (window.____ebnis.newEntryResolversAdded) {
     return;
   }
@@ -26,7 +28,6 @@ export function addResolvers(client: ApolloClient<{}>) {
 
 type Fn<T = string | ExperienceFragment> = (
   experienceOrId: T,
-  persistor?: AppPersistor,
 ) => (
   proxy: DataProxy,
   mutationResult: FetchResult<CreateOnlineEntryMutation>,
@@ -35,23 +36,19 @@ type Fn<T = string | ExperienceFragment> = (
   : Promise<ExperienceFragment | undefined>;
 
 /**
- * Insert the entry into the experience and updates the Get full experience
+ * Upsert the entry into the experience and updates the Get full experience
  * query
  */
-export const updateExperienceWithNewEntry: Fn = function updateFn(
-  experienceOrId,
-  persistor,
-) {
+export const updateExperienceWithEntry: Fn = function updateFn(experienceOrId) {
   return async function updateFnInner(
     dataProxy,
     { data: createEntryResponse },
   ) {
-    const entry =
-      createEntryResponse &&
+    const entry = (createEntryResponse &&
       createEntryResponse.createEntry &&
-      createEntryResponse.createEntry.entry;
+      createEntryResponse.createEntry.entry) as EntryFragment;
 
-    let experience = experienceOrId as (ExperienceFragment | null);
+    let experience = experienceOrId as ExperienceFragment | null;
 
     if (typeof experienceOrId === "string") {
       if (!entry) {
@@ -72,25 +69,31 @@ export const updateExperienceWithNewEntry: Fn = function updateFn(
       const entries = proxy.entries as ExperienceFragment_entries;
       const edges = entries.edges || [];
 
-      edges.unshift(
-        entryToEdge(entry as ExperienceFragment_entries_edges_node),
+      const existingEntry = edges.find(
+        e =>
+          ((e as ExperienceFragment_entries_edges).node as EntryFragment).id ===
+          entry.id,
       );
+
+      if (existingEntry) {
+        existingEntry.node = entry;
+      } else {
+        edges.unshift(
+          entryToEdge(entry as ExperienceFragment_entries_edges_node),
+        );
+      }
 
       entries.edges = edges;
       proxy.entries = entries;
     });
 
-    // PLEASE I NEED TO CHECK THIS AGAIN AS WE ARE ALREADY WRITING THE FULL
+    // ATTENTION: I NEED TO CHECK THIS AGAIN AS WE ARE ALREADY WRITING THE FULL
     // EXPERIENCE FRAGMENT IN my-experiences/pre-fetch-experiences.
     // if we don't re-write the experience fragment we will only be able to
     // query EXPERIENCE_MINI_FRAGMENT and not EXPERIENCE_FRAGMENT.
     writeGetExperienceFullQueryToCache(dataProxy, updatedExperience, {
       writeFragment: true,
     });
-
-    if (persistor) {
-      persistor.persist();
-    }
 
     return updatedExperience;
   };

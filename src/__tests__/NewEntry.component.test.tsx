@@ -13,7 +13,7 @@ import differenceInDays from "date-fns/differenceInDays";
 import differenceInHours from "date-fns/differenceInHours";
 import parseISO from "date-fns/parseISO";
 import { NewEntryComponent } from "../components/NewEntry/new-entry.component";
-import { NewEntryComponentProps } from "../components/NewEntry/new-entry.utils";
+import { ComponentProps } from "../components/NewEntry/new-entry.utils";
 import {
   renderWithRouter,
   fillField,
@@ -43,7 +43,7 @@ import {
   CreateOfflineEntryMutationReturned,
 } from "../components/NewEntry/new-entry.resolvers";
 import { GraphQLError } from "graphql";
-import { updateExperienceWithNewEntry } from "../components/NewEntry/new-entry.injectables";
+import { updateExperienceWithEntry } from "../components/NewEntry/new-entry.injectables";
 import { cleanupRanQueriesFromCache } from "../apollo-cache/cleanup-ran-queries-from-cache";
 import { defaultLoadingDomId } from "../components/Loading/loading-dom";
 import {
@@ -69,7 +69,7 @@ jest.mock("../state/connections");
 const mockIsConnected = isConnected as jest.Mock;
 
 jest.mock("../components/NewEntry/new-entry.injectables");
-const mockUpdate = updateExperienceWithNewEntry as jest.Mock;
+const mockUpdate = updateExperienceWithEntry as jest.Mock;
 
 jest.mock("../components/scroll-into-view");
 const mockScrollIntoView = scrollIntoView as jest.Mock;
@@ -697,11 +697,11 @@ it("treats all exceptions as network error", async () => {
 ////////////////////////// HELPER FUNCTIONS ///////////////////////////////////
 
 const NewEntryP = NewEntryComponent as ComponentType<
-  Partial<NewEntryComponentProps>
+  Partial<ComponentProps>
 >;
 
 function makeComp(
-  props: Partial<NewEntryComponentProps>,
+  props: Partial<ComponentProps>,
   connectionStatus = true,
 ) {
   mockIsConnected.mockReturnValue(connectionStatus);

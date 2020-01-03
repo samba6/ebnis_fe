@@ -26,7 +26,7 @@ import {
 } from "./new-entry.resolvers";
 import { wrapReducer } from "../../logger";
 import { isConnected } from "../../state/connections";
-import { updateExperienceWithNewEntry } from "./new-entry.injectables";
+import { updateExperienceWithEntry } from "./new-entry.injectables";
 import { scrollIntoView } from "../scroll-into-view";
 import { AppPersistor } from "../../context";
 import { InMemoryCache } from "apollo-cache-inmemory";
@@ -166,44 +166,61 @@ export function interpretCreateEntryMutationException(payload: Error) {
 
 ////////////////////////// EFFECTS SECTION ////////////////////////////
 
+export async function createEntryEffectHelper(
+  { experience, input }: CreateEntryEffectArgs,
+  {
+    createOnlineEntry,
+    createOfflineEntry,
+    persistor,
+  }: Pick<
+    ComponentProps,
+    "persistor" | "createOfflineEntry" | "createOnlineEntry"
+  >,
+) {
+  const experienceId = experience.id;
+  let createResult: CreateOnlineEntryMutation_createEntry;
+
+  if (isConnected()) {
+    const result = await createOnlineEntry({
+      variables: {
+        input,
+      },
+
+      update: updateExperienceWithEntry(experienceId, persistor),
+    });
+
+    createResult = ((result && result.data && result.data.createEntry) ||
+      {}) as CreateOnlineEntryMutation_createEntry;
+  } else {
+    const result = await createOfflineEntry({
+      variables: {
+        experience,
+        dataObjects: input.dataObjects as CreateDataObject[],
+      },
+    });
+
+    const { entry } = (result &&
+      result.data &&
+      result.data
+        .createOfflineEntry) as CreateOfflineEntryMutationReturned["createOfflineEntry"];
+
+    createResult = { entry } as CreateOnlineEntryMutation_createEntry;
+  }
+
+  return createResult;
+}
+
 const createEntryEffect: CreateEntryEffect["func"] = async (
-  { experience, input },
+  ownArgs,
   { createOnlineEntry, createOfflineEntry, persistor },
   { dispatch, goToExperience },
 ) => {
-  const experienceId = experience.id;
-
   try {
-    let createResult: CreateOnlineEntryMutation_createEntry;
-
-    if (isConnected()) {
-      const result = await createOnlineEntry({
-        variables: {
-          input,
-        },
-
-        update: updateExperienceWithNewEntry(experienceId, persistor),
-      });
-
-      createResult = ((result && result.data && result.data.createEntry) ||
-        {}) as CreateOnlineEntryMutation_createEntry;
-    } else {
-      const result = await createOfflineEntry({
-        variables: {
-          experience,
-          dataObjects: input.dataObjects as CreateDataObject[],
-        },
-      });
-
-      const { entry } = (result &&
-        result.data &&
-        result.data
-          .createOfflineEntry) as CreateOfflineEntryMutationReturned["createOfflineEntry"];
-
-      createResult = { entry } as CreateOnlineEntryMutation_createEntry;
-    }
-
-    const { entry, errors } = createResult;
+    const { entry, errors } = await createEntryEffectHelper(ownArgs, {
+      createOnlineEntry,
+      createOfflineEntry,
+      persistor,
+    });
 
     if (errors) {
       dispatch({ type: ActionType.ON_CREATE_ENTRY_ERRORS, ...errors });
@@ -222,13 +239,12 @@ const createEntryEffect: CreateEntryEffect["func"] = async (
   }
 };
 
-type CreateEntryEffect = EffectDefinition<
-  "createEntry",
-  {
-    experience: ExperienceFragment;
-    input: CreateEntryInput;
-  }
->;
+interface CreateEntryEffectArgs {
+  experience: ExperienceFragment;
+  input: CreateEntryInput;
+}
+
+type CreateEntryEffect = EffectDefinition<"createEntry", CreateEntryEffectArgs>;
 
 const scrollToViewEffect: ScrollToViewEffect["func"] = ({ id }) => {
   scrollIntoView(id, {
@@ -250,7 +266,7 @@ export const effectFunctions = {
 
 export function runEffects(
   effects: EffectsList,
-  props: NewEntryComponentProps,
+  props: ComponentProps,
   thirdArgs: ThirdEffectFunctionArgs,
 ) {
   for (const { key, ownArgs } of effects) {
@@ -498,7 +514,7 @@ export interface NewEntryCallerProps
   experience: ExperienceFragment;
 }
 
-export type NewEntryComponentProps = NewEntryCallerProps &
+export type ComponentProps = NewEntryCallerProps &
   CreateOnlineEntryMutationComponentProps &
   CreateOfflineEntryMutationComponentProps & {
     client: ApolloClient<{}>;
@@ -619,7 +635,7 @@ type ErrorsStateValue = "errors";
 /////////////////////// END STRINGY TYPES SECTION /////////////
 
 interface EffectContext {
-  effectsArgsObj: NewEntryComponentProps;
+  effectsArgsObj: ComponentProps;
 }
 
 type EffectsList = (ScrollToViewEffect | CreateEntryEffect)[];
@@ -646,7 +662,7 @@ interface EffectDefinition<
   ownArgs: OwnArgs;
   func?: (
     ownArgs: OwnArgs,
-    props: NewEntryComponentProps,
+    props: ComponentProps,
     thirdArgs: ThirdEffectFunctionArgs,
   ) => void | Promise<void | (() => void)> | (() => void);
 }

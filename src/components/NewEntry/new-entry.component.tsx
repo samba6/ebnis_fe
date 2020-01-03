@@ -1,17 +1,11 @@
-import React, {
-  useEffect,
-  useReducer,
-  useContext,
-  useLayoutEffect,
-  useCallback,
-} from "react";
+import React, { useEffect, useReducer, useContext, useCallback } from "react";
 import Form from "semantic-ui-react/dist/commonjs/collections/Form";
 import Message from "semantic-ui-react/dist/commonjs/collections/Message";
 import Button from "semantic-ui-react/dist/commonjs/elements/Button";
 import { NavigateFn } from "@reach/router";
 import "./new-entry.styles.scss";
 import {
-  NewEntryComponentProps,
+  ComponentProps,
   FormObjVal,
   makePageTitle,
   reducer,
@@ -34,7 +28,7 @@ import { DataTypes } from "../../graphql/apollo-types/globalTypes";
 import { useCreateOfflineEntryMutation } from "./new-entry.resolvers";
 import { componentFromDataType } from "./component-from-data-type";
 import { InputOnChangeData } from "semantic-ui-react";
-import { addResolvers } from "./new-entry.injectables";
+import { addNewEntryResolvers } from "./new-entry.injectables";
 import { EbnisAppContext } from "../../context";
 import { SidebarHeader } from "../SidebarHeader/sidebar-header.component";
 import { useCreateOnlineEntryMutation } from "../../graphql/create-entry.mutation";
@@ -54,10 +48,8 @@ import {
   MUTATION_NAME_createOfflineEntry,
 } from "../../state/resolvers";
 
-export function NewEntryComponent(props: NewEntryComponentProps) {
-  const { navigate, experience, ...rest } = props;
-  const { client } = rest;
-
+export function NewEntryComponent(props: ComponentProps) {
+  const { navigate, experience } = props;
   const [stateMachine, dispatch] = useReducer(reducer, experience, initState);
 
   const {
@@ -87,7 +79,9 @@ export function NewEntryComponent(props: NewEntryComponentProps) {
   }, [onRender]);
 
   useEffect(() => {
-    const { cache, persistor } = props;
+    const { client, cache, persistor } = props;
+    addNewEntryResolvers(client);
+
     return () =>
       cleanupRanQueriesFromCache(
         cache,
@@ -98,11 +92,6 @@ export function NewEntryComponent(props: NewEntryComponentProps) {
         ],
         persistor,
       );
-    /* eslint-disable-next-line react-hooks/exhaustive-deps*/
-  }, []);
-
-  useLayoutEffect(() => {
-    addResolvers(client);
     /* eslint-disable-next-line react-hooks/exhaustive-deps*/
   }, []);
 

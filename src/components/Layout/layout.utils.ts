@@ -400,9 +400,9 @@ function getRenderEffects(globalState: StateMachine) {
 
 ///////////////////// END STATE UPDATE FUNCTIONS SECTION //////////////
 
-export const LayoutContextHeader = createContext<ILayoutContextHeaderValue>({
+export const LayoutContext = createContext<LayoutContextValue>({
   offlineItemsCount: 0,
-} as ILayoutContextHeaderValue);
+} as LayoutContextValue);
 
 export const LayoutUnchangingContext = createContext<
   ILayoutUnchangingContextValue
@@ -518,7 +518,7 @@ export type LayoutDispatchType = Dispatch<LayoutAction>;
 
 export interface Props extends PropsWithChildren<{}>, RouteComponentProps {}
 
-export interface ILayoutContextHeaderValue {
+export interface LayoutContextValue {
   offlineItemsCount: number;
   hasConnection: boolean;
 }

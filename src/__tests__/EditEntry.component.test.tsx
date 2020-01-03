@@ -4,7 +4,7 @@ import "@marko/testing-library/cleanup-after-each";
 import { render, wait, waitForElement } from "@testing-library/react";
 import { EditEntryComponent } from "../components/EditEntry/edit-entry.component";
 import {
-  EditEntryComponentProps,
+  ComponentProps,
   ActionType,
 } from "../components/EditEntry/edit-entry-utils";
 import { EntryFragment } from "../graphql/apollo-types/EntryFragment";
@@ -59,9 +59,21 @@ import {
   getDefinitionFieldSelectorClass,
   ControlName,
   getDataControlDomId,
+  offlineSyncButtonId,
+  makeOfflineDefinitionLabelId,
 } from "../components/EditEntry/edit-entry-dom";
+import { isConnected } from "../state/connections";
+/* eslint-disable-next-line @typescript-eslint/no-unused-vars*/
+import { CreateOfflineEntryMutationReturned } from "../components/NewEntry/new-entry.resolvers";
+import { updateExperienceWithEntry } from "../components/NewEntry/new-entry.injectables";
 
 ////////////////////////// MOCKS ////////////////////////////
+
+jest.mock("../components/NewEntry/new-entry.injectables");
+const mockUpdateExperience = jest.fn();
+(updateExperienceWithEntry as jest.Mock).mockReturnValue(
+  mockUpdateExperience,
+);
 
 jest.mock("../components/DateTimeField/date-time-field.component", () => ({
   DateTimeField: MockDateTimeField,
@@ -80,6 +92,9 @@ const mockCleanupRanQueriesFromCache = cleanupRanQueriesFromCache as jest.Mock;
 jest.mock("../apollo-cache/drecrement-offline-entries-count");
 const mockDecrementOfflineEntriesCountForExperience = decrementOfflineEntriesCountForExperience as jest.Mock;
 
+jest.mock("../state/connections");
+const mockIsConnected = isConnected as jest.Mock;
+
 let errorConsoleSpy: jest.SpyInstance;
 const mockPersistFunc = jest.fn();
 
@@ -96,6 +111,7 @@ beforeEach(() => {
   mockDecrementOfflineEntriesCountForExperience.mockReset();
   mockEditEntryUpdate.mockReset();
   mockPersistFunc.mockReset();
+  mockIsConnected.mockReset();
 });
 
 it("destroys the UI", async () => {
@@ -134,6 +150,7 @@ it("destroys the UI", async () => {
 test("not editing data, editing single definition, form errors, server success", async () => {
   const { ui, mockUpdateDefinitionsOnline, mockEditEntryUpdate } = makeComp({
     props: {
+      hasConnection: true,
       entry: {
         dataObjects: [] as DataObjectFragment[],
       } as EntryFragment,
@@ -156,6 +173,8 @@ test("not editing data, editing single definition, form errors, server success",
   //  const { debug } = render(ui);
 
   // idle
+
+  expect(document.getElementById(offlineSyncButtonId)).toBeNull();
 
   let $editBtn = getDefinitionEdit("a");
   expect(getDefinitionDismiss("a")).toBeNull();
@@ -349,6 +368,7 @@ test("not editing data, editing multiple definitions, server error", async () =>
    */
   const { ui, mockUpdateDefinitionsOnline } = makeComp({
     props: {
+      hasConnection: true,
       entry: {
         dataObjects: [] as DataObjectFragment[],
       } as EntryFragment,
@@ -737,6 +757,7 @@ test("editing data, editing definitions, some data and definitions errors, excep
     mockEditEntryUpdate,
   } = makeComp({
     props: {
+      hasConnection: true,
       entry: {
         dataObjects: [
           {
@@ -968,7 +989,6 @@ test("editing data, editing definitions, some data and definitions errors, excep
    */
   await waitForElement(getOtherErrorsResponseDom);
 
-
   /**
    * When form is submitted 2nd time
    */
@@ -1161,6 +1181,7 @@ test("renders error boundary", () => {
 test("submitting only data objects, apollo errors, runtime errors", async () => {
   const { ui, mockUpdateDataOnline, mockEditEntryUpdate } = makeComp({
     props: {
+      hasConnection: true,
       entry: {
         dataObjects: [
           {
@@ -1293,6 +1314,7 @@ test("submitting only data objects, apollo errors, runtime errors", async () => 
 test("not editing data, editing definition, apollo errors", async () => {
   const { ui, mockUpdateDefinitionsOnline } = makeComp({
     props: {
+      hasConnection: true,
       entry: {
         dataObjects: [] as DataObjectFragment[],
       } as EntryFragment,
@@ -1324,7 +1346,15 @@ test("not editing data, editing definition, apollo errors", async () => {
   expect($response).not.toBeNull();
 });
 
-test("editing offline entry, one data object updated, one not updated, submitting online", async () => {
+test("upload offline entry, one data object updated, one not updated, submitting online", async () => {
+  /**
+   * Given there is entry created offline with 2 data objects:
+   * 1 - will be updated using the component
+   * 2 - will be submitted unchanged
+   */
+  const offlineEntryId = makeOfflineId(1);
+  const experienceId = "ex";
+
   const definition1Id = "int";
   const data1OnlineId = "d1on";
   const data1OfflineId = "d1of";
@@ -1333,13 +1363,6 @@ test("editing offline entry, one data object updated, one not updated, submittin
   const data2OnlineId = "d2on";
   const data2OfflineId = "d2of";
 
-  /**
-   * Given there is entry created offline with 2 data objects:
-   * 1 - will be updated using the component
-   * 2 - will be submitted unchanged
-   */
-  const offlineEntryId = makeOfflineId(1);
-  const experienceId = "ex";
   const offlineEntry = {
     id: offlineEntryId,
     experienceId,
@@ -1358,11 +1381,13 @@ test("editing offline entry, one data object updated, one not updated, submittin
   };
 
   /**
-   * And there are other offline items in the system
+   * And we are online
    */
+  mockIsConnected.mockReturnValue(true);
   const { ui, mockCreateEntryOnline, mockLayoutDispatch } = makeComp({
     props: {
       entry: offlineEntry as EntryFragment,
+      hasConnection: true,
       experience: {
         id: experienceId,
         dataDefinitions: [
@@ -1453,14 +1478,21 @@ test("editing offline entry, one data object updated, one not updated, submittin
   render(ui);
 
   /**
-   * And we update entry data 1 to a new value
+   * The offline definition labels should not be visible
    */
-  getDataInput(data1OfflineId, "2");
+  expect(
+    document.getElementById(makeOfflineDefinitionLabelId(definition1Id)),
+  ).toBeNull();
+
+  expect(
+    document.getElementById(makeOfflineDefinitionLabelId(definition2Id)),
+  ).toBeNull();
 
   /**
-   * And submit the form
+   * And sync offline button is clicked
    */
-  getSubmit().click();
+
+  (document.getElementById(offlineSyncButtonId) as HTMLElement).click();
 
   /**
    * Then error UI should not be visible
@@ -1473,7 +1505,12 @@ test("editing offline entry, one data object updated, one not updated, submittin
   await waitForElement(getOtherErrorsResponseDom);
 
   /**
-   * When form is submitted a second time
+   * When we update entry data 1 to a new value
+   */
+  getDataInput(data1OfflineId, "2");
+
+  /**
+   * And form is submitted a second time
    */
   getSubmit().click();
 
@@ -1538,7 +1575,7 @@ test("editing offline entry, one data object updated, one not updated, submittin
   getSubmit().click();
 
   /**
-   * And success UI should not be visible
+   * Then success UI should not be visible
    */
   expect(getSubmissionSuccessResponseDom()).toBeNull();
 
@@ -1546,6 +1583,12 @@ test("editing offline entry, one data object updated, one not updated, submittin
    * But after a while, success UI should be visible
    */
   await waitForElement(getSubmissionSuccessResponseDom);
+
+  /**
+   * And offline sync button should not be visible
+   */
+
+  expect(document.getElementById(offlineSyncButtonId)).toBeNull();
 
   /**
    * And correct data should have been uploaded to the server
@@ -1602,26 +1645,118 @@ test("editing offline entry, one data object updated, one not updated, submittin
   expect(getDataInput(data2OnlineId)).not.toBeNull();
 
   /**
-   * And the fields should show success colours
+   * And the fields should show success UI
    */
   expect(getDataField(data1OnlineId).classList).toContain("data--success");
   expect(getDataField(data2OnlineId).classList).toContain("data--success");
 });
 
+test("update offline entry - only data objects allowed", async () => {
+  /**
+   * Given user wishes to edit an entry
+   */
+
+  const offlineEntry = {
+    id: "en",
+    experienceId: "ex",
+    dataObjects: [
+      {
+        id: "int",
+        definitionId: "int",
+        data: `{"integer":1}`,
+      },
+      {
+        id: "dec",
+        definitionId: "dec",
+        data: `{"decimal":1.1}`,
+      },
+    ] as DataObjectFragment[],
+  };
+
+  /**
+   * And we are offline
+   */
+  mockIsConnected.mockReturnValue(false);
+  const { ui } = makeComp({
+    props: {
+      entry: offlineEntry as EntryFragment,
+      experience: {
+        id: "ex",
+        dataDefinitions: [
+          {
+            id: "int",
+            type: DataTypes.INTEGER,
+            name: "int",
+          },
+          {
+            id: "dec",
+            type: DataTypes.DECIMAL,
+            name: "dec",
+          },
+        ] as DataDefinitionFragment[],
+      } as ExperienceFragment,
+    },
+  });
+
+  /**
+   * When component is rendered
+   */
+  render(ui);
+
+  /**
+   * Then offline sync button should not be visible
+   */
+  expect(document.getElementById(offlineSyncButtonId)).toBeNull();
+
+  /**
+   * But offlin definition label should be visible
+   */
+  expect(
+    document.getElementById(makeOfflineDefinitionLabelId("int")),
+  ).not.toBeNull();
+
+  /**
+   * When we update entry data to a new value
+   */
+  getDataInput("int", "2");
+
+  /**
+   * Then the data field should not show success UI
+   */
+  expect(getDataField("int").classList).not.toContain("data--success");
+
+  /**
+   * And success UI should not be visible
+   */
+  expect(getSubmissionSuccessResponseDom()).toBeNull();
+
+  /**
+   * When form is submitted
+   */
+  getSubmit().click();
+
+  /**
+   * Then success UI should be visible
+   */
+  expect(getSubmissionSuccessResponseDom()).not.toBeNull();
+
+  /**
+   * And the data field should now show success UI
+   */
+  expect(getDataField("int").classList).toContain("data--success");
+});
+
 ////////////////////////// HELPER FUNCTIONS ///////////////////////////
 
-const EditEntryP = EditEntryComponent as ComponentType<
-  Partial<EditEntryComponentProps>
->;
+const EditEntryP = EditEntryComponent as ComponentType<Partial<ComponentProps>>;
 
-function makeComp({
-  props = {},
-}: { props?: Partial<EditEntryComponentProps> } = {}) {
+function makeComp({ props = {} }: { props?: Partial<ComponentProps> } = {}) {
   const mockUpdateDefinitionsOnline = jest.fn();
   const mockParentDispatch = jest.fn();
   const mockUpdateDefinitionsAndDataOnline = jest.fn();
   const mockUpdateDataOnline = jest.fn();
   const mockCreateEntryOnline = jest.fn();
+  const mockCreateOfflineEntry = jest.fn();
   const mockLayoutDispatch = jest.fn();
   const persistor = {
     persist: mockPersistFunc as any,
@@ -1631,6 +1766,7 @@ function makeComp({
     ui: (
       <EditEntryP
         createOnlineEntry={mockCreateEntryOnline}
+        createOfflineEntry={mockCreateOfflineEntry}
         updateDefinitionsOnline={mockUpdateDefinitionsOnline}
         updateDataObjectsOnline={mockUpdateDataOnline}
         updateDefinitionsAndDataOnline={mockUpdateDefinitionsAndDataOnline}
@@ -1648,6 +1784,7 @@ function makeComp({
     mockCreateEntryOnline,
     mockPersistFunc,
     mockLayoutDispatch,
+    mockCreateOfflineEntry,
   };
 }
 

@@ -7,7 +7,7 @@ import React, {
 import { EbnisAppContext } from "../../context";
 import { Loading } from "../Loading/loading";
 import {
-  ILayoutContextHeaderValue,
+  LayoutContextValue,
   reducer,
   LayoutActionType,
   Props,
@@ -127,7 +127,7 @@ export function Layout(props: Props) {
   if (!(cache && restoreCacheOrPurgeStorage && client)) {
     return (
       <LayoutProvider
-        value={{ offlineItemsCount: 0 } as ILayoutContextHeaderValue}
+        value={{ offlineItemsCount: 0 } as LayoutContextValue}
       >
         {children}
       </LayoutProvider>
@@ -146,7 +146,7 @@ export function Layout(props: Props) {
             {
               offlineItemsCount,
               hasConnection: hasConnection,
-            } as ILayoutContextHeaderValue
+            } as LayoutContextValue
           }
         >
           <LocationProvider value={{ ...location, navigate }}>

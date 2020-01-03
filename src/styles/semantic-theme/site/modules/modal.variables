@@ -1,0 +1,3 @@
+@closeTop: 0.5rem;
+@closeRight: 0.5rem;
+@closeColor: @textColor;

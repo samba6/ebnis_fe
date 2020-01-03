@@ -11,7 +11,7 @@ import {
 } from "../graphql/apollo-types/ExperienceFragment";
 import { DataTypes } from "../graphql/apollo-types/globalTypes";
 import {
-  EditEntryCallerProps,
+  CallerProps,
   ActionType as EditEntryActionType,
 } from "../components/EditEntry/edit-entry-utils";
 import { EditEntry } from "../components/EditEntry/edit-entry.component";
@@ -52,14 +52,14 @@ it("renders single line text", () => {
     },
   });
 
-  const {} = render(ui);
+  render(ui);
 
   (document.getElementById(`entry-1-edit-trigger`) as HTMLElement).click();
 
   const lastRender = mockEditEntry.mock.calls.length - 1;
 
   expect(
-    (mockEditEntry.mock.calls[lastRender][0] as EditEntryCallerProps).entry.id,
+    (mockEditEntry.mock.calls[lastRender][0] as CallerProps).entry.id,
   ).toEqual("1");
 });
 
@@ -159,6 +159,7 @@ it("renders datetime field", () => {
   });
 
   render(ui);
+  expect(true).toBe(true)
 });
 
 it("renders decimal field", () => {

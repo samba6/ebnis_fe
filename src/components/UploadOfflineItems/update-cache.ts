@@ -114,7 +114,7 @@ function handleOfflineExperiences(
 ) {
   const offlineItems: OfflineItem[] = [];
   let outstandingUnsavedCount = 0;
-  let toDeletes: string[] = [];
+  const toDeletes: string[] = [];
   const mutations: [string, string][] = [];
   const queries: [string, string][] = [];
   const offlineExperiencesNowOnline: ExperienceFragment[] = [];
@@ -221,7 +221,7 @@ function handleOnlineExperiences(
 ) {
   const offlineItems: OfflineItem[] = [];
   let outstandingUnsavedCount = 0;
-  let toDeletes: string[] = [];
+  const toDeletes: string[] = [];
   const mutations: [string, string][] = [];
   const offlineExperiencesNowOnline: ExperienceFragment[] = [];
 

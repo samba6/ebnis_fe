@@ -4,7 +4,7 @@ import React, { ComponentType } from "react";
 import { render, fireEvent } from "@testing-library/react";
 import { Header, Props } from "../components/Header/header.component";
 import { EXPERIENCES_URL, ROOT_URL } from "../routes";
-import { ILayoutContextHeaderValue } from "../components/Layout/layout.utils";
+import { LayoutContextValue } from "../components/Layout/layout.utils";
 import { UPLOAD_OFFLINE_ITEMS_PREVIEW_URL } from "../constants/upload-offline-items-routes";
 import {
   LayoutProvider,
@@ -405,6 +405,6 @@ function setup(args: Args = {}) {
 
 interface Args {
   props?: Partial<Props>;
-  context?: Partial<ILayoutContextHeaderValue>;
+  context?: Partial<LayoutContextValue>;
   location?: Partial<WindowLocation>;
 }

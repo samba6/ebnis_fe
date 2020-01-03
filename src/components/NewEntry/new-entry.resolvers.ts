@@ -11,7 +11,7 @@ import {
 import { makeOfflineId } from "../../constants";
 import { CreateDataObject } from "../../graphql/apollo-types/globalTypes";
 import gql from "graphql-tag";
-import { updateExperienceWithNewEntry } from "./new-entry.injectables";
+import { updateExperienceWithEntry } from "./new-entry.injectables";
 import { ENTRY_FRAGMENT } from "../../graphql/entry.fragment";
 import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragment";
 import { EntryFragment } from "../../graphql/apollo-types/EntryFragment";
@@ -81,7 +81,7 @@ const createOfflineEntryMutationResolver: LocalResolverFn<
     updatedAt: timestamps,
   };
 
-  experience = (await updateExperienceWithNewEntry(experience)(client, {
+  experience = (await updateExperienceWithEntry(experience)(client, {
     data: { createEntry: { entry } as CreateOnlineEntryMutation_createEntry },
   })) as ExperienceFragment;
 

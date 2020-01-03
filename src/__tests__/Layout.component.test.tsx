@@ -7,7 +7,7 @@ import { Layout } from "../components/Layout/layout.component";
 import { EbnisAppProvider, EbnisContextProps } from "../context";
 import { EmitActionType, makeObservable } from "../state/observable-manager";
 import {
-  ILayoutContextHeaderValue,
+  LayoutContextValue,
   Props,
   LayoutActionType,
   reducer,
@@ -46,7 +46,7 @@ jest.mock("../components/Loading/loading", () => ({
 jest.mock("../components/use-user");
 const mockUseUser = useUser as jest.Mock;
 
-let layoutContextValue: null | ILayoutContextHeaderValue;
+let layoutContextValue: null | LayoutContextValue;
 let layoutDispatch: LayoutDispatchType;
 let layoutExperienceContextValue: null | ILayoutContextExperienceValue;
 let locationContextValue: null | WindowLocation;
@@ -284,7 +284,7 @@ describe("components", () => {
     mockIsConnected.mockReturnValue(false);
 
     expect(layoutContextValue).toBeNull();
-    let context1: ILayoutContextHeaderValue;
+    let context1: LayoutContextValue;
 
     render(ui);
 
@@ -297,7 +297,7 @@ describe("components", () => {
      * Then we should not have a connection
      */
 
-    context1 = layoutContextValue as ILayoutContextHeaderValue;
+    context1 = layoutContextValue as LayoutContextValue;
     expect(context1.hasConnection).toBe(false);
 
     /**
@@ -320,7 +320,7 @@ describe("components", () => {
     /**
      * Then component should query for unsaved data after some pause
      */
-    context1 = layoutContextValue as ILayoutContextHeaderValue;
+    context1 = layoutContextValue as LayoutContextValue;
 
     expect(context1.offlineItemsCount).toBe(5);
 
@@ -334,7 +334,7 @@ describe("components", () => {
      * When a random event occurs
      */
 
-    let context2 = {} as ILayoutContextHeaderValue;
+    let context2 = {} as LayoutContextValue;
 
     emitData({
       type: EmitActionType.random,
@@ -344,7 +344,7 @@ describe("components", () => {
      * Then nothing should have changed
      */
 
-    context2 = layoutContextValue as ILayoutContextHeaderValue;
+    context2 = layoutContextValue as LayoutContextValue;
     expect(context2).toBe(context1);
     expect(context2.offlineItemsCount).toBe(5);
   });
@@ -361,7 +361,7 @@ describe("components", () => {
 
     render(ui);
 
-    let context = layoutContextValue as ILayoutContextHeaderValue;
+    let context = layoutContextValue as LayoutContextValue;
 
     /**
      * Then we should not query for unsaved data in the beginning
@@ -377,7 +377,7 @@ describe("components", () => {
       return document.getElementById(browserRenderedUiId);
     });
 
-    context = layoutContextValue as ILayoutContextHeaderValue;
+    context = layoutContextValue as LayoutContextValue;
 
     /**
      * Then we should query for unsaved data
@@ -396,7 +396,7 @@ describe("components", () => {
       });
     });
 
-    context = layoutContextValue as ILayoutContextHeaderValue;
+    context = layoutContextValue as LayoutContextValue;
 
     /**
      * Then we should reset unsaved data count
@@ -609,7 +609,7 @@ describe("components", () => {
 
     render(ui);
 
-    let context = layoutContextValue as ILayoutContextHeaderValue;
+    let context = layoutContextValue as LayoutContextValue;
 
     /**
      * Then we should not query for unsaved data in the beginning
@@ -625,7 +625,7 @@ describe("components", () => {
       return document.getElementById(browserRenderedUiId);
     });
 
-    context = layoutContextValue as ILayoutContextHeaderValue;
+    context = layoutContextValue as LayoutContextValue;
 
     /**
      * Then we should query for unsaved data
@@ -645,7 +645,7 @@ describe("components", () => {
     });
 
     await wait(() => {
-      context = layoutContextValue as ILayoutContextHeaderValue;
+      context = layoutContextValue as LayoutContextValue;
     });
 
     /**

@@ -6,9 +6,9 @@ import React, {
   useCallback,
 } from "react";
 import {
-  EditEntryComponentProps,
+  ComponentProps,
   ActionType,
-  initStateFromProps,
+  initState,
   reducer,
   DefinitionState,
   DispatchType,
@@ -17,7 +17,7 @@ import {
   EditEnryContext,
   StateMachine,
   Submission,
-  EditEntryCallerProps,
+  CallerProps,
   StateValue,
   runEffects,
 } from "./edit-entry-utils";
@@ -50,11 +50,13 @@ import {
   getDefinitionControlId,
   ControlName,
   getDataControlDomId,
+  offlineSyncButtonId,
+  makeOfflineDefinitionLabelId,
 } from "./edit-entry-dom";
 import { useCreateOnlineEntryMutation } from "../../graphql/create-entry.mutation";
 // import ApolloClient from "apollo-client";
 import { EbnisAppContext } from "../../context";
-import { LayoutUnchangingContext } from "../Layout/layout.utils";
+import { LayoutUnchangingContext, LayoutContext } from "../Layout/layout.utils";
 import { MUTATION_NAME_createEntry } from "../../graphql/create-entry.mutation";
 import { cleanupRanQueriesFromCache } from "../../apollo-cache/cleanup-ran-queries-from-cache";
 import { QUERY_NAME_getOfflineItems } from "../../state/offline-resolvers";
@@ -63,23 +65,24 @@ import {
   MUTATION_NAME_updateDataObjects,
   MUTATION_NAME_updateDefinitions,
 } from "../../graphql/update-definition-and-data.mutation";
+import { useCreateOfflineEntryMutation } from "../NewEntry/new-entry.resolvers";
+import { addNewEntryResolvers } from "../NewEntry/new-entry.injectables";
 
-export function EditEntryComponent(props: EditEntryComponentProps) {
-  const { dispatch: parentDispatch, experience } = props;
+export function EditEntryComponent(props: ComponentProps) {
+  const { dispatch: parentDispatch, experience, hasConnection } = props;
 
-  const [stateMachine, dispatch] = useReducer(
-    reducer,
-    props,
-    initStateFromProps,
-  );
+  const [stateMachine, dispatch] = useReducer(reducer, props, initState);
   const {
     context: { definitionAndDataIdsMapList },
-    editingData,
-    editingDefinition,
-    submission,
-    definitionsStates,
-    dataStates,
     effects: { runOnRenders },
+    states: {
+      editingData,
+      editingDefinition,
+      submission,
+      definitionsStates,
+      dataStates,
+      createMode,
+    },
   } = stateMachine;
 
   useEffect(() => {
@@ -96,8 +99,20 @@ export function EditEntryComponent(props: EditEntryComponentProps) {
     /* eslint-disable-next-line react-hooks/exhaustive-deps*/
   }, [runOnRenders]);
 
+  const onSubmit = useCallback(
+    function onSubmitCallback() {
+      dispatch({
+        type: ActionType.SUBMITTING,
+        hasConnection,
+      });
+      /* eslint-disable-next-line react-hooks/exhaustive-deps*/
+    },
+    [hasConnection],
+  );
+
   useEffect(() => {
-    const { cache, persistor } = props;
+    const { client, cache, persistor } = props;
+    addNewEntryResolvers(client);
 
     return () =>
       cleanupRanQueriesFromCache(
@@ -114,17 +129,12 @@ export function EditEntryComponent(props: EditEntryComponentProps) {
     /* eslint-disable-next-line react-hooks/exhaustive-deps*/
   }, []);
 
-  const onSubmit = useCallback(function onSubmitCallback() {
-    dispatch({
-      type: ActionType.SUBMITTING,
-    });
-    /* eslint-disable-next-line react-hooks/exhaustive-deps*/
-  }, []);
-
   return (
     <EditEnryContext.Provider
       value={{
         dispatch,
+        onSubmit,
+        hasConnection,
       }}
     >
       {submission.value === StateValue.submitting && <SubmittingOverlay />}
@@ -144,7 +154,10 @@ export function EditEntryComponent(props: EditEntryComponentProps) {
         }}
         dimmer="inverted"
         closeOnDimmerClick={false}
-        className="components-edit-entry"
+        className="
+          components-edit-entry
+          max-w-sm
+        "
       >
         <ErrorBoundary fallback={ErrorBoundaryFallBack}>
           <Modal.Header>
@@ -154,6 +167,24 @@ export function EditEntryComponent(props: EditEntryComponentProps) {
               {experience.title}
             </div>
           </Modal.Header>
+
+          {hasConnection && createMode.value === StateValue.offline && (
+            <div className="text-center mt-5">
+              <button
+                className="
+                rounded-lg
+                text-red-900
+                cursor-pointer
+                p-5
+                bg-red-200
+              "
+                onClick={onSubmit}
+                id={offlineSyncButtonId}
+              >
+                Sync Now
+              </button>
+            </div>
+          )}
 
           <SubmissionSuccessResponseComponent
             state={submission}
@@ -171,7 +202,6 @@ export function EditEntryComponent(props: EditEntryComponentProps) {
                   <Fragment key={index}>
                     {!!definitionId && (
                       <DefinitionComponent
-                        dispatch={dispatch}
                         key={definitionId}
                         id={definitionId}
                         state={definitionsStates[definitionId]}
@@ -180,7 +210,6 @@ export function EditEntryComponent(props: EditEntryComponentProps) {
                           editingData,
                           editingDefinition,
                         )}
-                        onSubmit={onSubmit}
                       />
                     )}
 
@@ -363,10 +392,10 @@ function getComponentFromDataType(
 }
 
 function DefinitionComponent(props: DefinitionComponentProps) {
-  const { id, state, onSubmit, dispatch, shouldSubmit } = props;
+  const { id, state, shouldSubmit } = props;
+  const { onSubmit, dispatch, hasConnection } = useContext(EditEnryContext);
 
   const { type, name: defaultFormValue } = state.context.defaults;
-  const typeText = `[${type}]`;
   const inputId = getDefinitionControlId(id, ControlName.input);
   const error = getDefinitionFormError(state);
   const hasSuccess =
@@ -381,116 +410,137 @@ function DefinitionComponent(props: DefinitionComponentProps) {
       })}
       error={!!error}
     >
-      <label htmlFor={inputId}>{typeText}</label>
-
-      {state.value === "idle" && (
-        <>
-          <Input className="definition-input">
-            <input
-              id={getDefinitionControlId(id, ControlName.name)}
-              value={defaultFormValue}
-              disabled={true}
-            />
-
-            <Button
-              className={makeClassNames({
-                "definition-edit": true,
-                "definition-edit--success": hasSuccess,
-              })}
-              primary={true}
-              compact={true}
-              type="button"
-              id={getDefinitionControlId(id, ControlName.edit)}
-              onClick={() =>
-                dispatch({
-                  type: ActionType.EDIT_BTN_CLICKED,
-                  id,
-                })
-              }
-            >
-              Edit
-            </Button>
-          </Input>
-        </>
-      )}
-
-      {state.value === "editing" && (
-        <>
-          <Input
-            onChange={(_, { value }) => {
-              dispatch({
-                type: ActionType.DEFINITION_NAME_CHANGED,
-                id,
-                formValue: value,
-              });
-            }}
-            className="definition-input"
+      <label htmlFor={inputId}>
+        {!hasConnection && (
+          <span
+            id={makeOfflineDefinitionLabelId(id)}
+            className="mr-2 relative"
+            style={{ bottom: "-0.15625rem" }}
           >
-            <input
-              id={inputId}
-              name={inputId}
-              value={state.editing.context.formValue}
-              autoComplete="off"
-              className={makeClassNames({
-                "definition-input-unchanged":
-                  state.editing.value === "unchanged",
-              })}
-            />
+            {defaultFormValue}
+          </span>
+        )}
+        [
+        <span className="relative" style={{ bottom: "-0.15rem" }}>
+          {type}
+        </span>
+        ]
+      </label>
 
-            <Button
-              primary={true}
-              compact={true}
-              type="button"
-              id={getDefinitionControlId(id, ControlName.dismiss)}
-              onClick={() => {
-                dispatch({
-                  type: ActionType.STOP_DEFINITION_EDIT,
-                  id,
-                });
-              }}
-              className="definition-dismiss"
-            >
-              Dismiss
-            </Button>
-          </Input>
+      {hasConnection && (
+        <>
+          {state.value === "idle" && (
+            <>
+              <Input className="definition-input">
+                <input
+                  id={getDefinitionControlId(id, ControlName.name)}
+                  value={defaultFormValue}
+                  disabled={true}
+                />
 
-          {state.editing.value === "changed" && (
-            <Button.Group>
-              <Button
-                negative={true}
-                compact={true}
-                type="button"
-                id={getDefinitionControlId(id, ControlName.reset)}
-                onClick={() => {
-                  dispatch({
-                    type: ActionType.UNDO_DEFINITION_EDITS,
-                    id,
-                  });
-                }}
-                className="definition-reset"
-              >
-                Reset
-              </Button>
-
-              {shouldSubmit && (
                 <Button
-                  positive={true}
+                  className={makeClassNames({
+                    "definition-edit": true,
+                    "definition-edit--success": hasSuccess,
+                  })}
+                  primary={true}
                   compact={true}
-                  type="submit"
-                  id={getDefinitionControlId(id, ControlName.submit)}
-                  onClick={onSubmit}
-                  className="edit-entry-definition-submit"
+                  type="button"
+                  id={getDefinitionControlId(id, ControlName.edit)}
+                  onClick={() =>
+                    dispatch({
+                      type: ActionType.EDIT_BTN_CLICKED,
+                      id,
+                    })
+                  }
                 >
-                  Submit
+                  Edit
                 </Button>
-              )}
-            </Button.Group>
+              </Input>
+            </>
           )}
 
-          {!!error && (
-            <FormCtrlError id={getDefinitionControlId(id, ControlName.error)}>
-              {error}
-            </FormCtrlError>
+          {state.value === "editing" && (
+            <>
+              <Input
+                onChange={(_, { value }) => {
+                  dispatch({
+                    type: ActionType.DEFINITION_NAME_CHANGED,
+                    id,
+                    formValue: value,
+                  });
+                }}
+                className="definition-input"
+              >
+                <input
+                  id={inputId}
+                  name={inputId}
+                  value={state.editing.context.formValue}
+                  autoComplete="off"
+                  className={makeClassNames({
+                    "definition-input-unchanged":
+                      state.editing.value === "unchanged",
+                  })}
+                />
+
+                <Button
+                  primary={true}
+                  compact={true}
+                  type="button"
+                  id={getDefinitionControlId(id, ControlName.dismiss)}
+                  onClick={() => {
+                    dispatch({
+                      type: ActionType.STOP_DEFINITION_EDIT,
+                      id,
+                    });
+                  }}
+                  className="definition-dismiss"
+                >
+                  Dismiss
+                </Button>
+              </Input>
+
+              {state.editing.value === "changed" && (
+                <Button.Group>
+                  <Button
+                    negative={true}
+                    compact={true}
+                    type="button"
+                    id={getDefinitionControlId(id, ControlName.reset)}
+                    onClick={() => {
+                      dispatch({
+                        type: ActionType.UNDO_DEFINITION_EDITS,
+                        id,
+                      });
+                    }}
+                    className="definition-reset"
+                  >
+                    Reset
+                  </Button>
+
+                  {shouldSubmit && (
+                    <Button
+                      positive={true}
+                      compact={true}
+                      type="submit"
+                      id={getDefinitionControlId(id, ControlName.submit)}
+                      onClick={onSubmit}
+                      className="edit-entry-definition-submit"
+                    >
+                      Submit
+                    </Button>
+                  )}
+                </Button.Group>
+              )}
+
+              {!!error && (
+                <FormCtrlError
+                  id={getDefinitionControlId(id, ControlName.error)}
+                >
+                  {error}
+                </FormCtrlError>
+              )}
+            </>
           )}
         </>
       )}
@@ -541,8 +591,8 @@ function SubmissionErrorsComponent({
 
 function getIdOfSubmittingDefinition(
   id: string,
-  editingData: StateMachine["editingData"],
-  editingDefinition: StateMachine["editingDefinition"],
+  editingData: StateMachine["states"]["editingData"],
+  editingDefinition: StateMachine["states"]["editingDefinition"],
 ) {
   if (editingData.value === "active") {
     return false;
@@ -627,8 +677,6 @@ interface SubmitDefinitionsArgs {
 interface DefinitionComponentProps {
   state: DefinitionState;
   id: string;
-  onSubmit: () => void;
-  dispatch: DispatchType;
   shouldSubmit: boolean;
 }
 
@@ -640,14 +688,15 @@ interface DataComponentProps {
 type E = React.ChangeEvent<HTMLInputElement>;
 
 // istanbul ignore next:
-export function EditEntry(props: EditEntryCallerProps) {
+export function EditEntry(props: CallerProps) {
   const { client, persistor, cache } = useContext(EbnisAppContext);
   const { layoutDispatch } = useContext(LayoutUnchangingContext);
-
+  const { hasConnection } = useContext(LayoutContext);
   const [updateDataObjectsOnline] = useUpdateDataObjectsOnlineMutation();
   const [updateDefinitionsOnline] = useUpdateDefinitionsOnline();
   const [updateDefinitionsAndDataOnline] = useUpdateDefinitionAndDataOnline();
   const [createOnlineEntry] = useCreateOnlineEntryMutation();
+  const [createOfflineEntry] = useCreateOfflineEntryMutation();
 
   return (
     <EditEntryComponent
@@ -659,6 +708,8 @@ export function EditEntry(props: EditEntryCallerProps) {
       persistor={persistor}
       cache={cache}
       layoutDispatch={layoutDispatch}
+      hasConnection={hasConnection}
+      createOfflineEntry={createOfflineEntry}
       {...props}
     />
   );
