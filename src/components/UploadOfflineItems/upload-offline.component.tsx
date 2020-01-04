@@ -12,7 +12,7 @@ import {
   ExperiencesIdsToObjectMap,
   DispatchType,
   StateMachine,
-  stateInitializerFn,
+  initState,
   ExperienceObjectMap,
   StateValue,
   onUploadResultsReceived,
@@ -92,17 +92,19 @@ export function UploadOfflineItems(props: Props) {
   const [stateMachine, dispatch] = useReducer(
     reducer,
     getOfflineItems,
-    stateInitializerFn,
+    initState,
   );
 
   const {
-    completelyOfflineCount,
-    partlyOfflineCount,
-    partialOnlineMap,
-    completelyOfflineMap,
-    shouldRedirect,
     states: { upload, dataLoaded, tabs: tabsState },
-    context: { allCount },
+    context: {
+      allCount,
+      completelyOfflineCount,
+      partlyOfflineCount,
+      partialOnlineMap,
+      completelyOfflineMap,
+      shouldRedirect,
+    },
   } = stateMachine;
 
   const { cache, client, persistor } = useContext(EbnisAppContext);
@@ -212,8 +214,8 @@ export function UploadOfflineItems(props: Props) {
           .experiences as ExperiencesUploadedResultState).context.anySuccess
       ) {
         outstandingOfflineCount = updateCache({
-          partialOnlineMap: newState.partialOnlineMap,
-          completelyOfflineMap: newState.completelyOfflineMap,
+          partialOnlineMap: newState.context.partialOnlineMap,
+          completelyOfflineMap: newState.context.completelyOfflineMap,
           cache,
           client,
         });
@@ -503,7 +505,10 @@ function TabsMenuComponent({
 }: ComputeUploadPartialStateReturnValue & {
   dispatch: DispatchType;
   tabsState: TabsState;
-} & Pick<StateMachine, "completelyOfflineCount" | "partlyOfflineCount">) {
+} & Pick<
+    StateMachine["context"],
+    "completelyOfflineCount" | "partlyOfflineCount"
+  >) {
   const { context, value: tabsValue } = tabsState;
 
   const twoTabsValue = tabsState.value === "two" && tabsState.states.two.value;

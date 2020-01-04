@@ -283,10 +283,7 @@ describe("components", () => {
       },
     });
 
-    const domOfflineTitle1Id = makeExperienceComponentId(
-      1,
-      StateValue.online,
-    );
+    const domOfflineTitle1Id = makeExperienceComponentId(1, StateValue.online);
 
     let unmount: any = null;
 
@@ -1289,52 +1286,52 @@ describe("non components", () => {
       states: {
         upload: {},
       },
-
-      completelyOfflineMap: {
-        "1": {
-          experience: {
-            id: "1",
-            clientId: "1",
-          } as ExperienceFragment,
-
-          offlineEntries: [
-            {
+      context: {
+        completelyOfflineMap: {
+          "1": {
+            experience: {
               id: "1",
               clientId: "1",
-              dataObjects: [
-                {
-                  definitionId: "1",
-                },
-              ],
-            },
+            } as ExperienceFragment,
 
-            {
-              id: "2",
-              clientId: "2",
-              dataObjects: [
-                {
-                  // Notice definitionId (2), different from above (1). Server
-                  // will return dataDefinition.clientId of 1 and so only
-                  // the entry above will have its definitionId replaced
-                  // because 2 will not match
-                  definitionId: "2",
-                },
-              ],
-            },
-          ],
-        } as ExperienceObjectMap,
-      } as ExperiencesIdsToObjectMap,
+            offlineEntries: [
+              {
+                id: "1",
+                clientId: "1",
+                dataObjects: [
+                  {
+                    definitionId: "1",
+                  },
+                ],
+              },
 
-      partialOnlineMap: {
-        "1": {
-          offlineEntries: [
-            {
-              id: "1",
-              clientId: "1",
-            },
-          ],
-        } as ExperienceObjectMap,
-      } as ExperiencesIdsToObjectMap,
+              {
+                id: "2",
+                clientId: "2",
+                dataObjects: [
+                  {
+                    // Notice definitionId (2), different from above (1). Server
+                    // will return dataDefinition.clientId of 1 and so only
+                    // the entry above will have its definitionId replaced
+                    // because 2 will not match
+                    definitionId: "2",
+                  },
+                ],
+              },
+            ],
+          } as ExperienceObjectMap,
+        } as ExperiencesIdsToObjectMap,
+        partialOnlineMap: {
+          "1": {
+            offlineEntries: [
+              {
+                id: "1",
+                clientId: "1",
+              },
+            ],
+          } as ExperienceObjectMap,
+        } as ExperiencesIdsToObjectMap,
+      },
     } as StateMachine;
 
     const payload = {
@@ -1380,7 +1377,7 @@ describe("non components", () => {
     expect(nextState).toEqual({
       states: {
         upload: {
-          value: "uploaded",
+          value: StateValue.uploaded,
           uploaded: {
             states: {
               experiences: {
@@ -1403,65 +1400,66 @@ describe("non components", () => {
           },
         },
       },
-      completelyOfflineMap: {
-        "1": {
-          experience: {
-            id: "1",
-            clientId: "1",
-          },
-          offlineEntries: [
-            {
+      context: {
+        completelyOfflineMap: {
+          "1": {
+            experience: {
               id: "1",
               clientId: "1",
-              dataObjects: [
+            },
+            offlineEntries: [
+              {
+                id: "1",
+                clientId: "1",
+                dataObjects: [
+                  {
+                    definitionId: "a",
+                  },
+                ],
+              },
+              {
+                id: "2",
+                clientId: "2",
+                dataObjects: [
+                  {
+                    definitionId: "2",
+                  },
+                ],
+              },
+            ],
+            newlySavedExperience: {
+              id: "a",
+              clientId: "1",
+              dataDefinitions: [
                 {
-                  definitionId: "a",
+                  id: "a",
+                  clientId: "1",
                 },
               ],
+              entries: {},
             },
-            {
-              id: "2",
-              clientId: "2",
-              dataObjects: [
-                {
-                  definitionId: "2",
-                },
-              ],
-            },
-          ],
-          newlySavedExperience: {
-            id: "a",
-            clientId: "1",
-            dataDefinitions: [
+            didUploadSucceed: true,
+          } as ExperienceObjectMap,
+        } as ExperiencesIdsToObjectMap,
+        partialOnlineMap: {
+          "1": {
+            offlineEntries: [
               {
                 id: "a",
                 clientId: "1",
               },
             ],
-            entries: {},
-          },
-          didUploadSucceed: true,
-        } as ExperienceObjectMap,
-      } as ExperiencesIdsToObjectMap,
-
-      partialOnlineMap: {
-        "1": {
-          offlineEntries: [
-            {
-              id: "a",
-              clientId: "1",
-            },
-          ],
-          newlyOnlineEntries: [
-            {
-              id: "a",
-              clientId: "1",
-            },
-          ],
-          didUploadSucceed: false,
-          entriesErrors: {},
-        } as ExperienceObjectMap,
-      } as ExperiencesIdsToObjectMap,
+            newlyOnlineEntries: [
+              {
+                id: "a",
+                clientId: "1",
+              },
+            ],
+            didUploadSucceed: false,
+            entriesErrors: {},
+          } as ExperienceObjectMap,
+        } as ExperiencesIdsToObjectMap,
+      },
     } as StateMachine);
   });
 });

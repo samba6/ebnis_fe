@@ -50,7 +50,7 @@ export const StateValue = {
   initial: "initial" as InitialVal,
 };
 
-const initialStates = {
+const INITIAL_STATES = {
   upload: {
     value: StateValue.idle,
   },
@@ -63,21 +63,23 @@ const initialStates = {
   },
 };
 
-const initialContext = {
+const INITIAL_CONTEXT = {
   allCount: null,
+  partlyOfflineCount: 0,
+  completelyOfflineCount: 0,
 };
 
-const initial = {
-  states: initialStates,
-  context: initialContext,
-};
-
-export function stateInitializerFn(getOfflineItems?: GetOfflineItemsSummary) {
+export function initState(
+  getOfflineItems?: GetOfflineItemsSummary,
+): StateMachine {
   if (!getOfflineItems) {
     return {
-      ...initial,
-      completelyOfflineMap: {},
-      partialOnlineMap: {},
+      states: INITIAL_STATES,
+      context: {
+        ...INITIAL_CONTEXT,
+        completelyOfflineMap: {},
+        partialOnlineMap: {},
+      },
     } as StateMachine;
   }
 
@@ -89,18 +91,19 @@ export function stateInitializerFn(getOfflineItems?: GetOfflineItemsSummary) {
   const allCount = partlyOfflineCount + completelyOfflineCount;
 
   const context = {
-    ...initialContext,
+    ...INITIAL_CONTEXT,
     allCount,
+    ...getOfflineItems,
   };
 
-  const tabsState = { ...initialStates.tabs } as TabsState;
+  const tabsState = { ...INITIAL_STATES.tabs } as TabsState;
 
   if (allCount > 0) {
     updateTabsState(tabsState, partlyOfflineCount, completelyOfflineCount);
   }
 
   const states = {
-    ...initialStates,
+    ...INITIAL_STATES,
     dataLoaded: {
       value: StateValue.yes,
     },
@@ -108,11 +111,9 @@ export function stateInitializerFn(getOfflineItems?: GetOfflineItemsSummary) {
   };
 
   return {
-    ...{ ...initial, states, context },
-    ...getOfflineItems,
-    partlyOfflineCount,
-    completelyOfflineCount,
-  } as StateMachine;
+    states,
+    context,
+  };
 }
 
 function updateTabsState(
@@ -164,16 +165,7 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
       return immer(prevState, proxy => {
         switch (type) {
           case ActionType.INIT_STATE_FROM_PROPS:
-            {
-              Object.entries(
-                stateInitializerFn(
-                  (payload as InitStateFromPropsPayload).getOfflineItems,
-                ),
-              ).forEach(([k, v]) => {
-                proxy[k] = v;
-              });
-            }
-
+            handleInitStateAction(proxy, payload as InitStateFromPropsPayload);
             break;
 
           case ActionType.UPLOAD_STARTED:
@@ -181,51 +173,11 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
             break;
 
           case ActionType.TOGGLE_TAB:
-            {
-              const twoTabs = (proxy.states.tabs as TabTwo).states.two;
-
-              twoTabs.value =
-                (payload as TabStateTogglePayload).currentValue ===
-                StateValue.online
-                  ? StateValue.offline
-                  : StateValue.online;
-            }
-
+            handleUploadStartedAction(proxy, payload as TabStateTogglePayload);
             break;
 
           case ActionType.SERVER_ERROR:
-            {
-              const upload = proxy.states.upload as UploadedState;
-              upload.value = StateValue.uploaded;
-
-              const uploaded = (upload.uploaded ||
-                {}) as UploadedState["uploaded"];
-
-              const uploadedStates = uploaded.states || {};
-
-              uploadedStates.experiences =
-                uploadedStates.experiences || ({} as ExperiencesUploadedState);
-
-              uploadedStates.experiences.value = StateValue.serverError;
-
-              const errors = (payload as { errors: ApolloError }).errors
-                .message;
-
-              const apolloErrors = (uploadedStates.apolloErrors ||
-                {}) as ApolloErrorsActive;
-
-              apolloErrors.value = StateValue.active;
-              apolloErrors.active = {
-                context: {
-                  errors,
-                },
-              };
-
-              uploadedStates.apolloErrors = apolloErrors;
-              uploaded.states = uploadedStates;
-              upload.uploaded = uploaded;
-            }
-
+            handleServerErrorAction(proxy, payload as ServerErrorPayload);
             break;
 
           case ActionType.CLEAR_SERVER_ERRORS:
@@ -235,43 +187,105 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
             break;
 
           case ActionType.DELETE_EXPERIENCE:
-            {
-              const { id, mode } = payload as DeleteActionPayload;
-              const {
-                context,
-                states: { tabs },
-              } = proxy;
-
-              if (mode === StateValue.offline) {
-                delete proxy.completelyOfflineMap[id];
-                --proxy.completelyOfflineCount;
-              } else {
-                delete proxy.partialOnlineMap[id];
-                --proxy.partlyOfflineCount;
-              }
-
-              const count =
-                proxy.completelyOfflineCount + proxy.partlyOfflineCount;
-              context.allCount = count;
-
-              if (count === 0) {
-                tabs.value = StateValue.none;
-                proxy.shouldRedirect = true;
-              } else {
-                updateTabsState(
-                  tabs,
-                  proxy.partlyOfflineCount,
-                  proxy.completelyOfflineCount,
-                );
-              }
-            }
-
+            handleDeleteExperienceAction(proxy, payload as DeleteActionPayload);
             break;
         }
       });
     },
     // true,
   );
+
+////////////////////////// STATE UPDATE SECTION ///////////////////////
+
+function handleInitStateAction(
+  proxy: DraftState,
+  payload: InitStateFromPropsPayload,
+) {
+  Object.entries(
+    initState((payload as InitStateFromPropsPayload).getOfflineItems),
+  ).forEach(([k, v]) => {
+    proxy[k] = v;
+  });
+}
+
+function handleUploadStartedAction(
+  proxy: DraftState,
+  payload: TabStateTogglePayload,
+) {
+  const twoTabs = (proxy.states.tabs as TabTwo).states.two;
+
+  twoTabs.value =
+    payload.currentValue === StateValue.online
+      ? StateValue.offline
+      : StateValue.online;
+}
+
+function handleServerErrorAction(
+  proxy: DraftState,
+  payload: ServerErrorPayload,
+) {
+  const upload = proxy.states.upload as UploadedState;
+  upload.value = StateValue.uploaded;
+
+  const uploaded = (upload.uploaded || {}) as UploadedState["uploaded"];
+  const uploadedStates = uploaded.states || {};
+
+  uploadedStates.experiences =
+    uploadedStates.experiences || ({} as ExperiencesUploadedState);
+
+  uploadedStates.experiences.value = StateValue.serverError;
+
+  const errors = payload.errors.message;
+
+  const apolloErrors = (uploadedStates.apolloErrors ||
+    {}) as ApolloErrorsActive;
+
+  apolloErrors.value = StateValue.active;
+  apolloErrors.active = {
+    context: {
+      errors,
+    },
+  };
+
+  uploadedStates.apolloErrors = apolloErrors;
+  uploaded.states = uploadedStates;
+  upload.uploaded = uploaded;
+}
+
+function handleDeleteExperienceAction(
+  proxy: DraftState,
+  payload: DeleteActionPayload,
+) {
+  const { id, mode } = payload;
+  const {
+    context,
+    states: { tabs },
+  } = proxy;
+
+  if (mode === StateValue.offline) {
+    delete context.completelyOfflineMap[id];
+    --context.completelyOfflineCount;
+  } else {
+    delete context.partialOnlineMap[id];
+    --context.partlyOfflineCount;
+  }
+
+  const count = context.completelyOfflineCount + context.partlyOfflineCount;
+  context.allCount = count;
+
+  if (count === 0) {
+    tabs.value = StateValue.none;
+    context.shouldRedirect = true;
+  } else {
+    updateTabsState(
+      tabs,
+      context.partlyOfflineCount,
+      context.completelyOfflineCount,
+    );
+  }
+}
+
+////////////////////////// END STATE UPDATE SECTION ///////////////////////
 
 export function definitionToUnsavedData(
   value: ExperienceFragment_dataDefinitions | null,
@@ -293,7 +307,7 @@ function entriesErrorsToMap(errors: CreateEntriesErrorsFragment[]) {
 }
 
 function updatePartialOnlineFromUploadResults(
-  stateProxy: DraftState,
+  proxy: DraftState,
   createEntries: (UploadOfflineItemsMutation_createEntries | null)[] | null,
   successState: ExperiencesUploadedResultState,
 ) {
@@ -304,13 +318,13 @@ function updatePartialOnlineFromUploadResults(
   const localState = successState as PartialUploadSuccessState;
   let hasSuccess = false;
   let hasError = false;
-  const { partialOnlineMap } = stateProxy;
+  const { partialOnlineMap } = proxy.context;
 
   localState.partial =
     localState.partial ||
     ({
       states: {},
-    } as PartialUploadSuccessState["partial"]);
+    } as PartialUploadSuccessState[PartialVal]);
 
   const context = (localState as ExperiencesUploadedResultState).context;
 
@@ -365,7 +379,7 @@ function updatePartialOnlineFromUploadResults(
 }
 
 function updateCompleteOfflineFromUploadResults(
-  stateProxy: DraftState,
+  proxy: DraftState,
   uploadResults:
     | (UploadOfflineItemsMutation_saveOfflineExperiences | null)[]
     | null,
@@ -375,7 +389,7 @@ function updateCompleteOfflineFromUploadResults(
     return;
   }
 
-  const { completelyOfflineMap } = stateProxy;
+  const { completelyOfflineMap } = proxy.context;
   let hasSuccess = false;
   let hasError = false;
   const localState = successState as PartialUploadSuccessState;
@@ -384,7 +398,7 @@ function updateCompleteOfflineFromUploadResults(
     localState.partial ||
     ({
       states: {},
-    } as PartialUploadSuccessState["partial"]);
+    } as PartialUploadSuccessState[PartialVal]);
 
   const context = (localState as ExperiencesUploadedResultState).context;
 
@@ -642,11 +656,6 @@ export type Props = RouteComponentProps;
 type DraftState = Draft<StateMachine>;
 
 export interface StateMachine {
-  readonly partlyOfflineCount: number;
-  readonly completelyOfflineCount: number;
-  readonly partialOnlineMap: ExperiencesIdsToObjectMap;
-  readonly completelyOfflineMap: ExperiencesIdsToObjectMap;
-  readonly shouldRedirect?: boolean;
   readonly states: {
     readonly upload: UploadState;
     readonly tabs: TabsState;
@@ -655,7 +664,12 @@ export interface StateMachine {
     };
   };
   readonly context: {
-    allCount: null | number;
+    readonly allCount: null | number;
+    readonly partlyOfflineCount: number;
+    readonly completelyOfflineCount: number;
+    readonly partialOnlineMap: ExperiencesIdsToObjectMap;
+    readonly completelyOfflineMap: ExperiencesIdsToObjectMap;
+    readonly shouldRedirect?: boolean;
   };
 }
 
@@ -727,7 +741,7 @@ type AllErrorVal = "allError";
 type AllSuccessVal = "allSuccess";
 type PartialSuccessVal = "partialSuccess";
 type InitialVal = "initial";
-export type CreationMode = OnlineVal | OfflineVal
+export type CreationMode = OnlineVal | OfflineVal;
 ////////////////////////// END STRING TYPES SECTION ///////////////////////
 
 type ApolloErrorsState = ApolloErrorsInActive | ApolloErrorsActive;
@@ -819,3 +833,7 @@ interface InitStateFromPropsPayload {
   getOfflineItems: GetOfflineItemsSummary;
 }
 export type DispatchType = Dispatch<Action>;
+
+interface ServerErrorPayload {
+  errors: ApolloError;
+}
