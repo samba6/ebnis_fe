@@ -15,7 +15,7 @@ import {
   onUploadResultsReceived,
   StateMachine,
   ExperienceObjectMap,
-  CreationMode,
+  StateValue,
 } from "../components/UploadOfflineItems/upload-offline.utils";
 import {
   ExperienceFragment,
@@ -285,7 +285,7 @@ describe("components", () => {
 
     const domOfflineTitle1Id = makeExperienceComponentId(
       1,
-      CreationMode.online,
+      StateValue.online,
     );
 
     let unmount: any = null;
@@ -345,7 +345,7 @@ describe("components", () => {
 
     fireEvent.click(document.getElementById(uploadBtnDomId) as any);
 
-    const domOnlineTitle1Id = makeExperienceComponentId(1, CreationMode.online);
+    const domOnlineTitle1Id = makeExperienceComponentId(1, StateValue.online);
 
     const $elm = await waitForElement(() => {
       return document.getElementById(domOnlineTitle1Id) as HTMLElement;
@@ -472,7 +472,7 @@ describe("components", () => {
       document.getElementById("uploaded-success-tab-icon-never-saved"),
     ).toBeNull();
 
-    const domTitle1Id = makeExperienceComponentId(1, CreationMode.offline);
+    const domTitle1Id = makeExperienceComponentId(1, StateValue.offline);
 
     expect(
       (document.getElementById(domTitle1Id) as any).classList,
@@ -721,7 +721,7 @@ describe("components", () => {
      * And should not contain any error UI
      */
 
-    const domTitle1Id = makeExperienceComponentId(1, CreationMode.offline);
+    const domTitle1Id = makeExperienceComponentId(1, StateValue.offline);
 
     expect(
       (document.getElementById(domTitle1Id) as any).classList,
@@ -755,7 +755,7 @@ describe("components", () => {
       document.getElementById(createdOfflineExperiencesContainerId),
     ).toBeNull();
 
-    const domTitle2Id = makeExperienceComponentId(2, CreationMode.online);
+    const domTitle2Id = makeExperienceComponentId(2, StateValue.online);
 
     expect(
       (document.getElementById(domTitle2Id) as any).classList,
@@ -1107,7 +1107,7 @@ describe("components", () => {
     ).toEqual(["1"]);
   });
 
-  test("experience now online but entry still offline", async done => {
+  test("experience now online but entry still offline", async () => {
     const offlineExperienceId = "1";
     const newlyOnlineExperienceId = "2";
 
@@ -1247,8 +1247,6 @@ describe("components", () => {
     );
 
     expect(mockUpdateCache).toHaveBeenCalled();
-
-    done();
   });
 });
 
@@ -1272,7 +1270,6 @@ describe("non components", () => {
         upload: {
           value: "uploaded",
           uploaded: {
-            parallel: true,
             states: {
               experiences: {
                 value: "initial",
@@ -1385,7 +1382,6 @@ describe("non components", () => {
         upload: {
           value: "uploaded",
           uploaded: {
-            parallel: true,
             states: {
               experiences: {
                 context: {

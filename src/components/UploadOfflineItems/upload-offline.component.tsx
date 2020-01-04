@@ -14,12 +14,13 @@ import {
   StateMachine,
   stateInitializerFn,
   ExperienceObjectMap,
-  CreationMode,
+  StateValue,
   onUploadResultsReceived,
   PartialUploadSuccessState,
   ExperiencesUploadedState,
   ExperiencesUploadedResultState,
   TabsState,
+  CreationMode,
 } from "./upload-offline.utils";
 import { Loading } from "../Loading/loading";
 import { SidebarHeader } from "../SidebarHeader/sidebar-header.component";
@@ -256,11 +257,11 @@ export function UploadOfflineItems(props: Props) {
 
   const offlineTabActive =
     (tabsValue === "one" && tabsState.context.offline) ||
-    (twoTabsValue && twoTabsValue === CreationMode.offline);
+    (twoTabsValue && twoTabsValue === StateValue.offline);
 
   const onlineTabActive =
     (tabsValue === "one" && tabsState.context.online) ||
-    (twoTabsValue && twoTabsValue === CreationMode.online);
+    (twoTabsValue && twoTabsValue === StateValue.online);
 
   return (
     <div className="components-upload-offline-items">
@@ -309,7 +310,7 @@ export function UploadOfflineItems(props: Props) {
                   return (
                     <ExperienceComponent
                       key={id}
-                      mode={CreationMode.online}
+                      mode={StateValue.online}
                       experienceObjectMap={map}
                       dispatch={dispatch}
                     />
@@ -336,7 +337,7 @@ export function UploadOfflineItems(props: Props) {
                   return (
                     <ExperienceComponent
                       key={id}
-                      mode={CreationMode.offline}
+                      mode={StateValue.offline}
                       experienceObjectMap={map}
                       dispatch={dispatch}
                     />
@@ -380,7 +381,7 @@ function ExperienceComponent({
   const hasError = !!(entriesErrors || experienceError);
   const experienceId = experience.id;
   const experienceClientId =
-    mode === CreationMode.offline
+    mode === StateValue.offline
       ? (experience.clientId as string)
       : experienceId;
 
@@ -526,7 +527,7 @@ function TabsMenuComponent({
     <a
       className={makeClassNames({
         item: true,
-        active: tabActive || twoTabsValue === CreationMode.online,
+        active: tabActive || twoTabsValue === StateValue.online,
         "tab-menu": true,
       })}
       id="upload-unsaved-tab-menu-partly-saved"
@@ -562,7 +563,7 @@ function TabsMenuComponent({
     <a
       className={makeClassNames({
         item: true,
-        active: tabActive || twoTabsValue === CreationMode.offline,
+        active: tabActive || twoTabsValue === StateValue.offline,
         "tab-menu": true,
       })}
       id={offlineExperiencesTabMenuDomId}
