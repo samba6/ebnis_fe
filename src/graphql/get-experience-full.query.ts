@@ -22,3 +22,9 @@ export type GetExperienceFullQueryResult = QueryResult<
 >;
 
 export const QUERY_NAME_getExperienceFull = "getExperience";
+
+export const entriesPaginationVariables = {
+  entriesPagination: {
+    first: 20000,
+  },
+};

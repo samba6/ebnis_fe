@@ -1,6 +1,10 @@
 import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragment";
-import { EXPERIENCE_FRAGMENT } from "../../graphql/experience.fragment";
+import {
+  EXPERIENCE_FRAGMENT,
+  FRAGMENT_NAME_experienceFragment,
+} from "../../graphql/experience.fragment";
 import { DataProxy } from "apollo-cache";
+import { entriesPaginationVariables } from "../../graphql/get-experience-full.query";
 
 export function writeExperienceFragmentToCache(
   dataProxy: DataProxy,
@@ -8,8 +12,9 @@ export function writeExperienceFragmentToCache(
 ) {
   dataProxy.writeFragment({
     fragment: EXPERIENCE_FRAGMENT,
-    fragmentName: "ExperienceFragment",
+    fragmentName: FRAGMENT_NAME_experienceFragment,
     id: `Experience:${experience.id}`,
     data: experience,
+    variables: entriesPaginationVariables,
   });
 }

@@ -9,12 +9,12 @@ import {
   ExperienceFragment_entries_edges_node,
   ExperienceFragment_entries_edges,
 } from "../../graphql/apollo-types/ExperienceFragment";
-import { writeGetExperienceFullQueryToCache } from "../../state/resolvers/write-get-experience-full-query-to-cache";
 import { DataProxy } from "apollo-cache";
 import { FetchResult } from "apollo-link";
-import { readGetExperienceFullQueryFromCache } from "../../state/resolvers/read-get-experience-full-query-from-cache";
+import { readExperienceFragmentFromCache } from "../../state/resolvers/read-get-experience-full-query-from-cache";
 import { entryToEdge } from "../../state/resolvers/entry-to-edge";
 import { EntryFragment } from "../../graphql/apollo-types/EntryFragment";
+import { writeExperienceFragmentToCache } from "../../state/resolvers/write-experience-fragment-to-cache";
 
 // istanbul ignore next:
 export function addNewEntryResolvers(client: ApolloClient<{}>) {
@@ -59,10 +59,7 @@ export const upsertExperienceWithEntry: Fn = function updateFn(
         return;
       }
 
-      experience = readGetExperienceFullQueryFromCache(
-        dataProxy,
-        experienceOrId,
-      );
+      experience = readExperienceFragmentFromCache(dataProxy, experienceOrId);
 
       if (!experience) {
         return;
@@ -94,14 +91,7 @@ export const upsertExperienceWithEntry: Fn = function updateFn(
       proxy.entries = entries;
     });
 
-    // ATTENTION: I NEED TO CHECK THIS AGAIN AS WE ARE ALREADY WRITING THE FULL
-    // EXPERIENCE FRAGMENT IN my-experiences/pre-fetch-experiences.
-    // if we don't re-write the experience fragment we will only be able to
-    // query EXPERIENCE_MINI_FRAGMENT and not EXPERIENCE_FRAGMENT.
-    writeGetExperienceFullQueryToCache(dataProxy, updatedExperience, {
-      writeFragment: true,
-    });
-
+    writeExperienceFragmentToCache(dataProxy, updatedExperience);
     return updatedExperience;
   };
 };

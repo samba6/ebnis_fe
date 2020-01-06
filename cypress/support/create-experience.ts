@@ -10,6 +10,7 @@ import {
   CreateOfflineExperienceMutationData,
   CREATE_OFFLINE_EXPERIENCE_MUTATION,
 } from "../../src/components/ExperienceDefinition/experience-definition.resolvers";
+import { entriesPaginationVariables } from "../../src/graphql/get-experience-full.query";
 
 export function createSavedExperience(
   experienceDefinitionArgs: CreateExperienceInput,
@@ -48,7 +49,7 @@ export function createOfflineExperience(
     mutation: CREATE_OFFLINE_EXPERIENCE_MUTATION,
     variables: {
       createExperienceInput: experienceDefinitionArgs,
-      entriesPagination: { first: 2000 },
+      ...entriesPaginationVariables
     },
   }).then(result => {
     const experience =

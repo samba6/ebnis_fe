@@ -11,7 +11,7 @@ import {
 import { wipeReferencesFromCache } from "../state/resolvers/delete-references-from-cache";
 import { replaceExperiencesInGetExperiencesMiniQuery } from "../state/resolvers/update-get-experiences-mini-query";
 import { writeGetExperienceFullQueryToCache } from "../state/resolvers/write-get-experience-full-query-to-cache";
-import { writeOfflineItemsToCache } from "../apollo-cache/write-offline-items-to-cache";
+import { updateOfflineItemsLedger } from "../apollo-cache/write-offline-items-to-cache";
 import {
   MUTATION_NAME_createOfflineEntry,
   MUTATION_NAME_createExperienceOffline,
@@ -33,7 +33,7 @@ const mockReplaceExperiencesInGetExperiencesMiniQuery = replaceExperiencesInGetE
 
 const mockWriteGetExperienceFullQueryToCache = writeGetExperienceFullQueryToCache as jest.Mock;
 
-const mockWriteSavedAndUnsavedExperiencesToCache = writeOfflineItemsToCache as jest.Mock;
+const mockWriteSavedAndUnsavedExperiencesToCache = updateOfflineItemsLedger as jest.Mock;
 
 beforeEach(() => {
   jest.resetAllMocks();

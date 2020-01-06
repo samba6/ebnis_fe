@@ -1,6 +1,6 @@
 import { queryCacheOfflineItems } from "../state/resolvers/get-experiences-from-cache";
 import immer from "immer";
-import { writeOfflineItemsToCache } from "./write-offline-items-to-cache";
+import { updateOfflineItemsLedger } from "./write-offline-items-to-cache";
 import { wipeReferencesFromCache } from "../state/resolvers/delete-references-from-cache";
 import { OFFLINE_ITEMS_TYPENAME } from "../state/offline-resolvers";
 import { InMemoryCache } from "apollo-cache-inmemory";
@@ -58,6 +58,6 @@ export function decrementOfflineEntriesCountForExperience({
   }
 
   if (updated) {
-    writeOfflineItemsToCache(cache, cacheData);
+    updateOfflineItemsLedger(cache, cacheData);
   }
 }

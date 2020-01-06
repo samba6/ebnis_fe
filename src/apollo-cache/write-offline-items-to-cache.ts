@@ -5,7 +5,7 @@ import {
   OfflineItem,
 } from "../state/offline-resolvers";
 
-export function writeOfflineItemsToCache(
+export function updateOfflineItemsLedger(
   dataProxy: DataProxy,
   data: OfflineItem[],
 ) {

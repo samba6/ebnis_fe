@@ -10,6 +10,8 @@ import {
   EXPERIENCE_CONNECTION_PRE_FETCH_FRAGMENT,
 } from "./experience.fragment";
 
+// this query will be kept around after we ran it and all experiences list will
+// refer to it.
 export const GET_EXPERIENCES_MINI_QUERY = gql`
   query GetExperienceConnectionMini($input: GetExperiencesInput) {
     getExperiences(input: $input) {
@@ -35,6 +37,7 @@ export type GetExperienceConnectionMiniQueryResult = QueryResult<
   GetExperienceConnectionMiniVariables
 >;
 
+// this query will be deleted after we ran it.
 export const PRE_FETCH_EXPERIENCES_QUERY = gql`
   query PreFetchExperiences(
     $experiencesArgs: GetExperiencesInput

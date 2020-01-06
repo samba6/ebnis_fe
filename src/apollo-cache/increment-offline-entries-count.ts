@@ -2,7 +2,7 @@ import immer from "immer";
 import { queryCacheOfflineItems } from "../state/resolvers/get-experiences-from-cache";
 import { OFFLINE_ITEMS_TYPENAME } from "../state/offline-resolvers";
 import { isOfflineId } from "../constants";
-import { writeOfflineItemsToCache } from "./write-offline-items-to-cache";
+import { updateOfflineItemsLedger } from "./write-offline-items-to-cache";
 import { InMemoryCache } from "apollo-cache-inmemory";
 
 export function incrementOfflineEntriesCountForExperience(
@@ -27,7 +27,7 @@ export function incrementOfflineEntriesCountForExperience(
     });
   }
 
-  writeOfflineItemsToCache(cache, cacheData);
+  updateOfflineItemsLedger(cache, cacheData);
 }
 
 export function newOfflineExperienceInCache(experienceId: string) {

@@ -4,7 +4,10 @@ import {
 } from "../../graphql/apollo-types/GetExperienceFull";
 import { isOfflineId } from "../../constants";
 import { useQuery } from "@apollo/react-hooks";
-import { GET_EXPERIENCE_FULL_QUERY } from "../../graphql/get-experience-full.query";
+import {
+  GET_EXPERIENCE_FULL_QUERY,
+  entriesPaginationVariables,
+} from "../../graphql/get-experience-full.query";
 
 export function useGetExperienceFullQuery(experienceId?: string) {
   return useQuery<GetExperienceFull, GetExperienceFullVariables>(
@@ -12,9 +15,7 @@ export function useGetExperienceFullQuery(experienceId?: string) {
     {
       variables: {
         id: experienceId as string,
-        entriesPagination: {
-          first: 20000,
-        },
+        ...entriesPaginationVariables,
       },
       fetchPolicy: isOfflineId(experienceId) ? "cache-only" : "cache-first",
     },

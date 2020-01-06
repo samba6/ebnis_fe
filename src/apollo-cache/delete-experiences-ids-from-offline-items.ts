@@ -1,5 +1,5 @@
 import { OfflineItem } from "../state/offline-resolvers";
-import { writeOfflineItemsToCache } from "./write-offline-items-to-cache";
+import { updateOfflineItemsLedger } from "./write-offline-items-to-cache";
 import { queryCacheOfflineItems } from "../state/resolvers/get-experiences-from-cache";
 import { InMemoryCache } from "apollo-cache-inmemory";
 
@@ -20,5 +20,5 @@ export function deleteExperiencesIdsFromOfflineItemsInCache(
     [] as OfflineItem[],
   );
 
-  writeOfflineItemsToCache(client, cacheData);
+  updateOfflineItemsLedger(client, cacheData);
 }

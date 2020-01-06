@@ -1,28 +1,22 @@
 import { DataProxy } from "apollo-cache";
+import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragment";
 import {
-  GetExperienceFullVariables,
-  GetExperienceFull,
-} from "../../graphql/apollo-types/GetExperienceFull";
-import { GET_EXPERIENCE_FULL_QUERY } from "../../graphql/get-experience-full.query";
+  EXPERIENCE_FRAGMENT,
+  FRAGMENT_NAME_experienceFragment,
+} from "../../graphql/experience.fragment";
+import { entriesPaginationVariables } from "../../graphql/get-experience-full.query";
 
-export function readGetExperienceFullQueryFromCache(
+export function readExperienceFragmentFromCache(
   dataProxy: DataProxy,
   experienceId: string,
 ) {
-  const variables: GetExperienceFullVariables = {
-    id: experienceId,
-    entriesPagination: {
-      first: 20000,
-    },
+  const options = {
+    id: `Experience:${experienceId}`,
+    fragment: EXPERIENCE_FRAGMENT,
+    fragmentName: FRAGMENT_NAME_experienceFragment,
+    variables: entriesPaginationVariables,
   };
 
-  const data = dataProxy.readQuery<
-    GetExperienceFull,
-    GetExperienceFullVariables
-  >({
-    query: GET_EXPERIENCE_FULL_QUERY,
-    variables,
-  });
-
-  return data && data.getExperience;
+  const experience = dataProxy.readFragment<ExperienceFragment>(options);
+  return experience;
 }

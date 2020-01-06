@@ -14,9 +14,6 @@ export function wipeReferencesFromCache(
   const data = dataClass.data;
   let count = 0;
 
-  let rootQuery: { [k: string]: { id: string } } = {};
-  let rootMutation: { [k: string]: { id: string } } = {};
-
   ids.forEach(id => {
     const idRegex = new RegExp(id);
 
@@ -26,30 +23,18 @@ export function wipeReferencesFromCache(
         ++count;
         return;
       }
-
-      if (k === "ROOT_QUERY") {
-        rootQuery = data.ROOT_QUERY;
-
-        return;
-      }
-
-      if (k === "ROOT_MUTATION") {
-        rootMutation = data.ROOT_MUTATION;
-
-        return;
-      }
     });
   });
 
+  const rootQuery = data["ROOT_QUERY"] as { [k: string]: { id: string } };
+  const rootMutation = data["ROOT_MUTATION"] as { [k: string]: { id: string } };
+
   if (mutationsAndQueries) {
-    let { mutations, queries } = mutationsAndQueries;
+    const { mutations, queries } = mutationsAndQueries;
 
     count += deleteOperations(rootMutation, mutations);
     count += deleteOperations(rootQuery, queries);
   }
-
-  // I think broadcastWatches will serve same purpose.
-  // ids.forEach(id => dataClass.delete(id));
 
   cache.broadcastWatches();
 
@@ -70,26 +55,23 @@ function deleteOperations(
 
   let count = 0;
 
-  const operationsMap = operations.reduce(
-    (acc, [operationName, id]) => {
-      const mIds = acc[operationName] || [];
-      mIds.push(id);
-      acc[operationName] = mIds;
+  const operationsMap = operations.reduce((acc, [operationName, operationId]) => {
+    const operationIds = acc[operationName] || [];
+    operationIds.push(operationId);
+    acc[operationName] = operationIds;
 
-      return acc;
-    },
-    {} as { [k: string]: string[] },
-  );
+    return acc;
+  }, {} as { [k: string]: string[] });
 
-  Object.entries(operationsMap).forEach(([operationName, mIds]) => {
-    Object.keys(rootOperations).forEach(mk => {
-      if (mk.includes(operationName)) {
-        const { id } = rootOperations[mk];
+  Object.entries(operationsMap).forEach(([operationName, methodIds]) => {
+    Object.keys(rootOperations).forEach(method => {
+      if (method.includes(operationName)) {
+        const { id } = rootOperations[method];
 
         if (id) {
-          mIds.forEach(mid => {
-            if (id === mid) {
-              delete rootOperations[mk];
+          methodIds.forEach(methodId => {
+            if (id === methodId) {
+              delete rootOperations[method];
               ++count;
             }
           });
@@ -148,5 +130,6 @@ export function removeQueriesAndMutationsFromCache(
     }
   }
 
+  cache.broadcastWatches();
   return count;
 }

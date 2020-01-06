@@ -63,6 +63,7 @@ import {
   ExperienceDefinitionUpdate,
 } from "./experience-definition.injectables";
 import { useDeleteCachedQueriesAndMutationsOnUnmount } from "../use-delete-cached-queries-mutations-on-unmount";
+import { entriesPaginationVariables } from "../../graphql/get-experience-full.query";
 
 const mainComponentId = "components-experience-definition";
 
@@ -128,10 +129,6 @@ export function ExperienceDefinition(props: Props) {
         return;
       }
 
-      const entriesPagination = {
-        first: 20000,
-      };
-
       try {
         let result;
         let experienceId;
@@ -141,7 +138,7 @@ export function ExperienceDefinition(props: Props) {
           result = await createExperience({
             variables: {
               createExperienceInput: values,
-              entriesPagination,
+              ...entriesPaginationVariables,
             },
 
             update: ExperienceDefinitionUpdate,
@@ -161,7 +158,7 @@ export function ExperienceDefinition(props: Props) {
           result = await createOfflineExperience({
             variables: {
               createExperienceInput: values,
-              entriesPagination,
+              ...entriesPaginationVariables,
             },
           });
 
@@ -588,20 +585,17 @@ function AllErrorsSummaryComponent({
   }
 
   const otherErrors = serverOtherErrorsMap
-    ? Object.entries(serverOtherErrorsMap).reduce(
-        (acc, [k, v]) => {
-          if (v) {
-            acc.push(
-              <div key={k}>
-                {k} : {v}
-              </div>,
-            );
-          }
+    ? Object.entries(serverOtherErrorsMap).reduce((acc, [k, v]) => {
+        if (v) {
+          acc.push(
+            <div key={k}>
+              {k} : {v}
+            </div>,
+          );
+        }
 
-          return acc;
-        },
-        [] as JSX.Element[],
-      )
+        return acc;
+      }, [] as JSX.Element[])
     : null;
 
   return (
@@ -641,16 +635,13 @@ function DefinitionsErrorsComponent({
         return (
           <div key={index} className="graphql-field-defs-error-inner">
             <span>Field {Number(index) + 1}</span>
-            {Object.entries(errors).reduce(
-              (acc, [k, v]) => {
-                if (v) {
-                  acc.push(<span key={k}>{v}</span>);
-                }
+            {Object.entries(errors).reduce((acc, [k, v]) => {
+              if (v) {
+                acc.push(<span key={k}>{v}</span>);
+              }
 
-                return acc;
-              },
-              [] as JSX.Element[],
-            )}
+              return acc;
+            }, [] as JSX.Element[])}
           </div>
         );
       })}

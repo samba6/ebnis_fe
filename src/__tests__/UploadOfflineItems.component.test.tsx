@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { ComponentType, useState, useEffect } from "react";
+import React, { ComponentType } from "react";
 import {
   render,
   fireEvent,
@@ -7,15 +7,15 @@ import {
   waitForElement,
   cleanup,
 } from "@testing-library/react";
-import { UploadOfflineItems } from "../components/UploadOfflineItems/upload-offline.component";
+import { UploadOfflineItemsComponent } from "../components/UploadOfflineItems/upload-offline.component";
 import {
-  Props,
+  ComponentProps,
   definitionToUnsavedData,
   ExperiencesIdsToObjectMap,
-  onUploadResultsReceived,
-  StateMachine,
-  ExperienceObjectMap,
   StateValue,
+  initState,
+  reducer,
+  ActionType,
 } from "../components/UploadOfflineItems/upload-offline.utils";
 import {
   ExperienceFragment,
@@ -23,7 +23,7 @@ import {
   ExperienceFragment_entries_edges_node_dataObjects,
   ExperienceFragment_dataDefinitions,
 } from "../graphql/apollo-types/ExperienceFragment";
-import { makeOfflineId } from "../constants";
+import { makeOfflineId, noop } from "../constants";
 import {
   renderWithRouter,
   makeDataDefinitions,
@@ -39,11 +39,7 @@ import {
 import { Props as EntryProps } from "../components/Entry/entry.utils";
 import { DataObjectFragment } from "../graphql/apollo-types/DataObjectFragment";
 import { EXPERIENCES_URL } from "../routes";
-import {
-  GetOfflineItemsSummary,
-  GetOfflineItemsQueryResult,
-} from "../state/offline-resolvers";
-import { LayoutUnchangingProvider } from "../components/Layout/layout-providers";
+import { GetOfflineItemsSummary } from "../components/UploadOfflineItems/upload-offline.resolvers";
 import { isConnected } from "../state/connections";
 import { Entry } from "../components/Entry/entry.component";
 import { scrollIntoView } from "../components/scroll-into-view";
@@ -54,13 +50,6 @@ import {
   removeQueriesAndMutationsFromCache,
 } from "../state/resolvers/delete-references-from-cache";
 import { deleteExperiencesIdsFromOfflineItemsInCache } from "../apollo-cache/delete-experiences-ids-from-offline-items";
-import { EbnisAppProvider } from "../context";
-import {
-  useUploadOfflineExperiencesMutation,
-  useUploadOfflineItemsMutation,
-  useUploadOfflineEntriesMutation,
-} from "../components/UploadOfflineItems/upload-offline.injectables";
-import { act } from "react-dom/test-utils";
 import {
   makeExperienceComponentId,
   createdOnlineExperiencesContainerId,
@@ -102,32 +91,7 @@ jest.mock("../components/UploadOfflineItems/update-cache");
 jest.mock("../state/resolvers/update-get-experiences-mini-query");
 jest.mock("../state/resolvers/delete-references-from-cache");
 jest.mock("../apollo-cache/delete-experiences-ids-from-offline-items.ts");
-
-const mockUseState = useState;
-const mockUseEffect = useEffect;
-let mockGetAllUnsavedQueryReturnValue: null | GetOfflineItemsQueryResult;
-jest.mock(
-  "../components/UploadOfflineItems/upload-offline.injectables",
-  () => ({
-    useGetAllUnsavedQuery: () => {
-      const [result, setResult] = mockUseState<GetOfflineItemsQueryResult>({
-        loading: true,
-      } as GetOfflineItemsQueryResult);
-
-      mockUseEffect(() => {
-        const r = mockGetAllUnsavedQueryReturnValue as GetOfflineItemsQueryResult;
-        setResult(r);
-      }, []);
-
-      return result;
-    },
-
-    useUploadOfflineExperiencesMutation: jest.fn(),
-    useUploadOfflineItemsMutation: jest.fn(),
-    useUploadOfflineEntriesMutation: jest.fn(),
-    addUploadOfflineItemsResolvers: jest.fn(),
-  }),
-);
+jest.mock("../components/UploadOfflineItems/upload-offline.resolvers");
 
 const mockIsConnected = isConnected as jest.Mock;
 const mockEntry = Entry as jest.Mock;
@@ -136,10 +100,11 @@ const mockUpdateCache = updateCache as jest.Mock;
 const mockReplaceExperiencesInGetExperiencesMiniQuery = replaceExperiencesInGetExperiencesMiniQuery as jest.Mock;
 const mockWipeReferencesFromCache = wipeReferencesFromCache as jest.Mock;
 const mockDeleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache = deleteExperiencesIdsFromOfflineItemsInCache as jest.Mock;
-const mockUseUploadUnsavedExperiencesMutation = useUploadOfflineExperiencesMutation as jest.Mock;
-const mockUseUploadAllUnsavedsMutation = useUploadOfflineItemsMutation as jest.Mock;
-const mockUseUploadOnlineExperiencesOfflineEntriesMutation = useUploadOfflineEntriesMutation as jest.Mock;
+const mockUploadAllOfflineItems = jest.fn();
+const mockCreateEntries = jest.fn();
+const mockLayoutDispatch = jest.fn();
 const mockRemoveQueriesAndMutationsFromCache = removeQueriesAndMutationsFromCache as jest.Mock;
+const mockUploadOfflineExperiences = jest.fn();
 
 ////////////////////////// END MOCK ////////////////////////////
 
@@ -150,13 +115,13 @@ beforeEach(() => {
   mockScrollIntoView.mockReset();
   mockIsConnected.mockReset();
   mockEntry.mockClear();
-  mockGetAllUnsavedQueryReturnValue = null;
-  mockUseUploadOnlineExperiencesOfflineEntriesMutation.mockReset();
-  mockUseUploadUnsavedExperiencesMutation.mockReset();
-  mockUseUploadAllUnsavedsMutation.mockReset();
+  mockCreateEntries.mockReset();
+  mockUploadOfflineExperiences.mockReset();
+  mockUploadAllOfflineItems.mockReset();
   mockDeleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache.mockReset();
   mockReplaceExperiencesInGetExperiencesMiniQuery.mockReset();
   mockRemoveQueriesAndMutationsFromCache.mockReset();
+  mockLayoutDispatch.mockReset();
 });
 
 afterEach(() => {
@@ -168,45 +133,37 @@ const timeStamps = { insertedAt: "a", updatedAt: "a" };
 
 describe("components", () => {
   it("redirects to 404 when not connected", async () => {
-    const { ui, mockNavigate } = makeComp({
-      isConnected: false,
-    });
+    mockIsConnected.mockReturnValue(false);
 
-    act(() => {
-      render(ui);
-    });
-
+    const { ui, mockNavigate } = makeComp();
+    render(ui);
     expect(mockNavigate).toHaveBeenCalled();
     expect(document.getElementById("a-lo")).toBeNull();
   });
 
   it("renders loading indicator", () => {
-    expect(mockGetAllUnsavedQueryReturnValue).toBeNull();
-
     /**
      * Given we are loading data
      */
     const { ui } = makeComp({
-      getOfflineItems: {} as any,
+      allOfflineItems: {} as any,
+      loading: true,
     });
 
     /**
      * While component is rendering
      */
-    act(() => {
-      render(ui);
+    render(ui);
 
-      /**
-       * Then we should see loading indicator
-       */
-      expect(document.getElementById(mockLoadingId)).not.toBeNull();
-    });
+    /**
+     * Then we should see loading indicator
+     */
+    expect(document.getElementById(mockLoadingId)).not.toBeNull();
   });
 
   it("redirects to 404 when there are no offline data", async () => {
-    expect(mockGetAllUnsavedQueryReturnValue).toBeNull();
     const { ui, mockNavigate } = makeComp({
-      getOfflineItems: {
+      allOfflineItems: {
         completelyOfflineCount: 0,
         partlyOfflineCount: 0,
       } as GetOfflineItemsSummary,
@@ -218,8 +175,8 @@ describe("components", () => {
     expect(document.getElementById(mockLoadingId)).toBeNull();
   });
 
-  it("shows only partly offline item with no online entries and uploads all offline entries successfully", async () => {
-    expect(mockGetAllUnsavedQueryReturnValue).toBeNull();
+  it("shows only part offline experiences, no online entries and uploads all entries successfully", async () => {
+    mockIsConnected.mockReturnValue(true);
 
     const { id: entryId, ...entry } = {
       ...makeEntryNode(makeOfflineId("1")),
@@ -253,13 +210,8 @@ describe("components", () => {
       },
     } as ExperienceFragment;
 
-    const {
-      ui,
-      mockUploadOfflineExperiences,
-      mockUploadOnlineExperiencesOfflineEntries,
-      mockUploadAllUnsaveds,
-    } = makeComp({
-      getOfflineItems: {
+    const { ui } = makeComp({
+      allOfflineItems: {
         partialOnlineMap: {
           "1": {
             experience,
@@ -272,7 +224,7 @@ describe("components", () => {
       } as GetOfflineItemsSummary,
     });
 
-    mockUploadOnlineExperiencesOfflineEntries.mockResolvedValue({
+    mockCreateEntries.mockResolvedValue({
       data: {
         createEntries: [
           {
@@ -285,12 +237,7 @@ describe("components", () => {
 
     const domOfflineTitle1Id = makeExperienceComponentId(1, StateValue.online);
 
-    let unmount: any = null;
-
-    act(() => {
-      const args = render(ui);
-      unmount = args.unmount;
-    });
+    const { unmount } = render(ui);
 
     expect(
       document.getElementById("upload-unsaved-tab-menu-partly-saved"),
@@ -348,20 +295,19 @@ describe("components", () => {
       return document.getElementById(domOnlineTitle1Id) as HTMLElement;
     });
 
-    expect(mockUploadOnlineExperiencesOfflineEntries).toHaveBeenCalled();
+    expect(mockCreateEntries).toHaveBeenCalled();
 
     expect($elm.classList).toContain(
       makeExperienceUploadStatusClassNames(true)[1],
     );
 
-    const uploadedEntry = ((mockUploadOnlineExperiencesOfflineEntries.mock
-      .calls[0][0] as any).variables as CreateOnlineEntryMutationVariables)
-      .input[0];
+    const uploadedEntry = ((mockCreateEntries.mock.calls[0][0] as any)
+      .variables as CreateOnlineEntryMutationVariables).input[0];
 
     expect(uploadedEntry).toEqual(entry);
 
     expect(mockUploadOfflineExperiences).not.toHaveBeenCalled();
-    expect(mockUploadAllUnsaveds).not.toHaveBeenCalled();
+    expect(mockUploadAllOfflineItems).not.toHaveBeenCalled();
 
     expect(document.getElementById(uploadBtnDomId)).toBeNull();
 
@@ -378,7 +324,9 @@ describe("components", () => {
     expect(mockRemoveQueriesAndMutationsFromCache).toHaveBeenCalled();
   });
 
-  it("shows only completely offline items and uploading all succeeds", async () => {
+  it("shows only offline experiences and uploading all succeeds", async () => {
+    mockIsConnected.mockReturnValue(true);
+
     const experience = {
       title: "a",
       clientId: "1",
@@ -402,7 +350,6 @@ describe("components", () => {
     const unsavedExperience = {
       id: "1",
       ...experience,
-
       entries: {
         edges: [
           {
@@ -412,15 +359,9 @@ describe("components", () => {
       },
     } as ExperienceFragment;
 
-    const {
-      ui,
-      mockUploadOfflineExperiences,
-      mockUploadOnlineExperiencesOfflineEntries,
-      mockUploadAllUnsaveds,
-    } = makeComp({
-      getOfflineItems: {
+    const { ui } = makeComp({
+      allOfflineItems: {
         completelyOfflineCount: 1,
-
         completelyOfflineMap: {
           "1": {
             experience: unsavedExperience,
@@ -441,13 +382,7 @@ describe("components", () => {
       },
     });
 
-    let unmount: any;
-
-    act(() => {
-      const args = render(ui);
-      unmount = args.unmount;
-      expect(document.getElementById(mockLoadingId)).not.toBeNull();
-    });
+    const { unmount } = render(ui);
 
     expect(
       document.getElementById(createdOnlineExperiencesContainerId),
@@ -530,8 +465,8 @@ describe("components", () => {
 
     expect(uploadedEntries[0]).toEqual(entry);
 
-    expect(mockUploadOnlineExperiencesOfflineEntries).not.toHaveBeenCalled();
-    expect(mockUploadAllUnsaveds).not.toHaveBeenCalled();
+    expect(mockCreateEntries).not.toHaveBeenCalled();
+    expect(mockUploadAllOfflineItems).not.toHaveBeenCalled();
 
     expect(document.getElementById(uploadBtnDomId)).toBeNull();
 
@@ -561,13 +496,8 @@ describe("components", () => {
       clientId: entryId,
     } as ExperienceFragment_entries_edges_node;
 
-    const {
-      ui,
-      mockUploadOfflineExperiences,
-      mockUploadOnlineExperiencesOfflineEntries,
-      mockUploadAllUnsaveds,
-    } = makeComp({
-      getOfflineItems: {
+    const { ui } = makeComp({
+      allOfflineItems: {
         completelyOfflineCount: 1,
 
         completelyOfflineMap: {
@@ -619,7 +549,7 @@ describe("components", () => {
       } as GetOfflineItemsSummary,
     });
 
-    mockUploadAllUnsaveds.mockResolvedValue({
+    mockUploadAllOfflineItems.mockResolvedValue({
       data: {
         createEntries: [
           {
@@ -655,12 +585,10 @@ describe("components", () => {
      * When component is rendered
      */
 
-    act(() => {
-      render(ui);
-    });
+    render(ui);
 
     /**
-     * Then partly saved experiences should be visible
+     * Then part offline experiences should be visible
      */
 
     expect(
@@ -668,7 +596,7 @@ describe("components", () => {
     ).not.toBeNull();
 
     /**
-     * And never saved experiences should not be visible
+     * And offline experiences should not be visible
      */
 
     expect(
@@ -687,7 +615,7 @@ describe("components", () => {
     expect(tabsMenuClassList).toContain("two");
 
     /**
-     * When we click on never saved tab menu
+     * When we click on offline experiences tab menu
      */
 
     const $neverSavedTabMenu = document.getElementById(
@@ -699,7 +627,7 @@ describe("components", () => {
     jest.runAllTimers();
 
     /**
-     * Then never saved experiences should be visible
+     * Then offline experiences should be visible
      */
 
     expect(
@@ -707,7 +635,7 @@ describe("components", () => {
     ).not.toBeNull();
 
     /**
-     * And partly saved experience should not be visible
+     * And part offline experience should not be visible
      */
 
     expect(
@@ -715,7 +643,7 @@ describe("components", () => {
     ).toBeNull();
 
     /**
-     * And should not contain any error UI
+     * And part offline experience should not contain any error UI
      */
 
     const domTitle1Id = makeExperienceComponentId(1, StateValue.offline);
@@ -725,7 +653,7 @@ describe("components", () => {
     ).not.toContain("error");
 
     /**
-     * When we click on partly saved tab menu
+     * When we click on part offline experience tab menu
      */
 
     const $partlySavedTabMenu = document.getElementById(
@@ -737,7 +665,7 @@ describe("components", () => {
     jest.runAllTimers();
 
     /**
-     * Then partly saved experiences should become visible
+     * Then part offline experiences should become visible
      */
 
     expect(
@@ -745,7 +673,7 @@ describe("components", () => {
     ).not.toBeNull();
 
     /**
-     * And never saved experiences should not be visible
+     * And offline experiences should not be visible
      */
 
     expect(
@@ -790,10 +718,10 @@ describe("components", () => {
 
     expect($error).not.toBeNull();
 
-    expect(mockUploadAllUnsaveds).toHaveBeenCalled();
+    expect(mockUploadAllOfflineItems).toHaveBeenCalled();
 
     expect(mockUploadOfflineExperiences).not.toHaveBeenCalled();
-    expect(mockUploadOnlineExperiencesOfflineEntries).not.toHaveBeenCalled();
+    expect(mockCreateEntries).not.toHaveBeenCalled();
 
     expect(
       document.getElementById("upload-triggered-error-icon-partly-saved"),
@@ -840,10 +768,9 @@ describe("components", () => {
   });
 
   it("shows apollo errors", async () => {
-    const { ui, mockUploadAllUnsaveds } = makeComp({
-      getOfflineItems: {
+    const { ui } = makeComp({
+      allOfflineItems: {
         completelyOfflineCount: 1,
-
         completelyOfflineMap: {
           "1": {
             experience: {
@@ -875,9 +802,7 @@ describe("components", () => {
             onlineEntries: [],
           },
         } as ExperiencesIdsToObjectMap,
-
         partlyOfflineCount: 1,
-
         partialOnlineMap: {
           "2": {
             experience: {
@@ -910,7 +835,7 @@ describe("components", () => {
       } as GetOfflineItemsSummary,
     });
 
-    mockUploadAllUnsaveds.mockRejectedValue(new Error("a"));
+    mockUploadAllOfflineItems.mockRejectedValue(new Error("a"));
 
     render(ui);
 
@@ -959,9 +884,9 @@ describe("components", () => {
     expect(mockUpdateCache).not.toHaveBeenCalled();
   });
 
-  it("deletes never saved", async () => {
-    const { ui, mockNavigate, mockLayoutDispatch } = makeComp({
-      getOfflineItems: {
+  it("deletes offline experiences", async () => {
+    const { ui, mockNavigate } = makeComp({
+      allOfflineItems: {
         completelyOfflineCount: 1,
 
         completelyOfflineMap: {
@@ -1023,9 +948,10 @@ describe("components", () => {
     expect(mockLayoutDispatch).toHaveBeenCalled();
   });
 
-  it("deletes partly saved but not never saved", async () => {
+  it("deletes part offline but not complete offline experiences", async () => {
+    mockIsConnected.mockReturnValue(true);
     const { ui, mockNavigate } = makeComp({
-      getOfflineItems: {
+      allOfflineItems: {
         completelyOfflineCount: 1,
 
         completelyOfflineMap: {
@@ -1071,9 +997,7 @@ describe("components", () => {
 
     mockReplaceExperiencesInGetExperiencesMiniQuery.mockResolvedValue({});
 
-    act(() => {
-      render(ui);
-    });
+    render(ui);
 
     expect(
       document.getElementById("upload-unsaved-tab-menu-partly-saved"),
@@ -1165,10 +1089,9 @@ describe("components", () => {
       ...timeStamps,
     } as ExperienceFragment;
 
-    const { ui, mockUploadOfflineExperiences } = makeComp({
-      getOfflineItems: {
+    const { ui } = makeComp({
+      allOfflineItems: {
         completelyOfflineCount: 1,
-
         completelyOfflineMap: {
           [offlineExperienceId]: {
             experience: offlineExperience,
@@ -1198,10 +1121,7 @@ describe("components", () => {
       },
     });
 
-    act(() => {
-      render(ui);
-      expect(document.getElementById(mockLoadingId)).not.toBeNull();
-    });
+    render(ui);
 
     expect(
       document.getElementById("uploaded-success-tab-icon-never-saved"),
@@ -1247,298 +1167,44 @@ describe("components", () => {
   });
 });
 
-describe("non components", () => {
-  test("onUploadResultsReceived/2 does nothing if upload mutation does not exist", () => {
-    expect(onUploadResultsReceived({} as StateMachine, undefined)).toEqual({});
-  });
+describe("reducer", () => {
+  test("on data loaded", () => {
+    const state = initState();
+    const nextState = reducer(state, {
+      type: ActionType.ON_DATA_LOADED,
+      allOfflineItems: {
+        partlyOfflineCount: 1,
+      } as GetOfflineItemsSummary,
+    });
 
-  test("onUploadResultsReceived/2 initializes experience uploaded state", () => {
-    const nextState = onUploadResultsReceived(
-      {
-        states: {
-          upload: {},
-        },
-      } as StateMachine,
-      {} as UploadOfflineItemsMutation,
-    );
-
-    expect(nextState).toEqual({
-      states: {
-        upload: {
-          value: "uploaded",
-          uploaded: {
-            states: {
-              experiences: {
-                value: "initial",
-                context: {
-                  anySuccess: false,
-                },
-              },
-            },
-          },
-        },
-      },
-    } as StateMachine);
-  });
-
-  test("onUploadResultsReceived/2 handles results with undefined elements", () => {
-    const state = {
-      states: {
-        upload: {},
-      },
-      context: {
-        completelyOfflineMap: {
-          "1": {
-            experience: {
-              id: "1",
-              clientId: "1",
-            } as ExperienceFragment,
-
-            offlineEntries: [
-              {
-                id: "1",
-                clientId: "1",
-                dataObjects: [
-                  {
-                    definitionId: "1",
-                  },
-                ],
-              },
-
-              {
-                id: "2",
-                clientId: "2",
-                dataObjects: [
-                  {
-                    // Notice definitionId (2), different from above (1). Server
-                    // will return dataDefinition.clientId of 1 and so only
-                    // the entry above will have its definitionId replaced
-                    // because 2 will not match
-                    definitionId: "2",
-                  },
-                ],
-              },
-            ],
-          } as ExperienceObjectMap,
-        } as ExperiencesIdsToObjectMap,
-        partialOnlineMap: {
-          "1": {
-            offlineEntries: [
-              {
-                id: "1",
-                clientId: "1",
-              },
-            ],
-          } as ExperienceObjectMap,
-        } as ExperiencesIdsToObjectMap,
-      },
-    } as StateMachine;
-
-    const payload = {
-      saveOfflineExperiences: [
-        null,
-
-        {
-          experience: {
-            id: "a",
-            clientId: "1",
-            dataDefinitions: [
-              {
-                id: "a",
-                clientId: "1",
-              },
-            ],
-
-            entries: {},
-          },
-        },
-      ],
-
-      createEntries: [
-        null,
-
-        {
-          errors: [],
-
-          entries: [
-            {
-              id: "a",
-              clientId: "1",
-            },
-          ],
-
-          experienceId: "1",
-        },
-      ],
-    } as UploadOfflineItemsMutation;
-
-    const nextState = onUploadResultsReceived(state, payload);
-
-    expect(nextState).toEqual({
-      states: {
-        upload: {
-          value: StateValue.uploaded,
-          uploaded: {
-            states: {
-              experiences: {
-                context: {
-                  anySuccess: true,
-                },
-                partial: {
-                  states: {
-                    offline: {
-                      value: "partialSuccess",
-                    },
-                    saved: {
-                      value: "partialSuccess",
-                    },
-                  },
-                },
-                value: "partial",
-              },
-            },
-          },
-        },
-      },
-      context: {
-        completelyOfflineMap: {
-          "1": {
-            experience: {
-              id: "1",
-              clientId: "1",
-            },
-            offlineEntries: [
-              {
-                id: "1",
-                clientId: "1",
-                dataObjects: [
-                  {
-                    definitionId: "a",
-                  },
-                ],
-              },
-              {
-                id: "2",
-                clientId: "2",
-                dataObjects: [
-                  {
-                    definitionId: "2",
-                  },
-                ],
-              },
-            ],
-            newlySavedExperience: {
-              id: "a",
-              clientId: "1",
-              dataDefinitions: [
-                {
-                  id: "a",
-                  clientId: "1",
-                },
-              ],
-              entries: {},
-            },
-            didUploadSucceed: true,
-          } as ExperienceObjectMap,
-        } as ExperiencesIdsToObjectMap,
-        partialOnlineMap: {
-          "1": {
-            offlineEntries: [
-              {
-                id: "a",
-                clientId: "1",
-              },
-            ],
-            newlyOnlineEntries: [
-              {
-                id: "a",
-                clientId: "1",
-              },
-            ],
-            didUploadSucceed: false,
-            entriesErrors: {},
-          } as ExperienceObjectMap,
-        } as ExperiencesIdsToObjectMap,
-      },
-    } as StateMachine);
+    const {dataLoaded, tabs} = nextState.states;
+    expect(dataLoaded.value).toBe(StateValue.yes);
+    expect(tabs.value).toBe(StateValue.one);
   });
 });
 
 ////////////////////////// HELPER FUNCTIONS ///////////////////////////////////
 
-const UploadUnsavedP = UploadOfflineItems as ComponentType<Partial<Props>>;
+const UploadUnsavedP = UploadOfflineItemsComponent as ComponentType<
+  Partial<ComponentProps>
+>;
 
-const defaultArgs: Args = {
-  props: {},
-  isConnected: true,
-};
-
-function makeComp(args: Args = {}) {
-  args = { ...defaultArgs, ...args };
-  const { props, isConnected, getOfflineItems } = args;
-
-  mockGetAllUnsavedQueryReturnValue = (getOfflineItems
-    ? {
-        data: {
-          getOfflineItems,
-        },
-      }
-    : {}) as GetOfflineItemsQueryResult;
-
-  mockIsConnected.mockReturnValue(isConnected);
-
-  const mockUploadOfflineExperiences = jest.fn();
-
-  mockUseUploadUnsavedExperiencesMutation.mockReturnValue([
-    mockUploadOfflineExperiences,
-  ]);
-
-  const mockUploadOnlineExperiencesOfflineEntries = jest.fn();
-
-  mockUseUploadOnlineExperiencesOfflineEntriesMutation.mockReturnValue([
-    mockUploadOnlineExperiencesOfflineEntries,
-  ]);
-
-  const mockUploadAllUnsaveds = jest.fn();
-  mockUseUploadAllUnsavedsMutation.mockReturnValue([mockUploadAllUnsaveds]);
-
-  const mockLayoutDispatch = jest.fn();
-
+function makeComp(props: Partial<ComponentProps> = {}) {
   const { Ui, ...routerProps } = renderWithRouter(UploadUnsavedP);
 
   return {
     ui: (
-      <EbnisAppProvider
-        value={
-          {
-            client: {},
-            cache: {},
-            persistor: {
-              persist: jest.fn(),
-            },
-          } as any
-        }
-      >
-        <LayoutUnchangingProvider
-          value={{
-            layoutDispatch: mockLayoutDispatch,
-          }}
-        >
-          <Ui {...props} />
-        </LayoutUnchangingProvider>
-      </EbnisAppProvider>
+      <Ui
+        createEntries={mockCreateEntries}
+        layoutDispatch={mockLayoutDispatch}
+        persistor={{ persist: noop } as any}
+        client={{ addResolvers: noop } as any}
+        cache={{} as any}
+        uploadAllOfflineItems={mockUploadAllOfflineItems}
+        uploadOfflineExperiences={mockUploadOfflineExperiences}
+        {...props}
+      />
     ),
-
-    mockUploadOfflineExperiences,
-    mockUploadOnlineExperiencesOfflineEntries,
-    mockUploadAllUnsaveds,
-    mockLayoutDispatch,
     ...routerProps,
   };
-}
-
-interface Args {
-  props?: Partial<Props>;
-  isConnected?: boolean;
-  getOfflineItems?: GetOfflineItemsSummary;
 }

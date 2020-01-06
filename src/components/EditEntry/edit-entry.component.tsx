@@ -54,12 +54,11 @@ import {
   makeOfflineDefinitionLabelId,
 } from "./edit-entry-dom";
 import { useCreateOnlineEntryMutation } from "../../graphql/create-entry.mutation";
-// import ApolloClient from "apollo-client";
 import { EbnisAppContext } from "../../context";
 import { LayoutUnchangingContext, LayoutContext } from "../Layout/layout.utils";
 import { MUTATION_NAME_createEntry } from "../../graphql/create-entry.mutation";
 import { cleanupRanQueriesFromCache } from "../../apollo-cache/cleanup-ran-queries-from-cache";
-import { QUERY_NAME_getOfflineItems } from "../../state/offline-resolvers";
+import { QUERY_NAME_getOfflineItems } from "../UploadOfflineItems/upload-offline.resolvers";
 import { QUERY_NAME_getExperienceFull } from "../../graphql/get-experience-full.query";
 import {
   MUTATION_NAME_updateDataObjects,

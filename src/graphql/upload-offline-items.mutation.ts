@@ -1,4 +1,5 @@
 import gql from "graphql-tag";
+import { useMutation } from "@apollo/react-hooks";
 import { ENTRY_CONNECTION_FRAGMENT } from "./entry-connection.fragment";
 import {
   CREATE_ENTRIES_RESPONSE_FRAGMENT,
@@ -11,6 +12,10 @@ import {
 import { EXPERIENCE_NO_ENTRY_FRAGMENT } from "./experience.fragment";
 import { CREATE_EXPERIENCE_ERRORS } from "./create-experience-errors.fragment";
 import { MutationFunction, MutationFetchResult } from "@apollo/react-common";
+import {
+  UploadOfflineExperiencesMutation,
+  UploadOfflineExperiencesMutationVariables,
+} from "./apollo-types/UploadOfflineExperiencesMutation";
 
 const UPLOAD_OFFLINE_EXPERIENCES_EXPERIENCE_ERROR_FRAGMENT = gql`
   fragment UploadOfflineExperienceErrorFragment on CreateOfflineExperienceErrors {
@@ -77,11 +82,47 @@ export const UPLOAD_OFFLINE_ITEMS_MUTATION = gql`
   ${CREATE_ENTRIES_RESPONSE_FRAGMENT}
 `;
 
-export type UploadOfflineItemsMutationFn = MutationFunction<
+export function useUploadOfflineItemsMutation(): UseUploadOfflineItemsMutation {
+  return useMutation(UPLOAD_OFFLINE_ITEMS_MUTATION);
+}
+
+// component props should extend this
+export interface UseUploadOfflineItemsMutationProps {
+  uploadAllOfflineItems: UseUploadOfflineItemsMutationFn;
+}
+
+type UseUploadOfflineItemsMutation = [
+  UseUploadOfflineItemsMutationFn,
+  UseUploadOfflineItemsMutationFnResult,
+];
+
+type UseUploadOfflineItemsMutationFn = MutationFunction<
   UploadOfflineItemsMutation,
   UploadOfflineItemsMutationVariables
 >;
 
-export type UploadOfflineItemsMutationFnResult = MutationFetchResult<
+type UseUploadOfflineItemsMutationFnResult = MutationFetchResult<
   UploadOfflineItemsMutation
+>;
+
+export function useUploadOfflineExperiencesMutation(): UseUploadOfflineExperiencesMutation {
+  return useMutation(UPLOAD_OFFLINE_EXPERIENCES_MUTATION);
+}
+
+export interface UseUploadOfflineExperiencesMutationProps {
+  uploadOfflineExperiences: UseUploadOfflineExperiencesMutationFn;
+}
+
+export type UseUploadOfflineExperiencesMutationFn = MutationFunction<
+  UploadOfflineExperiencesMutation,
+  UploadOfflineExperiencesMutationVariables
+>;
+
+type UseUploadOfflineExperiencesMutation = [
+  UseUploadOfflineExperiencesMutationFn,
+  UseUploadOfflineExperiencesMutationResult,
+];
+
+type UseUploadOfflineExperiencesMutationResult = MutationFetchResult<
+  UploadOfflineExperiencesMutation
 >;

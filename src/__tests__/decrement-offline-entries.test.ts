@@ -3,7 +3,7 @@ import {
   DecrementOfflineEntriesCountForExperienceArgs,
 } from "../apollo-cache/drecrement-offline-entries-count";
 import { queryCacheOfflineItems } from "../state/resolvers/get-experiences-from-cache";
-import { writeOfflineItemsToCache } from "../apollo-cache/write-offline-items-to-cache";
+import { updateOfflineItemsLedger } from "../apollo-cache/write-offline-items-to-cache";
 import { wipeReferencesFromCache } from "../state/resolvers/delete-references-from-cache";
 import { makeApolloCacheRef } from "../constants";
 import { OFFLINE_ITEMS_TYPENAME } from "../state/offline-resolvers";
@@ -12,7 +12,7 @@ jest.mock("../state/resolvers/get-experiences-from-cache");
 const mockQueryCacheOfflineItems = queryCacheOfflineItems as jest.Mock;
 
 jest.mock("../apollo-cache/write-offline-items-to-cache");
-const mockWriteOfflineItemsToCache = writeOfflineItemsToCache as jest.Mock;
+const mockWriteOfflineItemsToCache = updateOfflineItemsLedger as jest.Mock;
 
 jest.mock("../state/resolvers/delete-references-from-cache");
 const mockWipeReferencesFromCache = wipeReferencesFromCache as jest.Mock;

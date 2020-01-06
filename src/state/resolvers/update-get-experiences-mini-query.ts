@@ -115,7 +115,7 @@ export async function replaceExperiencesInGetExperiencesMiniQuery(
     fetchPolicy: "cache-only",
   });
 
-  let getExperiences = data && data.getExperiences;
+  const getExperiences = data && data.getExperiences;
 
   const updatedExperienceConnection = immer(
     (getExperiences ||
@@ -129,13 +129,16 @@ export async function replaceExperiencesInGetExperiencesMiniQuery(
         const node = edge.node as ExperienceConnectionFragment_edges_node;
         const replacementExperience = experiencesMap[node.id];
 
-        if (replacementExperience !== null) {
-          if (replacementExperience) {
-            edge.node = replacementExperience;
-          }
-
-          newEdges.push(edge);
+        // value is null, so skip ==== delete.
+        if (replacementExperience === null) {
+          continue;
         }
+
+        if (replacementExperience) {
+          edge.node = replacementExperience;
+        }
+
+        newEdges.push(edge);
       }
 
       proxy.edges = newEdges;

@@ -3,42 +3,35 @@ import React, {
   useEffect,
   useContext,
   useLayoutEffect,
+  useCallback,
 } from "react";
 import {
-  Props,
+  ComponentProps,
   reducer,
   ActionType,
-  definitionToUnsavedData,
-  ExperiencesIdsToObjectMap,
   DispatchType,
   StateMachine,
   initState,
   ExperienceObjectMap,
   StateValue,
-  onUploadResultsReceived,
   PartialUploadSuccessState,
   ExperiencesUploadedState,
-  ExperiencesUploadedResultState,
   TabsState,
   CreationMode,
+  CallerProps,
+  effectFunctions,
 } from "./upload-offline.utils";
 import { Loading } from "../Loading/loading";
 import { SidebarHeader } from "../SidebarHeader/sidebar-header.component";
-import { ExperienceFragment_entries_edges_node } from "../../graphql/apollo-types/ExperienceFragment";
 import "./upload-offline.styles.scss";
 import { CSSTransition, TransitionGroup } from "react-transition-group";
 import makeClassNames from "classnames";
 import Button from "semantic-ui-react/dist/commonjs/elements/Button";
-import { CreateEntriesInput } from "../../graphql/apollo-types/globalTypes";
-import { UploadOfflineItemsMutationFn } from "../../graphql/upload-offline-items.mutation";
 import { isConnected } from "../../state/connections";
 import { NavigateFn } from "@reach/router";
-import Modal from "semantic-ui-react/dist/commonjs/modules/Modal";
 import Icon from "semantic-ui-react/dist/commonjs/elements/Icon";
 import Message from "semantic-ui-react/dist/commonjs/collections/Message";
-import { UploadOfflineItemsMutationVariables } from "../../graphql/apollo-types/UploadOfflineItemsMutation";
 import { Experience } from "../Experience/experience.component";
-import { scrollIntoView } from "../scroll-into-view";
 import { FormCtrlError } from "../FormCtrlError/form-ctrl-error.component";
 import { Entry } from "../Entry/entry.component";
 import {
@@ -49,21 +42,11 @@ import { replaceExperiencesInGetExperiencesMiniQuery } from "../../state/resolve
 import { wipeReferencesFromCache } from "../../state/resolvers/delete-references-from-cache";
 import { deleteExperiencesIdsFromOfflineItemsInCache } from "../../apollo-cache/delete-experiences-ids-from-offline-items";
 import { EXPERIENCES_URL } from "../../routes";
-import { updateCache } from "./update-cache";
-import { useDeleteCachedQueriesAndMutationsOnUnmount } from "../use-delete-cached-queries-mutations-on-unmount";
 import { makeSiteTitle, setDocumentTitle } from "../../constants";
 import { UPLOAD_OFFLINE_ITEMS_TITLE } from "../../constants/upload-offline-title";
 import { IconProps } from "semantic-ui-react";
-import { DataObjectFragment } from "../../graphql/apollo-types/DataObjectFragment";
 import { MY_EXPERIENCES_TITLE } from "../../constants/my-experiences-title";
 import { EbnisAppContext } from "../../context";
-import {
-  useGetAllUnsavedQuery,
-  useUploadOfflineExperiencesMutation,
-  useUploadOfflineItemsMutation,
-  useUploadOfflineEntriesMutation,
-  addUploadOfflineItemsResolvers,
-} from "./upload-offline.injectables";
 import {
   makeExperienceComponentId,
   createdOnlineExperiencesContainerId,
@@ -76,22 +59,34 @@ import {
   offlineExperiencesTabMenuDomId,
 } from "./upload-offline.dom";
 import { QUERY_NAME_getExperienceFull } from "../../graphql/get-experience-full.query";
+import { useCreateEntriesMutation } from "../../graphql/create-entries.mutation";
+import { cleanupRanQueriesFromCache } from "../../apollo-cache/cleanup-ran-queries-from-cache";
+import {
+  useUploadOfflineExperiencesMutation,
+  useUploadOfflineItemsMutation,
+} from "../../graphql/upload-offline-items.mutation";
+import {
+  getAllOfflineItemsResolvers,
+  useGetAllOfflineItemsQuery,
+} from "./upload-offline.resolvers";
 
 const timeoutMs = 500;
 const REDIRECT_ROUTE = makeSiteTitle(MY_EXPERIENCES_TITLE);
 
-export function UploadOfflineItems(props: Props) {
-  const { navigate } = props;
-  const [uploadUnsavedExperiences] = useUploadOfflineExperiencesMutation();
-  const [uploadAllUnsaveds] = useUploadOfflineItemsMutation();
-  const [uploadSavedExperiencesEntries] = useUploadOfflineEntriesMutation();
-
-  const { data, loading } = useGetAllUnsavedQuery();
-  const getOfflineItems = data && data.getOfflineItems;
+export function UploadOfflineItemsComponent(props: ComponentProps) {
+  const {
+    navigate,
+    layoutDispatch,
+    cache,
+    client,
+    persistor,
+    loading,
+    allOfflineItems,
+  } = props;
 
   const [stateMachine, dispatch] = useReducer(
     reducer,
-    getOfflineItems,
+    allOfflineItems,
     initState,
   );
 
@@ -105,10 +100,21 @@ export function UploadOfflineItems(props: Props) {
       completelyOfflineMap,
       shouldRedirect,
     },
+    effects: { general },
   } = stateMachine;
 
-  const { cache, client, persistor } = useContext(EbnisAppContext);
-  const { layoutDispatch } = useContext(LayoutUnchangingContext);
+  useEffect(() => {
+    if (general.value === StateValue.yes) {
+      const {
+        yes: { effects },
+      } = general;
+
+      effects.forEach(({ key, ownArgs }) => {
+        effectFunctions[key](ownArgs, props, { dispatch });
+      });
+    }
+    /* eslint-disable-next-line react-hooks/exhaustive-deps*/
+  }, [general]);
 
   useLayoutEffect(() => {
     if (!isConnected()) {
@@ -116,26 +122,39 @@ export function UploadOfflineItems(props: Props) {
       return;
     }
     setDocumentTitle(makeSiteTitle(UPLOAD_OFFLINE_ITEMS_TITLE));
-    addUploadOfflineItemsResolvers(client);
-    return setDocumentTitle;
+    client.addResolvers(getAllOfflineItemsResolvers);
+    return () => {
+      cleanupRanQueriesFromCache(
+        cache,
+        [
+          "saveOfflineExperiences",
+          "createEntries",
+          "getOfflineItems",
+          QUERY_NAME_getExperienceFull + "(",
+        ],
+        persistor,
+      );
+    };
     /* eslint-disable-next-line react-hooks/exhaustive-deps*/
   }, []);
 
+  const dataNotLoaded = dataLoaded.value === StateValue.no;
+  // istanbul ignore next: no easy way to test
   useEffect(() => {
-    if (getOfflineItems && dataLoaded.value === "no") {
+    if (dataNotLoaded && allOfflineItems) {
       dispatch({
-        type: ActionType.INIT_STATE_FROM_PROPS,
-        getOfflineItems,
+        type: ActionType.ON_DATA_LOADED,
+        allOfflineItems,
       });
     }
-  }, [getOfflineItems, dataLoaded, navigate]);
+  }, [allOfflineItems, dataNotLoaded]);
 
   useEffect(() => {
-    if (allCount === 0) {
+    if (!dataNotLoaded && allCount === 0) {
       (navigate as NavigateFn)(REDIRECT_ROUTE);
       return;
     }
-  }, [allCount, navigate]);
+  }, [allCount, navigate, dataNotLoaded]);
 
   useEffect(() => {
     if (shouldRedirect) {
@@ -148,100 +167,14 @@ export function UploadOfflineItems(props: Props) {
     }
   }, [shouldRedirect, navigate, layoutDispatch]);
 
-  useDeleteCachedQueriesAndMutationsOnUnmount(
-    [
-      "saveOfflineExperiences",
-      "createEntries",
-      "getOfflineItems",
-      QUERY_NAME_getExperienceFull + "(",
-    ],
-    upload.value === "uploaded",
-  );
+  const onSubmit = useCallback(() => {
+    dispatch({
+      type: ActionType.ON_UPLOAD,
+    });
+  }, []);
 
   if (loading) {
     return <Loading />;
-  }
-
-  async function onSubmit() {
-    dispatch({
-      type: ActionType.UPLOAD_STARTED,
-      isUploading: true,
-    });
-
-    try {
-      let uploadFunction;
-      let variables;
-
-      if (completelyOfflineCount !== 0 && partlyOfflineCount !== 0) {
-        uploadFunction = uploadAllUnsaveds;
-
-        variables = {
-          offlineExperiencesInput: completelyOfflineExperiencesToUploadData(
-            completelyOfflineMap,
-          ),
-
-          offlineEntriesInput: onlineExperiencesToUploadData(partialOnlineMap),
-        };
-      } else if (completelyOfflineCount !== 0) {
-        uploadFunction = uploadUnsavedExperiences;
-
-        variables = ({
-          input: completelyOfflineExperiencesToUploadData(completelyOfflineMap),
-        } as unknown) as UploadOfflineItemsMutationVariables;
-      } else {
-        uploadFunction = uploadSavedExperiencesEntries;
-
-        variables = ({
-          input: onlineExperiencesToUploadData(partialOnlineMap),
-        } as unknown) as UploadOfflineItemsMutationVariables;
-      }
-
-      const result = await (uploadFunction as UploadOfflineItemsMutationFn)({
-        variables,
-      });
-
-      const newState = onUploadResultsReceived(
-        stateMachine,
-        result && result.data,
-      );
-
-      let outstandingOfflineCount: number | null = null;
-
-      if (
-        newState.states.upload.value === "uploaded" &&
-        newState.states.upload.uploaded.states.experiences &&
-        (newState.states.upload.uploaded.states
-          .experiences as ExperiencesUploadedResultState).context.anySuccess
-      ) {
-        outstandingOfflineCount = updateCache({
-          partialOnlineMap: newState.context.partialOnlineMap,
-          completelyOfflineMap: newState.context.completelyOfflineMap,
-          cache,
-          client,
-        });
-
-        await persistor.persist();
-      }
-
-      dispatch({
-        type: ActionType.UPLOAD_RESULTS_RECEIVED,
-        stateMachine: newState,
-      });
-
-      if (outstandingOfflineCount !== null) {
-        layoutDispatch({
-          type: LayoutActionType.SET_OFFLINE_ITEMS_COUNT,
-          count: outstandingOfflineCount,
-        });
-      }
-    } catch (errors) {
-      dispatch({
-        type: ActionType.SERVER_ERROR,
-        errors,
-      });
-
-      scrollIntoView("js-scroll-into-view-server-error");
-    }
   }
 
   const serverErrors =
@@ -267,7 +200,7 @@ export function UploadOfflineItems(props: Props) {
 
   return (
     <div className="components-upload-offline-items">
-      <ModalComponent open={upload.value === "uploading"} />
+      {upload.value === StateValue.uploading && <Loading />}
 
       <SidebarHeader sidebar={true}>
         <div className="components-upload-offline-items-header">
@@ -315,6 +248,8 @@ export function UploadOfflineItems(props: Props) {
                       mode={StateValue.online}
                       experienceObjectMap={map}
                       dispatch={dispatch}
+                      client={client}
+                      cache={cache}
                     />
                   );
                 })}
@@ -342,6 +277,8 @@ export function UploadOfflineItems(props: Props) {
                       mode={StateValue.offline}
                       experienceObjectMap={map}
                       dispatch={dispatch}
+                      client={client}
+                      cache={cache}
                     />
                   );
                 })}
@@ -354,21 +291,19 @@ export function UploadOfflineItems(props: Props) {
   );
 }
 
-export default UploadOfflineItems;
-
 ////////////////////////// COMPONENTS ///////////////////////////////////
 
 function ExperienceComponent({
   mode,
   experienceObjectMap,
   dispatch,
+  client,
+  cache,
 }: {
   experienceObjectMap: ExperienceObjectMap;
   mode: CreationMode;
   dispatch: DispatchType;
-}) {
-  const { client, cache } = useContext(EbnisAppContext);
-
+} & Pick<ComponentProps, "client" | "cache">) {
   const {
     newlySavedExperience,
     didUploadSucceed,
@@ -484,16 +419,6 @@ function ExperienceComponent({
   );
 }
 
-function ModalComponent({ open }: { open?: boolean }) {
-  return (
-    <Modal basic={true} size="small" open={open} dimmer="inverted">
-      <Modal.Content>
-        <Loading />
-      </Modal.Content>
-    </Modal>
-  );
-}
-
 function TabsMenuComponent({
   dispatch,
   serverErrors,
@@ -604,7 +529,7 @@ function TabsMenuComponent({
 function UploadAllButtonComponent({
   onUploadAllClicked,
 }: {
-  onUploadAllClicked: () => Promise<void>;
+  onUploadAllClicked: () => void;
 }) {
   return (
     <Button
@@ -654,65 +579,6 @@ function ServerError(props: { dispatch: DispatchType; errors: string }) {
 
 ////////////////////////// HELPER FUNCTIONS ///////////////////////////////////
 
-function toUploadableEntry(entry: ExperienceFragment_entries_edges_node) {
-  const dataObjects = entry.dataObjects.map(value => {
-    const dataObject = value as DataObjectFragment;
-
-    const keys: (keyof DataObjectFragment)[] = [
-      "data",
-      "definitionId",
-      "clientId",
-      "insertedAt",
-      "updatedAt",
-    ];
-
-    return keys.reduce((acc, k) => {
-      acc[k as keyof DataObjectFragment] =
-        dataObject[k as keyof DataObjectFragment];
-      return acc;
-    }, {} as DataObjectFragment);
-  });
-
-  return {
-    experienceId: entry.experienceId,
-    clientId: entry.clientId as string,
-    dataObjects,
-    insertedAt: entry.insertedAt,
-    updatedAt: entry.updatedAt,
-  };
-}
-
-function completelyOfflineExperiencesToUploadData(
-  experiencesIdsToObjectMap: ExperiencesIdsToObjectMap,
-) {
-  return Object.values(experiencesIdsToObjectMap).map(
-    ({ experience, offlineEntries }) => {
-      return {
-        entries: offlineEntries.map(toUploadableEntry),
-        title: experience.title,
-        clientId: experience.clientId,
-        dataDefinitions: experience.dataDefinitions.map(
-          definitionToUnsavedData,
-        ),
-        insertedAt: experience.insertedAt,
-        updatedAt: experience.updatedAt,
-        description: experience.description,
-      };
-    },
-  );
-}
-
-function onlineExperiencesToUploadData(
-  experiencesIdsToObjectMap: ExperiencesIdsToObjectMap,
-) {
-  return Object.entries(experiencesIdsToObjectMap).reduce(
-    (acc, [, { offlineEntries }]) => {
-      return acc.concat(offlineEntries.map(toUploadableEntry));
-    },
-    [] as CreateEntriesInput[],
-  );
-}
-
 function computeUploadedPartialState(
   uploadSomeSuccess: ExperiencesUploadedState | null,
 ): ComputeUploadPartialStateReturnValue {
@@ -751,3 +617,30 @@ interface ComputeUploadPartialStateReturnValue {
   savedAllSuccess?: boolean;
   unsavedAllSuccess?: boolean;
 }
+
+// istanbul ignore next:
+export default (props: CallerProps) => {
+  const [createEntries] = useCreateEntriesMutation();
+  const { layoutDispatch } = useContext(LayoutUnchangingContext);
+  const { cache, client, persistor } = useContext(EbnisAppContext);
+  const [uploadAllOfflineItems] = useUploadOfflineItemsMutation();
+  const [uploadOfflineExperiences] = useUploadOfflineExperiencesMutation();
+
+  const { data, loading } = useGetAllOfflineItemsQuery();
+  const allOfflineItems = data && data.getOfflineItems;
+
+  return (
+    <UploadOfflineItemsComponent
+      layoutDispatch={layoutDispatch}
+      createEntries={createEntries}
+      client={client}
+      cache={cache}
+      persistor={persistor}
+      uploadAllOfflineItems={uploadAllOfflineItems}
+      uploadOfflineExperiences={uploadOfflineExperiences}
+      loading={loading}
+      allOfflineItems={allOfflineItems}
+      {...props}
+    />
+  );
+};

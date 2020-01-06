@@ -3,9 +3,14 @@ import {
   PreFetchExperiences,
   PreFetchExperiencesVariables,
 } from "../../graphql/apollo-types/PreFetchExperiences";
-import { PRE_FETCH_EXPERIENCES_QUERY } from "../../graphql/get-experience-connection-mini.query";
+import {
+  PRE_FETCH_EXPERIENCES_QUERY,
+  getExperienceConnectionMiniVariables,
+} from "../../graphql/get-experience-connection-mini.query";
 import { InMemoryCache } from "apollo-cache-inmemory";
 import { removeQueriesAndMutationsFromCache } from "../../state/resolvers/delete-references-from-cache";
+import { entriesPaginationVariables } from "../../graphql/get-experience-full.query";
+import { GetExperiencesInput } from "../../graphql/apollo-types/globalTypes";
 
 export function preFetchExperiences({
   ids,
@@ -13,19 +18,16 @@ export function preFetchExperiences({
   onDone,
   cache,
 }: PreFetchExperiencesFnArgs) {
-  const entriesPagination = {
-    first: 20000,
-  };
-
   client
     .query<PreFetchExperiences, PreFetchExperiencesVariables>({
       query: PRE_FETCH_EXPERIENCES_QUERY,
       variables: {
         experiencesArgs: {
           ids,
-          pagination: entriesPagination,
+          pagination: (getExperienceConnectionMiniVariables.input as GetExperiencesInput)
+            .pagination,
         },
-        entriesPagination,
+        ...entriesPaginationVariables,
       },
     })
     .then(() => {

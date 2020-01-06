@@ -1,10 +1,10 @@
 import { deleteExperiencesIdsFromOfflineItemsInCache } from "../apollo-cache/delete-experiences-ids-from-offline-items";
-import { writeOfflineItemsToCache } from "../apollo-cache/write-offline-items-to-cache";
+import { updateOfflineItemsLedger } from "../apollo-cache/write-offline-items-to-cache";
 import { queryCacheOfflineItems } from "../state/resolvers/get-experiences-from-cache";
 import { InMemoryCache } from "apollo-cache-inmemory";
 
 jest.mock("../apollo-cache/write-offline-items-to-cache");
-const mockwriteOfflineItemsToCache = writeOfflineItemsToCache as jest.Mock;
+const mockwriteOfflineItemsToCache = updateOfflineItemsLedger as jest.Mock;
 
 jest.mock("../state/resolvers/get-experiences-from-cache");
 const mockQueryCacheOfflineItems = queryCacheOfflineItems as jest.Mock;

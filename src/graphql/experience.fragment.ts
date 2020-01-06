@@ -50,6 +50,8 @@ export const EXPERIENCE_FRAGMENT = gql`
   ${ENTRY_CONNECTION_FRAGMENT}
 `;
 
+export const FRAGMENT_NAME_experienceFragment = "ExperienceFragment";
+
 export const EXPERIENCE_CONNECTION_FRAGMENT = gql`
   fragment ExperienceConnectionFragment on ExperienceConnection {
     pageInfo {

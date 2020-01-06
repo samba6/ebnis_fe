@@ -1,6 +1,6 @@
 import { DataProxy } from "apollo-cache";
 import { upsertExperienceWithEntry } from "../components/NewEntry/new-entry.injectables";
-import { readGetExperienceFullQueryFromCache } from "../state/resolvers/read-get-experience-full-query-from-cache";
+import { readExperienceFragmentFromCache } from "../state/resolvers/read-get-experience-full-query-from-cache";
 import {
   ExperienceFragment,
   ExperienceFragment_entries_edges,
@@ -11,7 +11,7 @@ import { EntryFragment } from "../graphql/apollo-types/EntryFragment";
 jest.mock("../state/resolvers/write-get-experience-full-query-to-cache");
 
 jest.mock("../state/resolvers/read-get-experience-full-query-from-cache");
-const mockReadGetExperienceFullQueryFromCache = readGetExperienceFullQueryFromCache as jest.Mock;
+const mockReadGetExperienceFullQueryFromCache = readExperienceFragmentFromCache as jest.Mock;
 
 beforeEach(() => {
   mockReadGetExperienceFullQueryFromCache.mockReset();
