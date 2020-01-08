@@ -30,7 +30,8 @@
     "cy-run": "start-server-and-test serve-local :3022 cy-run-task",
     "build-cy-run": "start-server-and-test build-serve:e2e :3022 cy-run-task",
     "type-check": "yarn tsc --noEmit --project .",
-    "type-check-cypress": "yarn tsc --noEmit --project ./cypress"
+    "type-check-cypress": "yarn tsc --noEmit --project ./cypress",
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx"
   },
   "dependencies": {
     "@absinthe/socket": "0.2.1",

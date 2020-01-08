@@ -20,7 +20,7 @@ export function createSavedExperience(
     mutation: CREATE_EXPERIENCE_MUTATION,
     variables: {
       createExperienceInput: experienceDefinitionArgs,
-      entriesPagination: { first: 2000 },
+      ...entriesPaginationVariables,
     },
   }).then(result => {
     const experience = (result &&
@@ -49,7 +49,7 @@ export function createOfflineExperience(
     mutation: CREATE_OFFLINE_EXPERIENCE_MUTATION,
     variables: {
       createExperienceInput: experienceDefinitionArgs,
-      ...entriesPaginationVariables
+      ...entriesPaginationVariables,
     },
   }).then(result => {
     const experience =

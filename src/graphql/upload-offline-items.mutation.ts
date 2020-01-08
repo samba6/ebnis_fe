@@ -34,7 +34,7 @@ const UPLOAD_OFFLINE_EXPERIENCES_FRAGMENT = gql`
     experience {
       ...ExperienceNoEntryFragment
 
-      entries(pagination: { first: 2000 }) {
+      entries(pagination: { first: 20000 }) {
         ...EntryConnectionFragment
       }
     }

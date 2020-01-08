@@ -5,12 +5,10 @@ import {
 } from "../../graphql/apollo-types/PreFetchExperiences";
 import {
   PRE_FETCH_EXPERIENCES_QUERY,
-  getExperienceConnectionMiniVariables,
 } from "../../graphql/get-experience-connection-mini.query";
 import { InMemoryCache } from "apollo-cache-inmemory";
 import { removeQueriesAndMutationsFromCache } from "../../state/resolvers/delete-references-from-cache";
 import { entriesPaginationVariables } from "../../graphql/get-experience-full.query";
-import { GetExperiencesInput } from "../../graphql/apollo-types/globalTypes";
 
 export function preFetchExperiences({
   ids,
@@ -22,10 +20,8 @@ export function preFetchExperiences({
     .query<PreFetchExperiences, PreFetchExperiencesVariables>({
       query: PRE_FETCH_EXPERIENCES_QUERY,
       variables: {
-        experiencesArgs: {
+        input: {
           ids,
-          pagination: (getExperienceConnectionMiniVariables.input as GetExperiencesInput)
-            .pagination,
         },
         ...entriesPaginationVariables,
       },
@@ -39,7 +35,7 @@ export function preFetchExperiences({
         removeQueriesAndMutationsFromCache(cache, [
           `getExperiences({"input":{"ids":`,
         ]);
-      }, 500);
+      }, 100);
     });
 }
 

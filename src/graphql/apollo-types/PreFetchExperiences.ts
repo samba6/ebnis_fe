@@ -144,6 +144,6 @@ export interface PreFetchExperiences {
 }
 
 export interface PreFetchExperiencesVariables {
-  experiencesArgs?: GetExperiencesInput | null;
+  input: GetExperiencesInput;
   entriesPagination: PaginationInput;
 }

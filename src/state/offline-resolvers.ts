@@ -18,18 +18,18 @@ export const OFFLINE_ITEMS_QUERY = gql`
 `;
 
 export function getOfflineItemsCount(cache: InMemoryCache) {
-  return queryCacheOfflineItems(cache).reduce(
-    (acc, { id, offlineEntriesCount }) => {
-      acc += offlineEntriesCount;
+  const results = queryCacheOfflineItems(cache);
 
-      if (isOfflineId(id)) {
-        ++acc;
-      }
+  return results.reduce((acc, { id, offlineEntriesCount }) => {
+    acc += offlineEntriesCount;
 
-      return acc;
-    },
-    0,
-  );
+    if (isOfflineId(id)) {
+      // offline experience (not part offline experience)
+      ++acc;
+    }
+
+    return acc;
+  }, 0);
 }
 
 export function entryNodesFromExperience({ entries }: ExperienceFragment) {

@@ -40,10 +40,10 @@ export type GetExperienceConnectionMiniQueryResult = QueryResult<
 // this query will be deleted after we ran it.
 export const PRE_FETCH_EXPERIENCES_QUERY = gql`
   query PreFetchExperiences(
-    $experiencesArgs: GetExperiencesInput
+    $input: GetExperiencesInput!
     $entriesPagination: PaginationInput!
   ) {
-    getExperiences(input: $experiencesArgs) {
+    getExperiences(input: $input) {
       ...ExperienceConnectionPreFetchFragment
     }
   }

@@ -1,12 +1,14 @@
 import { InMemoryCache } from "apollo-cache-inmemory";
 
+/**
+ * May this function can be combined with the one below. We'll
+ * -------------------------------------------------------
+ * Things to delete:
+ * 3. TYPE_NAME:Id i.e apollo cacheKey
+ */
 export function wipeReferencesFromCache(
   dataProxy: InMemoryCache,
   ids: string[],
-  mutationsAndQueries?: {
-    mutations?: [string, string][];
-    queries?: [string, string][];
-  },
 ) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const cache = dataProxy as any;
@@ -26,62 +28,17 @@ export function wipeReferencesFromCache(
     });
   });
 
-  const rootQuery = data["ROOT_QUERY"] as { [k: string]: { id: string } };
-  const rootMutation = data["ROOT_MUTATION"] as { [k: string]: { id: string } };
-
-  if (mutationsAndQueries) {
-    const { mutations, queries } = mutationsAndQueries;
-
-    count += deleteOperations(rootMutation, mutations);
-    count += deleteOperations(rootQuery, queries);
-  }
-
   cache.broadcastWatches();
-
   return count;
 }
 
-function deleteOperations(
-  rootOperations: { [k: string]: { id: string } },
-  operations?: [string, string][],
-) {
-  if (!operations) {
-    return 0;
-  }
-
-  if (operations.length === 0) {
-    return 0;
-  }
-
-  let count = 0;
-
-  const operationsMap = operations.reduce((acc, [operationName, operationId]) => {
-    const operationIds = acc[operationName] || [];
-    operationIds.push(operationId);
-    acc[operationName] = operationIds;
-
-    return acc;
-  }, {} as { [k: string]: string[] });
-
-  Object.entries(operationsMap).forEach(([operationName, methodIds]) => {
-    Object.keys(rootOperations).forEach(method => {
-      if (method.includes(operationName)) {
-        const { id } = rootOperations[method];
-
-        if (id) {
-          methodIds.forEach(methodId => {
-            if (id === methodId) {
-              delete rootOperations[method];
-              ++count;
-            }
-          });
-        }
-      }
-    });
-  });
-
-  return count;
-}
+/**
+ * Things to remove:
+ * 1. data.ROOT_QUERY.query_name
+ * 2. data.$ROOT_QUERY.query_name.0 (i.e normalized result(s) of 1,
+ *     if result is a list)
+ * 3. TYPE_NAME:Id i.e apollo cacheKey
+ */
 
 export function removeQueriesAndMutationsFromCache(
   dataProxy: InMemoryCache,
@@ -114,11 +71,13 @@ export function removeQueriesAndMutationsFromCache(
       continue;
     }
 
+    // dataKey === { ROOT_QUERY | ROOT_MUTATION}.operationName
+    // dataKey === $ROOT_QUERY.queryName.0
     if (
       dataKey.startsWith("$ROOT_MUTATION") ||
       dataKey.startsWith("$ROOT_QUERY") ||
-      dataKey.startsWith("ROOT_MUTATION") ||
-      dataKey.startsWith("ROOT_QUERY")
+      dataKey.startsWith("ROOT_QUERY") ||
+      dataKey.startsWith("ROOT_MUTATION")
     ) {
       for (const operationName of operations) {
         if (dataKey.includes(operationName)) {

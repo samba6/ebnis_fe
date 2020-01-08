@@ -68,6 +68,7 @@ import {
 import {
   getAllOfflineItemsResolvers,
   useGetAllOfflineItemsQuery,
+  QUERY_NAME_getOfflineItems,
 } from "./upload-offline.resolvers";
 
 const timeoutMs = 500;
@@ -129,7 +130,10 @@ export function UploadOfflineItemsComponent(props: ComponentProps) {
         [
           "saveOfflineExperiences",
           "createEntries",
-          "getOfflineItems",
+          // why remove here when we already removing from ./update-cache?
+          // because we only trigger update-cache when we submit and what if
+          // user leaves this component without submitting.
+          QUERY_NAME_getOfflineItems,
           QUERY_NAME_getExperienceFull + "(",
         ],
         persistor,

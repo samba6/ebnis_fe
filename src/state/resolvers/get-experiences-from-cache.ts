@@ -9,5 +9,7 @@ export function queryCacheOfflineItems(dataProxy: InMemoryCache) {
     query: OFFLINE_ITEMS_QUERY,
   });
 
-  return (data && data.offlineItems) || [];
+  const result = (data && data.offlineItems) || [];
+
+  return result;
 }

@@ -77,14 +77,16 @@ export const upsertExperienceWithEntry: Fn = function updateFn(
       );
 
       if (existingEntry) {
+        // update
         existingEntry.node = entry;
-        if (mode === "offline") {
-          proxy.hasUnsaved = true;
-        }
       } else {
         edges.unshift(
           entryToEdge(entry as ExperienceFragment_entries_edges_node),
         );
+      }
+
+      if (mode === "offline") {
+        proxy.hasUnsaved = true;
       }
 
       entries.edges = edges;
