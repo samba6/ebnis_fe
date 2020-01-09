@@ -82,6 +82,8 @@ export const UPLOAD_OFFLINE_ITEMS_MUTATION = gql`
   ${CREATE_ENTRIES_RESPONSE_FRAGMENT}
 `;
 
+export const MUTATION_NAME_saveOfflineExperiences = "saveOfflineExperiences";
+
 export function useUploadOfflineItemsMutation(): UseUploadOfflineItemsMutation {
   return useMutation(UPLOAD_OFFLINE_ITEMS_MUTATION);
 }

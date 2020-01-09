@@ -12,7 +12,6 @@ import "./my-experiences.styles.scss";
 import {
   ComponentProps,
   ExperienceProps,
-  mapCompletelyOnlineExperiencesToIds,
   DispatchProvider,
   reducer,
   dispatchContext,
@@ -32,11 +31,6 @@ import {
   ExperienceConnectionFragment_edges,
   ExperienceConnectionFragment_edges_node,
 } from "../../graphql/apollo-types/ExperienceConnectionFragment";
-import {
-  LayoutUnchangingContext,
-  LayoutActionType,
-  LayoutContextExperience,
-} from "../Layout/layout.utils";
 import { ExperienceMiniFragment } from "../../graphql/apollo-types/ExperienceMiniFragment";
 import SemanticSearch from "semantic-ui-react/dist/commonjs/modules/Search";
 import { SearchResultProps, SearchProps } from "semantic-ui-react";
@@ -60,14 +54,7 @@ import { SidebarHeader } from "../SidebarHeader/sidebar-header.component";
 const SearchComponent = memo(SearchComponentUnMemo, SearchComponentPropsDiffFn);
 
 export function MyExperiences(props: ComponentProps) {
-  const {
-    experiences,
-    navigate,
-    error,
-    loading,
-    layoutDispatch,
-    fetchExperience,
-  } = props;
+  const { experiences, navigate, error, loading } = props;
 
   const [stateMachine, dispatch] = useReducer(
     reducer,
@@ -99,22 +86,6 @@ export function MyExperiences(props: ComponentProps) {
     });
     /* eslint-disable-next-line react-hooks/exhaustive-deps*/
   }, [experiencesPrepared, noExperiences]);
-
-  useEffect(() => {
-    if (noExperiences || fetchExperience !== "never-fetched") {
-      return;
-    }
-
-    setTimeout(() => {
-      const ids = mapCompletelyOnlineExperiencesToIds(experiences);
-
-      layoutDispatch({
-        type: LayoutActionType.EXPERIENCES_TO_PREFETCH,
-        ids,
-      });
-    }, 1000);
-    /* eslint-disable-next-line react-hooks/exhaustive-deps*/
-  }, [fetchExperience, noExperiences]);
 
   function renderExperiences() {
     if (experiences.length === 0) {
@@ -370,8 +341,6 @@ export default (props: CallerProps) => {
     variables: getExperienceConnectionMiniVariables,
   });
 
-  const { layoutDispatch } = useContext(LayoutUnchangingContext);
-  const { fetchExperience } = useContext(LayoutContextExperience);
   const getExperiences = data && data.getExperiences;
 
   const experiences = useMemo(() => {
@@ -389,8 +358,6 @@ export default (props: CallerProps) => {
       error={error}
       loading={loading}
       navigate={navigate as NavigateFn}
-      layoutDispatch={layoutDispatch}
-      fetchExperience={fetchExperience}
     />
   );
 };

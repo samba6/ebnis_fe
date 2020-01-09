@@ -186,25 +186,22 @@ const submitEffect: SubmitEffect["func"] = async (
 
 type SubmitEffect = EffectDefinition<StateMachine["context"]>;
 
-const updateCacheEffect: UpdateCacheEffect["func"] = (
+const updateCacheEffect: UpdateCacheEffect["func"] = async (
   { partialOnlineMap, completelyOfflineMap },
   { persistor, layoutDispatch, cache, client },
 ) => {
-  const outstandingOfflineCount = updateCache({
+  updateCache({
     partialOnlineMap,
     completelyOfflineMap,
     cache,
     client,
   });
 
-  persistor.persist();
+  await persistor.persist();
 
-  if (outstandingOfflineCount !== null) {
-    layoutDispatch({
-      type: LayoutActionType.SET_OFFLINE_ITEMS_COUNT,
-      count: outstandingOfflineCount,
-    });
-  }
+  layoutDispatch({
+    type: LayoutActionType.REFETCH_OFFLINE_ITEMS_COUNT,
+  });
 };
 
 type UpdateCacheEffect = EffectDefinition<StateMachine["context"]>;

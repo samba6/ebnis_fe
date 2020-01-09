@@ -21,6 +21,8 @@ export const CREATE_ENTRIES_MUTATION = gql`
   ${CREATE_ENTRIES_RESPONSE_FRAGMENT}
 `;
 
+export const MUTATION_NAME_createEntries = "createEntries";
+
 export function useCreateEntriesMutation(): UseCreateEntriesMutation {
   return useMutation(CREATE_ENTRIES_MUTATION);
 }
@@ -31,9 +33,7 @@ type UseCreateEntriesMutationFn = MutationFunction<
 >;
 
 // use to type check server response
-type UseCreateEntriesMutationResult = MutationResult<
-  CreateEntriesMutation
->;
+type UseCreateEntriesMutationResult = MutationResult<CreateEntriesMutation>;
 
 // component props should extend this
 export interface UseCreateEntriesMutationProps {

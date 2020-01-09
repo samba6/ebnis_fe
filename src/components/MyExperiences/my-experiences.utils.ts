@@ -5,10 +5,6 @@ import { wrapReducer } from "../../logger";
 import immer from "immer";
 import fuzzysort from "fuzzysort";
 import { ApolloError } from "apollo-client";
-import {
-  LayoutDispatchType,
-  PrefetchValues,
-} from "../Layout/layout.utils";
 
 export enum ActionTypes {
   TOGGLE_DESCRIPTION = "@my-experiences/toggle-description",
@@ -109,20 +105,6 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
     });
   });
 
-export function mapCompletelyOnlineExperiencesToIds(
-  experiences: ExperienceConnectionFragment_edges_node[],
-) {
-  return experiences.reduce((acc, experience) => {
-    const { hasUnsaved, id } = experience;
-
-    if (!hasUnsaved) {
-      acc.push(id);
-    }
-
-    return acc;
-  }, [] as string[]);
-}
-
 function preExperiencesForSearch(
   experiences: ExperienceConnectionFragment_edges_node[],
 ) {
@@ -208,8 +190,6 @@ export interface ComponentProps {
   experiences: ExperienceConnectionFragment_edges_node[];
   loading: boolean;
   error?: ApolloError;
-  layoutDispatch: LayoutDispatchType;
-  fetchExperience: PrefetchValues;
 }
 
 export type CallerProps = RouteComponentProps<{}>;

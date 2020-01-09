@@ -2,28 +2,27 @@ import { createContext, Reducer, Dispatch, PropsWithChildren } from "react";
 import immer from "immer";
 import { RouteComponentProps, WindowLocation, NavigateFn } from "@reach/router";
 import { wrapReducer } from "../../logger";
-import { ConnectionStatus, isConnected } from "../../state/connections";
+import { ConnectionStatus } from "../../state/connections";
 import { UserFragment } from "../../graphql/apollo-types/UserFragment";
-// import { InMemoryCache } from "apollo-cache-inmemory";
 import { getOfflineItemsCount } from "../../state/offline-resolvers";
-import { preFetchExperiences } from "./pre-fetch-experiences";
+import { preFetchExperiences } from "./layout-injectables";
 import { EbnisContextProps } from "../../context";
 
 export enum LayoutActionType {
   SET_OFFLINE_ITEMS_COUNT = "@layout/set-offline-items-count",
   CACHE_PERSISTED = "@layout/render-children",
-  EXPERIENCES_TO_PREFETCH = "@layout/experiences-to-pre-fetch",
   CONNECTION_CHANGED = "@layout/connection-changed",
   DONE_FETCHING_EXPERIENCES = "@layout/experiences-already-fetched",
   REFETCH_OFFLINE_ITEMS_COUNT = "@layout/refetch-offline-items-count",
 }
 
 export const StateValue = {
-  effectValNoEffect: "noEffect" as NoEffectValue,
-  effectValHasEffects: "hasEffects" as HasEffectsVal,
-  prefetchValNeverFetched: "never-fetched" as PrefetchValNeverFetched,
-  prefetchValFetchNow: "fetch-now" as PrefetchValFetchNow,
-  prefetchValAlreadyFetched: "already-fetched" as PrefetchValAlreadyFetched,
+  noEffect: "noEffect" as NoEffectValue,
+  hasEffects: "hasEffects" as HasEffectsVal,
+  neverFetched: "never-fetched" as NeverFetchedVal,
+  alreadyFetched: "already-fetched" as AlreadyFetchedVal,
+  getOfflineItemsCount: "getOfflineItemsCount" as GetOfflineItemsCountEffectVal,
+  prefetchExperiences: "prefetchExperiences" as PrefetchExperiencesEffectVal,
 };
 
 export const reducer: Reducer<StateMachine, LayoutAction> = (state, action) =>
@@ -32,7 +31,7 @@ export const reducer: Reducer<StateMachine, LayoutAction> = (state, action) =>
     action,
     (prevState, { type, ...payload }) => {
       return immer(prevState, proxy => {
-        proxy.effects.runOnRenders.value = StateValue.effectValNoEffect;
+        proxy.effects.runOnRenders.value = StateValue.noEffect;
 
         switch (type) {
           case LayoutActionType.CONNECTION_CHANGED:
@@ -46,16 +45,8 @@ export const reducer: Reducer<StateMachine, LayoutAction> = (state, action) =>
             handleCachePersistedAction(proxy, payload as CachePersistedPayload);
             break;
 
-          case LayoutActionType.EXPERIENCES_TO_PREFETCH:
-            handleExperiencesToPrefetch(
-              proxy,
-              payload as ExperiencesToPrefetchPayload,
-            );
-            break;
-
           case LayoutActionType.DONE_FETCHING_EXPERIENCES:
-            proxy.states.prefetchExperiences.value =
-              StateValue.prefetchValAlreadyFetched;
+            proxy.states.prefetchExperiences.value = StateValue.alreadyFetched;
             break;
 
           case LayoutActionType.SET_OFFLINE_ITEMS_COUNT:
@@ -86,18 +77,18 @@ const getOfflineItemsCountEffect: GetOfflineItemsCountEffect["func"] = (
   });
 };
 
-type GetOfflineItemsCountEffect = LayoutEffectDefinition<
-  "getOfflineItemsCount"
+type GetOfflineItemsCountEffect = EffectDefinition<
+  GetOfflineItemsCountEffectVal
 >;
+export type GetOfflineItemsCountEffectVal = "getOfflineItemsCount";
 
 const prefetchExperiencesEffect: PrefetchExperiencesEffect["func"] = (
-  { ids },
+  _,
   { cache, client },
   { dispatch },
 ) => {
   setTimeout(() => {
     preFetchExperiences({
-      ids,
       client,
       cache,
       onDone: () => {
@@ -106,15 +97,11 @@ const prefetchExperiencesEffect: PrefetchExperiencesEffect["func"] = (
         });
       },
     });
-  }, 500);
+  }, 1500);
 };
 
-type PrefetchExperiencesEffect = LayoutEffectDefinition<
-  "prefetchExperiences",
-  {
-    ids: string[];
-  }
->;
+type PrefetchExperiencesEffect = EffectDefinition<PrefetchExperiencesEffectVal>;
+type PrefetchExperiencesEffectVal = "prefetchExperiences";
 
 export const effectFunctions = {
   getOfflineItemsCount: getOfflineItemsCountEffect,
@@ -155,91 +142,58 @@ export function initState(args: InitStateArgs): StateMachine {
     },
     states: {
       prefetchExperiences: {
-        value: StateValue.prefetchValNeverFetched,
+        value: StateValue.neverFetched,
       },
     },
 
     effects: {
       runOnRenders: {
-        value: StateValue.effectValNoEffect,
+        value: StateValue.noEffect,
       },
     },
   };
 }
 
-function handleExperiencesToPrefetch(
-  globalState: StateMachine,
-  payload: ExperiencesToPrefetchPayload,
-) {
-  const {
-    states: { prefetchExperiences },
-    context: { user },
-  } = globalState;
-
-  const ids = (payload as ExperiencesToPrefetchPayload).ids;
-
-  if (!user || !ids || ids.length === 0) {
-    prefetchExperiences.value = StateValue.prefetchValNeverFetched;
-
-    return;
-  }
-
-  (prefetchExperiences as YesPrefechtExperiences).context = { ids };
-
-  if (!isConnected()) {
-    prefetchExperiences.value = StateValue.prefetchValNeverFetched;
-    return;
-  }
-
-  const effectObjects = getRenderEffects(globalState);
-  effectObjects.push({
-    key: "prefetchExperiences",
-    ownArgs: { ids },
-  });
-
-  prefetchExperiences.value = StateValue.prefetchValAlreadyFetched;
-}
-
 function handleConnectionChangedAction(
-  globalState: StateMachine,
+  proxy: StateMachine,
   payload: ConnectionChangedPayload,
 ) {
-  const { offlineItemsCount, isConnected } = payload;
+  const { isConnected } = payload;
 
-  const { context, states } = globalState;
+  const { context } = proxy;
   const { user } = context;
   context.hasConnection = isConnected;
 
   if (!isConnected) {
     context.offlineItemsCount = 0;
   } else if (user) {
-    context.offlineItemsCount = offlineItemsCount;
-  }
+    const effectObjects = getRenderEffects(proxy);
+    // globalState.states.prefetchExperiences.value
 
-  if (!user) {
+    effectObjects.push({
+      key: StateValue.getOfflineItemsCount,
+      ownArgs: {},
+    });
+
+    handlePrefetchExperiencesHelper(effectObjects, proxy);
+  }
+}
+
+function handlePrefetchExperiencesHelper(
+  effectObjects: EffectsList,
+  proxy: StateMachine,
+) {
+  if (
+    !proxy.context.user ||
+    proxy.states.prefetchExperiences.value === StateValue.alreadyFetched
+  ) {
     return;
   }
 
-  const yesPrefetch = states.prefetchExperiences as YesPrefechtExperiences;
-
-  if (
-    isConnected &&
-    states.prefetchExperiences.value === StateValue.prefetchValNeverFetched
-  ) {
-    if (yesPrefetch.context) {
-      const effectObjects = getRenderEffects(globalState);
-
-      effectObjects.push({
-        key: "prefetchExperiences",
-        ownArgs: {
-          ids: yesPrefetch.context.ids,
-        },
-      });
-
-      globalState.states.prefetchExperiences.value =
-        StateValue.prefetchValAlreadyFetched;
-    }
-  }
+  effectObjects.push({
+    key: StateValue.prefetchExperiences,
+    ownArgs: {},
+  });
 }
 
 function handleGetOfflineItemsCountAction(proxy: StateMachine) {
@@ -249,32 +203,40 @@ function handleGetOfflineItemsCountAction(proxy: StateMachine) {
 
   const effectObjects = getRenderEffects(proxy);
   effectObjects.push({
-    key: "getOfflineItemsCount",
+    key: StateValue.getOfflineItemsCount,
     ownArgs: {},
   });
 }
 
 function handleCachePersistedAction(
-  globalState: StateMachine,
+  proxy: StateMachine,
   payload: CachePersistedPayload,
 ) {
-  globalState.context.renderChildren = true;
+  proxy.context.renderChildren = true;
 
-  const { hasConnection, offlineItemsCount } = payload;
+  const { hasConnection } = payload;
 
-  globalState.context.hasConnection = hasConnection;
+  proxy.context.hasConnection = hasConnection;
 
   if (!hasConnection) {
     return;
   }
 
-  globalState.context.offlineItemsCount = offlineItemsCount;
+  const effectObjects = getRenderEffects(proxy);
+
+  effectObjects.push({
+    key: StateValue.getOfflineItemsCount,
+    ownArgs: {},
+  });
+
+  handlePrefetchExperiencesHelper(effectObjects, proxy);
 }
 
 function getRenderEffects(globalState: StateMachine) {
   const runOnRendersEffects = globalState.effects.runOnRenders as EffectState;
-  runOnRendersEffects.value = StateValue.effectValHasEffects;
+  runOnRendersEffects.value = StateValue.hasEffects;
   const effectObjects: EffectsList = [];
+
   runOnRendersEffects.hasEffects = {
     context: {
       effects: effectObjects,
@@ -309,15 +271,9 @@ export type LayoutAction =
       type: LayoutActionType.SET_OFFLINE_ITEMS_COUNT;
       count: number;
     }
-  | {
+  | ({
       type: LayoutActionType.CACHE_PERSISTED;
-      offlineItemsCount: number | null;
-      hasConnection: boolean;
-    }
-  | {
-      type: LayoutActionType.EXPERIENCES_TO_PREFETCH;
-      ids: string[] | null;
-    }
+    } & CachePersistedPayload)
   | ({
       type: LayoutActionType.CONNECTION_CHANGED;
     } & ConnectionChangedPayload)
@@ -328,17 +284,11 @@ export type LayoutAction =
       type: LayoutActionType.REFETCH_OFFLINE_ITEMS_COUNT;
     };
 
-interface ExperiencesToPrefetchPayload {
-  ids: string[] | null;
-}
-
 interface ConnectionChangedPayload {
   isConnected: boolean;
-  offlineItemsCount: number;
 }
 
 interface CachePersistedPayload {
-  offlineItemsCount: number;
   hasConnection: boolean;
 }
 
@@ -362,29 +312,21 @@ interface RunOnceEffectState<IEffect> {
   effect: IEffect;
 }
 
-type PrefetchValNeverFetched = "never-fetched";
+type NeverFetchedVal = "never-fetched";
 type PrefetchValFetchNow = "fetch-now";
-type PrefetchValAlreadyFetched = "already-fetched";
+type AlreadyFetchedVal = "already-fetched";
 export type PrefetchValues =
-  | PrefetchValNeverFetched
+  | NeverFetchedVal
   | PrefetchValFetchNow
-  | PrefetchValAlreadyFetched;
+  | AlreadyFetchedVal;
 
 type PrefetchExperiencesState =
   | {
-      value: PrefetchValNeverFetched;
+      value: NeverFetchedVal;
     }
   | {
-      value: PrefetchValAlreadyFetched;
-    }
-  | YesPrefechtExperiences;
-
-interface YesPrefechtExperiences {
-  value: PrefetchValFetchNow;
-  context: {
-    ids: string[];
-  };
-}
+      value: AlreadyFetchedVal;
+    };
 
 export type LayoutDispatchType = Dispatch<LayoutAction>;
 
@@ -407,8 +349,10 @@ interface ILocationContextValue extends WindowLocation {
   navigate: NavigateFn;
 }
 
+////////////////////////// STRINGY TYPES SECTION /////////////////////
 type NoEffectValue = "noEffect";
 type HasEffectsVal = "hasEffects";
+////////////////////////// END STRINGY TYPES SECTION /////////////////
 
 type EffectsList = (GetOfflineItemsCountEffect | PrefetchExperiencesEffect)[];
 
@@ -425,7 +369,7 @@ interface ThirdEffectFunctionArgs {
   dispatch: Dispatch<LayoutAction>;
 }
 
-interface LayoutEffectDefinition<
+interface EffectDefinition<
   Key extends keyof typeof effectFunctions,
   OwnArgs = {}
 > {

@@ -186,64 +186,6 @@ describe("component", () => {
     expect(document.getElementById("experience-description-1")).toBeNull();
   });
 
-  it("loads full experiences in the background when experiences are loaded", () => {
-    /**
-     * Given there is one saved and one unsaved experience in the system
-     */
-
-    const experiences = [
-      {
-        id: "1",
-        title: "1",
-      },
-      {
-        id: "2",
-        title: "2",
-        hasUnsaved: true,
-      },
-    ] as ExperienceConnectionFragment_edges_node[];
-
-    const { ui, mockLayoutDispatch } = makeComp({
-      queryResults: {
-        experiences,
-      },
-    });
-
-    /**
-     * When we use the component
-     */
-
-    render(ui);
-
-    /**
-     * Then no experience should be fetched
-     */
-
-    expect(mockLayoutDispatch).not.toHaveBeenCalled();
-
-    /**
-     * After wait time to load experiences in background has elapsed
-     */
-
-    jest.runAllTimers();
-
-    /**
-     * Then the saved experience should have been pre fetched
-     */
-
-    expect((mockLayoutDispatch.mock.calls[0][0] as any).ids).toEqual(["1"]);
-  });
-
-  it("does not load entries in background when experiences are loaded but empty", () => {
-    const { ui, mockLayoutDispatch } = makeComp({
-      queryResults: { experiences: [] },
-    });
-
-    render(ui);
-    jest.runAllTimers();
-    expect(mockLayoutDispatch).not.toHaveBeenCalled();
-  });
-
   it("renders error ui if we are unable to get experiences", () => {
     const { ui } = makeComp({
       queryResults: { error: {} as any },
@@ -373,51 +315,6 @@ describe("component", () => {
 
     expect(mockCleanUpOnSearchExit).toHaveBeenCalled();
   });
-
-  it("does not load any experience in the background if background experiences previously loaded", () => {
-    /**
-     * Given there is saved experience in the system
-     */
-
-    const experiences = [
-      {
-        id: "1",
-        title: "1",
-      },
-    ] as ExperienceConnectionFragment_edges_node[];
-
-    const { ui, mockLayoutDispatch } = makeComp({
-      queryResults: {
-        experiences,
-      },
-
-      fetchExperience: "already-fetched",
-    });
-
-    /**
-     * When we use the component
-     */
-
-    render(ui);
-
-    /**
-     * Then no experience should be fetched
-     */
-
-    expect(mockLayoutDispatch).not.toHaveBeenCalled();
-
-    /**
-     * After wait time to load experiences in background has elapsed
-     */
-
-    jest.runAllTimers();
-
-    /**
-     * Then the saved experience should never be pre fetched
-     */
-
-    expect(mockLayoutDispatch).not.toHaveBeenCalled();
-  });
 });
 
 describe("reducer", () => {
@@ -448,23 +345,12 @@ describe("reducer", () => {
 
 const MyExperiencesP = MyExperiences as ComponentType<Partial<ComponentProps>>;
 
-function makeComp(
-  { fetchExperience = "never-fetched", queryResults }: Args = {} as Args,
-) {
+function makeComp({ queryResults }: Args = {} as Args) {
   const { Ui, ...rest } = renderWithRouter(MyExperiencesP);
   queryResults = { ...{ experiences: [] }, ...queryResults };
 
-  const mockLayoutDispatch = jest.fn();
-
   return {
-    ui: (
-      <Ui
-        {...queryResults}
-        fetchExperience={fetchExperience as any}
-        layoutDispatch={mockLayoutDispatch}
-      />
-    ),
-    mockLayoutDispatch,
+    ui: <Ui {...queryResults} />,
     ...rest,
   };
 }

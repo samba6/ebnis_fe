@@ -128,8 +128,6 @@ export function UploadOfflineItemsComponent(props: ComponentProps) {
       cleanupRanQueriesFromCache(
         cache,
         [
-          "saveOfflineExperiences",
-          "createEntries",
           // why remove here when we already removing from ./update-cache?
           // because we only trigger update-cache when we submit and what if
           // user leaves this component without submitting.

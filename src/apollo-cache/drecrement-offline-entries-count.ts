@@ -2,7 +2,10 @@ import { queryCacheOfflineItems } from "../state/resolvers/get-experiences-from-
 import immer from "immer";
 import { updateOfflineItemsLedger } from "./write-offline-items-to-cache";
 import { wipeReferencesFromCache } from "../state/resolvers/delete-references-from-cache";
-import { OFFLINE_ITEMS_TYPENAME } from "../state/offline-resolvers";
+import {
+  OFFLINE_ITEMS_TYPENAME,
+  OfflineItem,
+} from "../state/offline-resolvers";
 import { InMemoryCache } from "apollo-cache-inmemory";
 import { makeApolloCacheRef } from "../constants";
 
@@ -73,43 +76,31 @@ export function decrementOfflineEntriesCountForExperiences(
     return;
   }
 
-  let updated = false;
-  let wipeFromCacheId = "";
+  const wipeFromCacheIds: string[] = [];
 
-  cacheData = immer(cacheData, proxy => {
-    let index = 0;
-    const len = proxy.length;
+  cacheData = cacheData.reduce((acc, experience) => {
+    const { id } = experience;
+    const howMany = idHowManyMap[id];
 
-    for (; index < len; index++) {
-      const experience = proxy[index];
-      const { id } = experience;
-      const howMany = idHowManyMap[id];
-
-      if (howMany === undefined) {
-        return;
-      }
-
-      let { offlineEntriesCount } = experience;
-      updated = true;
-      offlineEntriesCount -= howMany;
-
-      if (offlineEntriesCount > 0) {
-        experience.offlineEntriesCount = offlineEntriesCount;
-        proxy[index] = experience;
-      } else {
-        wipeFromCacheId = id;
-        proxy.splice(index, 1);
-      }
+    if (howMany === undefined) {
+      return acc;
     }
-  });
 
-  if (wipeFromCacheId) {
-    wipeReferencesFromCache(cache, [
-      makeApolloCacheRef(OFFLINE_ITEMS_TYPENAME, wipeFromCacheId),
-    ]);
+    let { offlineEntriesCount } = experience;
+    offlineEntriesCount -= howMany;
+
+    if (offlineEntriesCount > 0) {
+      acc.push({ ...experience, offlineEntriesCount });
+    } else {
+      wipeFromCacheIds.push(makeApolloCacheRef(OFFLINE_ITEMS_TYPENAME, id));
+    }
+
+    return acc;
+  }, [] as OfflineItem[]);
+
+  if (wipeFromCacheIds.length) {
+    wipeReferencesFromCache(cache, wipeFromCacheIds);
   }
 
-  if (updated) {
-    updateOfflineItemsLedger(cache, cacheData);
-  }
+  updateOfflineItemsLedger(cache, cacheData);
 }

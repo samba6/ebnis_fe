@@ -23,7 +23,6 @@ import {
   EmitActionConnectionChangedPayload,
 } from "../../state/observable-manager";
 import { cleanupObservableSubscription } from "./layout-injectables";
-import { getOfflineItemsCount } from "../../state/offline-resolvers";
 import {isConnected} from '../../state/connections';
 
 export function Layout(props: Props) {
@@ -60,7 +59,7 @@ export function Layout(props: Props) {
   } = stateMachine;
 
   useEffect(() => {
-    if (runOnRenders.value !== StateValue.effectValHasEffects) {
+    if (runOnRenders.value !== StateValue.hasEffects) {
       return;
     }
 
@@ -79,7 +78,6 @@ export function Layout(props: Props) {
 
         dispatch({
           type: LayoutActionType.CACHE_PERSISTED,
-          offlineItemsCount: getOfflineItemsCount(cache),
           hasConnection: !!isConnected(),
         });
       }
@@ -94,7 +92,6 @@ export function Layout(props: Props) {
 
           dispatch({
             type: LayoutActionType.CONNECTION_CHANGED,
-            offlineItemsCount: getOfflineItemsCount(cache),
             isConnected: hasConnection,
           });
         }

@@ -12,9 +12,6 @@ import {
   LayoutActionType,
   reducer,
   LayoutAction,
-  LayoutDispatchType,
-  ILayoutUnchangingContextValue,
-  ILayoutContextExperienceValue,
   initState,
   StateValue,
   InitStateArgs,
@@ -25,13 +22,13 @@ import { getOfflineItemsCount } from "../state/offline-resolvers";
 import { isConnected } from "../state/connections";
 import { useUser } from "../components/use-user";
 import { E2EWindowObject } from "../state/apollo-setup";
-import {
-  preFetchExperiences,
-  PreFetchExperiencesFnArgs,
-} from "../components/Layout/pre-fetch-experiences";
 import { WindowLocation } from "@reach/router";
 import { act } from "react-dom/test-utils";
-import { cleanupObservableSubscription } from "../components/Layout/layout-injectables";
+import {
+  cleanupObservableSubscription,
+  preFetchExperiences,
+  PreFetchExperiencesFnArgs,
+} from "../components/Layout/layout-injectables";
 
 ////////////////////////// MOCKS ////////////////////////////
 
@@ -49,8 +46,6 @@ jest.mock("../components/use-user");
 const mockUseUser = useUser as jest.Mock;
 
 let layoutContextValue: null | LayoutContextValue;
-let layoutDispatch: LayoutDispatchType;
-let layoutExperienceContextValue: null | ILayoutContextExperienceValue;
 let locationContextValue: null | WindowLocation;
 
 jest.mock("../components/Layout/layout-providers", () => ({
@@ -61,14 +56,11 @@ jest.mock("../components/Layout/layout-providers", () => ({
     return children;
   },
 
-  LayoutUnchangingProvider: ({ children, value }: any) => {
-    layoutDispatch = (value as ILayoutUnchangingContextValue).layoutDispatch;
-
+  LayoutUnchangingProvider: ({ children }: any) => {
     return children;
   },
 
-  LayoutExperienceProvider: ({ children, value }: any) => {
-    layoutExperienceContextValue = value;
+  LayoutExperienceProvider: ({ children }: any) => {
     return children;
   },
 
@@ -78,14 +70,14 @@ jest.mock("../components/Layout/layout-providers", () => ({
   },
 }));
 
-jest.mock("../components/Layout/pre-fetch-experiences", () => ({
+jest.mock("../components/Layout/layout-injectables", () => ({
   preFetchExperiences: jest.fn(({ onDone }: PreFetchExperiencesFnArgs) => {
     onDone();
   }),
+
+  cleanupObservableSubscription: jest.fn(),
 }));
 const mockPrefetchExperiences = preFetchExperiences as jest.Mock;
-
-jest.mock("../components/Layout/layout-injectables");
 const mockCleanupObservableSubscription = cleanupObservableSubscription as jest.Mock;
 
 ////////////////////////// END MOCKS ////////////////////////////
@@ -407,198 +399,6 @@ describe("components", () => {
     expect(context.offlineItemsCount).toBe(0);
   });
 
-  test("pre-fetches experiences - initially connected", async () => {
-    const childProps = {} as FetchExperienceInstructorProps["props"];
-
-    const { ui } = makeComp({
-      props: {
-        children: <FetchExperienceInstructorComponent props={childProps} />,
-      },
-    });
-
-    let context = layoutExperienceContextValue as ILayoutContextExperienceValue;
-
-    expect(context).toBeNull();
-
-    /**
-     * Given there is logged in user
-     */
-
-    mockUseUser.mockReturnValue({});
-
-    /**
-     * And there are experiences to prefetch in the system
-     */
-
-    const ids = ["1"];
-
-    /**
-     * And we are connected
-     */
-
-    mockIsConnected.mockReturnValue(true);
-
-    /**
-     * And component is rendered
-     */
-
-    render(ui);
-
-    /**
-     * And child component is rendered
-     */
-
-    await waitForElement(() => document.getElementById(browserRenderedUiId));
-
-    /**
-     * Then we should not fetch experiences because child component has not
-     * issued instruction
-     */
-
-    expect(mockPrefetchExperiences).not.toHaveBeenCalled();
-
-    /**
-     * When child component signals it wishes to pre fetch experiences
-     */
-
-    childProps.onClick = () => {
-      layoutDispatch({
-        type: LayoutActionType.EXPERIENCES_TO_PREFETCH,
-        ids,
-      });
-    };
-
-    const $child = document.getElementById("layout-child") as HTMLDivElement;
-    $child.click();
-    await wait(() => true);
-    jest.runAllTimers();
-
-    /**
-     * Then we should have pre fetched experiences
-     */
-
-    const preFetchExperiencesArgs = mockPrefetchExperiences.mock
-      .calls[0][0] as PreFetchExperiencesFnArgs;
-
-    expect(preFetchExperiencesArgs.ids[0]).toEqual("1");
-
-    /**
-     * When we are done pre fetching experiences
-     */
-
-    await wait(() => {
-      preFetchExperiencesArgs.onDone();
-    });
-    /**
-     * Then we should indicate so
-     */
-
-    context = layoutExperienceContextValue as ILayoutContextExperienceValue;
-
-    expect(context.fetchExperience).toEqual("already-fetched");
-  });
-
-  test("pre-fetches experiences - initially disconnected", async () => {
-    /**
-     * Given component has a child that wishes to pre fetch experiences
-     */
-
-    const childProps = {} as FetchExperienceInstructorProps["props"];
-    const children = <FetchExperienceInstructorComponent props={childProps} />;
-
-    /**
-     * And we are initially disconnected
-     */
-    mockIsConnected.mockReturnValue(false);
-
-    const connectionStatus = {
-      isConnected: false,
-    };
-
-    /**
-     * And user is logged in
-     */
-
-    mockUseUser.mockReturnValue({});
-
-    /**
-     * And there unsaved data in the system
-     */
-
-    mockOfflineItemsCount.mockResolvedValue(2);
-
-    const { ui, emitData } = makeComp({
-      props: {
-        children,
-      },
-
-      context: {
-        connectionStatus,
-      },
-    });
-
-    /**
-     * When component is rendered
-     */
-
-    render(ui);
-
-    /**
-     * And component's children have rendered
-     */
-
-    await waitForElement(() => document.getElementById(browserRenderedUiId));
-
-    /**
-     * Then we should not have pre fetched experiences
-     */
-
-    expect(mockPrefetchExperiences).not.toHaveBeenCalled();
-
-    /**
-     * When child gives instruction to fetch experiences
-     */
-
-    childProps.onClick = () => {
-      layoutDispatch({
-        type: LayoutActionType.EXPERIENCES_TO_PREFETCH,
-        ids: ["1"],
-      });
-    };
-
-    const $child = document.getElementById("layout-child") as HTMLDivElement;
-    $child.click();
-
-    /**
-     * Then we should still not fetch experiences - because we not connected
-     */
-
-    expect(mockPrefetchExperiences).not.toHaveBeenCalled();
-
-    /**
-     * When connection event occurs
-     */
-
-    act(() => {
-      emitData({
-        type: EmitActionType.connectionChanged,
-        hasConnection: true,
-      });
-    });
-
-    /**
-     * Then we should fetch experiences
-     */
-
-    await wait(() => true);
-    jest.runAllTimers();
-
-    const preFetchExperiencesArgs = mockPrefetchExperiences.mock
-      .calls[0][0] as PreFetchExperiencesFnArgs;
-
-    expect(preFetchExperiencesArgs.ids[0]).toEqual("1");
-  });
-
   test("n", async () => {
     const { ui, emitData } = makeComp();
     mockUseUser.mockReturnValue({});
@@ -659,83 +459,112 @@ describe("components", () => {
 });
 
 describe("reducer", () => {
-  test("experiences to prefetch - set to never fetch if no user", () => {
+  test("CONNECTION_CHANGED: no connection", () => {
     const state = initState({
-      connectionStatus: {},
-    } as InitStateArgs);
-    state.states.prefetchExperiences.value = StateValue.prefetchValFetchNow;
-
-    const action = {
-      type: LayoutActionType.EXPERIENCES_TO_PREFETCH,
-      ids: ["1"],
-    } as LayoutAction;
-
-    const nextState = reducer(state, action);
-    expect(nextState.states.prefetchExperiences.value).toEqual("never-fetched");
-  });
-
-  test("experiences to prefetch - set to never fetch if ids is null", () => {
-    const state = initState({
-      connectionStatus: {},
-      user: {},
+      connectionStatus: { isConnected: true },
     } as InitStateArgs);
 
-    state.states.prefetchExperiences.value = StateValue.prefetchValFetchNow;
-
     const action = {
-      type: LayoutActionType.EXPERIENCES_TO_PREFETCH,
-      ids: null,
+      type: LayoutActionType.CONNECTION_CHANGED,
+      isConnected: false,
     } as LayoutAction;
 
-    const nextState = reducer(state, action);
-    expect(nextState.states.prefetchExperiences.value).toEqual("never-fetched");
-  });
-
-  test("experiences to prefetch - set to never fetch if ids is empty array", () => {
-    const state = initState({
-      connectionStatus: {},
-      user: {},
-    } as InitStateArgs);
-
-    state.states.prefetchExperiences.value = StateValue.prefetchValFetchNow;
-
-    const action = {
-      type: LayoutActionType.EXPERIENCES_TO_PREFETCH,
-      ids: [],
-    } as LayoutAction;
+    expect(state.context).toMatchObject({
+      hasConnection: true,
+      offlineItemsCount: null,
+    });
 
     const nextState = reducer(state, action);
-    expect(nextState.states.prefetchExperiences.value).toEqual("never-fetched");
+
+    expect(nextState.context).toMatchObject({
+      hasConnection: false,
+      offlineItemsCount: 0,
+    });
+
+    expect(nextState.effects.runOnRenders.value).toBe(StateValue.noEffect);
   });
 
-  test("experiences to prefetch - don't touch on connection changed if no user", () => {
-    /**
-     * Given we have never fetched experiences and there is no user
-     */
-
+  test("CONNECTION_CHANGED: has connection, no user", () => {
     const state = initState({
       connectionStatus: { isConnected: false },
     } as InitStateArgs);
 
-    state.states.prefetchExperiences.value = StateValue.prefetchValNeverFetched;
-
-    /**
-     * When connection changes
-     */
+    expect(state.context).toMatchObject({
+      hasConnection: false,
+    });
 
     const action = {
       type: LayoutActionType.CONNECTION_CHANGED,
       isConnected: true,
-      offlineItemsCount: 5,
     } as LayoutAction;
 
     const nextState = reducer(state, action);
 
-    /**
-     * Then experiences is still never fetched
-     */
+    expect(nextState.context).toMatchObject({
+      hasConnection: true,
+    });
 
-    expect(nextState.states.prefetchExperiences.value).toEqual("never-fetched");
+    expect(nextState.effects.runOnRenders.value).toBe(StateValue.noEffect);
+  });
+
+  test("CONNECTION_CHANGED: has connection and user", () => {
+    const state = initState({
+      connectionStatus: { isConnected: false },
+      user: {},
+    } as InitStateArgs);
+
+    expect(state.context).toMatchObject({
+      hasConnection: false,
+    });
+
+    const action = {
+      type: LayoutActionType.CONNECTION_CHANGED,
+      isConnected: true,
+    } as LayoutAction;
+
+    const nextState = reducer(state, action);
+
+    expect(nextState.context).toMatchObject({
+      hasConnection: true,
+    });
+
+    const { value, hasEffects } = nextState.effects.runOnRenders as EffectState;
+    expect(value).toBe(StateValue.hasEffects);
+    const effectKeys = hasEffects.context.effects.map(e => e.key);
+
+    expect(effectKeys).toContain(StateValue.prefetchExperiences);
+    expect(effectKeys).toContain(StateValue.getOfflineItemsCount);
+  });
+
+  test("CACHE_PERSISTED: has connection but already pre-fetched experiencess", () => {
+    const state = initState({
+      connectionStatus: { isConnected: false },
+      user: {},
+    } as InitStateArgs);
+
+    state.states.prefetchExperiences.value = StateValue.alreadyFetched;
+
+    expect(state.context).toMatchObject({
+      hasConnection: false,
+    });
+
+    const action = {
+      type: LayoutActionType.CACHE_PERSISTED,
+      hasConnection: true,
+    } as LayoutAction;
+
+    const nextState = reducer(state, action);
+
+    expect(nextState.context).toMatchObject({
+      hasConnection: true,
+    });
+
+    const { value, hasEffects } = nextState.effects.runOnRenders as EffectState;
+    expect(value).toBe(StateValue.hasEffects);
+    const effectKeys = hasEffects.context.effects.map(e => e.key);
+
+    expect(effectKeys).not.toContain(StateValue.prefetchExperiences);
+    expect(effectKeys).toContain(StateValue.getOfflineItemsCount);
   });
 
   test("sets unsaved count", () => {
@@ -781,7 +610,7 @@ describe("reducer", () => {
     expect(state).toEqual(nextState);
   });
 
-  it("refetches offline items count when no connection", () => {
+  it("refetches offline items count when there is connection", () => {
     const state = initState({
       connectionStatus: { isConnected: true },
     } as InitStateArgs);
@@ -792,15 +621,13 @@ describe("reducer", () => {
 
     const nextState = reducer(state, action);
 
-    expect(state.effects.runOnRenders.value).toEqual(
-      StateValue.effectValNoEffect,
-    );
+    expect(state.effects.runOnRenders.value).toEqual(StateValue.noEffect);
 
     const {
       effects: { runOnRenders },
     } = nextState;
 
-    expect(runOnRenders.value).toEqual(StateValue.effectValHasEffects);
+    expect(runOnRenders.value).toEqual(StateValue.hasEffects);
 
     const [effect] = (runOnRenders as EffectState).hasEffects.context.effects;
     const mockDispatch = jest.fn();
@@ -822,14 +649,11 @@ const LayoutP = Layout as ComponentType<Partial<Props>>;
 function makeComp({
   context = {},
   testId = browserRenderedUiId,
-  props = {},
 }: {
   context?: {};
   testId?: string;
-  props?: Partial<Props>;
 } = {}) {
   layoutContextValue = null;
-  layoutExperienceContextValue = null;
 
   const mockRestoreCacheOrPurgeStorage = jest.fn();
   const cache = { readQuery: jest.fn() };
@@ -854,35 +678,11 @@ function makeComp({
       <EbnisAppProvider value={context as EbnisContextProps}>
         <LayoutP location={{} as any}>
           <div id={testId} />
-          {props.children}
         </LayoutP>
       </EbnisAppProvider>
     ),
 
     mockRestoreCacheOrPurgeStorage,
     emitData: observableUtils.emitData,
-  };
-}
-
-function FetchExperienceInstructorComponent(
-  props: FetchExperienceInstructorProps,
-) {
-  return (
-    <div>
-      <span
-        id="layout-child"
-        onClick={() => {
-          props.props.onClick();
-        }}
-      >
-        1
-      </span>
-    </div>
-  );
-}
-
-interface FetchExperienceInstructorProps {
-  props: {
-    onClick: () => void;
   };
 }

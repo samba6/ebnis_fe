@@ -31,6 +31,10 @@ import { EntryFragment } from "../../graphql/apollo-types/EntryFragment";
 import { decrementOfflineEntriesCountForExperiences } from "../../apollo-cache/drecrement-offline-entries-count";
 import { QUERY_NAME_getOfflineItems } from "./upload-offline.resolvers";
 import { QUERY_NAME_getExperienceFull } from "../../graphql/get-experience-full.query";
+import { MUTATION_NAME_createEntries } from "../../graphql/create-entries.mutation";
+import { MUTATION_NAME_saveOfflineExperiences } from "../../graphql/upload-offline-items.mutation";
+import { writeExperienceFragmentToCache } from "../../state/resolvers/write-experience-fragment-to-cache";
+import { makeApolloCacheRef } from "../../constants";
 
 /**
  * TO REMOVE:
@@ -43,32 +47,29 @@ export function updateCache({
   cache,
   client,
 }: Args) {
-  const offlineExperiences = handleOfflineExperiences(completelyOfflineMap);
-  const partOnlineExperiences = handlePartOfflineExperiences(partialOnlineMap);
-
-  let experiencesToBeReplacedMap = {} as {
-    [k: string]: ExperienceFragment;
-  };
+  const offlineExperiences = handleOfflineExperiences(
+    completelyOfflineMap,
+    cache,
+  );
+  const partOnlineExperiences = handlePartOfflineExperiences(
+    partialOnlineMap,
+    cache,
+  );
 
   if (offlineExperiences.offlineExperiencesNowOnlineCount > 0) {
-    experiencesToBeReplacedMap = offlineExperiences.offlineExperiencesNowOnline.reduce(
+    const experiencesToBeReplacedMap = offlineExperiences.offlineExperiencesNowOnline.reduce(
       (acc, e) => {
         acc[e.clientId as string] = e;
         return acc;
       },
 
-      experiencesToBeReplacedMap,
-    );
-  }
-
-  if (
-    partOnlineExperiences.partOfflineExperiencesWithNewOnlineEntriesCount > 0
-  ) {
-    experiencesToBeReplacedMap = partOnlineExperiences.partOfflineExperiencesWithNewOnlineEntries.reduce(
-      (acc, e) => {
-        acc[e.id] = e;
-        return acc;
+      {} as {
+        [k: string]: ExperienceFragment;
       },
+    );
+
+    replaceExperiencesInGetExperiencesMiniQuery(
+      client,
       experiencesToBeReplacedMap,
     );
   }
@@ -80,12 +81,13 @@ export function updateCache({
   ) {
     decrementOfflineEntriesCountForExperiences(
       cache,
-      offlineExperiences.idHowManyMap,
-    );
-
-    replaceExperiencesInGetExperiencesMiniQuery(
-      client,
-      experiencesToBeReplacedMap,
+      Object.entries(partOnlineExperiences.idHowManyMap).reduce(
+        (acc, [id, howMany]) => {
+          acc[id] = howMany;
+          return acc;
+        },
+        offlineExperiences.idHowManyMap,
+      ),
     );
   }
 
@@ -108,6 +110,8 @@ export function updateCache({
     MUTATION_NAME_createExperienceOffline,
     QUERY_NAME_getOfflineItems,
     QUERY_NAME_getExperienceFull + "(",
+    MUTATION_NAME_createEntries,
+    MUTATION_NAME_saveOfflineExperiences,
   ]);
 
   return (
@@ -118,6 +122,7 @@ export function updateCache({
 
 function handleOfflineExperiences(
   oflineExperiencesMap: ExperiencesIdsToObjectMap,
+  cache: InMemoryCache,
 ) {
   const remainingOfflineItems: OfflineItem[] = [];
   let remainingOfflineItemsCount = 0;
@@ -147,21 +152,22 @@ function handleOfflineExperiences(
       return;
     }
 
-    // this offline experience now online, so we mark it for deletion, including
+    // this offline experience is now online, so we mark it for deletion,
+    // including
     // its data definitions and entries that are now online - we exclude entries
     // that are still offline
-    const cacheKey = `Experience:${offlineId}`;
-    toDeletes.push(cacheKey);
+    toDeletes.push(makeApolloCacheRef("Experience", offlineId));
 
     (offlineExperience.dataDefinitions as ExperienceFragment_dataDefinitions[]).forEach(
-      offlineDataDefinition =>
-        toDeletes.push(`DataDefinition:${offlineDataDefinition.id}`),
+      ({ id }) => toDeletes.push(makeApolloCacheRef("DataDefinition", id)),
     );
 
     //
     const updatedExperience = immer(newOnlineExperience, proxy => {
       const entries = proxy.entries;
       const edges = entries.edges as ExperienceFragment_entries_edges[];
+      // these are the formerly offline entries now online so we decrement
+      // offline items counter by thier number.
       decrementFromOfflineLedgerCount += edges.length;
 
       for (const edge of edges) {
@@ -171,7 +177,7 @@ function handleOfflineExperiences(
         const clientId = entry.clientId as string;
 
         // we will delete the offline version from cache.
-        toDeletes.push(`Entry:${clientId}`);
+        toDeletes.push(makeApolloCacheRef("Entry", clientId));
         deleteDataObjectsFromEntry(entry, toDeletes);
       }
 
@@ -179,12 +185,12 @@ function handleOfflineExperiences(
       // add offline entries not lucky to make it online, if any.
       if (entriesErrors) {
         // means some entries did not make it online
-        proxy.hasUnsaved = true;
+        proxy.hasUnsaved = true; // it will be null as returned by server
         const entriesErrorsIds = Object.keys(entriesErrors);
         const offlineEntriesCount = entriesErrorsIds.length;
         remainingOfflineItemsCount += offlineEntriesCount;
 
-        // we document the fact this experience, even though now online still
+        // we document the fact that this experience, even though now online still
         // contains offline entries
         remainingOfflineItems.push({
           id: newOnlineExperience.id,
@@ -216,6 +222,7 @@ function handleOfflineExperiences(
 
     offlineExperiencesNowOnline.push(updatedExperience);
     idHowManyMap[offlineId] = decrementFromOfflineLedgerCount;
+    writeExperienceFragmentToCache(cache, updatedExperience);
   });
 
   return {
@@ -230,11 +237,14 @@ function handleOfflineExperiences(
 
 function handlePartOfflineExperiences(
   onlineExperiencesMap: ExperiencesIdsToObjectMap,
+  cache: InMemoryCache,
 ) {
   const remainingOfflineItems: OfflineItem[] = [];
   let remainingOfflineItemsCount = 0;
   const toDeletes: string[] = [];
-  const partOfflineExperiencesWithNewOnlineEntries: ExperienceFragment[] = [];
+  const idHowManyMap: { [k: string]: number } = {};
+  let decrementFromOfflineLedgerCount = 0;
+  let partOfflineExperiencesWithNewOnlineEntriesCount = 0;
 
   Object.entries(onlineExperiencesMap).forEach(([experienceId, map]) => {
     const {
@@ -257,13 +267,15 @@ function handlePartOfflineExperiences(
       return;
     }
 
+    decrementFromOfflineLedgerCount += newOnlineEntries.length;
+
     const offlineIdToOnlineEntryMap = newOnlineEntries.reduce(
       (acc, entry) => {
         const clientId = entry.clientId as string;
         acc[clientId] = entry;
 
         // we will delete offline entry now online from cache
-        toDeletes.push(`Entry:${clientId}`);
+        toDeletes.push(makeApolloCacheRef("Entry", clientId));
         deleteDataObjectsFromEntry(entry, toDeletes);
 
         return acc;
@@ -301,16 +313,19 @@ function handlePartOfflineExperiences(
     } else {
       toDeletes.push(`${OFFLINE_ITEMS_TYPENAME}:${experienceId}`);
     }
-    partOfflineExperiencesWithNewOnlineEntries.push(updatedExperience);
+
+    writeExperienceFragmentToCache(cache, updatedExperience);
+
+    idHowManyMap[experienceId] = decrementFromOfflineLedgerCount;
+    ++partOfflineExperiencesWithNewOnlineEntriesCount;
   });
 
   return {
     remainingOfflineItems,
     remainingOfflineItemsCount,
     toDeletes,
-    partOfflineExperiencesWithNewOnlineEntries,
-    partOfflineExperiencesWithNewOnlineEntriesCount:
-      partOfflineExperiencesWithNewOnlineEntries.length,
+    partOfflineExperiencesWithNewOnlineEntriesCount,
+    idHowManyMap,
   };
 }
 
@@ -338,7 +353,7 @@ function swapOfflineEntriesWithNewOnline(
 function deleteDataObjectsFromEntry(entry: EntryFragment, toDeletes: string[]) {
   entry.dataObjects.forEach(obj => {
     const clientId = (obj as DataObjectFragment).clientId as string;
-    toDeletes.push(`DataObject:${clientId}`);
+    toDeletes.push(makeApolloCacheRef("DataObject", clientId));
   });
 }
 
