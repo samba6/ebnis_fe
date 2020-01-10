@@ -10,7 +10,7 @@ import {
 import { UploadOfflineItemsComponent } from "../components/UploadOfflineItems/upload-offline.component";
 import {
   ComponentProps,
-  definitionToUnsavedData,
+  definitionToUploadData,
   ExperiencesIdsToObjectMap,
   StateValue,
   initState,
@@ -49,14 +49,14 @@ import {
   wipeReferencesFromCache,
   removeQueriesAndMutationsFromCache,
 } from "../state/resolvers/delete-references-from-cache";
-import { deleteExperiencesIdsFromOfflineItemsInCache } from "../apollo-cache/delete-experiences-ids-from-offline-items";
+import { purgeIdsFromOfflineItemsLedger } from "../apollo-cache/delete-experiences-ids-from-offline-items";
 import {
   makeExperienceComponentId,
   createdOnlineExperiencesContainerId,
   createdOfflineExperiencesContainerId,
   makeExperienceUploadStatusClassNames,
   makeUploadStatusIconId,
-  makeEntryId,
+  makeEntryDomId,
   makeExperienceErrorId,
   uploadBtnDomId,
   offlineExperiencesTabMenuDomId,
@@ -99,7 +99,7 @@ const mockScrollIntoView = scrollIntoView as jest.Mock;
 const mockUpdateCache = updateCache as jest.Mock;
 const mockReplaceExperiencesInGetExperiencesMiniQuery = replaceExperiencesInGetExperiencesMiniQuery as jest.Mock;
 const mockWipeReferencesFromCache = wipeReferencesFromCache as jest.Mock;
-const mockDeleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache = deleteExperiencesIdsFromOfflineItemsInCache as jest.Mock;
+const mockDeleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache = purgeIdsFromOfflineItemsLedger as jest.Mock;
 const mockUploadAllOfflineItems = jest.fn();
 const mockCreateEntries = jest.fn();
 const mockLayoutDispatch = jest.fn();
@@ -458,7 +458,7 @@ describe("components", () => {
       .calls[0][0] as any).variables.input[0];
 
     experience.dataDefinitions = experience.dataDefinitions.map(
-      definitionToUnsavedData as any,
+      definitionToUploadData as any,
     );
 
     expect(otherExperienceFields).toEqual(experience);
@@ -687,7 +687,7 @@ describe("components", () => {
     ).not.toContain("error");
 
     const domEntry = document.getElementById(
-      makeEntryId(entryId),
+      makeEntryDomId(entryId),
     ) as HTMLElement;
 
     expect(domEntry.classList).not.toContain("entry--error");

@@ -43,7 +43,7 @@ export function makeUploadStatusIconId(id: Id, status: "success" | "error") {
   return `${domPrefix}-upload-status-${status}-icon-${id}`;
 }
 
-export function makeEntryId(entryId: Id) {
+export function makeEntryDomId(entryId: Id) {
   return `${domPrefix}-entry-${entryId}`;
 }
 

@@ -3,7 +3,7 @@ import { updateOfflineItemsLedger } from "./write-offline-items-to-cache";
 import { queryCacheOfflineItems } from "../state/resolvers/get-experiences-from-cache";
 import { InMemoryCache } from "apollo-cache-inmemory";
 
-export function deleteExperiencesIdsFromOfflineItemsInCache(
+export function purgeIdsFromOfflineItemsLedger(
   client: InMemoryCache,
   ids: string[],
 ) {

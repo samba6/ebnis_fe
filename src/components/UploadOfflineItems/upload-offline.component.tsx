@@ -38,9 +38,6 @@ import {
   LayoutActionType,
   LayoutUnchangingContext,
 } from "../Layout/layout.utils";
-import { replaceExperiencesInGetExperiencesMiniQuery } from "../../state/resolvers/update-get-experiences-mini-query";
-import { wipeReferencesFromCache } from "../../state/resolvers/delete-references-from-cache";
-import { deleteExperiencesIdsFromOfflineItemsInCache } from "../../apollo-cache/delete-experiences-ids-from-offline-items";
 import { EXPERIENCES_URL } from "../../routes";
 import { makeSiteTitle, setDocumentTitle } from "../../constants";
 import { UPLOAD_OFFLINE_ITEMS_TITLE } from "../../constants/upload-offline-title";
@@ -53,7 +50,7 @@ import {
   createdOfflineExperiencesContainerId,
   makeExperienceUploadStatusClassNames,
   makeUploadStatusIconId,
-  makeEntryId,
+  makeEntryDomId ,
   makeExperienceErrorId,
   uploadBtnDomId,
   offlineExperiencesTabMenuDomId,
@@ -111,7 +108,8 @@ export function UploadOfflineItemsComponent(props: ComponentProps) {
       } = general;
 
       effects.forEach(({ key, ownArgs }) => {
-        effectFunctions[key](ownArgs, props, { dispatch });
+        /* eslint-disable-next-line @typescript-eslint/no-explicit-any*/
+        effectFunctions[key](ownArgs as any, props, { dispatch });
       });
     }
     /* eslint-disable-next-line react-hooks/exhaustive-deps*/
@@ -250,8 +248,6 @@ export function UploadOfflineItemsComponent(props: ComponentProps) {
                       mode={StateValue.online}
                       experienceObjectMap={map}
                       dispatch={dispatch}
-                      client={client}
-                      cache={cache}
                     />
                   );
                 })}
@@ -279,8 +275,6 @@ export function UploadOfflineItemsComponent(props: ComponentProps) {
                       mode={StateValue.offline}
                       experienceObjectMap={map}
                       dispatch={dispatch}
-                      client={client}
-                      cache={cache}
                     />
                   );
                 })}
@@ -299,16 +293,15 @@ function ExperienceComponent({
   mode,
   experienceObjectMap,
   dispatch,
-  client,
-  cache,
 }: {
   experienceObjectMap: ExperienceObjectMap;
   mode: CreationMode;
   dispatch: DispatchType;
-} & Pick<ComponentProps, "client" | "cache">) {
+}) {
   const {
-    newlySavedExperience,
+    newlySavedExperience: newOnlineExperience,
     didUploadSucceed,
+    // note that on upload success, offlineEntries will include online entries
     offlineEntries,
     entriesErrors,
     experienceError,
@@ -316,7 +309,9 @@ function ExperienceComponent({
 
   let { experience } = experienceObjectMap;
 
-  experience = newlySavedExperience || experience;
+  // when the experience is now offline, we display it instead of the offline
+  // version
+  experience = newOnlineExperience || experience;
   const hasError = !!(entriesErrors || experienceError);
   const experienceId = experience.id;
   const experienceClientId =
@@ -367,26 +362,12 @@ function ExperienceComponent({
       }}
       menuOptions={{
         newEntry: false,
-        onDelete: async () => {
-          await replaceExperiencesInGetExperiencesMiniQuery(client, {
-            [experienceId]: null,
-          });
-
-          wipeReferencesFromCache(
-            cache,
-            [experienceId].concat(
-              offlineEntries.map(e => e.clientId as string),
-            ),
-          );
-
-          await deleteExperiencesIdsFromOfflineItemsInCache(cache, [
-            experienceId,
-          ]);
-
+        onDelete: () => {
           dispatch({
-            type: ActionType.DELETE_EXPERIENCE,
-            id: experienceId,
+            type: ActionType.ON_DELETE_EXPERIENCE,
+            experienceId,
             mode,
+            offlineEntries,
           });
         },
       }}
@@ -402,7 +383,7 @@ function ExperienceComponent({
             experience={experience}
             entriesLen={offlineEntries.length}
             index={index}
-            id={makeEntryId(entryId)}
+            id={makeEntryDomId(entryId)}
             className={makeClassNames({ "entry--error": !!error })}
           />
         );

@@ -1,4 +1,5 @@
 import gql from "graphql-tag";
+import { useQuery } from "@apollo/react-hooks";
 import { QueryResult } from "@apollo/react-common";
 import { LocalResolverFn } from "../../state/resolvers";
 import { readExperienceFragmentFromCache } from "../../state/resolvers/read-get-experience-full-query-from-cache";
@@ -6,6 +7,7 @@ import {
   ExperienceFragment,
   ExperienceFragment_entries_edges_node,
   ExperienceFragment_entries_edges,
+  ExperienceFragment_entries,
 } from "../../graphql/apollo-types/ExperienceFragment";
 import { queryCacheOfflineItems } from "../../state/resolvers/get-experiences-from-cache";
 import { isOfflineId } from "../../constants";
@@ -34,17 +36,25 @@ const getOfflineItemsResolver: LocalResolverFn<{}, GetOfflineItemsSummary> = (
     if (experience) {
       if (isOfflineId(id)) {
         ++completelyOfflineCount;
+
         completelyOfflineMap[id] = {
           experience,
-          onlineEntries: [],
           offlineEntries: entryNodesFromExperience(experience),
         };
       } else {
         ++partialOnlineCount;
 
+        // we really do not want to carry the entries around because it could
+        // contain a large number of items depending on entries pagination
+        // size
+        const partOfflineExperience = {
+          ...experience,
+          entries: (null as unknown) as ExperienceFragment_entries,
+        };
+
         partialOnlineMap[id] = {
-          experience,
-          ...getOnlineAndOfflineEntriesFromExperience(experience),
+          experience: partOfflineExperience,
+          offlineEntries: getOfflineEntriesFromExperience(experience),
         };
       }
     }
@@ -63,8 +73,6 @@ export const getAllOfflineItemsResolvers = {
   Query: { getOfflineItems: getOfflineItemsResolver },
 };
 
-import { useQuery } from "@apollo/react-hooks";
-
 export function useGetAllOfflineItemsQuery() {
   return useQuery<GetOfflineItemsQueryReturned, {}>(GET_OFFLINE_ITEMS_QUERY);
 }
@@ -74,25 +82,19 @@ export interface UseGetAllOfflineItemsProps {
   allOfflineItems?: GetOfflineItemsSummary;
 }
 
-function getOnlineAndOfflineEntriesFromExperience({
-  entries,
-}: ExperienceFragment) {
-  const offlineEntries: ExperienceFragment_entries_edges_node[] = [];
-  const onlineEntries: ExperienceFragment_entries_edges_node[] = [];
-
-  ((entries.edges as ExperienceFragment_entries_edges[]) || []).forEach(
-    (edge: ExperienceFragment_entries_edges) => {
+function getOfflineEntriesFromExperience({ entries }: ExperienceFragment) {
+  return ((entries.edges as ExperienceFragment_entries_edges[]) || []).reduce(
+    (acc, edge: ExperienceFragment_entries_edges) => {
       const node = edge.node as ExperienceFragment_entries_edges_node;
 
       if (isOfflineId(node.id) || node.modOffline) {
-        offlineEntries.push(node);
-      } else {
-        onlineEntries.push(node);
+        acc.push(node);
       }
-    },
-  );
 
-  return { offlineEntries, onlineEntries };
+      return acc;
+    },
+    [] as ExperienceFragment_entries_edges_node[],
+  );
 }
 
 ////////////////////////// TYPES ////////////////////////////
@@ -121,5 +123,4 @@ interface OfflineExperienceSummaryMap {
 export interface OfflineItemsSummary {
   offlineEntries: ExperienceFragment_entries_edges_node[];
   experience: ExperienceFragment;
-  onlineEntries: ExperienceFragment_entries_edges_node[];
 }

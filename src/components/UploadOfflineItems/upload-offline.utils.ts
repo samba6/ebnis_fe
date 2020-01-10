@@ -39,6 +39,10 @@ import {
 import { scrollIntoView } from "../scroll-into-view";
 import { updateCache } from "./update-cache";
 import { CreateEntriesInput } from "../../graphql/apollo-types/globalTypes";
+import { replaceExperiencesInGetExperiencesMiniQuery } from "../../state/resolvers/update-get-experiences-mini-query";
+import { wipeReferencesFromCache } from "../../state/resolvers/delete-references-from-cache";
+import { purgeIdsFromOfflineItemsLedger } from "../../apollo-cache/delete-experiences-ids-from-offline-items";
+import { makeApolloCacheRef } from "../../constants";
 
 export const StateValue = {
   submitting: "submitting" as SubmittingVal,
@@ -68,7 +72,8 @@ export enum ActionType {
   SERVER_ERROR = "@upload-offline/set-server-error",
   CLEAR_SERVER_ERRORS = "@upload-offline/clear-server-errors",
   ON_DATA_LOADED = "@upload-offline/on-data-loaded",
-  DELETE_EXPERIENCE = "@upload-offline/delete-experience",
+  DELETE_EXPERIENCE_SUCCESS = "@upload-offline/delete-experience",
+  ON_DELETE_EXPERIENCE = "@upload-offline/on-delete-experience",
   TOGGLE_TAB = "@upload-offline/toggle-tab",
   ON_SUBMIT = "@upload-offline/on-submit",
 }
@@ -111,8 +116,15 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
               StateValue.inactive;
             break;
 
-          case ActionType.DELETE_EXPERIENCE:
+          case ActionType.DELETE_EXPERIENCE_SUCCESS:
             handleDeleteExperienceAction(proxy, payload as DeleteActionPayload);
+            break;
+
+          case ActionType.ON_DELETE_EXPERIENCE:
+            handleOnDeleteExperience(
+              proxy,
+              payload as OnDeleteExperiencePayload,
+            );
             break;
         }
       });
@@ -121,6 +133,35 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
   );
 
 ////////////////////////// EFFECTS SECTION ////////////////////////////
+
+const deleteExperienceEffect: DeleteExperienceEffect["func"] = async (
+  { mode, experienceId, offlineEntries },
+  { client, cache },
+  { dispatch },
+) => {
+  await replaceExperiencesInGetExperiencesMiniQuery(client, {
+    [experienceId]: null,
+  });
+
+  purgeIdsFromOfflineItemsLedger(cache, [experienceId]);
+
+  wipeReferencesFromCache(
+    cache,
+    [makeApolloCacheRef("Experience", experienceId)].concat(
+      offlineEntries.map(e =>
+        makeApolloCacheRef("Entry", e.clientId as string),
+      ),
+    ),
+  );
+
+  dispatch({
+    type: ActionType.DELETE_EXPERIENCE_SUCCESS,
+    id: experienceId,
+    mode,
+  });
+};
+
+type DeleteExperienceEffect = EffectDefinition<OnDeleteExperiencePayload>;
 
 const submitEffect: SubmitEffect["func"] = async (
   {
@@ -140,23 +181,25 @@ const submitEffect: SubmitEffect["func"] = async (
       uploadFunction = uploadAllOfflineItems;
 
       variables = {
-        offlineExperiencesInput: completelyOfflineExperiencesToUploadData(
+        offlineExperiencesInput: offlineExperiencesToUploadData(
           completelyOfflineMap,
         ),
 
-        offlineEntriesInput: onlineExperiencesToUploadData(partialOnlineMap),
+        offlineEntriesInput: partOfflineExperiencesToUploadData(
+          partialOnlineMap,
+        ),
       };
     } else if (completelyOfflineCount !== 0) {
       uploadFunction = uploadOfflineExperiences;
 
       variables = ({
-        input: completelyOfflineExperiencesToUploadData(completelyOfflineMap),
+        input: offlineExperiencesToUploadData(completelyOfflineMap),
       } as unknown) as UploadOfflineItemsMutationVariables;
     } else {
       uploadFunction = createEntries;
 
       variables = ({
-        input: onlineExperiencesToUploadData(partialOnlineMap),
+        input: partOfflineExperiencesToUploadData(partialOnlineMap),
       } as unknown) as UploadOfflineItemsMutationVariables;
     }
 
@@ -206,7 +249,7 @@ const updateCacheEffect: UpdateCacheEffect["func"] = async (
 
 type UpdateCacheEffect = EffectDefinition<StateMachine["context"]>;
 
-function onlineExperiencesToUploadData(
+function partOfflineExperiencesToUploadData(
   experiencesIdsToObjectMap: ExperiencesIdsToObjectMap,
 ) {
   return Object.entries(experiencesIdsToObjectMap).reduce(
@@ -217,7 +260,7 @@ function onlineExperiencesToUploadData(
   );
 }
 
-function completelyOfflineExperiencesToUploadData(
+function offlineExperiencesToUploadData(
   experiencesIdsToObjectMap: ExperiencesIdsToObjectMap,
 ) {
   return Object.values(experiencesIdsToObjectMap).map(
@@ -226,9 +269,7 @@ function completelyOfflineExperiencesToUploadData(
         entries: offlineEntries.map(toUploadableEntry),
         title: experience.title,
         clientId: experience.clientId,
-        dataDefinitions: experience.dataDefinitions.map(
-          definitionToUnsavedData,
-        ),
+        dataDefinitions: experience.dataDefinitions.map(definitionToUploadData),
         insertedAt: experience.insertedAt,
         updatedAt: experience.updatedAt,
         description: experience.description,
@@ -237,19 +278,19 @@ function completelyOfflineExperiencesToUploadData(
   );
 }
 
+const UploadableDataObjectKeys: (keyof DataObjectFragment)[] = [
+  "data",
+  "definitionId",
+  "clientId",
+  "insertedAt",
+  "updatedAt",
+];
+
 function toUploadableEntry(entry: ExperienceFragment_entries_edges_node) {
   const dataObjects = entry.dataObjects.map(value => {
     const dataObject = value as DataObjectFragment;
 
-    const keys: (keyof DataObjectFragment)[] = [
-      "data",
-      "definitionId",
-      "clientId",
-      "insertedAt",
-      "updatedAt",
-    ];
-
-    return keys.reduce((acc, k) => {
+    return UploadableDataObjectKeys.reduce((acc, k) => {
       acc[k as keyof DataObjectFragment] =
         dataObject[k as keyof DataObjectFragment];
       return acc;
@@ -268,6 +309,7 @@ function toUploadableEntry(entry: ExperienceFragment_entries_edges_node) {
 export const effectFunctions = {
   submit: submitEffect,
   updateCache: updateCacheEffect,
+  deleteExperience: deleteExperienceEffect,
 };
 
 function prepareGeneralEffects(proxy: DraftState) {
@@ -458,6 +500,18 @@ function handleDeleteExperienceAction(
   }
 }
 
+function handleOnDeleteExperience(
+  proxy: StateMachine,
+  payload: OnDeleteExperiencePayload,
+) {
+  const effects = prepareGeneralEffects(proxy);
+
+  effects.push({
+    key: "deleteExperience",
+    ownArgs: payload,
+  });
+}
+
 export function handleOnUploadSuccessAction(
   proxy: DraftState,
   results: UploadOfflineItemsMutation,
@@ -479,13 +533,13 @@ export function handleOnUploadSuccessAction(
 
   const { saveOfflineExperiences, createEntries } = results;
 
-  updateOfflineExperience(
+  handleOfflineExperienceUploadResults(
     proxy,
     saveOfflineExperiences,
     uploadedStates.experiences,
   );
 
-  updatePartOfflineExperiences(
+  handlePartOfflineExperiencesUploadResults(
     proxy,
     createEntries,
     uploadedStates.experiences,
@@ -532,7 +586,7 @@ export function handleOnUploadSuccessAction(
 
 ////////////////////////// END STATE UPDATE SECTION ///////////////////////
 
-export function definitionToUnsavedData(
+export function definitionToUploadData(
   value: ExperienceFragment_dataDefinitions | null,
 ) {
   const { clientId, name, type } = value as ExperienceFragment_dataDefinitions;
@@ -551,16 +605,16 @@ function entriesErrorsToMap(errors: CreateEntriesErrorsFragment[]) {
   );
 }
 
-function updatePartOfflineExperiences(
+function handlePartOfflineExperiencesUploadResults(
   proxy: DraftState,
   createEntries: (UploadOfflineItemsMutation_createEntries | null)[] | null,
-  successState: ExperiencesUploadedResultState,
+  state: ExperiencesUploadedResultState,
 ) {
   if (!createEntries) {
     return;
   }
 
-  const localState = successState as PartialUploadSuccessState;
+  const localState = state as PartialUploadSuccessState;
   let hasSuccess = false;
   let hasError = false;
   const { partialOnlineMap } = proxy.context;
@@ -573,21 +627,21 @@ function updatePartOfflineExperiences(
 
   const context = (localState as ExperiencesUploadedResultState).context;
 
-  createEntries.forEach(element => {
+  createEntries.forEach(result => {
     localState.value = StateValue.partial;
 
-    if (!element) {
+    if (!result) {
       hasError = true;
       return;
     }
 
-    const { errors, experienceId, entries = [] } = element;
+    const { errors, experienceId, entries = [] } = result;
     hasSuccess = entries.length > 0;
 
     const map = partialOnlineMap[experienceId];
     map.newlyOnlineEntries = entries as ExperienceFragment_entries_edges_node[];
 
-    map.offlineEntries = replacePartlyUnsavedEntriesWithNewlySaved(
+    map.offlineEntries = partOfflineExperienceEntriesReplaceOfflineWithNewOnline(
       map.offlineEntries,
       map.newlyOnlineEntries,
     );
@@ -623,7 +677,7 @@ function updatePartOfflineExperiences(
   }
 }
 
-function updateOfflineExperience(
+function handleOfflineExperienceUploadResults(
   proxy: DraftState,
   uploadResults:
     | (UploadOfflineItemsMutation_saveOfflineExperiences | null)[]
@@ -647,15 +701,15 @@ function updateOfflineExperience(
 
   const context = (localState as ExperiencesUploadedResultState).context;
 
-  uploadResults.forEach(elm => {
+  uploadResults.forEach(uploadResult => {
     localState.value = StateValue.partial;
 
-    if (!elm) {
+    if (!uploadResult) {
       hasError = true;
       return;
     }
 
-    const { experience, entriesErrors, experienceErrors } = elm;
+    const { experience, entriesErrors, experienceErrors } = uploadResult;
 
     let map = {} as ExperiencesIdsToObjectMap["k"];
 
@@ -679,7 +733,7 @@ function updateOfflineExperience(
       map = completelyOfflineMap[clientId as string];
       map.newlySavedExperience = experience;
 
-      map.offlineEntries = replaceNeverSavedEntriesWithNewlySaved(
+      map.offlineEntries = replaceOfflineExperienceEntriesOfflineWithNewOnline(
         map.offlineEntries,
         experience,
       );
@@ -718,48 +772,48 @@ function updateOfflineExperience(
   }
 }
 
-function replacePartlyUnsavedEntriesWithNewlySaved(
+function partOfflineExperienceEntriesReplaceOfflineWithNewOnline(
   offlineEntries: EntryFragment[],
-  newlyOnlineEntries: EntryFragment[],
+  newOnlineEntries: EntryFragment[],
 ) {
-  if (newlyOnlineEntries.length === 0) {
+  if (newOnlineEntries.length === 0) {
     return offlineEntries;
   }
 
-  const newlySavedEntriesMap = newlyOnlineEntries.reduce((acc, item) => {
+  const offlineIdToOnlineEntryMap = newOnlineEntries.reduce((acc, item) => {
     acc[item.clientId as string] = item;
     return acc;
   }, {} as { [k: string]: EntryFragment });
 
-  return offlineEntries.map(entry => {
-    const saved = newlySavedEntriesMap[entry.clientId as string];
+  return offlineEntries.map(offlineEntry => {
+    const onlineEntry =
+      offlineIdToOnlineEntryMap[offlineEntry.clientId as string];
 
-    if (saved) {
-      return saved;
+    if (onlineEntry) {
+      return onlineEntry;
     }
 
-    return entry;
+    return offlineEntry;
   });
 }
 
-function replaceNeverSavedEntriesWithNewlySaved(
+function replaceOfflineExperienceEntriesOfflineWithNewOnline(
   offlineEntries: EntryFragment[],
-  newlySavedExperience: ExperienceFragment,
+  newOnlineExperience: ExperienceFragment,
 ) {
-  const savedEntries = (newlySavedExperience.entries.edges || []).map(
-    edge =>
-      (edge as ExperienceFragment_entries_edges)
-        .node as ExperienceFragment_entries_edges_node,
-  );
+  const offlineIdToOnlineEntryMap = (
+    newOnlineExperience.entries.edges || []
+  ).reduce((acc, edge) => {
+    const entry = (edge as ExperienceFragment_entries_edges)
+      .node as ExperienceFragment_entries_edges_node;
 
-  const savedEntriesMap = savedEntries.reduce((acc, item) => {
-    acc[item.clientId as string] = item;
+    acc[entry.clientId as string] = entry;
     return acc;
   }, {} as { [k: string]: EntryFragment });
 
-  const newlySavedDefinitionsClientIdsMap = newlySavedExperience.dataDefinitions.reduce(
-    (acc, elm) => {
-      const { clientId, id } = elm as DataDefinitionFragment;
+  const offlineIdToOnlineDataDefinitionIdMap = newOnlineExperience.dataDefinitions.reduce(
+    (acc, onlineDataDefinition) => {
+      const { clientId, id } = onlineDataDefinition as DataDefinitionFragment;
 
       acc[clientId as string] = id;
 
@@ -768,35 +822,36 @@ function replaceNeverSavedEntriesWithNewlySaved(
     {} as { [k: string]: string },
   );
 
-  return offlineEntries.map(unsavedEntry => {
-    const saved = savedEntriesMap[unsavedEntry.clientId as string];
+  return offlineEntries.map(offlineEntry => {
+    const onlineEntry =
+      offlineIdToOnlineEntryMap[offlineEntry.clientId as string];
 
-    if (saved) {
-      return saved;
+    if (onlineEntry) {
+      return onlineEntry;
     }
 
-    unsavedEntry.dataObjects = mapUnsavedDataObjectsDefinitionIdsToSaved(
-      unsavedEntry.dataObjects as DataObjectFragment[],
-      newlySavedDefinitionsClientIdsMap,
+    offlineEntry.dataObjects = replaceDataObjectsOfflineIdWithOnlineId(
+      offlineEntry.dataObjects as DataObjectFragment[],
+      offlineIdToOnlineDataDefinitionIdMap,
     );
 
-    return unsavedEntry;
+    return offlineEntry;
   });
 }
 
-function mapUnsavedDataObjectsDefinitionIdsToSaved(
-  unsavedDataObjects: DataObjectFragment[],
-  newlySavedDefinitionClientIdMap: { [k: string]: string },
+function replaceDataObjectsOfflineIdWithOnlineId(
+  offlineDataObjects: DataObjectFragment[],
+  offlineIdToOnlineDataDefinitionIdMap: { [k: string]: string },
 ) {
-  return unsavedDataObjects.map(unsavedDataObject => {
-    const newlySavedDefinitionId =
-      newlySavedDefinitionClientIdMap[unsavedDataObject.definitionId];
+  return offlineDataObjects.map(offlineDataObject => {
+    const onlineId =
+      offlineIdToOnlineDataDefinitionIdMap[offlineDataObject.definitionId];
 
-    if (newlySavedDefinitionId) {
-      unsavedDataObject.definitionId = newlySavedDefinitionId;
+    if (onlineId) {
+      offlineDataObject.definitionId = onlineId;
     }
 
-    return unsavedDataObject;
+    return offlineDataObject;
   });
 }
 
@@ -992,7 +1047,16 @@ export interface PartialUploadSuccessState {
   };
 }
 
+interface OnDeleteExperiencePayload {
+  experienceId: string;
+  offlineEntries: EntryFragment[];
+  mode: CreationMode;
+}
+
 type Action =
+  | ({
+      type: ActionType.ON_DELETE_EXPERIENCE;
+    } & OnDeleteExperiencePayload)
   | {
       type: ActionType.ON_SUBMIT;
     }
@@ -1013,7 +1077,7 @@ type Action =
       type: ActionType.ON_DATA_LOADED;
     } & DataLoadedPayload)
   | ({
-      type: ActionType.DELETE_EXPERIENCE;
+      type: ActionType.DELETE_EXPERIENCE_SUCCESS;
     } & DeleteActionPayload)
   | ({
       type: ActionType.TOGGLE_TAB;
@@ -1040,7 +1104,11 @@ interface ThirdEffectFunctionArgs {
   dispatch: DispatchType;
 }
 
-type EffectsList = (UpdateCacheEffect | SubmitEffect)[];
+type EffectsList = (
+  | DeleteExperienceEffect
+  | UpdateCacheEffect
+  | SubmitEffect
+)[];
 
 interface EffectDefinition<A = {}> {
   key: keyof typeof effectFunctions;

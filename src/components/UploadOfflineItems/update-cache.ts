@@ -35,6 +35,7 @@ import { MUTATION_NAME_createEntries } from "../../graphql/create-entries.mutati
 import { MUTATION_NAME_saveOfflineExperiences } from "../../graphql/upload-offline-items.mutation";
 import { writeExperienceFragmentToCache } from "../../state/resolvers/write-experience-fragment-to-cache";
 import { makeApolloCacheRef } from "../../constants";
+import { readExperienceFragmentFromCache } from "../../state/resolvers/read-get-experience-full-query-from-cache";
 
 /**
  * TO REMOVE:
@@ -249,7 +250,7 @@ function handlePartOfflineExperiences(
   Object.entries(onlineExperiencesMap).forEach(([experienceId, map]) => {
     const {
       newlyOnlineEntries: newOnlineEntries,
-      experience,
+      // experience,
       entriesErrors,
       offlineEntries,
     } = map;
@@ -259,7 +260,7 @@ function handlePartOfflineExperiences(
       remainingOfflineItemsCount += entriesErrorsLen;
 
       remainingOfflineItems.push({
-        id: experience.id,
+        id: experienceId,
         offlineEntriesCount: entriesErrorsLen,
         __typename: OFFLINE_ITEMS_TYPENAME,
       });
@@ -285,7 +286,14 @@ function handlePartOfflineExperiences(
       },
     );
 
-    const updatedExperience = immer(experience, proxy => {
+    // we need the full experience because the experience will have contains no
+    // online entries
+    const fullExperience = readExperienceFragmentFromCache(
+      cache,
+      experienceId,
+    ) as ExperienceFragment;
+
+    const updatedExperience = immer(fullExperience, proxy => {
       const entries = proxy.entries;
       const offlineAndOrOnlineEntries = entries.edges as ExperienceFragment_entries_edges[];
 
