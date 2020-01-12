@@ -367,14 +367,16 @@ const updateEntryOfflineEffect: UpdateEntryOfflineEffect["func"] = async (
   { entry },
   { layoutDispatch, client, persistor, cache },
 ) => {
-  const { experienceId } = entry;
+  const { experienceId, id } = entry;
 
   (await upsertExperienceWithEntry(experienceId, "offline")(client, {
     data: { createEntry: { entry } as CreateOnlineEntryMutation_createEntry },
   })) as ExperienceFragment;
 
-  // why pass noupdate flag?
-  incrementOfflineItemCount(cache, experienceId, "noupdate");
+  if (!isOfflineId(id)) {
+    incrementOfflineItemCount(cache, experienceId);
+  }
+
   await persistor.persist();
 
   layoutDispatch({
@@ -626,7 +628,7 @@ function handleDefinitionNameChangedAction(
 
 function handleSubmittingAction(proxy: DraftState, payload: SubmittingPayload) {
   proxy.states.submission.value = StateValue.submitting;
-  const effectObjects = getRenderEffects(proxy);
+  const effectObjects = prepareGeneralEffects(proxy);
   const { hasConnection } = payload;
 
   if (!hasConnection) {
@@ -790,7 +792,7 @@ function handleOnEntryCreatedAction(
   context: SubmissionSuccessStateContext,
   response: CreateOnlineEntryMutation_createEntry,
 ) {
-  const effectObjects = getRenderEffects(proxy);
+  const effectObjects = prepareGeneralEffects(proxy);
   const { entry: ent, errors } = response;
 
   if (errors) {
@@ -827,7 +829,6 @@ function handleOnEntryCreatedAction(
   }
 
   const entry = ent as EntryFragment;
-  const { id: entryId, clientId: entryOfflineId } = entry;
   const { dataStates, createMode } = proxy.states;
   const { context: globalContext } = proxy;
   const definitionAndDataIdsMapList = globalContext.definitionAndDataIdsMapList;
@@ -835,12 +836,8 @@ function handleOnEntryCreatedAction(
   entry.dataObjects.forEach((obj, index) => {
     const dataObject = obj as DataObjectFragment;
     const { clientId, id: dataId, definitionId } = dataObject;
-    let fetchId = dataId;
+    const fetchId = clientId as string;
 
-    // entry was created offline and now synced to server
-    if (entryOfflineId !== entryId) {
-      fetchId = clientId as string;
-    }
 
     const dataState = dataStates[fetchId];
     updateDataStateWithUpdatedDataObject(dataState, dataObject);
@@ -862,7 +859,7 @@ function handleOnEntryCreatedAction(
   return [1, 0, "valid"];
 }
 
-function getRenderEffects(proxy: DraftState) {
+function prepareGeneralEffects(proxy: DraftState) {
   const runOnRendersEffects = proxy.effects.runOnRenders as EffectState;
   runOnRendersEffects.value = StateValue.hasEffects;
   const effectObjects: EffectsList = [];
@@ -1432,7 +1429,7 @@ function handleUpdateEntryOfflineAction(
     context: { entry },
   } = proxy;
 
-  const updateTime = (new Date()).toJSON()
+  const updateTime = new Date().toJSON();
   entry.updatedAt = updateTime;
   entry.modOffline = true;
 

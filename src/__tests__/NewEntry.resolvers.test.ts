@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { newEntryResolvers } from "../components/NewEntry/new-entry.resolvers";
 import { CacheContext } from "../state/resolvers";
 import { isOfflineId } from "../constants";
@@ -10,7 +9,8 @@ import { ExperienceFragment } from "../graphql/apollo-types/ExperienceFragment";
 import { incrementOfflineItemCount } from "../apollo-cache/increment-offline-item-count";
 
 jest.mock("../components/NewEntry/new-entry.injectables");
-jest.mock("../apollo-cache/increment-offline-entries-count");
+jest.mock("../apollo-cache/increment-offline-item-count");
+jest.mock("../apollo-cache/write-experience-fragment");
 
 const mockUpdateExperienceWithNewEntry = upsertExperienceWithEntry as jest.Mock;
 

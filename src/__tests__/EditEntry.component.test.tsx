@@ -70,12 +70,12 @@ import { incrementOfflineItemCount } from "../apollo-cache/increment-offline-ite
 
 ////////////////////////// MOCKS ////////////////////////////
 
-jest.mock("../apollo-cache/increment-offline-entries-count");
+jest.mock("../apollo-cache/increment-offline-item-count");
 const mockIncrementOfflineEntriesCountForExperience = incrementOfflineItemCount as jest.Mock;
 
 jest.mock("../components/NewEntry/new-entry.injectables");
-const mockUpsertExperience = jest.fn();
-(upsertExperienceWithEntry as jest.Mock).mockReturnValue(mockUpsertExperience);
+const mockUpsertExperienceFn = jest.fn();
+const mockUpsertExperienceWithEntry = upsertExperienceWithEntry as jest.Mock;
 
 jest.mock("../components/DateTimeField/date-time-field.component", () => ({
   DateTimeField: MockDateTimeField,
@@ -109,13 +109,7 @@ afterAll(() => {
 });
 
 beforeEach(() => {
-  mockCleanupRanQueriesFromCache.mockReset();
-  mockDecrementOfflineEntriesCountForExperience.mockReset();
-  mockEditEntryUpdate.mockReset();
-  mockPersistFunc.mockReset();
-  mockIsConnected.mockReset();
-  mockIncrementOfflineEntriesCountForExperience.mockReset();
-  mockUpsertExperience.mockReset();
+  jest.resetAllMocks();
 });
 
 it("destroys the UI", async () => {
@@ -1350,7 +1344,7 @@ test("not editing data, editing definition, apollo errors", async () => {
   expect($response).not.toBeNull();
 });
 
-test("upload offline entry, one data object updated, one not updated, submitting online", async () => {
+test("edit offline entry and upload online, one data object updated, one not updated", async () => {
   /**
    * Given there is entry created offline with 2 data objects:
    * 1 - will be updated using the component
@@ -1655,7 +1649,8 @@ test("upload offline entry, one data object updated, one not updated, submitting
   expect(getDataField(data2OnlineId).classList).toContain("data--success");
 });
 
-test("update offline entry - only data objects can be updated", async () => {
+test("edit online entry, submit offline - only data objects can be updated", async () => {
+  mockUpsertExperienceWithEntry.mockReturnValue(mockUpsertExperienceFn);
   /**
    * Given user wishes to edit an entry
    */
@@ -1750,11 +1745,101 @@ test("update offline entry - only data objects can be updated", async () => {
   expect(getDataField("int").classList).toContain("data--success");
 
   /**
-   * And offline database is updated appropriately
+   * And offline ledger is updated appropriately
    */
   await wait(() => true);
+  expect(mockUpsertExperienceWithEntry.mock.calls[0]).toEqual([
+    "ex",
+    "offline",
+  ]);
   expect(mockIncrementOfflineEntriesCountForExperience).toHaveBeenCalled();
-  expect(mockUpsertExperience).toHaveBeenCalled();
+  expect(mockUpsertExperienceFn).toHaveBeenCalled();
+  expect(mockPersistFunc).toHaveBeenCalled();
+  expect(mockLayoutDispatch).toHaveBeenCalled();
+});
+
+test("edit offline entry, submit offline", async () => {
+  mockUpsertExperienceWithEntry.mockReturnValue(mockUpsertExperienceFn);
+  /**
+   * Given user wishes to edit an entry
+   */
+
+  const entryId = makeOfflineId("en");
+
+  const offlineEntry = {
+    id: entryId,
+    experienceId: "ex",
+    dataObjects: [
+      {
+        id: "int",
+        definitionId: "int",
+        data: `{"integer":1}`,
+      },
+    ] as DataObjectFragment[],
+  };
+
+  /**
+   * And we are offline
+   */
+  mockIsConnected.mockReturnValue(false);
+
+  const { ui, mockLayoutDispatch } = makeComp({
+    props: {
+      entry: offlineEntry as EntryFragment,
+      experience: {
+        id: "ex",
+        dataDefinitions: [
+          {
+            id: "int",
+            type: DataTypes.INTEGER,
+            name: "int",
+          },
+        ] as DataDefinitionFragment[],
+      } as ExperienceFragment,
+    },
+  });
+
+  /**
+   * When component is rendered
+   */
+  render(ui);
+
+  /**
+   * And entry data is updated to a new value
+   */
+  getDataInput("int", "2");
+
+  /**
+   * Then the data field should not show success UI
+   */
+  expect(getDataField("int").classList).not.toContain("data--success");
+
+  /**
+   * And success UI should not be visible
+   */
+  expect(getSubmissionSuccessResponseDom()).toBeNull();
+
+  /**
+   * When form is submitted
+   */
+  getSubmit().click();
+
+  /**
+   * Then success UI should be visible
+   */
+  expect(getSubmissionSuccessResponseDom()).not.toBeNull();
+
+  /**
+   * And the data field should now show success UI
+   */
+  expect(getDataField("int").classList).toContain("data--success");
+
+  /**
+   * And offline ledger is updated appropriately
+   */
+  await wait(() => true);
+  expect(mockIncrementOfflineEntriesCountForExperience).not.toHaveBeenCalled();
+  expect(mockUpsertExperienceFn).toHaveBeenCalled();
   expect(mockPersistFunc).toHaveBeenCalled();
   expect(mockLayoutDispatch).toHaveBeenCalled();
 });

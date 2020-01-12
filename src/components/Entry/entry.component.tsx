@@ -18,9 +18,14 @@ import {
 } from "../../graphql/apollo-types/EntryFragment";
 import { EditEntry } from "../EditEntry/edit-entry.component";
 import { DataDefinitionFragment } from "../../graphql/apollo-types/DataDefinitionFragment";
+import { isOfflineId } from "../../constants";
 
 export function Entry(props: Props) {
   const { entry, experience, className = "", ...fieldProps } = props;
+  const { id: entryId, modOffline } = entry;
+  const isOffline = isOfflineId(entryId);
+  const isPartOffline = !isOffline && modOffline;
+  const isOnline = !isOffline && !modOffline;
   const definitions = experience.dataDefinitions as DataDefinitionFragment[];
 
   const [state, dispatch] = useReducer(reducer, {
@@ -33,19 +38,19 @@ export function Entry(props: Props) {
   const dataObjectsLen = dataObjects.length;
 
   const definitionsMap = useMemo(() => {
-    return definitions.reduce(
-      (acc, f) => {
-        acc[f.id] = f;
-        return acc;
-      },
-      {} as { [k: string]: ExperienceFragment_dataDefinitions },
-    );
+    return definitions.reduce((acc, f) => {
+      acc[f.id] = f;
+      return acc;
+    }, {} as { [k: string]: ExperienceFragment_dataDefinitions });
   }, [definitions]);
 
   return (
     <div
       className={makeClassNames({
-        "component-experience-entry": true,
+        "component-experience-entry border-solid border-2": true,
+        "border-blue-400": isOnline,
+        "border-red-400": isOffline,
+        "border-red-200": isPartOffline,
         [className]: !!className,
       })}
       id={containerId}

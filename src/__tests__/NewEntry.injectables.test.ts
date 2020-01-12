@@ -7,8 +7,10 @@ import {
 } from "../graphql/apollo-types/ExperienceFragment";
 import { CreateOnlineEntryMutation_createEntry } from "../graphql/apollo-types/CreateOnlineEntryMutation";
 import { EntryFragment } from "../graphql/apollo-types/EntryFragment";
+import { writeExperienceFragmentToCache } from "../apollo-cache/write-experience-fragment";
 
-jest.mock("../state/resolvers/write-get-experience-full-query-to-cache");
+jest.mock("../apollo-cache/write-experience-fragment");
+const mockWriteExperienceFragmentToCache = writeExperienceFragmentToCache as jest.Mock;
 
 jest.mock("../apollo-cache/read-experience-fragment");
 const mockReadGetExperienceFullQueryFromCache = readExperienceFragment as jest.Mock;
@@ -59,4 +61,5 @@ test("replaces experiene entry", async () => {
   expect(result.id).toBe(experienceId);
   expect(node.id).toBe(entryId);
   expect(node.clientId).toBe(newEntryClientId);
+  expect(mockWriteExperienceFragmentToCache).toHaveBeenCalled()
 });

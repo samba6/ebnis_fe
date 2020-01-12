@@ -7,9 +7,6 @@ import { InMemoryCache } from "apollo-cache-inmemory";
 export function incrementOfflineItemCount(
   cache: InMemoryCache,
   experienceId: string,
-  // why noupdate flag? check:
-  // src/components/EditEntry/edit-entry-utils.ts
-  updateMode: "update" | "noupdate" = "update",
 ) {
   let cacheData = queryCacheOfflineItems(cache);
 
@@ -19,9 +16,7 @@ export function incrementOfflineItemCount(
     cacheData = immer(cacheData, proxy => {
       const experience = proxy.find(e => e.id === experienceId);
       if (experience) {
-        if (updateMode === "update") {
-          ++experience.offlineEntriesCount;
-        }
+        ++experience.offlineEntriesCount;
       } else {
         proxy.push(newOfflineItem(experienceId));
       }

@@ -23,7 +23,7 @@ import {
   ExperienceFragment_entries_edges_node_dataObjects,
   ExperienceFragment_dataDefinitions,
 } from "../graphql/apollo-types/ExperienceFragment";
-import { makeOfflineId, noop } from "../constants";
+import { makeOfflineId, noop, makeApolloCacheRef } from "../constants";
 import {
   renderWithRouter,
   makeDataDefinitions,
@@ -61,6 +61,7 @@ import {
   uploadBtnDomId,
   offlineExperiencesTabMenuDomId,
 } from "../components/UploadOfflineItems/upload-offline.dom";
+import { EXPERIENCE_TYPE_NAME, ENTRY_TYPE_NAME } from "../graphql/types";
 
 const mockLoadingId = "a-lo";
 jest.mock("../components/Loading/loading", () => ({
@@ -89,7 +90,10 @@ jest.mock("../state/connections");
 jest.mock("../components/scroll-into-view");
 jest.mock("../components/UploadOfflineItems/update-cache");
 jest.mock("../state/resolvers/update-get-experiences-mini-query");
+
 jest.mock("../state/resolvers/delete-references-from-cache");
+const mockPurgeIdsFromOfflineItemsLedger = purgeIdsFromOfflineItemsLedger as jest.Mock;
+
 jest.mock("../apollo-cache/delete-experiences-ids-from-offline-items.ts");
 jest.mock("../components/UploadOfflineItems/upload-offline.resolvers");
 
@@ -99,7 +103,6 @@ const mockScrollIntoView = scrollIntoView as jest.Mock;
 const mockUpdateCache = updateCache as jest.Mock;
 const mockReplaceExperiencesInGetExperiencesMiniQuery = replaceExperiencesInGetExperiencesMiniQuery as jest.Mock;
 const mockWipeReferencesFromCache = wipeReferencesFromCache as jest.Mock;
-const mockDeleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache = purgeIdsFromOfflineItemsLedger as jest.Mock;
 const mockUploadAllOfflineItems = jest.fn();
 const mockCreateEntries = jest.fn();
 const mockLayoutDispatch = jest.fn();
@@ -118,7 +121,7 @@ beforeEach(() => {
   mockCreateEntries.mockReset();
   mockUploadOfflineExperiences.mockReset();
   mockUploadAllOfflineItems.mockReset();
-  mockDeleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache.mockReset();
+  mockPurgeIdsFromOfflineItemsLedger.mockReset();
   mockReplaceExperiencesInGetExperiencesMiniQuery.mockReset();
   mockRemoveQueriesAndMutationsFromCache.mockReset();
   mockLayoutDispatch.mockReset();
@@ -184,45 +187,29 @@ describe("components", () => {
       experienceId: "1",
     };
 
-    const unsavedEntry = {
+    const offlineEntry = {
       ...entry,
       id: entryId,
     } as ExperienceFragment_entries_edges_node;
 
-    const savedEntry = {
+    const onlineEntry = {
       id: "2",
     } as ExperienceFragment_entries_edges_node;
 
     const experience = {
       id: "1",
       title: "a",
-
       entries: {
         edges: [
           {
-            node: unsavedEntry,
+            node: offlineEntry,
           },
-
           {
-            node: savedEntry,
+            node: onlineEntry,
           },
         ],
       },
     } as ExperienceFragment;
-
-    const { ui } = makeComp({
-      allOfflineItems: {
-        partialOnlineMap: {
-          "1": {
-            experience,
-            offlineEntries: [unsavedEntry],
-            onlineEntries: [savedEntry],
-          },
-        } as ExperiencesIdsToObjectMap,
-
-        partlyOfflineCount: 1,
-      } as GetOfflineItemsSummary,
-    });
 
     mockCreateEntries.mockResolvedValue({
       data: {
@@ -233,6 +220,19 @@ describe("components", () => {
           },
         ],
       },
+    });
+
+    const { ui } = makeComp({
+      allOfflineItems: {
+        partialOnlineMap: {
+          "1": {
+            experience,
+            offlineEntries: [offlineEntry],
+          },
+        } as ExperiencesIdsToObjectMap,
+
+        partlyOfflineCount: 1,
+      } as GetOfflineItemsSummary,
     });
 
     const domOfflineTitle1Id = makeExperienceComponentId(1, StateValue.online);
@@ -929,104 +929,27 @@ describe("components", () => {
     $deleteBtn.click();
 
     await wait(() => {
-      jest.runAllTimers();
-      expect(document.getElementById("experience-1-delete-button")).toBeNull();
+      return true;
     });
+
+    jest.runAllTimers();
+    expect(document.getElementById("experience-1-delete-button")).toBeNull();
 
     expect(
       mockReplaceExperiencesInGetExperiencesMiniQuery.mock.calls[0][1],
     ).toEqual({ "1": null });
 
-    expect(mockWipeReferencesFromCache).toHaveBeenCalledWith({}, ["1", "10"]);
+    expect(mockPurgeIdsFromOfflineItemsLedger.mock.calls[0][1]).toEqual(["1"]);
 
-    expect(
-      mockDeleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache,
-    ).toHaveBeenCalledWith({}, ["1"]);
+    expect(mockWipeReferencesFromCache.mock.calls[0][1]).toEqual([
+      makeApolloCacheRef(EXPERIENCE_TYPE_NAME, "1"),
+      makeApolloCacheRef(ENTRY_TYPE_NAME, "10"),
+    ]);
 
     expect(mockNavigate).toHaveBeenCalledWith(EXPERIENCES_URL);
-
     expect(mockLayoutDispatch).toHaveBeenCalled();
   });
 
-  it("deletes part offline but not complete offline experiences", async () => {
-    mockIsConnected.mockReturnValue(true);
-    const { ui, mockNavigate } = makeComp({
-      allOfflineItems: {
-        completelyOfflineCount: 1,
-
-        completelyOfflineMap: {
-          "2": {
-            experience: {
-              id: "2",
-              entries: {
-                edges: [
-                  {
-                    node: {
-                      id: "10",
-                      clientId: "10",
-                    } as ExperienceFragment_entries_edges_node,
-                  },
-                ],
-              },
-            } as ExperienceFragment,
-
-            offlineEntries: [
-              {
-                id: "10",
-                clientId: "10",
-              } as ExperienceFragment_entries_edges_node,
-            ],
-
-            onlineEntries: [],
-          },
-        } as ExperiencesIdsToObjectMap,
-
-        partlyOfflineCount: 1,
-
-        partialOnlineMap: {
-          "1": {
-            experience: {
-              id: "1",
-            } as ExperienceFragment,
-            offlineEntries: [],
-            onlineEntries: [],
-          },
-        } as ExperiencesIdsToObjectMap,
-      } as GetOfflineItemsSummary,
-    });
-
-    mockReplaceExperiencesInGetExperiencesMiniQuery.mockResolvedValue({});
-
-    render(ui);
-
-    expect(
-      document.getElementById("upload-unsaved-tab-menu-partly-saved"),
-    ).not.toBeNull();
-
-    (document.getElementById("experience-1-delete-button") as any).click();
-
-    await wait(() => {
-      jest.runAllTimers();
-      expect(document.getElementById("experience-1-delete-button")).toBeNull();
-    });
-
-    expect(
-      document.getElementById("upload-unsaved-tab-menu-partly-saved"),
-    ).toBeNull();
-
-    expect(mockNavigate).not.toHaveBeenCalled();
-
-    expect(
-      mockReplaceExperiencesInGetExperiencesMiniQuery.mock.calls[0][1],
-    ).toEqual({ "1": null });
-
-    expect(mockWipeReferencesFromCache.mock.calls[0][1]).toEqual(["1"]);
-
-    expect(
-      mockDeleteExperiencesIdsFromSavedAndUnsavedExperiencesInCache.mock
-        .calls[0][1],
-    ).toEqual(["1"]);
-  });
 
   test("experience now online but entry still offline", async () => {
     const offlineExperienceId = "1";
@@ -1177,7 +1100,7 @@ describe("reducer", () => {
       } as GetOfflineItemsSummary,
     });
 
-    const {dataLoaded, tabs} = nextState.states;
+    const { dataLoaded, tabs } = nextState.states;
     expect(dataLoaded.value).toBe(StateValue.yes);
     expect(tabs.value).toBe(StateValue.one);
   });

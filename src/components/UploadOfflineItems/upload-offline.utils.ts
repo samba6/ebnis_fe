@@ -43,6 +43,7 @@ import { replaceExperiencesInGetExperiencesMiniQuery } from "../../state/resolve
 import { wipeReferencesFromCache } from "../../state/resolvers/delete-references-from-cache";
 import { purgeIdsFromOfflineItemsLedger } from "../../apollo-cache/delete-experiences-ids-from-offline-items";
 import { makeApolloCacheRef } from "../../constants";
+import { EXPERIENCE_TYPE_NAME, ENTRY_TYPE_NAME } from "../../graphql/types";
 
 export const StateValue = {
   submitting: "submitting" as SubmittingVal,
@@ -117,11 +118,14 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
             break;
 
           case ActionType.DELETE_EXPERIENCE_SUCCESS:
-            handleDeleteExperienceAction(proxy, payload as DeleteActionPayload);
+            handleDeleteExperienceSuccessAction(
+              proxy,
+              payload as DeleteActionPayload,
+            );
             break;
 
           case ActionType.ON_DELETE_EXPERIENCE:
-            handleOnDeleteExperience(
+            handleOnDeleteExperienceAction(
               proxy,
               payload as OnDeleteExperiencePayload,
             );
@@ -147,9 +151,9 @@ const deleteExperienceEffect: DeleteExperienceEffect["func"] = async (
 
   wipeReferencesFromCache(
     cache,
-    [makeApolloCacheRef("Experience", experienceId)].concat(
+    [makeApolloCacheRef(EXPERIENCE_TYPE_NAME, experienceId)].concat(
       offlineEntries.map(e =>
-        makeApolloCacheRef("Entry", e.clientId as string),
+        makeApolloCacheRef(ENTRY_TYPE_NAME, e.clientId as string),
       ),
     ),
   );
@@ -468,7 +472,7 @@ function handleServerErrorAction(
   upload.uploaded = uploaded;
 }
 
-function handleDeleteExperienceAction(
+function handleDeleteExperienceSuccessAction(
   proxy: DraftState,
   payload: DeleteActionPayload,
 ) {
@@ -500,7 +504,7 @@ function handleDeleteExperienceAction(
   }
 }
 
-function handleOnDeleteExperience(
+function handleOnDeleteExperienceAction(
   proxy: StateMachine,
   payload: OnDeleteExperiencePayload,
 ) {
