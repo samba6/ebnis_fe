@@ -15,7 +15,7 @@ import { upsertExperienceWithEntry } from "./new-entry.injectables";
 import { ENTRY_FRAGMENT } from "../../graphql/entry.fragment";
 import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragment";
 import { EntryFragment } from "../../graphql/apollo-types/EntryFragment";
-import { incrementOfflineEntriesCountForExperience } from "../../apollo-cache/increment-offline-entries-count";
+import { incrementOfflineItemCount } from "../../apollo-cache/increment-offline-item-count";
 import { CreateOnlineEntryMutation_createEntry } from "../../graphql/apollo-types/CreateOnlineEntryMutation";
 
 export const CREATE_OFFLINE_ENTRY_MUTATION = gql`
@@ -85,7 +85,7 @@ const createOfflineEntryMutationResolver: LocalResolverFn<
     data: { createEntry: { entry } as CreateOnlineEntryMutation_createEntry },
   })) as ExperienceFragment;
 
-  incrementOfflineEntriesCountForExperience(cache, experienceId);
+  incrementOfflineItemCount(cache, experienceId);
 
   return { id, experience, entry, __typename: "Entry" };
 };

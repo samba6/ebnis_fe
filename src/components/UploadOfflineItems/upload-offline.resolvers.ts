@@ -2,7 +2,7 @@ import gql from "graphql-tag";
 import { useQuery } from "@apollo/react-hooks";
 import { QueryResult } from "@apollo/react-common";
 import { LocalResolverFn } from "../../state/resolvers";
-import { readExperienceFragmentFromCache } from "../../state/resolvers/read-get-experience-full-query-from-cache";
+import { readExperienceFragment } from "../../apollo-cache/read-experience-fragment";
 import {
   ExperienceFragment,
   ExperienceFragment_entries_edges_node,
@@ -31,7 +31,7 @@ const getOfflineItemsResolver: LocalResolverFn<{}, GetOfflineItemsSummary> = (
   const partialOnlineMap = {} as OfflineExperienceSummaryMap;
 
   queryCacheOfflineItems(cache).forEach(({ id: id }) => {
-    const experience = readExperienceFragmentFromCache(cache, id);
+    const experience = readExperienceFragment(cache, id);
 
     if (experience) {
       if (isOfflineId(id)) {

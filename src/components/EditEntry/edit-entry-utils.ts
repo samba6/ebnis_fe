@@ -57,7 +57,7 @@ import {
 } from "../Layout/layout.utils";
 import { CreateOfflineEntryMutationComponentProps } from "../NewEntry/new-entry.resolvers";
 import { upsertExperienceWithEntry } from "../NewEntry/new-entry.injectables";
-import { incrementOfflineEntriesCountForExperience } from "../../apollo-cache/increment-offline-entries-count";
+import { incrementOfflineItemCount } from "../../apollo-cache/increment-offline-item-count";
 
 export enum ActionType {
   EDIT_BTN_CLICKED = "@component/edit-entry/edit-btn-clicked",
@@ -373,7 +373,8 @@ const updateEntryOfflineEffect: UpdateEntryOfflineEffect["func"] = async (
     data: { createEntry: { entry } as CreateOnlineEntryMutation_createEntry },
   })) as ExperienceFragment;
 
-  incrementOfflineEntriesCountForExperience(cache, experienceId, "noupdate");
+  // why pass noupdate flag?
+  incrementOfflineItemCount(cache, experienceId, "noupdate");
   await persistor.persist();
 
   layoutDispatch({

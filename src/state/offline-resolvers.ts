@@ -42,7 +42,7 @@ export function entryNodesFromExperience({ entries }: ExperienceFragment) {
 
 type OfflineItemsTypeName = "OfflineItems";
 
-export const OFFLINE_ITEMS_TYPENAME = "OfflineItems" as OfflineItemsTypeName;
+export const OFFLINE_ITEMS_TYPENAME: OfflineItemsTypeName = "OfflineItems";
 
 export interface OfflineItem {
   id: string;

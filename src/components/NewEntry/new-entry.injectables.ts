@@ -11,10 +11,10 @@ import {
 } from "../../graphql/apollo-types/ExperienceFragment";
 import { DataProxy } from "apollo-cache";
 import { FetchResult } from "apollo-link";
-import { readExperienceFragmentFromCache } from "../../state/resolvers/read-get-experience-full-query-from-cache";
+import { readExperienceFragment } from "../../apollo-cache/read-experience-fragment";
 import { entryToEdge } from "../../state/resolvers/entry-to-edge";
 import { EntryFragment } from "../../graphql/apollo-types/EntryFragment";
-import { writeExperienceFragmentToCache } from "../../state/resolvers/write-experience-fragment-to-cache";
+import { writeExperienceFragmentToCache } from "../../apollo-cache/write-experience-fragment";
 
 // istanbul ignore next:
 export function addNewEntryResolvers(client: ApolloClient<{}>) {
@@ -59,7 +59,7 @@ export const upsertExperienceWithEntry: Fn = function updateFn(
         return;
       }
 
-      experience = readExperienceFragmentFromCache(dataProxy, experienceOrId);
+      experience = readExperienceFragment(dataProxy, experienceOrId);
 
       if (!experience) {
         return;

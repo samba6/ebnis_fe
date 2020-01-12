@@ -66,12 +66,12 @@ import { isConnected } from "../state/connections";
 /* eslint-disable-next-line @typescript-eslint/no-unused-vars*/
 import { CreateOfflineEntryMutationReturned } from "../components/NewEntry/new-entry.resolvers";
 import { upsertExperienceWithEntry } from "../components/NewEntry/new-entry.injectables";
-import { incrementOfflineEntriesCountForExperience } from "../apollo-cache/increment-offline-entries-count";
+import { incrementOfflineItemCount } from "../apollo-cache/increment-offline-item-count";
 
 ////////////////////////// MOCKS ////////////////////////////
 
 jest.mock("../apollo-cache/increment-offline-entries-count");
-const mockIncrementOfflineEntriesCountForExperience = incrementOfflineEntriesCountForExperience as jest.Mock;
+const mockIncrementOfflineEntriesCountForExperience = incrementOfflineItemCount as jest.Mock;
 
 jest.mock("../components/NewEntry/new-entry.injectables");
 const mockUpsertExperience = jest.fn();

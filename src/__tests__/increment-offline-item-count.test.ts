@@ -1,8 +1,8 @@
 import { queryCacheOfflineItems } from "../state/resolvers/get-experiences-from-cache";
 import {
-  incrementOfflineEntriesCountForExperience,
-  newOfflineExperienceInCache,
-} from "../apollo-cache/increment-offline-entries-count";
+  incrementOfflineItemCount,
+  newOfflineItem,
+} from "../apollo-cache/increment-offline-item-count";
 import { updateOfflineItemsLedger } from "../apollo-cache/write-offline-items-to-cache";
 import { makeOfflineId } from "../constants";
 import { InMemoryCache } from "apollo-cache-inmemory";
@@ -21,28 +21,28 @@ beforeEach(() => {
 test("no offline items", () => {
   mockQueryCacheOfflineItems.mockReturnValue([]);
 
-  incrementOfflineEntriesCountForExperience({} as InMemoryCache, "1");
+  incrementOfflineItemCount({} as InMemoryCache, "1");
 
   expect(mockWriteOfflineItemsToCache.mock.calls[0][1]).toEqual([
-    newOfflineExperienceInCache("1"),
+    newOfflineItem("1"),
   ]);
 });
 
 test("no offline items, noupdate flag - insert", () => {
   mockQueryCacheOfflineItems.mockReturnValue([]);
 
-  incrementOfflineEntriesCountForExperience(
+  incrementOfflineItemCount(
     {} as InMemoryCache,
     "1",
     "noupdate",
   );
 
   expect(mockWriteOfflineItemsToCache.mock.calls[0][1]).toEqual([
-    newOfflineExperienceInCache("1"),
+    newOfflineItem("1"),
   ]);
 });
 
-test("experience found in cache - increments", () => {
+test("experience found in cache - increment", () => {
   mockQueryCacheOfflineItems.mockReturnValue([
     {
       id: "1",
@@ -50,7 +50,7 @@ test("experience found in cache - increments", () => {
     },
   ]);
 
-  incrementOfflineEntriesCountForExperience({} as InMemoryCache, "1");
+  incrementOfflineItemCount({} as InMemoryCache, "1");
 
   expect(mockWriteOfflineItemsToCache.mock.calls[0][1]).toEqual([
     {
@@ -68,7 +68,7 @@ test("experience found in cache - no increment", () => {
     },
   ]);
 
-  incrementOfflineEntriesCountForExperience(
+  incrementOfflineItemCount(
     {} as InMemoryCache,
     "1",
     "noupdate",
@@ -92,7 +92,7 @@ test("experience not found in cache - insert", () => {
 
   const experienceId = makeOfflineId("2");
 
-  incrementOfflineEntriesCountForExperience({} as InMemoryCache, experienceId);
+  incrementOfflineItemCount({} as InMemoryCache, experienceId);
 
   expect(mockWriteOfflineItemsToCache.mock.calls[0][1]).toEqual([
     {
@@ -100,7 +100,7 @@ test("experience not found in cache - insert", () => {
       offlineEntriesCount: 1,
     },
 
-    newOfflineExperienceInCache(experienceId),
+    newOfflineItem(experienceId),
   ]);
 });
 
@@ -114,7 +114,7 @@ test("noupdate flag - experience not found in cache - insert", () => {
 
   const experienceId = makeOfflineId("2");
 
-  incrementOfflineEntriesCountForExperience(
+  incrementOfflineItemCount(
     {} as InMemoryCache,
     experienceId,
     "noupdate",
@@ -126,6 +126,6 @@ test("noupdate flag - experience not found in cache - insert", () => {
       offlineEntriesCount: 1,
     },
 
-    newOfflineExperienceInCache(experienceId),
+    newOfflineItem(experienceId),
   ]);
 });

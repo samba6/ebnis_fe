@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { updateCache } from "../components/UploadOfflineItems/update-cache";
-import { ExperiencesIdsToObjectMap } from "../components/UploadOfflineItems/upload-offline.utils";
 import {
   ExperienceFragment,
   ExperienceFragment_entries_edges_node,
@@ -8,117 +7,61 @@ import {
   ExperienceFragment_entries_edges,
   ExperienceFragment_dataDefinitions,
 } from "../graphql/apollo-types/ExperienceFragment";
-import { wipeReferencesFromCache } from "../state/resolvers/delete-references-from-cache";
-import { replaceExperiencesInGetExperiencesMiniQuery } from "../state/resolvers/update-get-experiences-mini-query";
-import { writeGetExperienceFullQueryToCache } from "../state/resolvers/write-get-experience-full-query-to-cache";
-import { updateOfflineItemsLedger } from "../apollo-cache/write-offline-items-to-cache";
 import {
-  MUTATION_NAME_createOfflineEntry,
-  MUTATION_NAME_createExperienceOffline,
-  QUERY_NAME_getExperience,
-} from "../state/resolvers";
-import { OFFLINE_ITEMS_TYPENAME } from "../state/offline-resolvers";
+  wipeReferencesFromCache,
+  removeQueriesAndMutationsFromCache,
+} from "../state/resolvers/delete-references-from-cache";
+import { replaceExperiencesInGetExperiencesMiniQuery } from "../state/resolvers/update-get-experiences-mini-query";
+import { updateOfflineItemsLedger } from "../apollo-cache/write-offline-items-to-cache";
 import { CreateEntriesErrorsFragment_errors } from "../graphql/apollo-types/CreateEntriesErrorsFragment";
-import { EntryFragment_dataObjects } from "../graphql/apollo-types/EntryFragment";
-import { DataObjectFragment } from "../graphql/apollo-types/DataObjectFragment";
+import {
+  EntryFragment_dataObjects,
+  EntryFragment,
+} from "../graphql/apollo-types/EntryFragment";
+import { writeExperienceFragmentToCache } from "../apollo-cache/write-experience-fragment";
+import { makeApolloCacheRef } from "../constants";
+import {
+  EXPERIENCE_TYPE_NAME,
+  DATA_DEFINITION_TYPE_NAME,
+  ENTRY_TYPE_NAME,
+  DATA_OBJECT_TYPE_NAME,
+} from "../graphql/types";
+import { decrementOfflineEntriesCountForExperiences } from "../apollo-cache/drecrement-offline-entries-count";
+import { readExperienceFragment } from "../apollo-cache/read-experience-fragment";
+
+jest.mock("../apollo-cache/read-experience-fragment");
+const mockreadExperienceFragment = readExperienceFragment as jest.Mock;
 
 jest.mock("../state/resolvers/update-get-experiences-mini-query");
-jest.mock("../state/resolvers/write-get-experience-full-query-to-cache");
-jest.mock("../state/resolvers/delete-references-from-cache");
-jest.mock("../apollo-cache/write-offline-items-to-cache");
-
-const mockWipeReferencesFromCache = wipeReferencesFromCache as jest.Mock;
-
 const mockReplaceExperiencesInGetExperiencesMiniQuery = replaceExperiencesInGetExperiencesMiniQuery as jest.Mock;
 
-const mockWriteGetExperienceFullQueryToCache = writeGetExperienceFullQueryToCache as jest.Mock;
+jest.mock("../state/resolvers/delete-references-from-cache");
+const mockWipeReferencesFromCache = wipeReferencesFromCache as jest.Mock;
+const mockRemoveQueriesAndMutationsFromCache = removeQueriesAndMutationsFromCache as jest.Mock;
 
-const mockWriteSavedAndUnsavedExperiencesToCache = updateOfflineItemsLedger as jest.Mock;
+jest.mock("../apollo-cache/write-offline-items-to-cache");
+const mockUpdateOfflineItemsLedger = updateOfflineItemsLedger as jest.Mock;
+
+jest.mock("../apollo-cache/write-experience-fragment");
+const mockWriteExperienceFragmentToCache = writeExperienceFragmentToCache as jest.Mock;
+
+jest.mock("../apollo-cache/drecrement-offline-entries-count");
+const mockDecrementOfflineEntriesCountForExperiences = decrementOfflineEntriesCountForExperiences as jest.Mock;
 
 beforeEach(() => {
   jest.resetAllMocks();
 });
 
-test("completely saved unsaved experience", () => {
+test("mixed", () => {
   const completelyOfflineMap = {
-    "1": {
+    // experience onine, entry online, entry offline
+    ex1Off: {
       experience: {
-        id: "1",
-        clientId: "1",
+        id: "ex1Off",
+        clientId: "ex1Off",
         dataDefinitions: [
           {
-            id: "1",
-          },
-        ] as ExperienceFragment_dataDefinitions[],
-        entries: {
-          edges: [
-            {
-              node: {},
-            },
-          ] as ExperienceFragment_entries_edges[],
-        } as ExperienceFragment_entries,
-      } as ExperienceFragment,
-
-      offlineEntries: [],
-      onlineEntries: [],
-      newlyOnlineEntries: [],
-      newlySavedExperience: {
-        id: "1s",
-        clientId: "1",
-        entries: {
-          edges: [] as ExperienceFragment_entries_edges[],
-        },
-      } as ExperienceFragment,
-    },
-  };
-
-  const outstandingUnsavedCount = updateCache({
-    completelyOfflineMap,
-    partialOnlineMap: {},
-    cache: {} as any,
-    client: {} as any,
-  });
-
-  expect(outstandingUnsavedCount).toBe(0);
-  expect(mockWriteGetExperienceFullQueryToCache).toHaveBeenCalledTimes(1);
-
-  expect(mockWipeReferencesFromCache).toHaveBeenCalledWith(
-    {},
-    ["Experience:1", "DataDefinition:1", `${OFFLINE_ITEMS_TYPENAME}:1`],
-    {
-      mutations: [[MUTATION_NAME_createExperienceOffline, "Experience:1"]],
-
-      queries: [[QUERY_NAME_getExperience, "Experience:1"]],
-    },
-  );
-
-  expect(
-    mockReplaceExperiencesInGetExperiencesMiniQuery.mock.calls[0][1],
-  ).toEqual({
-    "1": {
-      id: "1s",
-      clientId: "1",
-      entries: {
-        edges: [],
-      },
-    },
-  });
-
-  expect(mockWriteSavedAndUnsavedExperiencesToCache.mock.calls[0][1]).toEqual(
-    [],
-  );
-});
-
-test("partially saved unsaved experience", () => {
-  const completelyOfflineMap = {
-    "2": {
-      // experience partially saved, will be deleted from cache
-      experience: {
-        id: "2",
-        clientId: "2",
-        dataDefinitions: [
-          {
-            id: "1",
+            id: "def11Off",
           },
         ] as ExperienceFragment_dataDefinitions[],
 
@@ -130,36 +73,31 @@ test("partially saved unsaved experience", () => {
           ] as ExperienceFragment_entries_edges[],
         } as ExperienceFragment_entries,
       } as ExperienceFragment,
-      // one of these entries (21) failed to save -hence this experience is
-      // partially saved
+      // en1Off never made it online - so this experience is partOffline
       offlineEntries: [
         {
-          id: "unsaved-entry",
-        }, // did not save - notice it has same ID as entriesErrors
-
+          id: "en11Off",
+        }, // still offline - notice it has same ID as entriesErrors
         {
-          id: "saved-entry",
-        }, // saved, will be deleted from cache
+          id: "en12Off", // successfully online
+        },
       ] as ExperienceFragment_entries_edges_node[],
 
       entriesErrors: {
-        "unsaved-entry": {} as CreateEntriesErrorsFragment_errors,
+        en11Off: {} as CreateEntriesErrorsFragment_errors,
       },
-
-      onlineEntries: [], // an unsaved experience never has savedEntries
-
       newlySavedExperience: {
-        id: "2s",
-        clientId: "2",
+        id: "ex1On",
+        clientId: "ex1Off",
         entries: {
           edges: [
             {
               node: {
-                clientId: "saved-entry",
-
+                id: "en12On",
+                clientId: "en12Off",
                 dataObjects: [
                   {
-                    clientId: "saved-data-object",
+                    clientId: "da12Off",
                   },
                 ] as EntryFragment_dataObjects[],
               },
@@ -168,379 +106,253 @@ test("partially saved unsaved experience", () => {
         },
       } as ExperienceFragment,
     },
-  };
-
-  const outstandingUnsavedCount = updateCache({
-    completelyOfflineMap,
-    partialOnlineMap: {},
-    cache: {} as any,
-    client: {} as any,
-  });
-
-  expect(outstandingUnsavedCount).toBe(1);
-  expect(mockWriteGetExperienceFullQueryToCache).toHaveBeenCalledTimes(1);
-
-  expect(mockWipeReferencesFromCache).toHaveBeenCalledWith(
-    {},
-    [
-      "Experience:2",
-      "DataDefinition:1",
-      "Entry:saved-entry",
-      "DataObject:saved-data-object",
-    ],
-    {
-      mutations: [
-        [MUTATION_NAME_createExperienceOffline, "Experience:2"],
-        [MUTATION_NAME_createOfflineEntry, "Entry:saved-entry"],
-        [MUTATION_NAME_createOfflineEntry, "Entry:unsaved-entry"],
-      ],
-
-      queries: [[QUERY_NAME_getExperience, "Experience:2"]],
-    },
-  );
-
-  expect(
-    mockReplaceExperiencesInGetExperiencesMiniQuery.mock.calls[0][1],
-  ).toEqual({
-    "2": {
-      hasUnsaved: true,
-      id: "2s",
-      clientId: "2",
-      entries: {
-        edges: [
-          {
-            node: {
-              clientId: "saved-entry",
-
-              dataObjects: [
-                {
-                  clientId: "saved-data-object",
-                },
-              ],
-            },
-          },
-
-          {
-            __typename: "EntryEdge",
-            cursor: "",
-            node: {
-              id: "unsaved-entry",
-            },
-          },
-        ],
-      },
-    },
-  });
-
-  expect(mockWriteSavedAndUnsavedExperiencesToCache.mock.calls[0][1]).toEqual([
-    {
-      id: "2s",
-      offlineEntriesCount: 1,
-      __typename: OFFLINE_ITEMS_TYPENAME,
-    },
-  ]);
-});
-
-test("unsaved experience not saved", () => {
-  const completelyOfflineMap = {
-    "3": {
-      // newlySavedExperience = undefined, outstanding unsaved count = 2
+    // experience offline, entry offline
+    ex2Off: {
       experience: {
-        id: "3",
+        id: "ex2Off",
+        clientId: "ex2Off",
       } as ExperienceFragment,
-      // since experience did not save, ditto entry. outstanding unsaved
-      // count = 3
-      offlineEntries: [{} as ExperienceFragment_entries_edges_node],
-      entriesErrors: {},
-      onlineEntries: [],
-      newlyOnlineEntries: [],
+      offlineEntries: [{} as any],
     },
-  };
-
-  const outstandingUnsavedCount = updateCache({
-    completelyOfflineMap,
-    partialOnlineMap: {},
-    cache: {} as any,
-    client: {} as any,
-  });
-
-  expect(outstandingUnsavedCount).toBe(2);
-  expect(mockWriteGetExperienceFullQueryToCache).not.toHaveBeenCalled();
-
-  expect(mockWipeReferencesFromCache).not.toHaveBeenCalled();
-
-  expect(
-    mockReplaceExperiencesInGetExperiencesMiniQuery,
-  ).not.toHaveBeenCalled();
-
-  expect(mockWriteSavedAndUnsavedExperiencesToCache.mock.calls[0][1]).toEqual([
-    {
-      id: "3",
-      offlineEntriesCount: 1,
-      __typename: OFFLINE_ITEMS_TYPENAME,
-    },
-  ]);
-});
-
-test("saved experience with unsaved entry not saved", () => {
-  const partialOnlineMap = {
-    "6": {
-      // has an unsaved entry, so we will put it back in savedUnsaved
+    // experience offline, no entry
+    ex3Off: {
       experience: {
-        id: "6",
+        id: "ex3Off",
+        clientId: "ex3Off",
+      } as ExperienceFragment,
+      offlineEntries: [],
+    },
+    // experience online, entry online
+    ex4Off: {
+      experience: {
+        id: "ex4Off",
+        clientId: "ex4Off",
+        dataDefinitions: [
+          {
+            id: "def41Off",
+          },
+        ] as ExperienceFragment_dataDefinitions[],
+      } as ExperienceFragment,
+      offlineEntries: [
+        {
+          id: "en41Off",
+        },
+      ] as ExperienceFragment_entries_edges_node[],
+      newlySavedExperience: {
+        id: "ex4On",
+        clientId: "ex4Off",
         entries: {
           edges: [
             {
-              // a previously unsaved entry now saved
-
               node: {
-                id: "22",
-                clientId: "22-c", // will be deleted from cache
-              },
-            },
-
-            // this has always been a saved entry - must not be touched.
-            {
-              node: {
-                id: "23",
-                clientId: "23-c",
+                id: "en41On",
+                clientId: "en41Off",
+                dataObjects: [
+                  {
+                    clientId: "da41Off",
+                  },
+                ] as EntryFragment_dataObjects[],
               },
             },
           ] as ExperienceFragment_entries_edges[],
         },
       } as ExperienceFragment,
+    },
+    // online no entry
+    ex5Off: {
+      experience: {
+        id: "ex5Off",
+        clientId: "ex5Off",
+        dataDefinitions: [
+          {
+            id: "def51Off",
+          },
+        ] as ExperienceFragment_dataDefinitions[],
+      } as ExperienceFragment,
       offlineEntries: [],
-      onlineEntries: [],
+      newlySavedExperience: {
+        id: "ex5On",
+        clientId: "ex5Off",
+        entries: {},
+      } as ExperienceFragment,
+    },
+  };
+
+  const partialOnlineMap = {
+    // no entry (1) succeeded, newOnlineEntries === undefined
+    ex6On: {
+      experience: {} as ExperienceFragment,
+      offlineEntries: [{} as EntryFragment],
+    },
+    // no entry (1) succeeded, newlyOnlineEntries.length === 0
+    ex7On: {
+      experience: {} as ExperienceFragment,
+      offlineEntries: [{} as EntryFragment],
+      newlyOnlineEntries: [],
+    },
+    // all entries (1) succeeded
+    ex8On: {
+      experience: {} as ExperienceFragment,
+      offlineEntries: [],
       newlyOnlineEntries: [
         {
-          id: "22s",
-          clientId: "22-c",
-
-          dataObjects: [] as DataObjectFragment[],
-        } as ExperienceFragment_entries_edges_node,
+          id: "en81On",
+          clientId: "en81Off",
+          dataObjects: [
+            {
+              clientId: "da81Off",
+            },
+          ],
+        } as EntryFragment,
       ],
-      // so we have one entry we are unable to save,
-      // outstanding unsaved count = 6
+    },
+    // entry succeeded, entry failed
+    ex9On: {
+      experience: {} as ExperienceFragment,
+      offlineEntries: [],
+      newlyOnlineEntries: [
+        {
+          id: "en91On",
+          clientId: "en91Off",
+          dataObjects: [
+            {
+              clientId: "da91Off",
+            },
+          ],
+        } as EntryFragment,
+      ],
       entriesErrors: {
-        yy: {} as CreateEntriesErrorsFragment_errors,
+        en92Off: {} as any,
       },
     },
   };
 
-  const outstandingUnsavedCount = updateCache({
-    completelyOfflineMap: {},
-    partialOnlineMap,
-    cache: {} as any,
-    client: {} as any,
-  });
-
-  const finalEdges = [
-    {
-      node: {
-        clientId: "22-c",
-        id: "22s",
-
-        dataObjects: [],
-      },
-    },
-
-    {
-      node: {
-        clientId: "23-c",
-        id: "23",
-      },
-    },
-  ];
-
-  expect(mockWriteGetExperienceFullQueryToCache.mock.calls[0][1]).toEqual({
-    id: "6",
-    entries: {
-      edges: finalEdges,
-    },
-  });
-
-  expect(outstandingUnsavedCount).toBe(1);
-
-  expect(mockWipeReferencesFromCache).toHaveBeenCalledWith({}, ["Entry:22-c"], {
-    mutations: [[MUTATION_NAME_createOfflineEntry, "Entry:22-c"]],
-
-    queries: [],
-  });
-
-  expect(
-    mockReplaceExperiencesInGetExperiencesMiniQuery.mock.calls[0][1],
-  ).toEqual({
-    "6": {
-      id: "6",
+  mockreadExperienceFragment
+    .mockReturnValueOnce({
+      id: "ex8On",
       entries: {
-        edges: finalEdges,
-      },
-    },
-  });
-
-  expect(mockWriteSavedAndUnsavedExperiencesToCache.mock.calls[0][1]).toEqual([
-    {
-      id: "6",
-      offlineEntriesCount: 1,
-      __typename: OFFLINE_ITEMS_TYPENAME,
-    },
-  ]);
-});
-
-test("saved experience with no 'newlyOnlineEntries' ", () => {
-  const partialOnlineMap = {
-    "4": {
-      experience: {
-        id: "4",
-      },
-      // newlyOnlineEntries = undefined
-      offlineEntries: [{}],
-    } as any,
-  } as ExperiencesIdsToObjectMap;
-
-  const outstandingUnsavedCount = updateCache({
-    completelyOfflineMap: {},
-    partialOnlineMap,
-    cache: {} as any,
-    client: {} as any,
-  });
-
-  expect(mockWriteGetExperienceFullQueryToCache).not.toHaveBeenCalled();
-
-  expect(outstandingUnsavedCount).toBe(1);
-  expect(mockWipeReferencesFromCache).not.toHaveBeenCalled();
-
-  expect(
-    mockReplaceExperiencesInGetExperiencesMiniQuery,
-  ).not.toHaveBeenCalled();
-
-  expect(mockWriteSavedAndUnsavedExperiencesToCache.mock.calls[0][1]).toEqual([
-    {
-      id: "4",
-      offlineEntriesCount: 1,
-      __typename: OFFLINE_ITEMS_TYPENAME,
-    },
-  ]);
-});
-
-test("saved experience with empty 'newlyOnlineEntries' ", () => {
-  const partialOnlineMap = {
-    "5": {
-      experience: {
-        id: "5",
-      },
-      offlineEntries: [{}],
-      newlyOnlineEntries: [],
-    } as any,
-  } as ExperiencesIdsToObjectMap;
-
-  const outstandingUnsavedCount = updateCache({
-    completelyOfflineMap: {},
-    partialOnlineMap,
-    cache: {} as any,
-    client: {} as any,
-  });
-
-  expect(mockWriteGetExperienceFullQueryToCache).not.toHaveBeenCalled();
-
-  expect(outstandingUnsavedCount).toBe(1);
-  expect(mockWipeReferencesFromCache).not.toHaveBeenCalled();
-
-  expect(
-    mockReplaceExperiencesInGetExperiencesMiniQuery,
-  ).not.toHaveBeenCalled();
-
-  expect(mockWriteSavedAndUnsavedExperiencesToCache.mock.calls[0][1]).toEqual([
-    {
-      id: "5",
-      offlineEntriesCount: 1,
-      __typename: OFFLINE_ITEMS_TYPENAME,
-    },
-  ]);
-});
-
-test("saved experience completely saved", () => {
-  const partialOnlineMap = {
-    "7": {
-      experience: {
-        id: "7",
-        entries: {
-          edges: [] as ExperienceFragment_entries_edges[],
-        },
-      } as ExperienceFragment,
-      offlineEntries: [],
-      onlineEntries: [],
-      newlyOnlineEntries: [
-        {
-          clientId: "71-c",
-
-          dataObjects: [
-            {
-              clientId: "1",
+        edges: [
+          {
+            node: {
+              id: "en81Off",
+              clientId: "en81Off",
             },
-          ],
-        },
-      ] as ExperienceFragment_entries_edges_node[],
-    },
-  } as ExperiencesIdsToObjectMap;
+          },
+        ],
+      },
+    } as ExperienceFragment)
+    .mockReturnValueOnce({
+      id: "ex9On",
+      entries: {
+        edges: [
+          {
+            node: {
+              id: "en91Off",
+              clientId: "en91Off",
+            },
+          },
+          {
+            node: {
+              id: "en92Off",
+              clientId: "en92Off",
+            },
+          },
+        ],
+      },
+    } as ExperienceFragment);
 
-  const outstandingUnsavedCount = updateCache({
-    completelyOfflineMap: {},
+  const remainingOfflineCount = updateCache({
+    completelyOfflineMap,
     partialOnlineMap,
-    cache: {} as any,
-    client: {} as any,
+    cache: null as any,
+    client: null as any,
   });
 
-  expect(mockWriteGetExperienceFullQueryToCache.mock.calls[0][1]).toEqual({
-    id: "7",
-    entries: { edges: [] },
-    hasUnsaved: null,
-  });
+  //134567
+  expect(remainingOfflineCount).toBe(7);
 
-  expect(outstandingUnsavedCount).toBe(0);
-
-  expect(mockWipeReferencesFromCache).toHaveBeenCalledWith(
-    {},
-    ["Entry:71-c", "DataObject:1", `${OFFLINE_ITEMS_TYPENAME}:7`],
-    {
-      mutations: [[MUTATION_NAME_createOfflineEntry, "Entry:71-c"]],
-
-      queries: [],
-    },
-  );
+  expect(mapMockReplaceExperiencesInGetExperiencesMiniQuery()).toEqual([
+    ["ex1Off", "ex1On"],
+    ["ex4Off", "ex4On"],
+    ["ex5Off", "ex5On"],
+  ]);
 
   expect(
-    mockReplaceExperiencesInGetExperiencesMiniQuery.mock.calls[0][1],
+    mockDecrementOfflineEntriesCountForExperiences.mock.calls[0][1],
   ).toEqual({
-    "7": {
-      id: "7",
-      entries: { edges: [] },
-      hasUnsaved: null,
-    },
+    ex1Off: 2,
+    ex4Off: 2,
+    ex5Off: 1,
+    ex8On: 1,
+    ex9On: 2,
   });
 
-  expect(mockWriteSavedAndUnsavedExperiencesToCache.mock.calls[0][1]).toEqual(
-    [],
+  expect(mapMockUpdateOfflineItemsLedger()).toEqual([
+    ["ex1On", 1],
+    ["ex2Off", 2],
+    ["ex3Off", 1],
+    ["ex6On", 1],
+    ["ex7On", 1],
+    ["ex8On", 0],
+    ["ex9On", 1],
+  ]);
+
+  expect(mapMockWipeReferencesFromCache()).toEqual([
+    makeApolloCacheRef(DATA_DEFINITION_TYPE_NAME, "def11Off"),
+    makeApolloCacheRef(DATA_DEFINITION_TYPE_NAME, "def41Off"),
+    makeApolloCacheRef(DATA_DEFINITION_TYPE_NAME, "def51Off"),
+    makeApolloCacheRef(DATA_OBJECT_TYPE_NAME, "da12Off"),
+    makeApolloCacheRef(DATA_OBJECT_TYPE_NAME, "da41Off"),
+    makeApolloCacheRef(DATA_OBJECT_TYPE_NAME, "da81Off"),
+    makeApolloCacheRef(DATA_OBJECT_TYPE_NAME, "da91Off"),
+    makeApolloCacheRef(ENTRY_TYPE_NAME, "en12Off"),
+    makeApolloCacheRef(ENTRY_TYPE_NAME, "en41Off"),
+    makeApolloCacheRef(ENTRY_TYPE_NAME, "en81Off"),
+    makeApolloCacheRef(ENTRY_TYPE_NAME, "en91Off"),
+    makeApolloCacheRef(EXPERIENCE_TYPE_NAME, "ex1Off"),
+    makeApolloCacheRef(EXPERIENCE_TYPE_NAME, "ex4Off"),
+    makeApolloCacheRef(EXPERIENCE_TYPE_NAME, "ex5Off"),
+  ]);
+
+  expect(mapMockWriteExperienceFragmentToCache()).toEqual([
+    "ex1On",
+    "ex4On",
+    "ex5On",
+    "ex8On",
+    "ex9On",
+  ]);
+
+  expect(mockRemoveQueriesAndMutationsFromCache).toHaveBeenCalled();
+});
+
+test("noop", () => {
+  const remainingOfflineCount = updateCache({
+    completelyOfflineMap: {} as any,
+    partialOnlineMap: {} as any,
+    cache: null as any,
+    client: null as any,
+  });
+
+  expect(remainingOfflineCount).toBe(0);
+});
+
+function mapMockReplaceExperiencesInGetExperiencesMiniQuery() {
+  return Object.entries(
+    mockReplaceExperiencesInGetExperiencesMiniQuery.mock.calls[0][1] as any,
+  ).map(([k, v]: any) => [k, v.id]);
+}
+
+function mapMockWipeReferencesFromCache() {
+  return (mockWipeReferencesFromCache.mock.calls[0][1] as string[]).sort();
+}
+
+function mapMockUpdateOfflineItemsLedger() {
+  return (mockUpdateOfflineItemsLedger.mock
+    .calls[0][1] as any).map((v: any) => [v.id, v.offlineEntriesCount]);
+}
+
+function mapMockWriteExperienceFragmentToCache() {
+  return mockWriteExperienceFragmentToCache.mock.calls.map(
+    ([, arg]: any) => arg.id,
   );
-});
-
-it("is a noop when updating and there is nothing to update", () => {
-  const outstandingUnsavedCount = updateCache({
-    completelyOfflineMap: {},
-    partialOnlineMap: {},
-    cache: {} as any,
-    client: {} as any,
-  });
-
-  expect(outstandingUnsavedCount).toBe(0);
-
-  expect(mockWipeReferencesFromCache).not.toHaveBeenCalled();
-
-  expect(
-    mockReplaceExperiencesInGetExperiencesMiniQuery,
-  ).not.toHaveBeenCalled();
-
-  expect(mockWriteGetExperienceFullQueryToCache).not.toHaveBeenCalled();
-
-  expect(mockWriteSavedAndUnsavedExperiencesToCache).not.toHaveBeenCalled();
-});
+}

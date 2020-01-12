@@ -1,10 +1,10 @@
-import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragment";
+import { ExperienceFragment } from "../graphql/apollo-types/ExperienceFragment";
 import {
   EXPERIENCE_FRAGMENT,
   FRAGMENT_NAME_experienceFragment,
-} from "../../graphql/experience.fragment";
+} from "../graphql/experience.fragment";
 import { DataProxy } from "apollo-cache";
-import { entriesPaginationVariables } from "../../graphql/get-experience-full.query";
+import { entriesPaginationVariables } from "../graphql/get-experience-full.query";
 
 export function writeExperienceFragmentToCache(
   dataProxy: DataProxy,

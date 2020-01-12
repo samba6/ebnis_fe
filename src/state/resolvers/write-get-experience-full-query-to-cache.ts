@@ -5,7 +5,7 @@ import {
 } from "../../graphql/apollo-types/GetExperienceFull";
 import { GET_EXPERIENCE_FULL_QUERY } from "../../graphql/get-experience-full.query";
 import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragment";
-import { writeExperienceFragmentToCache } from "./write-experience-fragment-to-cache";
+import { writeExperienceFragmentToCache } from "../../apollo-cache/write-experience-fragment";
 
 export function writeGetExperienceFullQueryToCache(
   dataProxy: DataProxy,

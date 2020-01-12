@@ -12,8 +12,8 @@ import {
 } from "../../graphql/apollo-types/ExperienceFragment";
 import { EXPERIENCE_FRAGMENT } from "../../graphql/experience.fragment";
 import { insertExperienceInGetExperiencesMiniQuery } from "../../state/resolvers/update-get-experiences-mini-query";
-import { incrementOfflineEntriesCountForExperience } from "../../apollo-cache/increment-offline-entries-count";
-import { writeExperienceFragmentToCache } from "../../state/resolvers/write-experience-fragment-to-cache";
+import { incrementOfflineItemCount } from "../../apollo-cache/increment-offline-item-count";
+import { writeExperienceFragmentToCache } from "../../apollo-cache/write-experience-fragment";
 
 const createOfflineExperienceResolver: LocalResolverFn<
   CreateExperienceMutationVariables,
@@ -74,7 +74,7 @@ const createOfflineExperienceResolver: LocalResolverFn<
     force: true,
   });
 
-  incrementOfflineEntriesCountForExperience(cache, experienceId);
+  incrementOfflineItemCount(cache, experienceId);
 
   return experience;
 };
