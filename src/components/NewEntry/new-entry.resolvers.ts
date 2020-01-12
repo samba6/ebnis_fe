@@ -20,10 +20,10 @@ import { CreateOnlineEntryMutation_createEntry } from "../../graphql/apollo-type
 
 export const CREATE_OFFLINE_ENTRY_MUTATION = gql`
   mutation CreateOfflineEntry(
-    $experience: Experience!
+    $experienceId: String!
     $dataObjects: [DataObjects!]!
   ) {
-    createOfflineEntry(experience: $experience, dataObjects: $dataObjects)
+    createOfflineEntry(experienceId: $experienceId, dataObjects: $dataObjects)
       @client {
       entry {
         ...EntryFragment
@@ -49,9 +49,7 @@ const createOfflineEntryMutationResolver: LocalResolverFn<
 > = async (_, variables, context) => {
   const { client, cache } = context;
 
-  let experience = { ...variables.experience };
-
-  const { id: experienceId } = experience;
+  const { experienceId } = variables;
   const today = new Date();
   const timestamps = today.toJSON();
 
@@ -81,9 +79,12 @@ const createOfflineEntryMutationResolver: LocalResolverFn<
     modOffline: true,
   };
 
-  experience = (await upsertExperienceWithEntry(experience, "offline")(client, {
-    data: { createEntry: { entry } as CreateOnlineEntryMutation_createEntry },
-  })) as ExperienceFragment;
+  const experience = (await upsertExperienceWithEntry(experienceId, "offline")(
+    client,
+    {
+      data: { createEntry: { entry } as CreateOnlineEntryMutation_createEntry },
+    },
+  )) as ExperienceFragment;
 
   incrementOfflineItemCount(cache, experienceId);
 
@@ -92,7 +93,7 @@ const createOfflineEntryMutationResolver: LocalResolverFn<
 
 export interface CreateOfflineEntryMutationVariables {
   dataObjects: CreateDataObject[];
-  experience: ExperienceFragment;
+  experienceId: string;
 }
 
 export const newEntryResolvers = {

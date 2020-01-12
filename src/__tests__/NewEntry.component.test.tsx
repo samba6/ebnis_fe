@@ -410,12 +410,10 @@ it("creates new entry when offline", async () => {
    */
 
   const {
-    variables: { experience, dataObjects },
+    variables: { dataObjects },
   } = mockCreateOfflineEntry.mock.calls[0][0] as ToVariables<
     CreateOfflineEntryMutationVariables
   >;
-
-  expect(experience.id).toBe("1");
 
   const [f1] = dataObjects as CreateDataObject[];
 

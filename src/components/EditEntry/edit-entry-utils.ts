@@ -42,7 +42,7 @@ import {
   editEntryUpdate,
 } from "./edit-entry.injectables";
 import { CreateOnlineEntryMutationComponentProps } from "../../graphql/create-entry.mutation";
-import { isOfflineId } from "../../constants";
+import { isOfflineId, makeApolloCacheRef } from "../../constants";
 import {
   CreateOnlineEntryMutation_createEntry,
   CreateOnlineEntryMutation_createEntry_errors_dataObjectsErrors,
@@ -56,8 +56,13 @@ import {
   LayoutContextValue,
 } from "../Layout/layout.utils";
 import { CreateOfflineEntryMutationComponentProps } from "../NewEntry/new-entry.resolvers";
-import { upsertExperienceWithEntry } from "../NewEntry/new-entry.injectables";
+import {
+  upsertExperienceWithEntry,
+  UpsertExperienceInCacheMode,
+} from "../NewEntry/new-entry.injectables";
 import { incrementOfflineItemCount } from "../../apollo-cache/increment-offline-item-count";
+import { wipeReferencesFromCache } from "../../state/resolvers/delete-references-from-cache";
+import { ENTRY_TYPE_NAME, DATA_OBJECT_TYPE_NAME } from "../../graphql/types";
 
 export enum ActionType {
   EDIT_BTN_CLICKED = "@component/edit-entry/edit-btn-clicked",
@@ -67,7 +72,7 @@ export enum ActionType {
   SUBMITTING = "@component/edit-entry/submitting",
   DESTROYED = "@component/edit-entry/destroy",
   DEFINITIONS_SUBMISSION_RESPONSE = "@component/edit-entry/definitions-submission-response",
-  DATA_OBJECTS_SUBMISSION_RESPONSE = "@component/edit-entry/data-objects-submission-response",
+  DATA_OBJECTS_ONLINE_SUBMISSION_RESPONSE = "@component/edit-entry/data-objects-submission-response",
   DEFINITION_FORM_ERRORS = "@component/edit-entry/definition-form-errors",
   DATA_CHANGED = "@component/edit-entry/data-changed",
   DEFINITION_AND_DATA_SUBMISSION_RESPONSE = "@component/edit-entry/submission-response",
@@ -90,10 +95,12 @@ export const StateValue = {
   otherErrors: "otherErrors" as OtherErrorsVal,
   online: "online" as OnlineVal,
   offline: "offline" as OfflineVal,
+  modifiedOffline: "modifiedOffline" as ModifiedOfflineVal,
 };
 
 export const initState = (props: ComponentProps): StateMachine => {
   const { entry, experience, hasConnection } = props;
+  const { id: entryId, modOffline } = entry;
 
   const [dataStates, dataIdsMap, dataIds] = entry.dataObjects.reduce(
     ([statesMap, dataIdsMap, dataIds], obj) => {
@@ -171,20 +178,23 @@ export const initState = (props: ComponentProps): StateMachine => {
 
   return {
     effects: {
-      runOnRenders: {
+      general: {
         value: StateValue.noEffect,
       },
     },
     context: {
       lenDefinitions,
       definitionAndDataIdsMapList,
-      experience,
       entry,
       hasConnection,
     },
     states: {
-      createMode: {
-        value: isOfflineId(entry.id) ? StateValue.offline : StateValue.online,
+      mode: {
+        value: isOfflineId(entryId)
+          ? StateValue.offline
+          : modOffline === true
+          ? StateValue.modifiedOffline
+          : StateValue.online,
       },
       editingData: {
         value: StateValue.inactive,
@@ -207,7 +217,8 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
     action,
     (prevState, { type, ...payload }) => {
       return immer(prevState, proxy => {
-        proxy.effects.runOnRenders.value = StateValue.noEffect;
+        proxy.effects.general.value = StateValue.noEffect;
+        delete proxy.effects.general[StateValue.hasEffects];
 
         switch (type) {
           case ActionType.DATA_CHANGED:
@@ -247,7 +258,7 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
             });
             break;
 
-          case ActionType.DATA_OBJECTS_SUBMISSION_RESPONSE:
+          case ActionType.DATA_OBJECTS_ONLINE_SUBMISSION_RESPONSE:
             prepareSubmissionResponse(proxy, {
               key: "dataObjects",
               dataObjectsResults: payload as UpdateDataObjects,
@@ -299,42 +310,55 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
 
 ////////////////////////// EFFECT FUNCTIONS SECTION //////////////////
 
-const decrementOfflineEntriesCountEffect: DecrementOfflineEntriesCountEffect["func"] = async (
-  { experienceId },
-  { cache, persistor, layoutDispatch },
-) => {
-  await decrementOfflineEntriesCountForExperience({
-    cache,
-    experienceId,
-    howMany: 1,
-  });
-
-  await persistor.persist();
-
-  layoutDispatch({
-    type: LayoutActionType.REFETCH_OFFLINE_ITEMS_COUNT,
-  });
-};
-
-type DecrementOfflineEntriesCountEffect = EffectDefinition<
-  "decrementOfflineEntriesCount",
-  {
-    experienceId: string;
-  }
->;
-
 const createEntryEffect: CreateEntryEffect["func"] = async (
-  { input, experience },
-  { createOfflineEntry, createOnlineEntry, persistor },
+  { input },
+  { layoutDispatch, createOfflineEntry, createOnlineEntry, persistor, cache },
   { dispatch },
 ) => {
   try {
     const validResponse = await createEntryEffectHelper(
-      { input, experience },
+      {
+        input,
+        onDone: () => {
+          const { experienceId, clientId, dataObjects } = input;
+
+          decrementOfflineEntriesCountForExperience({
+            cache,
+            experienceId,
+            howMany: 1,
+          });
+
+          wipeReferencesFromCache(
+            cache,
+            [makeApolloCacheRef(ENTRY_TYPE_NAME, clientId as string)].concat(
+              dataObjects.map(d => {
+                const dobj = d as DataObjectFragment;
+
+                return makeApolloCacheRef(
+                  DATA_OBJECT_TYPE_NAME,
+                  dobj.clientId as string,
+                );
+              }),
+            ),
+          );
+
+          persistor.persist();
+
+          layoutDispatch({
+            type: LayoutActionType.REFETCH_OFFLINE_ITEMS_COUNT,
+          });
+        },
+      },
       { createOfflineEntry, createOnlineEntry },
     );
 
-    if (validResponse.entry || validResponse.errors) {
+    // We only deal with error state because on success with no errors, apollo
+    // will cause React lib to unmount this component. So if we try any update
+    // to state, react will complain:
+    // Warning: Can't perform a React state update on an unmounted component.
+    // This is the reason upsertExperienceWithEntry needs to take an onDone
+    // callback
+    if (validResponse && validResponse.errors) {
       persistor.persist();
       dispatch({
         type: ActionType.ON_ENTRY_CREATED,
@@ -344,9 +368,11 @@ const createEntryEffect: CreateEntryEffect["func"] = async (
       return;
     }
 
-    dispatch({
-      type: ActionType.OTHER_ERRORS,
-    });
+    if (!validResponse) {
+      dispatch({
+        type: ActionType.OTHER_ERRORS,
+      });
+    }
   } catch (errors) {
     dispatch({
       type: ActionType.OTHER_ERRORS,
@@ -359,22 +385,29 @@ type CreateEntryEffect = EffectDefinition<
   "createEntry",
   {
     input: CreateEntryInput;
-    experience: ExperienceFragment;
   }
 >;
 
-const updateEntryOfflineEffect: UpdateEntryOfflineEffect["func"] = async (
-  { entry },
+const updateEntryInCacheEffect: UpdateEntryInCacheEffect["func"] = async (
+  { entry, upsertMode },
   { layoutDispatch, client, persistor, cache },
 ) => {
   const { experienceId, id } = entry;
 
-  (await upsertExperienceWithEntry(experienceId, "offline")(client, {
+  (await upsertExperienceWithEntry(experienceId, upsertMode)(client, {
     data: { createEntry: { entry } as CreateOnlineEntryMutation_createEntry },
   })) as ExperienceFragment;
 
-  if (!isOfflineId(id)) {
+  if (upsertMode === "offline" && !isOfflineId(id)) {
     incrementOfflineItemCount(cache, experienceId);
+  }
+
+  if (upsertMode === "online") {
+    await decrementOfflineEntriesCountForExperience({
+      cache,
+      experienceId,
+      howMany: 1,
+    });
   }
 
   await persistor.persist();
@@ -384,10 +417,11 @@ const updateEntryOfflineEffect: UpdateEntryOfflineEffect["func"] = async (
   });
 };
 
-type UpdateEntryOfflineEffect = EffectDefinition<
-  "updateEntryOffline",
+type UpdateEntryInCacheEffect = EffectDefinition<
+  "updateEntryInCache",
   {
     entry: EntryFragment;
+    upsertMode: UpsertExperienceInCacheMode;
   }
 >;
 
@@ -473,7 +507,7 @@ const updateDataObjectsOnlineEffect: UpdateDataObjectsOnlineEffect["func"] = asy
 
     if (successResult) {
       dispatch({
-        type: ActionType.DATA_OBJECTS_SUBMISSION_RESPONSE,
+        type: ActionType.DATA_OBJECTS_ONLINE_SUBMISSION_RESPONSE,
         ...successResult,
       });
 
@@ -546,8 +580,7 @@ export const effectFunctions = {
   updateDefinitionsOnline: updateDefinitionsOnlineEffect,
   definitionsFormErrors: definitionsFormErrorsEffect,
   createEntry: createEntryEffect,
-  decrementOfflineEntriesCount: decrementOfflineEntriesCountEffect,
-  updateEntryOffline: updateEntryOfflineEffect,
+  updateEntryInCache: updateEntryInCacheEffect,
 };
 
 //// EFFECT HELPERS
@@ -568,21 +601,6 @@ function processFormSubmissionException({
     dispatch({
       type: ActionType.OTHER_ERRORS,
     });
-  }
-}
-
-export function runEffects(
-  effects: EffectsList,
-  props: ComponentProps,
-  thirdArgs: ThirdEffectFunctionArgs,
-) {
-  for (const { key, ownArgs } of effects) {
-    effectFunctions[key](
-      /* eslint-disable-next-line @typescript-eslint/no-explicit-any*/
-      ownArgs as any,
-      props,
-      thirdArgs,
-    );
   }
 }
 
@@ -628,23 +646,20 @@ function handleDefinitionNameChangedAction(
 
 function handleSubmittingAction(proxy: DraftState, payload: SubmittingPayload) {
   proxy.states.submission.value = StateValue.submitting;
-  const effectObjects = prepareGeneralEffects(proxy);
   const { hasConnection } = payload;
 
   if (!hasConnection) {
-    handleUpdateEntryOfflineAction(proxy, effectObjects);
+    // only edit
+    handleUpdateEntryOfflineAction(proxy);
     return;
   }
 
-  if (proxy.states.createMode.value === StateValue.offline) {
-    handleCreateEntryAction(proxy, effectObjects);
+  if (proxy.states.mode.value === StateValue.offline) {
+    handleCreateEntryAction(proxy);
     return;
   }
 
-  handleSubmittingUpdateDataAndOrDefinitionAction({
-    proxy,
-    effectObjects,
-  });
+  handleSubmittingUpdateDataAndOrDefinitionAction(proxy);
 }
 
 function handleDefinitionFormErrorsAction(
@@ -792,7 +807,6 @@ function handleOnEntryCreatedAction(
   context: SubmissionSuccessStateContext,
   response: CreateOnlineEntryMutation_createEntry,
 ) {
-  const effectObjects = prepareGeneralEffects(proxy);
   const { entry: ent, errors } = response;
 
   if (errors) {
@@ -828,16 +842,15 @@ function handleOnEntryCreatedAction(
     return [0, failureCount];
   }
 
-  const entry = ent as EntryFragment;
-  const { dataStates, createMode } = proxy.states;
+  const { dataStates, mode: createMode } = proxy.states;
   const { context: globalContext } = proxy;
   const definitionAndDataIdsMapList = globalContext.definitionAndDataIdsMapList;
+  const entry = ent as EntryFragment;
 
   entry.dataObjects.forEach((obj, index) => {
     const dataObject = obj as DataObjectFragment;
     const { clientId, id: dataId, definitionId } = dataObject;
     const fetchId = clientId as string;
-
 
     const dataState = dataStates[fetchId];
     updateDataStateWithUpdatedDataObject(dataState, dataObject);
@@ -850,26 +863,27 @@ function handleOnEntryCreatedAction(
     };
   });
 
-  effectObjects.push({
-    key: "decrementOfflineEntriesCount",
-    ownArgs: { experienceId: entry.experienceId },
-  });
   createMode.value = StateValue.online;
   globalContext.entry = entry;
   return [1, 0, "valid"];
 }
 
-function prepareGeneralEffects(proxy: DraftState) {
-  const runOnRendersEffects = proxy.effects.runOnRenders as EffectState;
-  runOnRendersEffects.value = StateValue.hasEffects;
-  const effectObjects: EffectsList = [];
-  runOnRendersEffects.hasEffects = {
-    context: {
-      effects: effectObjects,
-    },
-  };
+function getGeneralEffects(proxy: DraftState) {
+  const generalEffects = proxy.effects.general as EffectState;
+  generalEffects.value = StateValue.hasEffects;
+  let effects: EffectsList = [];
 
-  return effectObjects;
+  if (!generalEffects.hasEffects) {
+    generalEffects.hasEffects = {
+      context: {
+        effects,
+      },
+    };
+  } else {
+    effects = generalEffects.hasEffects.context.effects;
+  }
+
+  return effects;
 }
 
 function prepareSubmissionResponse(
@@ -902,7 +916,7 @@ function prepareSubmissionResponse(
     payload.key === "dataObjects" ||
     payload.key == "definitions and dataObjects"
   ) {
-    const [s, f, t] = handleDataObjectSubmissionResponse(
+    const [s, f, t] = handleDataObjectsOnlineSubmissionResponseAction(
       proxy,
       context,
       payload.dataObjectsResults,
@@ -1043,7 +1057,7 @@ function updateDataStateWithUpdatedDataObject(
   unchangedState.unchanged.context.anyEditSuccess = true;
 }
 
-function handleDataObjectSubmissionResponse(
+function handleDataObjectsOnlineSubmissionResponseAction(
   proxy: DraftState,
   context: SubmissionSuccessStateContext,
   updateDataObjectsResults: UpdateDataObjects,
@@ -1060,7 +1074,11 @@ function handleDataObjectSubmissionResponse(
 
   let successCount = 0;
   let failureCount = 0;
-  const { dataStates } = proxy.states;
+
+  const {
+    states: { dataStates, mode },
+    context: { entry },
+  } = proxy;
 
   dataObjects.forEach(obj => {
     const {
@@ -1093,6 +1111,19 @@ function handleDataObjectSubmissionResponse(
       );
     }
   });
+
+  const modeState = mode;
+
+  if (modeState.value === StateValue.modifiedOffline) {
+    entry.modOffline = null;
+    proxy.context.entry = entry;
+    mode.value = StateValue.online;
+    const effects = getGeneralEffects(proxy);
+    effects.push({
+      key: "updateEntryInCache",
+      ownArgs: { entry, upsertMode: "online" },
+    });
+  }
 
   return [successCount, failureCount, "valid"];
 }
@@ -1165,19 +1196,16 @@ function handleDefinitionsSubmissionResponse(
   return [successCount, failureCount, "valid"];
 }
 
-async function handleSubmittingUpdateDataAndOrDefinitionAction({
-  proxy,
-  effectObjects,
-}: {
-  proxy: DraftState;
-  effectObjects: EffectsList;
-}) {
+async function handleSubmittingUpdateDataAndOrDefinitionAction(
+  proxy: DraftState,
+) {
   const { states } = proxy;
+  const effects = getGeneralEffects(proxy);
   const [definitionsInput, definitionsWithFormErrors] = getDefinitionsToSubmit(
     states.definitionsStates,
   ) as [UpdateDefinitionInput[], string[]];
 
-  const [dataInput] = getDataObjectsForOnlineUpdate(states.dataStates);
+  const [dataInput] = getDataObjectsForOnlineUpdate(proxy);
 
   states.submission = {
     value: StateValue.submitting,
@@ -1192,7 +1220,7 @@ async function handleSubmittingUpdateDataAndOrDefinitionAction({
   };
 
   if (definitionsWithFormErrors.length !== 0) {
-    effectObjects.push({
+    effects.push({
       key: "definitionsFormErrors",
       ownArgs: {
         definitionsWithFormErrors,
@@ -1203,11 +1231,11 @@ async function handleSubmittingUpdateDataAndOrDefinitionAction({
   }
 
   const {
-    experience: { id: experienceId },
+    entry: { experienceId },
   } = proxy.context;
 
   if (dataInput.length === 0) {
-    effectObjects.push({
+    effects.push({
       key: "updateDefinitionsOnline",
       ownArgs: {
         definitionsInput,
@@ -1219,7 +1247,7 @@ async function handleSubmittingUpdateDataAndOrDefinitionAction({
   }
 
   if (definitionsInput.length === 0) {
-    effectObjects.push({
+    effects.push({
       key: "updateDataObjectsOnline",
       ownArgs: {
         dataInput,
@@ -1229,7 +1257,7 @@ async function handleSubmittingUpdateDataAndOrDefinitionAction({
     return;
   }
 
-  effectObjects.push({
+  effects.push({
     key: "updateDefinitionsAndDataOnline",
     ownArgs: {
       experienceId,
@@ -1256,14 +1284,13 @@ function setEditingData(proxy: DraftState) {
   }
 }
 
-function handleCreateEntryAction(
-  proxy: DraftState,
-  effectObjects: EffectsList,
-) {
+function handleCreateEntryAction(proxy: DraftState) {
   const {
     states,
-    context: { experience, entry },
+    context: { entry },
   } = proxy;
+
+  const { experienceId } = entry;
 
   states.submission = {
     value: StateValue.submitting,
@@ -1298,14 +1325,16 @@ function handleCreateEntryAction(
     };
   });
 
-  effectObjects.push({
+  const effects = getGeneralEffects(proxy);
+
+  effects.push({
     key: "createEntry",
     ownArgs: {
       input: {
         dataObjects,
-        experienceId: experience.id,
+        experienceId,
+        clientId: entry.clientId,
       },
-      experience,
     },
   });
 
@@ -1370,15 +1399,22 @@ function getDataObjectsForOfflineUpdate(
   return updatedCount;
 }
 
-function getDataObjectsForOnlineUpdate(dataStates: DataStates) {
+function getDataObjectsForOnlineUpdate(proxy: DraftState) {
+  const {
+    states: { dataStates, mode },
+  } = proxy;
+
   const inputs: UpdateDataObjectInput[] = [];
 
   for (const [id, dataState] of Object.entries(dataStates)) {
+    const {
+      context: {
+        defaults: { type, parsedVal },
+      },
+    } = dataState;
+
     if (dataState.value === "changed") {
       const {
-        context: {
-          defaults: { type },
-        },
         changed: {
           context: { formValue },
         },
@@ -1387,6 +1423,11 @@ function getDataObjectsForOnlineUpdate(dataStates: DataStates) {
       inputs.push({
         id,
         data: makeDataObjectData(type, formValue),
+      });
+    } else if (mode.value === StateValue.modifiedOffline) {
+      inputs.push({
+        id,
+        data: makeDataObjectData(type, parsedVal),
       });
     }
   }
@@ -1420,10 +1461,7 @@ function getDefinitionsToSubmit(allDefinitionsStates: DefinitionsStates) {
   return [input, withErrors];
 }
 
-function handleUpdateEntryOfflineAction(
-  proxy: DraftState,
-  effectObjects: EffectsList,
-) {
+function handleUpdateEntryOfflineAction(proxy: DraftState) {
   const {
     states,
     context: { entry },
@@ -1454,11 +1492,13 @@ function handleUpdateEntryOfflineAction(
   };
 
   states.editingData.value = StateValue.inactive;
+  const effects = getGeneralEffects(proxy);
 
-  effectObjects.push({
-    key: "updateEntryOffline",
+  effects.push({
+    key: "updateEntryInCache",
     ownArgs: {
       entry,
+      upsertMode: "offline",
     },
   });
 }
@@ -1481,15 +1521,17 @@ export interface StateMachine {
   readonly context: {
     readonly lenDefinitions: number;
     readonly definitionAndDataIdsMapList: DefinitionAndDataIds[];
-    readonly experience: ExperienceFragment;
     readonly entry: EntryFragment;
     readonly hasConnection: LayoutContextValue["hasConnection"];
   };
   readonly effects: {
-    runOnRenders: EffectState | { value: NoEffectVal };
+    general: EffectState | { value: NoEffectVal };
   };
   states: {
-    readonly createMode: { value: OfflineVal } | { value: OnlineVal };
+    readonly mode:
+      | { value: OfflineVal }
+      | { value: OnlineVal }
+      | { value: ModifiedOfflineVal };
     readonly dataStates: DataStates;
     readonly definitionsStates: DefinitionsStates;
     readonly editingData: {
@@ -1507,7 +1549,7 @@ export interface StateMachine {
   };
 }
 
-interface RunOnceEffectState<IEffect> {
+interface GeneralEffectState<IEffect> {
   run: boolean;
   effect: IEffect;
 }
@@ -1527,8 +1569,7 @@ type EffectsList = (
   | DefinitionsFormErrorsEffect
   | UpdateDataObjectsOnlineEffect
   | UpdateDefinitionsAndDataOnlineEffect
-  | DecrementOfflineEntriesCountEffect
-  | UpdateEntryOfflineEffect
+  | UpdateEntryInCacheEffect
 )[];
 
 interface ThirdEffectFunctionArgs {
@@ -1565,6 +1606,7 @@ type ApolloErrorValue = "apolloErrors";
 type OtherErrorsVal = "otherErrors";
 type OnlineVal = "online";
 type OfflineVal = "offline";
+type ModifiedOfflineVal = "modifiedOffline";
 ////////////////////////// END STRINGGY TYPES SECTION //////////////////
 
 interface Submitting {
@@ -1685,7 +1727,7 @@ export type Action =
       type: ActionType.DISMISS_SUBMISSION_RESPONSE_MESSAGE;
     }
   | ({
-      type: ActionType.DATA_OBJECTS_SUBMISSION_RESPONSE;
+      type: ActionType.DATA_OBJECTS_ONLINE_SUBMISSION_RESPONSE;
     } & UpdateDataObjects)
   | {
       type: ActionType.OTHER_ERRORS;

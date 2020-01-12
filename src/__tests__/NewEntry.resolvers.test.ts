@@ -55,7 +55,7 @@ it("updates unsaved experience successfully", async () => {
     experience: updatedExperience,
   } = await createOfflineEntry(
     {},
-    { experience, dataObjects: [dataObject] },
+    { experienceId: experience.id, dataObjects: [dataObject] },
     mockContext,
   );
 

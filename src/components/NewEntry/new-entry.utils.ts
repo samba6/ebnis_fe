@@ -154,14 +154,14 @@ export function interpretCreateEntryMutationException(payload: Error) {
 ////////////////////////// EFFECTS SECTION ////////////////////////////
 
 export async function createEntryEffectHelper(
-  { experience, input }: CreateEntryEffectArgs,
+  { input, onDone }: CreateEntryEffectArgs,
   {
     createOnlineEntry,
     createOfflineEntry,
   }: Pick<ComponentProps, "createOfflineEntry" | "createOnlineEntry">,
 ) {
-  const experienceId = experience.id;
   let createResult: CreateOnlineEntryMutation_createEntry;
+  const { experienceId } = input;
 
   if (isConnected()) {
     const result = await createOnlineEntry({
@@ -169,7 +169,7 @@ export async function createEntryEffectHelper(
         input,
       },
 
-      update: upsertExperienceWithEntry(experienceId, "online"),
+      update: upsertExperienceWithEntry(experienceId, "online", onDone),
     });
 
     createResult = ((result && result.data && result.data.createEntry) ||
@@ -177,7 +177,7 @@ export async function createEntryEffectHelper(
   } else {
     const result = await createOfflineEntry({
       variables: {
-        experience,
+        experienceId,
         dataObjects: input.dataObjects as CreateDataObject[],
       },
     });
@@ -224,8 +224,8 @@ const createEntryEffect: CreateEntryEffect["func"] = async (
 };
 
 interface CreateEntryEffectArgs {
-  experience: ExperienceFragment;
   input: CreateEntryInput;
+  onDone?: () => void;
 }
 
 type CreateEntryEffect = EffectDefinition<"createEntry", CreateEntryEffectArgs>;
@@ -322,7 +322,6 @@ async function handleSubmittingAction(proxy: ProxyState) {
   effects.push({
     key: "createEntry",
     ownArgs: {
-      experience,
       input: {
         experienceId,
         dataObjects,

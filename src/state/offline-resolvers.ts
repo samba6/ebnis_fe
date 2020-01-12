@@ -4,7 +4,6 @@ import {
   ExperienceFragment_entries_edges_node,
 } from "../graphql/apollo-types/ExperienceFragment";
 import gql from "graphql-tag";
-import { isOfflineId } from "../constants";
 import { queryCacheOfflineItems } from "./resolvers/get-experiences-from-cache";
 import { InMemoryCache } from "apollo-cache-inmemory";
 
@@ -20,13 +19,8 @@ export const OFFLINE_ITEMS_QUERY = gql`
 export function getOfflineItemsCount(cache: InMemoryCache) {
   const results = queryCacheOfflineItems(cache);
 
-  return results.reduce((acc, { id, offlineEntriesCount }) => {
+  return results.reduce((acc, { offlineEntriesCount }) => {
     acc += offlineEntriesCount;
-
-    if (isOfflineId(id)) {
-      // offline experience (not part offline experience)
-      ++acc;
-    }
 
     return acc;
   }, 0);

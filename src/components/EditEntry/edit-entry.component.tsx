@@ -19,7 +19,7 @@ import {
   Submission,
   CallerProps,
   StateValue,
-  runEffects,
+  effectFunctions,
 } from "./edit-entry-utils";
 import Form from "semantic-ui-react/dist/commonjs/collections/Form";
 import Message from "semantic-ui-react/dist/commonjs/collections/Message";
@@ -73,30 +73,33 @@ export function EditEntryComponent(props: ComponentProps) {
   const [stateMachine, dispatch] = useReducer(reducer, props, initState);
   const {
     context: { definitionAndDataIdsMapList },
-    effects: { runOnRenders },
+    effects: { general: generalEffects },
     states: {
       editingData,
       editingDefinition,
       submission,
       definitionsStates,
       dataStates,
-      createMode,
+      mode,
     },
   } = stateMachine;
 
   useEffect(() => {
-    if (runOnRenders.value !== StateValue.hasEffects) {
+    if (generalEffects.value !== StateValue.hasEffects) {
       return;
     }
 
-    const {
-      hasEffects: { context },
-    } = runOnRenders;
-
-    runEffects(context.effects, props, { dispatch });
+    for (const { key, ownArgs } of generalEffects.hasEffects.context.effects) {
+      effectFunctions[key](
+        /* eslint-disable-next-line @typescript-eslint/no-explicit-any*/
+        ownArgs as any,
+        props,
+        { dispatch },
+      );
+    }
 
     /* eslint-disable-next-line react-hooks/exhaustive-deps*/
-  }, [runOnRenders]);
+  }, [generalEffects]);
 
   const onSubmit = useCallback(
     function onSubmitCallback() {
@@ -167,23 +170,25 @@ export function EditEntryComponent(props: ComponentProps) {
             </div>
           </Modal.Header>
 
-          {hasConnection && createMode.value === StateValue.offline && (
-            <div className="text-center mt-5">
-              <button
-                className="
+          {hasConnection &&
+            (mode.value === StateValue.modifiedOffline ||
+              mode.value === StateValue.offline) && (
+              <div className="text-center mt-5">
+                <button
+                  className="
                 rounded-lg
                 text-red-900
                 cursor-pointer
                 p-5
                 bg-red-200
               "
-                onClick={onSubmit}
-                id={offlineSyncButtonId}
-              >
-                Sync Now
-              </button>
-            </div>
-          )}
+                  onClick={onSubmit}
+                  id={offlineSyncButtonId}
+                >
+                  Sync Now
+                </button>
+              </div>
+            )}
 
           <SubmissionSuccessResponseComponent
             state={submission}

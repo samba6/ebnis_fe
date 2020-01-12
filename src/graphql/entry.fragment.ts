@@ -16,3 +16,5 @@ export const ENTRY_FRAGMENT = gql`
 
   ${DATA_OBJECT_FRAGMENT}
 `;
+
+export const ENTRY_FRAGMENT_NAME = "EntryFragment";

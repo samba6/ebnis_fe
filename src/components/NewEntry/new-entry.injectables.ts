@@ -26,16 +26,6 @@ export function addNewEntryResolvers(client: ApolloClient<{}>) {
   window.____ebnis.newEntryResolversAdded = true;
 }
 
-type Fn<T = string | ExperienceFragment> = (
-  experienceOrId: T,
-  mode: "online" | "offline",
-) => (
-  proxy: DataProxy,
-  mutationResult: FetchResult<CreateOnlineEntryMutation>,
-) => T extends ExperienceFragment
-  ? Promise<ExperienceFragment>
-  : Promise<ExperienceFragment | undefined>;
-
 /**
  * Upsert the entry into the experience and updates the Get full experience
  * query
@@ -43,6 +33,7 @@ type Fn<T = string | ExperienceFragment> = (
 export const upsertExperienceWithEntry: Fn = function updateFn(
   experienceOrId,
   mode,
+  onDone,
 ) {
   return async function updateFnInner(
     dataProxy,
@@ -70,11 +61,12 @@ export const upsertExperienceWithEntry: Fn = function updateFn(
       const entries = proxy.entries as ExperienceFragment_entries;
       const edges = entries.edges || [];
 
-      const existingEntry = edges.find(
-        e =>
-          ((e as ExperienceFragment_entries_edges).node as EntryFragment).id ===
-          entry.id,
-      );
+      const existingEntry = edges.find(e => {
+        const { id } = (e as ExperienceFragment_entries_edges)
+          .node as EntryFragment;
+
+        return id === entry.id || id === entry.clientId;
+      });
 
       if (existingEntry) {
         // update
@@ -94,6 +86,24 @@ export const upsertExperienceWithEntry: Fn = function updateFn(
     });
 
     writeExperienceFragmentToCache(dataProxy, updatedExperience);
+
+    if (onDone) {
+      onDone();
+    }
+
     return updatedExperience;
   };
 };
+
+type Fn<T = string | ExperienceFragment> = (
+  experienceOrId: T,
+  mode: UpsertExperienceInCacheMode,
+  onDone?: () => void,
+) => (
+  proxy: DataProxy,
+  mutationResult: FetchResult<CreateOnlineEntryMutation>,
+) => T extends ExperienceFragment
+  ? Promise<ExperienceFragment>
+  : Promise<ExperienceFragment | undefined>;
+
+export type UpsertExperienceInCacheMode = "online" | "offline";
