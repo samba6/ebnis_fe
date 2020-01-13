@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any*/
 import { Reducer, useEffect } from "react";
 import lodashIsEqual from "lodash/isEqual";
+import {doNotLog} from './state/apollo-middlewares';
 
 const isDevEnv = process.env.NODE_ENV === "development";
 const isTestEnv = process.env.NODE_ENV === "test";
@@ -23,7 +24,7 @@ export function wrapReducer<State, Action>(
   reducer: Reducer<State, Action>,
   shouldWrap?: boolean,
 ) {
-  if (shouldWrap === false) {
+  if (shouldWrap === false && doNotLog()) {
     return reducer(prevState, action);
   }
 

@@ -46,6 +46,7 @@ import { isOfflineId, makeApolloCacheRef } from "../../constants";
 import {
   CreateOnlineEntryMutation_createEntry,
   CreateOnlineEntryMutation_createEntry_errors_dataObjectsErrors,
+  CreateOnlineEntryMutation_createEntry_errors,
 } from "../../graphql/apollo-types/CreateOnlineEntryMutation";
 import { decrementOfflineEntriesCountForExperience } from "../../apollo-cache/drecrement-offline-entries-count";
 import { AppPersistor } from "../../context";
@@ -79,7 +80,7 @@ export enum ActionType {
   DISMISS_SUBMISSION_RESPONSE_MESSAGE = "@component/edit-entry/dismiss-submission-response-message",
   OTHER_ERRORS = "@component/edit-entry/other-errors",
   APOLLO_ERRORS = "@component/edit-entry/apollo-errors",
-  ON_ENTRY_CREATED = "@component/edit-entry/online-entry-created",
+  ON_CREATE_ENTRY_ERRORS = "@component/edit-entry/online-entry-created",
   CONNECTION_CHANGED = "@component/edit-entry/connection-changed",
 }
 
@@ -265,7 +266,7 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
             });
             break;
 
-          case ActionType.ON_ENTRY_CREATED:
+          case ActionType.ON_CREATE_ENTRY_ERRORS:
             prepareSubmissionResponse(proxy, {
               key: "onlineEntry",
               onlineEntryResults: (payload as OnlineEntryCreatedPayload)
@@ -352,23 +353,25 @@ const createEntryEffect: CreateEntryEffect["func"] = async (
       { createOfflineEntry, createOnlineEntry },
     );
 
+    const { entry, errors } = validResponse;
+
     // We only deal with error state because on success with no errors, apollo
     // will cause React lib to unmount this component. So if we try any update
     // to state, react will complain:
     // Warning: Can't perform a React state update on an unmounted component.
     // This is the reason upsertExperienceWithEntry needs to take an onDone
     // callback
-    if (validResponse && validResponse.errors) {
+    if (errors) {
       persistor.persist();
       dispatch({
-        type: ActionType.ON_ENTRY_CREATED,
-        serverResult: validResponse,
+        type: ActionType.ON_CREATE_ENTRY_ERRORS,
+        serverResult: errors,
       });
 
       return;
     }
 
-    if (!validResponse) {
+    if (!entry) {
       dispatch({
         type: ActionType.OTHER_ERRORS,
       });
@@ -805,67 +808,38 @@ function handleApolloErrorsAction(
 function handleOnEntryCreatedAction(
   proxy: DraftState,
   context: SubmissionSuccessStateContext,
-  response: CreateOnlineEntryMutation_createEntry,
+  errors: CreateOnlineEntryMutation_createEntry_errors,
 ) {
-  const { entry: ent, errors } = response;
+  let errorString = "Please correct form errors and resubmit";
+  /* eslint-disable-next-line @typescript-eslint/no-unused-vars*/
+  const { dataObjectsErrors, clientId, ...rest } = errors;
+  errorString += typedErrorsToString(rest);
+  const errorContext = context.invalidResponse as SubmissionInvalidResponse;
+  errorContext.entry = errorString;
 
-  if (errors) {
-    let errorString = "Please correct form errors and resubmit";
-    /* eslint-disable-next-line @typescript-eslint/no-unused-vars*/
-    const { dataObjectsErrors, clientId, ...rest } = errors;
-    errorString += typedErrorsToString(rest);
-    const errorContext = context.invalidResponse as SubmissionInvalidResponse;
-    errorContext.entry = errorString;
-
-    if (!dataObjectsErrors) {
-      return [0, 1];
-    }
-
-    let failureCount = 0;
-    const { dataStates } = proxy.states;
-
-    dataObjectsErrors.forEach(obj => {
-      const {
-        clientId,
-        errors,
-      } = obj as CreateOnlineEntryMutation_createEntry_errors_dataObjectsErrors;
-
-      const dataState = dataStates[clientId as string];
-      ++failureCount;
-
-      putDataServerErrors(
-        dataState as DataChangedState,
-        errors as UpdateDataObjectsResponseFragment_fieldErrors,
-      );
-    });
-
-    return [0, failureCount];
+  if (!dataObjectsErrors) {
+    return [0, 1];
   }
 
-  const { dataStates, mode: createMode } = proxy.states;
-  const { context: globalContext } = proxy;
-  const definitionAndDataIdsMapList = globalContext.definitionAndDataIdsMapList;
-  const entry = ent as EntryFragment;
+  let failureCount = 0;
+  const { dataStates } = proxy.states;
 
-  entry.dataObjects.forEach((obj, index) => {
-    const dataObject = obj as DataObjectFragment;
-    const { clientId, id: dataId, definitionId } = dataObject;
-    const fetchId = clientId as string;
+  dataObjectsErrors.forEach(obj => {
+    const {
+      clientId,
+      errors,
+    } = obj as CreateOnlineEntryMutation_createEntry_errors_dataObjectsErrors;
 
-    const dataState = dataStates[fetchId];
-    updateDataStateWithUpdatedDataObject(dataState, dataObject);
-    delete dataStates[fetchId];
-    dataStates[dataId] = dataState;
+    const dataState = dataStates[clientId as string];
+    ++failureCount;
 
-    definitionAndDataIdsMapList[index] = {
-      definitionId,
-      dataId,
-    };
+    putDataServerErrors(
+      dataState as DataChangedState,
+      errors as UpdateDataObjectsResponseFragment_fieldErrors,
+    );
   });
 
-  createMode.value = StateValue.online;
-  globalContext.entry = entry;
-  return [1, 0, "valid"];
+  return [0, failureCount];
 }
 
 function getGeneralEffects(proxy: DraftState) {
@@ -1688,7 +1662,7 @@ export interface EditingMultipleDefinitionsState {
 
 export type Action =
   | ({
-      type: ActionType.ON_ENTRY_CREATED;
+      type: ActionType.ON_CREATE_ENTRY_ERRORS;
     } & OnlineEntryCreatedPayload)
   | {
       type: ActionType.EDIT_BTN_CLICKED;
@@ -1746,7 +1720,7 @@ interface ApolloErrorsPayload {
 }
 
 interface OnlineEntryCreatedPayload {
-  serverResult: CreateOnlineEntryMutation_createEntry;
+  serverResult: CreateOnlineEntryMutation_createEntry_errors;
 }
 
 interface DataChangedPayload {
@@ -1935,5 +1909,5 @@ interface UpdateWithDataObjectsSubmissionResponse {
 
 interface UpdateWithOnlineEntrySubmissionResponse {
   key: "onlineEntry";
-  onlineEntryResults: CreateOnlineEntryMutation_createEntry;
+  onlineEntryResults: CreateOnlineEntryMutation_createEntry_errors;
 }

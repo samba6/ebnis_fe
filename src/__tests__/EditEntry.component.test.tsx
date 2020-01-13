@@ -40,7 +40,7 @@ import { ApolloError } from "apollo-client";
 import { GraphQLError } from "graphql";
 import { toISODatetimeString } from "../components/NewEntry/new-entry.utils";
 import { cleanupRanQueriesFromCache } from "../apollo-cache/cleanup-ran-queries-from-cache";
-import { makeOfflineId } from "../constants";
+import { makeOfflineId, makeApolloCacheRef } from "../constants";
 import {
   CreateOnlineEntryMutationVariables,
   CreateOnlineEntryMutation,
@@ -67,8 +67,13 @@ import { isConnected } from "../state/connections";
 import { CreateOfflineEntryMutationReturned } from "../components/NewEntry/new-entry.resolvers";
 import { upsertExperienceWithEntry } from "../components/NewEntry/new-entry.injectables";
 import { incrementOfflineItemCount } from "../apollo-cache/increment-offline-item-count";
+import { wipeReferencesFromCache } from "../state/resolvers/delete-references-from-cache";
+import { ENTRY_TYPE_NAME, DATA_OBJECT_TYPE_NAME } from "../graphql/types";
 
 ////////////////////////// MOCKS ////////////////////////////
+
+jest.mock("../state/resolvers/delete-references-from-cache");
+const mockWipeReferencesFromCache = wipeReferencesFromCache as jest.Mock;
 
 jest.mock("../apollo-cache/increment-offline-item-count");
 const mockIncrementOfflineEntriesCountForExperience = incrementOfflineItemCount as jest.Mock;
@@ -110,6 +115,7 @@ afterAll(() => {
 
 beforeEach(() => {
   jest.resetAllMocks();
+  mockUpsertExperienceWithEntry.mockReturnValue(mockUpsertExperienceFn);
 });
 
 it("destroys the UI", async () => {
@@ -1340,7 +1346,6 @@ test("not editing data, editing definition, apollo errors", async () => {
 });
 
 test("edit online entry, submit offline - only data objects can be updated", async () => {
-  mockUpsertExperienceWithEntry.mockReturnValue(mockUpsertExperienceFn);
   /**
    * Given user wishes to edit an entry
    */
@@ -1553,6 +1558,7 @@ test("edit offline entry, upload online, one data object updated, one not update
 
   const offlineEntry = {
     id: offlineEntryId,
+    clientId: offlineEntryId,
     experienceId,
     dataObjects: [
       {
@@ -1566,12 +1572,13 @@ test("edit offline entry, upload online, one data object updated, one not update
         data: `{"decimal":1.1}`,
       },
     ] as DataObjectFragment[],
-  };
+  } as EntryFragment;
 
   /**
    * And we are online
    */
   mockIsConnected.mockReturnValue(true);
+
   const { ui, mockCreateEntryOnline, mockLayoutDispatch } = makeComp({
     props: {
       entry: offlineEntry as EntryFragment,
@@ -1603,8 +1610,34 @@ test("edit offline entry, upload online, one data object updated, one not update
    * 5 - success
    */
 
+  const createEntryResponse = {
+    data: {
+      createEntry: {
+        entry: {
+          id: "en",
+          experienceId,
+          clientId: offlineEntryId,
+          dataObjects: [
+            {
+              definitionId: definition1Id,
+              id: data1OnlineId,
+              clientId: data1OfflineId,
+              data: `{"integer":2}`,
+            },
+            {
+              definitionId: definition2Id,
+              id: data2OnlineId,
+              clientId: data2OfflineId,
+              data: `{"decimal":1.1}`,
+            },
+          ],
+        },
+      },
+    },
+  } as CreateEntryOnlineMutationResult;
+
   mockCreateEntryOnline
-    .mockResolvedValueOnce({}) // invalid
+    .mockResolvedValueOnce(null) // invalid
     .mockRejectedValueOnce(new Error("")) // exception
     .mockResolvedValueOnce({
       data: {
@@ -1634,31 +1667,7 @@ test("edit offline entry, upload online, one data object updated, one not update
         },
       } as CreateOnlineEntryMutation,
     }) // data objects errors
-    .mockResolvedValueOnce({
-      data: {
-        createEntry: {
-          entry: {
-            id: "en",
-            experienceId,
-            clientId: offlineEntryId,
-            dataObjects: [
-              {
-                definitionId: definition1Id,
-                id: data1OnlineId,
-                clientId: data1OfflineId,
-                data: `{"integer":2}`,
-              },
-              {
-                definitionId: definition2Id,
-                id: data2OnlineId,
-                clientId: data2OfflineId,
-                data: `{"decimal":1.1}`,
-              },
-            ],
-          },
-        },
-      },
-    } as CreateEntryOnlineMutationResult); // success
+    .mockResolvedValueOnce(createEntryResponse); // success
 
   /**
    * When the component is launched
@@ -1763,20 +1772,9 @@ test("edit offline entry, upload online, one data object updated, one not update
   getSubmit().click();
 
   /**
-   * Then success UI should not be visible
+   * But after a while
    */
-  expect(getSubmissionSuccessResponseDom()).toBeNull();
-
-  /**
-   * But after a while, success UI should be visible
-   */
-  await waitForElement(getSubmissionSuccessResponseDom);
-
-  /**
-   * And offline sync button should not be visible
-   */
-
-  expect(document.getElementById(offlineSyncButtonId)).toBeNull();
+  await wait(() => true);
 
   /**
    * And correct data should have been uploaded to the server
@@ -1788,6 +1786,7 @@ test("edit offline entry, upload online, one data object updated, one not update
   const variables: CreateOnlineEntryMutationFnOptions["variables"] = {
     input: {
       experienceId,
+      clientId: offlineEntryId,
       dataObjects: [
         {
           definitionId: definition1Id,
@@ -1806,7 +1805,15 @@ test("edit offline entry, upload online, one data object updated, one not update
   expect(mock.variables).toEqual(variables);
 
   /**
-   * And offline entry counts should decrease in cache
+   * And offline entry should be replaced with online entry in experiences
+   */
+  const [arg11, arg12, arg13] = mockUpsertExperienceWithEntry.mock.calls[0];
+
+  expect([arg11, arg12]).toEqual(["ex", "online"]);
+  arg13();
+
+  /**
+   * And offline entry counts should be drawn down in cache
    */
   expect(mockDecrementOfflineEntriesCountForExperience).toHaveBeenCalledTimes(
     1,
@@ -1818,25 +1825,21 @@ test("edit offline entry, upload online, one data object updated, one not update
   expect(mockPersistFunc).toHaveBeenCalled();
 
   /**
-   * And offline items count should be properly draw down
+   * And offline items count should be refetched
    */
   expect(mockLayoutDispatch).toHaveBeenCalledWith({
     type: LayoutActionType.REFETCH_OFFLINE_ITEMS_COUNT,
   });
 
   /**
-   * And the old data fields should be replaced with updated data from server
+   * And offline entry data should be removed from cache.
    */
-  expect(getDataInput(data1OfflineId)).toBeNull();
-  expect(getDataInput(data2OfflineId)).toBeNull();
-  expect(getDataInput(data1OnlineId)).not.toBeNull();
-  expect(getDataInput(data2OnlineId)).not.toBeNull();
 
-  /**
-   * And the fields should show success UI
-   */
-  expect(getDataField(data1OnlineId).classList).toContain("data--success");
-  expect(getDataField(data2OnlineId).classList).toContain("data--success");
+  expect(mockWipeReferencesFromCache.mock.calls[0][1]).toEqual([
+    makeApolloCacheRef(ENTRY_TYPE_NAME, offlineEntryId),
+    makeApolloCacheRef(DATA_OBJECT_TYPE_NAME, data1OfflineId),
+    makeApolloCacheRef(DATA_OBJECT_TYPE_NAME, data2OfflineId),
+  ]);
 });
 
 ////////////////////////// HELPER FUNCTIONS ///////////////////////////

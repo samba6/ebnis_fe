@@ -111,7 +111,7 @@ function getNow() {
   return `${n.getHours()}:${n.getMinutes()}:${n.getSeconds()}:${n.getMilliseconds()}`;
 }
 
-function doNotLog() {
+export function doNotLog() {
   return (
     !window.____ebnis.logApolloQueries &&
     (process.env.NODE_ENV === "production" || process.env.NO_LOG === "true")
