@@ -13,11 +13,6 @@
     position: relative;
   }
 
-  .exp-container-main {
-    color: initial;
-    display: block;
-  }
-
   .no-experiences-info {
     cursor: pointer;
     color: initial;
@@ -29,40 +24,12 @@
     }
   }
 
-  .exp-container {
-    margin-bottom: 15px;
-    cursor: pointer;
-    border-bottom: 1px solid lighten($color: $app-color, $amount: 35);
-    padding-bottom: 2px;
-    padding-left: 5px;
-    padding-right: 5px;
-
-    &::after {
-      content: "";
-      clear: both;
-      height: 0;
-      width: 0;
-    }
-  }
-
-  .experience-title {
-    display: block;
-    padding-left: 10px;
-  }
-
-  .reveal-hide-description {
-    padding: 0 35px 35px 10px;
-    float: left;
+  .experience-container + .experience-container {
+    margin-top: 30px;
   }
 
   .experience-description {
-    position: relative;
-    left: 20px;
-    margin-right: 15px;
-    margin-top: 10px;
-    font-style: italic;
-    font-size: 0.92em;
-    word-break: break-all;
+    overflow-wrap: break-word;
   }
 
   .new-experience-button {

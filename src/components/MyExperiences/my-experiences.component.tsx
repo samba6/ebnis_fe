@@ -1,20 +1,17 @@
 import React, {
   useEffect,
-  useContext,
   useReducer,
   useMemo,
   useRef,
   useCallback,
   memo,
 } from "react";
-import Icon from "semantic-ui-react/dist/commonjs/elements/Icon";
 import "./my-experiences.styles.scss";
 import {
   ComponentProps,
   ExperienceProps,
   DispatchProvider,
   reducer,
-  dispatchContext,
   ActionTypes,
   initState,
   SearchResults,
@@ -24,14 +21,13 @@ import {
 import { EXPERIENCE_DEFINITION_URL } from "../../routes";
 import { makeExperienceRoute } from "../../constants/experience-route";
 import { Loading } from "../Loading/loading";
-import { setDocumentTitle, makeSiteTitle } from "../../constants";
+import { setDocumentTitle, makeSiteTitle, isOfflineId } from "../../constants";
 import { MY_EXPERIENCES_TITLE } from "../../constants/my-experiences-title";
 import { Link } from "../Link";
 import {
   ExperienceConnectionFragment_edges,
   ExperienceConnectionFragment_edges_node,
 } from "../../graphql/apollo-types/ExperienceConnectionFragment";
-import { ExperienceMiniFragment } from "../../graphql/apollo-types/ExperienceMiniFragment";
 import SemanticSearch from "semantic-ui-react/dist/commonjs/modules/Search";
 import { SearchResultProps, SearchProps } from "semantic-ui-react";
 import { NavigateFn } from "@reach/router";
@@ -50,6 +46,7 @@ import {
   cleanUpOnSearchExit,
 } from "./my-experiences.injectables";
 import { SidebarHeader } from "../SidebarHeader/sidebar-header.component";
+import makeClassNames from "classnames";
 
 const SearchComponent = memo(SearchComponentUnMemo, SearchComponentPropsDiffFn);
 
@@ -164,78 +161,43 @@ export function MyExperiences(props: ComponentProps) {
 }
 
 const Experience = React.memo(
-  function ExperienceFn({ showingDescription, experience }: ExperienceProps) {
-    const { title, description, id } = experience;
+  function ExperienceFn({ experience }: ExperienceProps) {
+    const { title, description, id, hasUnsaved } = experience;
+    const isOffline = isOfflineId(id);
+    const isPartOffline = !isOffline && hasUnsaved;
 
     return (
-      <div className="exp-container">
-        <ShowDescriptionToggle
-          showingDescription={showingDescription}
-          experience={experience}
-        />
-
-        <Link
-          className="exp-container-main"
-          to={makeExperienceRoute(id)}
-          id={`experience-main-${id}`}
-        >
-          <span className="experience-title" id={`experience-title-${id}`}>
+      <div
+        className={makeClassNames({
+          "experience-container card": true,
+          "border-solid border-2 rounded": isOffline || isPartOffline,
+          "border-offline": isOffline,
+          "border-part-offline": isPartOffline,
+        })}
+      >
+        <div className="card-header">
+          <Link
+            className="card-header-title"
+            to={makeExperienceRoute(id)}
+            id={`experience-main-${id}`}
+          >
             {title}
-          </span>
+          </Link>
+        </div>
 
-          {showingDescription && (
-            <div
-              className="experience-description"
-              id={`experience-description-${id}`}
-            >
+        {!!description && (
+          <div className="experience-description card-content">
+            <div id={`experience-description-${id}`} className="content">
               {description}
             </div>
-          )}
-        </Link>
+          </div>
+        )}
       </div>
     );
   },
 
   function ExperienceDiff(prevProps, currProps) {
     return prevProps.showingDescription === currProps.showingDescription;
-  },
-);
-
-const ShowDescriptionToggle = React.memo(
-  function ShowDescriptionToggleFn({
-    showingDescription,
-    experience: { id, description },
-  }: {
-    experience: ExperienceMiniFragment;
-    showingDescription: boolean;
-  }) {
-    const { dispatch } = useContext(dispatchContext);
-
-    if (!description) {
-      return null;
-    }
-
-    const props = {
-      className: "reveal-hide-description",
-
-      id: `experience-description-toggle-${id}`,
-
-      onClick: () =>
-        dispatch({
-          type: ActionTypes.TOGGLE_DESCRIPTION,
-          id,
-        }),
-    };
-
-    return showingDescription ? (
-      <Icon name="caret down" {...props} />
-    ) : (
-      <Icon name="caret right" {...props} />
-    );
-  },
-
-  function ShowDescriptionToggleDiff(oldProps, newProps) {
-    return oldProps.showingDescription === newProps.showingDescription;
   },
 );
 
@@ -299,7 +261,7 @@ function SearchComponentUnMemo(props: SearchComponentProps) {
     <SemanticSearch
       id="my-experiences-search"
       value={props.context.searchText}
-      className="my-search"
+      className="z-10 my-search"
       loading={props.value === "searching"}
       results={context.results}
       resultRenderer={searchResultRenderer}

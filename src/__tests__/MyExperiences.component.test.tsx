@@ -108,82 +108,10 @@ describe("component", () => {
     expect(document.getElementById(`experience-description-2`)).toBeNull();
 
     /**
-     * But experience 1 description toggle UI should be visible
-     */
-
-    let $expToggle = document.getElementById(
-      "experience-description-toggle-1",
-    ) as HTMLElement;
-
-    /**
-     * And the toggle UI should have right caret
-     */
-
-    expect($expToggle.classList).toContain("right");
-
-    /**
-     * And experience 1 description should not be visible
-     */
-
-    expect(document.getElementById(`experience-description-1`)).toBeNull();
-
-    /**
-     * And the toggle UI should not have down caret
-     */
-
-    expect($expToggle.classList).not.toContain("down");
-
-    /**
-     * When the toggle UI is clicked
-     */
-
-    fireEvent.click($expToggle);
-
-    $expToggle = document.getElementById(
-      "experience-description-toggle-1",
-    ) as HTMLElement;
-
-    /**
-     * Then toggle UI should have down caret
-     */
-
-    expect($expToggle.classList).toContain("down");
-
-    /**
-     * And toggle UI should not have a right caret
-     */
-
-    expect($expToggle.classList).not.toContain("right");
-
-    /**
      * And experience 1 description should be visible
      */
 
     expect(document.getElementById("experience-description-1")).not.toBeNull();
-
-    /**
-     * When the toggle UI is clicked again
-     */
-
-    fireEvent.click($expToggle);
-
-    /**
-     * Then the toggle UI should contain right caret
-     */
-
-    expect($expToggle.classList).toContain("right");
-
-    /**
-     * And the toggle UI should not contain down
-     */
-
-    expect($expToggle.classList).not.toContain("down");
-
-    /**
-     * And experience 1 description should not be visible
-     */
-
-    expect(document.getElementById("experience-description-1")).toBeNull();
   });
 
   it("renders error ui if we are unable to get experiences", () => {
