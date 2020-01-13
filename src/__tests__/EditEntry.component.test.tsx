@@ -69,8 +69,12 @@ import { upsertExperienceWithEntry } from "../components/NewEntry/new-entry.inje
 import { incrementOfflineItemCount } from "../apollo-cache/increment-offline-item-count";
 import { wipeReferencesFromCache } from "../state/resolvers/delete-references-from-cache";
 import { ENTRY_TYPE_NAME, DATA_OBJECT_TYPE_NAME } from "../graphql/types";
+import { scrollIntoView } from "../components/scroll-into-view";
 
 ////////////////////////// MOCKS ////////////////////////////
+
+jest.mock("../components/scroll-into-view.ts");
+const mockScrollIntoView = scrollIntoView as jest.Mock;
 
 jest.mock("../state/resolvers/delete-references-from-cache");
 const mockWipeReferencesFromCache = wipeReferencesFromCache as jest.Mock;
@@ -1443,6 +1447,8 @@ test("edit online entry, submit offline - only data objects can be updated", asy
   expect(mockUpsertExperienceFn).toHaveBeenCalled();
   expect(mockPersistFunc).toHaveBeenCalled();
   expect(mockLayoutDispatch).toHaveBeenCalled();
+
+  expect(mockScrollIntoView).toHaveBeenCalled();
 });
 
 test("edit offline entry, submit offline", async () => {
@@ -2013,10 +2019,10 @@ test("online entry modified offline, sync online", async () => {
   );
 
   /**
-   * And cache should be flushed from memory 
+   * And cache should be flushed from memory
    */
 
-  expect(mockPersistFunc).toHaveBeenCalled()
+  expect(mockPersistFunc).toHaveBeenCalled();
 });
 
 ////////////////////////// HELPER FUNCTIONS ///////////////////////////

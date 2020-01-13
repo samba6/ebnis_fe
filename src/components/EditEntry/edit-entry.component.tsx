@@ -52,6 +52,7 @@ import {
   getDataControlDomId,
   offlineSyncButtonId,
   makeOfflineDefinitionLabelId,
+  scrollToTopId,
 } from "./edit-entry-dom";
 import { useCreateOnlineEntryMutation } from "../../graphql/create-entry.mutation";
 import { EbnisAppContext } from "../../context";
@@ -156,10 +157,7 @@ export function EditEntryComponent(props: ComponentProps) {
         }}
         dimmer="inverted"
         closeOnDimmerClick={false}
-        className="
-          components-edit-entry
-          max-w-sm
-        "
+        className="max-w-sm components-edit-entry"
       >
         <ErrorBoundary fallback={ErrorBoundaryFallBack}>
           <Modal.Header>
@@ -173,15 +171,9 @@ export function EditEntryComponent(props: ComponentProps) {
           {hasConnection &&
             (mode.value === StateValue.modifiedOffline ||
               mode.value === StateValue.offline) && (
-              <div className="text-center mt-5">
+              <div className="mt-5 text-center">
                 <button
-                  className="
-                rounded-lg
-                text-red-900
-                cursor-pointer
-                p-5
-                bg-red-200
-              "
+                  className="p-5 text-red-900 bg-red-200 rounded-lg cursor-pointer "
                   onClick={onSubmit}
                   id={offlineSyncButtonId}
                 >
@@ -189,6 +181,16 @@ export function EditEntryComponent(props: ComponentProps) {
                 </button>
               </div>
             )}
+
+          <span
+            id={scrollToTopId}
+            style={{
+              width: 1,
+              height: 1,
+              visibility: "hidden",
+              clip: "rect(1px, 1px, 1px, 1px)",
+            }}
+          />
 
           <SubmissionSuccessResponseComponent
             state={submission}
@@ -289,14 +291,14 @@ function SubmissionSuccessResponseComponent({
           {validResponse && (
             <div className="mt-5">
               {!!validResponse.successes && (
-                <div className="bg-green-300 pl-2 pt-1">
+                <div className="pt-1 pl-2 bg-green-300">
                   <span>{validResponse.successes} </span>
                   <span>succeeded</span>
                 </div>
               )}
 
               {!!validResponse.failures && (
-                <div className="bg-red-300 pl-2 pt-1">
+                <div className="pt-1 pl-2 bg-red-300">
                   <span> {validResponse.failures} </span>
                   <span>failed</span>
                 </div>
@@ -418,7 +420,7 @@ function DefinitionComponent(props: DefinitionComponentProps) {
         {!hasConnection && (
           <span
             id={makeOfflineDefinitionLabelId(id)}
-            className="mr-2 relative"
+            className="relative mr-2"
             style={{ bottom: "-0.15625rem" }}
           >
             {defaultFormValue}

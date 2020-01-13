@@ -3,6 +3,7 @@ export const formErrorsDomId = `${domPrefix}-form-errors-message`;
 export const otherErrorsDomId = `${domPrefix}-other-errors-message`;
 export const apolloErrorsDomId = `${domPrefix}-apollo-errors-message`;
 export const offlineSyncButtonId = `${domPrefix}-offline-sync`;
+export const scrollToTopId = `${domPrefix}-scroll-to-top`;
 
 export function getDefinitionFieldSelectorClass(id: Id) {
   return `js-${domPrefix}-definition-field-${id}`;

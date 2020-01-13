@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { ComponentType } from "react";
 import "@marko/testing-library/cleanup-after-each";
-import { render, fireEvent, act } from "@testing-library/react";
+import { render,  act } from "@testing-library/react";
 import { MyExperiences } from "../components/MyExperiences/my-experiences.component";
 import {
   ComponentProps,

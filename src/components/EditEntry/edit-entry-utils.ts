@@ -64,6 +64,8 @@ import {
 import { incrementOfflineItemCount } from "../../apollo-cache/increment-offline-item-count";
 import { wipeReferencesFromCache } from "../../state/resolvers/delete-references-from-cache";
 import { ENTRY_TYPE_NAME, DATA_OBJECT_TYPE_NAME } from "../../graphql/types";
+import { scrollIntoView } from "../scroll-into-view";
+import { scrollToTopId } from "./edit-entry-dom";
 
 export enum ActionType {
   EDIT_BTN_CLICKED = "@component/edit-entry/edit-btn-clicked",
@@ -253,21 +255,21 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
             break;
 
           case ActionType.DEFINITIONS_SUBMISSION_RESPONSE:
-            prepareSubmissionResponse(proxy, {
+            prepareSubmissionOnlineResponse(proxy, {
               key: "definitions",
               definitionsResults: payload as UpdateDefinitions,
             });
             break;
 
           case ActionType.DATA_OBJECTS_ONLINE_SUBMISSION_RESPONSE:
-            prepareSubmissionResponse(proxy, {
+            prepareSubmissionOnlineResponse(proxy, {
               key: "dataObjects",
               dataObjectsResults: payload as UpdateDataObjects,
             });
             break;
 
           case ActionType.ON_CREATE_ENTRY_ERRORS:
-            prepareSubmissionResponse(proxy, {
+            prepareSubmissionOnlineResponse(proxy, {
               key: "onlineEntry",
               onlineEntryResults: (payload as OnlineEntryCreatedPayload)
                 .serverResult,
@@ -577,6 +579,19 @@ type UpdateDefinitionsAndDataOnlineEffect = EffectDefinition<
   }
 >;
 
+const scrollToViewEffect: ScrollToViewEffect["func"] = ({ id }) => {
+  scrollIntoView(id, {
+    behavior: "smooth",
+  });
+};
+
+type ScrollToViewEffect = EffectDefinition<
+  "scrollToView",
+  {
+    id: string;
+  }
+>;
+
 export const effectFunctions = {
   updateDefinitionsAndDataOnline: updateDefinitionsAndDataOnlineEffect,
   updateDataObjectsOnline: updateDataObjectsOnlineEffect,
@@ -584,6 +599,7 @@ export const effectFunctions = {
   definitionsFormErrors: definitionsFormErrorsEffect,
   createEntry: createEntryEffect,
   updateEntryInCache: updateEntryInCacheEffect,
+  scrollToView: scrollToViewEffect,
 };
 
 //// EFFECT HELPERS
@@ -739,7 +755,7 @@ function handleDefinitionAndDataSubmissionResponse(
     updateDataObjects,
   } = payload as UpdateDefinitionAndData;
 
-  prepareSubmissionResponse(proxy, {
+  prepareSubmissionOnlineResponse(proxy, {
     key: "definitions and dataObjects",
     definitionsResults: { updateDefinitions },
     dataObjectsResults: { updateDataObjects },
@@ -847,14 +863,12 @@ function getGeneralEffects(proxy: DraftState) {
   generalEffects.value = StateValue.hasEffects;
   let effects: EffectsList = [];
 
-  // istanbul ignore next:
   if (!generalEffects.hasEffects) {
     generalEffects.hasEffects = {
       context: {
         effects,
       },
     };
-    // istanbul ignore next:
   } else {
     effects = generalEffects.hasEffects.context.effects;
   }
@@ -862,13 +876,13 @@ function getGeneralEffects(proxy: DraftState) {
   return effects;
 }
 
-function prepareSubmissionResponse(
+function prepareSubmissionOnlineResponse(
   proxy: DraftState,
   payload:
     | UpdateWithDefinitionsAndDataObjectsSubmissionResponse
     | UpdateWithDefinitionsSubmissionResponse
     | UpdateWithDataObjectsSubmissionResponse
-    | UpdateWithOnlineEntrySubmissionResponse,
+    | UpdateWithCreateEntrySubmissionResponse,
 ) {
   const { states } = proxy;
   const {
@@ -956,6 +970,14 @@ function prepareSubmissionResponse(
   if (submittedCount === successCount) {
     states.editingData.value = StateValue.inactive;
   }
+
+  const effects = getGeneralEffects(proxy);
+  effects.push({
+    key: "scrollToView",
+    ownArgs: {
+      id: scrollToTopId,
+    },
+  });
 }
 
 function handleDefinitionEditingUnchangedAction(proxy: DraftState, id: string) {
@@ -1485,13 +1507,21 @@ function handleUpdateEntryOfflineAction(proxy: DraftState) {
   };
 
   states.editingData.value = StateValue.inactive;
-  const effects = getGeneralEffects(proxy);
+  let effects = getGeneralEffects(proxy);
 
   effects.push({
     key: "updateEntryInCache",
     ownArgs: {
       entry,
       upsertMode: "offline",
+    },
+  });
+
+  effects = getGeneralEffects(proxy);
+  effects.push({
+    key: "scrollToView",
+    ownArgs: {
+      id: scrollToTopId,
     },
   });
 }
@@ -1563,6 +1593,7 @@ type EffectsList = (
   | UpdateDataObjectsOnlineEffect
   | UpdateDefinitionsAndDataOnlineEffect
   | UpdateEntryInCacheEffect
+  | ScrollToViewEffect
 )[];
 
 interface ThirdEffectFunctionArgs {
@@ -1926,7 +1957,7 @@ interface UpdateWithDataObjectsSubmissionResponse {
   dataObjectsResults: UpdateDataObjects;
 }
 
-interface UpdateWithOnlineEntrySubmissionResponse {
+interface UpdateWithCreateEntrySubmissionResponse {
   key: "onlineEntry";
   onlineEntryResults: CreateOnlineEntryMutation_createEntry_errors;
 }

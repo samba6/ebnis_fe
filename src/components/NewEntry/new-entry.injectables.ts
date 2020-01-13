@@ -79,6 +79,8 @@ export const upsertExperienceWithEntry: Fn = function updateFn(
 
       if (mode === "offline") {
         proxy.hasUnsaved = true;
+      } else {
+        proxy.hasUnsaved = null;
       }
 
       entries.edges = edges;
