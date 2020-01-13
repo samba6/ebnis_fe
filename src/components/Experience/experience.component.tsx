@@ -1,5 +1,4 @@
 import React, { useMemo, useReducer } from "react";
-import Card from "semantic-ui-react/dist/commonjs/views/Card";
 import Icon from "semantic-ui-react/dist/commonjs/elements/Icon";
 import Dropdown from "semantic-ui-react/dist/commonjs/modules/Dropdown";
 import { Link } from "../Link";
@@ -21,6 +20,7 @@ import {
 } from "../../graphql/apollo-types/ExperienceFragment";
 import makeClassNames from "classnames";
 import { EditExperience } from "./loadables";
+import { isOfflineId } from "../../constants";
 
 export function Experience(props: Props) {
   const {
@@ -91,22 +91,26 @@ export function Experience(props: Props) {
     );
   }
 
-  const title = getTitle(experience);
+  const { id, hasUnsaved } = experience;
+  const isOffline = isOfflineId(id);
+  const isPartOffline = !isOffline && hasUnsaved;
+  const isOnline = !isOffline && !hasUnsaved;
 
   return (
     <>
-      <Card
+      <div
         className={makeClassNames({
-          "components-experience": true,
+          "components-experience border-solid border-2 rounded": true,
           [className]: !!className,
+          "border-blue-400": isOnline,
+          "border-offline": isOffline,
+          "border-part-offline": isPartOffline,
         })}
-        id={experience.id}
+        id={id}
         {...otherProps}
       >
-        <Card.Content className="experience__header" {...headerProps}>
-          <Card.Header>
-            <span>{title}</span>
-
+        <div className="experience__header" {...headerProps}>
+          <div>
             <div className="options-menu-container">
               <OptionsMenuComponent
                 experience={experience}
@@ -114,17 +118,16 @@ export function Experience(props: Props) {
                 {...menuOptions}
               />
             </div>
-          </Card.Header>
+          </div>
 
           <>{headerProps.children}</>
-        </Card.Content>
+        </div>
 
         {children}
 
-        <Card.Content className="experience__main">
-          {entriesJSX || renderEntries()}
-        </Card.Content>
-      </Card>
+        <div className="experience__main">{entriesJSX || renderEntries()}</div>
+      </div>
+
       {onEdit && editingStateTag === EditingState.editingExperience && (
         <EditExperience
           experience={experience}

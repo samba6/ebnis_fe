@@ -49,8 +49,8 @@ export function Entry(props: Props) {
       className={makeClassNames({
         "component-experience-entry border-solid border-2": true,
         "border-blue-400": isOnline,
-        "border-red-400": isOffline,
-        "border-red-200": isPartOffline,
+        "border-offline": isOffline,
+        "border-part-offline": isPartOffline,
         [className]: !!className,
       })}
       id={containerId}
