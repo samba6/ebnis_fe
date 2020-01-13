@@ -847,12 +847,14 @@ function getGeneralEffects(proxy: DraftState) {
   generalEffects.value = StateValue.hasEffects;
   let effects: EffectsList = [];
 
+  // istanbul ignore next:
   if (!generalEffects.hasEffects) {
     generalEffects.hasEffects = {
       context: {
         effects,
       },
     };
+    // istanbul ignore next:
   } else {
     effects = generalEffects.hasEffects.context.effects;
   }
@@ -1018,7 +1020,7 @@ function setEditingDefinitionState(
 function updateDataStateWithUpdatedDataObject(
   dataState: DataState,
   dataObject: DataObjectFragment,
-) {
+): DataObjectFragment {
   dataState.context.defaults = {
     ...dataState.context.defaults,
     ...dataObject,
@@ -1029,6 +1031,8 @@ function updateDataStateWithUpdatedDataObject(
   const unchangedState = (dataState as unknown) as DataUnchangedState;
   unchangedState.value = "unchanged";
   unchangedState.unchanged.context.anyEditSuccess = true;
+
+  return dataState.context.defaults;
 }
 
 function handleDataObjectsOnlineSubmissionResponseAction(
@@ -1036,10 +1040,10 @@ function handleDataObjectsOnlineSubmissionResponseAction(
   context: SubmissionSuccessStateContext,
   updateDataObjectsResults: UpdateDataObjects,
 ) {
-  const dataObjects =
+  const dataObjectsResults =
     updateDataObjectsResults && updateDataObjectsResults.updateDataObjects;
 
-  if (!dataObjects) {
+  if (!dataObjectsResults) {
     (context.invalidResponse as SubmissionInvalidResponse).data =
       "unable to update data: unknown error occurred";
 
@@ -1054,7 +1058,13 @@ function handleDataObjectsOnlineSubmissionResponseAction(
     context: { entry },
   } = proxy;
 
-  dataObjects.forEach(obj => {
+  const idToPreviousDataObjectMap = entry.dataObjects.reduce((acc, d) => {
+    const data = d as DataObjectFragment;
+    acc[data.id] = data;
+    return acc;
+  }, {} as { [k: string]: DataObjectFragment });
+
+  dataObjectsResults.forEach(obj => {
     const {
       id,
       dataObject,
@@ -1066,6 +1076,14 @@ function handleDataObjectsOnlineSubmissionResponseAction(
 
     if (dataObject) {
       updateDataStateWithUpdatedDataObject(dataState, dataObject);
+
+      const { id } = dataObject;
+
+      idToPreviousDataObjectMap[id] = {
+        ...idToPreviousDataObjectMap[id],
+        ...dataObject,
+      };
+
       ++successCount;
     } else if (stringError) {
       ++failureCount;
@@ -1086,6 +1104,7 @@ function handleDataObjectsOnlineSubmissionResponseAction(
     }
   });
 
+  entry.dataObjects = Object.values(idToPreviousDataObjectMap);
   const modeState = mode;
 
   if (modeState.value === StateValue.modifiedOffline) {
