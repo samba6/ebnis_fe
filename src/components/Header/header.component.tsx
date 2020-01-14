@@ -13,6 +13,7 @@ import {
 import { useUser } from "../use-user";
 import { LogoImageQuery_file_childImageSharp_fixed } from "../../graphql/gatsby-types/LogoImageQuery";
 import { useLogo } from "./header.injectables";
+import { offlineItemsCountLinkId } from "./header.dom";
 
 export const Header = (props: Props) => {
   const {
@@ -80,11 +81,12 @@ export const Header = (props: Props) => {
         )}
       </Menu>
 
-      {offlineItemsCount > 0 &&
+      {user &&
+        offlineItemsCount > 0 &&
         !pathname.includes(UPLOAD_OFFLINE_ITEMS_URL_START) && (
           <Link
             to={UPLOAD_OFFLINE_ITEMS_PREVIEW_URL}
-            id="header-unsaved-count-label"
+            id={offlineItemsCountLinkId}
             className="unsaved-count-label"
           >
             {offlineItemsCount}

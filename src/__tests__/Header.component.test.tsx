@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
 import React, { ComponentType } from "react";
 import { render, fireEvent } from "@testing-library/react";
 import { Header, Props } from "../components/Header/header.component";
@@ -12,16 +11,22 @@ import {
 } from "../components/Layout/layout-providers";
 import { useUser } from "../components/use-user";
 import { WindowLocation } from "@reach/router";
+import { offlineItemsCountLinkId } from "../components/Header/header.dom";
 
 jest.mock("../components/use-user");
+const mockUseUser = useUser as jest.Mock;
 
 jest.mock("../components/Header/header.injectables", () => ({
   useLogo: () => ({}),
 }));
 
-const mockUseUser = useUser as jest.Mock;
+const mockNavigate = jest.fn();
 
 const title = "My App title";
+
+beforeEach(() => {
+  jest.resetAllMocks();
+});
 
 it("renders sidebar", () => {
   const { ui } = setup({ props: { title, sidebar: true } });
@@ -73,7 +78,7 @@ it("should not navigate when in experiences route", () => {
   /**
    * Given we are on experiences route
    */
-  const { ui, mockNavigate } = setup({
+  const { ui } = setup({
     props: {
       title,
       sidebar: true,
@@ -107,7 +112,7 @@ it("should not navigate when in root route", () => {
   /**
    * Given we are on ROOT route
    */
-  const { ui, mockNavigate } = setup({
+  const { ui } = setup({
     props: {
       title,
       sidebar: true,
@@ -141,7 +146,7 @@ it("should navigate to experiences route when on any url except root and experie
   /**
    * Given we are logged in and are on a route except ROOT and experiences
    */
-  const { ui, mockNavigate } = setup({
+  const { ui } = setup({
     props: {
       title,
       sidebar: true,
@@ -177,7 +182,7 @@ it("should navigate to root route when on any url except root and experiences ro
   /**
    * Given we are not logged in and are on a route except ROOT and experiences
    */
-  const { ui, mockNavigate } = setup({
+  const { ui } = setup({
     props: {
       title,
       sidebar: true,
@@ -276,30 +281,32 @@ it("renders show sidebar icon but not close icon", () => {
    */
   expect(mockToggleShowSidebar).toBeCalledWith(true);
 
-  expect(document.getElementById("header-unsaved-count-label")).toBeNull();
+  expect(document.getElementById(offlineItemsCountLinkId)).toBeNull();
 });
 
-it("renders unsaved count when not in 'upload unsaved' route", () => {
+it("renders offline items count when not in 'upload offline' route", () => {
   const { ui } = setup({
     context: {
       offlineItemsCount: 1,
     },
   });
 
+  mockUseUser.mockReturnValue({});
+
   render(ui);
 
-  expect(document.getElementById("header-unsaved-count-label")).not.toBeNull();
+  expect(document.getElementById(offlineItemsCountLinkId)).not.toBeNull();
 
-  expect(document.getElementsByClassName(
-    "header--disconnected",
-  )[0] as HTMLElement).toBeDefined();
+  expect(
+    document.getElementsByClassName("header--disconnected")[0] as HTMLElement,
+  ).toBeDefined();
 
   expect(
     document.getElementsByClassName("header--connected")[0],
   ).toBeUndefined();
 });
 
-it("does not render unsaved count in 'upload unsaved' route", () => {
+it("does not render offline items count in 'upload offline' route", () => {
   const { ui } = setup({
     context: {
       offlineItemsCount: 1,
@@ -311,13 +318,26 @@ it("does not render unsaved count in 'upload unsaved' route", () => {
 
   render(ui);
 
-  expect(document.getElementById("header-unsaved-count-label")).toBeNull();
+  expect(document.getElementById(offlineItemsCountLinkId)).toBeNull();
 
-  expect(document.getElementsByClassName(
-    "header--disconnected",
-  )[0] as HTMLElement).toBeUndefined();
+  expect(
+    document.getElementsByClassName("header--disconnected")[0] as HTMLElement,
+  ).toBeUndefined();
 
   expect(document.getElementsByClassName("header--connected")[0]).toBeDefined();
+});
+
+it("does not render offline items count when there is no user", () => {
+  const { ui } = setup({
+    context: {
+      offlineItemsCount: 1,
+      hasConnection: true,
+    },
+  });
+
+  render(ui);
+
+  expect(document.getElementById(offlineItemsCountLinkId)).toBeNull();
 });
 
 it("does not render title when there is none to render", () => {
@@ -379,10 +399,7 @@ it("sets class name", () => {
 const HeaderP = Header as ComponentType<Partial<Props>>;
 
 function setup(args: Args = {}) {
-  mockUseUser.mockReset();
-
   const props = args.props || {};
-  const mockNavigate = jest.fn();
   const locationContextValue = {
     pathname: "",
     ...(args.location || {}),
@@ -399,7 +416,6 @@ function setup(args: Args = {}) {
         </LayoutProvider>
       </LocationProvider>
     ),
-    mockNavigate,
   };
 }
 
