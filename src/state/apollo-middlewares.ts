@@ -101,7 +101,7 @@ export function middlewareErrorLink(link: ApolloLink) {
     }
 
     if (networkError) {
-      logError("Network Error", networkError);
+      logError("Network", networkError);
     }
   }).concat(link);
 }

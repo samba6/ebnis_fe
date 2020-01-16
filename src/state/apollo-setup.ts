@@ -1,8 +1,8 @@
 import { InMemoryCache } from "apollo-cache-inmemory";
 import { ApolloClient } from "apollo-client";
 import { CachePersistor } from "apollo-cache-persist";
-import * as AbsintheSocket from "@absinthe/socket";
-import { createAbsintheSocketLink } from "@absinthe/socket-apollo-link";
+import * as AbsintheSocket from "@kanmii/socket";
+import { createAbsintheSocketLink } from "@kanmii/socket-apollo-link";
 import {
   SCHEMA_KEY,
   SCHEMA_VERSION,

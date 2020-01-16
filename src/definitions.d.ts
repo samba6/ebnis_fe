@@ -1,5 +1,5 @@
 declare module "*.svg";
 declare module "*.png";
 declare module "*.jpg";
-declare module "@absinthe/socket";
-declare module "@absinthe/socket-apollo-link";
+declare module "@kanmii/socket";
+declare module "@kanmii/socket-apollo-link";
