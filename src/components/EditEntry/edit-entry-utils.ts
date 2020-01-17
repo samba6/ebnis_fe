@@ -387,7 +387,7 @@ const createEntryEffect: CreateEntryEffect["func"] = async (
 };
 
 type CreateEntryEffect = EffectDefinition<
-  "createEntry",
+  "createEntryEffect",
   {
     input: CreateEntryInput;
   }
@@ -423,7 +423,7 @@ const updateEntryInCacheEffect: UpdateEntryInCacheEffect["func"] = async (
 };
 
 type UpdateEntryInCacheEffect = EffectDefinition<
-  "updateEntryInCache",
+  "updateEntryInCacheEffect",
   {
     entry: EntryFragment;
     upsertMode: UpsertExperienceInCacheMode;
@@ -442,7 +442,7 @@ const definitionsFormErrorsEffect: DefinitionsFormErrorsEffect["func"] = (
 };
 
 type DefinitionsFormErrorsEffect = EffectDefinition<
-  "definitionsFormErrors",
+  "definitionsFormErrorsEffect",
   {
     definitionsWithFormErrors: string[];
   }
@@ -487,7 +487,7 @@ const updateDefinitionsOnlineEffect: UpdateDefinitionsOnlineEffect["func"] = asy
 };
 
 type UpdateDefinitionsOnlineEffect = EffectDefinition<
-  "updateDefinitionsOnline",
+  "updateDefinitionsOnlineEffect",
   {
     experienceId: string;
     definitionsInput: UpdateDefinitionInput[];
@@ -528,7 +528,7 @@ const updateDataObjectsOnlineEffect: UpdateDataObjectsOnlineEffect["func"] = asy
 };
 
 type UpdateDataObjectsOnlineEffect = EffectDefinition<
-  "updateDataObjectsOnline",
+  "updateDataObjectsOnlineEffect",
   {
     dataInput: UpdateDataObjectInput[];
   }
@@ -571,7 +571,7 @@ const updateDefinitionsAndDataOnlineEffect: UpdateDefinitionsAndDataOnlineEffect
 };
 
 type UpdateDefinitionsAndDataOnlineEffect = EffectDefinition<
-  "updateDefinitionsAndDataOnline",
+  "updateDefinitionsAndDataOnlineEffect",
   {
     dataInput: UpdateDataObjectInput[];
     experienceId: string;
@@ -586,20 +586,20 @@ const scrollToViewEffect: ScrollToViewEffect["func"] = ({ id }) => {
 };
 
 type ScrollToViewEffect = EffectDefinition<
-  "scrollToView",
+  "scrollToViewEffect",
   {
     id: string;
   }
 >;
 
 export const effectFunctions = {
-  updateDefinitionsAndDataOnline: updateDefinitionsAndDataOnlineEffect,
-  updateDataObjectsOnline: updateDataObjectsOnlineEffect,
-  updateDefinitionsOnline: updateDefinitionsOnlineEffect,
-  definitionsFormErrors: definitionsFormErrorsEffect,
-  createEntry: createEntryEffect,
-  updateEntryInCache: updateEntryInCacheEffect,
-  scrollToView: scrollToViewEffect,
+  updateDefinitionsAndDataOnlineEffect,
+  updateDataObjectsOnlineEffect,
+  updateDefinitionsOnlineEffect,
+  definitionsFormErrorsEffect,
+  createEntryEffect,
+  updateEntryInCacheEffect,
+  scrollToViewEffect,
 };
 
 //// EFFECT HELPERS
@@ -973,7 +973,7 @@ function prepareSubmissionOnlineResponse(
 
   const effects = getGeneralEffects(proxy);
   effects.push({
-    key: "scrollToView",
+    key: "scrollToViewEffect",
     ownArgs: {
       id: scrollToTopId,
     },
@@ -1135,7 +1135,7 @@ function handleDataObjectsOnlineSubmissionResponseAction(
     mode.value = StateValue.online;
     const effects = getGeneralEffects(proxy);
     effects.push({
-      key: "updateEntryInCache",
+      key: "updateEntryInCacheEffect",
       ownArgs: { entry, upsertMode: "online" },
     });
   }
@@ -1236,7 +1236,7 @@ async function handleSubmittingUpdateDataAndOrDefinitionAction(
 
   if (definitionsWithFormErrors.length !== 0) {
     effects.push({
-      key: "definitionsFormErrors",
+      key: "definitionsFormErrorsEffect",
       ownArgs: {
         definitionsWithFormErrors,
       },
@@ -1251,7 +1251,7 @@ async function handleSubmittingUpdateDataAndOrDefinitionAction(
 
   if (dataInput.length === 0) {
     effects.push({
-      key: "updateDefinitionsOnline",
+      key: "updateDefinitionsOnlineEffect",
       ownArgs: {
         definitionsInput,
         experienceId,
@@ -1263,7 +1263,7 @@ async function handleSubmittingUpdateDataAndOrDefinitionAction(
 
   if (definitionsInput.length === 0) {
     effects.push({
-      key: "updateDataObjectsOnline",
+      key: "updateDataObjectsOnlineEffect",
       ownArgs: {
         dataInput,
       },
@@ -1273,7 +1273,7 @@ async function handleSubmittingUpdateDataAndOrDefinitionAction(
   }
 
   effects.push({
-    key: "updateDefinitionsAndDataOnline",
+    key: "updateDefinitionsAndDataOnlineEffect",
     ownArgs: {
       experienceId,
       dataInput,
@@ -1341,14 +1341,17 @@ function handleCreateEntryAction(proxy: DraftState) {
   });
 
   const effects = getGeneralEffects(proxy);
+  const { updatedAt, insertedAt, clientId } = entry;
 
   effects.push({
-    key: "createEntry",
+    key: "createEntryEffect",
     ownArgs: {
       input: {
         dataObjects,
         experienceId,
-        clientId: entry.clientId,
+        clientId,
+        updatedAt,
+        insertedAt,
       },
     },
   });
@@ -1393,17 +1396,17 @@ function getDataObjectsForOfflineUpdate(
 
     if (dataState.value === "changed") {
       const {
-        context: {
-          defaults: { type },
-        },
+        context: { defaults },
         changed: {
           context: { formValue },
         },
       } = dataState;
 
+      const { type } = defaults;
       obj.data = makeDataObjectData(type, formValue);
       obj.updatedAt = updateTime;
       d.value = "unchanged";
+      defaults.parsedVal = formValue;
 
       (d as DataUnchangedState).unchanged.context.anyEditSuccess = true;
 
@@ -1510,7 +1513,7 @@ function handleUpdateEntryOfflineAction(proxy: DraftState) {
   let effects = getGeneralEffects(proxy);
 
   effects.push({
-    key: "updateEntryInCache",
+    key: "updateEntryInCacheEffect",
     ownArgs: {
       entry,
       upsertMode: "offline",
@@ -1519,7 +1522,7 @@ function handleUpdateEntryOfflineAction(proxy: DraftState) {
 
   effects = getGeneralEffects(proxy);
   effects.push({
-    key: "scrollToView",
+    key: "scrollToViewEffect",
     ownArgs: {
       id: scrollToTopId,
     },

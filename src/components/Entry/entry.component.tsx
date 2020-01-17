@@ -1,4 +1,4 @@
-import React, { useMemo, CSSProperties, useReducer } from "react";
+import React, { useMemo, CSSProperties, useReducer, Fragment } from "react";
 import {
   displayFieldType,
   formatDatetime,
@@ -159,8 +159,13 @@ function DataComponent(props: {
           )}
         </div>
 
-        <div className="field__value" id={`${definitionIdPrefix}-value`}>
-          {text}
+        <div className="mr-2 field__value" id={`${definitionIdPrefix}-value`}>
+          {(text + "").split("\\n").map((t, index) => (
+            <Fragment key={index}>
+              {t}
+              <br />
+            </Fragment>
+          ))}
         </div>
       </div>
     </div>

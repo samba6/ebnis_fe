@@ -15,7 +15,9 @@ const componentsObject: {
 
   [DataTypes.SINGLE_LINE_TEXT]: props => <Input fluid={true} {...props} />,
 
-  [DataTypes.MULTI_LINE_TEXT]: props => <TextArea {...props} />,
+  [DataTypes.MULTI_LINE_TEXT]: ({ value, ...props }) => {
+    return <TextArea {...props} value={value.replace(/\\n/g, '\n')} />;
+  },
 
   [DataTypes.DATE]: props => <DateField {...props} />,
 
