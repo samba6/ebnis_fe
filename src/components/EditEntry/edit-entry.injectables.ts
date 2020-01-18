@@ -61,8 +61,3 @@ export function editEntryUpdate(entry: EntryFragment) {
     });
   };
 }
-
-export interface EditEntryUpdateProps {
-  editEntryUpdateProp: typeof editEntryUpdate;
-}
-
