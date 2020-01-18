@@ -1,3 +1,4 @@
+/* istanbul ignore file */
 import { ExperienceFragment } from "../graphql/apollo-types/ExperienceFragment";
 import {
   EXPERIENCE_FRAGMENT,

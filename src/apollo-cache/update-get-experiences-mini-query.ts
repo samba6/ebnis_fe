@@ -4,10 +4,6 @@ import {
   GetExperienceConnectionMiniVariables,
   GetExperienceConnectionMini_getExperiences,
 } from "../graphql/apollo-types/GetExperienceConnectionMini";
-import {
-  GET_EXPERIENCES_MINI_QUERY,
-  getExperienceConnectionMiniVariables,
-} from "../graphql/get-experience-connection-mini.query";
 import immer from "immer";
 import ApolloClient from "apollo-client";
 import { DataProxy } from "apollo-cache";
@@ -16,8 +12,13 @@ import {
   ExperienceConnectionFragment_edges_node,
 } from "../graphql/apollo-types/ExperienceConnectionFragment";
 import { ExperienceMiniFragment } from "../graphql/apollo-types/ExperienceMiniFragment";
+import {
+  getExperiencesMiniQuery,
+  readOptions,
+} from "./get-experiences-mini-query";
+import { EXPERIENCE_EDGE_TYPE_NAME } from "../graphql/types";
 
-const DEFAULT_EXPERIENCE_CONNECTION: GetExperienceConnectionMini_getExperiences = {
+const DEFAULT_EXPERIENCE_MINI_CONNECTION: GetExperienceConnectionMini_getExperiences = {
   pageInfo: {
     __typename: "PageInfo",
     hasNextPage: false,
@@ -27,48 +28,10 @@ const DEFAULT_EXPERIENCE_CONNECTION: GetExperienceConnectionMini_getExperiences 
   edges: [],
 };
 
-const readOptions = {
-  query: GET_EXPERIENCES_MINI_QUERY,
-  variables: getExperienceConnectionMiniVariables,
-};
-
-async function getExperiencesMiniQuery(dataProxy: DataProxy) {
-  let getExperiences;
-
-  if (dataProxy instanceof ApolloClient) {
-    const { data } = await dataProxy.query<
-      GetExperienceConnectionMini,
-      GetExperienceConnectionMiniVariables
-    >({
-      ...readOptions,
-      fetchPolicy: "cache-only",
-    });
-
-    getExperiences = data && data.getExperiences;
-  } else {
-    try {
-      const data = dataProxy.readQuery<
-        GetExperienceConnectionMini,
-        GetExperienceConnectionMiniVariables
-      >(readOptions);
-
-      getExperiences = data && data.getExperiences;
-    } catch (error) {
-      if (
-        !(error as Error).message.includes("Can't find field getExperiences")
-      ) {
-        throw error;
-      }
-    }
-  }
-
-  return getExperiences;
-}
-
 export async function insertExperienceInGetExperiencesMiniQuery(
   dataProxy: DataProxy,
   experience: ExperienceFragment,
-  { force = false }: { force?: boolean },
+  { force }: { force?: boolean } = {},
 ) {
   const experienceConnection = await getExperiencesMiniQuery(dataProxy);
 
@@ -77,7 +40,7 @@ export async function insertExperienceInGetExperiencesMiniQuery(
   }
 
   const updatedExperienceConnection = immer(
-    experienceConnection || DEFAULT_EXPERIENCE_CONNECTION,
+    experienceConnection || DEFAULT_EXPERIENCE_MINI_CONNECTION,
     proxy => {
       const edges = proxy.edges || [];
 
@@ -105,7 +68,8 @@ export async function floatExperienceToTheTopInGetExperiencesMiniQuery(
   experience: ExperienceMiniFragment,
 ) {
   const experienceConnection =
-    (await getExperiencesMiniQuery(dataProxy)) || DEFAULT_EXPERIENCE_CONNECTION;
+    (await getExperiencesMiniQuery(dataProxy)) ||
+    DEFAULT_EXPERIENCE_MINI_CONNECTION;
 
   const edges = (experienceConnection.edges ||
     []) as ExperienceConnectionFragment_edges[];
@@ -114,7 +78,7 @@ export async function floatExperienceToTheTopInGetExperiencesMiniQuery(
     {} as ExperienceConnectionFragment_edges,
   ];
 
-  let experienceEdge = {} as ExperienceConnectionFragment_edges;
+  let experienceEdge = (undefined as unknown) as ExperienceConnectionFragment_edges;
 
   edges.forEach(e => {
     const edge = e as ExperienceConnectionFragment_edges;
@@ -127,7 +91,11 @@ export async function floatExperienceToTheTopInGetExperiencesMiniQuery(
     }
   });
 
-  newEdges[0] = experienceEdge;
+  newEdges[0] = experienceEdge || {
+    node: experience,
+    cursor: "",
+    __typename: EXPERIENCE_EDGE_TYPE_NAME,
+  };
 
   dataProxy.writeQuery<
     GetExperienceConnectionMini,
@@ -147,7 +115,8 @@ export async function replaceExperiencesInGetExperiencesMiniQuery(
   experiencesMap: { [k: string]: ExperienceFragment | null },
 ) {
   const experiences =
-    (await getExperiencesMiniQuery(client)) || DEFAULT_EXPERIENCE_CONNECTION;
+    (await getExperiencesMiniQuery(client)) ||
+    DEFAULT_EXPERIENCE_MINI_CONNECTION;
 
   const updatedExperienceConnection = immer(experiences, proxy => {
     const edges = (proxy.edges || []) as ExperienceConnectionFragment_edges[];

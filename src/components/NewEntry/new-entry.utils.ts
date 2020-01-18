@@ -229,7 +229,10 @@ interface CreateEntryEffectArgs {
   onDone?: () => void;
 }
 
-type CreateEntryEffect = EffectDefinition<"createEntry", CreateEntryEffectArgs>;
+type CreateEntryEffect = EffectDefinition<
+  "createEntryEffect",
+  CreateEntryEffectArgs
+>;
 
 const scrollToViewEffect: ScrollToViewEffect["func"] = ({ id }) => {
   scrollIntoView(id, {
@@ -238,15 +241,15 @@ const scrollToViewEffect: ScrollToViewEffect["func"] = ({ id }) => {
 };
 
 type ScrollToViewEffect = EffectDefinition<
-  "scrollToView",
+  "scrollToViewEffect",
   {
     id: string;
   }
 >;
 
 export const effectFunctions = {
-  createEntry: createEntryEffect,
-  scrollToView: scrollToViewEffect,
+  createEntryEffect,
+  scrollToViewEffect,
 };
 
 export function runEffects(
@@ -321,7 +324,7 @@ async function handleSubmittingAction(proxy: ProxyState) {
   const effects = getRenderEffects(proxy);
 
   effects.push({
-    key: "createEntry",
+    key: "createEntryEffect",
     ownArgs: {
       input: {
         experienceId,
@@ -364,7 +367,7 @@ function handleOnCreateEntryErrors(
 
     const effects = getRenderEffects(stateMachine);
     effects.push({
-      key: "scrollToView",
+      key: "scrollToViewEffect",
       ownArgs: {
         id: scrollIntoViewNonFieldErrorDomId,
       },
@@ -396,7 +399,7 @@ function handleOnCreateEntryErrors(
   const effects = getRenderEffects(stateMachine);
 
   effects.push({
-    key: "scrollToView",
+    key: "scrollToViewEffect",
     ownArgs: {
       id: getFieldErrorScrollToId(fieldErrors),
     },
@@ -422,7 +425,7 @@ function handleOnServerErrorsAction(
 
   const effects = getRenderEffects(stateMachine);
   effects.push({
-    key: "scrollToView",
+    key: "scrollToViewEffect",
     ownArgs: {
       id: scrollIntoViewNonFieldErrorDomId,
     },
