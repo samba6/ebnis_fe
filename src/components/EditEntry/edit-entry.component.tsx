@@ -41,7 +41,7 @@ import {
   useUpdateDefinitionsOnline,
   useUpdateDefinitionAndDataOnline,
   UpdateDefinitionsOnlineMutationFn,
-} from "./edit-entry.injectables";
+} from "../../graphql/update-definition-and-data.mutation";
 import {
   formErrorsDomId,
   otherErrorsDomId,
