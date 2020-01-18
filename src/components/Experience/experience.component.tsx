@@ -91,7 +91,7 @@ export function Experience(props: Props) {
     );
   }
 
-  const { id, hasUnsaved } = experience;
+  const { id, hasUnsaved, title } = experience;
   const isOffline = isOfflineId(id);
   const isPartOffline = !isOffline && hasUnsaved;
   const isOnline = !isOffline && !hasUnsaved;
@@ -110,6 +110,8 @@ export function Experience(props: Props) {
         {...otherProps}
       >
         <div className="experience__header" {...headerProps}>
+          <div className="mt-1 ml-1 font-bold">{title}</div>
+
           <div>
             <div className="options-menu-container">
               <OptionsMenuComponent

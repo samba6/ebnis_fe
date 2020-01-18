@@ -18,6 +18,7 @@ import {
   uploadBtnDomId,
   makeUploadStatusIconId,
 } from "../../src/components/UploadOfflineItems/upload-offline.dom";
+import { offlineItemsCountLinkId } from "../../src/components/Header/header.dom";
 
 context("Upload offline items page", () => {
   beforeEach(() => {
@@ -109,7 +110,7 @@ context("Upload offline items page", () => {
 
       cy.title().should("contain", offlineExperienceTitle);
 
-      cy.get("#header-unsaved-count-label").click();
+      cy.get("#" + offlineItemsCountLinkId).click();
       cy.title().should("contain", UPLOAD_OFFLINE_ITEMS_TITLE);
       cy.get(`#${offlineExperiencesTabMenuDomId}`).click();
 

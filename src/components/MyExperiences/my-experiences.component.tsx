@@ -47,6 +47,7 @@ import {
 } from "./my-experiences.injectables";
 import { SidebarHeader } from "../SidebarHeader/sidebar-header.component";
 import makeClassNames from "classnames";
+import { makeExperienceHeaderDomId } from "./my-experiences.dom";
 
 const SearchComponent = memo(SearchComponentUnMemo, SearchComponentPropsDiffFn);
 
@@ -179,7 +180,7 @@ const Experience = React.memo(
           <Link
             className="card-header-title"
             to={makeExperienceRoute(id)}
-            id={`experience-main-${id}`}
+            id={makeExperienceHeaderDomId(id)}
           >
             {title}
           </Link>
