@@ -106,7 +106,7 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
     action,
     (prevState, { type, ...payload }) => {
       return immer(prevState, proxy => {
-        proxy.effects.onRender.value = StateValue.noEffect;
+        proxy.effects.general.value = StateValue.noEffect;
 
         switch (type) {
           case ActionType.ON_FORM_FIELD_CHANGED:
@@ -138,6 +138,8 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
     // true,
   );
 
+const UNKNOWN_ERROR = "Unknown error!";
+
 export function interpretCreateEntryMutationException(payload: Error) {
   if (payload instanceof ApolloError) {
     const { graphQLErrors, networkError } = payload;
@@ -148,7 +150,7 @@ export function interpretCreateEntryMutationException(payload: Error) {
     return graphQLErrors[0].message;
   }
 
-  return "Unknown error!";
+  return UNKNOWN_ERROR;
 }
 
 ////////////////////////// EFFECTS SECTION ////////////////////////////
@@ -217,8 +219,7 @@ const createEntryEffect: CreateEntryEffect["func"] = async (
   } catch (errors) {
     dispatch({
       type: ActionType.ON_CREATE_ENTRY_EXCEPTION,
-      key: StateValue.nonFieldErrors,
-      value: interpretCreateEntryMutationException(errors),
+      errors: interpretCreateEntryMutationException(errors),
     });
   }
 };
@@ -295,7 +296,7 @@ export function initState(experience: ExperienceFragment): StateMachine {
     },
     context: { experience },
     effects: {
-      onRender: {
+      general: {
         value: StateValue.noEffect,
       },
     },
@@ -352,6 +353,23 @@ function handleOnCreateEntryErrors(
   } = payload as CreateOnlineEntryMutation_createEntry_errors;
 
   if (!dataObjectsErrors) {
+    submitting.errors = {
+      value: StateValue.nonFieldErrors,
+      nonFieldErrors: {
+        context: {
+          errors: UNKNOWN_ERROR,
+        },
+      },
+    };
+
+    const effects = getRenderEffects(stateMachine);
+    effects.push({
+      key: "scrollToView",
+      ownArgs: {
+        id: scrollIntoViewNonFieldErrorDomId,
+      },
+    });
+
     return;
   }
 
@@ -387,51 +405,28 @@ function handleOnCreateEntryErrors(
 
 function handleOnServerErrorsAction(
   stateMachine: ProxyState,
-  payload: ServerErrors,
+  { errors }: ServerErrors,
 ) {
   const { states } = stateMachine;
   const submitting = states.submitting as SubmittingErrors;
   submitting.value = StateValue.errors;
+
+  submitting.errors = {
+    value: StateValue.nonFieldErrors,
+    nonFieldErrors: {
+      context: {
+        errors,
+      },
+    },
+  };
+
   const effects = getRenderEffects(stateMachine);
-
-  if (payload.key === StateValue.fieldErrors) {
-    const fieldErrors = payload.value;
-    submitting.errors = {
-      value: StateValue.fieldErrors,
-      fieldErrors: {
-        context: {
-          errors: fieldErrors,
-        },
-      },
-    };
-
-    effects.push({
-      key: "scrollToView",
-      ownArgs: {
-        id: getFieldErrorScrollToId(fieldErrors),
-      },
-    });
-
-    return;
-  }
-
-  if (payload.key === StateValue.nonFieldErrors) {
-    submitting.errors = {
-      value: StateValue.nonFieldErrors,
-      nonFieldErrors: {
-        context: {
-          errors: payload.value,
-        },
-      },
-    };
-
-    effects.push({
-      key: "scrollToView",
-      ownArgs: {
-        id: scrollIntoViewNonFieldErrorDomId,
-      },
-    });
-  }
+  effects.push({
+    key: "scrollToView",
+    ownArgs: {
+      id: scrollIntoViewNonFieldErrorDomId,
+    },
+  });
 }
 
 function getFieldErrorScrollToId(fieldErrors: FieldErrors) {
@@ -442,7 +437,7 @@ function getFieldErrorScrollToId(fieldErrors: FieldErrors) {
 }
 
 function getRenderEffects(proxy: ProxyState) {
-  const renderEffects = proxy.effects.onRender as EffectState;
+  const renderEffects = proxy.effects.general as GeneralEffect;
   renderEffects.value = StateValue.hasEffects;
   const effects: EffectsList = [];
   renderEffects.hasEffects = {
@@ -537,9 +532,9 @@ interface FieldErrors {
   [k: string]: string;
 }
 
-type ServerErrors =
-  | { key: FieldErrorsValue; value: FieldErrors }
-  | { key: NonFieldErrorsValue; value: string };
+interface ServerErrors {
+  errors: string;
+}
 
 type ProxyState = Draft<StateMachine>;
 
@@ -548,7 +543,7 @@ interface StateMachine {
     readonly experience: ExperienceFragment;
   };
   readonly effects: {
-    readonly onRender: EffectState | { value: NoEffectVal };
+    readonly general: GeneralEffect | { value: NoEffectVal };
   };
   readonly states: {
     readonly submitting: SubmittingState;
@@ -557,6 +552,7 @@ interface StateMachine {
     };
   };
 }
+
 export type SubmittingState =
   | SubmittingErrors
   | { value: ActiveValue }
@@ -623,7 +619,7 @@ interface EffectContext {
 
 type EffectsList = (ScrollToViewEffect | CreateEntryEffect)[];
 
-interface EffectState {
+interface GeneralEffect {
   value: HasEffects;
   hasEffects: {
     context: {

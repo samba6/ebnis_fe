@@ -444,30 +444,39 @@ it("renders error when entry creation fails", async () => {
   } as ExperienceFragment;
 
   /**
-   * And server will respond with error when trying to create entry
+   * And server will respond when submitted twice:
+   * 1. errors with empty fields
+   * 2. data objects errors
    */
-  const errors = {
-    dataObjectsErrors: [
-      {
-        index: 0,
-        errors: {
-          data: "is invalid",
-          definitionId: "f1",
-          __typename: "DataObjectError",
-        },
-      },
-    ],
-  } as CreateOnlineEntryMutation_createEntry_errors;
 
   const { ui, mockCreateOnlineEntry, mockNavigate } = makeComp({
     experience,
   });
 
-  mockCreateOnlineEntry.mockResolvedValue({
-    data: {
-      createEntry: { errors },
-    } as CreateOnlineEntryMutation,
-  });
+  mockCreateOnlineEntry
+    .mockResolvedValueOnce({
+      data: {
+        createEntry: { errors: {} },
+      } as CreateOnlineEntryMutation,
+    })
+    .mockResolvedValue({
+      data: {
+        createEntry: {
+          errors: {
+            dataObjectsErrors: [
+              {
+                index: 0,
+                errors: {
+                  data: "is invalid",
+                  definitionId: "f1",
+                  __typename: "DataObjectError",
+                },
+              },
+            ],
+          } as CreateOnlineEntryMutation_createEntry_errors,
+        },
+      } as CreateOnlineEntryMutation,
+    });
 
   /**
    * When component is rendered
@@ -496,7 +505,8 @@ it("renders error when entry creation fails", async () => {
   /**
    * But after submitting the form
    */
-  fireEvent.click(document.getElementById(submitBtnDomId) as any);
+  const domSubmitBtn = document.getElementById(submitBtnDomId) as HTMLElement;
+  domSubmitBtn.click();
 
   /**
    * Then we should see loading indicator
@@ -504,15 +514,45 @@ it("renders error when entry creation fails", async () => {
   expect(document.getElementById(mockLoadingId)).not.toBeNull();
 
   /**
-   * And no error UI should be visible
+   * And no generic error UI should be visible
+   */
+  expect(document.getElementById(networkErrorDomId)).toBeNull();
+
+  /**
+   * And page should not scroll to errorDom
+   */
+  expect(mockScrollIntoView).not.toHaveBeenCalled();
+
+  /**
+   * And after unsucessful submit, a generic error UI should be visible
+   */
+
+  await waitForElement(
+    () => document.getElementById(networkErrorDomId) as HTMLDivElement,
+  );
+
+  /**
+   * And page should scroll to errorDom
+   */
+  expect(mockScrollIntoView.mock.calls[0][0]).toBe(
+    scrollIntoViewNonFieldErrorDomId,
+  );
+
+  /**
+   * After submitting form a second time
+   */
+  domSubmitBtn.click();
+
+  /**
+   * Then no error UI should be visible
    */
   const fieldErrorDomId = makeFieldErrorDomId(0);
   expect(document.getElementById(fieldErrorDomId)).toBeNull();
 
   /**
-   * And page should not scroll to error UI
+   * And page should not have been scrolled again
    */
-  expect(mockScrollIntoView).not.toHaveBeenCalled();
+  expect(mockScrollIntoView.mock.calls).toHaveLength(1);
 
   /**
    * But after a while, error UI should be visible
@@ -531,7 +571,7 @@ it("renders error when entry creation fails", async () => {
     variables: {
       input: { experienceId, dataObjects },
     },
-  } = mockCreateOnlineEntry.mock.calls[0][0] as {
+  } = mockCreateOnlineEntry.mock.calls[1][0] as {
     variables: CreateOnlineEntryMutationVariables;
   };
 
@@ -550,7 +590,7 @@ it("renders error when entry creation fails", async () => {
   /**
    * And page should scroll to error UI
    */
-  expect(mockScrollIntoView.mock.calls[0][0]).toBe(fieldErrorDomId);
+  expect(mockScrollIntoView.mock.calls[1][0]).toBe(fieldErrorDomId);
 });
 
 it("treats all exceptions as network error", async () => {

@@ -54,7 +54,7 @@ export function NewEntryComponent(props: ComponentProps) {
 
   const {
     states: { submitting, form },
-    effects: { onRender },
+    effects: { general: generalEffects },
   } = stateMachine;
 
   const pageTitle = makePageTitle(experience);
@@ -65,18 +65,18 @@ export function NewEntryComponent(props: ComponentProps) {
   }, []);
 
   useEffect(() => {
-    if (onRender.value !== StateValue.hasEffects) {
+    if (generalEffects.value !== StateValue.hasEffects) {
       return;
     }
 
     const {
       hasEffects: { context },
-    } = onRender;
+    } = generalEffects;
 
     runEffects(context.effects, props, { dispatch, goToExperience });
 
     /* eslint-disable-next-line react-hooks/exhaustive-deps*/
-  }, [onRender]);
+  }, [generalEffects]);
 
   useEffect(() => {
     const { client, cache, persistor } = props;
