@@ -7,7 +7,7 @@ import {
 } from "../../src/graphql/apollo-types/CreateExperienceMutation";
 import { ExperienceFragment } from "../../src/graphql/apollo-types/ExperienceFragment";
 import {
-  CreateOfflineExperienceMutationData,
+  CreateExperienceOfflineMutation,
   CREATE_OFFLINE_EXPERIENCE_MUTATION,
 } from "../../src/components/ExperienceDefinition/experience-definition.resolvers";
 import { entriesPaginationVariables } from "../../src/graphql/get-experience-full.query";
@@ -43,7 +43,7 @@ export function createOfflineExperience(
   { persist }: { persist?: boolean } = {},
 ) {
   return mutate<
-    CreateOfflineExperienceMutationData,
+    CreateExperienceOfflineMutation,
     CreateExperienceMutationVariables
   >({
     mutation: CREATE_OFFLINE_EXPERIENCE_MUTATION,

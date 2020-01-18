@@ -1,31 +1,7 @@
-import {
-  CreateExperienceMutation,
-  CreateExperienceMutationVariables,
-} from "../../graphql/apollo-types/CreateExperienceMutation";
-import { CREATE_EXPERIENCE_MUTATION } from "../../graphql/create-experience.mutation";
-import { useMutation } from "@apollo/react-hooks";
 import ApolloClient from "apollo-client";
-import {
-  experienceDefinitionResolvers,
-  CREATE_OFFLINE_EXPERIENCE_MUTATION,
-  CreateOfflineExperienceMutationData,
-} from "./experience-definition.resolvers";
+import { experienceDefinitionResolvers } from "./experience-definition.resolvers";
 import { CreateExpUpdateFn } from "./experience-definition.utils";
 import { insertExperienceInGetExperiencesMiniQuery } from "../../apollo-cache/update-get-experiences-mini-query";
-
-export function useCreateExperience() {
-  return useMutation<
-    CreateExperienceMutation,
-    CreateExperienceMutationVariables
-  >(CREATE_EXPERIENCE_MUTATION);
-}
-
-export function useCreateExperienceOffline() {
-  return useMutation<
-    CreateOfflineExperienceMutationData,
-    CreateExperienceMutationVariables
-  >(CREATE_OFFLINE_EXPERIENCE_MUTATION);
-}
 
 export function addResolvers(client: ApolloClient<{}>) {
   if (window.____ebnis.experienceDefinitionResolversAdded) {

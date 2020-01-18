@@ -14,12 +14,10 @@ import {
   CreateExperienceMutation_createExperience_errors_dataDefinitionsErrors_errors,
   CreateExperienceMutation_createExperience_errors_dataDefinitionsErrors,
 } from "../../graphql/apollo-types/CreateExperienceMutation";
-import { ApolloError, MutationUpdaterFn } from "apollo-client";
+import ApolloClient, { ApolloError, MutationUpdaterFn } from "apollo-client";
 import { wrapReducer } from "../../logger";
-
-export type CreateExpUpdateFn = MutationUpdaterFn<CreateExperienceMutation>;
-
-export type Props = RouteComponentProps<{}>;
+import { CreateExperienceOnlineMutationComponentProps } from "../../graphql/create-experience.mutation";
+import { CreateExperienceOfflineMutationComponentProps } from "./experience-definition.resolvers";
 
 export const fieldTypeKeys = Object.values(DataTypes);
 
@@ -56,13 +54,6 @@ export enum ActionType {
 
   FIELD_ERRORS = "@components/experience-definition/field-errors",
 }
-
-export type Action =
-  | [ActionType.setFormError, FormikErrors<FormValues>]
-  | [ActionType.setApolloError, ApolloError]
-  | [ActionType.showDescriptionInput, boolean]
-  | [ActionType.clearAllErrors]
-  | [ActionType.FIELD_ERRORS, CreateExperienceMutation_createExperience_errors];
 
 export const reducer: Reducer<State, Action> = (state, action) =>
   wrapReducer(state, action, (prevState, [type, payload]) => {
@@ -145,6 +136,24 @@ function normalizeServerFieldsErrors(
     ),
   };
 }
+
+////////////////////////// TYPES SECTION ////////////////////////////
+
+export type CreateExpUpdateFn = MutationUpdaterFn<CreateExperienceMutation>;
+
+export type CallerProps = RouteComponentProps<{}>;
+export type Props = CallerProps &
+  CreateExperienceOnlineMutationComponentProps &
+  CreateExperienceOfflineMutationComponentProps & {
+    client: ApolloClient<{}>;
+  };
+
+export type Action =
+  | [ActionType.setFormError, FormikErrors<FormValues>]
+  | [ActionType.setApolloError, ApolloError]
+  | [ActionType.showDescriptionInput, boolean]
+  | [ActionType.clearAllErrors]
+  | [ActionType.FIELD_ERRORS, CreateExperienceMutation_createExperience_errors];
 
 export interface ServerDataDefinitionsErrorsMap {
   [k: string]: CreateExperienceMutation_createExperience_errors_dataDefinitionsErrors_errors;

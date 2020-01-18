@@ -7,7 +7,7 @@ import {
   wait,
   waitForElement,
 } from "@testing-library/react";
-import { ExperienceDefinition } from "../components/ExperienceDefinition/experience-definition.component";
+import { ExperienceDefinitionComponent } from "../components/ExperienceDefinition/experience-definition.component";
 import {
   CreateDataDefinition,
   DataTypes,
@@ -21,16 +21,10 @@ import {
 } from "../graphql/apollo-types/CreateExperienceMutation";
 import { isConnected } from "../state/connections";
 import { scrollIntoView } from "../components/scroll-into-view";
-import { CreateOfflineExperienceMutationData } from "../components/ExperienceDefinition/experience-definition.resolvers";
+import { CreateExperienceOfflineMutation } from "../components/ExperienceDefinition/experience-definition.resolvers";
 import { ApolloError } from "apollo-client";
 import { GraphQLError } from "graphql";
-import { EbnisAppProvider } from "../context";
-import {
-  useCreateExperience,
-  addResolvers,
-  useCreateExperienceOffline,
-  ExperienceDefinitionUpdate,
-} from "../components/ExperienceDefinition/experience-definition.injectables";
+import { ExperienceDefinitionUpdate } from "../components/ExperienceDefinition/experience-definition.injectables";
 
 jest.mock("../state/connections");
 jest.mock("../components/scroll-into-view");
@@ -39,23 +33,16 @@ jest.mock(
 );
 jest.mock("@apollo/react-hooks");
 jest.mock("../components/SidebarHeader/sidebar-header.component", () => ({
-  SidebarHeader: jest.fn(() => null),
+  SidebarHeader: () => null,
 }));
 
 jest.mock("../components/use-delete-cached-queries-mutations-on-unmount");
 
 const mockIsConnected = isConnected as jest.Mock;
 const mockScrollIntoView = scrollIntoView as jest.Mock;
-const mockUseCreateExperience = useCreateExperience as jest.Mock;
-const mockUseCreateExperienceOffline = useCreateExperienceOffline as jest.Mock;
-const mockAddResolvers = addResolvers as jest.Mock;
 
 beforeEach(() => {
-  mockIsConnected.mockReset();
-  mockScrollIntoView.mockReset();
-  mockUseCreateExperience.mockReset();
-  mockAddResolvers.mockReset();
-  mockUseCreateExperienceOffline.mockReset();
+  jest.resetAllMocks();
 });
 
 const title = "ab";
@@ -119,11 +106,13 @@ it("adds field from top, creates online experience definition", async () => {
   /**
    * When we complete data type field of field0
    */
-  fireEvent.click((document.getElementById(
-    "experience-data-type-0",
-  ) as HTMLDivElement).getElementsByClassName(
-    `js-${dataDefinitions[0].type}`,
-  )[0] as any);
+  fireEvent.click(
+    (document.getElementById(
+      "experience-data-type-0",
+    ) as HTMLDivElement).getElementsByClassName(
+      `js-${dataDefinitions[0].type}`,
+    )[0] as any,
+  );
 
   /**
    * And remove button of field 0 should not be visible
@@ -204,11 +193,13 @@ it("adds field from top, creates online experience definition", async () => {
    * When we complete data type field of field 1
    */
 
-  fireEvent.click((document.getElementById(
-    "experience-data-type-1",
-  ) as HTMLDivElement).getElementsByClassName(
-    `js-${dataDefinitions[1].type}`,
-  )[0] as any);
+  fireEvent.click(
+    (document.getElementById(
+      "experience-data-type-1",
+    ) as HTMLDivElement).getElementsByClassName(
+      `js-${dataDefinitions[1].type}`,
+    )[0] as any,
+  );
 
   /**
    * Then add button of field 1 should now be visible
@@ -218,9 +209,9 @@ it("adds field from top, creates online experience definition", async () => {
   /**
    * When we submit the form
    */
-  fireEvent.click(document.getElementById(
-    "experience-definition-submit-btn",
-  ) as any);
+  fireEvent.click(
+    document.getElementById("experience-definition-submit-btn") as any,
+  );
 
   /**
    * Then correct data should be uploaded to the server
@@ -304,9 +295,9 @@ it("adds field in middle", async () => {
    */
   fillFieldDefinition("f3", DataTypes.DECIMAL, 2);
 
-  fireEvent.click(document.getElementById(
-    "experience-definition-submit-btn",
-  ) as any);
+  fireEvent.click(
+    document.getElementById("experience-definition-submit-btn") as any,
+  );
 
   /**
    * Then correct data should be uploaded to the server
@@ -389,9 +380,9 @@ it("adds field at bottom", async () => {
 
   fillFieldDefinition("f2", DataTypes.DECIMAL, 2);
 
-  fireEvent.click(document.getElementById(
-    "experience-definition-submit-btn",
-  ) as any);
+  fireEvent.click(
+    document.getElementById("experience-definition-submit-btn") as any,
+  );
 
   /**
    * Then correct data should be uploaded to the server
@@ -480,9 +471,9 @@ it("removes field from top", async () => {
   /**
    * When we submit the form
    */
-  fireEvent.click(document.getElementById(
-    "experience-definition-submit-btn",
-  ) as any);
+  fireEvent.click(
+    document.getElementById("experience-definition-submit-btn") as any,
+  );
 
   /**
    * Then correct data should be uploaded to the server
@@ -570,9 +561,9 @@ it("removes field from bottom", async () => {
   /**
    * When we submit the form
    */
-  fireEvent.click(document.getElementById(
-    "experience-definition-submit-btn",
-  ) as any);
+  fireEvent.click(
+    document.getElementById("experience-definition-submit-btn") as any,
+  );
 
   /**
    * Then correct data should be uploaded to the server
@@ -647,9 +638,9 @@ it("removes field from middle", async () => {
   /**
    * When we submit the form
    */
-  fireEvent.click(document.getElementById(
-    "experience-definition-submit-btn",
-  ) as any);
+  fireEvent.click(
+    document.getElementById("experience-definition-submit-btn") as any,
+  );
 
   /**
    * Then correct data should be uploaded to the server
@@ -731,9 +722,9 @@ it("moves field up from bottom", async () => {
   /**
    * When we submit the form
    */
-  fireEvent.click(document.getElementById(
-    "experience-definition-submit-btn",
-  ) as any);
+  fireEvent.click(
+    document.getElementById("experience-definition-submit-btn") as any,
+  );
 
   /**
    * Then correct data should be uploaded to the server
@@ -820,9 +811,9 @@ it("moves field up from middle", async () => {
   /**
    * When we submit the form
    */
-  fireEvent.click(document.getElementById(
-    "experience-definition-submit-btn",
-  ) as any);
+  fireEvent.click(
+    document.getElementById("experience-definition-submit-btn") as any,
+  );
 
   /**
    * Then correct data should be uploaded to the server
@@ -908,9 +899,9 @@ it("moves field down from top", async () => {
   /**
    * When we submit the form
    */
-  fireEvent.click(document.getElementById(
-    "experience-definition-submit-btn",
-  ) as any);
+  fireEvent.click(
+    document.getElementById("experience-definition-submit-btn") as any,
+  );
 
   /**
    * Then correct data should be uploaded to the server
@@ -997,9 +988,9 @@ it("moves field down from middle", async () => {
   /**
    * When we submit the form
    */
-  fireEvent.click(document.getElementById(
-    "experience-definition-submit-btn",
-  ) as any);
+  fireEvent.click(
+    document.getElementById("experience-definition-submit-btn") as any,
+  );
 
   /**
    * Then correct data should be uploaded to the server
@@ -1058,9 +1049,9 @@ it("toggles description field", () => {
   /**
    * When we click on the description label
    */
-  fireEvent.click(document.getElementById(
-    "experience-definition-description-toggle",
-  ) as any);
+  fireEvent.click(
+    document.getElementById("experience-definition-description-toggle") as any,
+  );
 
   /**
    * Then description input box should no longer be visible on the page
@@ -1160,9 +1151,9 @@ it("renders errors if we get field errors", async () => {
    * When we submit the form
    */
 
-  fireEvent.click(document.getElementById(
-    "experience-definition-submit-btn",
-  ) as any);
+  fireEvent.click(
+    document.getElementById("experience-definition-submit-btn") as any,
+  );
 
   /**
    * Then error UIs should be visible
@@ -1227,9 +1218,9 @@ it("renders error if all fields not completely filled on submission", async () =
 
   expect($definition1.classList).not.toContain("error");
 
-  fireEvent.click(document.getElementById(
-    "experience-definition-submit-btn",
-  ) as any);
+  fireEvent.click(
+    document.getElementById("experience-definition-submit-btn") as any,
+  );
 
   await wait(() => expect($definition1Container.classList).toContain("errors"));
 
@@ -1252,19 +1243,19 @@ it("saves experience when we are not connected", async () => {
   /**
    * Given server is not connected
    */
-  const { ui, mockNavigate, mockCreateUnsavedExperience } = makeComp(
+  const { ui, mockNavigate, mockCreateExperienceOffline } = makeComp(
     {},
     {
       isConnected: false,
     },
   );
 
-  mockCreateUnsavedExperience.mockResolvedValue({
+  mockCreateExperienceOffline.mockResolvedValue({
     data: {
       createOfflineExperience: {
         id: "1",
       },
-    } as CreateOfflineExperienceMutationData,
+    } as CreateExperienceOfflineMutation,
   });
 
   /**
@@ -1277,9 +1268,9 @@ it("saves experience when we are not connected", async () => {
    */
   fillFields(dataDefinitions);
 
-  fireEvent.click(document.getElementById(
-    "experience-definition-submit-btn",
-  ) as any);
+  fireEvent.click(
+    document.getElementById("experience-definition-submit-btn") as any,
+  );
 
   await wait(() => {
     expect(mockNavigate).toBeCalledWith(makeExperienceRoute("1"));
@@ -1289,7 +1280,7 @@ it("saves experience when we are not connected", async () => {
    * Then correct data should be uploaded to the server
    */
   await wait(() =>
-    expect(mockCreateUnsavedExperience.mock.calls[0][0]).toMatchObject({
+    expect(mockCreateExperienceOffline.mock.calls[0][0]).toMatchObject({
       variables: {
         createExperienceInput: {
           title,
@@ -1329,9 +1320,9 @@ it("renders error even if there are no fields error", async () => {
    * When we submit the form
    */
 
-  fireEvent.click(document.getElementById(
-    "experience-definition-submit-btn",
-  ) as any);
+  fireEvent.click(
+    document.getElementById("experience-definition-submit-btn") as any,
+  );
 
   /**
    * Then error UIs should be visible
@@ -1374,9 +1365,9 @@ it("renders network error", async () => {
     document.getElementById("experience-definition-errors-summary"),
   ).toBeNull();
 
-  fireEvent.click(document.getElementById(
-    "experience-definition-submit-btn",
-  ) as any);
+  fireEvent.click(
+    document.getElementById("experience-definition-submit-btn") as any,
+  );
 
   /**
    * Then correct data should be uploaded to the server
@@ -1419,9 +1410,9 @@ it("renders graphql error", async () => {
     document.getElementById("experience-definition-errors-summary"),
   ).toBeNull();
 
-  fireEvent.click(document.getElementById(
-    "experience-definition-submit-btn",
-  ) as any);
+  fireEvent.click(
+    document.getElementById("experience-definition-submit-btn") as any,
+  );
 
   /**
    * Then correct data should be uploaded to the server
@@ -1460,9 +1451,9 @@ it("renders errors if exception is thrown during submit", async () => {
     document.getElementById("experience-definition-errors-summary"),
   ).toBeNull();
 
-  fireEvent.click(document.getElementById(
-    "experience-definition-submit-btn",
-  ) as any);
+  fireEvent.click(
+    document.getElementById("experience-definition-submit-btn") as any,
+  );
 
   /**
    * Then correct data should be uploaded to the server
@@ -1501,9 +1492,9 @@ it("renders errors if server's response is out of shape", async () => {
     document.getElementById("experience-definition-errors-summary"),
   ).toBeNull();
 
-  fireEvent.click(document.getElementById(
-    "experience-definition-submit-btn",
-  ) as any);
+  fireEvent.click(
+    document.getElementById("experience-definition-submit-btn") as any,
+  );
 
   /**
    * Then correct data should be uploaded to the server
@@ -1517,7 +1508,7 @@ it("renders errors if server's response is out of shape", async () => {
 
 ////////////////////////// HELPER FUNCTIONS ///////////////////////////
 
-const ExperienceDefinitionP = ExperienceDefinition as ComponentType<
+const ExperienceDefinitionP = ExperienceDefinitionComponent as ComponentType<
   Partial<Props>
 >;
 
@@ -1528,29 +1519,21 @@ function makeComp(
   mockIsConnected.mockReturnValue(isConnected);
 
   const mockCreateExperience = jest.fn();
-  const mockCreateUnsavedExperience = jest.fn();
-
-  mockUseCreateExperience.mockReturnValue([mockCreateExperience]);
-  mockUseCreateExperienceOffline.mockReturnValue([mockCreateUnsavedExperience]);
+  const mockCreateExperienceOffline = jest.fn();
 
   const { Ui, ...rest } = renderWithRouter(ExperienceDefinitionP);
 
-  const client = {
-    addResolvers: jest.fn(),
-  };
-
-  const ebnisAppContext = {
-    client,
-  } as any;
-
   return {
     ui: (
-      <EbnisAppProvider value={ebnisAppContext}>
-        <Ui {...props} />
-      </EbnisAppProvider>
+      <Ui
+        client={{} as any}
+        createExperienceOnline={mockCreateExperience}
+        createExperienceOffline={mockCreateExperienceOffline}
+        {...props}
+      />
     ),
     mockCreateExperience,
-    mockCreateUnsavedExperience,
+    mockCreateExperienceOffline,
     ...rest,
   };
 }
@@ -1570,9 +1553,9 @@ function fillFields(
     fillFieldDefinition(name, type, index);
 
     if (index + 1 < len) {
-      fireEvent.click(document.getElementById(
-        `add-definition-btn-${index}`,
-      ) as any);
+      fireEvent.click(
+        document.getElementById(`add-definition-btn-${index}`) as any,
+      );
     }
   });
 }
@@ -1580,7 +1563,9 @@ function fillFields(
 function fillFieldDefinition(name: string, type: string, index: number) {
   fillField(document.getElementById(`field-name-${index}`) as any, name);
 
-  fireEvent.click((document.getElementById(
-    `experience-data-type-${index}`,
-  ) as HTMLElement).getElementsByClassName(`js-${type}`)[0] as any);
+  fireEvent.click(
+    (document.getElementById(
+      `experience-data-type-${index}`,
+    ) as HTMLElement).getElementsByClassName(`js-${type}`)[0] as any,
+  );
 }

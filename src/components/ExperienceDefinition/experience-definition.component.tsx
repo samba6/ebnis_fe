@@ -34,6 +34,7 @@ import {
   fieldTypeKeys,
   DispatchType,
   ServerDataDefinitionsErrorsMap,
+  CallerProps,
 } from "./experience-definition.utils";
 import {
   CreateExperienceInput as FormValues,
@@ -57,22 +58,23 @@ import { scrollIntoView } from "../scroll-into-view";
 import { ApolloError } from "apollo-client";
 import { EbnisAppContext } from "../../context";
 import {
-  useCreateExperience,
   addResolvers,
-  useCreateExperienceOffline,
   ExperienceDefinitionUpdate,
 } from "./experience-definition.injectables";
 import { useDeleteCachedQueriesAndMutationsOnUnmount } from "../use-delete-cached-queries-mutations-on-unmount";
 import { entriesPaginationVariables } from "../../graphql/get-experience-full.query";
+import { useCreateExperienceOnline } from "../../graphql/create-experience.mutation";
+import { useCreateExperienceOfflineMutation } from "./experience-definition.resolvers";
 
 const mainComponentId = "components-experience-definition";
 
-export function ExperienceDefinition(props: Props) {
-  const { navigate } = props;
-  const { client } = useContext(EbnisAppContext);
-
-  const [createExperience] = useCreateExperience();
-  const [createOfflineExperience] = useCreateExperienceOffline();
+export function ExperienceDefinitionComponent(props: Props) {
+  const {
+    createExperienceOffline,
+    client,
+    navigate,
+    createExperienceOnline,
+  } = props;
 
   const [state, dispatch] = useReducer(reducer, {
     showDescriptionInput: true,
@@ -135,7 +137,7 @@ export function ExperienceDefinition(props: Props) {
         let fieldErrors: CreateExperienceMutation_createExperience_errors | null = null;
 
         if (isConnected()) {
-          result = await createExperience({
+          result = await createExperienceOnline({
             variables: {
               createExperienceInput: values,
               ...entriesPaginationVariables,
@@ -155,7 +157,7 @@ export function ExperienceDefinition(props: Props) {
             experienceId = experience.id;
           }
         } else {
-          result = await createOfflineExperience({
+          result = await createExperienceOffline({
             variables: {
               createExperienceInput: values,
               ...entriesPaginationVariables,
@@ -279,8 +281,6 @@ export function ExperienceDefinition(props: Props) {
     </div>
   );
 }
-
-export default ExperienceDefinition;
 
 interface DataDefinitionComponentProps {
   values: FormValues;
@@ -665,3 +665,19 @@ function getDefinitionErrorFromForm(
     index
   ];
 }
+
+// istanbul ignore next:
+export default (props: CallerProps) => {
+  const [createExperienceOnline] = useCreateExperienceOnline();
+  const [createExperienceOffline] = useCreateExperienceOfflineMutation();
+  const { client } = useContext(EbnisAppContext);
+
+  return (
+    <ExperienceDefinitionComponent
+      client={client}
+      createExperienceOnline={createExperienceOnline}
+      createExperienceOffline={createExperienceOffline}
+      {...props}
+    />
+  );
+};

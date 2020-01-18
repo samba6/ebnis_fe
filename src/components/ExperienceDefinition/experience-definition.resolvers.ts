@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/rules-of-hooks*/
 import {
   LocalResolverFn,
   MUTATION_NAME_createExperienceOffline,
@@ -92,8 +93,41 @@ export const CREATE_OFFLINE_EXPERIENCE_MUTATION = gql`
   ${EXPERIENCE_FRAGMENT}
 `;
 
-export interface CreateOfflineExperienceMutationData {
+export interface CreateExperienceOfflineMutation {
   createOfflineExperience: ExperienceFragment;
+}
+
+import { useMutation } from "@apollo/react-hooks";
+
+import {
+  MutationFunction,
+  MutationFunctionOptions,
+  MutationResult,
+} from "@apollo/react-common";
+
+export function useCreateExperienceOfflineMutation(): UseCreateExperienceOfflineMutation {
+  return useMutation(CREATE_OFFLINE_EXPERIENCE_MUTATION);
+}
+
+export type CreateExperienceOfflineMutationFn = MutationFunction<
+  CreateExperienceOfflineMutation,
+  CreateExperienceMutationVariables
+>;
+
+// used to type check test mock calls
+export type mutation_nameMutationFnOptions = MutationFunctionOptions<
+  CreateExperienceOfflineMutation,
+  CreateExperienceMutationVariables
+>;
+
+export type UseCreateExperienceOfflineMutation = [
+  CreateExperienceOfflineMutationFn,
+  MutationResult<CreateExperienceOfflineMutation>,
+];
+
+// component's props should extend this
+export interface CreateExperienceOfflineMutationComponentProps {
+  createExperienceOffline: CreateExperienceOfflineMutationFn;
 }
 
 //////////////////////////// QUERIES /////////////////////////////////
