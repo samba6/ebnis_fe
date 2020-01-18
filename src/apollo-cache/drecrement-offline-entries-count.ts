@@ -72,7 +72,7 @@ export function decrementOfflineEntriesCountForExperiences(
 ) {
   let cacheData = queryCacheOfflineItems(cache);
 
-  if (cacheData.length === 0) {
+  if (!cacheData || cacheData.length === 0) {
     return;
   }
 
@@ -83,6 +83,7 @@ export function decrementOfflineEntriesCountForExperiences(
     const howMany = idHowManyMap[id];
 
     if (howMany === undefined) {
+      acc.push(experience);
       return acc;
     }
 
