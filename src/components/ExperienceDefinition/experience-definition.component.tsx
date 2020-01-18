@@ -59,7 +59,7 @@ import { EbnisAppContext } from "../../context";
 import {
   useCreateExperience,
   addResolvers,
-  useCreateUnsavedExperience,
+  useCreateExperienceOffline,
   ExperienceDefinitionUpdate,
 } from "./experience-definition.injectables";
 import { useDeleteCachedQueriesAndMutationsOnUnmount } from "../use-delete-cached-queries-mutations-on-unmount";
@@ -72,7 +72,7 @@ export function ExperienceDefinition(props: Props) {
   const { client } = useContext(EbnisAppContext);
 
   const [createExperience] = useCreateExperience();
-  const [createOfflineExperience] = useCreateUnsavedExperience();
+  const [createOfflineExperience] = useCreateExperienceOffline();
 
   const [state, dispatch] = useReducer(reducer, {
     showDescriptionInput: true,

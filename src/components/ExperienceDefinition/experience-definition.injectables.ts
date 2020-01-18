@@ -20,7 +20,7 @@ export function useCreateExperience() {
   >(CREATE_EXPERIENCE_MUTATION);
 }
 
-export function useCreateUnsavedExperience() {
+export function useCreateExperienceOffline() {
   return useMutation<
     CreateOfflineExperienceMutationData,
     CreateExperienceMutationVariables

@@ -39,8 +39,8 @@ import {
   UpdateDataObjectsOnlineMutationComponentProps,
   UpdateDefinitionsOnlineMutationComponentProps,
   UpdateDefinitionsAndDataOnlineMutationComponentProps,
-  editEntryUpdate,
-} from "./edit-entry.injectables";
+} from "../../graphql/update-definition-and-data.mutation";
+import { editEntryUpdate } from "./edit-entry.injectables";
 import { CreateOnlineEntryMutationComponentProps } from "../../graphql/create-entry.mutation";
 import { isOfflineId, makeApolloCacheRef } from "../../constants";
 import {

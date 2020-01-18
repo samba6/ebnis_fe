@@ -2,7 +2,7 @@ import React, { PropsWithChildren, useRef, useState, useEffect } from "react";
 import "./loading.styles.scss";
 import makeClassNames from "classnames";
 import { LoadingComponentProps } from "react-loadable";
-import {  domPrefix } from "./loading-dom";
+import { domPrefix } from "./loading-dom";
 
 export function LoadableLoading(props: LoadingComponentProps) {
   return <Loading loadableProps={props} />;
@@ -23,12 +23,7 @@ export function Loading({
   const [shouldShow, setShouldShow] = useState(false);
 
   useEffect(() => {
-    if (!loading) {
-      if (loadingRef.current) {
-        clearTimeout(loadingRef.current);
-      }
-      setShouldShow(false);
-    } else {
+    if (loading) {
       loadingRef.current = (setTimeout(() => {
         setShouldShow(true);
       }, 1000) as unknown) as number;

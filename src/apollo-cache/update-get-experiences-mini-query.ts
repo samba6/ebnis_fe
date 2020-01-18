@@ -91,11 +91,13 @@ export async function floatExperienceToTheTopInGetExperiencesMiniQuery(
     }
   });
 
-  newEdges[0] = experienceEdge || {
-    node: experience,
-    cursor: "",
-    __typename: EXPERIENCE_EDGE_TYPE_NAME,
-  };
+  newEdges[0] =
+    experienceEdge ||
+    ({
+      node: experience,
+      cursor: "",
+      __typename: EXPERIENCE_EDGE_TYPE_NAME,
+    } as ExperienceConnectionFragment_edges);
 
   dataProxy.writeQuery<
     GetExperienceConnectionMini,

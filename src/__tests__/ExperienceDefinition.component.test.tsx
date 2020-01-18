@@ -28,7 +28,7 @@ import { EbnisAppProvider } from "../context";
 import {
   useCreateExperience,
   addResolvers,
-  useCreateUnsavedExperience,
+  useCreateExperienceOffline,
   ExperienceDefinitionUpdate,
 } from "../components/ExperienceDefinition/experience-definition.injectables";
 
@@ -47,7 +47,7 @@ jest.mock("../components/use-delete-cached-queries-mutations-on-unmount");
 const mockIsConnected = isConnected as jest.Mock;
 const mockScrollIntoView = scrollIntoView as jest.Mock;
 const mockUseCreateExperience = useCreateExperience as jest.Mock;
-const mockUseCreateUnsavedExperience = useCreateUnsavedExperience as jest.Mock;
+const mockUseCreateExperienceOffline = useCreateExperienceOffline as jest.Mock;
 const mockAddResolvers = addResolvers as jest.Mock;
 
 beforeEach(() => {
@@ -55,7 +55,7 @@ beforeEach(() => {
   mockScrollIntoView.mockReset();
   mockUseCreateExperience.mockReset();
   mockAddResolvers.mockReset();
-  mockUseCreateUnsavedExperience.mockReset();
+  mockUseCreateExperienceOffline.mockReset();
 });
 
 const title = "ab";
@@ -1531,7 +1531,7 @@ function makeComp(
   const mockCreateUnsavedExperience = jest.fn();
 
   mockUseCreateExperience.mockReturnValue([mockCreateExperience]);
-  mockUseCreateUnsavedExperience.mockReturnValue([mockCreateUnsavedExperience]);
+  mockUseCreateExperienceOffline.mockReturnValue([mockCreateUnsavedExperience]);
 
   const { Ui, ...rest } = renderWithRouter(ExperienceDefinitionP);
 

@@ -51,7 +51,7 @@ context("Upload offline items page", () => {
       ]);
 
       const offlineEntryPromise = createOfflineEntry({
-        experience,
+        experienceId: experience.id,
         dataObjects: [
           {
             data: `{"integer":"2"}`,
@@ -79,7 +79,7 @@ context("Upload offline items page", () => {
       const { dataDefinitions } = offlineExperience;
 
       return createOfflineEntry({
-        experience: offlineExperience,
+        experienceId: offlineExperience.id,
         dataObjects: [
           {
             data: `{"integer":"3"}`,

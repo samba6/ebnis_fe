@@ -71,7 +71,7 @@ describe("insertExperienceInGetExperiencesMiniQuery", () => {
 
     const mockWriteQueryArg = mockWriteQuery.mock.calls[0][0];
     expect(
-      mockWriteQueryArg.data.getExperiences.edges.map(e => e.node.id),
+      mockWriteQueryArg.data.getExperiences.edges.map((e: any) => e.node.id),
     ).toEqual(["a", "b"]);
   });
 });
@@ -108,7 +108,7 @@ describe("floatExperienceToTheTopInGetExperiencesMiniQuery", () => {
 
     const mockWriteQueryArg = mockWriteQuery.mock.calls[0][0];
     expect(
-      mockWriteQueryArg.data.getExperiences.edges.map(e => e.node.id),
+      mockWriteQueryArg.data.getExperiences.edges.map((e: any) => e.node.id),
     ).toEqual(["a", "b"]);
   });
 });
