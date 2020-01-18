@@ -6,35 +6,34 @@ import {
   ActionType as EditEntryActionTypes,
   Action as EditEntryAction,
 } from "../EditEntry/edit-entry-utils";
+import { wrapReducer } from "../../logger";
 
 export enum ActionType {
   editClicked = "@components/entry/edit-clicked",
 }
 
-export const reducer: Reducer<State, EntryAction> = (
-  previousState,
-  { type },
-) => {
-  switch (type) {
-    case ActionType.editClicked: {
-      return {
-        ...previousState,
-        stateValue: "editing",
-      };
-    }
+export const reducer: Reducer<State, EntryAction> = (state, action) =>
+  wrapReducer(state, action, (previousState, { type }) => {
+    switch (type) {
+      case ActionType.editClicked: {
+        return {
+          ...previousState,
+          stateValue: "editing",
+        };
+      }
 
-    case EditEntryActionTypes.DESTROYED: {
-      return {
-        ...previousState,
-        stateValue: "idle",
-      };
-    }
+      case EditEntryActionTypes.DESTROYED: {
+        return {
+          ...previousState,
+          stateValue: "idle",
+        };
+      }
 
-    default: {
-      return previousState;
+      default: {
+        return previousState;
+      }
     }
-  }
-};
+  });
 
 export interface State {
   readonly stateValue: "idle" | "editing";

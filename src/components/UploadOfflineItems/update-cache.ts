@@ -16,7 +16,7 @@ import {
   wipeReferencesFromCache,
   removeQueriesAndMutationsFromCache,
 } from "../../state/resolvers/delete-references-from-cache";
-import { replaceExperiencesInGetExperiencesMiniQuery } from "../../state/resolvers/update-get-experiences-mini-query";
+import { replaceExperiencesInGetExperiencesMiniQuery } from "../../apollo-cache/update-get-experiences-mini-query";
 import { InMemoryCache } from "apollo-cache-inmemory";
 import ApolloClient from "apollo-client";
 import {
@@ -171,7 +171,7 @@ function handleOfflineExperiences(
       // offline items counter by thier number.
       decrementFromOfflineEntriesCount += edges.length;
 
-      const offlineIdToOnlineEntryMap = edges.reduce((acc, edge) => {
+      edges.reduce((acc, edge) => {
         // this is a newly online entry - the offline version will be deleted
         // from cache
         const entry = edge.node as ExperienceFragment_entries_edges_node;
@@ -183,7 +183,6 @@ function handleOfflineExperiences(
         acc[clientId] = entry;
         return acc;
       }, {} as { [k: string]: EntryFragment });
-
 
       // The online experience would have contained the online entries -
       // add offline entries not lucky to make it online, if any.

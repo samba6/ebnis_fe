@@ -15,6 +15,7 @@ import { readExperienceFragment } from "../../apollo-cache/read-experience-fragm
 import { entryToEdge } from "../../state/resolvers/entry-to-edge";
 import { EntryFragment } from "../../graphql/apollo-types/EntryFragment";
 import { writeExperienceFragmentToCache } from "../../apollo-cache/write-experience-fragment";
+import { floatExperienceToTheTopInGetExperiencesMiniQuery } from "../../apollo-cache/update-get-experiences-mini-query";
 
 // istanbul ignore next:
 export function addNewEntryResolvers(client: ApolloClient<{}>) {
@@ -88,6 +89,11 @@ export const upsertExperienceWithEntry: Fn = function updateFn(
     });
 
     writeExperienceFragmentToCache(dataProxy, updatedExperience);
+
+    floatExperienceToTheTopInGetExperiencesMiniQuery(
+      dataProxy,
+      updatedExperience,
+    );
 
     if (onDone) {
       onDone();

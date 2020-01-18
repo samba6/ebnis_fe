@@ -11,7 +11,7 @@ import {
   CreateOfflineExperienceMutationData,
 } from "./experience-definition.resolvers";
 import { CreateExpUpdateFn } from "./experience-definition.utils";
-import { insertExperienceInGetExperiencesMiniQuery } from "../../state/resolvers/update-get-experiences-mini-query";
+import { insertExperienceInGetExperiencesMiniQuery } from "../../apollo-cache/update-get-experiences-mini-query";
 
 export function useCreateExperience() {
   return useMutation<
@@ -56,9 +56,9 @@ export const ExperienceDefinitionUpdate: CreateExpUpdateFn = async (
 
   // if we have not fetched GET_EXPERIENCES_MINI_QUERY (e.g. by visiting
   // 'my experiences' page) in which case graphql field `getExperiences` would
-  // have been written to apollo ROOT_QUERY, then this part of the code will
-  // error because what we are trying to read does not exist on apollo
-  //ROOT_QUERY
+  // not have been written to apollo ROOT_QUERY, then this part of the code will
+  // error because what we are trying to read a query that does not exist on
+  // apollo ROOT_QUERY
   try {
     insertExperienceInGetExperiencesMiniQuery(dataProxy, experience, {
       force: false,

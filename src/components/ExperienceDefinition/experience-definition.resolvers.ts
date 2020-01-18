@@ -11,7 +11,7 @@ import {
   ExperienceFragment,
 } from "../../graphql/apollo-types/ExperienceFragment";
 import { EXPERIENCE_FRAGMENT } from "../../graphql/experience.fragment";
-import { insertExperienceInGetExperiencesMiniQuery } from "../../state/resolvers/update-get-experiences-mini-query";
+import { insertExperienceInGetExperiencesMiniQuery } from "../../apollo-cache/update-get-experiences-mini-query";
 import { incrementOfflineItemCount } from "../../apollo-cache/increment-offline-item-count";
 import { writeExperienceFragmentToCache } from "../../apollo-cache/write-experience-fragment";
 

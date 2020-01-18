@@ -11,7 +11,7 @@ import {
   wipeReferencesFromCache,
   removeQueriesAndMutationsFromCache,
 } from "../state/resolvers/delete-references-from-cache";
-import { replaceExperiencesInGetExperiencesMiniQuery } from "../state/resolvers/update-get-experiences-mini-query";
+import { replaceExperiencesInGetExperiencesMiniQuery } from "../apollo-cache/update-get-experiences-mini-query";
 import { updateOfflineItemsLedger } from "../apollo-cache/write-offline-items-to-cache";
 import { CreateEntriesErrorsFragment_errors } from "../graphql/apollo-types/CreateEntriesErrorsFragment";
 import {
@@ -32,7 +32,7 @@ import { readExperienceFragment } from "../apollo-cache/read-experience-fragment
 jest.mock("../apollo-cache/read-experience-fragment");
 const mockreadExperienceFragment = readExperienceFragment as jest.Mock;
 
-jest.mock("../state/resolvers/update-get-experiences-mini-query");
+jest.mock("../apollo-cache/update-get-experiences-mini-query");
 const mockReplaceExperiencesInGetExperiencesMiniQuery = replaceExperiencesInGetExperiencesMiniQuery as jest.Mock;
 
 jest.mock("../state/resolvers/delete-references-from-cache");

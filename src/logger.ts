@@ -89,7 +89,7 @@ function objectForEnv(obj: any) {
   return isTestEnv ? JSON.stringify(obj, null, 2) : obj;
 }
 
-export function useLogger(data: any, tag: string = "") {
+export function useLogger(data: any, tag = "") {
   useEffect(() => {
     if (!isDevEnv) {
       return;

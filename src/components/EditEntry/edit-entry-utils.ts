@@ -101,7 +101,7 @@ export const StateValue = {
   modifiedOffline: "modifiedOffline" as ModifiedOfflineVal,
 };
 
-export const initState = (props: ComponentProps): StateMachine => {
+export function initState(props: ComponentProps): StateMachine {
   const { entry, experience, hasConnection } = props;
   const { id: entryId, modOffline } = entry;
 
@@ -212,7 +212,7 @@ export const initState = (props: ComponentProps): StateMachine => {
       dataStates,
     },
   };
-};
+}
 
 export const reducer: Reducer<StateMachine, Action> = (state, action) =>
   wrapReducer<StateMachine, Action>(
@@ -461,7 +461,7 @@ const updateDefinitionsOnlineEffect: UpdateDefinitionsOnlineEffect["func"] = asy
           definitions: definitionsInput,
         },
       },
-      update: editEntryUpdate,
+      // update: editEntryUpdate(entry),
     });
 
     const validResponse = result && result.data;
@@ -496,7 +496,7 @@ type UpdateDefinitionsOnlineEffect = EffectDefinition<
 
 const updateDataObjectsOnlineEffect: UpdateDataObjectsOnlineEffect["func"] = async (
   { dataInput },
-  { updateDataObjectsOnline },
+  { updateDataObjectsOnline, entry },
   { dispatch },
 ) => {
   try {
@@ -505,7 +505,7 @@ const updateDataObjectsOnlineEffect: UpdateDataObjectsOnlineEffect["func"] = asy
         input: dataInput,
       },
 
-      update: editEntryUpdate,
+      update: editEntryUpdate(entry),
     });
 
     const successResult = response && response.data;
@@ -536,7 +536,7 @@ type UpdateDataObjectsOnlineEffect = EffectDefinition<
 
 const updateDefinitionsAndDataOnlineEffect: UpdateDefinitionsAndDataOnlineEffect["func"] = async (
   { experienceId, definitionsInput, dataInput },
-  { updateDefinitionsAndDataOnline },
+  { updateDefinitionsAndDataOnline, entry },
   { dispatch },
 ) => {
   try {
@@ -548,7 +548,7 @@ const updateDefinitionsAndDataOnlineEffect: UpdateDefinitionsAndDataOnlineEffect
         },
         dataInput,
       },
-      update: editEntryUpdate,
+      update: editEntryUpdate(entry),
     });
 
     const validResponse = response && response.data;

@@ -95,6 +95,7 @@ jest.mock("../components/DateField/date-field.component", () => ({
 }));
 
 jest.mock("../components/EditEntry/edit-entry.injectables");
+const mockEditEntryUpdateFn = jest.fn();
 const mockEditEntryUpdate = editEntryUpdate as jest.Mock;
 
 jest.mock("../apollo-cache/cleanup-ran-queries-from-cache");
@@ -120,6 +121,7 @@ afterAll(() => {
 beforeEach(() => {
   jest.resetAllMocks();
   mockUpsertExperienceWithEntry.mockReturnValue(mockUpsertExperienceFn);
+  mockEditEntryUpdate.mockReturnValue(mockEditEntryUpdateFn);
 });
 
 it("destroys the UI", async () => {
@@ -283,7 +285,7 @@ test("not editing data, editing single definition, form errors, server success",
     ],
   });
 
-  expect(mock.update).toBe(mockEditEntryUpdate);
+  // expect(mock.update).toBe(mockEditEntryUpdateFn);
 
   // let's try to submit again so we get another type of invalid server
   // response
@@ -2059,7 +2061,7 @@ function makeComp({ props = {} }: { props?: Partial<ComponentProps> } = {}) {
     mockParentDispatch,
     mockUpdateDefinitionsAndDataOnline,
     mockUpdateDataOnline,
-    mockEditEntryUpdate,
+    mockEditEntryUpdate: mockEditEntryUpdateFn,
     mockCreateEntryOnline,
     mockPersistFunc,
     mockLayoutDispatch,

@@ -44,7 +44,7 @@ import { isConnected } from "../state/connections";
 import { Entry } from "../components/Entry/entry.component";
 import { scrollIntoView } from "../components/scroll-into-view";
 import { updateCache } from "../components/UploadOfflineItems/update-cache";
-import { replaceExperiencesInGetExperiencesMiniQuery } from "../state/resolvers/update-get-experiences-mini-query";
+import { replaceExperiencesInGetExperiencesMiniQuery } from "../apollo-cache/update-get-experiences-mini-query";
 import {
   wipeReferencesFromCache,
   removeQueriesAndMutationsFromCache,
@@ -89,7 +89,7 @@ jest.mock("../components/Experience/loadables", () => ({
 jest.mock("../state/connections");
 jest.mock("../components/scroll-into-view");
 jest.mock("../components/UploadOfflineItems/update-cache");
-jest.mock("../state/resolvers/update-get-experiences-mini-query");
+jest.mock("../apollo-cache/update-get-experiences-mini-query");
 
 jest.mock("../state/resolvers/delete-references-from-cache");
 const mockPurgeIdsFromOfflineItemsLedger = purgeIdsFromOfflineItemsLedger as jest.Mock;

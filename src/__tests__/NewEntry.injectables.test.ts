@@ -15,6 +15,8 @@ const mockWriteExperienceFragmentToCache = writeExperienceFragmentToCache as jes
 jest.mock("../apollo-cache/read-experience-fragment");
 const mockReadGetExperienceFullQueryFromCache = readExperienceFragment as jest.Mock;
 
+jest.mock("../apollo-cache/update-get-experiences-mini-query");
+
 beforeEach(() => {
   mockReadGetExperienceFullQueryFromCache.mockReset();
 });
@@ -61,5 +63,5 @@ test("replaces experiene entry", async () => {
   expect(result.id).toBe(experienceId);
   expect(node.id).toBe(entryId);
   expect(node.clientId).toBe(newEntryClientId);
-  expect(mockWriteExperienceFragmentToCache).toHaveBeenCalled()
+  expect(mockWriteExperienceFragmentToCache).toHaveBeenCalled();
 });
