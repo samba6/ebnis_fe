@@ -1,22 +1,20 @@
 import React, {
   useEffect,
-  useReducer,
   useMemo,
   useRef,
   useCallback,
-  memo,
+  useState,
 } from "react";
 import "./my-experiences.styles.scss";
 import {
   ComponentProps,
   ExperienceProps,
-  DispatchProvider,
-  reducer,
-  ActionTypes,
-  initState,
   SearchResults,
   SearchComponentProps,
   CallerProps,
+  DescriptionMap,
+  SearchState,
+  prepareExperiencesForSearch,
 } from "./my-experiences.utils";
 import { EXPERIENCE_DEFINITION_URL } from "../../routes";
 import { makeExperienceRoute } from "../../constants/experience-route";
@@ -28,8 +26,6 @@ import {
   ExperienceConnectionFragment_edges,
   ExperienceConnectionFragment_edges_node,
 } from "../../graphql/apollo-types/ExperienceConnectionFragment";
-import SemanticSearch from "semantic-ui-react/dist/commonjs/modules/Search";
-import { SearchResultProps, SearchProps } from "semantic-ui-react";
 import { NavigateFn } from "@reach/router";
 import lodashDebounce from "lodash/debounce";
 import {
@@ -47,24 +43,54 @@ import {
 } from "./my-experiences.injectables";
 import { SidebarHeader } from "../SidebarHeader/sidebar-header.component";
 import makeClassNames from "classnames";
-import { makeExperienceHeaderDomId } from "./my-experiences.dom";
+import {
+  hideDescriptionIconSelector,
+  showDescriptionIconSelector,
+  descriptionSelector,
+  titleSelector,
+  experienceSelector,
+  searchTextInputId,
+} from "./my-experiences.dom";
+import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragment";
+import fuzzysort from "fuzzysort";
 
-const SearchComponent = memo(SearchComponentUnMemo, SearchComponentPropsDiffFn);
+enum ClickContext {
+  goToExperience = "go-to-experience",
+  toggleDescription = "toggle-description",
+  searchLink = "search-link",
+}
 
 export function MyExperiences(props: ComponentProps) {
-  const { experiences, navigate, error, loading } = props;
+  const { experiences, navigate, error, loading, experiencesPrepared } = props;
+  const experiencesLen = experiences.length;
 
-  const [stateMachine, dispatch] = useReducer(
-    reducer,
-    { experiences },
-    initState,
-  );
-  const noExperiences = experiences.length === 0;
+  const noExperiences = experiencesLen === 0;
 
-  const {
-    context: { descriptionMap, experiencesPrepared },
-    states,
-  } = stateMachine;
+  const [idToShowingDescriptionMap, toggleShowDescription] = useState(() => {
+    return experiences.reduce((acc, experience) => {
+      const { description, id } = experience;
+
+      if (description) {
+        acc[id] = false;
+      }
+
+      return acc;
+    }, {} as DescriptionMap);
+  });
+
+  useEffect(() => {
+    toggleShowDescription(
+      experiences.reduce((acc, experience) => {
+        const { description, id } = experience;
+
+        if (description) {
+          acc[id] = false;
+        }
+
+        return acc;
+      }, {} as DescriptionMap),
+    );
+  }, [experiences]);
 
   useEffect(() => {
     setDocumentTitle(makeSiteTitle(MY_EXPERIENCES_TITLE));
@@ -72,54 +98,41 @@ export function MyExperiences(props: ComponentProps) {
     return setDocumentTitle;
   }, []);
 
-  // istanbul ignore next:
-  useEffect(() => {
-    if (noExperiences || experiencesPrepared.length !== 0) {
-      return;
-    }
+  const onClick = useCallback((e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    const { dataset } = target;
 
-    dispatch({
-      type: ActionTypes.PREPARE_EXPERIENCES_FOR_SEARCH,
-      experiences,
-    });
+    switch (dataset.clickContext) {
+      case ClickContext.goToExperience:
+        navigate(
+          makeExperienceRoute(
+            (target.closest("." + experienceSelector) as HTMLElement).id,
+          ),
+        );
+        return;
+
+      case ClickContext.toggleDescription: {
+        const experienceId = (target.closest(
+          "." + experienceSelector,
+        ) as HTMLElement).id;
+
+        toggleShowDescription(prev => {
+          return {
+            ...prev,
+            [experienceId]: !prev[experienceId],
+          };
+        });
+        return;
+      }
+
+      case ClickContext.searchLink: {
+        const experienceId = dataset.experienceId as string;
+        navigate(makeExperienceRoute(experienceId));
+        return;
+      }
+    }
     /* eslint-disable-next-line react-hooks/exhaustive-deps*/
-  }, [experiencesPrepared, noExperiences]);
-
-  function renderExperiences() {
-    if (experiences.length === 0) {
-      return (
-        <Link
-          to={EXPERIENCE_DEFINITION_URL}
-          className="no-experiences-info"
-          id="no-experiences-info"
-        >
-          Click here to create your first experience
-        </Link>
-      );
-    }
-
-    return (
-      <div id="experiences-container" className="experiences-container">
-        <SearchComponent
-          {...states.search}
-          navigate={navigate}
-          dispatch={dispatch}
-        />
-
-        {experiences.map(experience => {
-          const { id } = experience;
-
-          return (
-            <Experience
-              key={id}
-              showingDescription={descriptionMap[id]}
-              experience={experience}
-            />
-          );
-        })}
-      </div>
-    );
-  }
+  }, []);
 
   function renderMain() {
     if (loading) {
@@ -132,7 +145,31 @@ export function MyExperiences(props: ComponentProps) {
 
     return (
       <>
-        {renderExperiences()}
+        {!noExperiences && (
+          <SearchComponent
+            experiencesLen={experiencesLen}
+            navigate={navigate}
+            experiencesPrepared={experiencesPrepared}
+          />
+        )}
+
+        {noExperiences && (
+          <Link
+            to={EXPERIENCE_DEFINITION_URL}
+            className="no-experiences-info"
+            id="no-experiences-info"
+          >
+            Click here to create your first experience
+          </Link>
+        )}
+
+        {!noExperiences && (
+          <ExperiencesComponent
+            idToShowingDescriptionMap={idToShowingDescriptionMap}
+            navigate={navigate}
+            experiences={experiences}
+          />
+        )}
 
         <Link
           className="new-experience-button"
@@ -149,20 +186,39 @@ export function MyExperiences(props: ComponentProps) {
     <div className="components-experiences">
       <SidebarHeader title="My Experiences" sidebar={true} />
 
-      <DispatchProvider
-        value={{
-          dispatch,
-          navigate: props.navigate as NavigateFn,
-        }}
-      >
-        <div className="main">{renderMain()}</div>
-      </DispatchProvider>
+      <div className="main" onClick={onClick}>
+        {renderMain()}
+      </div>
     </div>
   );
 }
 
-const Experience = React.memo(
-  function ExperienceFn({ experience }: ExperienceProps) {
+const ExperiencesComponent = (props: {
+  experiences: ExperienceFragment[];
+  navigate: NavigateFn;
+  idToShowingDescriptionMap: DescriptionMap;
+}) => {
+  const { experiences, idToShowingDescriptionMap } = props;
+
+  return (
+    <div id="experiences-container" className="experiences-container">
+      {experiences.map(experience => {
+        const { id } = experience;
+
+        return (
+          <ExperienceComponent
+            key={id}
+            showingDescription={idToShowingDescriptionMap[id]}
+            experience={experience}
+          />
+        );
+      })}
+    </div>
+  );
+};
+
+const ExperienceComponent = React.memo(
+  function ExperienceFn({ experience, showingDescription }: ExperienceProps) {
     const { title, description, id, hasUnsaved } = experience;
     const isOffline = isOfflineId(id);
     const isPartOffline = !isOffline && hasUnsaved;
@@ -170,76 +226,113 @@ const Experience = React.memo(
     return (
       <div
         className={makeClassNames({
-          "experience-container card": true,
+          "bulma experience-container": true,
           "border-solid border-2 rounded": isOffline || isPartOffline,
           "border-offline": isOffline,
           "border-part-offline": isPartOffline,
+          [experienceSelector]: true,
         })}
+        id={id}
       >
-        <div className="card-header">
-          <Link
-            className="card-header-title"
-            to={makeExperienceRoute(id)}
-            id={makeExperienceHeaderDomId(id)}
-          >
-            {title}
-          </Link>
-        </div>
-
-        {!!description && (
-          <div className="experience-description card-content">
-            <div id={`experience-description-${id}`} className="content">
-              {description}
+        <div className="card">
+          <div className="card-header">
+            <div
+              data-click-context={ClickContext.goToExperience}
+              className={makeClassNames({
+                "card-header-title": true,
+                [titleSelector]: true,
+              })}
+            >
+              {title}
             </div>
           </div>
-        )}
+
+          {!!description && (
+            <div className="pt-3 pb-3 experience-description card-content">
+              {showingDescription ? (
+                <i
+                  className={makeClassNames({
+                    "fas fa-eye-slash": true,
+                    [hideDescriptionIconSelector]: true,
+                  })}
+                  data-click-context={ClickContext.toggleDescription}
+                />
+              ) : (
+                <i
+                  className={makeClassNames({
+                    "fas fa-eye": true,
+                    [showDescriptionIconSelector]: true,
+                  })}
+                  data-click-context={ClickContext.toggleDescription}
+                />
+              )}
+
+              {showingDescription && (
+                <div
+                  className={makeClassNames({
+                    content: true,
+                    [descriptionSelector]: true,
+                  })}
+                >
+                  {description}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     );
   },
 
-  function ExperienceDiff(prevProps, currProps) {
+  function ExperienceComponentPropsDiff(prevProps, currProps) {
     return prevProps.showingDescription === currProps.showingDescription;
   },
 );
 
-const defaultSearchActiveContext = {
-  searchText: "",
-  results: [],
-} as SearchResults["results"]["context"];
-
-const defaultSearchResults = {} as SearchResults["results"];
-
-const searchResultRenderer = (props: SearchResultProps) => {
-  const { price: experienceId, title } = props;
-  return (
-    <div className="search-result" id={`search-result-${experienceId}`}>
-      {title}
-    </div>
-  );
-};
-
-function SearchComponentUnMemo(props: SearchComponentProps) {
-  const { dispatch, navigate } = props;
-
-  const activeSearch = (props as SearchResults).results || defaultSearchResults;
+function SearchComponent(props: SearchComponentProps) {
+  const { experiencesLen, experiencesPrepared } = props;
+  const [state, setState] = useState<SearchState>({
+    searchText: "",
+    value: "inactive",
+  });
 
   const searchFn = useCallback(
-    (_, { value }: SearchProps) => {
-      const searchText = value as string;
+    (e: React.ChangeEvent) => {
+      const searchText = (e.currentTarget as HTMLInputElement).value as string;
 
-      dispatch({
-        type: ActionTypes.SEARCH_TEXT_SET,
-        searchText,
+      setState(prev => {
+        return { ...prev, searchText, value: "searching" };
       });
 
       setTimeout(() => {
-        dispatch({
-          type: ActionTypes.EXEC_SEARCH,
-          searchText,
+        const results = fuzzysort
+          .go(searchText, experiencesPrepared, {
+            key: "title",
+          })
+          .map(searchResult => {
+            const { obj } = searchResult;
+
+            return {
+              title: obj.title,
+              id: obj.id,
+            };
+          });
+
+        const searchState: SearchResults = {
+          value: "results",
+          results: {
+            context: {
+              results,
+            },
+          },
+        };
+
+        setState(prev => {
+          return { ...prev, ...searchState };
         });
       });
     },
-    [dispatch],
+    [experiencesPrepared],
   );
 
   const searchFnDebouncedRef = useRef(
@@ -247,8 +340,6 @@ function SearchComponentUnMemo(props: SearchComponentProps) {
       leading: true,
     }),
   );
-
-  const { context = defaultSearchActiveContext } = activeSearch;
 
   useEffect(() => {
     const debounced = searchFnDebouncedRef.current;
@@ -259,37 +350,46 @@ function SearchComponentUnMemo(props: SearchComponentProps) {
   }, []);
 
   return (
-    <SemanticSearch
-      id="my-experiences-search"
-      value={props.context.searchText}
-      className="z-10 my-search"
-      loading={props.value === "searching"}
-      results={context.results}
-      resultRenderer={searchResultRenderer}
-      onSearchChange={searchFnDebouncedRef.current}
-      onResultSelect={(_, { result }) => {
-        const { price: experienceId } = result;
-        navigate(makeExperienceRoute(experienceId));
-      }}
-    />
-  );
-}
+    <div className="relative z-10 pt-4 mb-5 ml-2 bulma my-search">
+      <div className="control has-icons-right">
+        <input
+          className="input is-rounded"
+          type="text"
+          value={state.searchText}
+          placeholder={`${experiencesLen} items`}
+          onChange={searchFn}
+          id={searchTextInputId}
+        />
 
-function SearchComponentPropsDiffFn(
-  pp: SearchComponentProps,
-  np: SearchComponentProps,
-) {
-  if (pp.value !== np.value) {
-    return false;
-  }
-  const { context: prevContext = {} as SearchResults["results"]["context"] } =
-    (pp as SearchResults).results || defaultSearchResults;
-  const { context: nexContext = {} as SearchResults["results"]["context"] } =
-    (np as SearchResults).results || defaultSearchResults;
+        <span className="icon is-right">
+          <i className="fas fa-search" />
+        </span>
+      </div>
 
-  return (
-    pp.context.searchText === np.context.searchText &&
-    prevContext.results === nexContext.results
+      {state.value === "results" && (
+        <div
+          className="absolute w-full mt-2 overflow-auto bg-white border border-solid menu"
+          style={{ maxHeight: "250px" }}
+        >
+          <ul className="menu-list">
+            {state.results.context.results.map(props => {
+              const { id, title } = props;
+              return (
+                <li
+                  className="border-b border-solid"
+                  id={`search-result-${id}`}
+                  key={id}
+                  data-click-context={ClickContext.searchLink}
+                  data-experience-id={id}
+                >
+                  <a className="search-experience-link">{title}</a>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -321,6 +421,7 @@ export default (props: CallerProps) => {
       error={error}
       loading={loading}
       navigate={navigate as NavigateFn}
+      experiencesPrepared={prepareExperiencesForSearch(experiences)}
     />
   );
 };

@@ -1,7 +1,7 @@
 export const domPrefix = "my-experiences";
-
-export function makeExperienceHeaderDomId(id: Id) {
-  return `${domPrefix}-title-${id}`;
-}
-
-type Id = string | number;
+export const hideDescriptionIconSelector = "js-hide-description";
+export const showDescriptionIconSelector = "js-show-description";
+export const descriptionSelector = "js-description";
+export const titleSelector = "js-experience-title";
+export const experienceSelector = "js-experience";
+export const searchTextInputId = `${domPrefix}-search-input`;

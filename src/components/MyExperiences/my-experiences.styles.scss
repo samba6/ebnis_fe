@@ -52,14 +52,12 @@
   }
 
   .my-search {
-    margin-bottom: 15px;
     position: sticky !important;
-    top: 0;
-    padding-top: 10px;
+    width: 300px;
   }
 
-  .results {
-    overflow-y: auto;
-    max-height: 300px;
+  .search-experience-link {
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
   }
 }

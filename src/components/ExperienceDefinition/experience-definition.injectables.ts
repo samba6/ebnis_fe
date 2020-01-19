@@ -1,3 +1,4 @@
+/* istanbul ignore file */
 import ApolloClient from "apollo-client";
 import { experienceDefinitionResolvers } from "./experience-definition.resolvers";
 import { CreateExpUpdateFn } from "./experience-definition.utils";

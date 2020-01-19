@@ -1,3 +1,4 @@
+/* istanbul ignore file */
 import { graphql, useStaticQuery } from "gatsby";
 import {
   LogoImageQuery,

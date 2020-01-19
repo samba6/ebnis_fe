@@ -1,3 +1,4 @@
+/* istanbul ignore file */
 import { Cancelable } from "lodash";
 
 export function cleanUpOnSearchExit(cancellable: Cancelable) {

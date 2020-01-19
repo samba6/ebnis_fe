@@ -6,6 +6,7 @@ import { Workbox } from "workbox-window";
 import "./src/styles/semantic-theme/semantic.less";
 import "./src/styles/globals.scss";
 import "./src/styles/tailwind.css";
+import "@fortawesome/fontawesome-free/css/all.css";
 import {
   buildClientCache,
   restoreCacheOrPurgeStorage,
