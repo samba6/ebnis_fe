@@ -5,3 +5,4 @@ export const descriptionSelector = "js-description";
 export const titleSelector = "js-experience-title";
 export const experienceSelector = "js-experience";
 export const searchTextInputId = `${domPrefix}-search-input`;
+export const noSearchMatchId = `${domPrefix}-no-search-match`;

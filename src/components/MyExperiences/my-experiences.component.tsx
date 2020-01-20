@@ -3,18 +3,20 @@ import React, {
   useMemo,
   useRef,
   useCallback,
-  useState,
+  useReducer,
+  memo,
 } from "react";
 import "./my-experiences.styles.scss";
 import {
   ComponentProps,
   ExperienceProps,
-  SearchResults,
   SearchComponentProps,
   CallerProps,
   DescriptionMap,
-  SearchState,
   prepareExperiencesForSearch,
+  reducer,
+  initState,
+  ActionType,
 } from "./my-experiences.utils";
 import { EXPERIENCE_DEFINITION_URL } from "../../routes";
 import { makeExperienceRoute } from "../../constants/experience-route";
@@ -50,55 +52,31 @@ import {
   titleSelector,
   experienceSelector,
   searchTextInputId,
+  domPrefix,
+  noSearchMatchId,
 } from "./my-experiences.dom";
 import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragment";
-import fuzzysort from "fuzzysort";
 
 enum ClickContext {
   goToExperience = "go-to-experience",
   toggleDescription = "toggle-description",
   searchLink = "search-link",
+  searchInput = "search-input",
 }
 
 export function MyExperiences(props: ComponentProps) {
-  const { experiences, navigate, error, loading, experiencesPrepared } = props;
+  const { experiences, navigate, error, loading } = props;
   const experiencesLen = experiences.length;
-
   const noExperiences = experiencesLen === 0;
 
-  const [idToShowingDescriptionMap, toggleShowDescription] = useState(() => {
-    return experiences.reduce((acc, experience) => {
-      const { description, id } = experience;
+  const [stateMachine, dispatch] = useReducer(reducer, experiences, initState);
+  const {
+    states: { search: searchState },
+    context: { idToShowingDescriptionMap },
+  } = stateMachine;
 
-      if (description) {
-        acc[id] = false;
-      }
-
-      return acc;
-    }, {} as DescriptionMap);
-  });
-
-  useEffect(() => {
-    toggleShowDescription(
-      experiences.reduce((acc, experience) => {
-        const { description, id } = experience;
-
-        if (description) {
-          acc[id] = false;
-        }
-
-        return acc;
-      }, {} as DescriptionMap),
-    );
-  }, [experiences]);
-
-  useEffect(() => {
-    setDocumentTitle(makeSiteTitle(MY_EXPERIENCES_TITLE));
-
-    return setDocumentTitle;
-  }, []);
-
-  const onClick = useCallback((e: React.MouseEvent) => {
+  const onClick = useCallback((e: MouseEvent) => {
+    e.stopImmediatePropagation();
     const target = e.target as HTMLElement;
     const { dataset } = target;
 
@@ -112,16 +90,13 @@ export function MyExperiences(props: ComponentProps) {
         return;
 
       case ClickContext.toggleDescription: {
-        const experienceId = (target.closest(
-          "." + experienceSelector,
-        ) as HTMLElement).id;
+        const id = (target.closest("." + experienceSelector) as HTMLElement).id;
 
-        toggleShowDescription(prev => {
-          return {
-            ...prev,
-            [experienceId]: !prev[experienceId],
-          };
+        dispatch({
+          type: ActionType.TOGGLE_DESCRIPTION,
+          id,
         });
+
         return;
       }
 
@@ -130,7 +105,36 @@ export function MyExperiences(props: ComponentProps) {
         navigate(makeExperienceRoute(experienceId));
         return;
       }
+
+      case ClickContext.searchInput:
+        break;
+
+      default: {
+        dispatch({
+          type: ActionType.CLEAR_SEARCH,
+        });
+      }
     }
+    /* eslint-disable-next-line react-hooks/exhaustive-deps*/
+  }, []);
+
+  useEffect(() => {
+    dispatch({
+      type: ActionType.ON_EXPERIENCES_CHANGED,
+      experiences,
+    });
+  }, [experiences]);
+
+  useEffect(() => {
+    setDocumentTitle(makeSiteTitle(MY_EXPERIENCES_TITLE));
+
+    const doc = document.documentElement;
+    doc.addEventListener("click", onClick);
+
+    return () => {
+      setDocumentTitle;
+      doc.removeEventListener("click", onClick);
+    };
     /* eslint-disable-next-line react-hooks/exhaustive-deps*/
   }, []);
 
@@ -148,8 +152,8 @@ export function MyExperiences(props: ComponentProps) {
         {!noExperiences && (
           <SearchComponent
             experiencesLen={experiencesLen}
-            navigate={navigate}
-            experiencesPrepared={experiencesPrepared}
+            dispatch={dispatch}
+            searchState={searchState}
           />
         )}
 
@@ -183,39 +187,44 @@ export function MyExperiences(props: ComponentProps) {
   }
 
   return (
-    <div className="components-experiences">
+    <div className="components-experiences" id={domPrefix}>
       <SidebarHeader title="My Experiences" sidebar={true} />
-
-      <div className="main" onClick={onClick}>
+      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any*/}
+      <div className="main" onClick={onClick as any}>
         {renderMain()}
       </div>
     </div>
   );
 }
 
-const ExperiencesComponent = (props: {
-  experiences: ExperienceFragment[];
-  navigate: NavigateFn;
-  idToShowingDescriptionMap: DescriptionMap;
-}) => {
-  const { experiences, idToShowingDescriptionMap } = props;
+const ExperiencesComponent = memo(
+  (props: ExperiencesComponentProps) => {
+    const { experiences, idToShowingDescriptionMap } = props;
 
-  return (
-    <div id="experiences-container" className="experiences-container">
-      {experiences.map(experience => {
-        const { id } = experience;
+    return (
+      <div id="experiences-container" className="experiences-container">
+        {experiences.map(experience => {
+          const { id } = experience;
 
-        return (
-          <ExperienceComponent
-            key={id}
-            showingDescription={idToShowingDescriptionMap[id]}
-            experience={experience}
-          />
-        );
-      })}
-    </div>
-  );
-};
+          return (
+            <ExperienceComponent
+              key={id}
+              showingDescription={idToShowingDescriptionMap[id]}
+              experience={experience}
+            />
+          );
+        })}
+      </div>
+    );
+  },
+  (currentProps, nextProps) => {
+    return (
+      currentProps.idToShowingDescriptionMap ===
+        nextProps.idToShowingDescriptionMap &&
+      currentProps.experiences === nextProps.experiences
+    );
+  },
+);
 
 const ExperienceComponent = React.memo(
   function ExperienceFn({ experience, showingDescription }: ExperienceProps) {
@@ -248,7 +257,11 @@ const ExperienceComponent = React.memo(
           </div>
 
           {!!description && (
-            <div className="pt-3 pb-3 experience-description card-content">
+            <div
+              className={makeClassNames({
+                "experience-description card-content": true,
+              })}
+            >
               {showingDescription ? (
                 <i
                   className={makeClassNames({
@@ -270,7 +283,7 @@ const ExperienceComponent = React.memo(
               {showingDescription && (
                 <div
                   className={makeClassNames({
-                    content: true,
+                    "content pt-2": true,
                     [descriptionSelector]: true,
                   })}
                 >
@@ -290,49 +303,26 @@ const ExperienceComponent = React.memo(
 );
 
 function SearchComponent(props: SearchComponentProps) {
-  const { experiencesLen, experiencesPrepared } = props;
-  const [state, setState] = useState<SearchState>({
-    searchText: "",
-    value: "inactive",
-  });
+  const { experiencesLen, searchState: state, dispatch } = props;
 
   const searchFn = useCallback(
     (e: React.ChangeEvent) => {
-      const searchText = (e.currentTarget as HTMLInputElement).value as string;
+      const text = (e.currentTarget as HTMLInputElement).value as string;
 
-      setState(prev => {
-        return { ...prev, searchText, value: "searching" };
+      dispatch({
+        type: ActionType.SET_SEARCH_TEXT,
+        text,
       });
 
       setTimeout(() => {
-        const results = fuzzysort
-          .go(searchText, experiencesPrepared, {
-            key: "title",
-          })
-          .map(searchResult => {
-            const { obj } = searchResult;
-
-            return {
-              title: obj.title,
-              id: obj.id,
-            };
-          });
-
-        const searchState: SearchResults = {
-          value: "results",
-          results: {
-            context: {
-              results,
-            },
-          },
-        };
-
-        setState(prev => {
-          return { ...prev, ...searchState };
+        dispatch({
+          type: ActionType.SEARCH,
+          text,
         });
       });
     },
-    [experiencesPrepared],
+    /* eslint-disable-next-line react-hooks/exhaustive-deps*/
+    [],
   );
 
   const searchFnDebouncedRef = useRef(
@@ -359,6 +349,7 @@ function SearchComponent(props: SearchComponentProps) {
           placeholder={`${experiencesLen} items`}
           onChange={searchFn}
           id={searchTextInputId}
+          data-click-context={ClickContext.searchInput}
         />
 
         <span className="icon is-right">
@@ -368,24 +359,34 @@ function SearchComponent(props: SearchComponentProps) {
 
       {state.value === "results" && (
         <div
-          className="absolute w-full mt-2 overflow-auto bg-white border border-solid menu"
+          className="absolute w-full mt-2 overflow-auto bg-white border border-gray-500 border-solid menu"
           style={{ maxHeight: "250px" }}
         >
           <ul className="menu-list">
-            {state.results.context.results.map(props => {
-              const { id, title } = props;
-              return (
-                <li
-                  className="border-b border-solid"
-                  id={`search-result-${id}`}
-                  key={id}
-                  data-click-context={ClickContext.searchLink}
-                  data-experience-id={id}
-                >
-                  <a className="search-experience-link">{title}</a>
-                </li>
-              );
-            })}
+            {state.results.context.results.length === 0 ? (
+              <li
+                className="border-b border-solid no-search-match"
+                id={noSearchMatchId}
+              >
+                No matches
+              </li>
+            ) : (
+              state.results.context.results.map(props => {
+                const { id, title } = props;
+                return (
+                  <li className="border-b border-solid" key={id}>
+                    <a
+                      className="search-experience-link"
+                      id={`search-result-${id}`}
+                      data-click-context={ClickContext.searchLink}
+                      data-experience-id={id}
+                    >
+                      {title}
+                    </a>
+                  </li>
+                );
+              })
+            )}
           </ul>
         </div>
       )}
@@ -425,3 +426,9 @@ export default (props: CallerProps) => {
     />
   );
 };
+
+interface ExperiencesComponentProps {
+  experiences: ExperienceFragment[];
+  navigate: NavigateFn;
+  idToShowingDescriptionMap: DescriptionMap;
+}

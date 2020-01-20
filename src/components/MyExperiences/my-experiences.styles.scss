@@ -31,6 +31,7 @@
 
   .experience-description {
     overflow-wrap: break-word;
+    padding: 10px 0 0 1rem;
   }
 
   .new-experience-button {
@@ -59,5 +60,10 @@
   .search-experience-link {
     padding-top: 1rem !important;
     padding-bottom: 1rem !important;
+  }
+
+  .no-search-match {
+    padding: 1rem;
+    font-weight: bold;
   }
 }

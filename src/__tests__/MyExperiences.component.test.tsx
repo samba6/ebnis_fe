@@ -3,10 +3,7 @@ import React, { ComponentType } from "react";
 import "@marko/testing-library/cleanup-after-each";
 import { render, act } from "@testing-library/react";
 import { MyExperiences } from "../components/MyExperiences/my-experiences.component";
-import {
-  ComponentProps,
-  prepareExperiencesForSearch,
-} from "../components/MyExperiences/my-experiences.utils";
+import { ComponentProps } from "../components/MyExperiences/my-experiences.utils";
 import { renderWithRouter, fillField } from "./test_utils";
 import { ExperienceConnectionFragment_edges_node } from "../graphql/apollo-types/ExperienceConnectionFragment";
 import { cleanUpOnSearchExit } from "../components/MyExperiences/my-experiences.injectables";
@@ -17,6 +14,8 @@ import {
   descriptionSelector,
   titleSelector,
   searchTextInputId,
+  domPrefix,
+  noSearchMatchId,
 } from "../components/MyExperiences/my-experiences.dom";
 
 jest.mock("../components/SidebarHeader/sidebar-header.component", () => ({
@@ -128,9 +127,11 @@ it("renders experiences from server, toggles descriptions, goes to detailed page
   /**
    * When experience 1 show description icon is clicked
    */
-  (experience1Dom.getElementsByClassName(
-    showDescriptionIconSelector,
-  )[0] as HTMLElement).click();
+  act(() => {
+    (experience1Dom.getElementsByClassName(
+      showDescriptionIconSelector,
+    )[0] as HTMLElement).click();
+  });
 
   /**
    * Then experience 1 description should be visible
@@ -153,9 +154,11 @@ it("renders experiences from server, toggles descriptions, goes to detailed page
   /**
    * When experience 1 hide description icon is clicked
    */
-  (experience1Dom.getElementsByClassName(
-    hideDescriptionIconSelector,
-  )[0] as HTMLElement).click();
+  act(() => {
+    (experience1Dom.getElementsByClassName(
+      hideDescriptionIconSelector,
+    )[0] as HTMLElement).click();
+  });
 
   /**
    * Then experience 1 description should not be visible
@@ -217,7 +220,7 @@ it("renders error ui if we are unable to get experiences", () => {
   expect(document.getElementById("no-experiences-error")).not.toBeNull();
 });
 
-it("goes to detailed experience page on search", async () => {
+it("goes to detailed experience page on search", () => {
   /**
    * Given there are experiences in the system
    */
@@ -242,20 +245,22 @@ it("goes to detailed experience page on search", async () => {
   });
 
   /**
-   * And component is rendered
+   * When component is rendered
+   */
+  const { unmount } = render(ui);
+
+  /**
+   * And main component window is clicked, then nothing should happen
    */
 
-  const { unmount } = render(ui);
+  const domMain = document.getElementById(domPrefix) as HTMLElement;
+  // domMain.click();
 
   /**
    * Then we should not see title 1 search result
    */
 
   expect(document.getElementById("search-result-id1")).toBeNull();
-
-  const $searchContainer = document.getElementsByClassName(
-    "my-search",
-  )[0] as HTMLDivElement;
 
   /**
    * When we search for title 1
@@ -279,13 +284,72 @@ it("goes to detailed experience page on search", async () => {
    * Then search result for experience 1 should be visible
    */
 
-  const $result = document.getElementById("search-result-id1") as HTMLElement;
+  expect(document.getElementById("search-result-id1")).not.toBeNull();
 
   /**
-   * When we click on the search result
+   * When search input is clicked
+   */
+  searcInputDom.click();
+
+  /**
+   * Then search results should remain open
+   */
+  expect(document.getElementById("search-result-id1")).not.toBeNull();
+
+  /**
+   * When user clicks outside results menu
+   */
+  act(() => {
+    domMain.click();
+  });
+
+  /**
+   * Then search result for experience 1 should no longer be visible
    */
 
-  $result.click();
+  expect(document.getElementById("search-result-id1")).toBeNull();
+
+  /**
+   * And no UI indicating no search results should be visible
+   */
+  expect(document.getElementById(noSearchMatchId)).toBeNull();
+
+  /**
+   * When search is run with text that does not match any of the experiences
+   * titles
+   */
+  fillField(searcInputDom, "t1111");
+
+  /**
+   * Then UI indicating no search results should be visible
+   */
+  act(() => {
+    jest.runAllTimers();
+  });
+  expect(document.getElementById(noSearchMatchId)).not.toBeNull();
+
+  /**
+   * When user clicks outside results menu
+   */
+  act(() => {
+    domMain.click();
+  });
+
+  /**
+   * Then no UI indicating no search results should be visible
+   */
+  expect(document.getElementById(noSearchMatchId)).toBeNull();
+
+  /**
+   * When search is conducted again and experience 1 search result is clicked
+   */
+  fillField(searcInputDom, "t1");
+
+  act(() => {
+    jest.runAllTimers();
+  });
+
+  (document.getElementById("search-result-id1") as HTMLElement).click();
 
   /**
    * Then we should be redirected to detailed page of experience 1
@@ -321,13 +385,7 @@ function makeComp({ props = {} }: { props?: Partial<ComponentProps> } = {}) {
   const experiences = props.experiences || [];
 
   return {
-    ui: (
-      <Ui
-        experiences={experiences}
-        experiencesPrepared={prepareExperiencesForSearch(experiences)}
-        {...props}
-      />
-    ),
+    ui: <Ui experiences={experiences} {...props} />,
     ...rest,
   };
 }
