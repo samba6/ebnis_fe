@@ -13,7 +13,7 @@ $header-border-bottom: 5px solid;
   }
 
   flex-shrink: 0;
-  z-index: 2; // otherwise app-main will cover it and the close button will be
+  z-index: 3; // otherwise app-main will cover it and the close button will be
   // covered by sidebar
   position: relative;
 

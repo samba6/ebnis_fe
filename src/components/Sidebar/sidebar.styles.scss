@@ -10,7 +10,7 @@ $sidebar-item-border: 0.1px solid
 .components-sidebar {
   --main-container-height: 100%;
   --main-container-width: 100%;
-  z-index: 1; // so that it can cover app-main
+  z-index: 2; // so that it can cover app-main
 
   display: flex;
   flex-direction: row-reverse;

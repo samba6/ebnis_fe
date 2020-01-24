@@ -76,12 +76,12 @@ export function MyExperiences(props: ComponentProps) {
   } = stateMachine;
 
   const onClick = useCallback((e: MouseEvent) => {
-    e.stopImmediatePropagation();
     const target = e.target as HTMLElement;
     const { dataset } = target;
 
     switch (dataset.clickContext) {
       case ClickContext.goToExperience:
+        e.stopImmediatePropagation();
         navigate(
           makeExperienceRoute(
             (target.closest("." + experienceSelector) as HTMLElement).id,
@@ -90,6 +90,7 @@ export function MyExperiences(props: ComponentProps) {
         return;
 
       case ClickContext.toggleDescription: {
+        e.stopImmediatePropagation();
         const id = (target.closest("." + experienceSelector) as HTMLElement).id;
 
         dispatch({
@@ -101,12 +102,14 @@ export function MyExperiences(props: ComponentProps) {
       }
 
       case ClickContext.searchLink: {
+        e.stopImmediatePropagation();
         const experienceId = dataset.experienceId as string;
         navigate(makeExperienceRoute(experienceId));
         return;
       }
 
       case ClickContext.searchInput:
+        e.stopImmediatePropagation();
         break;
 
       default: {
@@ -340,7 +343,7 @@ function SearchComponent(props: SearchComponentProps) {
   }, []);
 
   return (
-    <div className="relative z-10 pt-4 mb-5 ml-2 bulma my-search">
+    <div className="relative pt-4 mb-5 ml-2 bulma my-search">
       <div className="control has-icons-right">
         <input
           className="input is-rounded"
