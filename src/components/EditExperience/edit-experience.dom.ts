@@ -1,0 +1,13 @@
+export const domPrefix = "edit-experience";
+export const titleInputId = `${domPrefix}-title-input`;
+export const descriptionInputId = `${domPrefix}-description-input`;
+export const submitBtnId = `${domPrefix}-submit-btn`;
+export const resetFormFieldsBtnId = `${domPrefix}-reset-form-fields`;
+export const errorsNotificationId = `${domPrefix}-errors-notification`;
+export const warningNotificationId = `${domPrefix}-warning-notification`;
+export const successNotificationId = `${domPrefix}-success-notification`;
+export const titleInputErrorId = `${domPrefix}-title-input-error`;
+export const closeModalBtnId = `${domPrefix}-close-modal-btn`;
+export const closeSubmitNotificationBtnSelector = `js-${domPrefix}-close-submit-notification`;
+export const definitionErrorSelector = `js-${domPrefix}-definition-error`;
+export const scrollToTopId = `${domPrefix}-scroll-to-top`;

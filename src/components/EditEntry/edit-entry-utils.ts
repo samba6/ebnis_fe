@@ -1533,13 +1533,7 @@ function handleUpdateEntryOfflineAction(proxy: DraftState) {
 
 export const EditEnryContext = createContext<ContextValue>({} as ContextValue);
 
-////////////////////////// TYPES ////////////////////////////
-
-interface ContextValue {
-  dispatch: DispatchType;
-  onSubmit: () => void;
-  hasConnection: LayoutContextValue["hasConnection"];
-}
+////////////////////////// TYPES SECTION ////////////////////////
 
 type DraftState = Draft<StateMachine>;
 
@@ -1575,6 +1569,27 @@ export interface StateMachine {
   };
 }
 
+////////////////////////// STRINGGY TYPES SECTION //////////////////////
+type NoEffectVal = "noEffect";
+type HasEffectsVal = "hasEffects";
+type InActiveVal = "inactive";
+type SingleVal = "single";
+type MultipleVal = "multiple";
+type ActiveVal = "active";
+type SubmittingVal = "submitting";
+type ApolloErrorValue = "apolloErrors";
+type OtherErrorsVal = "otherErrors";
+type OnlineVal = "online";
+type OfflineVal = "offline";
+type ModifiedOfflineVal = "modifiedOffline";
+////////////////////////// END STRINGGY TYPES SECTION //////////////////
+
+interface ContextValue {
+  dispatch: DispatchType;
+  onSubmit: () => void;
+  hasConnection: LayoutContextValue["hasConnection"];
+}
+
 interface GeneralEffectState<IEffect> {
   run: boolean;
   effect: IEffect;
@@ -1599,7 +1614,7 @@ type EffectsList = (
   | ScrollToViewEffect
 )[];
 
-interface ThirdEffectFunctionArgs {
+interface EffectFunctionArgs {
   dispatch: DispatchType;
 }
 
@@ -1612,7 +1627,7 @@ interface EffectDefinition<
   func?: (
     ownArgs: OwnArgs,
     effectArgs: ComponentProps,
-    lastArgs: ThirdEffectFunctionArgs,
+    lastArgs: EffectFunctionArgs,
   ) => void | Promise<void | (() => void)> | (() => void);
 }
 
@@ -1620,21 +1635,6 @@ interface DefinitionAndDataIds {
   definitionId: string;
   dataId: string;
 }
-
-////////////////////////// STRINGGY TYPES SECTION //////////////////////
-type NoEffectVal = "noEffect";
-type HasEffectsVal = "hasEffects";
-type InActiveVal = "inactive";
-type SingleVal = "single";
-type MultipleVal = "multiple";
-type ActiveVal = "active";
-type SubmittingVal = "submitting";
-type ApolloErrorValue = "apolloErrors";
-type OtherErrorsVal = "otherErrors";
-type OnlineVal = "online";
-type OfflineVal = "offline";
-type ModifiedOfflineVal = "modifiedOffline";
-////////////////////////// END STRINGGY TYPES SECTION //////////////////
 
 interface Submitting {
   value: SubmittingVal;

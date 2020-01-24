@@ -125,7 +125,7 @@ export interface ExperienceFragment {
   /**
    * The field definitions used for the experience entries
    */
-  dataDefinitions: (ExperienceFragment_dataDefinitions | null)[];
+  dataDefinitions: ExperienceFragment_dataDefinitions[];
   /**
    * The entries of the experience - can be paginated
    */

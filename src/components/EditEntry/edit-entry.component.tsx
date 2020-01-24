@@ -182,15 +182,7 @@ export function EditEntryComponent(props: ComponentProps) {
               </div>
             )}
 
-          <span
-            id={scrollToTopId}
-            style={{
-              width: 1,
-              height: 1,
-              visibility: "hidden",
-              clip: "rect(1px, 1px, 1px, 1px)",
-            }}
-          />
+          <span id={scrollToTopId} className="visually-hidden" />
 
           <SubmissionSuccessResponseComponent
             state={submission}

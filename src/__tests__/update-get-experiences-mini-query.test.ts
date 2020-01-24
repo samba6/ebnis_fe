@@ -4,6 +4,7 @@ import {
   insertExperienceInGetExperiencesMiniQuery,
   floatExperienceToTheTopInGetExperiencesMiniQuery,
   replaceExperiencesInGetExperiencesMiniQuery,
+  floatExperiencesToTheTopInGetExperiencesMiniQuery,
 } from "../apollo-cache/update-get-experiences-mini-query";
 import { getExperiencesMiniQuery } from "../apollo-cache/get-experiences-mini-query";
 import { ExperienceFragment } from "../graphql/apollo-types/ExperienceFragment";
@@ -46,7 +47,7 @@ describe("insertExperienceInGetExperiencesMiniQuery", () => {
   });
 
   test("no experience edges", async () => {
-    mockGetExperiencesMiniQuery.mockResolvedValue({});
+    mockGetExperiencesMiniQuery.mockReturnValue({});
 
     await insertExperienceInGetExperiencesMiniQuery(
       dataProxy,
@@ -59,7 +60,7 @@ describe("insertExperienceInGetExperiencesMiniQuery", () => {
   });
 
   test("insert as first element", async () => {
-    mockGetExperiencesMiniQuery.mockResolvedValue({
+    mockGetExperiencesMiniQuery.mockReturnValue({
       edges: [{ node: { id: "b" } }],
     });
 
@@ -87,7 +88,7 @@ describe("floatExperienceToTheTopInGetExperiencesMiniQuery", () => {
   });
 
   test("no edges", async () => {
-    mockGetExperiencesMiniQuery.mockResolvedValue({});
+    mockGetExperiencesMiniQuery.mockReturnValue({});
 
     await floatExperienceToTheTopInGetExperiencesMiniQuery(dataProxy, {
       id: "a",
@@ -98,7 +99,7 @@ describe("floatExperienceToTheTopInGetExperiencesMiniQuery", () => {
   });
 
   test("floats to top of list", async () => {
-    mockGetExperiencesMiniQuery.mockResolvedValue({
+    mockGetExperiencesMiniQuery.mockReturnValue({
       edges: [{ node: { id: "b" } }, { node: { id: "a" } }],
     });
 
@@ -123,7 +124,7 @@ describe("replaceExperiencesInGetExperiencesMiniQuery", () => {
   });
 
   test("no edges", async () => {
-    mockGetExperiencesMiniQuery.mockResolvedValue({});
+    mockGetExperiencesMiniQuery.mockReturnValue({});
 
     await replaceExperiencesInGetExperiencesMiniQuery(dataProxy as any, {});
 
@@ -133,7 +134,7 @@ describe("replaceExperiencesInGetExperiencesMiniQuery", () => {
   });
 
   test("replaces and removes", async () => {
-    mockGetExperiencesMiniQuery.mockResolvedValue({
+    mockGetExperiencesMiniQuery.mockReturnValue({
       edges: [
         { node: { id: "a" } }, // leave alone
         { node: { id: "b" } }, // remove
@@ -152,5 +153,65 @@ describe("replaceExperiencesInGetExperiencesMiniQuery", () => {
       { node: { id: "a" } },
       { node: { id: "c", title: "cc" } },
     ]);
+  });
+});
+
+describe("floatExperiencesToTheTopInGetExperiencesMiniQuery", () => {
+  test("no updates", () => {
+    mockGetExperiencesMiniQuery
+      .mockReturnValueOnce(null)
+      .mockReturnValueOnce({});
+
+    floatExperiencesToTheTopInGetExperiencesMiniQuery(dataProxy, {});
+    expect(mockWriteQuery).not.toHaveBeenCalled();
+
+    floatExperiencesToTheTopInGetExperiencesMiniQuery(dataProxy, {});
+    expect(mockWriteQuery.mock.calls[0][0].data.getExperiences).toEqual({
+      edges: [],
+    });
+  });
+
+  test("updates", () => {
+    mockGetExperiencesMiniQuery.mockReturnValue({
+      edges: [
+        {
+          node: {
+            id: "1",
+          },
+        },
+        {
+          node: {
+            id: "2",
+          },
+        },
+        {
+          node: {
+            id: "3",
+          },
+        },
+      ],
+    });
+
+    floatExperiencesToTheTopInGetExperiencesMiniQuery(dataProxy, { "2": 1 });
+
+    expect(mockWriteQuery.mock.calls[0][0].data.getExperiences).toEqual({
+      edges: [
+        {
+          node: {
+            id: "2",
+          },
+        },
+        {
+          node: {
+            id: "1",
+          },
+        },
+        {
+          node: {
+            id: "3",
+          },
+        },
+      ],
+    });
   });
 });

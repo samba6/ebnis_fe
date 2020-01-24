@@ -31,7 +31,7 @@ import { isConnected } from "../../state/connections";
 import { NavigateFn } from "@reach/router";
 import Icon from "semantic-ui-react/dist/commonjs/elements/Icon";
 import Message from "semantic-ui-react/dist/commonjs/collections/Message";
-import { Experience } from "../Experience/experience.component";
+import Experience from "../Experience/experience.component";
 import { FormCtrlError } from "../FormCtrlError/form-ctrl-error.component";
 import { Entry } from "../Entry/entry.component";
 import {
@@ -50,7 +50,7 @@ import {
   createdOfflineExperiencesContainerId,
   makeExperienceUploadStatusClassNames,
   makeUploadStatusIconId,
-  makeEntryDomId ,
+  makeEntryDomId,
   makeExperienceErrorId,
   uploadBtnDomId,
   offlineExperiencesTabMenuDomId,

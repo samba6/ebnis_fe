@@ -52,7 +52,7 @@ export interface DeleteExperienceMutation_deleteExperience {
   /**
    * The field definitions used for the experience entries
    */
-  dataDefinitions: (DeleteExperienceMutation_deleteExperience_dataDefinitions | null)[];
+  dataDefinitions: DeleteExperienceMutation_deleteExperience_dataDefinitions[];
 }
 
 export interface DeleteExperienceMutation {

@@ -268,7 +268,7 @@ const ExperienceComponent = React.memo(
               {showingDescription ? (
                 <i
                   className={makeClassNames({
-                    "fas fa-eye-slash": true,
+                    "fas fa-eye-slash pb-6 toggle-description": true,
                     [hideDescriptionIconSelector]: true,
                   })}
                   data-click-context={ClickContext.toggleDescription}
@@ -276,7 +276,7 @@ const ExperienceComponent = React.memo(
               ) : (
                 <i
                   className={makeClassNames({
-                    "fas fa-eye": true,
+                    "fas fa-eye toggle-description": true,
                     [showDescriptionIconSelector]: true,
                   })}
                   data-click-context={ClickContext.toggleDescription}
@@ -286,7 +286,7 @@ const ExperienceComponent = React.memo(
               {showingDescription && (
                 <div
                   className={makeClassNames({
-                    "content pt-2": true,
+                    "content": true,
                     [descriptionSelector]: true,
                   })}
                 >

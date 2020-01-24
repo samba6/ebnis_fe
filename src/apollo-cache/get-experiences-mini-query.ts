@@ -1,5 +1,4 @@
 /* istanbul ignore file */
-import ApolloClient from "apollo-client";
 import { DataProxy } from "apollo-cache";
 import {
   GetExperienceConnectionMini,
@@ -15,33 +14,19 @@ export const readOptions = {
   variables: getExperienceConnectionMiniVariables,
 };
 
-export async function getExperiencesMiniQuery(dataProxy: DataProxy) {
+export function getExperiencesMiniQuery(cache: DataProxy) {
   let getExperiences;
 
-  if (dataProxy instanceof ApolloClient) {
-    const { data } = await dataProxy.query<
+  try {
+    const data = cache.readQuery<
       GetExperienceConnectionMini,
       GetExperienceConnectionMiniVariables
-    >({
-      ...readOptions,
-      fetchPolicy: "cache-only",
-    });
+    >(readOptions);
 
     getExperiences = data && data.getExperiences;
-  } else {
-    try {
-      const data = dataProxy.readQuery<
-        GetExperienceConnectionMini,
-        GetExperienceConnectionMiniVariables
-      >(readOptions);
-
-      getExperiences = data && data.getExperiences;
-    } catch (error) {
-      if (
-        !(error as Error).message.includes("Can't find field getExperiences")
-      ) {
-        throw error;
-      }
+  } catch (error) {
+    if (!(error as Error).message.includes("Can't find field getExperiences")) {
+      throw error;
     }
   }
 

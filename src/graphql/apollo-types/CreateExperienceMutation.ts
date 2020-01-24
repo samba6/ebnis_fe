@@ -125,7 +125,7 @@ export interface CreateExperienceMutation_createExperience_experience {
   /**
    * The field definitions used for the experience entries
    */
-  dataDefinitions: (CreateExperienceMutation_createExperience_experience_dataDefinitions | null)[];
+  dataDefinitions: CreateExperienceMutation_createExperience_experience_dataDefinitions[];
   /**
    * The entries of the experience - can be paginated
    */

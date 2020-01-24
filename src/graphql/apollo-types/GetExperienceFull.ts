@@ -125,7 +125,7 @@ export interface GetExperienceFull_getExperience {
   /**
    * The field definitions used for the experience entries
    */
-  dataDefinitions: (GetExperienceFull_getExperience_dataDefinitions | null)[];
+  dataDefinitions: GetExperienceFull_getExperience_dataDefinitions[];
   /**
    * The entries of the experience - can be paginated
    */

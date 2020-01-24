@@ -3,21 +3,22 @@ import React, { ComponentType } from "react";
 import "@marko/testing-library/cleanup-after-each";
 import { render, fireEvent } from "@testing-library/react";
 import {
-  Experience,
+  ExperienceComponent,
   getTitle,
 } from "../components/Experience/experience.component";
 import {
   Props,
-  State,
+  StateValue,
   reducer,
-  EditingState,
+  initState,
+  ActionType,
 } from "../components/Experience/experience.utils";
 import { renderWithRouter } from "./test_utils";
 import {
   ExperienceFragment_entries_edges,
   ExperienceFragment_dataDefinitions,
 } from "../graphql/apollo-types/ExperienceFragment";
-import { EditExperienceActionType } from "../components/EditExperience/edit-experience.component";
+import { ActionType as EditExperienceActionType } from "../components/EditExperience/edit-experience.utils";
 
 jest.mock("../components/Experience/loadables", () => ({
   EditExperience: () => <div id="js-editor" />,
@@ -139,17 +140,22 @@ it("toggles experience editor", () => {
 });
 
 test("reducer", () => {
-  const prevState = { editingState: "0" as any } as State;
+  const prevState = initState();
 
   expect(
-    reducer(prevState, [EditExperienceActionType.aborted]).editingState,
-  ).toEqual([EditingState.notEditing]);
+    reducer(prevState, { type: EditExperienceActionType.ABORTED }).states
+      .editingExperience.value,
+  ).toEqual(StateValue.idle);
 
   expect(
-    reducer(prevState, [EditExperienceActionType.completed]).editingState,
-  ).toEqual([EditingState.notEditing]);
+    reducer(prevState, { type: ActionType.EDIT_EXPERIENCE }).states
+      .editingExperience.value,
+  ).toEqual(StateValue.editing);
 
-  expect(reducer(prevState, ["" as any]).editingState).toEqual("0");
+  expect(
+    reducer(prevState, { type: EditExperienceActionType.COMPLETED }).states
+      .editingExperience.value,
+  ).toEqual(StateValue.idle);
 });
 
 test("getTitle", () => {
@@ -159,7 +165,7 @@ test("getTitle", () => {
 
 ////////////////////////// HELPER FUNCTIONS ///////////////////////////
 
-const ExperienceP = Experience as P;
+const ExperienceP = ExperienceComponent as P;
 
 type P = ComponentType<Partial<Props>>;
 

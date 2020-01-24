@@ -55,7 +55,7 @@
   .my-search {
     position: sticky !important;
     width: 300px;
-    z-index:1;
+    z-index: 1;
   }
 
   .search-experience-link {
@@ -66,5 +66,9 @@
   .no-search-match {
     padding: 1rem;
     font-weight: bold;
+  }
+
+  .toggle-description {
+    width: 100%;
   }
 }

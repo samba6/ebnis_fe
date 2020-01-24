@@ -63,6 +63,10 @@ import {
 } from "../components/UploadOfflineItems/upload-offline.dom";
 import { EXPERIENCE_TYPE_NAME, ENTRY_TYPE_NAME } from "../graphql/types";
 
+jest.mock("../graphql/update-experience.mutation", () => ({
+  useUpdateExperiencesOnlineMutation: () => [{}],
+}));
+
 const mockLoadingId = "a-lo";
 jest.mock("../components/Loading/loading", () => ({
   Loading: () => <div id={mockLoadingId} />,
@@ -949,7 +953,6 @@ describe("components", () => {
     expect(mockNavigate).toHaveBeenCalledWith(EXPERIENCES_URL);
     expect(mockLayoutDispatch).toHaveBeenCalled();
   });
-
 
   test("experience now online but entry still offline", async () => {
     const offlineExperienceId = "1";

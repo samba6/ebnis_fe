@@ -1,4 +1,7 @@
-import { InMemoryCache } from "apollo-cache-inmemory";
+import {
+  InMemoryCache,
+  IntrospectionFragmentMatcher,
+} from "apollo-cache-inmemory";
 import { ApolloClient } from "apollo-client";
 import { CachePersistor } from "apollo-cache-persist";
 import * as AbsintheSocket from "@kanmii/socket";
@@ -29,6 +32,7 @@ import {
   ObservableUtils,
   EmitPayload,
 } from "./observable-manager";
+import possibleTypes from "../graphql/apollo-types/fragment-types.json";
 
 export function buildClientCache(
   {
@@ -51,6 +55,10 @@ export function buildClientCache(
   }
 
   if (!cache) {
+    const fragmentMatcher = new IntrospectionFragmentMatcher({
+      introspectionQueryResultData: possibleTypes,
+    });
+
     cache = new InMemoryCache({
       addTypename: true,
 
@@ -59,6 +67,7 @@ export function buildClientCache(
       },
 
       freezeResults: true,
+      fragmentMatcher,
     }) as InMemoryCache;
   }
 
@@ -209,7 +218,7 @@ function addToGlobals(args: {
   persistor: CachePersistor<{}>;
 }) {
   const keys: (keyof typeof args)[] = ["client", "cache", "persistor"];
-  let globals = window.Cypress ? getGlobalsFromCypress() : window.____ebnis;
+  const globals = window.Cypress ? getGlobalsFromCypress() : window.____ebnis;
 
   keys.forEach(key => {
     const k = key as KeyOfE2EWindowObject;

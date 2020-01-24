@@ -137,7 +137,7 @@ export interface ExperienceConnectionFragment_edges_node {
   /**
    * The field definitions used for the experience entries
    */
-  dataDefinitions: (ExperienceConnectionFragment_edges_node_dataDefinitions | null)[];
+  dataDefinitions: ExperienceConnectionFragment_edges_node_dataDefinitions[];
   /**
    * The entries of the experience - can be paginated
    */

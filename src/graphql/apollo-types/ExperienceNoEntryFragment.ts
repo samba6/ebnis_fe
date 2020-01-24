@@ -52,5 +52,5 @@ export interface ExperienceNoEntryFragment {
   /**
    * The field definitions used for the experience entries
    */
-  dataDefinitions: (ExperienceNoEntryFragment_dataDefinitions | null)[];
+  dataDefinitions: ExperienceNoEntryFragment_dataDefinitions[];
 }

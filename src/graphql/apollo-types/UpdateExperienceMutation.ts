@@ -52,7 +52,7 @@ export interface UpdateExperienceMutation_updateExperience_experience {
   /**
    * The field definitions used for the experience entries
    */
-  dataDefinitions: (UpdateExperienceMutation_updateExperience_experience_dataDefinitions | null)[];
+  dataDefinitions: UpdateExperienceMutation_updateExperience_experience_dataDefinitions[];
 }
 
 export interface UpdateExperienceMutation_updateExperience_errors {

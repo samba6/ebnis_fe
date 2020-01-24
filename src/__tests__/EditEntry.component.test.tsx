@@ -158,7 +158,7 @@ it("destroys the UI", async () => {
 });
 
 test("not editing data, editing single definition, form errors, server success", async () => {
-  const { ui, mockUpdateDefinitionsOnline, mockEditEntryUpdate } = makeComp({
+  const { ui, mockUpdateDefinitionsOnline } = makeComp({
     props: {
       hasConnection: true,
       entry: {
@@ -584,7 +584,7 @@ test("not editing data, editing multiple definitions, server error", async () =>
   expect(getDefinitionSubmit("b")).toBeNull();
 
   /**
-   * When dismiss button of 'c' is cliked
+   * When dismiss button of 'c' is clicked
    */
   getDefinitionDismiss("c").click();
 

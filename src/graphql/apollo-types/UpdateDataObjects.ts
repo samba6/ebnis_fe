@@ -55,6 +55,10 @@ export interface UpdateDataObjects_updateDataObjects {
 }
 
 export interface UpdateDataObjects {
+  /**
+   * Update several data objects at once - prefer using this for data objects
+   *   belonging to same entry as it will be easier to deal with
+   */
   updateDataObjects: (UpdateDataObjects_updateDataObjects | null)[] | null;
 }
 

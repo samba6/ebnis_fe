@@ -29,7 +29,9 @@ it("renders loading indicator", () => {
 
   act(() => {
     jest.runAllTimers();
-    expect(document.getElementById(domPrefix)).not.toBeNull();
+    const elm = document.getElementById(domPrefix) as HTMLElement;
+    expect(elm).not.toBeNull();
+    elm.click();
   });
 });
 

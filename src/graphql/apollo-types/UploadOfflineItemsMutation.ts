@@ -125,7 +125,7 @@ export interface UploadOfflineItemsMutation_saveOfflineExperiences_experience {
   /**
    * The field definitions used for the experience entries
    */
-  dataDefinitions: (UploadOfflineItemsMutation_saveOfflineExperiences_experience_dataDefinitions | null)[];
+  dataDefinitions: UploadOfflineItemsMutation_saveOfflineExperiences_experience_dataDefinitions[];
   /**
    * The entries of the experience - can be paginated
    */

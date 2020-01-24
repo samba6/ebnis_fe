@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import "./experience-route.styles.scss";
 import { SidebarHeader } from "../SidebarHeader/sidebar-header.component";
 import { setDocumentTitle, makeSiteTitle } from "../../constants";
-import { Experience, getTitle } from "../Experience/experience.component";
+import Experience, { getTitle } from "../Experience/experience.component";
 import { UPDATE_EXPERIENCE_MUTATION } from "../../graphql/update-experience.mutation";
 import {
   UpdateExperienceMutation,

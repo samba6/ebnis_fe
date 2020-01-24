@@ -18,6 +18,13 @@ export enum DataTypes {
   SINGLE_LINE_TEXT = "SINGLE_LINE_TEXT",
 }
 
+export interface CreateAnEntryInput {
+  clientId?: string | null;
+  dataObjects: CreateDataObject[];
+  insertedAt?: any | null;
+  updatedAt?: any | null;
+}
+
 /**
  * Variables for defining field while defining a new experience
  */
@@ -101,9 +108,21 @@ export interface Registration {
   source: string;
 }
 
+/**
+ * Input variables for updating an experience
+ */
+export interface UpdateAnExperienceInput {
+  addEntries?: CreateAnEntryInput[] | null;
+  experienceId: string;
+  ownFields?: UpdateExperienceOwnFieldsInput | null;
+  updateDefinitions?: UpdateDefinitionInput[] | null;
+  updateEntries?: UpdateEntryInput[] | null;
+}
+
 export interface UpdateDataObjectInput {
   data: any;
   id: string;
+  updatedAt?: any | null;
 }
 
 /**
@@ -125,11 +144,28 @@ export interface UpdateDefinitionsInput {
 }
 
 /**
+ * An input object for updating an entry when updating several entries at once
+ */
+export interface UpdateEntryInput {
+  dataObjects: UpdateDataObjectInput[];
+  entryId: string;
+}
+
+/**
  * Variables for updating an existing Experience
  */
 export interface UpdateExperienceInput {
   description?: string | null;
   id: string;
+  title?: string | null;
+}
+
+/**
+ * Input variables for updating own fields of an experience as opposed to
+ * objects owned by the experience e.g. dataDefinition, entry
+ */
+export interface UpdateExperienceOwnFieldsInput {
+  description?: string | null;
   title?: string | null;
 }
 

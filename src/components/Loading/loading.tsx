@@ -37,7 +37,13 @@ export function Loading({
   }, [loading]);
 
   return shouldShow ? (
-    <div className="components-loading" id={domPrefix}>
+    <div
+      className="components-loading"
+      id={domPrefix}
+      onClick={e => {
+        e.stopPropagation();
+      }}
+    >
       <div
         className={makeClassNames({
           "components-loading__spinner": true,

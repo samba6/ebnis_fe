@@ -8,8 +8,8 @@ import {
 } from "../components/ExperienceRoute/experience-route.component";
 
 jest.mock("../components/Experience/experience.component", () => ({
-  Experience: () => null,
-
+  __esModule: true,
+  default: () => null,
   getTitle: jest.fn(() => "cool"),
 }));
 
@@ -26,7 +26,8 @@ it("renders correctly", () => {
     props: {},
   });
 
-  const {} = render(ui);
+  render(ui);
+  expect(true).toBe(true)
 });
 
 ////////////////////////// HELPER FUNCTIONS ///////////////////////////////////

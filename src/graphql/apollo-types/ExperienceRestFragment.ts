@@ -110,7 +110,7 @@ export interface ExperienceRestFragment {
   /**
    * The field definitions used for the experience entries
    */
-  dataDefinitions: (ExperienceRestFragment_dataDefinitions | null)[];
+  dataDefinitions: ExperienceRestFragment_dataDefinitions[];
   /**
    * The entries of the experience - can be paginated
    */

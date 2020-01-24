@@ -8,36 +8,16 @@ import { EbnisComponentProps } from "../../types";
 import { PropsWithChildren, Reducer, Dispatch } from "react";
 import { UpdateExperienceMutationFn } from "../../graphql/update-experience.mutation";
 import {
-  EditExperienceAction,
-  EditExperienceActionType,
-} from "../EditExperience/edit-experience.component";
+  Action as EditExperienceAction,
+  ActionType as EditExperienceActionType,
+} from "../EditExperience/edit-experience.utils";
+import immer, { Draft } from "immer";
+import { wrapReducer } from "../../logger";
 
-export interface IMenuOptions {
-  newEntry?: boolean;
-  onDelete: (id: string) => void;
-  onEdit?: UpdateExperienceMutationFn;
-}
-
-export interface Props
-  extends EbnisComponentProps,
-    RouteComponentProps<NewEntryRouteParams>,
-    PropsWithChildren<{}> {
-  experience: ExperienceFragment;
-  entryProps?: EbnisComponentProps;
-  headerProps?: EbnisComponentProps;
-  menuOptions: IMenuOptions;
-  entriesJSX?: JSX.Element | JSX.Element[];
-}
-
-export type FormObjVal = number | Date | string;
-export interface FormObj {
-  [k: string]: FormObjVal;
-}
-
-export interface FieldComponentProps {
-  name: string;
-  onChange: (formName: string, value: FormObjVal) => void;
-}
+export const StateValue = {
+  editing: "editing" as EditingVal,
+  idle: "idle" as IdleVal,
+};
 
 export const displayFieldType = {
   [DataTypes.SINGLE_LINE_TEXT](text: string) {
@@ -67,44 +47,97 @@ export const displayFieldType = {
   },
 };
 
+export enum ActionType {
+  EDIT_EXPERIENCE = "@experience-component/edit-experience",
+}
+
+export const reducer: Reducer<StateMachine, Action> = (state, action) =>
+  wrapReducer(
+    state,
+    action,
+    (prevState, { type }) => {
+      return immer(prevState, proxy => {
+        switch (type) {
+          case EditExperienceActionType.COMPLETED:
+          case EditExperienceActionType.ABORTED:
+            proxy.states.editingExperience.value = StateValue.idle;
+            break;
+
+          case ActionType.EDIT_EXPERIENCE:
+            proxy.states.editingExperience.value = StateValue.editing;
+            break;
+        }
+      });
+    },
+
+    // true
+  );
+
+////////////////////////// STATE UPDATE SECTION /////////////////////
+export function initState(): StateMachine {
+  return {
+    states: {
+      editingExperience: { value: StateValue.idle },
+    },
+  };
+}
+////////////////////////// END STATE UPDATE SECTION /////////////////
+
 export function formatDatetime(date: Date | string) {
   date = typeof date === "string" ? parseISO(date) : date;
   return dateFnFormat(date, "dd/MM/yyyy HH:mm:ss");
 }
 
-export enum EditingState {
-  editingExperience = "editing-experience",
-  notEditing = "not-editing",
+////////////////////////// TYPES SECTION ///////////////////////
+
+type DraftState = Draft<StateMachine>;
+
+export interface StateMachine {
+  readonly states: {
+    editingExperience: { value: IdleVal } | { value: EditingVal };
+  };
 }
 
-export const reducer: Reducer<State, Action> = (prevState, [type]) => {
-  switch (type) {
-    case EditExperienceActionType.completed:
-    case EditExperienceActionType.aborted: {
-      return {
-        ...prevState,
-        editingState: [EditingState.notEditing],
-      };
-    }
+////////////////////////// STRINGY TYPES SECTION /////////////////////////
+type EditingVal = "editing";
+type IdleVal = "idle";
+////////////////////////// END STRINGY TYPES SECTION ////////////////////
 
-    case "show-editor": {
-      return {
-        ...prevState,
-        editingState: [EditingState.editingExperience],
-      };
-    }
-
-    default:
-      return prevState;
-  }
-};
-
-export interface State {
-  readonly editingState:
-    | [EditingState.notEditing]
-    | [EditingState.editingExperience];
-}
-
-type Action = EditExperienceAction | ["show-editor"];
+type Action =
+  | EditExperienceAction
+  | {
+      type: ActionType.EDIT_EXPERIENCE;
+    };
 
 export type DispatchType = Dispatch<Action>;
+
+export interface IMenuOptions {
+  newEntry?: boolean;
+  onDelete: (id: string) => void;
+  onEdit?: UpdateExperienceMutationFn;
+}
+
+export interface CallerProps
+  extends EbnisComponentProps,
+    RouteComponentProps<NewEntryRouteParams>,
+    PropsWithChildren<{}> {
+  experience: ExperienceFragment;
+  entryProps?: EbnisComponentProps;
+  headerProps?: EbnisComponentProps;
+  menuOptions: IMenuOptions;
+  entriesJSX?: JSX.Element | JSX.Element[];
+}
+
+export type Props = CallerProps & {
+  hasConnection: boolean;
+};
+
+export type FormObjVal = number | Date | string;
+export interface FormObj {
+  [k: string]: FormObjVal;
+}
+
+export interface FieldComponentProps {
+  name: string;
+  onChange: (formName: string, value: FormObjVal) => void;
+}

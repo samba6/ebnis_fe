@@ -110,7 +110,7 @@ export interface ExperienceConnectionPreFetchFragment_edges_node {
   /**
    * The field definitions used for the experience entries
    */
-  dataDefinitions: (ExperienceConnectionPreFetchFragment_edges_node_dataDefinitions | null)[];
+  dataDefinitions: ExperienceConnectionPreFetchFragment_edges_node_dataDefinitions[];
   /**
    * The entries of the experience - can be paginated
    */

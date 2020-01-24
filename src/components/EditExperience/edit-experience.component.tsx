@@ -1,259 +1,350 @@
-import React, { useMemo, useState } from "react";
-import { Formik, Field, FormikProps, FieldProps } from "formik";
-import { noop } from "../../constants";
-import Form from "semantic-ui-react/dist/commonjs/collections/Form";
-import Message from "semantic-ui-react/dist/commonjs/collections/Message";
-import Button from "semantic-ui-react/dist/commonjs/elements/Button";
-import Input from "semantic-ui-react/dist/commonjs/elements/Input";
-import Icon from "semantic-ui-react/dist/commonjs/elements/Icon";
-import Modal from "semantic-ui-react/dist/commonjs/modules/Modal";
-import TextArea from "semantic-ui-react/dist/commonjs/addons/TextArea";
-import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragment";
-import { UpdateExperienceInput } from "../../graphql/apollo-types/globalTypes";
-import immer from "immer";
-import { ApolloError } from "apollo-client";
+import React, { useReducer, useCallback, useContext, useEffect } from "react";
+import makeClassNames from "classnames";
 import { FormCtrlError } from "../FormCtrlError/form-ctrl-error.component";
 import "./edit-experience.styles.scss";
-import { ExperienceNoEntryFragment } from "../../graphql/apollo-types/ExperienceNoEntryFragment";
-import { UpdateExperienceMutationFn } from "../../graphql/update-experience.mutation";
-import { Dispatch } from "react";
-import { UpdateExperienceMutation_updateExperience_errors } from "../../graphql/apollo-types/UpdateExperienceMutation";
+import {
+  Props,
+  ActionType,
+  reducer,
+  initState,
+  CallerProps,
+  StateValue,
+  effectFunctions,
+  FieldServerError,
+} from "./edit-experience.utils";
+import { useUpdateExperiencesOnlineMutation } from "../../graphql/update-experience.mutation";
+import { LayoutContext } from "../Layout/layout.utils";
+import { Loading } from "../Loading/loading";
+import {
+  domPrefix,
+  titleInputId,
+  descriptionInputId,
+  submitBtnId,
+  resetFormFieldsBtnId,
+  errorsNotificationId,
+  closeSubmitNotificationBtnSelector,
+  titleInputErrorId,
+  warningNotificationId,
+  closeModalBtnId,
+  successNotificationId,
+  definitionErrorSelector,
+  scrollToTopId,
+} from "./edit-experience.dom";
 
-const unwantedExperienceFields: (keyof ExperienceFragment)[] = [
-  "__typename",
-  "entries",
-  "insertedAt",
-  "updatedAt",
-  "clientId",
-  "dataDefinitions",
-  "hasUnsaved",
-];
-
-export enum EditExperienceActionType {
-  aborted = "@components/edit-experience-modal/edit-cancelled",
-  completed = "@components/edit-experience-modal/edit-finished",
-  ready = "ready",
-  submitting = "submitting",
-  formError = "form-error",
-  genericServerError = "generic-server-error",
-  successful = "successful",
-  experienceError = "experience-error",
-  fieldDefinitionsErrors = "field-definitions-errors",
+enum ClickContext {
+  submit = "submit",
+  resetForm = "reset-form",
+  closeModal = "close-modal",
+  closeSubmitNotification = "close-submit-notification",
 }
 
 export function EditExperience(props: Props) {
-  const { experience, dispatch, onEdit } = props;
+  const { experience, parentDispatch } = props;
 
-  const [editingState, setState] = useState<EditingState>([
-    EditExperienceActionType.ready,
-  ]);
+  const [stateMachine, dispatch] = useReducer(
+    reducer,
+    { experience },
+    initState,
+  );
 
-  const [stateTag, stateData] = editingState;
+  const {
+    states: {
+      dataDefinitions: definitionsState,
+      submission: submissionState,
+      meta: {
+        fields: { title: titleState, description: descriptionState },
+      },
+    },
+    effects: { general: generalEffects },
+  } = stateMachine;
 
-  const initialFormValues = useMemo(() => {
-    return immer(experience, proxy => {
-      proxy.description = proxy.description || "";
-      // proxy.id = "1";
+  useEffect(() => {
+    if (generalEffects.value !== StateValue.hasEffects) {
+      return;
+    }
 
-      unwantedExperienceFields.forEach(f => {
-        delete proxy[f];
-      });
-    });
+    for (const { key, ownArgs } of generalEffects.hasEffects.context.effects) {
+      effectFunctions[key](
+        /* eslint-disable-next-line @typescript-eslint/no-explicit-any*/
+        ownArgs as any,
+        props,
+        { dispatch },
+      );
+    }
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    /* eslint-disable-next-line react-hooks/exhaustive-deps*/
+  }, [generalEffects]);
+
+  let titleValue = titleState.context.defaults;
+  let titleError = "";
+
+  if (titleState.states.value === StateValue.changed) {
+    titleValue = titleState.states.changed.context.formValue;
+
+    if (titleState.states.changed.states.value === StateValue.invalid) {
+      titleError =
+        titleState.states.changed.states.invalid.context.errors[0][1];
+    }
+  }
+
+  let descriptionValue = descriptionState.context.defaults;
+
+  if (descriptionState.states.value === StateValue.changed) {
+    descriptionValue = descriptionState.states.changed.context.formValue;
+  }
+
+  const onClick = useCallback((e: MouseEvent) => {
+    const target = e.target as HTMLElement;
+    const { dataset } = target;
+
+    switch (dataset.clickContext) {
+      case ClickContext.submit:
+        dispatch({
+          type: ActionType.SUBMITTING,
+        });
+        break;
+
+      case ClickContext.closeModal:
+        parentDispatch({
+          type: ActionType.ABORTED,
+        });
+        break;
+
+      case ClickContext.resetForm:
+        dispatch({
+          type: ActionType.RESET_FORM_FIELDS,
+        });
+        break;
+
+      case ClickContext.closeSubmitNotification:
+        dispatch({
+          type: ActionType.CLOSE_SUBMIT_NOTIFICATION,
+        });
+        break;
+    }
+    /* eslint-disable-next-line react-hooks/exhaustive-deps*/
   }, []);
 
-  function onSubmit(formikProps: FormikProps<UpdateExperienceInput>) {
-    return async function onSubmitInner() {
-      setState([EditExperienceActionType.submitting]);
-
-      const { values } = formikProps;
-
-      try {
-        const result = await onEdit({
-          variables: {
-            input: values,
-          },
-        });
-
-        const updatedData =
-          result && result.data && result.data.updateExperience;
-
-        if (!updatedData) {
-          setState([
-            EditExperienceActionType.genericServerError,
-            "Something went wrong - please try again.",
-          ]);
-          return;
-        }
-
-        const { experience, errors } = updatedData;
-
-        if (experience) {
-          dispatch([EditExperienceActionType.completed]);
-
-          return;
-        }
-
-        if (errors) {
-          setState([
-            EditExperienceActionType.experienceError,
-            { experienceError: errors },
-          ]);
-        }
-      } catch (error) {
-        const serverError = error as ApolloError;
-
-        setState([
-          EditExperienceActionType.genericServerError,
-          serverError.message,
-        ]);
-      }
-    };
-  }
-
-  function renderForm(formikProps: FormikProps<UpdateExperienceInput>) {
-    const { dirty } = formikProps;
-
-    const { titleError } = parseErrors(editingState);
-
-    return (
-      <Form onSubmit={onSubmit(formikProps)}>
-        <Form.Field error={!!titleError}>
-          <label htmlFor="edit-experience-form-title">Title</label>
-
-          <Field
-            name="title"
-            render={({ field }: FieldProps<UpdateExperienceInput>) => {
-              return (
-                <Input
-                  error={!!titleError}
-                  id="edit-experience-form-title"
-                  {...field}
-                />
-              );
-            }}
-          />
-
-          {titleError && (
-            <FormCtrlError
-              id="edit-experience-ctrl-error-title"
-              error={titleError}
-            />
-          )}
-        </Form.Field>
-
-        <Form.Field>
-          <label htmlFor="edit-experience-form-description">Description</label>
-
-          <Field
-            name="description"
-            render={({ field }: FieldProps<UpdateExperienceInput>) => {
-              return (
-                <TextArea id="edit-experience-form-description" {...field} />
-              );
-            }}
-          />
-        </Form.Field>
-
-        <Button
-          className="edit-experience-submit"
-          id="edit-experience-submit"
-          color="green"
-          inverted={true}
-          disabled={!dirty || stateTag === EditExperienceActionType.submitting}
-          loading={stateTag === EditExperienceActionType.submitting}
-          type="submit"
-          fluid={true}
-        >
-          <Icon name="checkmark" /> Submit
-        </Button>
-      </Form>
-    );
-  }
-
   return (
-    <Modal
-      id="edit-experience-modal"
-      open={true}
-      closeIcon={true}
-      onClose={() => {
-        dispatch([EditExperienceActionType.aborted]);
-      }}
-      dimmer="inverted"
-    >
-      <Modal.Header>Edit Experience</Modal.Header>
+    <div className="bulma">
+      {submissionState.value === StateValue.submitting && <Loading />}
 
-      {stateTag === EditExperienceActionType.genericServerError && (
-        <Modal.Content>
-          <Message
-            id="edit-experience-server-error"
-            error={true}
-            onDismiss={() => {
-              setState([EditExperienceActionType.ready]);
-            }}
-          >
-            <Message.Content style={{ paddingTop: "15px" }}>
-              {stateData}
-            </Message.Content>
-          </Message>
-        </Modal.Content>
-      )}
+      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any*/}
+      <div onClick={onClick as any} className="modal is-active" id={domPrefix}>
+        <div className="modal-background" />
 
-      <Modal.Content>
-        <Formik<UpdateExperienceInput>
-          onSubmit={noop}
-          render={renderForm}
-          validateOnChange={false}
-          initialValues={initialFormValues}
-        />
-      </Modal.Content>
-    </Modal>
+        <div className="modal-card">
+          <header className="modal-card-head">
+            <p className="modal-card-title">Edit Experience</p>
+
+            <button
+              className="delete"
+              aria-label="close"
+              data-click-context={ClickContext.closeModal}
+              id={closeModalBtnId}
+            />
+          </header>
+
+          <section className="modal-card-body">
+            <span id={scrollToTopId} className="visually-hidden" />
+
+            {submissionState.value === StateValue.success && (
+              <div
+                id={successNotificationId}
+                className="notification is-success is-light"
+              >
+                <button
+                  data-click-context={ClickContext.closeSubmitNotification}
+                  className={`delete ${closeSubmitNotificationBtnSelector}`}
+                />
+                Changes saved successfully.
+              </div>
+            )}
+
+            {submissionState.value === StateValue.warning && (
+              <div
+                id={warningNotificationId}
+                className="notification is-warning is-light"
+              >
+                <button
+                  data-click-context={ClickContext.closeSubmitNotification}
+                  className={`delete ${closeSubmitNotificationBtnSelector}`}
+                />
+                {submissionState.warning.context.warning}
+              </div>
+            )}
+
+            {submissionState.value === StateValue.errors && (
+              <div
+                className="notification is-danger is-light"
+                id={errorsNotificationId}
+              >
+                <button
+                  data-click-context={ClickContext.closeSubmitNotification}
+                  className={`delete ${closeSubmitNotificationBtnSelector}`}
+                />
+                {submissionState.errors.context.errors}
+              </div>
+            )}
+
+            <form>
+              <div
+                className={makeClassNames({
+                  field: true,
+                  error: !!titleError,
+                })}
+              >
+                <label className="label">Title</label>
+
+                <div className="control">
+                  <input
+                    className="input"
+                    type="text"
+                    placeholder="Text input"
+                    value={titleValue}
+                    id={titleInputId}
+                    onChange={e => {
+                      dispatch({
+                        type: ActionType.FORM_CHANGED,
+                        text: e.currentTarget.value,
+                        fieldName: "title",
+                      });
+                    }}
+                  />
+                </div>
+
+                {titleError && (
+                  <FormCtrlError id={titleInputErrorId}>
+                    {titleError}
+                  </FormCtrlError>
+                )}
+              </div>
+
+              <div className="field">
+                <label className="label">Description</label>
+
+                <div className="control">
+                  <textarea
+                    id={descriptionInputId}
+                    className="textarea"
+                    placeholder="Textarea"
+                    onChange={e => {
+                      dispatch({
+                        type: ActionType.FORM_CHANGED,
+                        text: e.currentTarget.value,
+                        fieldName: "description",
+                      });
+                    }}
+                    value={descriptionValue}
+                  />
+                </div>
+              </div>
+
+              <hr />
+
+              {Object.entries(definitionsState).map(
+                ([id, definition], index) => {
+                  const {
+                    context: { defaultName },
+                    states,
+                  } = definition;
+
+                  let value = defaultName;
+                  let error: null | FieldServerError = null;
+
+                  if (states.value === StateValue.changed) {
+                    value = states.changed.context.formValue;
+
+                    if (states.changed.states.value === StateValue.invalid) {
+                      error = states.changed.states.invalid.context.errors;
+                    }
+                  }
+
+                  const index1 = index + 1;
+
+                  return (
+                    <div
+                      key={id}
+                      className={makeClassNames({
+                        field: true,
+                        error: !!error,
+                      })}
+                    >
+                      <label className="label">Data Field {index1}</label>
+
+                      <div className="control">
+                        <input
+                          className="input"
+                          type="text"
+                          placeholder="Text input"
+                          value={value}
+                          id={id}
+                          onChange={e => {
+                            dispatch({
+                              type: ActionType.DEFINITION_CHANGED,
+                              text: e.currentTarget.value,
+                              id,
+                            });
+                          }}
+                        />
+                      </div>
+
+                      {error && (
+                        <FormCtrlError
+                          className={makeClassNames({
+                            [definitionErrorSelector]: true,
+                          })}
+                        >
+                          {error.map(([k, e], index) => {
+                            return (
+                              <div key={index}>
+                                {k}: {e}
+                              </div>
+                            );
+                          })}
+                        </FormCtrlError>
+                      )}
+                    </div>
+                  );
+                },
+              )}
+            </form>
+          </section>
+
+          <footer className="modal-card-foot">
+            <button
+              type="submit"
+              className="button is-success"
+              id={submitBtnId}
+              data-click-context={ClickContext.submit}
+            >
+              Save changes
+            </button>
+
+            <button
+              id={resetFormFieldsBtnId}
+              className="button is-warning"
+              data-click-context={ClickContext.resetForm}
+            >
+              Reset
+            </button>
+          </footer>
+        </div>
+      </div>
+    </div>
   );
 }
 
-export default EditExperience;
+// istanbul ignore next:
+export default (props: CallerProps) => {
+  const [updateExperiencesOnline] = useUpdateExperiencesOnlineMutation();
+  const { hasConnection } = useContext(LayoutContext);
 
-function parseErrors([stateTag, stateData]: EditingState) {
-  const errorObject: {
-    titleError?: string | null;
-    dataDefinitionsErrors: { [k: string]: string };
-  } = {
-    dataDefinitionsErrors: {},
-  };
-
-  if (stateTag !== EditExperienceActionType.experienceError) {
-    return errorObject;
-  }
-
-  const { experienceError } = stateData as UpdateErrors;
-
-  if (experienceError) {
-    const { title } = experienceError;
-
-    errorObject.titleError = title;
-  }
-
-  return errorObject;
-}
-
-export interface Props {
-  experience: ExperienceNoEntryFragment;
-  onEdit: UpdateExperienceMutationFn;
-  dispatch: Dispatch<EditExperienceAction>;
-}
-
-export type EditExperienceAction =
-  | [EditExperienceActionType.aborted]
-  | [EditExperienceActionType.completed];
-
-export type EditingState =
-  | [EditExperienceActionType.ready]
-  | [EditExperienceActionType.submitting]
-  | [EditExperienceActionType.formError]
-  | [EditExperienceActionType.genericServerError, string]
-  | [EditExperienceActionType.experienceError, UpdateErrors];
-
-export interface UpdateErrors {
-  experienceError: UpdateExperienceMutation_updateExperience_errors;
-}
+  return (
+    <EditExperience
+      {...props}
+      updateExperiencesOnline={updateExperiencesOnline}
+      hasConnection={hasConnection}
+    />
+  );
+};

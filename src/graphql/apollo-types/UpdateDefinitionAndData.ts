@@ -119,6 +119,10 @@ export interface UpdateDefinitionAndData_updateDefinitions {
 }
 
 export interface UpdateDefinitionAndData {
+  /**
+   * Update several data objects at once - prefer using this for data objects
+   *   belonging to same entry as it will be easier to deal with
+   */
   updateDataObjects: (UpdateDefinitionAndData_updateDataObjects | null)[] | null;
   /**
    * Update several definitions

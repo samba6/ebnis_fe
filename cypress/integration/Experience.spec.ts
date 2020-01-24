@@ -47,24 +47,23 @@ context("ExperienceComponent", () => {
     /**
      * Given there is an experience in the system with entries
      */
-    let p = createEntry(createExperience()).then(([experience]) => {
+    const p = createEntry(createExperience()).then(([experience]) => {
       return experience;
     });
 
     cy.wrap(p).then((experience: ExperienceFragment) => {
+      const { id } = experience;
       /**
        * When we visit experience page
        */
 
-      cy.visit(makeExperienceRoute(experience.id));
-
-      const escapedExperienceId = CSS.escape(experience.id);
+      cy.visit(makeExperienceRoute(id));
 
       /**
        * When we click new experience button in the menu
        */
       cy.get("#experience-options-menu").click();
-      cy.get(`#experience-${escapedExperienceId}-new-entry-button`).click();
+      cy.get(`#experience-${id}-new-entry-button`).click();
 
       /**
        * Then we should be redirected to new entry page
@@ -76,7 +75,7 @@ context("ExperienceComponent", () => {
 
 context("EditEntryComponent", () => {
   it("edits definitions while online", () => {
-    let p = createEntry(createExperience(3));
+    const p = createEntry(createExperience(3));
 
     cy.wrap(p).then(([experience, entry]) => {
       const [
@@ -86,7 +85,7 @@ context("EditEntryComponent", () => {
       ] = experience.dataDefinitions.sort((a, b) => (a.name < b.name ? -1 : 1));
 
       cy.visit(makeExperienceRoute(experience.id));
-      const entryIdPrefix = `#entry-${CSS.escape(entry.id)}`;
+      const entryIdPrefix = `#entry-${entry.id}`;
       cy.get(`${entryIdPrefix}-menu-trigger`).click();
       cy.get(`${entryIdPrefix}-edit-trigger`).click();
 
@@ -159,7 +158,7 @@ function createEntry(experiencePromise: Promise<ExperienceFragment>) {
   });
 }
 
-function createExperience(howManyDefinitions: number = 1) {
+function createExperience(howManyDefinitions = 1) {
   const dataDefinitions = Array.from(
     { length: howManyDefinitions },
     (_, index) => ({

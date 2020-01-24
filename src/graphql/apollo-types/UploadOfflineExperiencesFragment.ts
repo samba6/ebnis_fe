@@ -125,7 +125,7 @@ export interface UploadOfflineExperiencesFragment_experience {
   /**
    * The field definitions used for the experience entries
    */
-  dataDefinitions: (UploadOfflineExperiencesFragment_experience_dataDefinitions | null)[];
+  dataDefinitions: UploadOfflineExperiencesFragment_experience_dataDefinitions[];
   /**
    * The entries of the experience - can be paginated
    */

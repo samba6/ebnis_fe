@@ -1,4 +1,4 @@
-import React, { useMemo, useReducer } from "react";
+import React, { useMemo, useReducer, useContext } from "react";
 import Icon from "semantic-ui-react/dist/commonjs/elements/Icon";
 import Dropdown from "semantic-ui-react/dist/commonjs/modules/Dropdown";
 import { Link } from "../Link";
@@ -8,7 +8,10 @@ import {
   IMenuOptions,
   reducer,
   DispatchType,
-  EditingState,
+  ActionType,
+  CallerProps,
+  initState,
+  StateValue,
 } from "./experience.utils";
 import { makeNewEntryRoute } from "../../constants/new-entry-route";
 import { Entry } from "../Entry/entry.component";
@@ -21,11 +24,16 @@ import {
 import makeClassNames from "classnames";
 import { EditExperience } from "./loadables";
 import { isOfflineId } from "../../constants";
+import { LayoutContext } from "../Layout/layout.utils";
 
-export function Experience(props: Props) {
+export function ExperienceComponent(props: Props) {
   const {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     navigate,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    updateExperiencesOnline,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    hasConnection,
     experience,
     className = "",
     entryProps = {},
@@ -36,13 +44,10 @@ export function Experience(props: Props) {
     ...otherProps
   } = props;
 
-  const { onEdit } = menuOptions;
-
-  const [state, dispatch] = useReducer(reducer, {
-    editingState: [EditingState.notEditing],
-  });
-  const { editingState } = state;
-  const [editingStateTag] = editingState;
+  const [stateMachine, dispatch] = useReducer(reducer, undefined, initState);
+  const {
+    states: { editingExperience: editingExperienceState },
+  } = stateMachine;
 
   const entryNodes = useMemo(() => {
     if (entriesJSX) {
@@ -130,12 +135,8 @@ export function Experience(props: Props) {
         <div className="experience__main">{entriesJSX || renderEntries()}</div>
       </div>
 
-      {onEdit && editingStateTag === EditingState.editingExperience && (
-        <EditExperience
-          experience={experience}
-          onEdit={onEdit}
-          dispatch={dispatch}
-        />
+      {editingExperienceState.value === StateValue.editing && (
+        <EditExperience experience={experience} parentDispatch={dispatch} />
       )}
     </>
   );
@@ -189,7 +190,11 @@ function OptionsMenuComponent({
               label={{ color: "blue", empty: true, circular: true }}
               className="js-edit-menu"
               id={`${experienceIdPrefix}-edit-menu`}
-              onClick={() => dispatch(["show-editor"])}
+              onClick={() =>
+                dispatch({
+                  type: ActionType.EDIT_EXPERIENCE,
+                })
+              }
             />
           )}
 
@@ -211,3 +216,10 @@ function OptionsMenuComponent({
 export function getTitle(arg?: { title: string }) {
   return arg ? arg.title : "Experience";
 }
+
+// istanbul ignore next:
+export default (props: CallerProps) => {
+  const { hasConnection } = useContext(LayoutContext);
+
+  return <ExperienceComponent {...props} hasConnection={hasConnection} />;
+};
