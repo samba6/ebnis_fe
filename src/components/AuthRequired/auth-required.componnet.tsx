@@ -1,17 +1,19 @@
 import React, { ComponentType, useLayoutEffect } from "react";
 import { useUser } from "../use-user";
-import { RouteComponentProps } from "@reach/router";
-import { redirectToLogin } from "./auth-required.injectables";
+import { RouteComponentProps, NavigateFn } from "@reach/router";
+import { LOGIN_URL } from "../../routes";
 
 export function AuthRequired(props: Props) {
   const { component: AuthComponent, ...rest } = props;
   const user = useUser();
+  const navigate = rest.navigate as NavigateFn;
 
   useLayoutEffect(() => {
     if (!user) {
-      redirectToLogin();
+      navigate(LOGIN_URL);
       return;
     }
+    /* eslint-disable-next-line react-hooks/exhaustive-deps*/
   }, [user]);
 
   return user ? <AuthComponent {...rest} /> : null;

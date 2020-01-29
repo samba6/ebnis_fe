@@ -8,17 +8,14 @@ import {
   Props,
 } from "../components/AuthRequired/auth-required.componnet";
 import { useUser } from "../components/use-user";
-import { redirectToLogin } from "../components/AuthRequired/auth-required.injectables";
 
 jest.mock("../components/use-user");
 const mockUseUser = useUser as jest.Mock;
 
-jest.mock("../components/AuthRequired/auth-required.injectables");
-const mockRedirectToLogin = redirectToLogin as jest.Mock;
+const mockNavigate = jest.fn();
 
 beforeEach(() => {
-  mockUseUser.mockReset();
-  mockRedirectToLogin.mockReset();
+  jest.resetAllMocks();
 });
 
 it("redirects to login if no authenticated user", () => {
@@ -26,9 +23,9 @@ it("redirects to login if no authenticated user", () => {
     props: {},
   });
 
-  const {} = render(ui);
+  render(ui);
   expect(document.getElementById("00")).toBeNull();
-  expect(mockRedirectToLogin).toHaveBeenCalled();
+  expect(mockNavigate).toHaveBeenCalled();
 });
 
 it("renders component if user is authenticated", () => {
@@ -38,9 +35,9 @@ it("renders component if user is authenticated", () => {
     props: {},
   });
 
-  const {} = render(ui);
+  render(ui);
 
-  expect(mockRedirectToLogin).not.toHaveBeenCalled();
+  expect(mockNavigate).not.toHaveBeenCalled();
   expect(document.getElementById("00")).not.toBeNull();
 });
 
@@ -50,7 +47,13 @@ const AuthRequiredP = AuthRequired as ComponentType<Partial<Props>>;
 
 function makeComp({ props = {} }: { props?: Partial<Props> } = {}) {
   return {
-    ui: <AuthRequiredP {...props} component={RenderComponent} />,
+    ui: (
+      <AuthRequiredP
+        {...props}
+        navigate={mockNavigate}
+        component={RenderComponent}
+      />
+    ),
   };
 }
 
