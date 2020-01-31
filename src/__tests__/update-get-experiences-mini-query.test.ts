@@ -5,9 +5,11 @@ import {
   floatExperienceToTheTopInGetExperiencesMiniQuery,
   replaceExperiencesInGetExperiencesMiniQuery,
   floatExperiencesToTheTopInGetExperiencesMiniQuery,
+  insertExperiencesInGetExperiencesMiniQuery,
 } from "../apollo-cache/update-get-experiences-mini-query";
 import { getExperiencesMiniQuery } from "../apollo-cache/get-experiences-mini-query";
 import { ExperienceFragment } from "../graphql/apollo-types/ExperienceFragment";
+import { ExperienceMiniFragment } from "../graphql/apollo-types/ExperienceMiniFragment";
 
 jest.mock("../apollo-cache/get-experiences-mini-query", () => ({
   getExperiencesMiniQuery: jest.fn(),
@@ -26,8 +28,8 @@ const dataProxy = {
 } as DataProxy;
 
 describe("insertExperienceInGetExperiencesMiniQuery", () => {
-  test("no experiences and not forcing", async () => {
-    await insertExperienceInGetExperiencesMiniQuery(
+  test("no experiences and not forcing", () => {
+    insertExperienceInGetExperiencesMiniQuery(
       dataProxy,
       {} as ExperienceFragment,
     );
@@ -35,8 +37,8 @@ describe("insertExperienceInGetExperiencesMiniQuery", () => {
     expect(mockWriteQuery).not.toHaveBeenCalled();
   });
 
-  test("no experiences but forcing", async () => {
-    await insertExperienceInGetExperiencesMiniQuery(
+  test("no experiences but forcing", () => {
+    insertExperienceInGetExperiencesMiniQuery(
       dataProxy,
       { id: "a" } as ExperienceFragment,
       { force: true },
@@ -46,10 +48,10 @@ describe("insertExperienceInGetExperiencesMiniQuery", () => {
     expect(mockWriteQueryArg.data.getExperiences.edges[0].node.id).toBe("a");
   });
 
-  test("no experience edges", async () => {
+  test("no experience edges", () => {
     mockGetExperiencesMiniQuery.mockReturnValue({});
 
-    await insertExperienceInGetExperiencesMiniQuery(
+    insertExperienceInGetExperiencesMiniQuery(
       dataProxy,
       { id: "a" } as ExperienceFragment,
       { force: true },
@@ -59,12 +61,12 @@ describe("insertExperienceInGetExperiencesMiniQuery", () => {
     expect(mockWriteQueryArg.data.getExperiences.edges[0].node.id).toBe("a");
   });
 
-  test("insert as first element", async () => {
+  test("insert as first element", () => {
     mockGetExperiencesMiniQuery.mockReturnValue({
       edges: [{ node: { id: "b" } }],
     });
 
-    await insertExperienceInGetExperiencesMiniQuery(
+    insertExperienceInGetExperiencesMiniQuery(
       dataProxy,
       { id: "a" } as ExperienceFragment,
       { force: true },
@@ -210,6 +212,50 @@ describe("floatExperiencesToTheTopInGetExperiencesMiniQuery", () => {
           node: {
             id: "3",
           },
+        },
+      ],
+    });
+  });
+});
+
+describe("insertExperiencesInGetExperiencesMiniQuery", () => {
+  test("empty query", () => {
+    mockGetExperiencesMiniQuery.mockReturnValue(null);
+    insertExperiencesInGetExperiencesMiniQuery(dataProxy, []);
+    expect(mockWriteQuery.mock.calls[0][0].data.getExperiences).toMatchObject({
+      edges: [],
+    });
+  });
+
+  test("no edges", () => {
+    mockGetExperiencesMiniQuery.mockReturnValue({});
+    insertExperiencesInGetExperiencesMiniQuery(dataProxy, []);
+
+    expect(mockWriteQuery.mock.calls[0][0].data.getExperiences).toMatchObject({
+      edges: [],
+    });
+  });
+
+  test("insert many", () => {
+    mockGetExperiencesMiniQuery.mockReturnValue({
+      edges: { id: "1" },
+    });
+
+    insertExperiencesInGetExperiencesMiniQuery(dataProxy, [
+      {
+        id: "2",
+      } as ExperienceMiniFragment,
+    ]);
+
+    expect(mockWriteQuery.mock.calls[0][0].data.getExperiences).toMatchObject({
+      edges: [
+        {
+          node: {
+            id: "2",
+          },
+        },
+        {
+          id: "1",
         },
       ],
     });

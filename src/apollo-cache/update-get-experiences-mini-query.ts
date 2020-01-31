@@ -18,7 +18,7 @@ import {
 } from "./get-experiences-mini-query";
 import { EXPERIENCE_EDGE_TYPE_NAME } from "../graphql/types";
 
-const DEFAULT_EXPERIENCE_MINI_CONNECTION: GetExperienceConnectionMini_getExperiences = {
+export const DEFAULT_EXPERIENCE_MINI_CONNECTION: GetExperienceConnectionMini_getExperiences = {
   pageInfo: {
     __typename: "PageInfo",
     hasNextPage: false,
@@ -53,6 +53,36 @@ export function insertExperienceInGetExperiencesMiniQuery(
       proxy.edges = edges;
     },
   );
+
+  dataProxy.writeQuery<
+    GetExperienceConnectionMini,
+    GetExperienceConnectionMiniVariables
+  >({
+    ...readOptions,
+    data: { getExperiences: updatedExperienceConnection },
+  });
+}
+
+export function insertExperiencesInGetExperiencesMiniQuery(
+  dataProxy: DataProxy,
+  experiences: (ExperienceMiniFragment | null)[],
+) {
+  const experienceConnection =
+    getExperiencesMiniQuery(dataProxy) || DEFAULT_EXPERIENCE_MINI_CONNECTION;
+
+  const updatedExperienceConnection = immer(experienceConnection, proxy => {
+    const edges = (proxy.edges || []) as ExperienceConnectionFragment_edges[];
+
+    proxy.edges = experiences
+      .map(e => {
+        return {
+          node: e,
+          cursor: "",
+          __typename: "ExperienceEdge" as "ExperienceEdge",
+        };
+      })
+      .concat(edges);
+  });
 
   dataProxy.writeQuery<
     GetExperienceConnectionMini,

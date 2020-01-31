@@ -201,7 +201,7 @@ export interface UploadOfflineItemsMutation_saveOfflineExperiences_entriesErrors
    */
   experienceId: string | null;
   /**
-   * Did we fail because, say, we did could not fetch the experience
+   * Did we fail because, say, we could not fetch the experience
    */
   experience: string | null;
   /**
@@ -315,7 +315,7 @@ export interface UploadOfflineItemsMutation_createEntries_errors_errors {
    */
   experienceId: string | null;
   /**
-   * Did we fail because, say, we did could not fetch the experience
+   * Did we fail because, say, we could not fetch the experience
    */
   experience: string | null;
   /**

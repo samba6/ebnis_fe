@@ -201,7 +201,7 @@ export interface UploadOfflineExperiencesMutation_saveOfflineExperiences_entries
    */
   experienceId: string | null;
   /**
-   * Did we fail because, say, we did could not fetch the experience
+   * Did we fail because, say, we could not fetch the experience
    */
   experience: string | null;
   /**

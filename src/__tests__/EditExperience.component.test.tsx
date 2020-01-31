@@ -23,16 +23,21 @@ import {
   definitionErrorSelector,
 } from "../components/EditExperience/edit-experience.dom";
 import { UpdateExperiencesOnlineMutationResult } from "../graphql/update-experience.mutation";
-import { ApolloError } from "apollo-client";
+import ApolloClient, { ApolloError } from "apollo-client";
 import { GraphQLError } from "graphql";
 import { scrollIntoView } from "../components/scroll-into-view";
+import { UpdateExperienceOflineMutationResult } from "../components/EditExperience/edit-experience.resolvers";
 
 jest.mock("../apollo-cache/update-experiences");
+jest.mock("../components/EditExperience/edit-experience.resolvers");
+
 jest.mock("../components/scroll-into-view");
+const mockScrollIntoView = scrollIntoView as jest.Mock;
 
 const mockParentDispatch = jest.fn();
-const mockUpdateDataOnline = jest.fn();
-const mockScrollIntoView = scrollIntoView as jest.Mock;
+const mockUpdateExperiencesOnline = jest.fn();
+const mockUpdateExperienceOffline = jest.fn();
+const client = { addResolvers: (() => undefined) as any } as ApolloClient<{}>;
 
 beforeEach(() => {
   jest.resetAllMocks();
@@ -42,7 +47,7 @@ afterEach(() => {
   cleanup();
 });
 
-it("submits form and closes modal when everything goes well", async () => {
+it("online", async () => {
   const experienceId = "ex";
 
   const { ui } = makeComp({
@@ -58,6 +63,7 @@ it("submits form and closes modal when everything goes well", async () => {
           },
         ],
       } as ExperienceFragment,
+      hasConnection: true,
     },
   });
 
@@ -81,7 +87,7 @@ it("submits form and closes modal when everything goes well", async () => {
    * 16. DefinitionSuccess
    */
 
-  mockUpdateDataOnline
+  mockUpdateExperiencesOnline
     .mockResolvedValueOnce({}) // 2
     .mockRejectedValueOnce(new Error("a")) // 5
     .mockRejectedValueOnce(
@@ -552,7 +558,7 @@ it("submits form and closes modal when everything goes well", async () => {
   /**
    * And correct data should have been sent to server
    */
-  const mockUpdateDataOnlineCalls = mockUpdateDataOnline.mock.calls;
+  const mockUpdateDataOnlineCalls = mockUpdateExperiencesOnline.mock.calls;
   const [mockUpdateDataOnlineArgs] = mockUpdateDataOnlineCalls[
     mockUpdateDataOnlineCalls.length - 1
   ][0].variables.input;
@@ -694,6 +700,12 @@ it("submits form and closes modal when everything goes well", async () => {
   ).toBeUndefined();
 
   /**
+   * And page should not be scrolled
+   */
+  mockScrollIntoView.mockReset();
+  expect(mockScrollIntoView).not.toHaveBeenCalled();
+
+  /**
    * When form is submitted
    */
   submitBtn.click(); // 15
@@ -737,6 +749,337 @@ it("submits form and closes modal when everything goes well", async () => {
    * And definition should be updated to value from server
    */
   expect(definitionInput.value).toBe("a2");
+
+  /**
+   * And page should be scrolled
+   */
+  expect(mockScrollIntoView).toHaveBeenCalled();
+});
+
+it("offline", async () => {
+  const { ui } = makeComp({
+    props: {
+      experience: {
+        id: "ex",
+        title: "t1",
+        description: "d1",
+        dataDefinitions: [
+          {
+            id: "f1",
+            name: "f1",
+          },
+        ],
+      } as ExperienceFragment,
+    },
+  });
+
+  /**
+   * Submissions
+   * 1. Invalid results
+   * 2. server error
+   * 3. server success - title updated
+   * 4. server success - description updated
+   * 5. server success - definition updated
+   * 6. form warning - definition updated with empty spaces
+   */
+
+  mockUpdateExperienceOffline
+    .mockResolvedValueOnce({})
+    .mockResolvedValueOnce({
+      data: {
+        updateExperienceOffline: {
+          __typename: "UpdateExperienceOfflineError",
+          error: {
+            error: "a",
+          },
+        },
+      },
+    } as UpdateExperienceOflineMutationResult)
+    .mockResolvedValueOnce({
+      data: {
+        updateExperienceOffline: {
+          __typename: "UpdateExperienceOfflineSuccess",
+          data: {
+            ownFields: {
+              title: "t3",
+            },
+          },
+        },
+      },
+    } as UpdateExperienceOflineMutationResult)
+    .mockResolvedValueOnce({
+      data: {
+        updateExperienceOffline: {
+          __typename: "UpdateExperienceOfflineSuccess",
+          data: {
+            ownFields: {
+              description: "d3",
+            },
+          },
+        },
+      },
+    } as UpdateExperienceOflineMutationResult)
+    .mockResolvedValueOnce({
+      data: {
+        updateExperienceOffline: {
+          __typename: "UpdateExperienceOfflineSuccess",
+          data: {
+            updateDefinitions: [
+              {
+                id: "f1",
+                name: "f3",
+              },
+            ],
+          },
+        },
+      },
+    } as UpdateExperienceOflineMutationResult);
+
+  /**
+   * When using the component
+   */
+  render(ui);
+
+  /**
+   * And title is updated
+   */
+  const titleInput = document.getElementById(titleInputId) as HTMLInputElement;
+  fillField(titleInput, "t2");
+
+  /**
+   * Then error UI should not be visible
+   */
+  expect(document.getElementById(errorsNotificationId)).toBeNull();
+
+  /**
+   * And page should not be scrolled
+   */
+  expect(mockScrollIntoView).not.toHaveBeenCalled();
+
+  /**
+   * When form is submitted
+   */
+  const submitBtn = document.getElementById(submitBtnId) as HTMLButtonElement;
+  submitBtn.click(); // 1
+
+  /**
+   * Then error UI should be visible
+   */
+  await waitForElement(() => {
+    return document.getElementById(errorsNotificationId) as HTMLElement;
+  });
+
+  /**
+   * And page should be scrolled
+   */
+  expect(mockScrollIntoView).toHaveBeenCalled();
+
+  /**
+   * When reset button is clicked
+   */
+  const resetBtn = document.getElementById(resetFormFieldsBtnId) as HTMLElement;
+  resetBtn.click();
+
+  /**
+   * Then error UI should not be visible
+   */
+  expect(document.getElementById(errorsNotificationId)).toBeNull();
+
+  /**
+   * When title is updated
+   */
+  fillField(titleInput, "t2");
+
+  /**
+   * And form is re-submitted
+   */
+  submitBtn.click(); // 2
+
+  /**
+   * Then error UI should be visible
+   */
+  await waitForElement(() => {
+    return document.getElementById(errorsNotificationId) as HTMLElement;
+  });
+
+  /**
+   * And success UI should not be visible
+   */
+  expect(document.getElementById(successNotificationId)).toBeNull();
+
+  /**
+   * When title is updated
+   */
+  fillField(titleInput, "t2.");
+
+  /**
+   * And description is updated with only empty spaces
+   */
+  const descriptionInput = document.getElementById(
+    descriptionInputId,
+  ) as HTMLInputElement;
+
+  const dWord = "d1  ";
+  fillField(descriptionInput, dWord);
+
+  /**
+   * Then description input should contain updated value
+   */
+  expect(descriptionInput.value).toBe(dWord);
+
+  /**
+   * When form is submitted
+   */
+  submitBtn.click();
+
+  /**
+   * Then success UI should be visible
+   */
+  await waitForElement(() => {
+    return document.getElementById(successNotificationId);
+  });
+
+  /**
+   * And correct value should have been sent to server
+   */
+  let mockUpdateExperienceOfflineCalls = mockUpdateExperienceOffline.mock.calls;
+
+  let mockUpdateExperienceOfflineArgs =
+    mockUpdateExperienceOfflineCalls[
+      mockUpdateExperienceOfflineCalls.length - 1
+    ][0].variables.input;
+
+  expect(mockUpdateExperienceOfflineArgs).toEqual({
+    experienceId: "ex",
+    ownFields: {
+      title: "t2.",
+    },
+  });
+
+  /**
+   * And title input should be updated with server result
+   */
+  expect(titleInput.value).toBe("t3");
+
+  /**
+   * And description input should be updated back to default
+   */
+  expect(descriptionInput.value).toBe("d1");
+
+  /**
+   * When description is updated
+   */
+  fillField(descriptionInput, "d2");
+
+  /**
+   * And title is updated by adding empty spaces
+   */
+  const cWord = "   t3";
+  fillField(titleInput, cWord);
+
+  /**
+   * And form is submiited
+   */
+  submitBtn.click();
+  await wait(() => true);
+
+  /**
+   * Then description should be updated to server result
+   */
+  expect(descriptionInput.value).toBe("d3");
+
+  /**
+   * And title should revert back to default
+   */
+  expect(titleInput.value).toBe("t3");
+
+  /**
+   * And correct value should have been sent to server
+   */
+  mockUpdateExperienceOfflineCalls = mockUpdateExperienceOffline.mock.calls;
+
+  mockUpdateExperienceOfflineArgs =
+    mockUpdateExperienceOfflineCalls[
+      mockUpdateExperienceOfflineCalls.length - 1
+    ][0].variables.input;
+
+  expect(mockUpdateExperienceOfflineArgs).toEqual({
+    experienceId: "ex",
+    ownFields: {
+      description: "d2",
+    },
+  });
+
+  mockScrollIntoView.mockReset();
+
+  /**
+   * When definition name is updated
+   */
+  const definitionInput = document.getElementById("f1") as HTMLInputElement;
+  fillField(definitionInput, "f2");
+
+  /**
+   * Then page should not be scrolled
+   */
+  expect(mockScrollIntoView).not.toHaveBeenCalled();
+
+  /**
+   * When form is submiited
+   */
+  submitBtn.click();
+  await wait(() => true);
+
+  /**
+   * Then page should be scrolled
+   */
+  expect(mockScrollIntoView).toHaveBeenCalled();
+
+  /**
+   * Then definition should be updated to server result
+   */
+  expect(definitionInput.value).toBe("f3");
+
+  /**
+   * And correct value should have been sent to server
+   */
+  mockUpdateExperienceOfflineCalls = mockUpdateExperienceOffline.mock.calls;
+
+  mockUpdateExperienceOfflineArgs =
+    mockUpdateExperienceOfflineCalls[
+      mockUpdateExperienceOfflineCalls.length - 1
+    ][0].variables.input;
+
+  expect(mockUpdateExperienceOfflineArgs).toEqual({
+    experienceId: "ex",
+    updateDefinitions: [
+      {
+        id: "f1",
+        name: "f2",
+      },
+    ],
+  });
+
+  /**
+   * When definition is updated with only empty spaces
+   */
+  fillField(definitionInput, "  f3  ");
+
+  /**
+   * Then no warning UI should be visible
+   */
+  expect(document.getElementById(warningNotificationId)).toBeNull();
+
+  /**
+   * When form submitted
+   */
+  submitBtn.click();
+
+  /**
+   * Then warning UI should be visible
+   */
+  await waitForElement(() => {
+    return document.getElementById(warningNotificationId);
+  });
 });
 
 ////////////////////////// HELPER FUNCTIONS ///////////////////////////////////
@@ -751,8 +1094,10 @@ function makeComp({
   return {
     ui: (
       <EditExperienceP
-        updateExperiencesOnline={mockUpdateDataOnline}
+        updateExperiencesOnline={mockUpdateExperiencesOnline}
         parentDispatch={mockParentDispatch}
+        client={client}
+        updateExperienceOffline={mockUpdateExperienceOffline}
         {...props}
       />
     ),

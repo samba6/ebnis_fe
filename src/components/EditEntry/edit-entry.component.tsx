@@ -59,7 +59,6 @@ import { EbnisAppContext } from "../../context";
 import { LayoutUnchangingContext, LayoutContext } from "../Layout/layout.utils";
 import { MUTATION_NAME_createEntry } from "../../graphql/create-entry.mutation";
 import { cleanupRanQueriesFromCache } from "../../apollo-cache/cleanup-ran-queries-from-cache";
-import { QUERY_NAME_getOfflineItems } from "../UploadOfflineItems/upload-offline.resolvers";
 import { QUERY_NAME_getExperienceFull } from "../../graphql/get-experience-full.query";
 import {
   MUTATION_NAME_updateDataObjects,
@@ -124,7 +123,7 @@ export function EditEntryComponent(props: ComponentProps) {
           MUTATION_NAME_updateDataObjects,
           MUTATION_NAME_updateDefinitions,
           MUTATION_NAME_createEntry,
-          QUERY_NAME_getOfflineItems,
+          "getOfflineItems",
           QUERY_NAME_getExperienceFull + "(",
         ],
         persistor,

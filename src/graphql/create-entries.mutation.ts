@@ -36,7 +36,7 @@ type UseCreateEntriesMutationFn = MutationFunction<
 type UseCreateEntriesMutationResult = MutationResult<CreateEntriesMutation>;
 
 // component props should extend this
-export interface UseCreateEntriesMutationProps {
+export interface CreateEntriesMutationProps {
   createEntries: UseCreateEntriesMutationFn;
 }
 

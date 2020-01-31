@@ -1,3 +1,4 @@
+/* istanbul ignore file */
 export const SITE_TITLE = "Ebnis";
 export const THEME_COLOR = "#5faac7";
 export const PAGE_NOT_FOUND_TITLE = "Page Not Found";

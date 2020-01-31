@@ -11,13 +11,19 @@ import {
   DataTypes,
 } from "../../graphql/apollo-types/globalTypes";
 import { UpdateExperiencesOnline_updateExperiences_UpdateExperiencesSomeSuccess_experiences } from "../../graphql/apollo-types/UpdateExperiencesOnline";
-import { ApolloError } from "apollo-client";
+import ApolloClient, { ApolloError } from "apollo-client";
 import { updateExperiencesInCache } from "../../apollo-cache/update-experiences";
 import { DataDefinitionFragment } from "../../graphql/apollo-types/DataDefinitionFragment";
 import { UpdateExperienceOwnFieldsUnionFragment } from "../../graphql/apollo-types/UpdateExperienceOwnFieldsUnionFragment";
 import { UpdateDefinitionUnionFragment } from "../../graphql/apollo-types/UpdateDefinitionUnionFragment";
 import { scrollIntoView } from "../scroll-into-view";
 import { scrollToTopId } from "./edit-experience.dom";
+import { AppPersistor } from "../../context";
+import { InMemoryCache } from "apollo-cache-inmemory";
+import {
+  UpdateExperienceOfflineComponentProps,
+  UpdateExperienceOffline,
+} from "./edit-experience.resolvers";
 
 export enum ActionType {
   ABORTED = "@components/edit-experience-modal/edit-cancelled",
@@ -27,7 +33,8 @@ export enum ActionType {
   OTHER_ERRORS = "@edit-experience/other-errors",
   SERVER_ERRORS = "@edit-experience/server-errors",
   FORM_CHANGED = "@edit-experience/form-changed",
-  ON_UPDATED = "@edit-experience/on-updated",
+  ON_UPDATED_ONLINE = "@edit-experience/on-updated-online",
+  ON_UPDATED_OFFLINE = "@edit-experience/on-updated-offline",
   RESET_FORM_FIELDS = "@edit-experience/reset-form-fields",
   APOLLO_ERRORS = "@edit-experience/apollo-errors",
   CLOSE_SUBMIT_NOTIFICATION = "@edit-experience/close-submit-notification",
@@ -76,8 +83,8 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
             handleSubmittingAction(proxy);
             break;
 
-          case ActionType.ON_UPDATED:
-            handleOnUpdatedAction(proxy, payload as OnUpdatedPayload);
+          case ActionType.ON_UPDATED_ONLINE:
+            handleOnUpdatedOnlineAction(proxy, payload as OnUpdatedPayload);
             break;
 
           case ActionType.OTHER_ERRORS:
@@ -95,6 +102,12 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
           case ActionType.CLOSE_SUBMIT_NOTIFICATION:
             proxy.states.submission.value = StateValue.inactive;
             break;
+
+          case ActionType.ON_UPDATED_OFFLINE:
+            handleOnUpdatedOfflineAction(
+              proxy,
+              payload as OnUpdatedOfflinePayload,
+            );
         }
       });
     },
@@ -108,20 +121,42 @@ export const FORM_CONTAINS_ERRORS_MESSAGE =
   "Form contains errors. Please correct them and save again.";
 
 const doEditEffect: DoEdit["func"] = async ({ input }, props, effectArgs) => {
-  const { updateExperiencesOnline, experience } = props;
+  const {
+    hasConnection,
+    updateExperienceOffline,
+    updateExperiencesOnline,
+    experience,
+  } = props;
   const { dispatch } = effectArgs;
+  const { id: experienceId } = experience;
+
+  const updateData = {
+    experienceId,
+    ...input,
+  };
+
+  if (!hasConnection) {
+    const result = await updateExperienceOffline({
+      variables: {
+        input: updateData,
+      },
+    });
+
+    const validResponse =
+      result && result.data && result.data.updateExperienceOffline;
+
+    dispatch({
+      type: ActionType.ON_UPDATED_OFFLINE,
+      result: validResponse,
+    });
+
+    return;
+  }
 
   try {
-    const { id: experienceId } = experience;
-
     const result = await updateExperiencesOnline({
       variables: {
-        input: [
-          {
-            experienceId,
-            ...input,
-          },
-        ],
+        input: [updateData],
       },
       update: updateExperiencesInCache,
     });
@@ -202,7 +237,7 @@ function onExperienceUpdatedEffectHelper(
       const { experience } = updateResult;
       const { ownFields, updatedDefinitions } = experience;
 
-      if (!ownFields && !updatedDefinitions) {
+      if (!(ownFields || updatedDefinitions)) {
         dispatch({
           type: ActionType.OTHER_ERRORS,
           errors: GENERIC_SERVER_ERROR,
@@ -222,7 +257,7 @@ function onExperienceUpdatedEffectHelper(
       }
 
       dispatch({
-        type: ActionType.ON_UPDATED,
+        type: ActionType.ON_UPDATED_ONLINE,
         ...payload,
       });
 
@@ -366,13 +401,13 @@ function handleFormChangedActionHelper(
   defaultVal: string,
   text: string,
 ) {
-  const trimmedText = text.trim();
+  // const trimmedText = text.trim();
 
-  if (trimmedText === defaultVal) {
-    field.states.value = StateValue.unchanged;
-    delete field.states[StateValue.changed];
-    return;
-  }
+  // if (trimmedText === defaultVal) {
+  //   field.states.value = StateValue.unchanged;
+  //   delete field.states[StateValue.changed];
+  //   return;
+  // }
 
   const state = field.states as ChangedState;
   state.value = StateValue.changed;
@@ -432,8 +467,14 @@ function validateForm(proxy: DraftState): FormInput {
   } = proxy;
 
   const {
-    title: { states: titleState0 },
-    description: { states: descriptionState0 },
+    title: {
+      context: { defaults: defaultTitle },
+      states: titleState0,
+    },
+    description: {
+      states: descriptionState0,
+      context: { defaults: defaultDescription },
+    },
   } = fields;
 
   const submissionErrorState = submission as SubmissionErrors;
@@ -446,8 +487,6 @@ function validateForm(proxy: DraftState): FormInput {
   let definitionsUpdated = false;
 
   if (titleState0.value === StateValue.changed) {
-    ownFieldsUpdated = true;
-
     const {
       changed: {
         context: { formValue },
@@ -457,53 +496,8 @@ function validateForm(proxy: DraftState): FormInput {
 
     const value = formValue.trim();
 
-    if (value.length < 2) {
-      submissionErrorState.value = StateValue.errors;
-      submissionErrorState.errors = {
-        context: {
-          errors: FORM_CONTAINS_ERRORS_MESSAGE,
-        },
-      };
-
-      const titleValidityState = titleValidityState0 as FieldInValid;
-      titleValidityState.value = StateValue.invalid;
-      titleValidityState.invalid = {
-        context: {
-          errors: [["", "title must be at least 2 characters long"]],
-        },
-      };
-    } else {
-      ownFieldsInput.title = value;
-      titleValidityState0.value = StateValue.valid;
-    }
-  }
-
-  if (descriptionState0.value === StateValue.changed) {
-    ownFieldsUpdated = true;
-
-    const {
-      changed: {
-        context: { formValue },
-      },
-    } = descriptionState0;
-
-    ownFieldsInput.description = formValue.trim();
-  }
-
-  Object.entries(dataDefinitions).forEach(([definitionId, field]) => {
-    const state = field.states;
-
-    if (state.value === StateValue.changed) {
-      definitionsUpdated = true;
-
-      const {
-        changed: {
-          context: { formValue },
-          states: validityState0,
-        },
-      } = state;
-
-      const value = formValue.trim();
+    if (value !== defaultTitle) {
+      ownFieldsUpdated = true;
 
       if (value.length < 2) {
         submissionErrorState.value = StateValue.errors;
@@ -513,20 +507,78 @@ function validateForm(proxy: DraftState): FormInput {
           },
         };
 
-        const inValidState = validityState0 as FieldInValid;
-        inValidState.value = StateValue.invalid;
-        inValidState.invalid = {
+        const titleValidityState = titleValidityState0 as FieldInValid;
+        titleValidityState.value = StateValue.invalid;
+        titleValidityState.invalid = {
           context: {
-            errors: [["name", "must be at least 2 characters long"]],
+            errors: [["", "title must be at least 2 characters long"]],
           },
         };
       } else {
-        definitionsInput.push({
-          id: definitionId,
-          name: value,
-        });
+        ownFieldsInput.title = value;
+        titleValidityState0.value = StateValue.valid;
+      }
+    }
+  }
 
-        validityState0.value = StateValue.valid;
+  if (descriptionState0.value === StateValue.changed) {
+    const {
+      changed: {
+        context: { formValue },
+      },
+    } = descriptionState0;
+
+    const value = formValue.trim();
+
+    if (value !== defaultDescription) {
+      ownFieldsUpdated = true;
+
+      ownFieldsInput.description = value;
+    }
+  }
+
+  Object.entries(dataDefinitions).forEach(([definitionId, field]) => {
+    const {
+      states: state,
+      context: { defaultName },
+    } = field;
+
+    if (state.value === StateValue.changed) {
+      const {
+        changed: {
+          context: { formValue },
+          states: validityState0,
+        },
+      } = state;
+
+      const value = formValue.trim();
+
+      if (value !== defaultName) {
+        definitionsUpdated = true;
+
+        if (value.length < 2) {
+          submissionErrorState.value = StateValue.errors;
+          submissionErrorState.errors = {
+            context: {
+              errors: FORM_CONTAINS_ERRORS_MESSAGE,
+            },
+          };
+
+          const inValidState = validityState0 as FieldInValid;
+          inValidState.value = StateValue.invalid;
+          inValidState.invalid = {
+            context: {
+              errors: [["name", "must be at least 2 characters long"]],
+            },
+          };
+        } else {
+          definitionsInput.push({
+            id: definitionId,
+            name: value,
+          });
+
+          validityState0.value = StateValue.valid;
+        }
       }
     }
   });
@@ -565,24 +617,101 @@ function handleOtherErrorsAction(
   };
 }
 
-function handleOnUpdatedAction(proxy: DraftState, payload: OnUpdatedPayload) {
+function handleOnUpdatedOfflineAction(
+  proxy: DraftState,
+  payload: OnUpdatedOfflinePayload,
+) {
+  const {
+    states: {
+      submission,
+      meta: { fields },
+      dataDefinitions,
+    },
+  } = proxy;
+
+  const { result } = payload;
+  let errors = "";
+
+  if (result) {
+    switch (result.__typename) {
+      case "UpdateExperienceOfflineError":
+        errors = GENERIC_SERVER_ERROR;
+        break;
+
+      case "UpdateExperienceOfflineSuccess": {
+        const { ownFields, updateDefinitions } = result.data;
+
+        if (ownFields) {
+          const { title: titleField, description: descriptionField } = fields;
+          const { title, description } = ownFields;
+
+          titleField.context.defaults = title || titleField.context.defaults;
+          titleField.states.value = StateValue.unchanged;
+
+          descriptionField.context.defaults =
+            description || descriptionField.context.defaults;
+          descriptionField.states.value = StateValue.unchanged;
+        }
+
+        if (updateDefinitions) {
+          updateDefinitions.forEach(({ id, name }) => {
+            const field = dataDefinitions[id];
+            field.context.defaultName = name;
+            field.states.value = StateValue.unchanged;
+          });
+        }
+      }
+    }
+  } else {
+    errors = GENERIC_SERVER_ERROR;
+  }
+
+  if (errors) {
+    handleOtherErrorsAction(proxy, {
+      errors,
+    });
+  } else {
+    submission.value = StateValue.success;
+  }
+
+  const effects = getGeneralEffects(proxy);
+
+  effects.push({
+    key: "scrollToViewEffect",
+    ownArgs: {
+      id: scrollToTopId,
+    },
+  });
+}
+
+function handleOnUpdatedOnlineAction(
+  proxy: DraftState,
+  payload: OnUpdatedPayload,
+) {
   const {
     states: { submission },
   } = proxy;
 
-  submission.value = StateValue.inactive;
-
-  handleOnUpdatedOwnFieldsActionHelper(proxy, payload.ownFields);
-  handleOnUpdatedDefinitionsActionHelper(proxy, payload.definitions);
+  handleOnUpdatedOwnFieldsOnlineActionHelper(proxy, payload.ownFields);
+  handleOnUpdatedDefinitionsOnlineActionHelper(proxy, payload.definitions);
 
   const updatedSubmission = submission;
 
   if (updatedSubmission.value !== StateValue.errors) {
     submission.value = StateValue.success;
+
+    const effects = getGeneralEffects(proxy);
+
+    effects.push({
+      key: "scrollToViewEffect",
+      ownArgs: {
+        id: scrollToTopId,
+      },
+    });
   }
 }
 
-function handleOnUpdatedDefinitionsActionHelper(
+function handleOnUpdatedDefinitionsOnlineActionHelper(
   proxy: DraftState,
   payload: OnUpdatedPayload["definitions"],
 ) {
@@ -632,7 +761,7 @@ function handleOnUpdatedDefinitionsActionHelper(
   }
 }
 
-function handleOnUpdatedOwnFieldsActionHelper(
+function handleOnUpdatedOwnFieldsOnlineActionHelper(
   proxy: DraftState,
   payload: OnUpdatedPayload["ownFields"],
 ) {
@@ -844,6 +973,9 @@ interface SubmissionWarning {
 }
 
 export type Action =
+  | ({
+      type: ActionType.ON_UPDATED_OFFLINE;
+    } & OnUpdatedOfflinePayload)
   | {
       type: ActionType.CLOSE_SUBMIT_NOTIFICATION;
     }
@@ -869,7 +1001,7 @@ export type Action =
       type: ActionType.FORM_CHANGED;
     } & FormChangedPayload)
   | ({
-      type: ActionType.ON_UPDATED;
+      type: ActionType.ON_UPDATED_ONLINE;
     } & OnUpdatedPayload)
   | {
       type: ActionType.RESET_FORM_FIELDS;
@@ -880,6 +1012,10 @@ export type Action =
   | ({
       type: ActionType.DEFINITION_CHANGED;
     } & DefinitionChangedPayload);
+
+interface OnUpdatedOfflinePayload {
+  result: UpdateExperienceOffline["updateExperienceOffline"];
+}
 
 interface OnUpdatedPayload {
   ownFields?: UpdateExperienceOwnFieldsUnionFragment;
@@ -916,8 +1052,12 @@ export interface CallerProps {
 }
 
 export type Props = CallerProps &
+  UpdateExperienceOfflineComponentProps &
   UpdateExperiencesOnlineComponentProps & {
     hasConnection: boolean;
+    client: ApolloClient<{}>;
+    persistor: AppPersistor;
+    cache: InMemoryCache;
   };
 
 interface EffectArgs {

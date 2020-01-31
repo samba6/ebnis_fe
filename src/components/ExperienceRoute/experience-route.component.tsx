@@ -3,22 +3,11 @@ import "./experience-route.styles.scss";
 import { SidebarHeader } from "../SidebarHeader/sidebar-header.component";
 import { setDocumentTitle, makeSiteTitle } from "../../constants";
 import Experience, { getTitle } from "../Experience/experience.component";
-import { UPDATE_EXPERIENCE_MUTATION } from "../../graphql/update-experience.mutation";
-import {
-  UpdateExperienceMutation,
-  UpdateExperienceMutationVariables,
-} from "../../graphql/apollo-types/UpdateExperienceMutation";
-import { useMutation } from "@apollo/react-hooks";
 import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragment";
 import { IMenuOptions } from "../Experience/experience.utils";
 
 export function ExperienceRoute(props: Props) {
   const { experience } = props;
-
-  const [updateExperience] = useMutation<
-    UpdateExperienceMutation,
-    UpdateExperienceMutationVariables
-  >(UPDATE_EXPERIENCE_MUTATION);
 
   const title = getTitle(experience);
 
@@ -36,14 +25,7 @@ export function ExperienceRoute(props: Props) {
       <SidebarHeader title={title} sidebar={true} />
 
       <div className="main">
-        <Experience
-          experience={experience}
-          menuOptions={
-            {
-              onEdit: updateExperience,
-            } as IMenuOptions
-          }
-        />
+        <Experience experience={experience} menuOptions={{} as IMenuOptions} />
       </div>
     </div>
   );

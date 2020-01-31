@@ -32,7 +32,7 @@ export interface CreateEntryErrorsFragment {
    */
   entry: string | null;
   /**
-   * Did we fail because, say, we did could not fetch the experience
+   * Did we fail because, say, we could not fetch the experience
    */
   experience: string | null;
   /**

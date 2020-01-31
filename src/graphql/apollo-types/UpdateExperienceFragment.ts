@@ -157,6 +157,7 @@ export type UpdateExperienceFragment_updatedEntries = UpdateExperienceFragment_u
 
 export interface UpdateExperienceFragment_newEntries_CreateEntryErrorss_errors_meta {
   __typename: "CreateEntryErrorMeta";
+  experienceId: string;
   index: number;
   clientId: string | null;
 }

@@ -1,4 +1,10 @@
-import React, { useReducer, useCallback, useContext, useEffect } from "react";
+import React, {
+  useReducer,
+  useCallback,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+} from "react";
 import makeClassNames from "classnames";
 import { FormCtrlError } from "../FormCtrlError/form-ctrl-error.component";
 import "./edit-experience.styles.scss";
@@ -30,16 +36,21 @@ import {
   definitionErrorSelector,
   scrollToTopId,
 } from "./edit-experience.dom";
+import { EbnisAppContext } from "../../context";
+import {
+  updateExperienceOfflineResolvers,
+  useUpdateExperienceOfflineMutation,
+} from "./edit-experience.resolvers";
 
 enum ClickContext {
-  submit = "submit",
-  resetForm = "reset-form",
-  closeModal = "close-modal",
-  closeSubmitNotification = "close-submit-notification",
+  submit = "@edit-experience/submit",
+  resetForm = "@edit-experience/reset-form",
+  closeModal = "@edit-experience/close-modal",
+  closeSubmitNotification = "@edit-experience/close-submit-notification",
 }
 
 export function EditExperience(props: Props) {
-  const { experience, parentDispatch } = props;
+  const { experience, parentDispatch, client } = props;
 
   const [stateMachine, dispatch] = useReducer(
     reducer,
@@ -74,6 +85,11 @@ export function EditExperience(props: Props) {
 
     /* eslint-disable-next-line react-hooks/exhaustive-deps*/
   }, [generalEffects]);
+
+  useLayoutEffect(() => {
+    client.addResolvers(updateExperienceOfflineResolvers);
+    /* eslint-disable-next-line react-hooks/exhaustive-deps*/
+  }, []);
 
   let titleValue = titleState.context.defaults;
   let titleError = "";
@@ -339,12 +355,18 @@ export function EditExperience(props: Props) {
 export default (props: CallerProps) => {
   const [updateExperiencesOnline] = useUpdateExperiencesOnlineMutation();
   const { hasConnection } = useContext(LayoutContext);
+  const { client, persistor, cache } = useContext(EbnisAppContext);
+  const [updateExperienceOffline] = useUpdateExperienceOfflineMutation();
 
   return (
     <EditExperience
       {...props}
       updateExperiencesOnline={updateExperiencesOnline}
       hasConnection={hasConnection}
+      client={client}
+      persistor={persistor}
+      cache={cache}
+      updateExperienceOffline={updateExperienceOffline}
     />
   );
 };

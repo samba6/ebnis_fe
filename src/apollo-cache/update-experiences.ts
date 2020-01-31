@@ -41,6 +41,7 @@ export function updateExperiencesInCache(
         updatedIds[experienceId] = 1;
 
         const updatedExperience = immer(experience, proxy => {
+          proxy.hasUnsaved = null; // if all components saved
           proxy.updatedAt = updatedAt;
           updateOwnFields(proxy, result);
           updateDefinitions(proxy, result);

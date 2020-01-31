@@ -23,7 +23,7 @@ import {
   EmitActionConnectionChangedPayload,
 } from "../../state/observable-manager";
 import { cleanupObservableSubscription } from "./layout-injectables";
-import {isConnected} from '../../state/connections';
+import { isConnected } from "../../state/connections";
 
 export function Layout(props: Props) {
   const { children } = props;
@@ -125,6 +125,8 @@ export function Layout(props: Props) {
             {
               offlineItemsCount,
               hasConnection: hasConnection,
+              ...location,
+              navigate,
             } as LayoutContextValue
           }
         >

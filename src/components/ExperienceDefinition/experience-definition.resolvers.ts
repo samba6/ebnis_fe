@@ -13,7 +13,8 @@ import {
 } from "../../graphql/apollo-types/ExperienceFragment";
 import { EXPERIENCE_FRAGMENT } from "../../graphql/experience.fragment";
 import { insertExperienceInGetExperiencesMiniQuery } from "../../apollo-cache/update-get-experiences-mini-query";
-import { incrementOfflineItemCount } from "../../apollo-cache/increment-offline-item-count";
+import { writeUnsyncedExperience } from "../../apollo-cache/unsynced.resolvers";
+// import { incrementOfflineItemCount } from "../../apollo-cache/increment-offline-item-count";
 import { writeExperienceFragmentToCache } from "../../apollo-cache/write-experience-fragment";
 
 const createOfflineExperienceResolver: LocalResolverFn<
@@ -75,7 +76,9 @@ const createOfflineExperienceResolver: LocalResolverFn<
     force: true,
   });
 
-  incrementOfflineItemCount(cache, experienceId);
+  writeUnsyncedExperience(experienceId, true);
+
+  // incrementOfflineItemCount(cache, experienceId);
 
   return experience;
 };

@@ -332,9 +332,10 @@ export type LayoutDispatchType = Dispatch<LayoutAction>;
 
 export interface Props extends PropsWithChildren<{}>, RouteComponentProps {}
 
-export interface LayoutContextValue {
+export interface LayoutContextValue extends WindowLocation {
   offlineItemsCount: number;
   hasConnection: boolean;
+  navigate: NavigateFn;
 }
 
 export interface ILayoutUnchangingContextValue {

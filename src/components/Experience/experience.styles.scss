@@ -34,10 +34,6 @@
   }
 
   .options-menu__trigger {
-    &.ui.icon {
-      padding-right: 5px !important;
-    }
-
     .text {
       position: relative;
       left: -10px;
@@ -46,5 +42,9 @@
 
   .options-menu__trigger .text {
     left: -1px;
+  }
+
+  .options-menu__text {
+    font-weight: bold !important;
   }
 }

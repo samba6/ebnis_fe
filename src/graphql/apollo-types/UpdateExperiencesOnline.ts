@@ -179,6 +179,7 @@ export type UpdateExperiencesOnline_updateExperiences_UpdateExperiencesSomeSucce
 
 export interface UpdateExperiencesOnline_updateExperiences_UpdateExperiencesSomeSuccess_experiences_UpdateExperienceSomeSuccess_experience_newEntries_CreateEntryErrorss_errors_meta {
   __typename: "CreateEntryErrorMeta";
+  experienceId: string;
   index: number;
   clientId: string | null;
 }
