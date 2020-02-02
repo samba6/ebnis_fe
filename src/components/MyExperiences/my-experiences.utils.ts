@@ -260,6 +260,8 @@ export interface DescriptionMap {
 export interface ExperienceProps {
   showingDescription: boolean;
   experience: ExperienceConnectionFragment_edges_node;
+  navigate: NavigateFn;
+  dispatch: DispatchType;
 }
 
 export interface NoneStateContextValue {
@@ -272,4 +274,4 @@ export type SearchComponentProps = {
   searchState: StateMachine["states"]["search"];
 };
 
-type DispatchType = Dispatch<Action>;
+export type DispatchType = Dispatch<Action>;

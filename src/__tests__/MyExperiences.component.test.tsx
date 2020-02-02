@@ -193,9 +193,11 @@ it("renders experiences from server, toggles descriptions, goes to detailed page
    */
   expect(mockNavigate).not.toHaveBeenCalled();
 
-  (experience2Dom.getElementsByClassName(
-    titleSelector,
-  )[0] as HTMLElement).click();
+  act(() => {
+    (experience2Dom.getElementsByClassName(
+      titleSelector,
+    )[0] as HTMLElement).click();
+  });
 
   /**
    * Then window should navigate to experience 2 detailed page

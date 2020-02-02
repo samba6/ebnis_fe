@@ -11,7 +11,7 @@ import {
   DataTypes,
 } from "../../graphql/apollo-types/globalTypes";
 import { UpdateExperiencesOnline_updateExperiences_UpdateExperiencesSomeSuccess_experiences } from "../../graphql/apollo-types/UpdateExperiencesOnline";
-import ApolloClient, { ApolloError } from "apollo-client";
+import ApolloClient from "apollo-client";
 import { updateExperiencesInCache } from "../../apollo-cache/update-experiences";
 import { DataDefinitionFragment } from "../../graphql/apollo-types/DataDefinitionFragment";
 import { UpdateExperienceOwnFieldsUnionFragment } from "../../graphql/apollo-types/UpdateExperienceOwnFieldsUnionFragment";
@@ -24,22 +24,26 @@ import {
   UpdateExperienceOfflineComponentProps,
   UpdateExperienceOffline,
 } from "./edit-experience.resolvers";
+import {
+  DispatchType as ExperienceDispatchType,
+  ActionType as ExperienceActype,
+} from "../Experience/experience.utils";
+import { parseStringError, StringyErrorPayload } from "../../general-utils";
+import { isOfflineId } from "../../constants";
+import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragment";
 
 export enum ActionType {
-  ABORTED = "@components/edit-experience-modal/edit-cancelled",
-  COMPLETED = "@components/edit-experience-modal/edit-finished",
   SUBMITTING = "@edit-experience/submitting",
   FORM_ERRORS = "@edit-experience/form-errors",
-  OTHER_ERRORS = "@edit-experience/other-errors",
   SERVER_ERRORS = "@edit-experience/server-errors",
   FORM_CHANGED = "@edit-experience/form-changed",
   ON_UPDATED_ONLINE = "@edit-experience/on-updated-online",
   ON_UPDATED_OFFLINE = "@edit-experience/on-updated-offline",
   RESET_FORM_FIELDS = "@edit-experience/reset-form-fields",
-  APOLLO_ERRORS = "@edit-experience/apollo-errors",
   CLOSE_SUBMIT_NOTIFICATION = "@edit-experience/close-submit-notification",
   SERVER_FIELD_ERRORS = "@edit-experience/server-field-errors",
   DEFINITION_CHANGED = "@edit-experience/definition-changed",
+  ON_COMMON_ERROR = "@edit-experience/on-common-error",
 }
 
 export const StateValue = {
@@ -87,16 +91,8 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
             handleOnUpdatedOnlineAction(proxy, payload as OnUpdatedPayload);
             break;
 
-          case ActionType.OTHER_ERRORS:
-            handleOtherErrorsAction(proxy, payload as OtherErrorsPayload);
-            break;
-
           case ActionType.RESET_FORM_FIELDS:
             handleResetFormFieldsAction(proxy);
-            break;
-
-          case ActionType.APOLLO_ERRORS:
-            handleApolloErrorsAction(proxy, payload as ApolloErrorsPayload);
             break;
 
           case ActionType.CLOSE_SUBMIT_NOTIFICATION:
@@ -108,6 +104,11 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
               proxy,
               payload as OnUpdatedOfflinePayload,
             );
+            break;
+
+          case ActionType.ON_COMMON_ERROR:
+            handleOnCommonErrorAction(proxy, payload as StringyErrorPayload);
+            break;
         }
       });
     },
@@ -120,7 +121,11 @@ export const GENERIC_SERVER_ERROR = "Something went wrong - please try again.";
 export const FORM_CONTAINS_ERRORS_MESSAGE =
   "Form contains errors. Please correct them and save again.";
 
-const doEditEffect: DoEdit["func"] = async ({ input }, props, effectArgs) => {
+const submitEffect: DefSubmitEffect["func"] = async (
+  { input },
+  props,
+  effectArgs,
+) => {
   const {
     hasConnection,
     updateExperienceOffline,
@@ -153,6 +158,11 @@ const doEditEffect: DoEdit["func"] = async ({ input }, props, effectArgs) => {
     return;
   }
 
+  if (isOfflineId(experienceId)) {
+    SyncEditedOfflineExperienceEffectHelper(input, props, effectArgs);
+    return;
+  }
+
   try {
     const result = await updateExperiencesOnline({
       variables: {
@@ -166,8 +176,8 @@ const doEditEffect: DoEdit["func"] = async ({ input }, props, effectArgs) => {
 
     if (!validResponse) {
       dispatch({
-        type: ActionType.OTHER_ERRORS,
-        errors: GENERIC_SERVER_ERROR,
+        type: ActionType.ON_COMMON_ERROR,
+        error: GENERIC_SERVER_ERROR,
       });
 
       return;
@@ -176,8 +186,8 @@ const doEditEffect: DoEdit["func"] = async ({ input }, props, effectArgs) => {
     switch (validResponse.__typename) {
       case "UpdateExperiencesAllFail":
         dispatch({
-          type: ActionType.OTHER_ERRORS,
-          errors: validResponse.error,
+          type: ActionType.ON_COMMON_ERROR,
+          error: validResponse.error,
         });
 
         break;
@@ -189,28 +199,88 @@ const doEditEffect: DoEdit["func"] = async ({ input }, props, effectArgs) => {
         }
         break;
     }
-  } catch (errors) {
-    if (errors instanceof ApolloError) {
-      dispatch({
-        type: ActionType.APOLLO_ERRORS,
-        errors,
-      });
-      return;
-    }
-
+  } catch (error) {
     dispatch({
-      type: ActionType.OTHER_ERRORS,
-      errors: errors.message,
+      type: ActionType.ON_COMMON_ERROR,
+      error,
     });
   }
 };
 
-type DoEdit = EffectDefinition<
-  "doEditEffect",
+type DefSubmitEffect = EffectDefinition<
+  "submitEffect",
   {
     input: FormInput;
   }
 >;
+
+interface DefinitionUpdateVal {
+  name: string;
+  updatedAt?: string;
+}
+
+function SyncEditedOfflineExperienceEffectHelper(
+  input: FormInput,
+  props: Props,
+  effectArgs: EffectArgs,
+) {
+  const { parentDispatch, experience } = props;
+  const { dispatch } = effectArgs;
+
+  const { ownFields, updateDefinitions: definitionsInput } = input;
+
+  const updatedExperience = immer(experience, proxy => {
+    proxy.updatedAt = new Date().toJSON();
+
+    if (ownFields) {
+      Object.entries(ownFields).forEach(([k, v]) => {
+        proxy[k] = v;
+      });
+    }
+
+    if (definitionsInput) {
+      const idToDefinitionToUpdateMap: {
+        [k: string]: DefinitionUpdateVal;
+      } = {};
+
+      definitionsInput.forEach(({ id, name, updatedAt }) => {
+        const updateVal: DefinitionUpdateVal = { name };
+
+        if (updatedAt) {
+          updateVal.updatedAt = updatedAt;
+        }
+
+        idToDefinitionToUpdateMap[id] = updateVal;
+      });
+
+      proxy.dataDefinitions = proxy.dataDefinitions.map(d => {
+        const definition = d as DataDefinitionFragment;
+        const { id } = definition;
+
+        const found = idToDefinitionToUpdateMap[id];
+
+        if (found) {
+          Object.entries(found).forEach(([k, v]) => {
+            definition[k] = v;
+          });
+        }
+
+        return definition;
+      });
+    }
+  });
+
+  parentDispatch({
+    type: ExperienceActype.SYNC_EDITED_OFFLINE_EXPERIENCE,
+    experience: updatedExperience,
+    onError: error => {
+      dispatch({
+        type: ActionType.ON_COMMON_ERROR,
+        error,
+      });
+    },
+  });
+}
 
 function onExperienceUpdatedEffectHelper(
   updateResult: UpdateExperiencesOnline_updateExperiences_UpdateExperiencesSomeSuccess_experiences,
@@ -227,8 +297,8 @@ function onExperienceUpdatedEffectHelper(
         } = updateResult;
 
         dispatch({
-          type: ActionType.OTHER_ERRORS,
-          errors: error,
+          type: ActionType.ON_COMMON_ERROR,
+          error,
         });
       }
       break;
@@ -239,8 +309,8 @@ function onExperienceUpdatedEffectHelper(
 
       if (!(ownFields || updatedDefinitions)) {
         dispatch({
-          type: ActionType.OTHER_ERRORS,
-          errors: GENERIC_SERVER_ERROR,
+          type: ActionType.ON_COMMON_ERROR,
+          error: GENERIC_SERVER_ERROR,
         });
 
         return;
@@ -280,7 +350,7 @@ type ScrollToViewEffect = EffectDefinition<
 >;
 
 export const effectFunctions = {
-  doEditEffect,
+  submitEffect,
   scrollToViewEffect,
 };
 
@@ -449,7 +519,7 @@ function handleSubmittingAction(proxy: DraftState) {
   submission.value = StateValue.submitting;
 
   effects.push({
-    key: "doEditEffect",
+    key: "submitEffect",
     ownArgs: { input },
   });
 }
@@ -603,20 +673,6 @@ function validateForm(proxy: DraftState): FormInput {
   return input;
 }
 
-function handleOtherErrorsAction(
-  proxy: DraftState,
-  payload: OtherErrorsPayload,
-) {
-  const { states } = proxy;
-  const submissionState = states.submission as SubmissionErrors;
-  submissionState.value = StateValue.errors;
-  submissionState.errors = {
-    context: {
-      errors: payload.errors,
-    },
-  };
-}
-
 function handleOnUpdatedOfflineAction(
   proxy: DraftState,
   payload: OnUpdatedOfflinePayload,
@@ -630,12 +686,12 @@ function handleOnUpdatedOfflineAction(
   } = proxy;
 
   const { result } = payload;
-  let errors = "";
+  let error = "";
 
   if (result) {
     switch (result.__typename) {
       case "UpdateExperienceOfflineError":
-        errors = GENERIC_SERVER_ERROR;
+        error = GENERIC_SERVER_ERROR;
         break;
 
       case "UpdateExperienceOfflineSuccess": {
@@ -663,12 +719,12 @@ function handleOnUpdatedOfflineAction(
       }
     }
   } else {
-    errors = GENERIC_SERVER_ERROR;
+    error = GENERIC_SERVER_ERROR;
   }
 
-  if (errors) {
-    handleOtherErrorsAction(proxy, {
-      errors,
+  if (error) {
+    handleOnCommonErrorAction(proxy, {
+      error,
     });
   } else {
     submission.value = StateValue.success;
@@ -838,23 +894,16 @@ function handleResetFormFieldsAction(proxy: DraftState) {
     });
 }
 
-function handleApolloErrorsAction(
+function handleOnCommonErrorAction(
   proxy: DraftState,
-  payload: ApolloErrorsPayload,
+  payload: StringyErrorPayload,
 ) {
-  const {
-    errors: { graphQLErrors, networkError },
-  } = payload as ApolloErrorsPayload;
-
-  const {
-    states: { submission },
-  } = proxy;
-
-  submission.value = StateValue.errors;
-  const submissionErrorState = submission as SubmissionErrors;
-  submissionErrorState.errors = {
+  const { states } = proxy;
+  const submissionState = states.submission as SubmissionErrors;
+  submissionState.value = StateValue.errors;
+  submissionState.errors = {
     context: {
-      errors: networkError ? networkError.message : graphQLErrors[0].message,
+      errors: parseStringError(payload.error),
     },
   };
 }
@@ -980,20 +1029,11 @@ export type Action =
       type: ActionType.CLOSE_SUBMIT_NOTIFICATION;
     }
   | {
-      type: ActionType.ABORTED;
-    }
-  | {
-      type: ActionType.COMPLETED;
-    }
-  | {
       type: ActionType.SUBMITTING;
     }
   | {
       type: ActionType.FORM_ERRORS;
     }
-  | ({
-      type: ActionType.OTHER_ERRORS;
-    } & OtherErrorsPayload)
   | ({
       type: ActionType.SERVER_ERRORS;
     } & ServerErrorPayload)
@@ -1007,23 +1047,19 @@ export type Action =
       type: ActionType.RESET_FORM_FIELDS;
     }
   | ({
-      type: ActionType.APOLLO_ERRORS;
-    } & ApolloErrorsPayload)
-  | ({
       type: ActionType.DEFINITION_CHANGED;
-    } & DefinitionChangedPayload);
+    } & DefinitionChangedPayload)
+  | ({
+      type: ActionType.ON_COMMON_ERROR;
+    } & StringyErrorPayload);
 
 interface OnUpdatedOfflinePayload {
-  result: UpdateExperienceOffline["updateExperienceOffline"];
+  result: UpdateExperienceOffline["updateExperienceOffline"] | undefined;
 }
 
 interface OnUpdatedPayload {
   ownFields?: UpdateExperienceOwnFieldsUnionFragment;
   definitions?: UpdateDefinitionUnionFragment[];
-}
-
-interface ApolloErrorsPayload {
-  errors: ApolloError;
 }
 
 interface FormChangedPayload {
@@ -1036,10 +1072,6 @@ interface DefinitionChangedPayload {
   id: string;
 }
 
-interface OtherErrorsPayload {
-  errors: string;
-}
-
 interface ServerErrorPayload {
   errors: UpdateExperienceMutation_updateExperience_errors;
 }
@@ -1047,8 +1079,8 @@ interface ServerErrorPayload {
 type DispatchType = Dispatch<Action>;
 
 export interface CallerProps {
-  experience: ExperienceNoEntryFragment;
-  parentDispatch: Dispatch<Action>;
+  experience: ExperienceFragment;
+  parentDispatch: ExperienceDispatchType;
 }
 
 export type Props = CallerProps &
@@ -1060,7 +1092,7 @@ export type Props = CallerProps &
     cache: InMemoryCache;
   };
 
-interface EffectArgs {
+export interface EffectArgs {
   dispatch: DispatchType;
 }
 
@@ -1086,7 +1118,7 @@ interface EffectState {
   };
 }
 
-type EffectsList = (DoEdit | ScrollToViewEffect)[];
+type EffectsList = (DefSubmitEffect | ScrollToViewEffect)[];
 
 type FormInput = Pick<
   UpdateAnExperienceInput,

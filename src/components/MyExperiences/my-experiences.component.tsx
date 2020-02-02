@@ -17,6 +17,7 @@ import {
   reducer,
   initState,
   ActionType,
+  DispatchType,
 } from "./my-experiences.utils";
 import { EXPERIENCE_DEFINITION_URL } from "../../routes";
 import { makeExperienceRoute } from "../../constants/experience-route";
@@ -54,12 +55,11 @@ import {
   searchTextInputId,
   domPrefix,
   noSearchMatchId,
+  makeExperienceTitleDomId,
 } from "./my-experiences.dom";
 import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragment";
 
 enum ClickContext {
-  goToExperience = "go-to-experience",
-  toggleDescription = "toggle-description",
   searchLink = "search-link",
   searchInput = "search-input",
 }
@@ -80,27 +80,6 @@ export function MyExperiences(props: ComponentProps) {
     const { dataset } = target;
 
     switch (dataset.clickContext) {
-      case ClickContext.goToExperience:
-        e.stopImmediatePropagation();
-        navigate(
-          makeExperienceRoute(
-            (target.closest("." + experienceSelector) as HTMLElement).id,
-          ),
-        );
-        return;
-
-      case ClickContext.toggleDescription: {
-        e.stopImmediatePropagation();
-        const id = (target.closest("." + experienceSelector) as HTMLElement).id;
-
-        dispatch({
-          type: ActionType.TOGGLE_DESCRIPTION,
-          id,
-        });
-
-        return;
-      }
-
       case ClickContext.searchLink: {
         e.stopImmediatePropagation();
         const experienceId = dataset.experienceId as string;
@@ -175,6 +154,7 @@ export function MyExperiences(props: ComponentProps) {
             idToShowingDescriptionMap={idToShowingDescriptionMap}
             navigate={navigate}
             experiences={experiences}
+            dispatch={dispatch}
           />
         )}
 
@@ -202,7 +182,12 @@ export function MyExperiences(props: ComponentProps) {
 
 const ExperiencesComponent = memo(
   (props: ExperiencesComponentProps) => {
-    const { experiences, idToShowingDescriptionMap } = props;
+    const {
+      dispatch,
+      experiences,
+      idToShowingDescriptionMap,
+      navigate,
+    } = props;
 
     return (
       <div id="experiences-container" className="experiences-container">
@@ -214,6 +199,8 @@ const ExperiencesComponent = memo(
               key={id}
               showingDescription={idToShowingDescriptionMap[id]}
               experience={experience}
+              navigate={navigate}
+              dispatch={dispatch}
             />
           );
         })}
@@ -230,7 +217,12 @@ const ExperiencesComponent = memo(
 );
 
 const ExperienceComponent = React.memo(
-  function ExperienceFn({ experience, showingDescription }: ExperienceProps) {
+  function ExperienceFn({
+    experience,
+    showingDescription,
+    navigate,
+    dispatch,
+  }: ExperienceProps) {
     const { title, description, id, hasUnsaved } = experience;
     const isOffline = isOfflineId(id);
     const isPartOffline = !isOffline && hasUnsaved;
@@ -249,11 +241,14 @@ const ExperienceComponent = React.memo(
         <div className="card">
           <div className="card-header">
             <div
-              data-click-context={ClickContext.goToExperience}
+              id={makeExperienceTitleDomId(id)}
               className={makeClassNames({
                 "card-header-title": true,
                 [titleSelector]: true,
               })}
+              onClick={() => {
+                navigate(makeExperienceRoute(id));
+              }}
             >
               {title}
             </div>
@@ -271,7 +266,12 @@ const ExperienceComponent = React.memo(
                     "fas fa-eye-slash pb-6 toggle-description": true,
                     [hideDescriptionIconSelector]: true,
                   })}
-                  data-click-context={ClickContext.toggleDescription}
+                  onClick={() => {
+                    dispatch({
+                      type: ActionType.TOGGLE_DESCRIPTION,
+                      id,
+                    });
+                  }}
                 />
               ) : (
                 <i
@@ -279,14 +279,19 @@ const ExperienceComponent = React.memo(
                     "fas fa-eye toggle-description": true,
                     [showDescriptionIconSelector]: true,
                   })}
-                  data-click-context={ClickContext.toggleDescription}
+                  onClick={() => {
+                    dispatch({
+                      type: ActionType.TOGGLE_DESCRIPTION,
+                      id,
+                    });
+                  }}
                 />
               )}
 
               {showingDescription && (
                 <div
                   className={makeClassNames({
-                    "content": true,
+                    content: true,
                     [descriptionSelector]: true,
                   })}
                 >
@@ -434,4 +439,5 @@ interface ExperiencesComponentProps {
   experiences: ExperienceFragment[];
   navigate: NavigateFn;
   idToShowingDescriptionMap: DescriptionMap;
+  dispatch: DispatchType;
 }

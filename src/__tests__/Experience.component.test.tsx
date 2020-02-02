@@ -12,6 +12,10 @@ import {
   reducer,
   initState,
   ActionType,
+  EffectState,
+  DefSyncOfflineEditedExperienceEffect,
+  EffectArgs,
+  effectFunctions,
 } from "../components/Experience/experience.utils";
 import { renderWithRouter } from "./test_utils";
 import {
@@ -19,7 +23,6 @@ import {
   ExperienceFragment_dataDefinitions,
   ExperienceFragment,
 } from "../graphql/apollo-types/ExperienceFragment";
-import { ActionType as EditExperienceActionType } from "../components/EditExperience/edit-experience.utils";
 import {
   getUnsyncedExperience,
   removeUnsyncedExperience,
@@ -38,14 +41,10 @@ import {
   CreateExperiencesMutationResult,
 } from "../graphql/update-experience.mutation";
 import { makeOfflineId } from "../constants";
-import { replaceExperiencesInGetExperiencesMiniQuery } from "../apollo-cache/update-get-experiences-mini-query";
-import { wipeReferencesFromCache } from "../state/resolvers/delete-references-from-cache";
+import { saveOnSyncOfflineExperienceComponentSuccess } from "../apollo-cache/on-sync-offline-experience-component-success";
 
-jest.mock("../state/resolvers/delete-references-from-cache");
-const mockWipeReferencesFromCache = wipeReferencesFromCache as jest.Mock;
-
-jest.mock("../apollo-cache/update-get-experiences-mini-query");
-const mockReplaceExperiencesInGetExperiencesMiniQuery = replaceExperiencesInGetExperiencesMiniQuery as jest.Mock;
+jest.mock("../apollo-cache/on-sync-offline-experience-component-success");
+const mockSaveOnSyncOfflineExperienceComponentSuccess = saveOnSyncOfflineExperienceComponentSuccess as jest.Mock;
 
 jest.mock("../components/Experience/loadables", () => ({
   EditExperience: () => <div id="js-editor" />,
@@ -74,8 +73,6 @@ beforeEach(() => {
   mockCreateExperiences.mockReset();
   mockGetUnsyncedExperience.mockReset();
   mockRemoveUnsyncedExperience.mockReset();
-  mockWipeReferencesFromCache.mockReset();
-  mockReplaceExperiencesInGetExperiencesMiniQuery.mockReset();
   mockPersistFunc.mockReset();
 });
 
@@ -178,34 +175,6 @@ it("toggles experience editor", () => {
   (document.getElementById("experience-a-edit-menu") as HTMLDivElement).click();
 
   expect(document.getElementById("js-editor")).not.toBeNull();
-});
-
-test("reducer", () => {
-  const prevState = initState({} as any);
-
-  expect(
-    reducer(prevState, { type: EditExperienceActionType.ABORTED }).states
-      .editingExperience.value,
-  ).toEqual(StateValue.idle);
-
-  expect(
-    reducer(prevState, { type: ActionType.EDIT_EXPERIENCE }).states
-      .editingExperience.value,
-  ).toEqual(StateValue.editing);
-
-  expect(
-    reducer(prevState, { type: EditExperienceActionType.COMPLETED }).states
-      .editingExperience.value,
-  ).toEqual(StateValue.idle);
-
-  expect(prevState.context.offlineExperienceNewlySynced).toBeUndefined();
-
-  expect(
-    reducer(prevState, {
-      type: ActionType.SET_OFFLINE_EXPERIENCE_NEWLY_SYNCED,
-      data: true,
-    }).context.offlineExperienceNewlySynced,
-  ).toBe(true);
 });
 
 test("getTitle", () => {
@@ -879,19 +848,11 @@ test("sync offline experience, navigate to new entry", async () => {
   /**
    * And cache cleanup functions should not be invoked
    */
-  expect(mockRemoveUnsyncedExperience).not.toHaveBeenCalled();
-
   expect(
-    mockReplaceExperiencesInGetExperiencesMiniQuery,
+    mockSaveOnSyncOfflineExperienceComponentSuccess,
   ).not.toHaveBeenCalled();
-
-  expect(mockWipeReferencesFromCache).not.toHaveBeenCalled();
+  expect(mockRemoveUnsyncedExperience).not.toHaveBeenCalled();
   expect(mockPersistFunc).not.toHaveBeenCalled();
-
-  /**
-   * And page should not navigate away
-   */
-  expect(mockNavigate).not.toHaveBeenCalled();
 
   /**
    * When sync button is clicked
@@ -904,29 +865,170 @@ test("sync offline experience, navigate to new entry", async () => {
    * And cache cleanup functions should be invoked
    */
   expect(mockPersistFunc).toHaveBeenCalled();
-
   expect(mockRemoveUnsyncedExperience.mock.calls[0][0]).toBe(experienceId);
 
   expect(
-    mockReplaceExperiencesInGetExperiencesMiniQuery.mock.calls[0][1],
-  ).toEqual({
-    [experienceId]: null,
-  });
-
-  expect(mockWipeReferencesFromCache.mock.calls[0][1]).toEqual([
-    experienceId,
-    "e1",
-  ]);
+    mockSaveOnSyncOfflineExperienceComponentSuccess.mock.calls[0][0],
+  ).toEqual([experienceId, "e1", "a"]);
 
   /**
    * And error UI should not be visible
    */
   expect(document.getElementById(errorsNotificationId)).toBeNull();
+});
 
-  /**
-   * And page should navigate away
-   */
-  expect(mockNavigate).toHaveBeenCalled();
+describe("reducer", () => {
+  test("trivial", () => {
+    const prevState = initState();
+
+    expect(
+      reducer(prevState, { type: ActionType.ABORTED }).states.editExperience
+        .value,
+    ).toEqual(StateValue.idle);
+
+    expect(
+      reducer(prevState, { type: ActionType.EDIT_EXPERIENCE }).states
+        .editExperience.value,
+    ).toEqual(StateValue.editing);
+
+    expect(
+      reducer(prevState, { type: ActionType.COMPLETED }).states.editExperience
+        .value,
+    ).toEqual(StateValue.idle);
+
+    expect(prevState.context.offlineExperienceNewlySynced).not.toBe(true);
+
+    expect(
+      reducer(prevState, {
+        type: ActionType.SET_OFFLINE_EXPERIENCE_NEWLY_SYNCED,
+        value: true,
+      }).context.offlineExperienceNewlySynced,
+    ).toBe(true);
+  });
+
+  test("sync edited offline experience", async () => {
+    const experience = {
+      id: "1",
+      entries: {
+        edges: [] as any,
+      },
+      dataDefinitions: [] as any,
+    } as ExperienceFragment;
+
+    const mockOnError = jest.fn();
+
+    const props = {
+      createExperiences: mockCreateExperiences as any,
+    } as Props;
+
+    const mockDispatch = jest.fn();
+    const effectArgs = { dispatch: mockDispatch as any } as EffectArgs;
+
+    const prevState = initState();
+
+    const nextState = reducer(prevState, {
+      type: ActionType.SYNC_EDITED_OFFLINE_EXPERIENCE,
+      experience,
+      onError: mockOnError,
+    });
+
+    const args = (nextState.effects.general as EffectState).hasEffects.context
+      .effects[0] as DefSyncOfflineEditedExperienceEffect;
+
+    expect(args).toEqual({
+      key: "syncEditedOfflineExperienceEffect",
+      ownArgs: { experience, onError: mockOnError },
+    });
+
+    /**
+     * SUBMISSIONS
+     * 1. javascript exception
+     * 2. Invalid response
+     * 3. CreateExperienceErrorss
+     * 4. ExperienceSuccess.entriesErrors
+     * 5. ExperienceSuccess no entriesErrors
+     */
+    mockCreateExperiences
+      .mockRejectedValueOnce(new Error("a")) // 1
+      .mockResolvedValueOnce({
+        data: {
+          createExperiences: [],
+        },
+      } as CreateExperiencesMutationResult) // 2
+      .mockResolvedValueOnce({
+        data: {
+          createExperiences: [
+            {
+              __typename: "CreateExperienceErrorss",
+              errors: {},
+            },
+          ],
+        },
+      } as CreateExperiencesMutationResult) // 3
+      .mockResolvedValueOnce({
+        data: {
+          createExperiences: [
+            {
+              __typename: "ExperienceSuccess",
+              entriesErrors: [{}],
+            },
+          ],
+        },
+      } as CreateExperiencesMutationResult) // 4
+      .mockResolvedValueOnce({
+        data: {
+          createExperiences: [
+            {
+              __typename: "ExperienceSuccess",
+              experience: {
+                id: "a",
+              },
+            },
+          ],
+        },
+      } as CreateExperiencesMutationResult); // 5
+
+    // 1
+    expect(mockOnError).not.toHaveBeenCalled();
+    effectFunctions[args.key](args.ownArgs, props, effectArgs);
+    expect(mockDispatch).not.toHaveBeenCalled();
+    await wait(() => true);
+    expect(mockOnError).toHaveBeenCalled();
+
+    // 2
+    mockOnError.mockReset();
+    expect(mockOnError).not.toHaveBeenCalled();
+    effectFunctions[args.key](args.ownArgs, props, effectArgs);
+    expect(mockDispatch).not.toHaveBeenCalled();
+    await wait(() => true);
+    expect(mockOnError).toHaveBeenCalled();
+
+    // 3
+    mockOnError.mockReset();
+    expect(mockOnError).not.toHaveBeenCalled();
+    effectFunctions[args.key](args.ownArgs, props, effectArgs);
+    expect(mockDispatch).not.toHaveBeenCalled();
+    await wait(() => true);
+    expect(mockOnError).toHaveBeenCalled();
+
+    // 4
+    mockOnError.mockReset();
+    expect(mockOnError).not.toHaveBeenCalled();
+    effectFunctions[args.key](args.ownArgs, props, effectArgs);
+    await wait(() => true);
+    expect(mockOnError).toHaveBeenCalled();
+
+    // 5
+    mockOnError.mockReset();
+    expect(mockOnError).not.toHaveBeenCalled();
+    expect(mockRemoveUnsyncedExperience).not.toHaveBeenCalled();
+    effectFunctions[args.key](args.ownArgs, props, effectArgs);
+    await wait(() => true);
+    expect(mockOnError).not.toHaveBeenCalled();
+    expect(mockRemoveUnsyncedExperience.mock.calls[0][0]).toBe("1");
+
+    // 6
+  });
 });
 
 ////////////////////////// HELPER FUNCTIONS ///////////////////////////

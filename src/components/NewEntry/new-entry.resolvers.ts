@@ -47,7 +47,7 @@ const createOfflineEntryMutationResolver: LocalResolverFn<
   CreateOfflineEntryMutationVariables,
   Promise<CreateOfflineEntryMutationReturned["createOfflineEntry"]>
 > = async (_, variables, context) => {
-  const { client } = context;
+  const { cache } = context;
 
   const { experienceId } = variables;
   const today = new Date();
@@ -80,7 +80,7 @@ const createOfflineEntryMutationResolver: LocalResolverFn<
   };
 
   const experience = (await upsertExperienceWithEntry(experienceId, "offline")(
-    client,
+    cache,
     {
       data: { createEntry: { entry } as CreateOnlineEntryMutation_createEntry },
     },

@@ -4,6 +4,7 @@ import React, {
   useMemo,
   useReducer,
   useContext,
+  useLayoutEffect,
 } from "react";
 import { Link } from "../Link";
 import "./experience.styles.scss";
@@ -16,7 +17,7 @@ import {
   initState,
   StateValue,
   effectFunctions,
-  OFFLINE_EXPERIENCE_SYNCED_NAVIGATION_STATE_KEY,
+  DispatchType,
 } from "./experience.utils";
 import { makeNewEntryRoute } from "../../constants/new-entry-route";
 import { Entry } from "../Entry/entry.component";
@@ -24,7 +25,6 @@ import {
   ExperienceFragment_entries,
   ExperienceFragment_entries_edges,
   ExperienceFragment_entries_edges_node,
-  ExperienceFragment,
 } from "../../graphql/apollo-types/ExperienceFragment";
 import makeClassNames from "classnames";
 import { EditExperience } from "./loadables";
@@ -40,36 +40,26 @@ import {
   errorsNotificationId,
   syncButtonId,
   newEntryTriggerId,
+  experienceMenuTriggerDomId,
 } from "./experience.dom";
 import { Loading } from "../Loading/loading";
 import { useCreateEntriesMutation } from "../../graphql/create-entries.mutation";
 import { EbnisAppContext } from "../../context";
-
-enum ClickContext {
-  submit = "@experience-component/submit",
-  resetForm = "@experience-component/reset-form",
-  closeSubmitNotification = "@experience-component/close-submit-notification",
-  openNewEntry = "@experience-component/openNewEntry",
-  openExperienceEdit = "@experience-component/openExperienceEdit",
-  sync = "@experience-component/sync",
-}
+import { execOnSyncOfflineExperienceComponentSuccess } from "../../apollo-cache/on-sync-offline-experience-component-success";
+import { EbnisContextProps } from "../../context";
 
 export function ExperienceComponent(props: Props) {
   const {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    cache,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    persistor,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    client,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     createExperiences,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     createEntries,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     updateExperiencesOnline,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    offlineExperienceNewlySynced: offlineExperienceNewlySyncedProp,
+    pathname,
+    cache,
+    persistor,
+    client,
     navigate,
     hasConnection,
     experience,
@@ -85,7 +75,7 @@ export function ExperienceComponent(props: Props) {
   const [stateMachine, dispatch] = useReducer(reducer, props, initState);
   const {
     states: {
-      editingExperience: editingExperienceState,
+      editExperience: editExperienceState,
       submission: submissionState,
     },
     effects: { general: generalEffects },
@@ -111,15 +101,34 @@ export function ExperienceComponent(props: Props) {
     );
   }, [experience, entriesJSX]);
 
-  // istanbul ignore next: can figure out how to test
-  useEffect(() => {
-    if (offlineExperienceNewlySyncedProp) {
-      dispatch({
-        type: ActionType.SET_OFFLINE_EXPERIENCE_NEWLY_SYNCED,
-        data: offlineExperienceNewlySyncedProp,
-      });
-    }
-  }, [offlineExperienceNewlySyncedProp]);
+  // istanbul ignore next:
+  useLayoutEffect(() => {
+    execOnSyncOfflineExperienceComponentSuccess(
+      pathname,
+      () => {
+        dispatch({
+          type: ActionType.SET_OFFLINE_EXPERIENCE_NEWLY_SYNCED,
+          value: true,
+        });
+      },
+      { client, cache, persistor } as EbnisContextProps,
+    );
+
+    const cb = () => {
+      const menuTrigger = document.getElementById(
+        experienceMenuTriggerDomId,
+      ) as HTMLElement;
+
+      menuTrigger.classList.remove("is-active");
+    };
+
+    document.documentElement.addEventListener("click", cb);
+
+    return () => {
+      document.documentElement.removeEventListener("click", cb);
+    };
+    /* eslint-disable-next-line react-hooks/exhaustive-deps*/
+  }, []);
 
   useEffect(() => {
     if (generalEffects.value !== StateValue.hasEffects) {
@@ -171,33 +180,10 @@ export function ExperienceComponent(props: Props) {
     );
   }
 
-  const onClick = useCallback((e: MouseEvent) => {
-    const target = e.target as HTMLElement;
-    const { dataset } = target;
-
-    switch (dataset.clickContext) {
-      case ClickContext.closeSubmitNotification:
-        dispatch({
-          type: ActionType.CLOSE_SUBMIT_NOTIFICATION,
-        });
-        break;
-
-      case ClickContext.openNewEntry:
-        navigate(makeNewEntryRoute(id));
-        break;
-
-      case ClickContext.openExperienceEdit:
-        dispatch({
-          type: ActionType.EDIT_EXPERIENCE,
-        });
-        break;
-
-      case ClickContext.sync:
-        dispatch({
-          type: ActionType.SYNC,
-        });
-        break;
-    }
+  const closeSubmitNotificationHandler = useCallback(() => {
+    dispatch({
+      type: ActionType.CLOSE_SUBMIT_NOTIFICATION,
+    });
     /* eslint-disable-next-line react-hooks/exhaustive-deps*/
   }, []);
 
@@ -206,7 +192,6 @@ export function ExperienceComponent(props: Props) {
       {submissionState.value === StateValue.submitting && <Loading />}
 
       <div
-        onClick={(onClick as unknown) as (e: React.MouseEvent) => void}
         className={makeClassNames({
           "bulma components-experience border-solid border-2 rounded": true,
           [className]: !!className,
@@ -225,7 +210,7 @@ export function ExperienceComponent(props: Props) {
               className="notification is-success is-light"
             >
               <button
-                data-click-context={ClickContext.closeSubmitNotification}
+                onClick={closeSubmitNotificationHandler}
                 className={`delete ${closeSubmitNotificationBtnSelector}`}
               />
               Changes saved successfully.
@@ -238,7 +223,7 @@ export function ExperienceComponent(props: Props) {
               id={errorsNotificationId}
             >
               <button
-                data-click-context={ClickContext.closeSubmitNotification}
+                onClick={closeSubmitNotificationHandler}
                 className={`delete ${closeSubmitNotificationBtnSelector}`}
               />
               {submissionState.errors.context.errors}
@@ -256,7 +241,11 @@ export function ExperienceComponent(props: Props) {
                   <button
                     id={syncButtonId}
                     className="block w-full font-bold button is-rounded is-success"
-                    data-click-context={ClickContext.sync}
+                    onClick={() => {
+                      dispatch({
+                        type: ActionType.SYNC,
+                      });
+                    }}
                   >
                     Sync
                   </button>
@@ -266,7 +255,12 @@ export function ExperienceComponent(props: Props) {
           </div>
           <div>
             <div className="options-menu-container">
-              <OptionsMenuComponent experience={experience} {...menuOptions} />
+              <OptionsMenuComponent
+                dispatch={dispatch}
+                navigate={navigate}
+                experience={experience}
+                {...menuOptions}
+              />
             </div>
           </div>
 
@@ -278,7 +272,7 @@ export function ExperienceComponent(props: Props) {
         <div className="experience__main">{entriesJSX || renderEntries()}</div>
       </div>
 
-      {editingExperienceState.value === StateValue.editing && (
+      {editExperienceState.value === StateValue.editing && (
         <EditExperience experience={experience} parentDispatch={dispatch} />
       )}
     </>
@@ -287,16 +281,20 @@ export function ExperienceComponent(props: Props) {
 
 function OptionsMenuComponent({
   experience,
-}: Props["menuOptions"] & {
-  experience: ExperienceFragment;
-}) {
+  navigate,
+  dispatch,
+}: { dispatch: DispatchType } & Props["menuOptions"] &
+  Pick<Props, "experience" | "navigate">) {
   const { id } = experience;
   const experienceIdPrefix = `experience-${id}`;
 
   return (
     <div
       className="options-menu__trigger dropdown is-hoverable"
-      id="experience-options-menu"
+      id={experienceMenuTriggerDomId}
+      onClick={e => {
+        e.currentTarget.classList.toggle("is-active");
+      }}
     >
       <div className="dropdown-trigger">
         <button
@@ -317,7 +315,9 @@ function OptionsMenuComponent({
           <a
             id={newEntryTriggerId}
             className="text-lg font-extrabold dropdown-item"
-            data-click-context={ClickContext.openNewEntry}
+            onClick={() => {
+              navigate(makeNewEntryRoute(id));
+            }}
           >
             <span className="mr-2 icon is-small">
               <i className="fas fa-external-link-alt" />
@@ -330,7 +330,11 @@ function OptionsMenuComponent({
           <div
             className="font-bold dropdown-item js-edit-menu"
             id={`${experienceIdPrefix}-edit-menu`}
-            data-click-context={ClickContext.openExperienceEdit}
+            onClick={() => {
+              dispatch({
+                type: ActionType.EDIT_EXPERIENCE,
+              });
+            }}
           >
             Edit
           </div>
@@ -346,7 +350,7 @@ export function getTitle(arg?: { title: string }) {
 
 // istanbul ignore next:
 export default (props: CallerProps) => {
-  const { hasConnection, navigate, ...rest } = useContext(LayoutContext);
+  const { hasConnection, navigate, pathname } = useContext(LayoutContext);
   const [updateExperiencesOnline] = useUpdateExperiencesOnlineMutation();
   const [createEntries] = useCreateEntriesMutation();
   const [createExperiences] = useCreateExperiencesMutation();
@@ -363,9 +367,7 @@ export default (props: CallerProps) => {
       client={client}
       persistor={persistor}
       cache={cache}
-      offlineExperienceNewlySynced={
-        rest.state && rest.state[OFFLINE_EXPERIENCE_SYNCED_NAVIGATION_STATE_KEY]
-      }
+      pathname={pathname}
     />
   );
 };

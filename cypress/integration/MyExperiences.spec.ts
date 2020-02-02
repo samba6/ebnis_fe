@@ -6,7 +6,7 @@ import { MY_EXPERIENCES_TITLE } from "../../src/constants/my-experiences-title";
 import { createSavedExperience } from "../support/create-experience";
 import { persistCache } from "../support/mutate";
 import { ExperienceFragment } from "../../src/graphql/apollo-types/ExperienceFragment";
-import { makeExperienceHeaderDomId } from "../../src/components/MyExperiences/my-experiences.dom";
+import { makeExperienceTitleDomId } from "../../src/components/MyExperiences/my-experiences.dom";
 
 const title = "aa";
 
@@ -85,7 +85,7 @@ context("my experiences page", () => {
       /**
        * When we click on the title of experience to which we want to add entry
        */
-      cy.get("#" + makeExperienceHeaderDomId(id)).click();
+      cy.get("#" + makeExperienceTitleDomId(id)).click();
 
       /**
        * Then we should be directed to the experience's detailed page

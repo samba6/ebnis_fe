@@ -41,6 +41,7 @@ import {
   updateExperienceOfflineResolvers,
   useUpdateExperienceOfflineMutation,
 } from "./edit-experience.resolvers";
+import { ActionType as ExperienceActype } from "../Experience/experience.utils";
 
 enum ClickContext {
   submit = "@edit-experience/submit",
@@ -122,7 +123,7 @@ export function EditExperience(props: Props) {
 
       case ClickContext.closeModal:
         parentDispatch({
-          type: ActionType.ABORTED,
+          type: ExperienceActype.ABORTED,
         });
         break;
 

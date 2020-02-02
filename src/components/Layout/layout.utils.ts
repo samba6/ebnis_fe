@@ -8,14 +8,6 @@ import { getOfflineItemsCount } from "../../state/offline-resolvers";
 import { preFetchExperiences } from "./layout-injectables";
 import { EbnisContextProps } from "../../context";
 
-export enum LayoutActionType {
-  SET_OFFLINE_ITEMS_COUNT = "@layout/set-offline-items-count",
-  CACHE_PERSISTED = "@layout/render-children",
-  CONNECTION_CHANGED = "@layout/connection-changed",
-  DONE_FETCHING_EXPERIENCES = "@layout/experiences-already-fetched",
-  REFETCH_OFFLINE_ITEMS_COUNT = "@layout/refetch-offline-items-count",
-}
-
 export const StateValue = {
   noEffect: "noEffect" as NoEffectValue,
   hasEffects: "hasEffects" as HasEffectsVal,
@@ -24,6 +16,14 @@ export const StateValue = {
   getOfflineItemsCount: "getOfflineItemsCount" as GetOfflineItemsCountEffectVal,
   prefetchExperiences: "prefetchExperiences" as PrefetchExperiencesEffectVal,
 };
+
+export enum LayoutActionType {
+  SET_OFFLINE_ITEMS_COUNT = "@layout/set-offline-items-count",
+  CACHE_PERSISTED = "@layout/render-children",
+  CONNECTION_CHANGED = "@layout/connection-changed",
+  DONE_FETCHING_EXPERIENCES = "@layout/experiences-already-fetched",
+  REFETCH_OFFLINE_ITEMS_COUNT = "@layout/refetch-offline-items-count",
+}
 
 export const reducer: Reducer<StateMachine, LayoutAction> = (state, action) =>
   wrapReducer(
@@ -336,6 +336,8 @@ export interface LayoutContextValue extends WindowLocation {
   offlineItemsCount: number;
   hasConnection: boolean;
   navigate: NavigateFn;
+  offlineExperienceNewlySynced?: boolean;
+  layoutDispatch: LayoutDispatchType;
 }
 
 export interface ILayoutUnchangingContextValue {

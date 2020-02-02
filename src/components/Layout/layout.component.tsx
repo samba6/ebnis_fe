@@ -50,11 +50,7 @@ export function Layout(props: Props) {
 
   const {
     states: { prefetchExperiences },
-    context: {
-      offlineItemsCount,
-      renderChildren,
-      hasConnection: hasConnection,
-    },
+    context: { offlineItemsCount, renderChildren, hasConnection },
     effects: { runOnRenders },
   } = stateMachine;
 
@@ -73,6 +69,7 @@ export function Layout(props: Props) {
       if (cache && restoreCacheOrPurgeStorage) {
         try {
           await restoreCacheOrPurgeStorage(persistor);
+
           /* eslint-disable-next-line no-empty*/
         } catch (error) {}
 
@@ -127,6 +124,7 @@ export function Layout(props: Props) {
               hasConnection: hasConnection,
               ...location,
               navigate,
+              layoutDispatch: dispatch,
             } as LayoutContextValue
           }
         >

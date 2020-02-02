@@ -195,7 +195,7 @@ export async function createEntryEffectHelper(
   return createResult;
 }
 
-const createEntryEffect: CreateEntryEffect["func"] = async (
+const createEntryEffect: DefCreateEntryEffect["func"] = async (
   ownArgs,
   { createOnlineEntry, createOfflineEntry, persistor },
   { dispatch, goToExperience },
@@ -229,7 +229,7 @@ interface CreateEntryEffectArgs {
   onDone?: () => void;
 }
 
-type CreateEntryEffect = EffectDefinition<
+type DefCreateEntryEffect = EffectDefinition<
   "createEntryEffect",
   CreateEntryEffectArgs
 >;
@@ -620,7 +620,7 @@ interface EffectContext {
   effectsArgsObj: ComponentProps;
 }
 
-type EffectsList = (ScrollToViewEffect | CreateEntryEffect)[];
+type EffectsList = (ScrollToViewEffect | DefCreateEntryEffect)[];
 
 interface GeneralEffect {
   value: HasEffects;

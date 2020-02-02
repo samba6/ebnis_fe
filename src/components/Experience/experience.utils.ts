@@ -12,11 +12,7 @@ import {
   ExperienceFragment_entries_edges,
 } from "../../graphql/apollo-types/ExperienceFragment";
 import { EbnisComponentProps } from "../../types";
-import { PropsWithChildren, Reducer, Dispatch } from "react";
-import {
-  Action as EditExperienceAction,
-  ActionType as EditExperienceActionType,
-} from "../EditExperience/edit-experience.utils";
+import { Reducer, Dispatch } from "react";
 import immer, { Draft } from "immer";
 import { wrapReducer } from "../../logger";
 import {
@@ -39,16 +35,16 @@ import { EntryConnectionFragment_edges } from "../../graphql/apollo-types/EntryC
 import { entriesPaginationVariables } from "../../graphql/get-experience-full.query";
 import { CreateExperiences_createExperiences_CreateExperienceErrorss_errors } from "../../graphql/apollo-types/CreateExperiences";
 import { createExperiencesManualUpdate } from "../../apollo-cache/create_experiences-update";
-import { makeExperienceRoute } from "../../constants/experience-route";
-import { replaceExperiencesInGetExperiencesMiniQuery } from "../../apollo-cache/update-get-experiences-mini-query";
 import { AppPersistor } from "../../context";
 import { InMemoryCache } from "apollo-cache-inmemory";
-import { wipeReferencesFromCache } from "../../state/resolvers/delete-references-from-cache";
+import { parseStringError, StringyErrorPayload } from "../../general-utils";
+import { saveOnSyncOfflineExperienceComponentSuccess } from "../../apollo-cache/on-sync-offline-experience-component-success";
 
 export const StateValue = {
   success: "success" as SuccessVal,
   errors: "errors" as ErrorsVal,
   inactive: "inactive" as InActiveVal,
+  active: "active" as ActiveVal,
   editing: "editing" as EditingVal,
   idle: "idle" as IdleVal,
   noEffect: "noEffect" as NoEffectVal,
@@ -88,13 +84,15 @@ export const displayFieldType = {
 export enum ActionType {
   EDIT_EXPERIENCE = "@experience-component/edit-experience",
   SYNC = "@eperience-component/sync",
-  OTHER_ERRORS = "@eperience-component/other-errors",
   CLOSE_SUBMIT_NOTIFICATION = "@eperience-component/close-submit-notification",
-  APOLLO_ERRORS = "@experience-component/apollo-errors",
   ON_MODIFIED_EXPERIENCE_SYNCED = "@experience-component/on-modified-experience-synced",
   ON_SYNC_OFFLINE_EXPERIENCE_ERRORS = "@experience-component/on-sync-offline-experience-errors",
   ON_SYNC_OFFLINE_EXPERIENCE_SUCCESS = "@experience-component/on-sync-offline-experience-success",
-  SET_OFFLINE_EXPERIENCE_NEWLY_SYNCED = "@experience-component/set-offline-experience-newly-synced",
+  ABORTED = "@experience-component/edit-cancelled",
+  COMPLETED = "@experience-component/edit-finished",
+  SYNC_EDITED_OFFLINE_EXPERIENCE = "@experience-component/sync-edited-offline-experience",
+  ON_COMMON_ERROR = "@experience-component/on-common-error",
+  SET_OFFLINE_EXPERIENCE_NEWLY_SYNCED = "@experience-component/offline-experience-newly-synced",
 }
 
 export const reducer: Reducer<StateMachine, Action> = (state, action) =>
@@ -107,29 +105,21 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
         delete proxy.effects.general[StateValue.hasEffects];
 
         switch (type) {
-          case EditExperienceActionType.COMPLETED:
-          case EditExperienceActionType.ABORTED:
-            proxy.states.editingExperience.value = StateValue.idle;
+          case ActionType.COMPLETED:
+          case ActionType.ABORTED:
+            proxy.states.editExperience.value = StateValue.idle;
             break;
 
           case ActionType.EDIT_EXPERIENCE:
-            proxy.states.editingExperience.value = StateValue.editing;
+            handleEditExperienceAction(proxy);
             break;
 
           case ActionType.SYNC:
             handleSyncAction(proxy);
             break;
 
-          case ActionType.OTHER_ERRORS:
-            handleOtherErrorsAction(proxy, payload as OtherErrorsPayload);
-            break;
-
           case ActionType.CLOSE_SUBMIT_NOTIFICATION:
             handleCloseSubmitNotificationAction(proxy);
-            break;
-
-          case ActionType.APOLLO_ERRORS:
-            handleApolloErrorsAction(proxy, payload as ApolloErrorsPayload);
             break;
 
           case ActionType.ON_MODIFIED_EXPERIENCE_SYNCED:
@@ -153,8 +143,19 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
             );
             break;
 
+          case ActionType.ON_COMMON_ERROR:
+            handleOnCommonErrorAction(proxy, payload as StringyErrorPayload);
+            break;
+
+          case ActionType.SYNC_EDITED_OFFLINE_EXPERIENCE:
+            handleSyncEditedOfflineExperienceAction(
+              proxy,
+              payload as SyncEditedOfflineExperiencePayload,
+            );
+            break;
+
           case ActionType.SET_OFFLINE_EXPERIENCE_NEWLY_SYNCED:
-            proxy.context.offlineExperienceNewlySynced = (payload as SetOfflineExperienceNewlySyncedPayload).data;
+            proxy.context.offlineExperienceNewlySynced = (payload as SetOfflineExperienceNewlySyncedPayload).value;
             break;
         }
       });
@@ -181,8 +182,8 @@ const syncEffect: SyncEffectDef["func"] = async (_, props, effectArgs) => {
 
   if (!unsynced) {
     dispatch({
-      type: ActionType.OTHER_ERRORS,
-      errors: GENERIC_SERVER_ERROR,
+      type: ActionType.ON_COMMON_ERROR,
+      error: GENERIC_SERVER_ERROR,
     });
 
     return;
@@ -238,8 +239,8 @@ const syncEffect: SyncEffectDef["func"] = async (_, props, effectArgs) => {
 
     if (!validResponse) {
       dispatch({
-        type: ActionType.OTHER_ERRORS,
-        errors: GENERIC_SERVER_ERROR,
+        type: ActionType.ON_COMMON_ERROR,
+        error: GENERIC_SERVER_ERROR,
       });
 
       return;
@@ -248,8 +249,8 @@ const syncEffect: SyncEffectDef["func"] = async (_, props, effectArgs) => {
     switch (validResponse.__typename) {
       case "UpdateExperiencesAllFail":
         dispatch({
-          type: ActionType.OTHER_ERRORS,
-          errors: validResponse.error,
+          type: ActionType.ON_COMMON_ERROR,
+          error: validResponse.error,
         });
 
         break;
@@ -263,18 +264,10 @@ const syncEffect: SyncEffectDef["func"] = async (_, props, effectArgs) => {
         }
         break;
     }
-  } catch (errors) {
-    if (errors instanceof ApolloError) {
-      dispatch({
-        type: ActionType.APOLLO_ERRORS,
-        errors,
-      });
-      return;
-    }
-
+  } catch (error) {
     dispatch({
-      type: ActionType.OTHER_ERRORS,
-      errors: errors.message,
+      type: ActionType.ON_COMMON_ERROR,
+      error,
     });
   }
 };
@@ -284,39 +277,36 @@ type SyncEffectDef = EffectDefinition<"syncEffect">;
 export const OFFLINE_EXPERIENCE_SYNCED_NAVIGATION_STATE_KEY =
   "@experience-componnet/offline-experience-synced";
 
-const navigateToNewlySyncedExperienceEffect: NavigateToNewlySyncedExperienceEffectDef["func"] = (
+const onSyncOfflineExperienceSuccessEffect: DefOnSyncExperienceSuccessEffect["func"] = async (
   { syncedId, unsyncedIds },
   props,
 ) => {
-  const { navigate, client, persistor, cache } = props;
-
-  setTimeout(() => {
-    navigate(makeExperienceRoute(syncedId), {
-      state: {
-        [OFFLINE_EXPERIENCE_SYNCED_NAVIGATION_STATE_KEY]: true,
-      },
-    });
-
-    setTimeout(() => {
-      replaceExperiencesInGetExperiencesMiniQuery(client, {
-        [unsyncedIds[0]]: null,
-      });
-
-      wipeReferencesFromCache(cache, unsyncedIds);
-
-      persistor.persist();
-    });
-  });
+  await props.persistor.persist();
+  saveOnSyncOfflineExperienceComponentSuccess(unsyncedIds.concat(syncedId));
 };
 
-type NavigateToNewlySyncedExperienceEffectDef = EffectDefinition<
-  "navigateToNewlySyncedExperienceEffect",
+type DefOnSyncExperienceSuccessEffect = EffectDefinition<
+  "onSyncOfflineExperienceSuccessEffect",
   { syncedId: string; unsyncedIds: string[] }
+>;
+
+const syncEditedOfflineExperienceEffect: DefSyncOfflineEditedExperienceEffect["func"] = (
+  editedOfflineArgs,
+  props,
+  effectArgs,
+) => {
+  syncOfflineExperienceEffectHelper(props, effectArgs, editedOfflineArgs);
+};
+
+export type DefSyncOfflineEditedExperienceEffect = EffectDefinition<
+  "syncEditedOfflineExperienceEffect",
+  SyncEditedOfflineExperiencePayload
 >;
 
 export const effectFunctions = {
   syncEffect,
-  navigateToNewlySyncedExperienceEffect,
+  onSyncOfflineExperienceSuccessEffect,
+  syncEditedOfflineExperienceEffect,
 };
 
 function getGeneralEffects(proxy: DraftState) {
@@ -342,12 +332,19 @@ function getGeneralEffects(proxy: DraftState) {
 async function syncOfflineExperienceEffectHelper(
   props: Props,
   effectArgs: EffectArgs,
+  editedOffline?: SyncEditedOfflineExperiencePayload,
 ) {
   const { dispatch } = effectArgs;
+  const onError = editedOffline && editedOffline.onError;
 
   try {
-    const { experience, createExperiences } = props;
+    let experience = props.experience;
 
+    if (editedOffline) {
+      experience = editedOffline.experience;
+    }
+
+    const { createExperiences } = props;
     const { entries, id: unsyncedId } = experience;
 
     let unsyncedIds: string[] = [unsyncedId];
@@ -386,9 +383,14 @@ async function syncOfflineExperienceEffectHelper(
       response.data.createExperiences[0];
 
     if (!validResponses) {
+      if (onError) {
+        onError(GENERIC_SERVER_ERROR);
+        return;
+      }
+
       dispatch({
-        type: ActionType.OTHER_ERRORS,
-        errors: GENERIC_SERVER_ERROR,
+        type: ActionType.ON_COMMON_ERROR,
+        error: GENERIC_SERVER_ERROR,
       });
 
       return;
@@ -396,6 +398,11 @@ async function syncOfflineExperienceEffectHelper(
 
     switch (validResponses.__typename) {
       case "CreateExperienceErrorss":
+        if (onError) {
+          onError(GENERIC_SERVER_ERROR);
+          return;
+        }
+
         dispatch({
           type: ActionType.ON_SYNC_OFFLINE_EXPERIENCE_ERRORS,
           errors: validResponses.errors,
@@ -407,9 +414,16 @@ async function syncOfflineExperienceEffectHelper(
           const { experience, entriesErrors } = validResponses;
 
           if (entriesErrors) {
+            const error = JSON.stringify(entriesErrors);
+
+            if (onError) {
+              onError(error);
+              return;
+            }
+
             dispatch({
-              type: ActionType.OTHER_ERRORS,
-              errors: JSON.stringify(entriesErrors),
+              type: ActionType.ON_COMMON_ERROR,
+              error,
             });
 
             return;
@@ -429,18 +443,15 @@ async function syncOfflineExperienceEffectHelper(
         }
         break;
     }
-  } catch (errors) {
-    if (errors instanceof ApolloError) {
-      dispatch({
-        type: ActionType.APOLLO_ERRORS,
-        errors,
-      });
+  } catch (error) {
+    if (onError) {
+      onError(error);
       return;
     }
 
     dispatch({
-      type: ActionType.OTHER_ERRORS,
-      errors: errors.message,
+      type: ActionType.ON_COMMON_ERROR,
+      error,
     });
   }
 }
@@ -497,12 +508,9 @@ function definitionToUploadDataEffectHelper(
 ////////////////////////// END EFFECTS SECTION /////////////////////////
 
 ////////////////////////// STATE UPDATE SECTION /////////////////////
-export function initState(props: Props): StateMachine {
-  const { offlineExperienceNewlySynced } = props;
+export function initState(): StateMachine {
   return {
-    context: {
-      offlineExperienceNewlySynced,
-    },
+    context: {},
     effects: {
       general: {
         value: StateValue.noEffect,
@@ -510,7 +518,7 @@ export function initState(props: Props): StateMachine {
     },
     states: {
       submission: { value: StateValue.inactive },
-      editingExperience: { value: StateValue.idle },
+      editExperience: { value: StateValue.idle },
     },
   };
 }
@@ -535,27 +543,6 @@ function handleOtherErrorsAction(
   submissionState.errors = {
     context: {
       errors: payload.errors,
-    },
-  };
-}
-
-function handleApolloErrorsAction(
-  proxy: DraftState,
-  payload: ApolloErrorsPayload,
-) {
-  const {
-    errors: { graphQLErrors, networkError },
-  } = payload as ApolloErrorsPayload;
-
-  const {
-    states: { submission },
-  } = proxy;
-
-  submission.value = StateValue.errors;
-  const submissionErrorState = submission as SubmissionErrors;
-  submissionErrorState.errors = {
-    context: {
-      errors: networkError ? networkError.message : graphQLErrors[0].message,
     },
   };
 }
@@ -610,14 +597,46 @@ function handleOnSyncOfflineExperienceSuccessAction(
 
   const effects = getGeneralEffects(proxy);
   effects.push({
-    key: "navigateToNewlySyncedExperienceEffect",
+    key: "onSyncOfflineExperienceSuccessEffect",
     ownArgs: payload.data,
   });
 }
 
 function handleCloseSubmitNotificationAction(proxy: DraftState) {
-  proxy.states.submission.value = StateValue.inactive;
-  proxy.context.offlineExperienceNewlySynced = false;
+  const { context, states } = proxy;
+  states.submission.value = StateValue.inactive;
+  context.offlineExperienceNewlySynced = false;
+}
+
+function handleOnCommonErrorAction(
+  proxy: DraftState,
+  payload: StringyErrorPayload,
+) {
+  const { states } = proxy;
+  const submissionState = states.submission as SubmissionErrors;
+  submissionState.value = StateValue.errors;
+  submissionState.errors = {
+    context: {
+      errors: parseStringError(payload.error),
+    },
+  };
+}
+
+function handleSyncEditedOfflineExperienceAction(
+  proxy: DraftState,
+  payload: SyncEditedOfflineExperiencePayload,
+) {
+  const effects = getGeneralEffects(proxy);
+  effects.push({
+    key: "syncEditedOfflineExperienceEffect",
+    ownArgs: payload,
+  });
+}
+
+function handleEditExperienceAction(proxy: DraftState) {
+  const { states } = proxy;
+  const editExperience = states.editExperience;
+  editExperience.value = StateValue.editing;
 }
 
 ////////////////////////// END STATE UPDATE SECTION /////////////////
@@ -633,10 +652,10 @@ type DraftState = Draft<StateMachine>;
 
 export interface StateMachine {
   readonly context: {
-    offlineExperienceNewlySynced?: boolean;
+    readonly offlineExperienceNewlySynced?: boolean;
   };
   readonly states: {
-    editingExperience: { value: IdleVal } | { value: EditingVal };
+    readonly editExperience: { value: IdleVal } | { value: EditingVal };
     readonly submission: Submission;
   };
   readonly effects: {
@@ -644,12 +663,18 @@ export interface StateMachine {
   };
 }
 
+// interface SyncEditedOfflineExperienceState {
+//   value: ActiveVal;
+//   active: {}
+// }
+
 ////////////////////////// STRINGY TYPES SECTION /////////////////////////
 type EditingVal = "editing";
 type IdleVal = "idle";
 type NoEffectVal = "noEffect";
 type HasEffectsVal = "hasEffects";
 type InActiveVal = "inactive";
+type ActiveVal = "active";
 type SubmittingVal = "submitting";
 type SuccessVal = "success";
 type ErrorsVal = "errors";
@@ -691,23 +716,35 @@ interface SubmissionWarning {
   };
 }
 
+interface SetOfflineExperienceNewlySyncedPayload {
+  value: boolean;
+}
+
 type Action =
+  | ({
+      type: ActionType.SET_OFFLINE_EXPERIENCE_NEWLY_SYNCED;
+    } & SetOfflineExperienceNewlySyncedPayload)
+  | ({
+      type: ActionType.ON_COMMON_ERROR;
+    } & StringyErrorPayload)
+  | ({
+      type: ActionType.SYNC_EDITED_OFFLINE_EXPERIENCE;
+    } & SyncEditedOfflineExperiencePayload)
+  | {
+      type: ActionType.COMPLETED;
+    }
+  | {
+      type: ActionType.ABORTED;
+    }
   | {
       type: ActionType.CLOSE_SUBMIT_NOTIFICATION;
     }
-  | ({
-      type: ActionType.OTHER_ERRORS;
-    } & OtherErrorsPayload)
-  | EditExperienceAction
   | {
       type: ActionType.EDIT_EXPERIENCE;
     }
   | {
       type: ActionType.SYNC;
     }
-  | ({
-      type: ActionType.APOLLO_ERRORS;
-    } & ApolloErrorsPayload)
   | ({
       type: ActionType.ON_MODIFIED_EXPERIENCE_SYNCED;
     } & OnModifiedExperienceSyncedPayload)
@@ -716,17 +753,15 @@ type Action =
     } & OnSyncOfflineExperienceErrorsPayload)
   | ({
       type: ActionType.ON_SYNC_OFFLINE_EXPERIENCE_SUCCESS;
-    } & OnSyncOfflineExperienceSuccessPayload)
-  | ({
-      type: ActionType.SET_OFFLINE_EXPERIENCE_NEWLY_SYNCED;
-    } & SetOfflineExperienceNewlySyncedPayload);
+    } & OnSyncOfflineExperienceSuccessPayload);
 
-interface SetOfflineExperienceNewlySyncedPayload {
-  data: boolean;
+interface SyncEditedOfflineExperiencePayload {
+  experience: ExperienceFragment;
+  onError: (error: string) => void;
 }
 
 interface OnSyncOfflineExperienceSuccessPayload {
-  data: NavigateToNewlySyncedExperienceEffectDef["ownArgs"];
+  data: DefOnSyncExperienceSuccessEffect["ownArgs"];
 }
 
 interface OnSyncOfflineExperienceErrorsPayload {
@@ -752,9 +787,7 @@ export interface IMenuOptions {
   onDelete: (id: string) => void;
 }
 
-export interface CallerProps
-  extends EbnisComponentProps,
-    PropsWithChildren<{}> {
+export interface CallerProps extends EbnisComponentProps {
   experience: ExperienceFragment;
   entryProps?: EbnisComponentProps;
   headerProps?: EbnisComponentProps;
@@ -770,7 +803,7 @@ export type Props = CallerProps &
     client: ApolloClient<{}>;
     persistor: AppPersistor;
     cache: InMemoryCache;
-    offlineExperienceNewlySynced?: boolean;
+    pathname: string;
   };
 
 export type FormObjVal = number | Date | string;
@@ -783,7 +816,7 @@ export interface FieldComponentProps {
   onChange: (formName: string, value: FormObjVal) => void;
 }
 
-interface EffectArgs {
+export interface EffectArgs {
   dispatch: DispatchType;
   isOffline: boolean;
 }
@@ -801,7 +834,7 @@ interface EffectDefinition<
   ) => void | Promise<void | (() => void)> | (() => void);
 }
 
-interface EffectState {
+export interface EffectState {
   value: HasEffectsVal;
   hasEffects: {
     context: {
@@ -810,4 +843,8 @@ interface EffectState {
   };
 }
 
-type EffectsList = (SyncEffectDef | NavigateToNewlySyncedExperienceEffectDef)[];
+type EffectsList = (
+  | DefSyncOfflineEditedExperienceEffect
+  | SyncEffectDef
+  | DefOnSyncExperienceSuccessEffect
+)[];
