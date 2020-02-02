@@ -8,11 +8,9 @@ import { upsertExperienceWithEntry } from "../components/NewEntry/new-entry.inje
 import { ExperienceFragment } from "../graphql/apollo-types/ExperienceFragment";
 
 jest.mock("../components/NewEntry/new-entry.injectables");
-jest.mock("../apollo-cache/increment-offline-item-count");
-jest.mock("../apollo-cache/write-experience-fragment");
-
 const mockUpdateExperienceWithNewEntry = upsertExperienceWithEntry as jest.Mock;
 
+jest.mock("../apollo-cache/write-experience-fragment");
 
 const { createOfflineEntry } = newEntryResolvers.Mutation;
 
@@ -64,7 +62,6 @@ it("updates unsaved experience successfully", async () => {
 
   const experienceEntry = (updatedExperience.entries.edges as any)[0].node;
   expect(entry).toMatchObject(experienceEntry);
-
 });
 
 function setUp() {

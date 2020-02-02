@@ -26,12 +26,12 @@
   }
 
   .experience-container + .experience-container {
-    margin-top: 30px;
+    margin-top: 15px;
   }
 
   .experience-description {
     overflow-wrap: break-word;
-    padding: 10px 0 0 1rem;
+    padding: 10px 1rem 0 0;
   }
 
   .new-experience-button {
@@ -67,8 +67,8 @@
     padding: 1rem;
     font-weight: bold;
   }
+}
 
-  .toggle-description {
-    width: 100%;
-  }
+.modal-inner {
+  box-shadow: 0 1px 5px 2px #bdbaba;
 }

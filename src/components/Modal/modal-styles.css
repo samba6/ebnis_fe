@@ -1,0 +1,36 @@
+.ebnis-modal {
+  & .close {
+    width: 56px;
+    height: 56px;
+  }
+
+  & .close__button {
+    height: 20px;
+    width: 20px;
+    top: calc(50% - 10px);
+    right: calc(50% - 10px);
+    background: black;
+
+    &::before,
+    &::after {
+      content: "";
+      background: white;
+      position: absolute;
+      left: 50%;
+      top: 50%;
+    }
+
+    &::before {
+      height: 2px;
+      width: 50%;
+      transform: translateX(-50%) translateY(-50%) rotate(45deg);
+    }
+
+    &::after {
+      height: 50%;
+      width: 2px;
+      transform: translateX(-50%) translateY(-50%) rotate(45deg);
+    }
+  }
+}
+

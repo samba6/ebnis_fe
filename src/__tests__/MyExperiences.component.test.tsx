@@ -10,12 +10,13 @@ import { cleanUpOnSearchExit } from "../components/MyExperiences/my-experiences.
 import { defaultLoadingDomId } from "../components/Loading/loading-dom";
 import {
   hideDescriptionIconSelector,
-  showDescriptionIconSelector,
+  toggleDescriptionMenuSelector,
   descriptionSelector,
   titleSelector,
   searchTextInputId,
   domPrefix,
   noSearchMatchId,
+  experienceMenuSelector,
 } from "../components/MyExperiences/my-experiences.dom";
 
 jest.mock("../components/SidebarHeader/sidebar-header.component", () => ({
@@ -51,7 +52,6 @@ it("renders loading state and not main", () => {
   render(ui);
 
   expect(document.getElementById(mockLoadingId)).not.toBeNull();
-  expect(document.getElementById("new-experience-button")).toBeNull();
 });
 
 it("does not render empty experiences", () => {
@@ -105,7 +105,7 @@ it("renders experiences from server, toggles descriptions, goes to detailed page
   ).toBeUndefined();
 
   expect(
-    experience2Dom.getElementsByClassName(showDescriptionIconSelector)[0],
+    experience2Dom.getElementsByClassName(toggleDescriptionMenuSelector)[0],
   ).toBeUndefined();
 
   /**
@@ -127,9 +127,15 @@ it("renders experiences from server, toggles descriptions, goes to detailed page
   /**
    * When experience 1 show description icon is clicked
    */
+  const experience1DropdownNode = experience1Dom
+    .getElementsByClassName(experienceMenuSelector)
+    .item(0) as HTMLElement;
+
+  experience1DropdownNode.click();
+
   act(() => {
-    (experience1Dom.getElementsByClassName(
-      showDescriptionIconSelector,
+    (experience1DropdownNode.getElementsByClassName(
+      toggleDescriptionMenuSelector,
     )[0] as HTMLElement).click();
   });
 
@@ -140,16 +146,6 @@ it("renders experiences from server, toggles descriptions, goes to detailed page
   expect(
     experience1Dom.getElementsByClassName(descriptionSelector)[0],
   ).toBeDefined();
-
-  /**
-   * And experience 1 show description icon should not be visible
-   */
-
-  expect(
-    experience1Dom.getElementsByClassName(
-      showDescriptionIconSelector,
-    )[0] as HTMLElement,
-  ).toBeUndefined();
 
   /**
    * When experience 1 hide description icon is clicked
@@ -174,7 +170,7 @@ it("renders experiences from server, toggles descriptions, goes to detailed page
 
   expect(
     experience1Dom.getElementsByClassName(
-      showDescriptionIconSelector,
+      toggleDescriptionMenuSelector,
     )[0] as HTMLElement,
   ).toBeDefined();
 

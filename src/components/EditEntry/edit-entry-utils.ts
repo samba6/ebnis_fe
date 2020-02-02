@@ -48,7 +48,6 @@ import {
   CreateOnlineEntryMutation_createEntry_errors_dataObjectsErrors,
   CreateOnlineEntryMutation_createEntry_errors,
 } from "../../graphql/apollo-types/CreateOnlineEntryMutation";
-import { decrementOfflineEntriesCountForExperience } from "../../apollo-cache/drecrement-offline-entries-count";
 import { AppPersistor } from "../../context";
 import { InMemoryCache } from "apollo-cache-inmemory";
 import {
@@ -61,7 +60,6 @@ import {
   upsertExperienceWithEntry,
   UpsertExperienceInCacheMode,
 } from "../NewEntry/new-entry.injectables";
-import { incrementOfflineItemCount } from "../../apollo-cache/increment-offline-item-count";
 import { wipeReferencesFromCache } from "../../state/resolvers/delete-references-from-cache";
 import { ENTRY_TYPE_NAME, DATA_OBJECT_TYPE_NAME } from "../../graphql/types";
 import { scrollIntoView } from "../scroll-into-view";
@@ -323,13 +321,7 @@ const createEntryEffect: CreateEntryEffect["func"] = async (
       {
         input,
         onDone: () => {
-          const { experienceId, clientId, dataObjects } = input;
-
-          decrementOfflineEntriesCountForExperience({
-            cache,
-            experienceId,
-            howMany: 1,
-          });
+          const { clientId, dataObjects } = input;
 
           wipeReferencesFromCache(
             cache,
@@ -395,25 +387,13 @@ type CreateEntryEffect = EffectDefinition<
 
 const updateEntryInCacheEffect: UpdateEntryInCacheEffect["func"] = async (
   { entry, upsertMode },
-  { layoutDispatch, client, persistor, cache },
+  { layoutDispatch, client, persistor },
 ) => {
-  const { experienceId, id } = entry;
+  const { experienceId } = entry;
 
   (await upsertExperienceWithEntry(experienceId, upsertMode)(client, {
     data: { createEntry: { entry } as CreateOnlineEntryMutation_createEntry },
   })) as ExperienceFragment;
-
-  if (upsertMode === "offline" && !isOfflineId(id)) {
-    incrementOfflineItemCount(cache, experienceId);
-  }
-
-  if (upsertMode === "online") {
-    await decrementOfflineEntriesCountForExperience({
-      cache,
-      experienceId,
-      howMany: 1,
-    });
-  }
 
   await persistor.persist();
 

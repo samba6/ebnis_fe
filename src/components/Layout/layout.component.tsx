@@ -50,7 +50,7 @@ export function Layout(props: Props) {
 
   const {
     states: { prefetchExperiences },
-    context: { offlineItemsCount, renderChildren, hasConnection },
+    context: {  renderChildren, hasConnection },
     effects: { runOnRenders },
   } = stateMachine;
 
@@ -120,7 +120,6 @@ export function Layout(props: Props) {
         <LayoutProvider
           value={
             {
-              offlineItemsCount,
               hasConnection: hasConnection,
               ...location,
               navigate,

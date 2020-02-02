@@ -1,4 +1,3 @@
-import { DEFAULT_OFFLINE_STATES } from "./offline-resolvers";
 import { ApolloClient } from "apollo-client";
 import { InMemoryCache } from "apollo-cache-inmemory";
 
@@ -35,7 +34,6 @@ export function initState() {
     defaults: {
       staleToken: null,
       loggedOutUser: null,
-      ...DEFAULT_OFFLINE_STATES,
     },
   };
 }

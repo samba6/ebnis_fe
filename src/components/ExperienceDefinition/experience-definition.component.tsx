@@ -90,7 +90,10 @@ export function ExperienceDefinitionComponent(props: Props) {
 
   // we use getExperience( instead of getExperience so that getExperiences does
   // not get deleted
-  useDeleteCachedQueriesAndMutationsOnUnmount(["getExperience("], true);
+  useDeleteCachedQueriesAndMutationsOnUnmount(
+    ["getExperience(", "createExperience"],
+    true,
+  );
 
   const DataDefinitionsComponent = (values: FormValues) => (
     arrayHelpers: ArrayHelpers,

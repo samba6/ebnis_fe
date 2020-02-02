@@ -5,6 +5,7 @@ import React, {
   useCallback,
   useReducer,
   memo,
+  useContext,
 } from "react";
 import "./my-experiences.styles.scss";
 import {
@@ -18,6 +19,9 @@ import {
   initState,
   ActionType,
   DispatchType,
+  StateValue,
+  DeleteExperienceActiveState,
+  effectFunctions,
 } from "./my-experiences.utils";
 import { EXPERIENCE_DEFINITION_URL } from "../../routes";
 import { makeExperienceRoute } from "../../constants/experience-route";
@@ -48,7 +52,7 @@ import { SidebarHeader } from "../SidebarHeader/sidebar-header.component";
 import makeClassNames from "classnames";
 import {
   hideDescriptionIconSelector,
-  showDescriptionIconSelector,
+  toggleDescriptionMenuSelector,
   descriptionSelector,
   titleSelector,
   experienceSelector,
@@ -56,12 +60,22 @@ import {
   domPrefix,
   noSearchMatchId,
   makeExperienceTitleDomId,
+  experienceMenuSelector,
+  deleteExperienceSelector,
 } from "./my-experiences.dom";
 import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragment";
+import { Modal } from "../Modal/modal-component";
+import { useDeleteExperiencesMutation } from "../../graphql/delete-experiences.mutation";
+import { EbnisAppContext } from "../../context";
+import { LayoutContext } from "../Layout/layout.utils";
 
 enum ClickContext {
-  searchLink = "search-link",
-  searchInput = "search-input",
+  searchLink = "@my-experiences/search-link",
+  searchInput = "@my-experiences/search-input",
+  experienceMenuTrigger = "@my-experiences/experienceMenuTrigger",
+  cancelDeleteExperience = "@my-experiences/cancel-delete-experience",
+  okDeleteExperience = "@my-experiences/ok-delete-experience",
+  concludeDeleteExperienceSuccess = "@my-experiences/experience-deleted-success",
 }
 
 export function MyExperiences(props: ComponentProps) {
@@ -71,8 +85,9 @@ export function MyExperiences(props: ComponentProps) {
 
   const [stateMachine, dispatch] = useReducer(reducer, experiences, initState);
   const {
-    states: { search: searchState },
+    states: { search: searchState, deleteExperience: deleteExperienceState },
     context: { idToShowingDescriptionMap },
+    effects: { general: generalEffects },
   } = stateMachine;
 
   const onClick = useCallback((e: MouseEvent) => {
@@ -91,14 +106,71 @@ export function MyExperiences(props: ComponentProps) {
         e.stopImmediatePropagation();
         break;
 
+      case ClickContext.experienceMenuTrigger:
+        {
+          e.stopImmediatePropagation();
+          target.classList.toggle("is-active");
+
+          document.querySelectorAll("." + experienceMenuSelector).forEach(e => {
+            if (e !== target) {
+              e.classList.remove("is-active");
+            }
+          });
+        }
+        break;
+
+      case ClickContext.cancelDeleteExperience:
+        e.stopImmediatePropagation();
+        dispatch({
+          type: ActionType.CONFIRM_DELETE_EXPERIENCE,
+          confirmation: StateValue.cancelled,
+        });
+        break;
+
+      case ClickContext.okDeleteExperience:
+        e.stopImmediatePropagation();
+        dispatch({
+          type: ActionType.CONFIRM_DELETE_EXPERIENCE,
+          confirmation: StateValue.ok,
+        });
+        break;
+
+      case ClickContext.concludeDeleteExperienceSuccess:
+        e.stopImmediatePropagation();
+        dispatch({
+          type: ActionType.CONCLUDE_DELETE_EXPERIENCE_SUCCESS,
+        });
+        break;
+
       default: {
         dispatch({
           type: ActionType.CLEAR_SEARCH,
+        });
+
+        document.querySelectorAll("." + experienceMenuSelector).forEach(e => {
+          e.classList.remove("is-active");
         });
       }
     }
     /* eslint-disable-next-line react-hooks/exhaustive-deps*/
   }, []);
+
+  useEffect(() => {
+    if (generalEffects.value !== StateValue.hasEffects) {
+      return;
+    }
+
+    for (const { key, ownArgs } of generalEffects.hasEffects.context.effects) {
+      effectFunctions[key](
+        /* eslint-disable-next-line @typescript-eslint/no-explicit-any*/
+        ownArgs as any,
+        props,
+        { dispatch },
+      );
+    }
+
+    /* eslint-disable-next-line react-hooks/exhaustive-deps*/
+  }, [generalEffects]);
 
   useEffect(() => {
     dispatch({
@@ -120,63 +192,159 @@ export function MyExperiences(props: ComponentProps) {
     /* eslint-disable-next-line react-hooks/exhaustive-deps*/
   }, []);
 
-  function renderMain() {
-    if (loading) {
-      return <Loading loading={loading} />;
-    }
+  let deleteExperiencePromptState = false;
+  let deletingExperienceState = false;
+  let deleteExperienceSuccessState = false;
+  let deleteExperienceContext = (null as unknown) as DeleteExperienceActiveState["active"]["context"];
 
-    if (error) {
-      return <div id="no-experiences-error">Error loading experiences</div>;
-    }
+  if (deleteExperienceState.value === StateValue.active) {
+    const { active } = deleteExperienceState;
+    const { states, context: c } = active;
+    deleteExperienceContext = c;
+    const { value } = states;
+    deleteExperiencePromptState = value === StateValue.prompt;
+    deletingExperienceState = value === StateValue.deletingExperience;
 
-    return (
-      <>
-        {!noExperiences && (
-          <SearchComponent
-            experiencesLen={experiencesLen}
-            dispatch={dispatch}
-            searchState={searchState}
-          />
-        )}
-
-        {noExperiences && (
-          <Link
-            to={EXPERIENCE_DEFINITION_URL}
-            className="no-experiences-info"
-            id="no-experiences-info"
-          >
-            Click here to create your first experience
-          </Link>
-        )}
-
-        {!noExperiences && (
-          <ExperiencesComponent
-            idToShowingDescriptionMap={idToShowingDescriptionMap}
-            navigate={navigate}
-            experiences={experiences}
-            dispatch={dispatch}
-          />
-        )}
-
-        <Link
-          className="new-experience-button"
-          id="new-experience-button"
-          to={EXPERIENCE_DEFINITION_URL}
-        >
-          +
-        </Link>
-      </>
-    );
+    deleteExperienceSuccessState =
+      states.value === StateValue.deleted &&
+      states.deleted.states.value === StateValue.success;
   }
 
   return (
-    <div className="components-experiences" id={domPrefix}>
-      <SidebarHeader title="My Experiences" sidebar={true} />
-      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any*/}
-      <div className="main" onClick={onClick as any}>
-        {renderMain()}
+    <>
+      {deleteExperiencePromptState && (
+        <Modal>
+          <div>
+            Ok to delete:
+            <strong className="block">
+              {deleteExperienceContext.experience.title}
+            </strong>
+          </div>
+
+          <div className="flex justify-end">
+            <button
+              data-click-context={ClickContext.okDeleteExperience}
+              className={`
+                      mr-2
+                      px-4
+                      py-2
+                      text-center
+                      text-white
+                      bg-red-400
+                      active:bg-red-500
+                      hover:bg-red-600
+                      border
+                      rounded-sm
+                      cursor-pointer
+                      focus:outline-none
+                    `}
+            >
+              Ok
+            </button>
+
+            <button
+              data-click-context={ClickContext.cancelDeleteExperience}
+              className={`
+                      ml-3
+                      px-4
+                      py-2
+                      text-center
+                      text-white
+                      bg-blue-500
+                      active:bg-blue-600
+                      hover:bg-blue-700
+                      border
+                      border-transparent
+                      rounded-sm
+                      cursor-pointer
+                      focus:outline-none
+                    `}
+            >
+              Cancel
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {deletingExperienceState && <Loading />}
+
+      {deleteExperienceSuccessState && (
+        <Modal>
+          <div>
+            <strong className="block">
+              {deleteExperienceContext.experience.title}
+            </strong>
+            successfully deleted
+          </div>
+
+          <div className="flex justify-end">
+            <button
+              data-click-context={ClickContext.concludeDeleteExperienceSuccess}
+              className={`
+                      mr-2
+                      px-4
+                      py-2
+                      text-center
+                      text-white
+                      bg-red-400
+                      active:bg-red-500
+                      hover:bg-red-600
+                      border
+                      rounded-sm
+                      cursor-pointer
+                      focus:outline-none
+                    `}
+            >
+              Ok
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      <div className="components-experiences" id={domPrefix}>
+        <SidebarHeader title="My Experiences" sidebar={true} />
+
+        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any*/}
+        <div className="main" onClick={onClick as any}>
+          {loading ? (
+            <Loading loading={loading} />
+          ) : error ? (
+            <div id="no-experiences-error">Error loading experiences</div>
+          ) : noExperiences ? (
+            <Link
+              to={EXPERIENCE_DEFINITION_URL}
+              className="no-experiences-info"
+              id="no-experiences-info"
+            >
+              Click here to create your first experience
+            </Link>
+          ) : (
+            <>
+              <SearchComponent
+                experiencesLen={experiencesLen}
+                dispatch={dispatch}
+                searchState={searchState}
+              />
+
+              <ExperiencesComponent
+                idToShowingDescriptionMap={idToShowingDescriptionMap}
+                navigate={navigate}
+                experiences={experiences}
+                dispatch={dispatch}
+              />
+            </>
+          )}
+
+          <Link
+            className="new-experience-button"
+            id="new-experience-button"
+            to={EXPERIENCE_DEFINITION_URL}
+          >
+            +
+          </Link>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -240,64 +408,110 @@ const ExperienceComponent = React.memo(
       >
         <div className="card">
           <div className="card-header">
-            <div
-              id={makeExperienceTitleDomId(id)}
-              className={makeClassNames({
-                "card-header-title": true,
-                [titleSelector]: true,
-              })}
-              onClick={() => {
-                navigate(makeExperienceRoute(id));
-              }}
-            >
-              {title}
+            <div className="flex justify-between w-full">
+              <div
+                id={makeExperienceTitleDomId(id)}
+                className={makeClassNames({
+                  "card-header-title flex-1 cursor-pointer": true,
+                  [titleSelector]: true,
+                })}
+                onClick={() => {
+                  navigate(makeExperienceRoute(id));
+                }}
+              >
+                {title}
+              </div>
+
+              <div
+                className={makeClassNames({
+                  "items-center pl-8 pr-2 -mr-2 cursor-pointer dropdown is-right": true,
+                  [experienceMenuSelector]: true,
+                })}
+                data-click-context={ClickContext.experienceMenuTrigger}
+              >
+                <div className="pointer-events-none">
+                  <span className="mr-2 icon is-small">
+                    <i className="fas fa-ellipsis-v" aria-hidden="true" />
+                  </span>
+                </div>
+
+                <div className="mr-3 dropdown-menu" role="menu">
+                  <div className="font-bold dropdown-content">
+                    {description && (
+                      <>
+                        <a
+                          className={makeClassNames({
+                            "dropdown-item": true,
+                            [toggleDescriptionMenuSelector]: true,
+                          })}
+                          onClick={() => {
+                            dispatch({
+                              type: ActionType.TOGGLE_DESCRIPTION,
+                              id,
+                            });
+                          }}
+                        >
+                          Description
+                        </a>
+
+                        <hr className="dropdown-divider" />
+                      </>
+                    )}
+
+                    <a
+                      className={makeClassNames({
+                        "dropdown-item js-edit-menu": true,
+                        [deleteExperienceSelector]: true,
+                      })}
+                      onClick={() => {
+                        dispatch({
+                          type: ActionType.DELETE_EXPERIENCE,
+                          experience,
+                        });
+                      }}
+                    >
+                      Delete
+                    </a>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
-          {!!description && (
+          {showingDescription && (
             <div
               className={makeClassNames({
-                "experience-description card-content": true,
+                "experience-description card-content flex": true,
               })}
             >
-              {showingDescription ? (
+              <div
+                className="pt-1 pb-4 pl-5 pr-4"
+                style={{
+                  height: "50px",
+                }}
+                onClick={() => {
+                  dispatch({
+                    type: ActionType.TOGGLE_DESCRIPTION,
+                    id,
+                  });
+                }}
+              >
                 <i
                   className={makeClassNames({
-                    "fas fa-eye-slash pb-6 toggle-description": true,
+                    "pointer-events-none far fa-times-circle": true,
                     [hideDescriptionIconSelector]: true,
                   })}
-                  onClick={() => {
-                    dispatch({
-                      type: ActionType.TOGGLE_DESCRIPTION,
-                      id,
-                    });
-                  }}
                 />
-              ) : (
-                <i
-                  className={makeClassNames({
-                    "fas fa-eye toggle-description": true,
-                    [showDescriptionIconSelector]: true,
-                  })}
-                  onClick={() => {
-                    dispatch({
-                      type: ActionType.TOGGLE_DESCRIPTION,
-                      id,
-                    });
-                  }}
-                />
-              )}
+              </div>
 
-              {showingDescription && (
-                <div
-                  className={makeClassNames({
-                    content: true,
-                    [descriptionSelector]: true,
-                  })}
-                >
-                  {description}
-                </div>
-              )}
+              <div
+                className={makeClassNames({
+                  "content flex-1": true,
+                  [descriptionSelector]: true,
+                })}
+              >
+                {description}
+              </div>
             </div>
           )}
         </div>
@@ -405,12 +619,15 @@ function SearchComponent(props: SearchComponentProps) {
 // istanbul ignore next:
 export default (props: CallerProps) => {
   const { navigate } = props;
+  const { hasConnection } = useContext(LayoutContext);
+  const { cache, persistor } = useContext(EbnisAppContext);
 
   const { data, loading, error } = useQuery<
     GetExperienceConnectionMini,
     GetExperienceConnectionMiniVariables
   >(GET_EXPERIENCES_MINI_QUERY, {
     variables: getExperienceConnectionMiniVariables,
+    fetchPolicy: hasConnection ? "cache-first" : "cache-only",
   });
 
   const getExperiences = data && data.getExperiences;
@@ -424,13 +641,19 @@ export default (props: CallerProps) => {
       edge => edge.node as ExperienceConnectionFragment_edges_node,
     );
   }, [getExperiences]);
+
+  const [deleteExperiences] = useDeleteExperiencesMutation();
+
   return (
     <MyExperiences
+      deleteExperiences={deleteExperiences}
       experiences={experiences}
       error={error}
       loading={loading}
       navigate={navigate as NavigateFn}
       experiencesPrepared={prepareExperiencesForSearch(experiences)}
+      cache={cache}
+      persistor={persistor}
     />
   );
 };

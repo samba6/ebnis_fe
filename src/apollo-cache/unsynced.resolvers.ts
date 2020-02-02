@@ -27,6 +27,16 @@ export function removeUnsyncedExperience(id: string) {
   localStorage.setItem(KEY, JSON.stringify(allUnsycned));
 }
 
+export function removeUnsyncedExperiences(ids: string[]) {
+  const allUnsycned = getUnsyncedExperiences();
+
+  ids.forEach(id => {
+    delete allUnsycned[id];
+  });
+
+  localStorage.setItem(KEY, JSON.stringify(allUnsycned));
+}
+
 ////////////////////////// TYPES ////////////////////////////
 
 type UnsyncedData = true | UnsyncedModifiedExperience;

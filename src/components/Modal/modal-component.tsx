@@ -1,0 +1,46 @@
+import React, { PropsWithChildren } from "react";
+import "./modal-styles.css";
+
+interface Props {
+  open?: boolean;
+}
+
+export function Modal({ children }: PropsWithChildren<Props>) {
+  return (
+    <div
+      className={`
+            fixed
+            top-0
+            bottom-0
+            left-0
+            right-0
+            z-40
+            flex
+            flex-col
+            items-center
+            justify-center
+            w-screen
+            h-screen
+            overflow-hidden
+            opacity-75
+            bg-white
+            ebnis-modal
+          `}
+    >
+      <div className="w-11/12 p-2 modal-inner">{children}</div>
+
+      <div className="absolute top-0 right-0 close">
+        <button
+          className={`
+                rounded-full
+                close__button
+                inline-flex
+                absolute
+                pointer-events-none
+              `}
+          aria-label="close"
+        />
+      </div>
+    </div>
+  );
+}

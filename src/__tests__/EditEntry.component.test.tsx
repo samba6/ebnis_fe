@@ -51,7 +51,6 @@ import {
   CreateEntryOnlineMutationResult,
 } from "../graphql/create-entry.mutation";
 import { editEntryUpdate } from "../components/EditEntry/edit-entry.injectables";
-import { decrementOfflineEntriesCountForExperience } from "../apollo-cache/drecrement-offline-entries-count";
 import { AppPersistor } from "../context";
 import { LayoutActionType } from "../components/Layout/layout.utils";
 import {
@@ -65,7 +64,6 @@ import { isConnected } from "../state/connections";
 /* eslint-disable-next-line @typescript-eslint/no-unused-vars*/
 import { CreateOfflineEntryMutationReturned } from "../components/NewEntry/new-entry.resolvers";
 import { upsertExperienceWithEntry } from "../components/NewEntry/new-entry.injectables";
-import { incrementOfflineItemCount } from "../apollo-cache/increment-offline-item-count";
 import { wipeReferencesFromCache } from "../state/resolvers/delete-references-from-cache";
 import { ENTRY_TYPE_NAME, DATA_OBJECT_TYPE_NAME } from "../graphql/types";
 import { scrollIntoView } from "../components/scroll-into-view";
@@ -77,9 +75,6 @@ const mockScrollIntoView = scrollIntoView as jest.Mock;
 
 jest.mock("../state/resolvers/delete-references-from-cache");
 const mockWipeReferencesFromCache = wipeReferencesFromCache as jest.Mock;
-
-jest.mock("../apollo-cache/increment-offline-item-count");
-const mockIncrementOfflineEntriesCountForExperience = incrementOfflineItemCount as jest.Mock;
 
 jest.mock("../components/NewEntry/new-entry.injectables");
 const mockUpsertExperienceFn = jest.fn();
@@ -99,9 +94,6 @@ const mockEditEntryUpdate = editEntryUpdate as jest.Mock;
 
 jest.mock("../apollo-cache/cleanup-ran-queries-from-cache");
 const mockCleanupRanQueriesFromCache = cleanupRanQueriesFromCache as jest.Mock;
-
-jest.mock("../apollo-cache/drecrement-offline-entries-count");
-const mockDecrementOfflineEntriesCountForExperience = decrementOfflineEntriesCountForExperience as jest.Mock;
 
 jest.mock("../state/connections");
 const mockIsConnected = isConnected as jest.Mock;
@@ -1437,7 +1429,6 @@ test("edit online entry, submit offline - only data objects can be updated", asy
     "ex",
     "offline",
   ]);
-  expect(mockIncrementOfflineEntriesCountForExperience).toHaveBeenCalled();
   expect(mockUpsertExperienceFn).toHaveBeenCalled();
   expect(mockPersistFunc).toHaveBeenCalled();
   expect(mockLayoutDispatch).toHaveBeenCalled();
@@ -1525,7 +1516,6 @@ test("edit offline entry, submit offline", async () => {
    * And offline ledger is updated appropriately
    */
   await wait(() => true);
-  expect(mockIncrementOfflineEntriesCountForExperience).not.toHaveBeenCalled();
   expect(mockUpsertExperienceFn).toHaveBeenCalled();
   expect(mockPersistFunc).toHaveBeenCalled();
   expect(mockLayoutDispatch).toHaveBeenCalled();
@@ -1804,13 +1794,6 @@ test("edit offline entry, upload online, one data object updated, one not update
   arg13();
 
   /**
-   * And offline entry counts should be drawn down in cache
-   */
-  expect(mockDecrementOfflineEntriesCountForExperience).toHaveBeenCalledTimes(
-    1,
-  );
-
-  /**
    * And cache should be flushed from memory
    */
   expect(mockPersistFunc).toHaveBeenCalled();
@@ -1991,17 +1974,6 @@ test("online entry modified offline, sync online", async () => {
         } as EntryFragment,
       },
     },
-  });
-
-  /**
-   * And offline items ledger should be correctly updated
-   */
-
-  expect(
-    mockDecrementOfflineEntriesCountForExperience.mock.calls[0][0],
-  ).toMatchObject({
-    experienceId: "ex",
-    howMany: 1,
   });
 
   /**

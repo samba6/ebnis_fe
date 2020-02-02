@@ -2,12 +2,11 @@
 
 import React, { ComponentType } from "react";
 import "@marko/testing-library/cleanup-after-each";
-import { render, waitForElement, wait } from "@testing-library/react";
+import { render, waitForElement } from "@testing-library/react";
 import { Layout } from "../components/Layout/layout.component";
 import { EbnisAppProvider, EbnisContextProps } from "../context";
-import { EmitActionType, makeObservable } from "../state/observable-manager";
+import { makeObservable } from "../state/observable-manager";
 import {
-  LayoutContextValue,
   Props,
   LayoutActionType,
   reducer,
@@ -15,15 +14,12 @@ import {
   initState,
   StateValue,
   InitStateArgs,
-  effectFunctions,
   EffectState,
 } from "../components/Layout/layout.utils";
-import { getOfflineItemsCount } from "../state/offline-resolvers";
 import { isConnected } from "../state/connections";
 import { useUser } from "../components/use-user";
 import { E2EWindowObject } from "../state/apollo-setup";
 import { WindowLocation } from "@reach/router";
-import { act } from "react-dom/test-utils";
 import {
   cleanupObservableSubscription,
   preFetchExperiences,
@@ -31,9 +27,6 @@ import {
 } from "../components/Layout/layout-injectables";
 
 ////////////////////////// MOCKS ////////////////////////////
-
-jest.mock("../state/offline-resolvers");
-const mockOfflineItemsCount = getOfflineItemsCount as jest.Mock;
 
 jest.mock("../state/connections");
 const mockIsConnected = isConnected as jest.Mock;
@@ -45,13 +38,10 @@ jest.mock("../components/Loading/loading", () => ({
 jest.mock("../components/use-user");
 const mockUseUser = useUser as jest.Mock;
 
-let layoutContextValue: null | LayoutContextValue;
 let locationContextValue: null | WindowLocation;
 
 jest.mock("../components/Layout/layout-providers", () => ({
-  LayoutProvider: ({ children, value }: any) => {
-    layoutContextValue = value;
-
+  LayoutProvider: ({ children }: any) => {
     return <>{children}</>;
     return children;
   },
@@ -88,7 +78,6 @@ describe("components", () => {
   beforeEach(() => {
     jest.useFakeTimers();
 
-    mockOfflineItemsCount.mockReset();
     mockUseUser.mockReset();
     mockIsConnected.mockReset();
     mockPrefetchExperiences.mockReset();
@@ -242,220 +231,6 @@ describe("components", () => {
      */
     expect(document.getElementById("o-o-1")).toBeNull();
   });
-
-  it("queries unsaved when there is user and connection", async () => {
-    const { ui } = makeComp();
-    mockUseUser.mockReturnValue({});
-    mockIsConnected.mockReturnValue(true);
-
-    render(ui);
-
-    /**
-     * When children are done rendering
-     */
-    await waitForElement(() => document.getElementById(browserRenderedUiId));
-
-    /**
-     * Then component should query for unsaved data
-     */
-    expect(mockOfflineItemsCount).toHaveBeenCalled();
-  });
-
-  it("queries unsaved when connection returns", async () => {
-    /**
-     * Given there is user in the system and initially there is no connection
-     */
-    const { ui, emitData } = makeComp({
-      context: {
-        connectionStatus: {
-          isConnected: false,
-        },
-      },
-    });
-
-    mockUseUser.mockReturnValue({});
-    mockOfflineItemsCount.mockReturnValue(5);
-    mockIsConnected.mockReturnValue(false);
-
-    expect(layoutContextValue).toBeNull();
-    let context1: LayoutContextValue;
-
-    render(ui);
-
-    /**
-     * When children are done rendering
-     */
-    await waitForElement(() => document.getElementById(browserRenderedUiId));
-
-    /**
-     * Then we should not have a connection
-     */
-
-    context1 = layoutContextValue as LayoutContextValue;
-    expect(context1.hasConnection).toBe(false);
-
-    /**
-     * And we should not have queried for unsaved data
-     */
-
-    expect(context1.offlineItemsCount).toBe(null);
-
-    /**
-     * When connection event occurs
-     */
-
-    act(() => {
-      emitData({
-        type: EmitActionType.connectionChanged,
-        hasConnection: true,
-      });
-    });
-
-    /**
-     * Then component should query for unsaved data after some pause
-     */
-    context1 = layoutContextValue as LayoutContextValue;
-
-    expect(context1.offlineItemsCount).toBe(5);
-
-    /**
-     * And set connection status to true
-     */
-
-    expect(context1.hasConnection).toBe(true);
-
-    /**
-     * When a random event occurs
-     */
-
-    let context2 = {} as LayoutContextValue;
-
-    emitData({
-      type: EmitActionType.random,
-    });
-
-    /**
-     * Then nothing should have changed
-     */
-
-    context2 = layoutContextValue as LayoutContextValue;
-    expect(context2).toBe(context1);
-    expect(context2.offlineItemsCount).toBe(5);
-  });
-
-  test("sets unsaved count to 0 if we lose connection", async () => {
-    const { ui, emitData } = makeComp();
-    mockUseUser.mockReturnValue({});
-    mockIsConnected.mockReturnValue(true);
-    mockOfflineItemsCount.mockReturnValue(2);
-
-    /**
-     * Given the component is rendered
-     */
-
-    render(ui);
-
-    let context = layoutContextValue as LayoutContextValue;
-
-    /**
-     * Then we should not query for unsaved data in the beginning
-     */
-
-    expect(context).toBeNull();
-
-    /**
-     * When main component is rendered
-     */
-
-    await waitForElement(() => {
-      return document.getElementById(browserRenderedUiId);
-    });
-
-    context = layoutContextValue as LayoutContextValue;
-
-    /**
-     * Then we should query for unsaved data
-     */
-
-    expect(context.offlineItemsCount).toBe(2);
-
-    /**
-     * When disconnect event occurs
-     */
-
-    act(() => {
-      emitData({
-        type: EmitActionType.connectionChanged,
-        hasConnection: false,
-      });
-    });
-
-    context = layoutContextValue as LayoutContextValue;
-
-    /**
-     * Then we should reset unsaved data count
-     */
-
-    expect(context.offlineItemsCount).toBe(0);
-  });
-
-  test("n", async () => {
-    const { ui, emitData } = makeComp();
-    mockUseUser.mockReturnValue({});
-    mockIsConnected.mockReturnValue(true);
-    mockOfflineItemsCount.mockReturnValue(2);
-
-    /**
-     * Given the component is rendered
-     */
-
-    render(ui);
-
-    let context = layoutContextValue as LayoutContextValue;
-
-    /**
-     * Then we should not query for unsaved data in the beginning
-     */
-
-    expect(context).toBeNull();
-
-    /**
-     * When main component is rendered
-     */
-
-    await waitForElement(() => {
-      return document.getElementById(browserRenderedUiId);
-    });
-
-    context = layoutContextValue as LayoutContextValue;
-
-    /**
-     * Then we should query for unsaved data
-     */
-
-    expect(context.offlineItemsCount).toBe(2);
-
-    /**
-     * When disconnect event occurs
-     */
-
-    act(() => {
-      emitData({
-        type: EmitActionType.connectionChanged,
-        hasConnection: false,
-      });
-    });
-
-    await wait(() => {
-      context = layoutContextValue as LayoutContextValue;
-    });
-
-    /**
-     * Then we should reset unsaved data count
-     */
-
-    expect(context.offlineItemsCount).toBe(0);
-  });
 });
 
 describe("reducer", () => {
@@ -471,14 +246,12 @@ describe("reducer", () => {
 
     expect(state.context).toMatchObject({
       hasConnection: true,
-      offlineItemsCount: null,
     });
 
     const nextState = reducer(state, action);
 
     expect(nextState.context).toMatchObject({
       hasConnection: false,
-      offlineItemsCount: 0,
     });
 
     expect(nextState.effects.runOnRenders.value).toBe(StateValue.noEffect);
@@ -533,7 +306,6 @@ describe("reducer", () => {
     const effectKeys = hasEffects.context.effects.map(e => e.key);
 
     expect(effectKeys).toContain(StateValue.prefetchExperiences);
-    expect(effectKeys).toContain(StateValue.getOfflineItemsCount);
   });
 
   test("CACHE_PERSISTED: has connection but already pre-fetched experiencess", () => {
@@ -564,81 +336,6 @@ describe("reducer", () => {
     const effectKeys = hasEffects.context.effects.map(e => e.key);
 
     expect(effectKeys).not.toContain(StateValue.prefetchExperiences);
-    expect(effectKeys).toContain(StateValue.getOfflineItemsCount);
-  });
-
-  test("sets unsaved count", () => {
-    /**
-     * Given we have some unsaved data
-     */
-
-    const state = initState({
-      connectionStatus: { isConnected: false },
-    } as InitStateArgs);
-
-    state.context.offlineItemsCount = 5;
-
-    /**
-     * When we update count of unsaved data
-     */
-
-    const action = {
-      type: LayoutActionType.SET_OFFLINE_ITEMS_COUNT,
-      count: 17,
-    } as LayoutAction;
-
-    const nextState = reducer(state, action);
-
-    /**
-     * Then the count should reflect new value
-     */
-
-    expect(nextState.context.offlineItemsCount).toBe(17);
-  });
-
-  it("does not refetch offline items count when no connection", () => {
-    const state = initState({
-      connectionStatus: {},
-    } as InitStateArgs);
-
-    const action = {
-      type: LayoutActionType.REFETCH_OFFLINE_ITEMS_COUNT,
-    } as LayoutAction;
-
-    const nextState = reducer(state, action);
-
-    expect(state).toEqual(nextState);
-  });
-
-  it("refetches offline items count when there is connection", () => {
-    const state = initState({
-      connectionStatus: { isConnected: true },
-    } as InitStateArgs);
-
-    const action = {
-      type: LayoutActionType.REFETCH_OFFLINE_ITEMS_COUNT,
-    } as LayoutAction;
-
-    const nextState = reducer(state, action);
-
-    expect(state.effects.runOnRenders.value).toEqual(StateValue.noEffect);
-
-    const {
-      effects: { runOnRenders },
-    } = nextState;
-
-    expect(runOnRenders.value).toEqual(StateValue.hasEffects);
-
-    const [effect] = (runOnRenders as EffectState).hasEffects.context.effects;
-    const mockDispatch = jest.fn();
-    mockOfflineItemsCount.mockReturnValue(1);
-    effectFunctions[effect.key]({} as any, {} as any, {
-      dispatch: mockDispatch,
-    });
-    expect(mockDispatch).toHaveBeenCalledWith({
-      type: LayoutActionType.SET_OFFLINE_ITEMS_COUNT,
-      count: 1,
-    });
   });
 });
 
@@ -653,8 +350,6 @@ function makeComp({
   context?: {};
   testId?: string;
 } = {}) {
-  layoutContextValue = null;
-
   const mockRestoreCacheOrPurgeStorage = jest.fn();
   const cache = { readQuery: jest.fn() };
   const client = { query: jest.fn };

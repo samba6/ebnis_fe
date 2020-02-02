@@ -834,6 +834,11 @@ export interface StateMachine {
   };
 }
 
+// interface SyncEditedOfflineExperienceState {
+//   value: ActiveVal;
+//   active: {}
+// }
+
 ////////////////////////// STRINGY TYPES SECTION /////////////////////////
 type EditingVal = "editing";
 type IdleVal = "idle";
