@@ -8,7 +8,6 @@ import { EXPERIENCE_URL } from "../../constants/experience-route";
 import { NEW_ENTRY_URL } from "../../constants/new-entry-route";
 import Loadable from "react-loadable";
 import { LoadableLoading } from "../../components/Loading/loading";
-import { UPLOAD_OFFLINE_ITEMS_PREVIEW_URL } from "../../constants/upload-offline-items-routes";
 
 const ExperienceDefinition = Loadable({
   loader: () =>
@@ -32,12 +31,6 @@ const MyExperiences = Loadable({
   loading: LoadableLoading,
 });
 
-const UploadOfflineItems = Loadable({
-  loader: () =>
-    import("../../components/UploadOfflineItems/upload-offline.component"),
-  loading: LoadableLoading,
-});
-
 export function App(props: RouteComponentProps) {
   return (
     <Layout {...props}>
@@ -58,11 +51,6 @@ export function App(props: RouteComponentProps) {
         />
 
         <AuthRequired path={EXPERIENCES_URL} component={MyExperiences} />
-
-        <AuthRequired
-          path={UPLOAD_OFFLINE_ITEMS_PREVIEW_URL}
-          component={UploadOfflineItems}
-        />
 
         <NotFound default={true} />
       </Router>

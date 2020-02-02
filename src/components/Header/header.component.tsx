@@ -2,18 +2,12 @@ import React, { useContext, SetStateAction, PropsWithChildren } from "react";
 import Menu from "semantic-ui-react/dist/commonjs/collections/Menu";
 import Icon from "semantic-ui-react/dist/commonjs/elements/Icon";
 import makeClassnames from "classnames";
-import { Link } from "../Link";
 import "./header.styles.scss";
 import { EXPERIENCES_URL, ROOT_URL } from "../../routes";
 import { LayoutContext, LocationContext } from "../Layout/layout.utils";
-import {
-  UPLOAD_OFFLINE_ITEMS_PREVIEW_URL,
-  UPLOAD_OFFLINE_ITEMS_URL_START,
-} from "../../constants/upload-offline-items-routes";
 import { useUser } from "../use-user";
 import { LogoImageQuery_file_childImageSharp_fixed } from "../../graphql/gatsby-types/LogoImageQuery";
 import { useLogo } from "./header.injectables";
-import { offlineItemsCountLinkId } from "./header.dom";
 
 export const Header = (props: Props) => {
   const {
@@ -28,7 +22,7 @@ export const Header = (props: Props) => {
   const user = useUser();
   const logoAttrs = useLogo();
   const { navigate, pathname } = useContext(LocationContext);
-  const { offlineItemsCount, hasConnection } = useContext(LayoutContext);
+  const { hasConnection } = useContext(LayoutContext);
   const isHome = pathname === EXPERIENCES_URL || pathname === ROOT_URL;
 
   const asUrlProps = isHome
@@ -80,18 +74,6 @@ export const Header = (props: Props) => {
           </Menu.Item>
         )}
       </Menu>
-
-      {user &&
-        offlineItemsCount > 0 &&
-        !pathname.includes(UPLOAD_OFFLINE_ITEMS_URL_START) && (
-          <Link
-            to={UPLOAD_OFFLINE_ITEMS_PREVIEW_URL}
-            id={offlineItemsCountLinkId}
-            className="unsaved-count-label"
-          >
-            {offlineItemsCount}
-          </Link>
-        )}
 
       {(title || children) &&
         (title ? (

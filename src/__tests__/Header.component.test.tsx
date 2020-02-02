@@ -4,14 +4,12 @@ import { render, fireEvent } from "@testing-library/react";
 import { Header, Props } from "../components/Header/header.component";
 import { EXPERIENCES_URL, ROOT_URL } from "../routes";
 import { LayoutContextValue } from "../components/Layout/layout.utils";
-import { UPLOAD_OFFLINE_ITEMS_PREVIEW_URL } from "../constants/upload-offline-items-routes";
 import {
   LayoutProvider,
   LocationProvider,
 } from "../components/Layout/layout-providers";
 import { useUser } from "../components/use-user";
 import { WindowLocation } from "@reach/router";
-import { offlineItemsCountLinkId } from "../components/Header/header.dom";
 
 jest.mock("../components/use-user");
 const mockUseUser = useUser as jest.Mock;
@@ -280,64 +278,6 @@ it("renders show sidebar icon but not close icon", () => {
    * Then sidebar should be toggled open
    */
   expect(mockToggleShowSidebar).toBeCalledWith(true);
-
-  expect(document.getElementById(offlineItemsCountLinkId)).toBeNull();
-});
-
-it("renders offline items count when not in 'upload offline' route", () => {
-  const { ui } = setup({
-    context: {
-      offlineItemsCount: 1,
-    },
-  });
-
-  mockUseUser.mockReturnValue({});
-
-  render(ui);
-
-  expect(document.getElementById(offlineItemsCountLinkId)).not.toBeNull();
-
-  expect(
-    document.getElementsByClassName("header--disconnected")[0] as HTMLElement,
-  ).toBeDefined();
-
-  expect(
-    document.getElementsByClassName("header--connected")[0],
-  ).toBeUndefined();
-});
-
-it("does not render offline items count in 'upload offline' route", () => {
-  const { ui } = setup({
-    context: {
-      offlineItemsCount: 1,
-      hasConnection: true,
-    },
-
-    location: { pathname: UPLOAD_OFFLINE_ITEMS_PREVIEW_URL } as any,
-  });
-
-  render(ui);
-
-  expect(document.getElementById(offlineItemsCountLinkId)).toBeNull();
-
-  expect(
-    document.getElementsByClassName("header--disconnected")[0] as HTMLElement,
-  ).toBeUndefined();
-
-  expect(document.getElementsByClassName("header--connected")[0]).toBeDefined();
-});
-
-it("does not render offline items count when there is no user", () => {
-  const { ui } = setup({
-    context: {
-      offlineItemsCount: 1,
-      hasConnection: true,
-    },
-  });
-
-  render(ui);
-
-  expect(document.getElementById(offlineItemsCountLinkId)).toBeNull();
 });
 
 it("does not render title when there is none to render", () => {
