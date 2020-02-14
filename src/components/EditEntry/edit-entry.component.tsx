@@ -50,7 +50,6 @@ import {
   getDefinitionControlId,
   ControlName,
   getDataControlDomId,
-  offlineSyncButtonId,
   makeOfflineDefinitionLabelId,
   scrollToTopId,
 } from "./edit-entry-dom";
@@ -66,6 +65,7 @@ import {
 } from "../../graphql/update-definition-and-data.mutation";
 import { useCreateOfflineEntryMutation } from "../NewEntry/new-entry.resolvers";
 import { addNewEntryResolvers } from "../NewEntry/new-entry.injectables";
+import { capitalize } from "../../general-utils";
 
 export function EditEntryComponent(props: ComponentProps) {
   const { dispatch: parentDispatch, experience, hasConnection } = props;
@@ -80,7 +80,6 @@ export function EditEntryComponent(props: ComponentProps) {
       submission,
       definitionsStates,
       dataStates,
-      mode,
     },
   } = stateMachine;
 
@@ -166,20 +165,6 @@ export function EditEntryComponent(props: ComponentProps) {
               {experience.title}
             </div>
           </Modal.Header>
-
-          {hasConnection &&
-            (mode.value === StateValue.modifiedOffline ||
-              mode.value === StateValue.offline) && (
-              <div className="mt-5 text-center">
-                <button
-                  className="p-5 text-red-900 bg-red-200 rounded-lg cursor-pointer "
-                  onClick={onSubmit}
-                  id={offlineSyncButtonId}
-                >
-                  Sync Now
-                </button>
-              </div>
-            )}
 
           <span id={scrollToTopId} className="visually-hidden" />
 
@@ -658,10 +643,6 @@ function getNodesFromObject(obj: { [k: string]: string }) {
 
     return acc;
   }, [] as JSX.Element[]);
-}
-
-function capitalize(word: string) {
-  return word.charAt(0).toUpperCase() + word.slice(1);
 }
 
 interface SubmitDefinitionsArgs {

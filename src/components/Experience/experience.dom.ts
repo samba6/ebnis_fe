@@ -6,3 +6,5 @@ export const errorsNotificationId = `${domPrefix}-errors-notification`;
 export const syncButtonId = `${domPrefix}-sync-button`;
 export const newEntryTriggerId = `${domPrefix}-new-entry-trigger`;
 export const experienceMenuTriggerDomId = `${domPrefix}-menu-trigger`;
+export const onOnlineExperienceSyncedNotificationSuccessDom = `js-${domPrefix}-on-online-experience-synced-notification-success`;
+export const onOnlineExperienceSyncedNotificationErrorDom = `js-${domPrefix}-on-online-experience-synced-notification-error`;

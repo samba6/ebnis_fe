@@ -6,6 +6,8 @@ import {
   UpdateDefinitionInput,
   CreateExperienceInput,
   CreateEntryInput,
+  UpdateAnExperienceInput,
+  CreateAnEntryInput,
 } from "../../graphql/apollo-types/globalTypes";
 import {
   ExperienceFragment,
@@ -19,12 +21,10 @@ import {
   CreateExperiencesComponentProps,
   UpdateExperiencesOnlineComponentProps,
 } from "../../graphql/update-experience.mutation";
-import { UpdateExperiencesOnline_updateExperiences_UpdateExperiencesSomeSuccess_experiences } from "../../graphql/apollo-types/UpdateExperiencesOnline";
 import {
   getUnsyncedExperience,
   removeUnsyncedExperience,
 } from "../../apollo-cache/unsynced.resolvers";
-import { UpdateAnExperienceInput } from "../../graphql/apollo-types/globalTypes";
 import { DataDefinitionFragment } from "../../graphql/apollo-types/DataDefinitionFragment";
 import ApolloClient, { ApolloError } from "apollo-client";
 import { updateExperiencesInCache } from "../../apollo-cache/update-experiences";
@@ -39,9 +39,13 @@ import { AppPersistor } from "../../context";
 import { InMemoryCache } from "apollo-cache-inmemory";
 import { parseStringError, StringyErrorPayload } from "../../general-utils";
 import { saveOnSyncOfflineExperienceComponentSuccess } from "../../apollo-cache/on-sync-offline-experience-component-success";
+import { isOfflineId } from "../../constants";
+import { CreateEntryErrorFragment_dataObjects } from "../../graphql/apollo-types/CreateEntryErrorFragment";
+import { CreateEntryErrorssFragment_errors_dataObjects } from "../../graphql/apollo-types/CreateEntryErrorssFragment";
+import { UpdateExperienceSomeSuccessFragment } from "../../graphql/apollo-types/UpdateExperienceSomeSuccessFragment";
 
 export const StateValue = {
-  success: "success" as SuccessVal,
+  // success: "success" as SuccessVal,
   errors: "errors" as ErrorsVal,
   inactive: "inactive" as InActiveVal,
   active: "active" as ActiveVal,
@@ -51,6 +55,7 @@ export const StateValue = {
   hasEffects: "hasEffects" as HasEffectsVal,
   warning: "warning" as WarningVal,
   submitting: "submitting" as SubmittingVal,
+  onOnlineExperienceSynced: "onOnlineExperienceSynced" as OnOnlineExperienceSynced,
 };
 
 export const displayFieldType = {
@@ -93,6 +98,8 @@ export enum ActionType {
   SYNC_EDITED_OFFLINE_EXPERIENCE = "@experience-component/sync-edited-offline-experience",
   ON_COMMON_ERROR = "@experience-component/on-common-error",
   SET_OFFLINE_EXPERIENCE_NEWLY_SYNCED = "@experience-component/offline-experience-newly-synced",
+
+  CLOSE_ON_ONLINE_EXPERIENCE_SYNCED_NOTIFICATION = "@eperience-component/close-on-online-experience-synced-notification",
 }
 
 export const reducer: Reducer<StateMachine, Action> = (state, action) =>
@@ -157,118 +164,28 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
           case ActionType.SET_OFFLINE_EXPERIENCE_NEWLY_SYNCED:
             proxy.context.offlineExperienceNewlySynced = (payload as SetOfflineExperienceNewlySyncedPayload).value;
             break;
+
+          case ActionType.CLOSE_ON_ONLINE_EXPERIENCE_SYNCED_NOTIFICATION:
+            handleOnCloseOnlineExperienceSyncedNotificationAction(
+              proxy,
+              payload as CloseOnOnlineExperienceSyncedNotificationPayload,
+            );
+            break;
         }
       });
     },
 
-    // true
+    // true,
   );
 ////////////////////////// EFFECTS SECTION /////////////////////////
 
 export const GENERIC_SERVER_ERROR = "Something went wrong - please try again.";
 
-const syncEffect: SyncEffectDef["func"] = async (_, props, effectArgs) => {
+const syncEffect: SyncEffectDef["func"] = (_, props, effectArgs) => {
   if (effectArgs.isOffline) {
     syncOfflineExperienceEffectHelper(props, effectArgs);
-    return;
-  }
-
-  const { dispatch } = effectArgs;
-  const { updateExperiencesOnline, experience } = props;
-  const { id: experienceId } = experience;
-  const unsynced = getUnsyncedExperience(experienceId);
-
-  // throw "Please remove from unsynced in local storage on all success";
-
-  if (!unsynced) {
-    dispatch({
-      type: ActionType.ON_COMMON_ERROR,
-      error: GENERIC_SERVER_ERROR,
-    });
-
-    return;
-  }
-
-  const input = {
-    experienceId,
-  } as UpdateAnExperienceInput;
-
-  const { ownFields, definitions: unSyncedDefinitions } = unsynced;
-
-  if (ownFields) {
-    const ownFieldsInput = {} as UpdateExperienceOwnFieldsInput;
-    input.ownFields = ownFieldsInput;
-
-    Object.keys(ownFields).forEach(k => {
-      ownFieldsInput[k] = experience[k];
-    });
-  }
-
-  if (unSyncedDefinitions) {
-    const definitionsInput = [] as UpdateDefinitionInput[];
-    input.updateDefinitions = definitionsInput;
-
-    experience.dataDefinitions.forEach(d => {
-      const definition = d as DataDefinitionFragment;
-      const { id } = definition;
-      const unsyncedDef = unSyncedDefinitions[id];
-
-      if (!unsyncedDef) {
-        return;
-      }
-
-      const definitionInput = { id } as UpdateDefinitionInput;
-      definitionsInput.push(definitionInput);
-
-      Object.keys(unsyncedDef).forEach(k => {
-        definitionInput[k] = definition[k];
-      });
-    });
-  }
-
-  try {
-    const response = await updateExperiencesOnline({
-      variables: {
-        input: [input],
-      },
-      update: updateExperiencesInCache,
-    });
-
-    const validResponse =
-      response && response.data && response.data.updateExperiences;
-
-    if (!validResponse) {
-      dispatch({
-        type: ActionType.ON_COMMON_ERROR,
-        error: GENERIC_SERVER_ERROR,
-      });
-
-      return;
-    }
-
-    switch (validResponse.__typename) {
-      case "UpdateExperiencesAllFail":
-        dispatch({
-          type: ActionType.ON_COMMON_ERROR,
-          error: validResponse.error,
-        });
-
-        break;
-
-      case "UpdateExperiencesSomeSuccess":
-        {
-          dispatch({
-            type: ActionType.ON_MODIFIED_EXPERIENCE_SYNCED,
-            syncResult: validResponse.experiences[0],
-          });
-        }
-        break;
-    }
-  } catch (error) {
-    dispatch({
-      type: ActionType.ON_COMMON_ERROR,
-      error,
-    });
+  } else {
+    syncOnlineExperienceEffectHelper(props, effectArgs);
   }
 };
 
@@ -329,6 +246,229 @@ function getGeneralEffects(proxy: DraftState) {
   return effects;
 }
 
+async function syncOnlineExperienceEffectHelper(
+  props: Props,
+  effectArgs: EffectArgs,
+) {
+  const { dispatch } = effectArgs;
+  const { updateExperiencesOnline, experience } = props;
+  const { id: experienceId } = experience;
+  const unsynced = getUnsyncedExperience(experienceId);
+
+  if (!unsynced) {
+    dispatch({
+      type: ActionType.ON_COMMON_ERROR,
+      error: GENERIC_SERVER_ERROR,
+    });
+
+    return;
+  }
+
+  const input = {
+    experienceId,
+  } as UpdateAnExperienceInput;
+
+  const { ownFields, definitions: unSyncedDefinitions, newEntries } = unsynced;
+  const ownFieldsInput = {} as UpdateExperienceOwnFieldsInput;
+
+  if (ownFields) {
+    input.ownFields = ownFieldsInput;
+
+    Object.keys(ownFields).forEach(k => {
+      ownFieldsInput[k] = experience[k];
+    });
+  }
+
+  if (unSyncedDefinitions) {
+    const definitionsInput = [] as UpdateDefinitionInput[];
+    input.updateDefinitions = definitionsInput;
+
+    experience.dataDefinitions.forEach(d => {
+      const definition = d as DataDefinitionFragment;
+      const { id } = definition;
+      const unsyncedDef = unSyncedDefinitions[id];
+
+      if (!unsyncedDef) {
+        return;
+      }
+
+      const definitionInput = { id } as UpdateDefinitionInput;
+      definitionsInput.push(definitionInput);
+
+      Object.keys(unsyncedDef).forEach(k => {
+        definitionInput[k] = definition[k];
+      });
+    });
+  }
+
+  if (newEntries) {
+    input.addEntries = getOfflineEntriesInputEffectHelper(
+      experience.entries.edges as EntryConnectionFragment_edges[],
+    );
+  }
+
+  try {
+    const response = await updateExperiencesOnline({
+      variables: {
+        input: [input],
+      },
+      update: updateExperiencesInCache,
+    });
+
+    const validResponse =
+      response && response.data && response.data.updateExperiences;
+
+    if (!validResponse) {
+      dispatch({
+        type: ActionType.ON_COMMON_ERROR,
+        error: GENERIC_SERVER_ERROR,
+      });
+
+      return;
+    }
+
+    if (validResponse.__typename === "UpdateExperiencesAllFail") {
+      dispatch({
+        type: ActionType.ON_COMMON_ERROR,
+        error: validResponse.error,
+      });
+    } else {
+      const syncResult = validResponse.experiences[0];
+
+      if (syncResult.__typename === "UpdateExperienceFullErrors") {
+        dispatch({
+          type: ActionType.ON_COMMON_ERROR,
+          error: syncResult.errors.error,
+        });
+      } else {
+        processUpdateExperienceSomeSuccessEffectHelper(
+          syncResult,
+          ownFieldsInput,
+          effectArgs,
+        );
+      }
+    }
+  } catch (error) {
+    dispatch({
+      type: ActionType.ON_COMMON_ERROR,
+      error,
+    });
+  }
+}
+
+function processUpdateExperienceSomeSuccessEffectHelper(
+  syncResult: UpdateExperienceSomeSuccessFragment,
+  ownFieldsInput: UpdateExperienceOwnFieldsInput,
+  effectArgs: EffectArgs,
+) {
+  const { experience } = syncResult;
+  const { ownFields, updatedDefinitions, newEntries } = experience;
+  const result: OnModifiedExperienceSyncedData = [];
+  const { dispatch } = effectArgs;
+
+  if (ownFields) {
+    if (ownFields.__typename === "UpdateExperienceOwnFieldsErrors") {
+      result.push(["title", [["title", ownFields.errors.title]]]);
+    } else {
+      Object.keys(ownFieldsInput).forEach(k => {
+        result.push([k, "success"]);
+      });
+    }
+  }
+
+  if (updatedDefinitions) {
+    updatedDefinitions.forEach((d, index) => {
+      const label = `Data definition ${index + 1}`;
+      if (d.__typename === "DefinitionErrors") {
+        const {
+          /* eslint-disable-next-line @typescript-eslint/no-unused-vars*/
+          id,
+          /* eslint-disable-next-line @typescript-eslint/no-unused-vars*/
+          __typename,
+          ...rest
+        } = d.errors;
+
+        result.push([
+          label,
+          Object.entries(rest).reduce((acc, [k, v]) => {
+            if (v) {
+              acc.push([k, v]);
+            }
+
+            return acc;
+          }, [] as string[][]),
+        ]);
+      } else {
+        result.push([label, "success"]);
+      }
+    });
+  }
+
+  if (newEntries) {
+    newEntries.forEach((n, index) => {
+      const label = `Entry ${index + 1}`;
+
+      if (n.__typename === "CreateEntryErrorss") {
+        const {
+          /* eslint-disable-next-line @typescript-eslint/no-unused-vars*/
+          __typename,
+          /* eslint-disable-next-line @typescript-eslint/no-unused-vars*/
+          experienceId,
+          /* eslint-disable-next-line @typescript-eslint/no-unused-vars*/
+          meta,
+          ...rest
+        } = n.errors;
+
+        const errors = [] as string[][];
+        result.push([label, errors]);
+
+        Object.entries(rest).forEach(([k, v]) => {
+          if (v) {
+            if (k === "dataObjects") {
+              (v as CreateEntryErrorssFragment_errors_dataObjects[]).forEach(
+                d => {
+                  const {
+                    index,
+                    /* eslint-disable-next-line @typescript-eslint/no-unused-vars*/
+                    __typename,
+                    ...rest
+                  } = d as CreateEntryErrorFragment_dataObjects;
+
+                  const label = `Data ${index + 1}`;
+
+                  Object.entries(rest).forEach(([k, v]) => {
+                    if (v) {
+                      errors.push([k, `${label}: ${v}`]);
+                    }
+                  });
+                },
+              );
+            } else {
+              errors.push([k, v]);
+            }
+          }
+        });
+      } else {
+        result.push([label, "success"]);
+      }
+    });
+  }
+
+  if (!result.length) {
+    dispatch({
+      type: ActionType.ON_COMMON_ERROR,
+      error: GENERIC_SERVER_ERROR,
+    });
+
+    return;
+  }
+
+  dispatch({
+    type: ActionType.ON_MODIFIED_EXPERIENCE_SYNCED,
+    data: result,
+  });
+}
+
 async function syncOfflineExperienceEffectHelper(
   props: Props,
   effectArgs: EffectArgs,
@@ -361,7 +501,7 @@ async function syncOfflineExperienceEffectHelper(
     } as CreateExperienceInput;
 
     const edges = entries.edges as ExperienceFragment_entries_edges[];
-    const entriesUnsyncedIds = offlinePrepareOfflineEntriesForSyncEffectHelper(
+    const entriesUnsyncedIds = getOfflineExperienceEntriesInputEffectHelper(
       edges,
     );
 
@@ -464,7 +604,7 @@ const UploadableDataObjectKeys: (keyof DataObjectFragment)[] = [
   "updatedAt",
 ];
 
-function offlinePrepareOfflineEntriesForSyncEffectHelper(
+function getOfflineExperienceEntriesInputEffectHelper(
   edges: (EntryConnectionFragment_edges | null)[],
 ) {
   return edges.reduce(
@@ -472,20 +612,12 @@ function offlinePrepareOfflineEntriesForSyncEffectHelper(
       const entry = (edge as EntryConnectionFragment_edges)
         .node as EntryFragment;
 
-      const dataObjects = entry.dataObjects.map(value => {
-        const dataObject = value as DataObjectFragment;
-
-        return UploadableDataObjectKeys.reduce((acc, k) => {
-          acc[k as keyof DataObjectFragment] =
-            dataObject[k as keyof DataObjectFragment];
-          return acc;
-        }, {} as DataObjectFragment);
-      });
-
       entries.push({
         experienceId: entry.experienceId,
         clientId: entry.clientId as string,
-        dataObjects,
+        dataObjects: getDataObjectsInputEffectHelper(
+          entry.dataObjects as DataObjectFragment[],
+        ),
         insertedAt: entry.insertedAt,
         updatedAt: entry.updatedAt,
       });
@@ -498,11 +630,44 @@ function offlinePrepareOfflineEntriesForSyncEffectHelper(
   );
 }
 
+function getDataObjectsInputEffectHelper(dataObjects: DataObjectFragment[]) {
+  return dataObjects.map(value => {
+    const dataObject = value as DataObjectFragment;
+
+    return UploadableDataObjectKeys.reduce((acc, k) => {
+      acc[k as keyof DataObjectFragment] =
+        dataObject[k as keyof DataObjectFragment];
+      return acc;
+    }, {} as DataObjectFragment);
+  });
+}
+
 function definitionToUploadDataEffectHelper(
   value: DataDefinitionFragment | null,
 ) {
   const { clientId, name, type } = value as DataDefinitionFragment;
   return { clientId, name, type };
+}
+
+function getOfflineEntriesInputEffectHelper(
+  entriesEdges: EntryConnectionFragment_edges[],
+) {
+  return entriesEdges.reduce((acc, e) => {
+    const entry = (e as EntryConnectionFragment_edges).node as EntryFragment;
+
+    if (isOfflineId(entry.id)) {
+      acc.push({
+        clientId: entry.clientId,
+        insertedAt: entry.insertedAt,
+        updatedAt: entry.updatedAt,
+        dataObjects: getDataObjectsInputEffectHelper(
+          entry.dataObjects as DataObjectFragment[],
+        ),
+      });
+    }
+
+    return acc;
+  }, [] as CreateAnEntryInput[]);
 }
 
 ////////////////////////// END EFFECTS SECTION /////////////////////////
@@ -527,6 +692,7 @@ function handleSyncAction(proxy: DraftState) {
   proxy.states.submission.value = StateValue.submitting;
 
   const effects = getGeneralEffects(proxy);
+
   effects.push({
     key: "syncEffect",
     ownArgs: {},
@@ -551,30 +717,19 @@ function handleOnModifiedExperienceSyncedAction(
   proxy: DraftState,
   payload: OnModifiedExperienceSyncedPayload,
 ) {
-  const { syncResult } = payload;
+  const { data } = payload;
+  const {
+    states: { submission },
+  } = proxy;
 
-  switch (syncResult.__typename) {
-    case "UpdateExperienceFullErrors":
-      {
-        const {
-          errors: { error },
-        } = syncResult;
+  submission.value = StateValue.onOnlineExperienceSynced;
 
-        handleOtherErrorsAction(proxy, { errors: error });
-      }
-      break;
-
-    case "UpdateExperienceSomeSuccess": {
-      const { experience } = syncResult;
-      const { ownFields, updatedDefinitions } = experience;
-
-      if (!(ownFields || updatedDefinitions)) {
-        handleOtherErrorsAction(proxy, { errors: GENERIC_SERVER_ERROR });
-      } else {
-        proxy.states.submission.value = StateValue.success;
-      }
-    }
-  }
+  (submission as SubmissionOnOnlineExperienceSynced).onOnlineExperienceSynced = {
+    context: { data },
+    states: {
+      notifications: data.map(() => true),
+    },
+  };
 }
 
 function handleOnSyncOfflineExperienceErrorsAction(
@@ -639,6 +794,22 @@ function handleEditExperienceAction(proxy: DraftState) {
   editExperience.value = StateValue.editing;
 }
 
+function handleOnCloseOnlineExperienceSyncedNotificationAction(
+  proxy: DraftState,
+  payload: CloseOnOnlineExperienceSyncedNotificationPayload,
+) {
+  const {
+    states: { submission },
+  } = proxy;
+
+  const {
+    onOnlineExperienceSynced: {
+      states: { notifications },
+    },
+  } = submission as SubmissionOnOnlineExperienceSynced;
+  notifications[payload.index] = false;
+}
+
 ////////////////////////// END STATE UPDATE SECTION /////////////////
 
 export function formatDatetime(date: Date | string) {
@@ -663,11 +834,6 @@ export interface StateMachine {
   };
 }
 
-// interface SyncEditedOfflineExperienceState {
-//   value: ActiveVal;
-//   active: {}
-// }
-
 ////////////////////////// STRINGY TYPES SECTION /////////////////////////
 type EditingVal = "editing";
 type IdleVal = "idle";
@@ -676,9 +842,10 @@ type HasEffectsVal = "hasEffects";
 type InActiveVal = "inactive";
 type ActiveVal = "active";
 type SubmittingVal = "submitting";
-type SuccessVal = "success";
+// type SuccessVal = "success";
 type ErrorsVal = "errors";
 type WarningVal = "warning";
+type OnOnlineExperienceSynced = "onOnlineExperienceSynced";
 ////////////////////////// END STRINGY TYPES SECTION ////////////////////
 
 interface Submitting {
@@ -690,13 +857,14 @@ type Submission =
       value: InActiveVal;
     }
   | Submitting
-  | SubmissionSuccess
+  // | SubmissionSuccess
   | SubmissionErrors
-  | SubmissionWarning;
+  | SubmissionWarning
+  | SubmissionOnOnlineExperienceSynced;
 
-interface SubmissionSuccess {
-  value: SuccessVal;
-}
+// interface SubmissionSuccess {
+//   value: SuccessVal;
+// }
 
 interface SubmissionErrors {
   value: ErrorsVal;
@@ -716,8 +884,16 @@ interface SubmissionWarning {
   };
 }
 
-interface SetOfflineExperienceNewlySyncedPayload {
-  value: boolean;
+export interface SubmissionOnOnlineExperienceSynced {
+  value: OnOnlineExperienceSynced;
+  onOnlineExperienceSynced: {
+    context: {
+      data: OnModifiedExperienceSyncedData;
+    };
+    states: {
+      notifications: boolean[];
+    };
+  };
 }
 
 type Action =
@@ -753,7 +929,18 @@ type Action =
     } & OnSyncOfflineExperienceErrorsPayload)
   | ({
       type: ActionType.ON_SYNC_OFFLINE_EXPERIENCE_SUCCESS;
-    } & OnSyncOfflineExperienceSuccessPayload);
+    } & OnSyncOfflineExperienceSuccessPayload)
+  | ({
+      type: ActionType.CLOSE_ON_ONLINE_EXPERIENCE_SYNCED_NOTIFICATION;
+    } & CloseOnOnlineExperienceSyncedNotificationPayload);
+
+interface CloseOnOnlineExperienceSyncedNotificationPayload {
+  index: number;
+}
+
+interface SetOfflineExperienceNewlySyncedPayload {
+  value: boolean;
+}
 
 interface SyncEditedOfflineExperiencePayload {
   experience: ExperienceFragment;
@@ -768,8 +955,10 @@ interface OnSyncOfflineExperienceErrorsPayload {
   errors: CreateExperiences_createExperiences_CreateExperienceErrorss_errors;
 }
 
+type OnModifiedExperienceSyncedData = [string, "success" | string[][]][];
+
 interface OnModifiedExperienceSyncedPayload {
-  syncResult: UpdateExperiencesOnline_updateExperiences_UpdateExperiencesSomeSuccess_experiences;
+  data: OnModifiedExperienceSyncedData;
 }
 
 interface ApolloErrorsPayload {

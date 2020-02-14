@@ -101,23 +101,37 @@ const UPDATE_EXPERIENCE_OWN_FIELDS_UNION_FRAGMENT = gql`
   ${UPDATE_EXPERIENCE_OWN_FIELDS_FRAGMENT}
 `;
 
+const DEFINITION_SUCCESS_FRAGMENT = gql`
+  fragment DefinitionSuccessFragment on DefinitionSuccess {
+    definition {
+      ...DataDefinitionFragment
+    }
+  }
+  ${DEFINITION_FRAGMENT}
+`;
+
+const DEFINITION_ERRORS_FRAGMENT = gql`
+  fragment DefinitionErrorsFragment on DefinitionErrors {
+    errors {
+      ...DefinitionErrorFragment
+    }
+  }
+  ${DEFINITION_ERROR_FRAGMENT}
+`;
+
 const UPDATE_DEFINITION_UNION_FRAGMENT = gql`
   fragment UpdateDefinitionUnionFragment on UpdateDefinition {
     __typename
     ... on DefinitionErrors {
-      errors {
-        ...DefinitionErrorFragment
-      }
+      ...DefinitionErrorsFragment
     }
 
     ... on DefinitionSuccess {
-      definition {
-        ...DataDefinitionFragment
-      }
+      ...DefinitionSuccessFragment
     }
   }
-  ${DEFINITION_ERROR_FRAGMENT}
-  ${DEFINITION_FRAGMENT}
+  ${DEFINITION_ERRORS_FRAGMENT}
+  ${DEFINITION_SUCCESS_FRAGMENT}
 `;
 
 const CREATE_ENTRY_ERROR_FRAGMENT = gql`
@@ -140,6 +154,24 @@ const CREATE_ENTRY_ERROR_FRAGMENT = gql`
   }
 `;
 
+const CREATE_ENTRY_ERRORSS_FRAGMENT = gql`
+  fragment CreateEntryErrorssFragment on CreateEntryErrorss {
+    errors {
+      ...CreateEntryErrorFragment
+    }
+  }
+  ${CREATE_ENTRY_ERROR_FRAGMENT}
+`;
+
+const CREATE_ENTRY_SUCCESS_FRAGMENT = gql`
+  fragment CreateEntrySuccessFragment on CreateEntrySuccess {
+    entry {
+      ...EntryFragment
+    }
+  }
+  ${ENTRY_FRAGMENT}
+`;
+
 const UPDATE_EXPERIENCE_FRAGMENT = gql`
   fragment UpdateExperienceFragment on UpdateExperience {
     experienceId
@@ -156,22 +188,27 @@ const UPDATE_EXPERIENCE_FRAGMENT = gql`
     newEntries {
       __typename
       ... on CreateEntryErrorss {
-        errors {
-          ...CreateEntryErrorFragment
-        }
+        ...CreateEntryErrorssFragment
       }
       ... on CreateEntrySuccess {
-        entry {
-          ...EntryFragment
-        }
+        ...CreateEntrySuccessFragment
       }
     }
   }
   ${UPDATE_EXPERIENCE_OWN_FIELDS_UNION_FRAGMENT}
   ${UPDATE_DEFINITION_UNION_FRAGMENT}
   ${UPDATE_ENTRY_UNION_FRAGMENT}
-  ${ENTRY_FRAGMENT}
-  ${CREATE_ENTRY_ERROR_FRAGMENT}
+  ${CREATE_ENTRY_SUCCESS_FRAGMENT}
+  ${CREATE_ENTRY_ERRORSS_FRAGMENT}
+`;
+
+const UPDATE_EXPERIENCE_SOME_SUCESS_FARGMENT = gql`
+  fragment UpdateExperienceSomeSuccessFragment on UpdateExperienceSomeSuccess {
+    experience {
+      ...UpdateExperienceFragment
+    }
+  }
+  ${UPDATE_EXPERIENCE_FRAGMENT}
 `;
 
 const UPDATE_EXPERIENCES_ONLINE_MUTATION = gql`
@@ -193,16 +230,14 @@ const UPDATE_EXPERIENCES_ONLINE_MUTATION = gql`
           }
 
           ... on UpdateExperienceSomeSuccess {
-            experience {
-              ...UpdateExperienceFragment
-            }
+            ...UpdateExperienceSomeSuccessFragment
           }
         }
       }
     }
   }
   ${UPDATE_EXPERIENCE_ERROR_FRAGMENT}
-  ${UPDATE_EXPERIENCE_FRAGMENT}
+  ${UPDATE_EXPERIENCE_SOME_SUCESS_FARGMENT}
 `;
 
 export function useUpdateExperiencesOnlineMutation(): UseUpdateExperiencesOnlineMutation {

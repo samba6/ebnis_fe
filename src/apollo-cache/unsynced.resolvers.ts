@@ -4,9 +4,11 @@ const KEY = "S4gz/ER4FSYsvw";
 export function getUnsyncedExperience(
   id: string,
 ): UnsyncedModifiedExperience | undefined {
-  const data = localStorage.getItem(KEY) || "{}";
+  const data = localStorage.getItem(KEY);
 
-  return JSON.parse(data)[id] as UnsyncedModifiedExperience;
+  return data
+    ? (JSON.parse(data)[id] as UnsyncedModifiedExperience)
+    : undefined;
 }
 
 export function writeUnsyncedExperience(id: string, data: UnsyncedData) {

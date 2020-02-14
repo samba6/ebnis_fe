@@ -59,7 +59,6 @@ import {
   getDefinitionFieldSelectorClass,
   ControlName,
   getDataControlDomId,
-  offlineSyncButtonId,
   makeOfflineDefinitionLabelId,
 } from "../components/EditEntry/edit-entry-dom";
 import { isConnected } from "../state/connections";
@@ -183,8 +182,6 @@ test("not editing data, editing single definition, form errors, server success",
   //  const { debug } = render(ui);
 
   // idle
-
-  expect(document.getElementById(offlineSyncButtonId)).toBeNull();
 
   let $editBtn = getDefinitionEdit("a");
   expect(getDefinitionDismiss("a")).toBeNull();
@@ -1396,12 +1393,7 @@ test("edit online entry, submit offline - only data objects can be updated", asy
   render(ui);
 
   /**
-   * Then offline sync button should not be visible
-   */
-  expect(document.getElementById(offlineSyncButtonId)).toBeNull();
-
-  /**
-   * But offlin definition label should be visible
+   * Then offline definition label should be visible
    */
   expect(
     document.getElementById(makeOfflineDefinitionLabelId("int")),
@@ -1686,10 +1678,14 @@ test("edit offline entry, upload online, one data object updated, one not update
   ).toBeNull();
 
   /**
-   * And sync offline button is clicked
+   * When we update entry data 1 to a new value
    */
+  getDataInput(data1OfflineId, "2");
 
-  (document.getElementById(offlineSyncButtonId) as HTMLElement).click();
+  /**
+   * And submit button is clicked
+   */
+  getSubmit().click();
 
   /**
    * Then error UI should not be visible
@@ -1702,12 +1698,7 @@ test("edit offline entry, upload online, one data object updated, one not update
   await waitForElement(getOtherErrorsResponseDom);
 
   /**
-   * When we update entry data 1 to a new value
-   */
-  getDataInput(data1OfflineId, "2");
-
-  /**
-   * And form is submitted a second time
+   * When form is submitted a second time
    */
   getSubmit().click();
 

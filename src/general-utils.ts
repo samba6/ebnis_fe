@@ -11,6 +11,10 @@ export function parseStringError(error: string | Error): string {
   }
 }
 
+export function capitalize(word: string) {
+  return word.charAt(0).toUpperCase() + word.slice(1);
+}
+
 export interface StringyErrorPayload {
   error: Error | string;
 }

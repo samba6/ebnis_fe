@@ -33,6 +33,8 @@ import {
   closeSubmitNotificationBtnSelector,
   successNotificationId,
   newEntryTriggerId,
+  onOnlineExperienceSyncedNotificationSuccessDom,
+  onOnlineExperienceSyncedNotificationErrorDom,
 } from "../components/Experience/experience.dom";
 import { ApolloError } from "apollo-client";
 import { GraphQLError } from "graphql";
@@ -42,6 +44,7 @@ import {
 } from "../graphql/update-experience.mutation";
 import { makeOfflineId } from "../constants";
 import { saveOnSyncOfflineExperienceComponentSuccess } from "../apollo-cache/on-sync-offline-experience-component-success";
+import { DataObjectFragment } from "../graphql/apollo-types/DataObjectFragment";
 
 jest.mock("../apollo-cache/on-sync-offline-experience-component-success");
 const mockSaveOnSyncOfflineExperienceComponentSuccess = saveOnSyncOfflineExperienceComponentSuccess as jest.Mock;
@@ -183,12 +186,27 @@ test("getTitle", () => {
 });
 
 test("sync online experience", async () => {
+  const entryOnlineId = "exon";
+  const entryOfflineId = makeOfflineId("exof");
+
   const { ui } = makeComp({
     experience: {
       title: "t1",
       id: "a",
       entries: {
-        edges: [] as ExperienceFragment_entries_edges[],
+        edges: [
+          {
+            node: {
+              id: entryOnlineId,
+            },
+          },
+          {
+            node: {
+              id: entryOfflineId,
+              dataObjects: [] as DataObjectFragment[],
+            },
+          },
+        ] as ExperienceFragment_entries_edges[],
       },
       hasUnsaved: true,
       dataDefinitions: [
@@ -206,16 +224,57 @@ test("sync online experience", async () => {
 
   /**
    * SUBMISSIONS:
-   * 1. unsynced = null
-   * 2. unsynced.ownFields.title, serverResponse invalid
-   * 3. unsynced.definitions only, javascript exception
-   * 4. unsynced.ownFields.title, networkError
-   * 5. unsynced.ownFields.title, graphQLErrors
-   * 6. unsynced.ownFields.title, UpdateExperiencesAllFail
-   * 7. unsynced.ownFields.title, UpdateExperiencesSomeSuccess.UpdateExperienceFullErrors
-   * 8. unsynced.ownFields.title, UpdateExperiencesSomeSuccess.UpdateExperienceSomeSuccess - all error
-   * 9. unsynced.ownFields.title, UpdateExperiencesSomeSuccess.UpdateExperienceSomeSuccess - all success
    */
+  mockGetUnsyncedExperience
+    .mockReturnValueOnce(null) // 1
+    .mockReturnValueOnce({
+      ownFields: {
+        title: true,
+      },
+    }) // 2
+    .mockReturnValueOnce({
+      definitions: {
+        "2": {
+          name: true,
+        },
+      },
+    }) // 3
+    .mockReturnValueOnce({
+      ownFields: {
+        title: true,
+      },
+    }) // 4
+    .mockReturnValueOnce({
+      ownFields: {
+        title: true,
+      },
+    }) // 5
+    .mockReturnValueOnce({
+      ownFields: {
+        title: true,
+      },
+    }) // 6
+    .mockReturnValueOnce({
+      ownFields: {
+        title: true,
+      },
+    }) // 7
+    .mockReturnValueOnce({
+      ownFields: {
+        title: true,
+      },
+    }) // 8
+    .mockReturnValueOnce({
+      ownFields: {
+        title: true,
+      },
+    }) //  9
+    .mockReturnValueOnce({
+      newEntries: true,
+      ownFields: {
+        title: true,
+      },
+    }); // 10
 
   mockUpdateExperiencesOnline
     .mockResolvedValueOnce({}) // 2
@@ -274,59 +333,63 @@ test("sync online experience", async () => {
             {
               __typename: "UpdateExperienceSomeSuccess",
               experience: {
-                ownFields: {},
-                updatedDefinitions: [{}],
+                ownFields: {
+                  __typename: "UpdateExperienceOwnFieldsErrors",
+                  errors: {},
+                },
+                newEntries: [
+                  {
+                    __typename: "CreateEntryErrorss",
+                    errors: {
+                      error: null,
+                      clientId: "a",
+                      dataObjects: [
+                        {
+                          definition: null,
+                          data: "a",
+                        },
+                      ],
+                    },
+                  },
+                  {
+                    __typename: "CreateEntrySuccess",
+                  },
+                ],
+                updatedDefinitions: [
+                  {
+                    __typename: "DefinitionErrors",
+                    errors: {
+                      error: null,
+                      name: "a",
+                    },
+                  },
+                  {
+                    __typename: "DefinitionSuccess",
+                  },
+                ],
               },
             },
           ],
         },
       },
-    } as UpdateExperiencesOnlineMutationResult); // 9
-
-  mockGetUnsyncedExperience
-    .mockReturnValueOnce(null) // 1
-    .mockReturnValueOnce({
-      ownFields: {
-        title: true,
-      },
-    }) // 2
-    .mockReturnValueOnce({
-      definitions: {
-        "2": {
-          name: true,
+    } as UpdateExperiencesOnlineMutationResult) // 9
+    .mockResolvedValueOnce({
+      data: {
+        updateExperiences: {
+          __typename: "UpdateExperiencesSomeSuccess",
+          experiences: [
+            {
+              __typename: "UpdateExperienceSomeSuccess",
+              experience: {
+                ownFields: {
+                  __typename: "ExperienceOwnFieldsSuccess",
+                },
+              },
+            },
+          ],
         },
       },
-    }) // 3
-    .mockReturnValueOnce({
-      ownFields: {
-        title: true,
-      },
-    }) // 4
-    .mockReturnValueOnce({
-      ownFields: {
-        title: true,
-      },
-    }) // 5
-    .mockReturnValueOnce({
-      ownFields: {
-        title: true,
-      },
-    }) // 6
-    .mockReturnValueOnce({
-      ownFields: {
-        title: true,
-      },
-    }) // 7
-    .mockReturnValueOnce({
-      ownFields: {
-        title: true,
-      },
-    }) // 8
-    .mockReturnValueOnce({
-      ownFields: {
-        title: true,
-      },
-    }); // 9
+    } as UpdateExperiencesOnlineMutationResult); // 10
 
   /**
    * When component is rendered
@@ -576,20 +639,67 @@ test("sync online experience", async () => {
   /**
    * When sync button is clicked
    */
-  syncBtn.click(); // 8
+  syncBtn.click(); // 9
   await wait(() => true);
 
   /**
-   * Then error UI should be visible
+   * Then success and error notifications should be visible
    */
-  await waitForElement(() => {
-    return document.getElementById(successNotificationId);
+  let errorNotifications = (null as unknown) as HTMLCollection;
+
+  const onSyncErrorNotificationDom = await waitForElement(() => {
+    errorNotifications = document.getElementsByClassName(
+      onOnlineExperienceSyncedNotificationErrorDom,
+    );
+
+    return errorNotifications.item(0) as HTMLElement;
+  });
+
+  expect(errorNotifications).toHaveLength(3);
+
+  expect(
+    document.getElementsByClassName(
+      onOnlineExperienceSyncedNotificationSuccessDom,
+    )
+  ).toHaveLength(2);
+
+  /**
+   * When one of the success notifications is closed
+   */
+  (onSyncErrorNotificationDom
+    .getElementsByClassName("delete")
+    .item(0) as HTMLElement).click();
+
+  expect(errorNotifications).toHaveLength(2);
+
+  /**
+   * When sync button is clicked
+   */
+  syncBtn.click(); // 10
+  await wait(() => true);
+
+  /**
+   * Then sync success notification should be visible
+   */
+  const syncSuccessNotification = await waitForElement(() => {
+    return document
+      .getElementsByClassName(onOnlineExperienceSyncedNotificationSuccessDom)
+      .item(0) as HTMLElement;
   });
 
   /**
-   * And error notification should not be visible
+   * And sync error notification should not be visible
    */
-  expect(document.getElementById(errorsNotificationId)).toBeNull();
+  expect(
+    document.getElementsByClassName(
+      onOnlineExperienceSyncedNotificationErrorDom,
+    ),
+  ).toHaveLength(0);
+
+  /**
+   * When sync error notification dismiss button is clicked
+   */
+  syncSuccessNotification.click();
 });
 
 test("sync offline experience, navigate to new entry", async () => {

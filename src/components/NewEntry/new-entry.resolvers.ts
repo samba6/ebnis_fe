@@ -8,7 +8,7 @@ import {
   LocalResolverFn,
   MUTATION_NAME_createOfflineEntry,
 } from "../../state/resolvers";
-import { makeOfflineId } from "../../constants";
+import { makeOfflineId, isOfflineId } from "../../constants";
 import { CreateDataObject } from "../../graphql/apollo-types/globalTypes";
 import gql from "graphql-tag";
 import { upsertExperienceWithEntry } from "./new-entry.injectables";
@@ -17,6 +17,11 @@ import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragmen
 import { EntryFragment } from "../../graphql/apollo-types/EntryFragment";
 // import { incrementOfflineItemCount } from "../../apollo-cache/increment-offline-item-count";
 import { CreateOnlineEntryMutation_createEntry } from "../../graphql/apollo-types/CreateOnlineEntryMutation";
+import {
+  getUnsyncedExperience,
+  UnsyncedModifiedExperience,
+  writeUnsyncedExperience,
+} from "../../apollo-cache/unsynced.resolvers";
 
 export const CREATE_OFFLINE_ENTRY_MUTATION = gql`
   mutation CreateOfflineEntry(
@@ -86,7 +91,7 @@ const createOfflineEntryMutationResolver: LocalResolverFn<
     },
   )) as ExperienceFragment;
 
-  // incrementOfflineItemCount(cache, experienceId);
+  updateUnsynced(experienceId);
 
   return { id, experience, entry, __typename: "Entry" };
 };
@@ -103,6 +108,20 @@ export const newEntryResolvers = {
 
   Query: {},
 };
+
+function updateUnsynced(experienceId: string) {
+  if (isOfflineId(experienceId)) {
+    return;
+  }
+
+  const unsyncedExperience = (getUnsyncedExperience(experienceId) || {
+    newEntries: true,
+  }) as UnsyncedModifiedExperience;
+
+  writeUnsyncedExperience(experienceId, unsyncedExperience);
+}
+
+////////////////////////// TYPES SECTION ////////////////////////////
 
 export function useCreateOfflineEntryMutation(): UseCreateOfflineEntryMutation {
   return useMutation(CREATE_OFFLINE_ENTRY_MUTATION);

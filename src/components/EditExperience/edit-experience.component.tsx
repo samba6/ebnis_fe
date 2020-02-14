@@ -175,6 +175,10 @@ export function EditExperience(props: Props) {
                   className={`delete ${closeSubmitNotificationBtnSelector}`}
                 />
                 Changes saved successfully.
+                <button
+                  className="absolute w-5 h-5 bg-black rounded-full opacity-25"
+                  style={{ top: "0.5rem", left: "0.5rem" }}
+                />
               </div>
             )}
 

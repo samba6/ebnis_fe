@@ -1,4 +1,5 @@
 import React, {
+  Fragment,
   useCallback,
   useEffect,
   useMemo,
@@ -18,6 +19,7 @@ import {
   StateValue,
   effectFunctions,
   DispatchType,
+  SubmissionOnOnlineExperienceSynced,
 } from "./experience.utils";
 import { makeNewEntryRoute } from "../../constants/new-entry-route";
 import { Entry } from "../Entry/entry.component";
@@ -41,12 +43,15 @@ import {
   syncButtonId,
   newEntryTriggerId,
   experienceMenuTriggerDomId,
+  onOnlineExperienceSyncedNotificationErrorDom,
+  onOnlineExperienceSyncedNotificationSuccessDom,
 } from "./experience.dom";
 import { Loading } from "../Loading/loading";
 import { useCreateEntriesMutation } from "../../graphql/create-entries.mutation";
 import { EbnisAppContext } from "../../context";
 import { execOnSyncOfflineExperienceComponentSuccess } from "../../apollo-cache/on-sync-offline-experience-component-success";
 import { EbnisContextProps } from "../../context";
+import { capitalize } from "../../general-utils";
 
 export function ExperienceComponent(props: Props) {
   const {
@@ -184,7 +189,6 @@ export function ExperienceComponent(props: Props) {
     dispatch({
       type: ActionType.CLOSE_SUBMIT_NOTIFICATION,
     });
-    /* eslint-disable-next-line react-hooks/exhaustive-deps*/
   }, []);
 
   return (
@@ -203,8 +207,26 @@ export function ExperienceComponent(props: Props) {
         {...otherProps}
       >
         <div className="m-2">
-          {(offlineExperienceNewlySynced ||
-            submissionState.value === StateValue.success) && (
+          {submissionState.value === StateValue.onOnlineExperienceSynced && (
+            <div
+              className={`
+                relative
+            `}
+            >
+              <OnOnlineExperienceSyncedNotifications
+                state={submissionState}
+                onClose={(index: number) => () => {
+                  dispatch({
+                    type:
+                      ActionType.CLOSE_ON_ONLINE_EXPERIENCE_SYNCED_NOTIFICATION,
+                    index,
+                  });
+                }}
+              />
+            </div>
+          )}
+          {offlineExperienceNewlySynced && (
+            /*istanbul ignore next:*/
             <div
               id={successNotificationId}
               className="notification is-success is-light"
@@ -216,7 +238,6 @@ export function ExperienceComponent(props: Props) {
               Changes saved successfully.
             </div>
           )}
-
           {submissionState.value === StateValue.errors && (
             <div
               className="notification is-danger is-light"
@@ -341,6 +362,69 @@ function OptionsMenuComponent({
         </div>
       </div>
     </div>
+  );
+}
+
+function OnOnlineExperienceSyncedNotifications({
+  state,
+  onClose,
+}: {
+  state: SubmissionOnOnlineExperienceSynced;
+  onClose: (index: number) => () => void;
+}) {
+  const {
+    onOnlineExperienceSynced: {
+      context: { data },
+      states: { notifications },
+    },
+  } = state;
+
+  return (
+    <>
+      {data.map(([header, value], index) => {
+        return (
+          <Fragment key={index}>
+            {notifications[index] && (
+              <div
+                className={makeClassNames({
+                  "notification is-light mb-2": true,
+                  [`is-success ${onOnlineExperienceSyncedNotificationSuccessDom}`]:
+                    value === "success",
+                  [`is-danger ${onOnlineExperienceSyncedNotificationErrorDom}`]:
+                    value !== "success",
+                })}
+              >
+                <button onClick={onClose(index)} className={`delete`} />
+
+                {value === "success" ? (
+                  <>
+                    <span className={`font-black mr-1`}>{header}</span>
+                    <span>updated successfully</span>
+                  </>
+                ) : (
+                  <div className={`flex`}>
+                    <div>{header}</div>
+
+                    <div className={`pl-1 flex-1`}>
+                      {value.map(([l, s], i) => {
+                        return (
+                          <div key={i}>
+                            <span className={`font-black mr-1`}>
+                              {capitalize(l)}
+                            </span>
+                            <span>{s}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </Fragment>
+        );
+      })}
+    </>
   );
 }
 
