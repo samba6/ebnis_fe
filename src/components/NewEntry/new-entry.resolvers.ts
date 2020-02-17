@@ -118,6 +118,7 @@ function updateUnsynced(experienceId: string) {
     newEntries: true,
   }) as UnsyncedModifiedExperience;
 
+  unsyncedExperience.newEntries = true;
   writeUnsyncedExperience(experienceId, unsyncedExperience);
 }
 
