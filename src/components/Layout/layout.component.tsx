@@ -50,7 +50,7 @@ export function Layout(props: Props) {
 
   const {
     states: { prefetchExperiences },
-    context: {  renderChildren, hasConnection },
+    context: { renderChildren, hasConnection },
     effects: { runOnRenders },
   } = stateMachine;
 
@@ -104,7 +104,7 @@ export function Layout(props: Props) {
   // this will be true if we are server rendering in gatsby build
   if (!(cache && restoreCacheOrPurgeStorage && client)) {
     return (
-      <LayoutProvider value={{ offlineItemsCount: 0 } as LayoutContextValue}>
+      <LayoutProvider value={{} as LayoutContextValue}>
         {children}
       </LayoutProvider>
     );

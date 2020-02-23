@@ -52,7 +52,6 @@ import {
 } from "../graphql/create-entry.mutation";
 import { editEntryUpdate } from "../components/EditEntry/edit-entry.injectables";
 import { AppPersistor } from "../context";
-import { LayoutActionType } from "../components/Layout/layout.utils";
 import {
   getDefinitionControlId,
   getDefinitionFieldSelectorClass,
@@ -1358,7 +1357,7 @@ test("edit online entry, submit offline - only data objects can be updated", asy
    * And we are offline
    */
   mockIsConnected.mockReturnValue(false);
-  const { ui, mockLayoutDispatch } = makeComp({
+  const { ui,  } = makeComp({
     props: {
       entry: offlineEntry as EntryFragment,
       experience: {
@@ -1431,8 +1430,6 @@ test("edit online entry, submit offline - only data objects can be updated", asy
   ]);
   expect(mockUpsertExperienceFn).toHaveBeenCalled();
   expect(mockPersistFunc).toHaveBeenCalled();
-  expect(mockLayoutDispatch).toHaveBeenCalled();
-
   expect(mockScrollIntoView).toHaveBeenCalled();
 });
 
@@ -1461,7 +1458,7 @@ test("edit offline entry, submit offline", async () => {
    */
   mockIsConnected.mockReturnValue(false);
 
-  const { ui, mockLayoutDispatch } = makeComp({
+  const { ui,  } = makeComp({
     props: {
       entry: offlineEntry as EntryFragment,
       experience: {
@@ -1518,7 +1515,6 @@ test("edit offline entry, submit offline", async () => {
   await wait(() => true);
   expect(mockUpsertExperienceFn).toHaveBeenCalled();
   expect(mockPersistFunc).toHaveBeenCalled();
-  expect(mockLayoutDispatch).toHaveBeenCalled();
 });
 
 test("edit offline entry, upload online, one data object updated, one not updated", async () => {
@@ -1561,7 +1557,7 @@ test("edit offline entry, upload online, one data object updated, one not update
    */
   mockIsConnected.mockReturnValue(true);
 
-  const { ui, mockCreateEntryOnline, mockLayoutDispatch } = makeComp({
+  const { ui, mockCreateEntryOnline } = makeComp({
     props: {
       entry: offlineEntry as EntryFragment,
       hasConnection: true,
@@ -1799,13 +1795,6 @@ test("edit offline entry, upload online, one data object updated, one not update
   expect(mockPersistFunc).toHaveBeenCalled();
 
   /**
-   * And offline items count should be refetched
-   */
-  expect(mockLayoutDispatch).toHaveBeenCalledWith({
-    type: LayoutActionType.REFETCH_OFFLINE_ITEMS_COUNT,
-  });
-
-  /**
    * And offline entry data should be removed from cache.
    */
 
@@ -1854,7 +1843,7 @@ test("online entry modified offline, sync online", async () => {
    * And we are online
    */
 
-  const { ui, mockUpdateDataOnline, mockLayoutDispatch } = makeComp({
+  const { ui, mockUpdateDataOnline } = makeComp({
     props: {
       entry,
       hasConnection: true,
@@ -1977,13 +1966,6 @@ test("online entry modified offline, sync online", async () => {
   });
 
   /**
-   * And offline items count should be refetched
-   */
-  expect(mockLayoutDispatch.mock.calls[0][0].type).toBe(
-    LayoutActionType.REFETCH_OFFLINE_ITEMS_COUNT,
-  );
-
-  /**
    * And cache should be flushed from memory
    */
 
@@ -2001,7 +1983,6 @@ function makeComp({ props = {} }: { props?: Partial<ComponentProps> } = {}) {
   const mockUpdateDataOnline = jest.fn();
   const mockCreateEntryOnline = jest.fn();
   const mockCreateOfflineEntry = jest.fn();
-  const mockLayoutDispatch = jest.fn();
   const persistor = {
     persist: mockPersistFunc as any,
   } as AppPersistor;
@@ -2016,7 +1997,6 @@ function makeComp({ props = {} }: { props?: Partial<ComponentProps> } = {}) {
         updateDefinitionsAndDataOnline={mockUpdateDefinitionsAndDataOnline}
         dispatch={mockParentDispatch}
         persistor={persistor}
-        layoutDispatch={mockLayoutDispatch}
         {...props}
       />
     ),
@@ -2027,7 +2007,6 @@ function makeComp({ props = {} }: { props?: Partial<ComponentProps> } = {}) {
     mockEditEntryUpdate: mockEditEntryUpdateFn,
     mockCreateEntryOnline,
     mockPersistFunc,
-    mockLayoutDispatch,
     mockCreateOfflineEntry,
   };
 }

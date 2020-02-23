@@ -1,6 +1,10 @@
 import { RouteComponentProps, NavigateFn } from "@reach/router";
-import { ExperienceConnectionFragment_edges_node } from "../../graphql/apollo-types/ExperienceConnectionFragment";
-import { ApolloError } from "apollo-client";
+import {
+  ExperienceConnectionFragment_edges_node,
+  ExperienceConnectionFragment,
+  ExperienceConnectionFragment_edges,
+} from "../../graphql/apollo-types/ExperienceConnectionFragment";
+import { ApolloError, WatchQueryFetchPolicy } from "apollo-client";
 import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragment";
 import fuzzysort from "fuzzysort";
 import { Reducer, Dispatch } from "react";
@@ -420,7 +424,7 @@ function handleConcludeDeleteExperienceSuccessAction(proxy: DraftState) {
 
 ////////////////////////// END STATE UPDATE SECTION /////////////
 
-export function prepareExperiencesForSearch(experiences: ExperienceFragment[]) {
+function prepareExperiencesForSearch(experiences: ExperienceFragment[]) {
   return experiences.map(({ id, title }) => {
     return {
       id,
@@ -428,6 +432,25 @@ export function prepareExperiencesForSearch(experiences: ExperienceFragment[]) {
       target: fuzzysort.prepare(title) as Fuzzysort.Prepared,
     };
   });
+}
+
+// istanbul ignore next:
+export function getExperiencesNodes(
+  experienceConnection?: ExperienceConnectionFragment | null,
+) {
+  if (!experienceConnection) {
+    return [];
+  }
+
+  return (experienceConnection.edges as ExperienceConnectionFragment_edges[]).map(
+    edge => edge.node as ExperienceConnectionFragment_edges_node,
+  );
+}
+
+export function computeFetchPolicy(
+  hasConnection: boolean,
+): WatchQueryFetchPolicy {
+  return hasConnection ? "cache-first" : "cache-only";
 }
 
 ////////////////////////// STRINGY TYPES SECTION //////////////////////
@@ -601,14 +624,14 @@ interface SetSearchTextPayload {
   text: string;
 }
 
-export interface ComponentProps extends DeleteExperiencesComponentProps {
+export interface Props extends DeleteExperiencesComponentProps {
   navigate: NavigateFn;
   experiences: ExperienceConnectionFragment_edges_node[];
   loading: boolean;
   error?: ApolloError;
-  experiencesPrepared: ExperiencesSearchPrepared;
   cache: InMemoryCache;
   persistor: AppPersistor;
+  hasConnection: boolean;
 }
 
 export type CallerProps = RouteComponentProps<{}>;
@@ -648,7 +671,7 @@ interface EffectDefinition<
   ownArgs: OwnArgs;
   func?: (
     ownArgs: OwnArgs,
-    effectArgs: ComponentProps,
+    effectArgs: Props,
     lastArgs: EffectArgs,
   ) => void | Promise<void | (() => void)> | (() => void);
 }

@@ -3,7 +3,10 @@ import React, { ComponentType } from "react";
 import "@marko/testing-library/cleanup-after-each";
 import { render, act } from "@testing-library/react";
 import { MyExperiences } from "../components/MyExperiences/my-experiences.component";
-import { ComponentProps } from "../components/MyExperiences/my-experiences.utils";
+import {
+  Props,
+  computeFetchPolicy,
+} from "../components/MyExperiences/my-experiences.utils";
 import { renderWithRouter, fillField } from "./test_utils";
 import { ExperienceConnectionFragment_edges_node } from "../graphql/apollo-types/ExperienceConnectionFragment";
 import { cleanUpOnSearchExit } from "../components/MyExperiences/my-experiences.injectables";
@@ -44,341 +47,354 @@ afterEach(() => {
   jest.clearAllTimers();
 });
 
-it("renders loading state and not main", () => {
-  const { ui } = makeComp({
-    props: { loading: true },
+describe("component", () => {
+  it("renders loading state and not main", () => {
+    const { ui } = makeComp({
+      props: { loading: true },
+    });
+
+    render(ui);
+
+    expect(document.getElementById(mockLoadingId)).not.toBeNull();
   });
 
-  render(ui);
+  it("does not render empty experiences", () => {
+    const { ui } = makeComp();
 
-  expect(document.getElementById(mockLoadingId)).not.toBeNull();
+    render(ui);
+    expect(document.getElementById(mockLoadingId)).toBeNull();
+    expect(document.getElementById("experiences-container")).toBeNull();
+    expect(document.getElementById("no-experiences-info")).not.toBeNull();
+  });
+
+  it("renders experiences from server, toggles descriptions, goes to detailed page on title clicked", () => {
+    /**
+     * Given there are experiences in the system
+     */
+
+    const experiences = [
+      {
+        id: "1",
+        description: "d1",
+        title: "t1",
+      },
+      {
+        id: "2",
+        title: "t2",
+        description: null,
+      },
+    ] as ExperienceConnectionFragment_edges_node[];
+
+    const { ui, mockNavigate } = makeComp({
+      props: {
+        experiences,
+      },
+    });
+
+    /**
+     * When we use the component
+     */
+
+    render(ui);
+
+    const experience1Dom = document.getElementById("1") as HTMLElement;
+    const experience2Dom = document.getElementById("2") as HTMLElement;
+
+    /**
+     * Then experience 2 should not have UI to toggle description
+     */
+
+    expect(
+      experience2Dom.getElementsByClassName(hideDescriptionIconSelector)[0],
+    ).toBeUndefined();
+
+    expect(
+      experience2Dom.getElementsByClassName(toggleDescriptionMenuSelector)[0],
+    ).toBeUndefined();
+
+    /**
+     * And experience 2 description should not be visible
+     */
+
+    expect(
+      document.getElementsByClassName(descriptionSelector)[0],
+    ).toBeUndefined();
+
+    /**
+     * And experience 1 description should not be visible
+     */
+
+    expect(
+      experience1Dom.getElementsByClassName(descriptionSelector)[0],
+    ).toBeUndefined();
+
+    /**
+     * When experience 1 show description icon is clicked
+     */
+    const experience1DropdownNode = experience1Dom
+      .getElementsByClassName(experienceMenuSelector)
+      .item(0) as HTMLElement;
+
+    experience1DropdownNode.click();
+
+    act(() => {
+      (experience1DropdownNode.getElementsByClassName(
+        toggleDescriptionMenuSelector,
+      )[0] as HTMLElement).click();
+    });
+
+    /**
+     * Then experience 1 description should be visible
+     */
+
+    expect(
+      experience1Dom.getElementsByClassName(descriptionSelector)[0],
+    ).toBeDefined();
+
+    /**
+     * When experience 1 hide description icon is clicked
+     */
+    act(() => {
+      (experience1Dom.getElementsByClassName(
+        hideDescriptionIconSelector,
+      )[0] as HTMLElement).click();
+    });
+
+    /**
+     * Then experience 1 description should not be visible
+     */
+
+    expect(
+      experience1Dom.getElementsByClassName(descriptionSelector)[0],
+    ).toBeUndefined();
+
+    /**
+     * And experience 1 show description icon should be visible
+     */
+
+    expect(
+      experience1Dom.getElementsByClassName(
+        toggleDescriptionMenuSelector,
+      )[0] as HTMLElement,
+    ).toBeDefined();
+
+    /**
+     * And experience 1 hide description icon should not be visible
+     */
+
+    expect(
+      experience1Dom.getElementsByClassName(
+        hideDescriptionIconSelector,
+      )[0] as HTMLElement,
+    ).toBeUndefined();
+
+    /**
+     * When experience 2 title is clicked
+     */
+    expect(mockNavigate).not.toHaveBeenCalled();
+
+    act(() => {
+      (experience2Dom.getElementsByClassName(
+        titleSelector,
+      )[0] as HTMLElement).click();
+    });
+
+    /**
+     * Then window should navigate to experience 2 detailed page
+     */
+    expect(mockNavigate).toHaveBeenCalled();
+  });
+
+  it("renders error ui if we are unable to get experiences", () => {
+    const { ui } = makeComp({
+      props: { error: {} as any },
+    });
+
+    /**
+     * When we use the component
+     */
+    render(ui);
+
+    /**
+     * Then we should load entries for the experiences in the background
+     */
+
+    expect(document.getElementById("no-experiences-error")).not.toBeNull();
+  });
+
+  it("goes to detailed experience page on search", () => {
+    /**
+     * Given there are experiences in the system
+     */
+
+    const experiences = [
+      {
+        id: "id1",
+        description: "d1",
+        title: "t1",
+      },
+      {
+        id: "id2",
+        title: "t2",
+        description: null,
+      },
+    ] as ExperienceConnectionFragment_edges_node[];
+
+    const { ui, mockNavigate } = makeComp({
+      props: {
+        experiences,
+      },
+    });
+
+    /**
+     * When component is rendered
+     */
+    const { unmount } = render(ui);
+
+    /**
+     * And main component window is clicked, then nothing should happen
+     */
+
+    const domMain = document.getElementById(domPrefix) as HTMLElement;
+    // domMain.click();
+
+    /**
+     * Then we should not see title 1 search result
+     */
+
+    expect(document.getElementById("search-result-id1")).toBeNull();
+
+    /**
+     * When we search for title 1
+     */
+
+    const searcInputDom = document.getElementById(
+      searchTextInputId,
+    ) as HTMLInputElement;
+
+    fillField(searcInputDom, "t1");
+
+    /**
+     * When search is completed
+     */
+
+    act(() => {
+      jest.runAllTimers();
+    });
+
+    /**
+     * Then search result for experience 1 should be visible
+     */
+
+    expect(document.getElementById("search-result-id1")).not.toBeNull();
+
+    /**
+     * When search input is clicked
+     */
+    searcInputDom.click();
+
+    /**
+     * Then search results should remain open
+     */
+    expect(document.getElementById("search-result-id1")).not.toBeNull();
+
+    /**
+     * When user clicks outside results menu
+     */
+    act(() => {
+      domMain.click();
+    });
+
+    /**
+     * Then search result for experience 1 should no longer be visible
+     */
+
+    expect(document.getElementById("search-result-id1")).toBeNull();
+
+    /**
+     * And no UI indicating no search results should be visible
+     */
+    expect(document.getElementById(noSearchMatchId)).toBeNull();
+
+    /**
+     * When search is run with text that does not match any of the experiences
+     * titles
+     */
+    fillField(searcInputDom, "t1111");
+
+    /**
+     * Then UI indicating no search results should be visible
+     */
+    act(() => {
+      jest.runAllTimers();
+    });
+    expect(document.getElementById(noSearchMatchId)).not.toBeNull();
+
+    /**
+     * When user clicks outside results menu
+     */
+    act(() => {
+      domMain.click();
+    });
+
+    /**
+     * Then no UI indicating no search results should be visible
+     */
+    expect(document.getElementById(noSearchMatchId)).toBeNull();
+
+    /**
+     * When search is conducted again and experience 1 search result is clicked
+     */
+    fillField(searcInputDom, "t1");
+
+    act(() => {
+      jest.runAllTimers();
+    });
+
+    (document.getElementById("search-result-id1") as HTMLElement).click();
+
+    /**
+     * Then we should be redirected to detailed page of experience 1
+     */
+
+    expect((mockNavigate as jest.Mock).mock.calls[0][0]).toContain("id1");
+
+    /**
+     * And search clean function should not be called
+     */
+
+    expect(mockCleanUpOnSearchExit).not.toHaveBeenCalled();
+
+    /**
+     * When the component is unmounted
+     */
+
+    unmount();
+
+    /**
+     * Then search clean function should be called
+     */
+
+    expect(mockCleanUpOnSearchExit).toHaveBeenCalled();
+  });
 });
 
-it("does not render empty experiences", () => {
-  const { ui } = makeComp();
-
-  render(ui);
-  expect(document.getElementById(mockLoadingId)).toBeNull();
-  expect(document.getElementById("experiences-container")).toBeNull();
-  expect(document.getElementById("no-experiences-info")).not.toBeNull();
-});
-
-it("renders experiences from server, toggles descriptions, goes to detailed page on title clicked", () => {
-  /**
-   * Given there are experiences in the system
-   */
-
-  const experiences = [
-    {
-      id: "1",
-      description: "d1",
-      title: "t1",
-    },
-    {
-      id: "2",
-      title: "t2",
-      description: null,
-    },
-  ] as ExperienceConnectionFragment_edges_node[];
-
-  const { ui, mockNavigate } = makeComp({
-    props: {
-      experiences,
-    },
+describe("utilities", () => {
+  test("computeFetchPolicy", () => {
+    expect(computeFetchPolicy(true)).toBe("cache-first");
+    expect(computeFetchPolicy(false)).toBe("cache-only");
   });
-
-  /**
-   * When we use the component
-   */
-
-  render(ui);
-
-  const experience1Dom = document.getElementById("1") as HTMLElement;
-  const experience2Dom = document.getElementById("2") as HTMLElement;
-
-  /**
-   * Then experience 2 should not have UI to toggle description
-   */
-
-  expect(
-    experience2Dom.getElementsByClassName(hideDescriptionIconSelector)[0],
-  ).toBeUndefined();
-
-  expect(
-    experience2Dom.getElementsByClassName(toggleDescriptionMenuSelector)[0],
-  ).toBeUndefined();
-
-  /**
-   * And experience 2 description should not be visible
-   */
-
-  expect(
-    document.getElementsByClassName(descriptionSelector)[0],
-  ).toBeUndefined();
-
-  /**
-   * And experience 1 description should not be visible
-   */
-
-  expect(
-    experience1Dom.getElementsByClassName(descriptionSelector)[0],
-  ).toBeUndefined();
-
-  /**
-   * When experience 1 show description icon is clicked
-   */
-  const experience1DropdownNode = experience1Dom
-    .getElementsByClassName(experienceMenuSelector)
-    .item(0) as HTMLElement;
-
-  experience1DropdownNode.click();
-
-  act(() => {
-    (experience1DropdownNode.getElementsByClassName(
-      toggleDescriptionMenuSelector,
-    )[0] as HTMLElement).click();
-  });
-
-  /**
-   * Then experience 1 description should be visible
-   */
-
-  expect(
-    experience1Dom.getElementsByClassName(descriptionSelector)[0],
-  ).toBeDefined();
-
-  /**
-   * When experience 1 hide description icon is clicked
-   */
-  act(() => {
-    (experience1Dom.getElementsByClassName(
-      hideDescriptionIconSelector,
-    )[0] as HTMLElement).click();
-  });
-
-  /**
-   * Then experience 1 description should not be visible
-   */
-
-  expect(
-    experience1Dom.getElementsByClassName(descriptionSelector)[0],
-  ).toBeUndefined();
-
-  /**
-   * And experience 1 show description icon should be visible
-   */
-
-  expect(
-    experience1Dom.getElementsByClassName(
-      toggleDescriptionMenuSelector,
-    )[0] as HTMLElement,
-  ).toBeDefined();
-
-  /**
-   * And experience 1 hide description icon should not be visible
-   */
-
-  expect(
-    experience1Dom.getElementsByClassName(
-      hideDescriptionIconSelector,
-    )[0] as HTMLElement,
-  ).toBeUndefined();
-
-  /**
-   * When experience 2 title is clicked
-   */
-  expect(mockNavigate).not.toHaveBeenCalled();
-
-  act(() => {
-    (experience2Dom.getElementsByClassName(
-      titleSelector,
-    )[0] as HTMLElement).click();
-  });
-
-  /**
-   * Then window should navigate to experience 2 detailed page
-   */
-  expect(mockNavigate).toHaveBeenCalled();
-});
-
-it("renders error ui if we are unable to get experiences", () => {
-  const { ui } = makeComp({
-    props: { error: {} as any },
-  });
-
-  /**
-   * When we use the component
-   */
-  render(ui);
-
-  /**
-   * Then we should load entries for the experiences in the background
-   */
-
-  expect(document.getElementById("no-experiences-error")).not.toBeNull();
-});
-
-it("goes to detailed experience page on search", () => {
-  /**
-   * Given there are experiences in the system
-   */
-
-  const experiences = [
-    {
-      id: "id1",
-      description: "d1",
-      title: "t1",
-    },
-    {
-      id: "id2",
-      title: "t2",
-      description: null,
-    },
-  ] as ExperienceConnectionFragment_edges_node[];
-
-  const { ui, mockNavigate } = makeComp({
-    props: {
-      experiences,
-    },
-  });
-
-  /**
-   * When component is rendered
-   */
-  const { unmount } = render(ui);
-
-  /**
-   * And main component window is clicked, then nothing should happen
-   */
-
-  const domMain = document.getElementById(domPrefix) as HTMLElement;
-  // domMain.click();
-
-  /**
-   * Then we should not see title 1 search result
-   */
-
-  expect(document.getElementById("search-result-id1")).toBeNull();
-
-  /**
-   * When we search for title 1
-   */
-
-  const searcInputDom = document.getElementById(
-    searchTextInputId,
-  ) as HTMLInputElement;
-
-  fillField(searcInputDom, "t1");
-
-  /**
-   * When search is completed
-   */
-
-  act(() => {
-    jest.runAllTimers();
-  });
-
-  /**
-   * Then search result for experience 1 should be visible
-   */
-
-  expect(document.getElementById("search-result-id1")).not.toBeNull();
-
-  /**
-   * When search input is clicked
-   */
-  searcInputDom.click();
-
-  /**
-   * Then search results should remain open
-   */
-  expect(document.getElementById("search-result-id1")).not.toBeNull();
-
-  /**
-   * When user clicks outside results menu
-   */
-  act(() => {
-    domMain.click();
-  });
-
-  /**
-   * Then search result for experience 1 should no longer be visible
-   */
-
-  expect(document.getElementById("search-result-id1")).toBeNull();
-
-  /**
-   * And no UI indicating no search results should be visible
-   */
-  expect(document.getElementById(noSearchMatchId)).toBeNull();
-
-  /**
-   * When search is run with text that does not match any of the experiences
-   * titles
-   */
-  fillField(searcInputDom, "t1111");
-
-  /**
-   * Then UI indicating no search results should be visible
-   */
-  act(() => {
-    jest.runAllTimers();
-  });
-  expect(document.getElementById(noSearchMatchId)).not.toBeNull();
-
-  /**
-   * When user clicks outside results menu
-   */
-  act(() => {
-    domMain.click();
-  });
-
-  /**
-   * Then no UI indicating no search results should be visible
-   */
-  expect(document.getElementById(noSearchMatchId)).toBeNull();
-
-  /**
-   * When search is conducted again and experience 1 search result is clicked
-   */
-  fillField(searcInputDom, "t1");
-
-  act(() => {
-    jest.runAllTimers();
-  });
-
-  (document.getElementById("search-result-id1") as HTMLElement).click();
-
-  /**
-   * Then we should be redirected to detailed page of experience 1
-   */
-
-  expect((mockNavigate as jest.Mock).mock.calls[0][0]).toContain("id1");
-
-  /**
-   * And search clean function should not be called
-   */
-
-  expect(mockCleanUpOnSearchExit).not.toHaveBeenCalled();
-
-  /**
-   * When the component is unmounted
-   */
-
-  unmount();
-
-  /**
-   * Then search clean function should be called
-   */
-
-  expect(mockCleanUpOnSearchExit).toHaveBeenCalled();
 });
 
 ////////////////////////// helper funcs ////////////////////////////
 
-const MyExperiencesP = MyExperiences as ComponentType<Partial<ComponentProps>>;
+const MyExperiencesP = MyExperiences as ComponentType<Partial<Props>>;
 
-function makeComp({ props = {} }: { props?: Partial<ComponentProps> } = {}) {
+function makeComp({
+  props = {},
+}: {
+  props?: Partial<Props>;
+} = {}) {
   const { Ui, ...rest } = renderWithRouter(MyExperiencesP);
   const experiences = props.experiences || [];
 

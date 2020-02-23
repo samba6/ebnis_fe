@@ -19,7 +19,6 @@ export enum LayoutActionType {
   CACHE_PERSISTED = "@layout/render-children",
   CONNECTION_CHANGED = "@layout/connection-changed",
   DONE_FETCHING_EXPERIENCES = "@layout/experiences-already-fetched",
-  REFETCH_OFFLINE_ITEMS_COUNT = "@layout/refetch-offline-items-count",
 }
 
 export const reducer: Reducer<StateMachine, LayoutAction> = (state, action) =>
@@ -192,9 +191,9 @@ function getRenderEffects(globalState: StateMachine) {
 
 ///////////////////// END STATE UPDATE FUNCTIONS SECTION //////////////
 
-export const LayoutContext = createContext<LayoutContextValue>({
-  offlineItemsCount: 0,
-} as LayoutContextValue);
+export const LayoutContext = createContext<LayoutContextValue>(
+  {} as LayoutContextValue,
+);
 
 export const LayoutUnchangingContext = createContext<
   ILayoutUnchangingContextValue
@@ -219,9 +218,6 @@ export type LayoutAction =
     } & ConnectionChangedPayload)
   | {
       type: LayoutActionType.DONE_FETCHING_EXPERIENCES;
-    }
-  | {
-      type: LayoutActionType.REFETCH_OFFLINE_ITEMS_COUNT;
     };
 
 interface ConnectionChangedPayload {
@@ -272,7 +268,6 @@ export type LayoutDispatchType = Dispatch<LayoutAction>;
 export interface Props extends PropsWithChildren<{}>, RouteComponentProps {}
 
 export interface LayoutContextValue extends WindowLocation {
-  offlineItemsCount: number;
   hasConnection: boolean;
   navigate: NavigateFn;
   offlineExperienceNewlySynced?: boolean;

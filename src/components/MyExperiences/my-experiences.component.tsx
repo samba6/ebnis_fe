@@ -9,12 +9,11 @@ import React, {
 } from "react";
 import "./my-experiences.styles.scss";
 import {
-  ComponentProps,
+  Props,
   ExperienceProps,
   SearchComponentProps,
   CallerProps,
   DescriptionMap,
-  prepareExperiencesForSearch,
   reducer,
   initState,
   ActionType,
@@ -22,6 +21,8 @@ import {
   StateValue,
   DeleteExperienceActiveState,
   effectFunctions,
+  getExperiencesNodes,
+  computeFetchPolicy,
 } from "./my-experiences.utils";
 import { EXPERIENCE_DEFINITION_URL } from "../../routes";
 import { makeExperienceRoute } from "../../constants/experience-route";
@@ -29,21 +30,10 @@ import { Loading } from "../Loading/loading";
 import { setDocumentTitle, makeSiteTitle, isOfflineId } from "../../constants";
 import { MY_EXPERIENCES_TITLE } from "../../constants/my-experiences-title";
 import { Link } from "../Link";
-import {
-  ExperienceConnectionFragment_edges,
-  ExperienceConnectionFragment_edges_node,
-} from "../../graphql/apollo-types/ExperienceConnectionFragment";
+import { ExperienceConnectionFragment } from "../../graphql/apollo-types/ExperienceConnectionFragment";
 import { NavigateFn } from "@reach/router";
 import lodashDebounce from "lodash/debounce";
-import {
-  GetExperienceConnectionMini,
-  GetExperienceConnectionMiniVariables,
-} from "../../graphql/apollo-types/GetExperienceConnectionMini";
-import {
-  GET_EXPERIENCES_MINI_QUERY,
-  getExperienceConnectionMiniVariables,
-} from "../../graphql/get-experience-connection-mini.query";
-import { useQuery } from "@apollo/react-hooks";
+import { useGetExperienceMiniQueryFn } from "../../graphql/get-experience-connection-mini.query";
 import {
   searchDebounceTimeoutMs,
   cleanUpOnSearchExit,
@@ -78,7 +68,7 @@ enum ClickContext {
   concludeDeleteExperienceSuccess = "@my-experiences/experience-deleted-success",
 }
 
-export function MyExperiences(props: ComponentProps) {
+export function MyExperiences(props: Props) {
   const { experiences, navigate, error, loading } = props;
   const experiencesLen = experiences.length;
   const noExperiences = experiencesLen === 0;
@@ -621,28 +611,15 @@ export default (props: CallerProps) => {
   const { navigate } = props;
   const { hasConnection } = useContext(LayoutContext);
   const { cache, persistor } = useContext(EbnisAppContext);
-
-  const { data, loading, error } = useQuery<
-    GetExperienceConnectionMini,
-    GetExperienceConnectionMiniVariables
-  >(GET_EXPERIENCES_MINI_QUERY, {
-    variables: getExperienceConnectionMiniVariables,
-    fetchPolicy: hasConnection ? "cache-first" : "cache-only",
-  });
-
+  const [deleteExperiences] = useDeleteExperiencesMutation();
+  const { data, loading, error } = useGetExperienceMiniQueryFn(
+    computeFetchPolicy(hasConnection),
+  );
   const getExperiences = data && data.getExperiences;
 
   const experiences = useMemo(() => {
-    if (!getExperiences) {
-      return [];
-    }
-
-    return (getExperiences.edges as ExperienceConnectionFragment_edges[]).map(
-      edge => edge.node as ExperienceConnectionFragment_edges_node,
-    );
+    return getExperiencesNodes(getExperiences as ExperienceConnectionFragment);
   }, [getExperiences]);
-
-  const [deleteExperiences] = useDeleteExperiencesMutation();
 
   return (
     <MyExperiences
@@ -651,9 +628,9 @@ export default (props: CallerProps) => {
       error={error}
       loading={loading}
       navigate={navigate as NavigateFn}
-      experiencesPrepared={prepareExperiencesForSearch(experiences)}
       cache={cache}
       persistor={persistor}
+      hasConnection={hasConnection}
     />
   );
 };

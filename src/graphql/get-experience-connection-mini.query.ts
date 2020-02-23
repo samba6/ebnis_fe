@@ -1,6 +1,6 @@
 import gql from "graphql-tag";
 import { QueryResult } from "@apollo/react-common";
-
+import { useQuery } from "@apollo/react-hooks";
 import {
   GetExperienceConnectionMini,
   GetExperienceConnectionMiniVariables,
@@ -9,6 +9,7 @@ import {
   EXPERIENCE_MINI_FRAGMENT,
   EXPERIENCE_CONNECTION_PRE_FETCH_FRAGMENT,
 } from "./experience.fragment";
+import { WatchQueryFetchPolicy } from "apollo-client";
 
 // this query will be kept around after we ran it and all experiences list will
 // refer to it.
@@ -58,3 +59,15 @@ export const getExperienceConnectionMiniVariables: GetExperienceConnectionMiniVa
     },
   },
 };
+
+export function useGetExperienceMiniQueryFn(
+  fetchPolicy: WatchQueryFetchPolicy,
+) {
+  return useQuery<
+    GetExperienceConnectionMini,
+    GetExperienceConnectionMiniVariables
+  >(GET_EXPERIENCES_MINI_QUERY, {
+    variables: getExperienceConnectionMiniVariables,
+    fetchPolicy,
+  });
+}

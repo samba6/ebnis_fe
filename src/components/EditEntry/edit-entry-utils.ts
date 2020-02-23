@@ -50,11 +50,7 @@ import {
 } from "../../graphql/apollo-types/CreateOnlineEntryMutation";
 import { AppPersistor } from "../../context";
 import { InMemoryCache } from "apollo-cache-inmemory";
-import {
-  LayoutDispatchType,
-  LayoutActionType,
-  LayoutContextValue,
-} from "../Layout/layout.utils";
+import { LayoutDispatchType, LayoutContextValue } from "../Layout/layout.utils";
 import { CreateOfflineEntryMutationComponentProps } from "../NewEntry/new-entry.resolvers";
 import {
   upsertExperienceWithEntry,
@@ -313,7 +309,7 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
 
 const createEntryEffect: CreateEntryEffect["func"] = async (
   { input },
-  { layoutDispatch, createOfflineEntry, createOnlineEntry, persistor, cache },
+  { createOfflineEntry, createOnlineEntry, persistor, cache },
   { dispatch },
 ) => {
   try {
@@ -338,10 +334,6 @@ const createEntryEffect: CreateEntryEffect["func"] = async (
           );
 
           persistor.persist();
-
-          layoutDispatch({
-            type: LayoutActionType.REFETCH_OFFLINE_ITEMS_COUNT,
-          });
         },
       },
       { createOfflineEntry, createOnlineEntry },
@@ -387,7 +379,7 @@ type CreateEntryEffect = EffectDefinition<
 
 const updateEntryInCacheEffect: UpdateEntryInCacheEffect["func"] = async (
   { entry, upsertMode },
-  { layoutDispatch, client, persistor },
+  { client, persistor },
 ) => {
   const { experienceId } = entry;
 
@@ -396,10 +388,6 @@ const updateEntryInCacheEffect: UpdateEntryInCacheEffect["func"] = async (
   })) as ExperienceFragment;
 
   await persistor.persist();
-
-  layoutDispatch({
-    type: LayoutActionType.REFETCH_OFFLINE_ITEMS_COUNT,
-  });
 };
 
 type UpdateEntryInCacheEffect = EffectDefinition<
