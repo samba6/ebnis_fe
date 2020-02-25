@@ -660,7 +660,7 @@ test("sync online experience", async () => {
   expect(
     document.getElementsByClassName(
       onOnlineExperienceSyncedNotificationSuccessDom,
-    )
+    ),
   ).toHaveLength(2);
 
   /**
@@ -989,7 +989,7 @@ test("sync offline experience, navigate to new entry", async () => {
 
 describe("reducer", () => {
   test("trivial", () => {
-    const prevState = initState();
+    const prevState = initState({ experience: {} } as Props);
 
     expect(
       reducer(prevState, { type: ActionType.ABORTED }).states.editExperience
@@ -1034,7 +1034,7 @@ describe("reducer", () => {
     const mockDispatch = jest.fn();
     const effectArgs = { dispatch: mockDispatch as any } as EffectArgs;
 
-    const prevState = initState();
+    const prevState = initState({ experience: {} } as Props);
 
     const nextState = reducer(prevState, {
       type: ActionType.SYNC_EDITED_OFFLINE_EXPERIENCE,

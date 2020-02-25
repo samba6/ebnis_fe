@@ -20,7 +20,9 @@ import {
   domPrefix,
   noSearchMatchId,
   experienceMenuSelector,
+  deleteExperienceSelector,
 } from "../components/MyExperiences/my-experiences.dom";
+import { getDeletedExperienceTitle } from "../apollo-cache/should-delete-experience";
 
 jest.mock("../components/SidebarHeader/sidebar-header.component", () => ({
   SidebarHeader: jest.fn(() => null),
@@ -35,16 +37,19 @@ jest.mock("../components/MyExperiences/my-experiences.injectables", () => ({
   cleanUpOnSearchExit: jest.fn(),
   searchDebounceTimeoutMs: 0,
 }));
-
 const mockCleanUpOnSearchExit = cleanUpOnSearchExit as jest.Mock;
+
+jest.mock("../apollo-cache/should-delete-experience");
+const mockGetDeletedExperienceTitle = getDeletedExperienceTitle as jest.Mock;
 
 beforeEach(() => {
   jest.useFakeTimers();
-  mockCleanUpOnSearchExit.mockClear();
 });
 
 afterEach(() => {
   jest.clearAllTimers();
+  mockCleanUpOnSearchExit.mockReset();
+  mockGetDeletedExperienceTitle.mockReset();
 });
 
 describe("component", () => {
@@ -67,7 +72,7 @@ describe("component", () => {
     expect(document.getElementById("no-experiences-info")).not.toBeNull();
   });
 
-  it("renders experiences from server, toggles descriptions, goes to detailed page on title clicked", () => {
+  it("renders experiences from server, toggles descriptions, goes to detailed page on title clicked, deletes online experience", async () => {
     /**
      * Given there are experiences in the system
      */
@@ -202,7 +207,20 @@ describe("component", () => {
     /**
      * Then window should navigate to experience 2 detailed page
      */
-    expect(mockNavigate).toHaveBeenCalled();
+    expect((mockNavigate as jest.Mock).mock.calls).toHaveLength(1);
+
+    /**
+     * When delete experience is clicked
+     */
+
+    (experience1DropdownNode.getElementsByClassName(
+      deleteExperienceSelector,
+    )[0] as HTMLElement).click();
+
+    /**
+     * Then window should navigate to experience 2 detailed page
+     */
+    expect((mockNavigate as jest.Mock).mock.calls).toHaveLength(2);
   });
 
   it("renders error ui if we are unable to get experiences", () => {
@@ -222,7 +240,7 @@ describe("component", () => {
     expect(document.getElementById("no-experiences-error")).not.toBeNull();
   });
 
-  it("goes to detailed experience page on search", () => {
+  it("goes to detailed experience page on search, shows recently deleted experience notification", () => {
     /**
      * Given there are experiences in the system
      */
@@ -240,6 +258,11 @@ describe("component", () => {
       },
     ] as ExperienceConnectionFragment_edges_node[];
 
+    /**
+     * And there is recently deleted experience in the system
+     */
+    mockGetDeletedExperienceTitle.mockReturnValue("t");
+
     const { ui, mockNavigate } = makeComp({
       props: {
         experiences,
@@ -252,7 +275,26 @@ describe("component", () => {
     const { unmount } = render(ui);
 
     /**
-     * And main component window is clicked, then nothing should happen
+     * Then notification should be visible
+     */
+    const notificationDom = document.getElementById(
+      "close-notification",
+    ) as HTMLElement;
+
+    /**
+     * When notification close is clicked
+     */
+    act(() => {
+      notificationDom.click();
+    });
+
+    /**
+     * Then notification should no longer be visible
+     */
+    expect(document.getElementById("close-notification")).toBeNull();
+
+    /**
+     * When main component window is clicked, then nothing should happen
      */
 
     const domMain = document.getElementById(domPrefix) as HTMLElement;

@@ -26,9 +26,11 @@ import {
 } from "../state/resolvers/delete-references-from-cache";
 import { InMemoryCache } from "apollo-cache-inmemory";
 import { removeUnsyncedExperiences } from "./unsynced.resolvers";
+import { AppPersistor } from "../context";
 
-export function deleteExperiencesFromCache(
+export async function deleteExperiencesFromCache(
   dataProxy: DataProxy,
+  persistor: AppPersistor,
   ids: string[],
 ) {
   const experienceConnection = getExperiencesMiniQuery(dataProxy);
@@ -44,6 +46,8 @@ export function deleteExperiencesFromCache(
 
   const toDeletes: string[] = [];
   let was_deleted = false;
+  let len = 0;
+  let totalRemoved = 0;
 
   const updatedExperienceConnection = immer(experienceConnection, proxy => {
     const edges = proxy.edges as ExperienceConnectionFragment_edges[];
@@ -54,7 +58,9 @@ export function deleteExperiencesFromCache(
         .node as ExperienceConnectionFragment_edges_node;
 
       if (idMap[id]) {
+        ++totalRemoved;
         toDeletes.push(id);
+
         deleteExperienceOffsprings(dataProxy, id, toDeletes);
         was_deleted = true;
       } else {
@@ -63,13 +69,12 @@ export function deleteExperiencesFromCache(
     });
 
     proxy.edges = newEdges;
+    len = newEdges.length;
   });
 
   if (!was_deleted) {
     return;
   }
-
-  wipeReferencesFromCache(dataProxy as InMemoryCache, toDeletes);
 
   dataProxy.writeQuery<
     GetExperienceConnectionMini,
@@ -78,17 +83,27 @@ export function deleteExperiencesFromCache(
     ...readOptions,
     data: { getExperiences: updatedExperienceConnection },
   });
+  await persistor.persist();
 
-  removeUnsyncedExperiences(ids);
-
-  if (
-    !(updatedExperienceConnection.edges as ExperienceConnectionFragment_edges[])
-      .length
-  ) {
+  if (len === 0) {
     removeQueriesAndMutationsFromCache(dataProxy as InMemoryCache, [
       "getExperiences",
     ]);
+  } else {
+    const end = len + totalRemoved;
+
+    for (; len < end; len++) {
+      const c = `ROOT_QUERY\\.getExperiences\\(\\{"input"\\:\\{"pagination"\\:\\{"first"\\:20000\\}\\}\\}\\)\\.edges\\.${len}`;
+
+      toDeletes.push(c);
+    }
   }
+
+  wipeReferencesFromCache(dataProxy as InMemoryCache, toDeletes);
+
+  removeUnsyncedExperiences(ids);
+
+  await persistor.persist();
 }
 
 function deleteExperienceOffsprings(

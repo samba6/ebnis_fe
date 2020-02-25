@@ -45,6 +45,8 @@ import {
   experienceMenuTriggerDomId,
   onOnlineExperienceSyncedNotificationErrorDom,
   onOnlineExperienceSyncedNotificationSuccessDom,
+  okDeleteExperienceDomId,
+  cancelDeleteExperienceDomId,
 } from "./experience.dom";
 import { Loading } from "../Loading/loading";
 import { useCreateEntriesMutation } from "../../graphql/create-entries.mutation";
@@ -52,15 +54,11 @@ import { EbnisAppContext } from "../../context";
 import { execOnSyncOfflineExperienceComponentSuccess } from "../../apollo-cache/on-sync-offline-experience-component-success";
 import { EbnisContextProps } from "../../context";
 import { capitalize } from "../../general-utils";
+import { useDeleteExperiencesMutation } from "../../graphql/delete-experiences.mutation";
+import { Modal } from "../Modal/modal-component";
 
 export function ExperienceComponent(props: Props) {
   const {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    createExperiences,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    createEntries,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    updateExperiencesOnline,
     pathname,
     cache,
     persistor,
@@ -74,14 +72,15 @@ export function ExperienceComponent(props: Props) {
     menuOptions = {} as IMenuOptions,
     children,
     entriesJSX,
-    ...otherProps
   } = props;
 
   const [stateMachine, dispatch] = useReducer(reducer, props, initState);
+
   const {
     states: {
       editExperience: editExperienceState,
       submission: submissionState,
+      deleteExperience: deleteExperienceState,
     },
     effects: { general: generalEffects },
     context: { offlineExperienceNewlySynced },
@@ -195,6 +194,68 @@ export function ExperienceComponent(props: Props) {
     <>
       {submissionState.value === StateValue.submitting && <Loading />}
 
+      {deleteExperienceState.value === StateValue.active && (
+        <Modal>
+          <div>
+            Ok to delete:
+            <strong className="block">{experience.title}</strong>
+          </div>
+
+          <div className="flex justify-end">
+            <button
+              id={okDeleteExperienceDomId}
+              className={`
+                      mr-2
+                      px-4
+                      py-2
+                      text-center
+                      text-white
+                      bg-red-400
+                      active:bg-red-500
+                      hover:bg-red-600
+                      border
+                      rounded-sm
+                      cursor-pointer
+                      focus:outline-none
+                    `}
+              onClick={() => {
+                dispatch({
+                  type: ActionType.OK_DELETE_EXPERIENCE,
+                });
+              }}
+            >
+              Ok
+            </button>
+
+            <button
+              id={cancelDeleteExperienceDomId}
+              onClick={() => {
+                dispatch({
+                  type: ActionType.CANCEL_DELETE_EXPERIENCE,
+                });
+              }}
+              className={`
+                      ml-3
+                      px-4
+                      py-2
+                      text-center
+                      text-white
+                      bg-blue-500
+                      active:bg-blue-600
+                      hover:bg-blue-700
+                      border
+                      border-transparent
+                      rounded-sm
+                      cursor-pointer
+                      focus:outline-none
+                    `}
+            >
+              Cancel
+            </button>
+          </div>
+        </Modal>
+      )}
+
       <div
         className={makeClassNames({
           "bulma components-experience border-solid border-2 rounded": true,
@@ -204,7 +265,6 @@ export function ExperienceComponent(props: Props) {
           "border-part-offline": isPartOffline,
         })}
         id={id}
-        {...otherProps}
       >
         <div className="m-2">
           {submissionState.value === StateValue.onOnlineExperienceSynced && (
@@ -359,6 +419,20 @@ function OptionsMenuComponent({
           >
             Edit
           </div>
+
+          <hr className="dropdown-divider" />
+
+          <div
+            className="font-bold dropdown-item js-edit-menu"
+            id={`${experienceIdPrefix}-delete-menu`}
+            onClick={() => {
+              dispatch({
+                type: ActionType.PROMPT_DELETE_EXPERIENCE,
+              });
+            }}
+          >
+            Delete
+          </div>
         </div>
       </div>
     </div>
@@ -434,15 +508,21 @@ export function getTitle(arg?: { title: string }) {
 
 // istanbul ignore next:
 export default (props: CallerProps) => {
-  const { hasConnection, navigate, pathname } = useContext(LayoutContext);
+  const {
+    hasConnection,
+    navigate,
+    pathname,
+  } = useContext(LayoutContext);
   const [updateExperiencesOnline] = useUpdateExperiencesOnlineMutation();
   const [createEntries] = useCreateEntriesMutation();
   const [createExperiences] = useCreateExperiencesMutation();
   const { client, persistor, cache } = useContext(EbnisAppContext);
+  const [deleteExperiences] = useDeleteExperiencesMutation();
 
   return (
     <ExperienceComponent
       {...props}
+      deleteExperiences={deleteExperiences}
       hasConnection={hasConnection}
       updateExperiencesOnline={updateExperiencesOnline}
       navigate={navigate}

@@ -67,6 +67,41 @@
     padding: 1rem;
     font-weight: bold;
   }
+
+  .notification {
+    padding: 2.5rem 1rem 0.5rem 1rem;
+    position: relative;
+    color: white;
+    background: blue;
+    width: 100%;
+    max-width: 300px;
+    margin: 10px auto;
+    border-radius: 4px;
+
+    .text {
+      margin-left: 5px;
+      word-break: break-all;
+    }
+
+    .close--container {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 40px;
+      height: 40px;
+    }
+
+    .close {
+      pointer-events: none;
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 20px;
+      height: 20px;
+      background: white;
+      border-radius: 50%;
+    }
+  }
 }
 
 .modal-inner {

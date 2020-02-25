@@ -43,6 +43,14 @@ import { isOfflineId } from "../../constants";
 import { CreateEntryErrorFragment_dataObjects } from "../../graphql/apollo-types/CreateEntryErrorFragment";
 import { CreateEntryErrorssFragment_errors_dataObjects } from "../../graphql/apollo-types/CreateEntryErrorssFragment";
 import { UpdateExperienceSomeSuccessFragment } from "../../graphql/apollo-types/UpdateExperienceSomeSuccessFragment";
+import { deleteExperiencesFromCache } from "../../apollo-cache/delete-experiences-from-cache";
+import { removeQueriesAndMutationsFromCache } from "../../state/resolvers/delete-references-from-cache";
+import { DeleteExperiencesComponentProps } from "../../graphql/delete-experiences.mutation";
+import { EXPERIENCES_URL } from "../../routes";
+import {
+  confirmShouldDeleteExperience,
+  writeDeletedExperienceTitle,
+} from "../../apollo-cache/should-delete-experience";
 
 export const StateValue = {
   // success: "success" as SuccessVal,
@@ -100,6 +108,9 @@ export enum ActionType {
   SET_OFFLINE_EXPERIENCE_NEWLY_SYNCED = "@experience-component/offline-experience-newly-synced",
 
   CLOSE_ON_ONLINE_EXPERIENCE_SYNCED_NOTIFICATION = "@eperience-component/close-on-online-experience-synced-notification",
+  CANCEL_DELETE_EXPERIENCE = "@eperience-component/cancel-delete-experience",
+  OK_DELETE_EXPERIENCE = "@eperience-component/ok-delete-experience",
+  PROMPT_DELETE_EXPERIENCE = "@eperience-component/prompt-delete-experience",
 }
 
 export const reducer: Reducer<StateMachine, Action> = (state, action) =>
@@ -171,6 +182,18 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
               payload as CloseOnOnlineExperienceSyncedNotificationPayload,
             );
             break;
+
+          case ActionType.CANCEL_DELETE_EXPERIENCE:
+            proxy.states.deleteExperience.value = StateValue.inactive;
+            break;
+
+          case ActionType.PROMPT_DELETE_EXPERIENCE:
+            proxy.states.deleteExperience.value = StateValue.active;
+            break;
+
+          case ActionType.OK_DELETE_EXPERIENCE:
+            handleDeleteExperienceAction(proxy);
+            break;
         }
       });
     },
@@ -220,10 +243,82 @@ export type DefSyncOfflineEditedExperienceEffect = EffectDefinition<
   SyncEditedOfflineExperiencePayload
 >;
 
+const deleteExperienceEffect: DeleteExperienceEffectDefinition["func"] = async (
+  _,
+  props,
+  effectArgs,
+) => {
+  const { experience, persistor, cache, deleteExperiences, navigate } = props;
+  const { id, title } = experience;
+  const input = [id];
+  const { dispatch } = effectArgs;
+
+  if (isOfflineId(id)) {
+    deleteExperiencesFromCache(cache, persistor, input);
+    await persistor.persist();
+    writeDeletedExperienceTitle(title);
+    navigate(EXPERIENCES_URL);
+
+    return;
+  }
+
+  try {
+    const result = await deleteExperiences({
+      variables: {
+        input,
+      },
+    });
+
+    const validResponse =
+      result && result.data && result.data.deleteExperiences;
+
+    if (!validResponse) {
+      dispatch({
+        type: ActionType.ON_COMMON_ERROR,
+        error: GENERIC_SERVER_ERROR,
+      });
+
+      return;
+    }
+
+    if (validResponse.__typename === "DeleteExperiencesAllFail") {
+      dispatch({
+        type: ActionType.ON_COMMON_ERROR,
+        error: validResponse.error,
+      });
+    } else {
+      const deleteResult = validResponse.experiences[0];
+
+      if (deleteResult.__typename === "DeleteExperienceErrors") {
+        dispatch({
+          type: ActionType.ON_COMMON_ERROR,
+          error: deleteResult.errors.error,
+        });
+      } else {
+        deleteExperiencesFromCache(cache, persistor, input);
+        removeQueriesAndMutationsFromCache(cache, ["deleteExperiences"]);
+        await persistor.persist();
+        writeDeletedExperienceTitle(title);
+        navigate(EXPERIENCES_URL);
+      }
+    }
+  } catch (error) {
+    dispatch({
+      type: ActionType.ON_COMMON_ERROR,
+      error,
+    });
+  }
+};
+
+type DeleteExperienceEffectDefinition = EffectDefinition<
+  "deleteExperienceEffect"
+>;
+
 export const effectFunctions = {
   syncEffect,
   onSyncOfflineExperienceSuccessEffect,
   syncEditedOfflineExperienceEffect,
+  deleteExperienceEffect,
 };
 
 function getGeneralEffects(proxy: DraftState) {
@@ -673,7 +768,7 @@ function getOfflineEntriesInputEffectHelper(
 ////////////////////////// END EFFECTS SECTION /////////////////////////
 
 ////////////////////////// STATE UPDATE SECTION /////////////////////
-export function initState(): StateMachine {
+export function initState(props: Props): StateMachine {
   return {
     context: {},
     effects: {
@@ -684,6 +779,11 @@ export function initState(): StateMachine {
     states: {
       submission: { value: StateValue.inactive },
       editExperience: { value: StateValue.idle },
+      deleteExperience: {
+        value: confirmShouldDeleteExperience(props.experience.id)
+          ? StateValue.active
+          : StateValue.inactive,
+      },
     },
   };
 }
@@ -810,6 +910,14 @@ function handleOnCloseOnlineExperienceSyncedNotificationAction(
   notifications[payload.index] = false;
 }
 
+function handleDeleteExperienceAction(proxy: DraftState) {
+  const effects = getGeneralEffects(proxy);
+  effects.push({
+    key: "deleteExperienceEffect",
+    ownArgs: {},
+  });
+}
+
 ////////////////////////// END STATE UPDATE SECTION /////////////////
 
 export function formatDatetime(date: Date | string) {
@@ -828,16 +936,12 @@ export interface StateMachine {
   readonly states: {
     readonly editExperience: { value: IdleVal } | { value: EditingVal };
     readonly submission: Submission;
+    readonly deleteExperience: { value: InActiveVal } | { value: ActiveVal };
   };
   readonly effects: {
     general: EffectState | { value: NoEffectVal };
   };
 }
-
-// interface SyncEditedOfflineExperienceState {
-//   value: ActiveVal;
-//   active: {}
-// }
 
 ////////////////////////// STRINGY TYPES SECTION /////////////////////////
 type EditingVal = "editing";
@@ -902,6 +1006,15 @@ export interface SubmissionOnOnlineExperienceSynced {
 }
 
 type Action =
+  | {
+      type: ActionType.PROMPT_DELETE_EXPERIENCE;
+    }
+  | {
+      type: ActionType.CANCEL_DELETE_EXPERIENCE;
+    }
+  | {
+      type: ActionType.OK_DELETE_EXPERIENCE;
+    }
   | ({
       type: ActionType.SET_OFFLINE_EXPERIENCE_NEWLY_SYNCED;
     } & SetOfflineExperienceNewlySyncedPayload)
@@ -992,6 +1105,7 @@ export interface CallerProps extends EbnisComponentProps {
 export type Props = CallerProps &
   CreateEntriesMutationProps &
   UpdateExperiencesOnlineComponentProps &
+  DeleteExperiencesComponentProps &
   CreateExperiencesComponentProps & {
     hasConnection: boolean;
     client: ApolloClient<{}>;
@@ -1041,4 +1155,5 @@ type EffectsList = (
   | DefSyncOfflineEditedExperienceEffect
   | SyncEffectDef
   | DefOnSyncExperienceSuccessEffect
+  | DeleteExperienceEffectDefinition
 )[];

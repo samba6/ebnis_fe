@@ -18,11 +18,9 @@ import {
   initState,
   ActionType,
   DispatchType,
-  StateValue,
-  DeleteExperienceActiveState,
-  effectFunctions,
   getExperiencesNodes,
   computeFetchPolicy,
+  StateValue,
 } from "./my-experiences.utils";
 import { EXPERIENCE_DEFINITION_URL } from "../../routes";
 import { makeExperienceRoute } from "../../constants/experience-route";
@@ -54,31 +52,26 @@ import {
   deleteExperienceSelector,
 } from "./my-experiences.dom";
 import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragment";
-import { Modal } from "../Modal/modal-component";
-import { useDeleteExperiencesMutation } from "../../graphql/delete-experiences.mutation";
-import { EbnisAppContext } from "../../context";
 import { LayoutContext } from "../Layout/layout.utils";
+import { writeShouldDeleteExperience } from "../../apollo-cache/should-delete-experience";
 
 enum ClickContext {
   searchLink = "@my-experiences/search-link",
   searchInput = "@my-experiences/search-input",
   experienceMenuTrigger = "@my-experiences/experienceMenuTrigger",
-  cancelDeleteExperience = "@my-experiences/cancel-delete-experience",
-  okDeleteExperience = "@my-experiences/ok-delete-experience",
-  concludeDeleteExperienceSuccess = "@my-experiences/experience-deleted-success",
 }
 
 export function MyExperiences(props: Props) {
   const { experiences, navigate, error, loading } = props;
-  const experiencesLen = experiences.length;
-  const noExperiences = experiencesLen === 0;
 
   const [stateMachine, dispatch] = useReducer(reducer, experiences, initState);
   const {
-    states: { search: searchState, deleteExperience: deleteExperienceState },
+    states: { search: searchState, experienceDeleted: experienceDeletedState },
     context: { idToShowingDescriptionMap },
-    effects: { general: generalEffects },
   } = stateMachine;
+
+  const experiencesLen = experiences.length;
+  const noExperiences = experiencesLen === 0;
 
   const onClick = useCallback((e: MouseEvent) => {
     const target = e.target as HTMLElement;
@@ -109,29 +102,6 @@ export function MyExperiences(props: Props) {
         }
         break;
 
-      case ClickContext.cancelDeleteExperience:
-        e.stopImmediatePropagation();
-        dispatch({
-          type: ActionType.CONFIRM_DELETE_EXPERIENCE,
-          confirmation: StateValue.cancelled,
-        });
-        break;
-
-      case ClickContext.okDeleteExperience:
-        e.stopImmediatePropagation();
-        dispatch({
-          type: ActionType.CONFIRM_DELETE_EXPERIENCE,
-          confirmation: StateValue.ok,
-        });
-        break;
-
-      case ClickContext.concludeDeleteExperienceSuccess:
-        e.stopImmediatePropagation();
-        dispatch({
-          type: ActionType.CONCLUDE_DELETE_EXPERIENCE_SUCCESS,
-        });
-        break;
-
       default: {
         dispatch({
           type: ActionType.CLEAR_SEARCH,
@@ -146,26 +116,9 @@ export function MyExperiences(props: Props) {
   }, []);
 
   useEffect(() => {
-    if (generalEffects.value !== StateValue.hasEffects) {
-      return;
-    }
-
-    for (const { key, ownArgs } of generalEffects.hasEffects.context.effects) {
-      effectFunctions[key](
-        /* eslint-disable-next-line @typescript-eslint/no-explicit-any*/
-        ownArgs as any,
-        props,
-        { dispatch },
-      );
-    }
-
-    /* eslint-disable-next-line react-hooks/exhaustive-deps*/
-  }, [generalEffects]);
-
-  useEffect(() => {
     dispatch({
       type: ActionType.ON_EXPERIENCES_CHANGED,
-      experiences,
+      experiences: experiences,
     });
   }, [experiences]);
 
@@ -182,117 +135,30 @@ export function MyExperiences(props: Props) {
     /* eslint-disable-next-line react-hooks/exhaustive-deps*/
   }, []);
 
-  let deleteExperiencePromptState = false;
-  let deletingExperienceState = false;
-  let deleteExperienceSuccessState = false;
-  let deleteExperienceContext = (null as unknown) as DeleteExperienceActiveState["active"]["context"];
-
-  if (deleteExperienceState.value === StateValue.active) {
-    const { active } = deleteExperienceState;
-    const { states, context: c } = active;
-    deleteExperienceContext = c;
-    const { value } = states;
-    deleteExperiencePromptState = value === StateValue.prompt;
-    deletingExperienceState = value === StateValue.deletingExperience;
-
-    deleteExperienceSuccessState =
-      states.value === StateValue.deleted &&
-      states.deleted.states.value === StateValue.success;
-  }
-
   return (
     <>
-      {deleteExperiencePromptState && (
-        <Modal>
-          <div>
-            Ok to delete:
-            <strong className="block">
-              {deleteExperienceContext.experience.title}
-            </strong>
-          </div>
-
-          <div className="flex justify-end">
-            <button
-              data-click-context={ClickContext.okDeleteExperience}
-              className={`
-                      mr-2
-                      px-4
-                      py-2
-                      text-center
-                      text-white
-                      bg-red-400
-                      active:bg-red-500
-                      hover:bg-red-600
-                      border
-                      rounded-sm
-                      cursor-pointer
-                      focus:outline-none
-                    `}
-            >
-              Ok
-            </button>
-
-            <button
-              data-click-context={ClickContext.cancelDeleteExperience}
-              className={`
-                      ml-3
-                      px-4
-                      py-2
-                      text-center
-                      text-white
-                      bg-blue-500
-                      active:bg-blue-600
-                      hover:bg-blue-700
-                      border
-                      border-transparent
-                      rounded-sm
-                      cursor-pointer
-                      focus:outline-none
-                    `}
-            >
-              Cancel
-            </button>
-          </div>
-        </Modal>
-      )}
-
-      {deletingExperienceState && <Loading />}
-
-      {deleteExperienceSuccessState && (
-        <Modal>
-          <div>
-            <strong className="block">
-              {deleteExperienceContext.experience.title}
-            </strong>
-            successfully deleted
-          </div>
-
-          <div className="flex justify-end">
-            <button
-              data-click-context={ClickContext.concludeDeleteExperienceSuccess}
-              className={`
-                      mr-2
-                      px-4
-                      py-2
-                      text-center
-                      text-white
-                      bg-red-400
-                      active:bg-red-500
-                      hover:bg-red-600
-                      border
-                      rounded-sm
-                      cursor-pointer
-                      focus:outline-none
-                    `}
-            >
-              Ok
-            </button>
-          </div>
-        </Modal>
-      )}
-
       <div className="components-experiences" id={domPrefix}>
         <SidebarHeader title="My Experiences" sidebar={true} />
+
+        {experienceDeletedState.value === StateValue.active && (
+          <div className="notification">
+            <strong>{experienceDeletedState.active.context.title}</strong>
+
+            <span className="text">successfully deleted.</span>
+
+            <div
+              className="close--container"
+              id="close-notification"
+              onClick={() => {
+                dispatch({
+                  type: ActionType.DISMISS_EXPERIENCE_DELETED_NOTIFICATION,
+                });
+              }}
+            >
+              <button className="close" />
+            </div>
+          </div>
+        )}
 
         {/* eslint-disable-next-line @typescript-eslint/no-explicit-any*/}
         <div className="main" onClick={onClick as any}>
@@ -454,10 +320,8 @@ const ExperienceComponent = React.memo(
                         [deleteExperienceSelector]: true,
                       })}
                       onClick={() => {
-                        dispatch({
-                          type: ActionType.DELETE_EXPERIENCE,
-                          experience,
-                        });
+                        writeShouldDeleteExperience(id);
+                        navigate(makeExperienceRoute(id));
                       }}
                     >
                       Delete
@@ -610,8 +474,6 @@ function SearchComponent(props: SearchComponentProps) {
 export default (props: CallerProps) => {
   const { navigate } = props;
   const { hasConnection } = useContext(LayoutContext);
-  const { cache, persistor } = useContext(EbnisAppContext);
-  const [deleteExperiences] = useDeleteExperiencesMutation();
   const { data, loading, error } = useGetExperienceMiniQueryFn(
     computeFetchPolicy(hasConnection),
   );
@@ -623,13 +485,10 @@ export default (props: CallerProps) => {
 
   return (
     <MyExperiences
-      deleteExperiences={deleteExperiences}
       experiences={experiences}
       error={error}
       loading={loading}
       navigate={navigate as NavigateFn}
-      cache={cache}
-      persistor={persistor}
       hasConnection={hasConnection}
     />
   );

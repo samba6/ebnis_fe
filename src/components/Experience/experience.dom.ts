@@ -8,3 +8,5 @@ export const newEntryTriggerId = `${domPrefix}-new-entry-trigger`;
 export const experienceMenuTriggerDomId = `${domPrefix}-menu-trigger`;
 export const onOnlineExperienceSyncedNotificationSuccessDom = `js-${domPrefix}-on-online-experience-synced-notification-success`;
 export const onOnlineExperienceSyncedNotificationErrorDom = `js-${domPrefix}-on-online-experience-synced-notification-error`;
+export const okDeleteExperienceDomId = `${domPrefix}-ok-delete-experience`;
+export const cancelDeleteExperienceDomId = `${domPrefix}-cancel-delete-experience`;

@@ -1,11 +1,12 @@
 import React, { PropsWithChildren } from "react";
 import "./modal-styles.css";
+import { EbnisComponentProps } from "../../types";
 
-interface Props {
+interface Props extends EbnisComponentProps {
   open?: boolean;
 }
 
-export function Modal({ children }: PropsWithChildren<Props>) {
+export function Modal({ children, ...props }: PropsWithChildren<Props>) {
   return (
     <div
       className={`
@@ -26,6 +27,7 @@ export function Modal({ children }: PropsWithChildren<Props>) {
             bg-white
             ebnis-modal
           `}
+      {...props}
     >
       <div className="w-11/12 p-2 modal-inner">{children}</div>
 
