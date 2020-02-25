@@ -96,8 +96,8 @@ export const displayFieldType = {
 
 export enum ActionType {
   EDIT_EXPERIENCE = "@experience-component/edit-experience",
-  SYNC = "@eperience-component/sync",
-  CLOSE_SUBMIT_NOTIFICATION = "@eperience-component/close-submit-notification",
+  SYNC = "@experience-component/sync",
+  CLOSE_SUBMIT_NOTIFICATION = "@experience-component/close-submit-notification",
   ON_MODIFIED_EXPERIENCE_SYNCED = "@experience-component/on-modified-experience-synced",
   ON_SYNC_OFFLINE_EXPERIENCE_ERRORS = "@experience-component/on-sync-offline-experience-errors",
   ON_SYNC_OFFLINE_EXPERIENCE_SUCCESS = "@experience-component/on-sync-offline-experience-success",
@@ -107,10 +107,10 @@ export enum ActionType {
   ON_COMMON_ERROR = "@experience-component/on-common-error",
   SET_OFFLINE_EXPERIENCE_NEWLY_SYNCED = "@experience-component/offline-experience-newly-synced",
 
-  CLOSE_ON_ONLINE_EXPERIENCE_SYNCED_NOTIFICATION = "@eperience-component/close-on-online-experience-synced-notification",
-  CANCEL_DELETE_EXPERIENCE = "@eperience-component/cancel-delete-experience",
-  OK_DELETE_EXPERIENCE = "@eperience-component/ok-delete-experience",
-  PROMPT_DELETE_EXPERIENCE = "@eperience-component/prompt-delete-experience",
+  CLOSE_ON_ONLINE_EXPERIENCE_SYNCED_NOTIFICATION = "@experience-component/close-on-online-experience-synced-notification",
+  CANCEL_DELETE_EXPERIENCE = "@experience-component/cancel-delete-experience",
+  OK_DELETE_EXPERIENCE = "@experience-component/ok-delete-experience",
+  PROMPT_DELETE_EXPERIENCE = "@experience-component/prompt-delete-experience",
 }
 
 export const reducer: Reducer<StateMachine, Action> = (state, action) =>
@@ -214,9 +214,6 @@ const syncEffect: SyncEffectDef["func"] = (_, props, effectArgs) => {
 
 type SyncEffectDef = EffectDefinition<"syncEffect">;
 
-export const OFFLINE_EXPERIENCE_SYNCED_NAVIGATION_STATE_KEY =
-  "@experience-componnet/offline-experience-synced";
-
 const onSyncOfflineExperienceSuccessEffect: DefOnSyncExperienceSuccessEffect["func"] = async (
   { syncedId, unsyncedIds },
   props,
@@ -297,8 +294,8 @@ const deleteExperienceEffect: DeleteExperienceEffectDefinition["func"] = async (
       } else {
         deleteExperiencesFromCache(cache, persistor, input);
         removeQueriesAndMutationsFromCache(cache, ["deleteExperiences"]);
-        await persistor.persist();
         writeDeletedExperienceTitle(title);
+        await persistor.persist();
         navigate(EXPERIENCES_URL);
       }
     }

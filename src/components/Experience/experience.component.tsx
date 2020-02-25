@@ -47,6 +47,7 @@ import {
   onOnlineExperienceSyncedNotificationSuccessDom,
   okDeleteExperienceDomId,
   cancelDeleteExperienceDomId,
+  makeDeleteMenuDomId,
 } from "./experience.dom";
 import { Loading } from "../Loading/loading";
 import { useCreateEntriesMutation } from "../../graphql/create-entries.mutation";
@@ -424,7 +425,7 @@ function OptionsMenuComponent({
 
           <div
             className="font-bold dropdown-item js-edit-menu"
-            id={`${experienceIdPrefix}-delete-menu`}
+            id={makeDeleteMenuDomId(id)}
             onClick={() => {
               dispatch({
                 type: ActionType.PROMPT_DELETE_EXPERIENCE,
@@ -508,11 +509,7 @@ export function getTitle(arg?: { title: string }) {
 
 // istanbul ignore next:
 export default (props: CallerProps) => {
-  const {
-    hasConnection,
-    navigate,
-    pathname,
-  } = useContext(LayoutContext);
+  const { hasConnection, navigate, pathname } = useContext(LayoutContext);
   const [updateExperiencesOnline] = useUpdateExperiencesOnlineMutation();
   const [createEntries] = useCreateEntriesMutation();
   const [createExperiences] = useCreateExperiencesMutation();

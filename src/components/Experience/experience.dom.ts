@@ -10,3 +10,9 @@ export const onOnlineExperienceSyncedNotificationSuccessDom = `js-${domPrefix}-o
 export const onOnlineExperienceSyncedNotificationErrorDom = `js-${domPrefix}-on-online-experience-synced-notification-error`;
 export const okDeleteExperienceDomId = `${domPrefix}-ok-delete-experience`;
 export const cancelDeleteExperienceDomId = `${domPrefix}-cancel-delete-experience`;
+
+export function makeDeleteMenuDomId(id: Id) {
+  return `${domPrefix}-delete-menu-${id}`;
+}
+
+type Id = string | number;

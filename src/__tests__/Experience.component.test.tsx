@@ -35,6 +35,9 @@ import {
   newEntryTriggerId,
   onOnlineExperienceSyncedNotificationSuccessDom,
   onOnlineExperienceSyncedNotificationErrorDom,
+  cancelDeleteExperienceDomId,
+  makeDeleteMenuDomId,
+  okDeleteExperienceDomId,
 } from "../components/Experience/experience.dom";
 import { ApolloError } from "apollo-client";
 import { GraphQLError } from "graphql";
@@ -45,6 +48,13 @@ import {
 import { makeOfflineId } from "../constants";
 import { saveOnSyncOfflineExperienceComponentSuccess } from "../apollo-cache/on-sync-offline-experience-component-success";
 import { DataObjectFragment } from "../graphql/apollo-types/DataObjectFragment";
+import { deleteExperiencesFromCache } from "../apollo-cache/delete-experiences-from-cache";
+import {
+  writeDeletedExperienceTitle,
+  confirmShouldDeleteExperience,
+} from "../apollo-cache/should-delete-experience";
+import { DeleteExperiencesMutationResult } from "../graphql/delete-experiences.mutation";
+import { removeQueriesAndMutationsFromCache } from "../state/resolvers/delete-references-from-cache";
 
 jest.mock("../apollo-cache/on-sync-offline-experience-component-success");
 const mockSaveOnSyncOfflineExperienceComponentSuccess = saveOnSyncOfflineExperienceComponentSuccess as jest.Mock;
@@ -63,11 +73,24 @@ jest.mock("../apollo-cache/unsynced.resolvers");
 const mockGetUnsyncedExperience = getUnsyncedExperience as jest.Mock;
 const mockRemoveUnsyncedExperience = removeUnsyncedExperience as jest.Mock;
 
+jest.mock("../apollo-cache/delete-experiences-from-cache");
+const mockDeleteExperiencesFromCache = deleteExperiencesFromCache as jest.Mock;
+
+jest.mock("../apollo-cache/should-delete-experience");
+const mockWriteDeletedExperienceTitle = writeDeletedExperienceTitle as jest.Mock;
+
+jest.mock("../state/resolvers/delete-references-from-cache");
+const mockRemoveQueriesAndMutationsFromCache = removeQueriesAndMutationsFromCache as jest.Mock;
+
+jest.mock("../apollo-cache/should-delete-experience");
+const mockConfirmShouldDeleteExperience = confirmShouldDeleteExperience as jest.Mock;
+
 const mockUpdateExperiencesOnline = jest.fn();
 const mockCreateEntries = jest.fn();
 const mockCreateExperiences = jest.fn();
 const mockPersistFunc = jest.fn();
 const persistor = { persist: mockPersistFunc };
+const mockDeleteExperiences = jest.fn();
 
 beforeEach(() => {
   jest.useFakeTimers();
@@ -77,6 +100,11 @@ beforeEach(() => {
   mockGetUnsyncedExperience.mockReset();
   mockRemoveUnsyncedExperience.mockReset();
   mockPersistFunc.mockReset();
+  mockDeleteExperiences.mockReset();
+  mockDeleteExperiencesFromCache.mockReset();
+  mockWriteDeletedExperienceTitle.mockReset();
+  mockRemoveQueriesAndMutationsFromCache.mockReset();
+  mockConfirmShouldDeleteExperience.mockReset();
 });
 
 it("renders ui to show empty entries", () => {
@@ -987,6 +1015,286 @@ test("sync offline experience, navigate to new entry", async () => {
   expect(document.getElementById(errorsNotificationId)).toBeNull();
 });
 
+test("delete offline experience", async () => {
+  const experienceId = makeOfflineId(1);
+
+  const { ui, mockNavigate } = makeComp({
+    experience: {
+      id: experienceId,
+      title: "t1",
+      entries: {
+        edges: [] as ExperienceFragment_entries_edges[],
+      },
+    } as ExperienceFragment,
+  });
+
+  /**
+   * When component is rendered
+   */
+  render(ui);
+
+  /**
+   * Then delete prompt should not be visible
+   */
+  expect(document.getElementById(cancelDeleteExperienceDomId)).toBeNull();
+
+  /**
+   * When delete experience menu is clicked
+   */
+  const deleteExperienceMenuDom = document.getElementById(
+    makeDeleteMenuDomId(experienceId),
+  ) as HTMLElement;
+
+  deleteExperienceMenuDom.click();
+
+  /**
+   * Then delete prompt should be visible
+   */
+  const cancelDeleteExperienceDom = document.getElementById(
+    cancelDeleteExperienceDomId,
+  ) as HTMLElement;
+
+  /**
+   * When user cancels experience deletion
+   */
+  cancelDeleteExperienceDom.click();
+
+  /**
+   * Then delete prompt should not be visible
+   */
+  expect(document.getElementById(cancelDeleteExperienceDomId)).toBeNull();
+  expect(document.getElementById(okDeleteExperienceDomId)).toBeNull();
+
+  /**
+   * When delete experience menu is clicked
+   */
+  deleteExperienceMenuDom.click();
+
+  /**
+   * Then delete experience should be visible, and when clicked
+   */
+  (document.getElementById(okDeleteExperienceDomId) as HTMLElement).click();
+  await wait(() => true);
+
+  /**
+   * Experience should be deleted
+   */
+  expect(mockDeleteExperiencesFromCache.mock.calls[0][2]).toEqual([
+    experienceId,
+  ]);
+
+  expect(mockWriteDeletedExperienceTitle.mock.calls[0][0]).toBe("t1");
+  expect(mockPersistFunc.mock.calls).toHaveLength(1);
+  expect(mockNavigate).toHaveBeenCalled();
+});
+
+test("delete online experience when there is connection", async () => {
+  mockDeleteExperiences
+    .mockRejectedValueOnce(new Error("a")) // 1
+    .mockResolvedValueOnce({} as DeleteExperiencesMutationResult) // 2
+    .mockResolvedValueOnce({
+      data: {
+        deleteExperiences: {
+          __typename: "DeleteExperiencesAllFail",
+          error: "a",
+        },
+      },
+    } as DeleteExperiencesMutationResult) // 3
+    .mockResolvedValueOnce({
+      data: {
+        deleteExperiences: {
+          __typename: "DeleteExperiencesSomeSuccess",
+          experiences: [
+            {
+              __typename: "DeleteExperienceErrors",
+              errors: {
+                error: "b",
+              },
+            },
+          ],
+        },
+      },
+    } as DeleteExperiencesMutationResult) // 4
+    .mockResolvedValueOnce({
+      data: {
+        deleteExperiences: {
+          __typename: "DeleteExperiencesSomeSuccess",
+          experiences: [
+            {
+              __typename: "DeleteExperienceSuccess",
+            },
+          ],
+        },
+      },
+    } as DeleteExperiencesMutationResult); // 5
+
+  mockConfirmShouldDeleteExperience.mockResolvedValue(true);
+
+  const experienceId = "ex";
+
+  const { ui, mockNavigate } = makeComp({
+    experience: {
+      id: experienceId,
+      title: "t1",
+      entries: {
+        edges: [] as ExperienceFragment_entries_edges[],
+      },
+    } as ExperienceFragment,
+    hasUnsaved: true,
+  });
+
+  /**
+   * When component is rendered
+   */
+  render(ui);
+
+  /**
+   * Then error notification should not be visible
+   */
+  expect(document.getElementById(errorsNotificationId)).toBeNull();
+
+
+  /**
+   * When experience deletion is confirmed
+   */
+  (document.getElementById(okDeleteExperienceDomId) as HTMLElement).click();
+  await wait(() => true);
+
+  /**
+   * Error notification should be visible
+   */
+  let errorsNotificationDom = await waitForElement(() => {
+    return document.getElementById(errorsNotificationId) as HTMLElement;
+  });
+
+  /**
+   * When error notification is dismissed
+   */
+  (errorsNotificationDom
+    .getElementsByClassName(closeSubmitNotificationBtnSelector)
+    .item(0) as HTMLElement).click();
+
+  /**
+   * Then error notification should not be visible
+   */
+  expect(document.getElementById(errorsNotificationId)).toBeNull();
+
+  //////////////////////////  ////////////////////////////
+
+  /**
+   * When delete experience menu is clicked - 2
+   */
+  (document.getElementById(
+    makeDeleteMenuDomId(experienceId),
+  ) as HTMLElement).click();
+
+  (document.getElementById(okDeleteExperienceDomId) as HTMLElement).click();
+  await wait(() => true);
+
+  /**
+   * Error notification should be visible
+   */
+  errorsNotificationDom = await waitForElement(() => {
+    return document.getElementById(errorsNotificationId) as HTMLElement;
+  });
+
+  /**
+   * When error notification is dismissed
+   */
+  (errorsNotificationDom
+    .getElementsByClassName(closeSubmitNotificationBtnSelector)
+    .item(0) as HTMLElement).click();
+
+  /**
+   * Then error notification should not be visible
+   */
+  expect(document.getElementById(errorsNotificationId)).toBeNull();
+  //////////////////////////  ////////////////////////////
+
+  /**
+   * When delete experience menu is clicked - 3
+   */
+  (document.getElementById(
+    makeDeleteMenuDomId(experienceId),
+  ) as HTMLElement).click();
+
+  (document.getElementById(okDeleteExperienceDomId) as HTMLElement).click();
+  await wait(() => true);
+
+  /**
+   * Error notification should be visible
+   */
+  errorsNotificationDom = await waitForElement(() => {
+    return document.getElementById(errorsNotificationId) as HTMLElement;
+  });
+
+  /**
+   * When error notification is dismissed
+   */
+  (errorsNotificationDom
+    .getElementsByClassName(closeSubmitNotificationBtnSelector)
+    .item(0) as HTMLElement).click();
+
+  /**
+   * Then error notification should not be visible
+   */
+  expect(document.getElementById(errorsNotificationId)).toBeNull();
+
+  /**
+   * When delete experience menu is clicked - 4
+   */
+  (document.getElementById(
+    makeDeleteMenuDomId(experienceId),
+  ) as HTMLElement).click();
+
+  (document.getElementById(okDeleteExperienceDomId) as HTMLElement).click();
+  await wait(() => true);
+
+  /**
+   * Error notification should be visible
+   */
+  errorsNotificationDom = await waitForElement(() => {
+    return document.getElementById(errorsNotificationId) as HTMLElement;
+  });
+
+  /**
+   * When error notification is dismissed
+   */
+  (errorsNotificationDom
+    .getElementsByClassName(closeSubmitNotificationBtnSelector)
+    .item(0) as HTMLElement).click();
+
+  /**
+   * Then error notification should not be visible
+   */
+  expect(document.getElementById(errorsNotificationId)).toBeNull();
+
+  /**
+   * When delete experience menu is clicked - 5
+   */
+  (document.getElementById(
+    makeDeleteMenuDomId(experienceId),
+  ) as HTMLElement).click();
+
+  (document.getElementById(okDeleteExperienceDomId) as HTMLElement).click();
+  await wait(() => true);
+  await wait(() => true);
+
+  /**
+   * Experience should be deleted
+   */
+  expect(mockDeleteExperiencesFromCache.mock.calls[0][2]).toEqual([
+    experienceId,
+  ]);
+
+  await wait(() => true);
+
+  expect(mockRemoveQueriesAndMutationsFromCache).toHaveBeenCalled();
+  expect(mockWriteDeletedExperienceTitle.mock.calls[0][0]).toBe("t1");
+  expect(mockPersistFunc.mock.calls).toHaveLength(1);
+  expect(mockNavigate).toHaveBeenCalled();
+});
+
 describe("reducer", () => {
   test("trivial", () => {
     const prevState = initState({ experience: {} } as Props);
@@ -1158,6 +1466,7 @@ function makeComp(props: Partial<Props> = {}) {
         createEntries={mockCreateEntries}
         createExperiences={mockCreateExperiences}
         persistor={persistor as any}
+        deleteExperiences={mockDeleteExperiences}
       />
     ),
     mockNavigate,
