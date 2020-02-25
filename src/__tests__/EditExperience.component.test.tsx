@@ -28,7 +28,7 @@ import { UpdateExperiencesOnlineMutationResult } from "../graphql/update-experie
 import ApolloClient, { ApolloError } from "apollo-client";
 import { GraphQLError } from "graphql";
 import { scrollIntoView } from "../components/scroll-into-view";
-import { UpdateExperienceOflineMutationResult } from "../components/EditExperience/edit-experience.resolvers";
+import { UpdateExperienceOfflineMutationResult } from "../components/EditExperience/edit-experience.resolvers";
 import { makeOfflineId } from "../constants";
 import { UpdateAnExperienceInput } from "../graphql/apollo-types/globalTypes";
 
@@ -807,7 +807,7 @@ describe("components", () => {
             },
           },
         },
-      } as UpdateExperienceOflineMutationResult)
+      } as UpdateExperienceOfflineMutationResult)
       .mockResolvedValueOnce({
         data: {
           updateExperienceOffline: {
@@ -819,7 +819,7 @@ describe("components", () => {
             },
           },
         },
-      } as UpdateExperienceOflineMutationResult)
+      } as UpdateExperienceOfflineMutationResult)
       .mockResolvedValueOnce({
         data: {
           updateExperienceOffline: {
@@ -831,7 +831,7 @@ describe("components", () => {
             },
           },
         },
-      } as UpdateExperienceOflineMutationResult)
+      } as UpdateExperienceOfflineMutationResult)
       .mockResolvedValueOnce({
         data: {
           updateExperienceOffline: {
@@ -846,7 +846,7 @@ describe("components", () => {
             },
           },
         },
-      } as UpdateExperienceOflineMutationResult);
+      } as UpdateExperienceOfflineMutationResult);
 
     /**
      * When using the component

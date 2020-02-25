@@ -98,7 +98,7 @@ const updateExperienceOfflineResolver: LocalResolverFn<
 
 function updateDefinitions(
   proxy: DraftState,
-  unsyncedExperience: DraftUnsycned,
+  unsyncedExperience: DraftUnsynced,
   inputs?: UpdateDefinitionInput[] | null,
 ) {
   if (!inputs) {
@@ -224,7 +224,7 @@ export interface UpdateExperienceOfflineVariables {
 }
 
 type MaybeUnsynced = UnsyncedModifiedExperience | null;
-type DraftUnsycned = Draft<MaybeUnsynced>;
+type DraftUnsynced = Draft<MaybeUnsynced>;
 
 ////////////////////////// end TYPES SECTION ///////////////////////
 
@@ -239,7 +239,7 @@ export type UpdateExperienceOfflineMutationFn = MutationFunction<
   UpdateExperienceOfflineVariables
 >;
 
-export type UpdateExperienceOflineMutationResult = ExecutionResult<
+export type UpdateExperienceOfflineMutationResult = ExecutionResult<
   UpdateExperienceOffline
 >;
 

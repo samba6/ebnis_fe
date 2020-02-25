@@ -135,15 +135,6 @@ export interface UpdateDefinitionInput {
 }
 
 /**
- * fields required to update a collection of data definitions belonging to an
- * experience
- */
-export interface UpdateDefinitionsInput {
-  definitions: UpdateDefinitionInput[];
-  experienceId: string;
-}
-
-/**
  * An input object for updating an entry when updating several entries at once
  */
 export interface UpdateEntryInput {

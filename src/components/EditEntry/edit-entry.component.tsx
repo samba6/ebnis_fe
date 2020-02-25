@@ -10,12 +10,9 @@ import {
   ActionType,
   initState,
   reducer,
-  DefinitionState,
   DispatchType,
-  DefinitionsStates,
   DataState,
-  EditEnryContext,
-  StateMachine,
+  EditEntryContext,
   Submission,
   CallerProps,
   StateValue,
@@ -24,7 +21,6 @@ import {
 import Form from "semantic-ui-react/dist/commonjs/collections/Form";
 import Message from "semantic-ui-react/dist/commonjs/collections/Message";
 import Button from "semantic-ui-react/dist/commonjs/elements/Button";
-import Input from "semantic-ui-react/dist/commonjs/elements/Input";
 import Modal from "semantic-ui-react/dist/commonjs/modules/Modal";
 import makeClassNames from "classnames";
 import { FormCtrlError } from "../FormCtrlError/form-ctrl-error.component";
@@ -36,21 +32,13 @@ import { InputOnChangeData } from "semantic-ui-react";
 import { DataTypes } from "../../graphql/apollo-types/globalTypes";
 import { UpdateDataObjectsResponseFragment_fieldErrors } from "../../graphql/apollo-types/UpdateDataObjectsResponseFragment";
 import { ErrorBoundary } from "../ErrorBoundary/error-boundary.component";
-import {
-  useUpdateDataObjectsOnlineMutation,
-  useUpdateDefinitionsOnline,
-  useUpdateDefinitionAndDataOnline,
-  UpdateDefinitionsOnlineMutationFn,
-} from "../../graphql/update-definition-and-data.mutation";
+import { useUpdateDataObjectsOnlineMutation } from "../../graphql/update-definition-and-data.mutation";
 import {
   formErrorsDomId,
   otherErrorsDomId,
   apolloErrorsDomId,
-  getDefinitionFieldSelectorClass,
-  getDefinitionControlId,
   ControlName,
   getDataControlDomId,
-  makeOfflineDefinitionLabelId,
   scrollToTopId,
 } from "./edit-entry-dom";
 import { useCreateOnlineEntryMutation } from "../../graphql/create-entry.mutation";
@@ -59,10 +47,7 @@ import { LayoutUnchangingContext, LayoutContext } from "../Layout/layout.utils";
 import { MUTATION_NAME_createEntry } from "../../graphql/create-entry.mutation";
 import { cleanupRanQueriesFromCache } from "../../apollo-cache/cleanup-ran-queries-from-cache";
 import { QUERY_NAME_getExperienceFull } from "../../graphql/get-experience-full.query";
-import {
-  MUTATION_NAME_updateDataObjects,
-  MUTATION_NAME_updateDefinitions,
-} from "../../graphql/update-definition-and-data.mutation";
+import { MUTATION_NAME_updateDataObjects } from "../../graphql/update-definition-and-data.mutation";
 import { useCreateOfflineEntryMutation } from "../NewEntry/new-entry.resolvers";
 import { addNewEntryResolvers } from "../NewEntry/new-entry.injectables";
 import { capitalize } from "../../general-utils";
@@ -72,15 +57,8 @@ export function EditEntryComponent(props: ComponentProps) {
 
   const [stateMachine, dispatch] = useReducer(reducer, props, initState);
   const {
-    context: { definitionAndDataIdsMapList },
     effects: { general: generalEffects },
-    states: {
-      editingData,
-      editingDefinition,
-      submission,
-      definitionsStates,
-      dataStates,
-    },
+    states: { editingData, submission, dataStates },
   } = stateMachine;
 
   useEffect(() => {
@@ -120,7 +98,6 @@ export function EditEntryComponent(props: ComponentProps) {
         cache,
         [
           MUTATION_NAME_updateDataObjects,
-          MUTATION_NAME_updateDefinitions,
           MUTATION_NAME_createEntry,
           "getOfflineItems",
           QUERY_NAME_getExperienceFull + "(",
@@ -131,7 +108,7 @@ export function EditEntryComponent(props: ComponentProps) {
   }, []);
 
   return (
-    <EditEnryContext.Provider
+    <EditEntryContext.Provider
       value={{
         dispatch,
         onSubmit,
@@ -177,30 +154,11 @@ export function EditEntryComponent(props: ComponentProps) {
 
           <Modal.Content>
             <Form>
-              {definitionAndDataIdsMapList.map((map, index) => {
-                const { definitionId, dataId } = map;
-
+              {Object.entries(dataStates).map(([dataId, state], index) => {
                 return (
                   <Fragment key={index}>
-                    {!!definitionId && (
-                      <DefinitionComponent
-                        key={definitionId}
-                        id={definitionId}
-                        state={definitionsStates[definitionId]}
-                        shouldSubmit={getIdOfSubmittingDefinition(
-                          definitionId,
-                          editingData,
-                          editingDefinition,
-                        )}
-                      />
-                    )}
-
                     {!!dataId && (
-                      <DataComponent
-                        key={dataId}
-                        state={dataStates[dataId]}
-                        id={dataId}
-                      />
+                      <DataComponent key={dataId} state={state} id={dataId} />
                     )}
                   </Fragment>
                 );
@@ -222,7 +180,7 @@ export function EditEntryComponent(props: ComponentProps) {
           </Modal.Content>
         </ErrorBoundary>
       </Modal>
-    </EditEnryContext.Provider>
+    </EditEntryContext.Provider>
   );
 }
 
@@ -301,17 +259,21 @@ function SubmissionSuccessResponseComponent({
 
 function DataComponent(props: DataComponentProps) {
   const { id, state } = props;
-  const { dispatch } = useContext(EditEnryContext);
+  const { dispatch } = useContext(EditEntryContext);
+
+  const {
+    context: {
+      defaults: { parsedVal, definitionName, type },
+    },
+  } = state;
 
   const formValue =
-    state.value === "changed"
-      ? state.changed.context.formValue
-      : state.context.defaults.parsedVal;
+    state.value === "changed" ? state.changed.context.formValue : parsedVal;
 
   const idPrefix = getDataControlDomId(id, ControlName.input);
 
   const component = getComponentFromDataType(
-    state.context.defaults.type,
+    type,
     id,
     dispatch,
     idPrefix,
@@ -321,21 +283,37 @@ function DataComponent(props: DataComponentProps) {
   const formErrorsComponent = getFormErrorsComponent(state);
 
   return (
-    <Form.Field
-      className={makeClassNames({
-        "data--success":
-          state.value === "unchanged" && state.unchanged.context.anyEditSuccess,
-      })}
-      error={!!formErrorsComponent}
-    >
-      {component}
+    <>
+      <Form.Field className="definition-field">
+        <label>
+          <span className="relative mr-2" style={{ bottom: "-0.15625rem" }}>
+            {definitionName}
+          </span>
+          [
+          <span className="relative" style={{ bottom: "-0.15rem" }}>
+            {type}
+          </span>
+          ]
+        </label>
+      </Form.Field>
 
-      {!!formErrorsComponent && (
-        <FormCtrlError id={getDataControlDomId(id, ControlName.error)}>
-          {formErrorsComponent}
-        </FormCtrlError>
-      )}
-    </Form.Field>
+      <Form.Field
+        className={makeClassNames({
+          "data--success":
+            state.value === "unchanged" &&
+            state.unchanged.context.anyEditSuccess,
+        })}
+        error={!!formErrorsComponent}
+      >
+        {component}
+
+        {!!formErrorsComponent && (
+          <FormCtrlError id={getDataControlDomId(id, ControlName.error)}>
+            {formErrorsComponent}
+          </FormCtrlError>
+        )}
+      </Form.Field>
+    </>
   );
 }
 
@@ -371,163 +349,6 @@ function getComponentFromDataType(
   };
 
   return componentFromDataType(type, props);
-}
-
-function DefinitionComponent(props: DefinitionComponentProps) {
-  const { id, state, shouldSubmit } = props;
-  const { onSubmit, dispatch, hasConnection } = useContext(EditEnryContext);
-
-  const { type, name: defaultFormValue } = state.context.defaults;
-  const inputId = getDefinitionControlId(id, ControlName.input);
-  const error = getDefinitionFormError(state);
-  const hasSuccess =
-    state.value === "idle" && state.idle.context.anyEditSuccess;
-
-  return (
-    <Form.Field
-      className={makeClassNames({
-        "definition--success": hasSuccess,
-        "definition-field": true,
-        [getDefinitionFieldSelectorClass(id)]: true,
-      })}
-      error={!!error}
-    >
-      <label htmlFor={inputId}>
-        {!hasConnection && (
-          <span
-            id={makeOfflineDefinitionLabelId(id)}
-            className="relative mr-2"
-            style={{ bottom: "-0.15625rem" }}
-          >
-            {defaultFormValue}
-          </span>
-        )}
-        [
-        <span className="relative" style={{ bottom: "-0.15rem" }}>
-          {type}
-        </span>
-        ]
-      </label>
-
-      {hasConnection && (
-        <>
-          {state.value === "idle" && (
-            <>
-              <Input className="definition-input">
-                <input
-                  id={getDefinitionControlId(id, ControlName.name)}
-                  value={defaultFormValue}
-                  disabled={true}
-                />
-
-                <Button
-                  className={makeClassNames({
-                    "definition-edit": true,
-                    "definition-edit--success": hasSuccess,
-                  })}
-                  primary={true}
-                  compact={true}
-                  type="button"
-                  id={getDefinitionControlId(id, ControlName.edit)}
-                  onClick={() =>
-                    dispatch({
-                      type: ActionType.EDIT_BTN_CLICKED,
-                      id,
-                    })
-                  }
-                >
-                  Edit
-                </Button>
-              </Input>
-            </>
-          )}
-
-          {state.value === "editing" && (
-            <>
-              <Input
-                onChange={(_, { value }) => {
-                  dispatch({
-                    type: ActionType.DEFINITION_NAME_CHANGED,
-                    id,
-                    formValue: value,
-                  });
-                }}
-                className="definition-input"
-              >
-                <input
-                  id={inputId}
-                  name={inputId}
-                  value={state.editing.context.formValue}
-                  autoComplete="off"
-                  className={makeClassNames({
-                    "definition-input-unchanged":
-                      state.editing.value === "unchanged",
-                  })}
-                />
-
-                <Button
-                  primary={true}
-                  compact={true}
-                  type="button"
-                  id={getDefinitionControlId(id, ControlName.dismiss)}
-                  onClick={() => {
-                    dispatch({
-                      type: ActionType.STOP_DEFINITION_EDIT,
-                      id,
-                    });
-                  }}
-                  className="definition-dismiss"
-                >
-                  Dismiss
-                </Button>
-              </Input>
-
-              {state.editing.value === "changed" && (
-                <Button.Group>
-                  <Button
-                    negative={true}
-                    compact={true}
-                    type="button"
-                    id={getDefinitionControlId(id, ControlName.reset)}
-                    onClick={() => {
-                      dispatch({
-                        type: ActionType.UNDO_DEFINITION_EDITS,
-                        id,
-                      });
-                    }}
-                    className="definition-reset"
-                  >
-                    Reset
-                  </Button>
-
-                  {shouldSubmit && (
-                    <Button
-                      positive={true}
-                      compact={true}
-                      type="submit"
-                      id={getDefinitionControlId(id, ControlName.submit)}
-                      onClick={onSubmit}
-                      className="edit-entry-definition-submit"
-                    >
-                      Submit
-                    </Button>
-                  )}
-                </Button.Group>
-              )}
-
-              {!!error && (
-                <FormCtrlError
-                  id={getDefinitionControlId(id, ControlName.error)}
-                >
-                  {error}
-                </FormCtrlError>
-              )}
-            </>
-          )}
-        </>
-      )}
-    </Form.Field>
-  );
 }
 
 function SubmissionErrorsComponent({
@@ -571,42 +392,6 @@ function SubmissionErrorsComponent({
   ) : null;
 }
 
-function getIdOfSubmittingDefinition(
-  id: string,
-  editingData: StateMachine["states"]["editingData"],
-  editingDefinition: StateMachine["states"]["editingDefinition"],
-) {
-  if (editingData.value === "active") {
-    return false;
-  }
-
-  if (editingDefinition.value !== StateValue.multiple) {
-    return true;
-  }
-
-  const {
-    context: { mostRecentlyChangedDefinitionId },
-  } = editingDefinition.multiple;
-
-  return id === mostRecentlyChangedDefinitionId;
-}
-
-function getDefinitionFormError(state: DefinitionState) {
-  if (state.value === "editing" && state.editing.value === "changed") {
-    const { changed } = state.editing;
-
-    if (changed.value === "formErrors" || changed.value === "serverErrors") {
-      const {
-        context: { errors },
-      } = changed;
-
-      return getNodesFromObject(errors as { [k: string]: string });
-    }
-  }
-
-  return null;
-}
-
 function getFormErrorsComponent(state: DataState) {
   if (state.value === "changed") {
     const { changed } = state;
@@ -645,19 +430,6 @@ function getNodesFromObject(obj: { [k: string]: string }) {
   }, [] as JSX.Element[]);
 }
 
-interface SubmitDefinitionsArgs {
-  dispatch: DispatchType;
-  updateDefinitionsOnline: UpdateDefinitionsOnlineMutationFn;
-  allDefinitionsStates: DefinitionsStates;
-  editEntryUpdate: () => void;
-}
-
-interface DefinitionComponentProps {
-  state: DefinitionState;
-  id: string;
-  shouldSubmit: boolean;
-}
-
 interface DataComponentProps {
   id: string;
   state: DataState;
@@ -671,8 +443,6 @@ export function EditEntry(props: CallerProps) {
   const { layoutDispatch } = useContext(LayoutUnchangingContext);
   const { hasConnection } = useContext(LayoutContext);
   const [updateDataObjectsOnline] = useUpdateDataObjectsOnlineMutation();
-  const [updateDefinitionsOnline] = useUpdateDefinitionsOnline();
-  const [updateDefinitionsAndDataOnline] = useUpdateDefinitionAndDataOnline();
   const [createOnlineEntry] = useCreateOnlineEntryMutation();
   const [createOfflineEntry] = useCreateOfflineEntryMutation();
 
@@ -680,8 +450,6 @@ export function EditEntry(props: CallerProps) {
     <EditEntryComponent
       createOnlineEntry={createOnlineEntry}
       updateDataObjectsOnline={updateDataObjectsOnline}
-      updateDefinitionsOnline={updateDefinitionsOnline}
-      updateDefinitionsAndDataOnline={updateDefinitionsAndDataOnline}
       client={client}
       persistor={persistor}
       cache={cache}

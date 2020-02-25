@@ -202,7 +202,7 @@ const UPDATE_EXPERIENCE_FRAGMENT = gql`
   ${CREATE_ENTRY_ERRORSS_FRAGMENT}
 `;
 
-const UPDATE_EXPERIENCE_SOME_SUCESS_FARGMENT = gql`
+const UPDATE_EXPERIENCE_SOME_SUCCESS_FRAGMENT = gql`
   fragment UpdateExperienceSomeSuccessFragment on UpdateExperienceSomeSuccess {
     experience {
       ...UpdateExperienceFragment
@@ -237,7 +237,7 @@ const UPDATE_EXPERIENCES_ONLINE_MUTATION = gql`
     }
   }
   ${UPDATE_EXPERIENCE_ERROR_FRAGMENT}
-  ${UPDATE_EXPERIENCE_SOME_SUCESS_FARGMENT}
+  ${UPDATE_EXPERIENCE_SOME_SUCCESS_FRAGMENT}
 `;
 
 export function useUpdateExperiencesOnlineMutation(): UseUpdateExperiencesOnlineMutation {
