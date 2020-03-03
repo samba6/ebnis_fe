@@ -14,13 +14,7 @@ import differenceInHours from "date-fns/differenceInHours";
 import parseISO from "date-fns/parseISO";
 import { NewEntryComponent } from "../components/NewEntry/new-entry.component";
 import { ComponentProps } from "../components/NewEntry/new-entry.utils";
-import {
-  renderWithRouter,
-  fillField,
-  closeMessage,
-  ToVariables,
-  ToData,
-} from "./test_utils";
+import { renderWithRouter, fillField } from "./test_utils";
 import {
   DataTypes,
   CreateDataObject,
@@ -30,32 +24,20 @@ import {
   ExperienceFragment,
   ExperienceFragment_dataDefinitions,
 } from "../graphql/apollo-types/ExperienceFragment";
-import { ApolloError } from "apollo-client";
-import {
-  CreateOnlineEntryMutation_createEntry_errors,
-  CreateOnlineEntryMutation,
-  CreateOnlineEntryMutationVariables,
-} from "../graphql/apollo-types/CreateOnlineEntryMutation";
 import { isConnected } from "../state/connections";
 import { scrollIntoView } from "../components/scroll-into-view";
-import {
-  CreateOfflineEntryMutationVariables,
-  CreateOfflineEntryMutationReturned,
-} from "../components/NewEntry/new-entry.resolvers";
-import { GraphQLError } from "graphql";
-import { upsertExperienceWithEntry } from "../components/NewEntry/new-entry.injectables";
 import { cleanupRanQueriesFromCache } from "../apollo-cache/cleanup-ran-queries-from-cache";
 import { defaultLoadingDomId } from "../components/Loading/loading-dom";
 import {
   submitBtnDomId,
-  makeFieldErrorDomId,
-  networkErrorDomId,
-  scrollIntoViewNonFieldErrorDomId,
   makeFieldInputId,
+  makeInputErrorDomId,
 } from "../components/NewEntry/new-entry.dom";
 import { Props as DateTimeProps } from "../components/DateTimeField/date-time-field.utils";
 import { toISODatetimeString } from "../components/NewEntry/new-entry.utils";
-import { AppPersistor } from "../context";
+import { UpdateExperiencesOnlineMutationResult } from "../graphql/experiences.mutation";
+
+jest.mock("../components/NewEntry/new-entry.injectables");
 
 jest.mock("../components/SidebarHeader/sidebar-header.component", () => ({
   SidebarHeader: jest.fn(() => null),
@@ -68,9 +50,6 @@ const mockCleanupRanQueriesFromCache = cleanupRanQueriesFromCache as jest.Mock;
 
 jest.mock("../state/connections");
 const mockIsConnected = isConnected as jest.Mock;
-
-jest.mock("../components/NewEntry/new-entry.injectables");
-const mockUpdate = upsertExperienceWithEntry as jest.Mock;
 
 jest.mock("../components/scroll-into-view");
 const mockScrollIntoView = scrollIntoView as jest.Mock;
@@ -88,16 +67,24 @@ jest.mock("../components/DateField/date-field.component", () => ({
   DateField: MockDateTimeField,
 }));
 
+const mockUpdateExperiencesOnline = jest.fn();
+const mockCreateOfflineEntry = jest.fn();
+const mockPersistFunc = jest.fn();
+const persistor = { persist: mockPersistFunc };
+
 beforeEach(() => {
   mockScrollIntoView.mockReset();
   mockIsConnected.mockReset();
-  mockUpdate.mockReset();
   mockCleanupRanQueriesFromCache.mockReset();
+  mockUpdateExperiencesOnline.mockReset();
+  mockPersistFunc.mockReset();
+  mockCreateOfflineEntry.mockReset();
 });
 
 const title = "ww";
 
 it("creates new experience entry when online", async () => {
+  mockIsConnected.mockReturnValue(true);
   /**
    * Given we have received experiences from server
    */
@@ -122,7 +109,7 @@ it("creates new experience entry when online", async () => {
     entries: {} as ExperienceFragment_entries,
   } as ExperienceFragment;
 
-  const { ui, mockCreateOnlineEntry } = makeComp({
+  const { ui } = makeComp({
     experience: experience,
   });
 
@@ -163,14 +150,16 @@ it("creates new experience entry when online", async () => {
 
   const {
     variables: {
-      input: { experienceId, dataObjects },
+      input: [
+        {
+          experienceId,
+          addEntries: [{ dataObjects }],
+        },
+      ],
     },
-  } = mockCreateOnlineEntry.mock.calls[0][0] as ToVariables<
-    CreateOnlineEntryMutationVariables
-  >;
+  } = mockUpdateExperiencesOnline.mock.calls[0][0];
 
   expect(experienceId).toBe("1");
-  expect((mockUpdate as jest.Mock).mock.calls[0][0]).toBe("1");
 
   const [f3, f4] = dataObjects as CreateDataObject[];
 
@@ -197,69 +186,259 @@ it("creates new experience entry when online", async () => {
   expect(mockCleanupRanQueriesFromCache).toHaveBeenCalledTimes(1);
 });
 
-it("sets decimal and integer fields to default to 0", async () => {
+it("sets field defaults, creates entry online", async () => {
+  mockIsConnected.mockReturnValue(true);
   /**
    * Given we have received experiences from server
    */
-  const exp = {
+  const experience = {
     dataDefinitions: [
       {
         id: "f1",
-        name: "f3",
+        name: "f1",
         type: DataTypes.DECIMAL,
       },
-
       {
         id: "f2",
-        name: "f4",
+        name: "f2",
         type: DataTypes.INTEGER,
       },
-    ] as ExperienceFragment_dataDefinitions[],
+      {
+        id: "f3",
+        name: "f3",
+        type: DataTypes.SINGLE_LINE_TEXT,
+      },
+      {
+        id: "f4",
+        name: "f4",
+        type: DataTypes.MULTI_LINE_TEXT,
+      },
+    ],
   } as ExperienceFragment;
 
-  const { ui, mockCreateOnlineEntry, mockNavigate } = makeComp({
-    experience: exp,
+  const { ui, mockNavigate } = makeComp({
+    experience,
   });
 
-  mockCreateOnlineEntry.mockResolvedValue({
-    data: {
-      createEntry: {
-        entry: {},
+  mockUpdateExperiencesOnline
+    // 1 - errors no dataObjects errors
+    .mockResolvedValueOnce({
+      data: {
+        updateExperiences: {
+          __typename: "UpdateExperiencesSomeSuccess",
+          experiences: [
+            {
+              __typename: "UpdateExperienceSomeSuccess",
+              experience: {
+                newEntries: [
+                  {
+                    __typename: "CreateEntryErrors",
+                    errors: {},
+                  },
+                ],
+              },
+            },
+          ],
+        },
       },
-    },
-  } as ToData<CreateOnlineEntryMutation>);
+    } as UpdateExperiencesOnlineMutationResult)
+    // end 1 - errors no dataObjects errors
+    // 2 dataObjects errors
+    .mockResolvedValueOnce({
+      data: {
+        updateExperiences: {
+          __typename: "UpdateExperiencesSomeSuccess",
+          experiences: [
+            {
+              __typename: "UpdateExperienceSomeSuccess",
+              experience: {
+                newEntries: [
+                  {
+                    __typename: "CreateEntryErrors",
+                    errors: {
+                      dataObjects: [
+                        {
+                          meta: {
+                            index: 0,
+                          },
+                          definition: "a",
+                          clientId: "",
+                        },
+                      ],
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      },
+    } as UpdateExperiencesOnlineMutationResult)
+    // end 2 dataObjects errors
+    .mockResolvedValueOnce({
+      data: {
+        updateExperiences: {
+          __typename: "UpdateExperiencesSomeSuccess",
+          experiences: [
+            {
+              __typename: "UpdateExperienceSomeSuccess",
+              experience: {
+                newEntries: [
+                  {
+                    __typename: "CreateEntrySuccess",
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      },
+    } as UpdateExperiencesOnlineMutationResult); // 3 happy path
 
   /**
-   * While we are on new entry page
+   * When component is rendered
    */
   render(ui);
 
   /**
-   * When we submit the form without making any input
+   * Then error notification should not be visible
    */
-  fireEvent.click(document.getElementById(submitBtnDomId) as any);
+  expect(document.getElementById("close-notification")).toBeNull();
+
+  /**
+   * When form is submitted without making any changes
+   */
+  const submitDom = document.getElementById(submitBtnDomId) as HTMLElement;
+  submitDom.click(); // 1
+
+  /**
+   * Then error notification should be visible
+   */
+  let closeNotificationDom = await waitForElement(() => {
+    return document.getElementById("close-notification") as HTMLElement;
+  });
+
+  /**
+   * And default values should be sent to the server
+   */
+  const {
+    variables: {
+      input: [
+        {
+          addEntries: [{ dataObjects: inputDataObjects0 }],
+        },
+      ],
+    },
+  } = mockUpdateExperiencesOnline.mock.calls[0][0];
+
+  let [f1, f2, f3, f4] = inputDataObjects0 as CreateDataObject[];
+  expect(JSON.parse(f1.data).decimal).toBe("0");
+  expect(JSON.parse(f2.data).integer).toBe("0");
+  expect(JSON.parse(f3.data).single_line_text).toBe("");
+  expect(JSON.parse(f4.data).multi_line_text).toBe("");
+
+  /**
+   * When error notification is closed
+   */
+  closeNotificationDom.click();
+
+  /**
+   * Then error notification should not be visible
+   */
+  expect(document.getElementById("close-notification")).toBeNull();
+
+  /**
+   * When form values are changed
+   */
+  const decimalInputDom = document.getElementById(
+    makeFieldInputId("f1"),
+  ) as HTMLInputElement;
+
+  fillField(decimalInputDom, "0.1");
+
+  const integerInputDom = document.getElementById(
+    makeFieldInputId("f2"),
+  ) as HTMLInputElement;
+
+  fillField(integerInputDom, "1");
+
+  const singleTextInputDom = document.getElementById(
+    makeFieldInputId("f3"),
+  ) as HTMLInputElement;
+
+  fillField(singleTextInputDom, "a");
+
+  const multiTextInputDom = document.getElementById(
+    makeFieldInputId("f4"),
+  ) as HTMLInputElement;
+
+  fillField(multiTextInputDom, "a\na");
+
+  /**
+   * Then field error should not to be visible
+   */
+  const decimalFieldDom = decimalInputDom.closest(".field") as HTMLElement;
+  expect(decimalFieldDom.classList).not.toContain("error");
+  const decimalErrorDomId = makeInputErrorDomId("f1");
+  expect(document.getElementById(decimalErrorDomId)).toBeNull();
+
+  /**
+   * When form is submitted again
+   */
+  submitDom.click(); // 2
+
+  /**
+   * Then error notification should be visible
+   */
+  closeNotificationDom = await waitForElement(() => {
+    return document.getElementById("close-notification") as HTMLElement;
+  });
+
+  /**
+   * And updated values should be sent to the server
+   */
+  const {
+    variables: {
+      input: [
+        {
+          addEntries: [{ dataObjects: inputDataObjects1 }],
+        },
+      ],
+    },
+  } = mockUpdateExperiencesOnline.mock.calls[1][0];
+
+  [f1, f2, f3, f4] = inputDataObjects1 as CreateDataObject[];
+  expect(JSON.parse(f1.data).decimal).toBe("0.1");
+  expect(JSON.parse(f2.data).integer).toBe("1");
+  expect(JSON.parse(f3.data).single_line_text).toBe("a");
+  expect(JSON.parse(f4.data).multi_line_text).toBe("a\\na");
+
+  /**
+   * And field error should be visible
+   */
+  expect(decimalFieldDom.classList).toContain("error");
+  expect(document.getElementById(decimalErrorDomId)).not.toBeNull();
+  expect(document.getElementById(makeInputErrorDomId("f2"))).toBeNull();
+
+  /**
+   * When form is submitted again
+   */
+  submitDom.click(); // 3
+
+  /**
+   * Then error notification should not be visible
+   */
+  expect(document.getElementById("close-notification")).toBeNull();
+
+  /**
+   * And user should be redirected
+   */
 
   await wait(() => {
     expect(mockNavigate).toHaveBeenCalled();
   });
 
-  /**
-   * Then default values should be sent to the server
-   */
-
-  const {
-    variables: {
-      input: { dataObjects },
-    },
-  } = mockCreateOnlineEntry.mock.calls[0][0] as ToVariables<
-    CreateOnlineEntryMutationVariables
-  >;
-
-  const [f1, f2] = dataObjects as CreateDataObject[];
-
-  expect(JSON.parse(f1.data).decimal).toBe("0");
-
-  expect(JSON.parse(f2.data).integer).toBe("0");
+  expect(mockPersistFunc).toHaveBeenCalled();
 });
 
 it("sets values of date and datetime fields", async () => {
@@ -289,7 +468,7 @@ it("sets values of date and datetime fields", async () => {
     entries: {} as ExperienceFragment_entries,
   } as ExperienceFragment;
 
-  const { ui, mockCreateOnlineEntry } = makeComp({
+  const { ui, mockNavigate } = makeComp({
     experience: experience,
   });
 
@@ -297,8 +476,6 @@ it("sets values of date and datetime fields", async () => {
    * While we are on new entry page
    */
   render(ui);
-  // const { debug } = render(ui);
-  // debug();
 
   /**
    * When we change datetime field to 2 hours ago
@@ -320,7 +497,7 @@ it("sets values of date and datetime fields", async () => {
   /**
    * And submit the form
    */
-  fireEvent.click(document.getElementById(submitBtnDomId) as any);
+  (document.getElementById(submitBtnDomId) as HTMLElement).click();
 
   /**
    * Then the correct values should be sent to the server
@@ -328,12 +505,8 @@ it("sets values of date and datetime fields", async () => {
   await wait(() => true);
 
   const {
-    variables: {
-      input: { dataObjects },
-    },
-  } = mockCreateOnlineEntry.mock.calls[0][0] as ToVariables<
-    CreateOnlineEntryMutationVariables
-  >;
+    variables: { dataObjects },
+  } = mockCreateOfflineEntry.mock.calls[0][0];
 
   const [f1, f2] = dataObjects as CreateDataObject[];
 
@@ -344,417 +517,30 @@ it("sets values of date and datetime fields", async () => {
   expect(
     differenceInHours(now, parseISO(JSON.parse(f2.data).datetime)),
   ).toBeGreaterThanOrEqual(1);
-});
-
-it("creates new entry when offline", async () => {
-  /**
-   * Given we have received experiences from server
-   */
-  const exp = {
-    id: "1",
-    title,
-    dataDefinitions: [
-      {
-        id: "f1",
-        name: "f1",
-        type: DataTypes.SINGLE_LINE_TEXT,
-      },
-    ],
-    entries: {},
-  };
-
-  const {
-    ui,
-    mockCreateOfflineEntry,
-    mockCreateOnlineEntry,
-    mockNavigate,
-  } = makeComp(
-    {
-      experience: exp as any,
-    },
-    false,
-  );
-
-  mockCreateOfflineEntry.mockResolvedValue({
-    data: {
-      createOfflineEntry: {
-        entry: {},
-      },
-    } as CreateOfflineEntryMutationReturned,
-  });
 
   /**
-   * While we are on new entry page
+   * And user should be redirected
    */
-  render(ui);
-
-  /**
-   * When we complete and submit the form
-   */
-  const $singleText = document.getElementById(
-    makeFieldInputId("f1"),
-  ) as HTMLInputElement;
-
-  expect($singleText.value).toBe("");
-
-  fillField($singleText, "s");
-
-  fireEvent.click(document.getElementById(submitBtnDomId) as any);
-
-  await wait(() => {
-    expect(mockNavigate).toHaveBeenCalled();
-  });
-
-  /**
-   * Then the correct values should be saved locally
-   */
-
-  const {
-    variables: { dataObjects },
-  } = mockCreateOfflineEntry.mock.calls[0][0] as ToVariables<
-    CreateOfflineEntryMutationVariables
-  >;
-
-  const [f1] = dataObjects as CreateDataObject[];
-
-  expect(f1.definitionId).toBe("f1");
-  expect(JSON.parse(f1.data).single_line_text).toBe("s");
-
-  /**
-   * No values should be uploaded to the server
-   */
-  expect(mockCreateOnlineEntry).not.toBeCalled();
-});
-
-it("renders error when entry creation fails", async () => {
-  /**
-   * Given there is experience in the system
-   */
-  const experience = {
-    id: "1",
-    title,
-    dataDefinitions: [
-      {
-        id: "f1",
-        name: "f1",
-        type: DataTypes.MULTI_LINE_TEXT,
-      },
-    ],
-    entries: {},
-  } as ExperienceFragment;
-
-  /**
-   * And server will respond when submitted twice:
-   * 1. errors with empty fields
-   * 2. data objects errors
-   */
-
-  const { ui, mockCreateOnlineEntry, mockNavigate } = makeComp({
-    experience,
-  });
-
-  mockCreateOnlineEntry
-    .mockResolvedValueOnce({
-      data: {
-        createEntry: { errors: {} },
-      } as CreateOnlineEntryMutation,
-    })
-    .mockResolvedValue({
-      data: {
-        createEntry: {
-          errors: {
-            dataObjectsErrors: [
-              {
-                index: 0,
-                errors: {
-                  data: "is invalid",
-                  definitionId: "f1",
-                  __typename: "DataObjectError",
-                },
-              },
-            ],
-          } as CreateOnlineEntryMutation_createEntry_errors,
-        },
-      } as CreateOnlineEntryMutation,
-    });
-
-  /**
-   * When component is rendered
-   */
-  render(ui);
-
-  /**
-   * Then the multi text input field should be empty
-   */
-  const multiTextInput = document.getElementById(
-    makeFieldInputId("f1"),
-  ) as HTMLInputElement;
-
-  expect(multiTextInput.value).toBe("");
-
-  /**
-   * When the multiTextInput field is completed with invalid data
-   */
-  fillField(multiTextInput, "s");
-
-  /**
-   * Then we should not see loading indicator
-   */
-  expect(document.getElementById(mockLoadingId)).toBeNull();
-
-  /**
-   * But after submitting the form
-   */
-  const domSubmitBtn = document.getElementById(submitBtnDomId) as HTMLElement;
-  domSubmitBtn.click();
-
-  /**
-   * Then we should see loading indicator
-   */
-  expect(document.getElementById(mockLoadingId)).not.toBeNull();
-
-  /**
-   * And no generic error UI should be visible
-   */
-  expect(document.getElementById(networkErrorDomId)).toBeNull();
-
-  /**
-   * And page should not scroll to errorDom
-   */
-  expect(mockScrollIntoView).not.toHaveBeenCalled();
-
-  /**
-   * And after unsucessful submit, a generic error UI should be visible
-   */
-
-  await waitForElement(
-    () => document.getElementById(networkErrorDomId) as HTMLDivElement,
-  );
-
-  /**
-   * And page should scroll to errorDom
-   */
-  expect(mockScrollIntoView.mock.calls[0][0]).toBe(
-    scrollIntoViewNonFieldErrorDomId,
-  );
-
-  /**
-   * After submitting form a second time
-   */
-  domSubmitBtn.click();
-
-  /**
-   * Then no error UI should be visible
-   */
-  const fieldErrorDomId = makeFieldErrorDomId(0);
-  expect(document.getElementById(fieldErrorDomId)).toBeNull();
-
-  /**
-   * And page should not have been scrolled again
-   */
-  expect(mockScrollIntoView.mock.calls).toHaveLength(1);
-
-  /**
-   * But after a while, error UI should be visible
-   */
-  await waitForElement(() => document.getElementById(fieldErrorDomId));
-
-  /**
-   * And loading indicator should no longer be visible
-   */
-  expect(document.getElementById(mockLoadingId)).toBeNull();
-
-  /**
-   * And the invalid data should have been sent to the server
-   */
-  const {
-    variables: {
-      input: { experienceId, dataObjects },
-    },
-  } = mockCreateOnlineEntry.mock.calls[1][0] as {
-    variables: CreateOnlineEntryMutationVariables;
-  };
-
-  expect(experienceId).toBe("1");
-
-  const [f1] = dataObjects as CreateDataObject[];
-
-  expect(f1.definitionId).toBe("f1");
-  expect(JSON.parse(f1.data).multi_line_text).toBe("s");
-
-  /**
-   * And user should not be redirected
-   */
-  expect(mockNavigate).not.toHaveBeenCalled();
-
-  /**
-   * And page should scroll to error UI
-   */
-  expect(mockScrollIntoView.mock.calls[1][0]).toBe(fieldErrorDomId);
-});
-
-it("treats all exceptions as network error", async () => {
-  const experience = {
-    id: "1",
-    title,
-    dataDefinitions: [
-      {
-        id: "f1",
-        name: "f1",
-        type: DataTypes.SINGLE_LINE_TEXT,
-      },
-    ],
-    entries: {},
-  } as ExperienceFragment;
-
-  const { ui, mockCreateOnlineEntry, mockNavigate } = makeComp({
-    experience,
-  });
-
-  /**
-   * And errors and exceptions will occur when form is submitted
-   */
-
-  mockCreateOnlineEntry
-    .mockRejectedValueOnce(
-      new ApolloError({
-        networkError: new Error(),
-      }),
-    )
-    .mockRejectedValueOnce(
-      new ApolloError({
-        graphQLErrors: [new GraphQLError("graphql error")],
-      }),
-    )
-    .mockRejectedValueOnce(new Error("others"));
-
-  /**
-   * When component renders
-   */
-  render(ui);
-
-  /**
-   * And we complete the form
-   */
-  fillField(document.getElementById(makeFieldInputId("f1")) as any, "s");
-
-  /**
-   * Then no loading indicator should be visible
-   */
-  expect(document.getElementById(mockLoadingId)).toBeNull();
-
-  ////////////////////////// NETWORK ERROR //////////////////////
-
-  /**
-   * When the form is submitted
-   */
-  const submitBtn = document.getElementById(submitBtnDomId) as HTMLElement;
-  submitBtn.click();
-
-  /**
-   * Then a loading indicator should be visible
-   */
-  expect(document.getElementById(mockLoadingId)).not.toBeNull();
-
-  /**
-   * And no error UI should be visible
-   */
-  expect(document.getElementById(networkErrorDomId)).toBeNull();
-
-  /**
-   * And page should not scroll to errorDom
-   */
-  expect(mockScrollIntoView).not.toHaveBeenCalled();
-
-  /**
-   * And after unsucessful submit, an error UI should be visible
-   */
-
-  let errorDom = await waitForElement(
-    () => document.getElementById(networkErrorDomId) as HTMLDivElement,
-  );
-
-  /**
-   * And page should scroll to errorDom
-   */
-  expect(mockScrollIntoView.mock.calls[0][0]).toBe(
-    scrollIntoViewNonFieldErrorDomId,
-  );
-
-  /**
-   * When error UI is closed
-   */
-  closeMessage(errorDom);
-
-  /**
-   * Then error UI should no longer be visible
-   */
-  expect(document.getElementById(networkErrorDomId)).toBeNull();
-
-  ////////////////////////// GRAPHQL ERROR ///////////////////////
-  /**
-   * When form is submitted again
-   */
-  submitBtn.click();
-
-  /**
-   * Then error UI should be visible again
-   */
-  errorDom = await waitForElement(
-    () => document.getElementById(networkErrorDomId) as HTMLDivElement,
-  );
-
-  /**
-   * When error UI is closed
-   */
-  closeMessage(errorDom);
-
-  /**
-   * Then error UI should no longer be visible
-   */
-  expect(document.getElementById(networkErrorDomId)).toBeNull();
-
-  ////////////////////////// OTHER ERROR ///////////////////////
-  /**
-   * When form is submitted yet again
-   */
-  submitBtn.click();
-
-  /**
-   * Then error UI should be visible again
-   */
-  await waitForElement(
-    () => document.getElementById(networkErrorDomId) as HTMLDivElement,
-  );
-
-  /**
-   * And page should not be redirected
-   */
-  expect(mockNavigate).not.toHaveBeenCalled();
+  expect(mockNavigate).toHaveBeenCalled();
+  expect(mockPersistFunc).toHaveBeenCalled();
 });
 
 ////////////////////////// HELPER FUNCTIONS ///////////////////////////////////
 
 const NewEntryP = NewEntryComponent as ComponentType<Partial<ComponentProps>>;
 
-function makeComp(props: Partial<ComponentProps>, connectionStatus = true) {
-  mockIsConnected.mockReturnValue(connectionStatus);
-  const mockCreateOnlineEntry = jest.fn();
-  const mockCreateOfflineEntry = jest.fn();
-
+function makeComp(props: Partial<ComponentProps>) {
   const { Ui, ...rest } = renderWithRouter(NewEntryP);
 
   return {
     ui: (
       <Ui
         createOfflineEntry={mockCreateOfflineEntry}
-        createOnlineEntry={mockCreateOnlineEntry}
-        persistor={({ persist: jest.fn() } as unknown) as AppPersistor}
+        updateExperiencesOnline={mockUpdateExperiencesOnline}
+        persistor={persistor as any}
         {...props}
       />
     ),
-    mockCreateOnlineEntry,
-    mockCreateOfflineEntry,
     ...rest,
   };
 }

@@ -3,65 +3,51 @@ import React, { ComponentType } from "react";
 import "@marko/testing-library/cleanup-after-each";
 import { render, wait, waitForElement } from "@testing-library/react";
 import { EditEntryComponent } from "../components/EditEntry/edit-entry.component";
-import {
-  ComponentProps,
-  ActionType,
-} from "../components/EditEntry/edit-entry-utils";
+import { Props, ActionType } from "../components/EditEntry/edit-entry-utils";
 import { EntryFragment } from "../graphql/apollo-types/EntryFragment";
 import { DataDefinitionFragment } from "../graphql/apollo-types/DataDefinitionFragment";
 import {
   DataTypes,
   UpdateDataObjectInput,
 } from "../graphql/apollo-types/globalTypes";
-import {
-  fillField,
-  closeMessage,
-  ToInputVariables,
-  ToVariables,
-} from "./test_utils";
+import { fillField, closeMessage, ToInputVariables } from "./test_utils";
 import { Props as DateTimeProps } from "../components/DateTimeField/date-time-field.utils";
 import { DataObjectFragment } from "../graphql/apollo-types/DataObjectFragment";
 import { ExperienceFragment } from "../graphql/apollo-types/ExperienceFragment";
-import { UpdateDataObjects } from "../graphql/apollo-types/UpdateDataObjects";
-import { ApolloError } from "apollo-client";
-import { GraphQLError } from "graphql";
 import { toISODatetimeString } from "../components/NewEntry/new-entry.utils";
 import { cleanupRanQueriesFromCache } from "../apollo-cache/cleanup-ran-queries-from-cache";
 import { makeOfflineId, makeApolloCacheRef } from "../constants";
-import {
-  CreateOnlineEntryMutationVariables,
-  CreateOnlineEntryMutation,
-  CreateOnlineEntryMutation_createEntry_errors,
-} from "../graphql/apollo-types/CreateOnlineEntryMutation";
-import {
-  CreateOnlineEntryMutationFnOptions,
-  CreateEntryOnlineMutationResult,
-} from "../graphql/create-entry.mutation";
-import { editEntryUpdate } from "../components/EditEntry/edit-entry.injectables";
 import { AppPersistor } from "../context";
 import {
   ControlName,
   getDataControlDomId,
 } from "../components/EditEntry/edit-entry-dom";
-import { isConnected } from "../state/connections";
 /* eslint-disable-next-line @typescript-eslint/no-unused-vars*/
 import { CreateOfflineEntryMutationReturned } from "../components/NewEntry/new-entry.resolvers";
-import { upsertExperienceWithEntry } from "../components/NewEntry/new-entry.injectables";
 import { wipeReferencesFromCache } from "../state/resolvers/delete-references-from-cache";
 import { ENTRY_TYPE_NAME, DATA_OBJECT_TYPE_NAME } from "../graphql/types";
 import { scrollIntoView } from "../components/scroll-into-view";
+import { UpdateExperiencesOnlineMutationResult } from "../graphql/experiences.mutation";
+import { writeUnsyncedExperience } from "../apollo-cache/unsynced.resolvers";
+import { upsertExperienceWithEntry } from "../components/NewEntry/new-entry.injectables";
+import { updateExperiencesInCache } from "../apollo-cache/update-experiences";
 
 ////////////////////////// MOCKS ////////////////////////////
+
+jest.mock("../apollo-cache/update-experiences");
+const mockUpdateExperiencesInCache = updateExperiencesInCache as jest.Mock;
+
+jest.mock("../apollo-cache/unsynced.resolvers");
+const mockWriteUnsyncedExperience = writeUnsyncedExperience as jest.Mock;
+
+jest.mock("../components/NewEntry/new-entry.injectables");
+const mockUpsertExperienceWithEntry = upsertExperienceWithEntry as jest.Mock;
 
 jest.mock("../components/scroll-into-view.ts");
 const mockScrollIntoView = scrollIntoView as jest.Mock;
 
 jest.mock("../state/resolvers/delete-references-from-cache");
 const mockWipeReferencesFromCache = wipeReferencesFromCache as jest.Mock;
-
-jest.mock("../components/NewEntry/new-entry.injectables");
-const mockUpsertExperienceFn = jest.fn();
-const mockUpsertExperienceWithEntry = upsertExperienceWithEntry as jest.Mock;
 
 jest.mock("../components/DateTimeField/date-time-field.component", () => ({
   DateTimeField: MockDateTimeField,
@@ -71,15 +57,10 @@ jest.mock("../components/DateField/date-field.component", () => ({
   DateField: MockDateTimeField,
 }));
 
-jest.mock("../components/EditEntry/edit-entry.injectables");
-const mockEditEntryUpdateFn = jest.fn();
-const mockEditEntryUpdate = editEntryUpdate as jest.Mock;
-
 jest.mock("../apollo-cache/cleanup-ran-queries-from-cache");
 const mockCleanupRanQueriesFromCache = cleanupRanQueriesFromCache as jest.Mock;
 
-jest.mock("../state/connections");
-const mockIsConnected = isConnected as jest.Mock;
+const mockUpdateExperiencesOnline = jest.fn();
 
 let errorConsoleSpy: jest.SpyInstance;
 const mockPersistFunc = jest.fn();
@@ -94,8 +75,6 @@ afterAll(() => {
 
 beforeEach(() => {
   jest.resetAllMocks();
-  mockUpsertExperienceWithEntry.mockReturnValue(mockUpsertExperienceFn);
-  mockEditEntryUpdate.mockReturnValue(mockEditEntryUpdateFn);
 });
 
 it("destroys the UI", async () => {
@@ -161,11 +140,16 @@ test("renders error boundary", () => {
   expect(mockParentDispatch).toHaveBeenCalled();
 });
 
-test("submitting only data objects, apollo errors, runtime errors", async () => {
-  const { ui, mockUpdateDataOnline, mockEditEntryUpdate } = makeComp({
+test("edit online entry, submit online", async () => {
+  const experienceId = "ex";
+  const entryId = "en";
+
+  const { ui } = makeComp({
     props: {
       hasConnection: true,
       entry: {
+        id: entryId,
+        experienceId,
         dataObjects: [
           {
             id: "int",
@@ -176,6 +160,7 @@ test("submitting only data objects, apollo errors, runtime errors", async () => 
       } as EntryFragment,
 
       experience: {
+        id: experienceId,
         dataDefinitions: [
           {
             id: "int",
@@ -187,92 +172,281 @@ test("submitting only data objects, apollo errors, runtime errors", async () => 
     },
   });
 
-  render(ui);
-  getDataInput("int", "5");
-
   // we received empty data
-  mockUpdateDataOnline
+  mockUpdateExperiencesOnline
+    .mockResolvedValueOnce({}) // 1
+    .mockRejectedValueOnce(new Error("t")) // 2
     .mockResolvedValueOnce({
-      data: {},
-    })
-    .mockResolvedValueOnce({}) // another type of empty response from server.
-    .mockRejectedValueOnce(
-      new ApolloError({
-        graphQLErrors: [new GraphQLError("holla")],
-      }),
-    ) // graphQLErrors
-    .mockRejectedValueOnce(
-      new ApolloError({
-        networkError: new Error("a"),
-      }),
-    ) // networkError
-    .mockRejectedValueOnce(new Error("t")) //javascript exceptions apart from apollo errors
-    .mockResolvedValue({
       data: {
-        updateDataObjects: [
-          {
-            id: "int",
-            dataObject: {
-              id: "int",
-              data: `{"int":10}`,
+        updateExperiences: {
+          __typename: "UpdateExperiencesSomeSuccess",
+          experiences: [
+            {
+              __typename: "UpdateExperienceSomeSuccess",
+              experience: {},
             },
-          },
-        ],
-      } as UpdateDataObjects,
-    });
+          ],
+        },
+      },
+    } as UpdateExperiencesOnlineMutationResult) // 3
+    .mockResolvedValueOnce({
+      data: {
+        updateExperiences: {
+          __typename: "UpdateExperiencesSomeSuccess",
+          experiences: [
+            {
+              __typename: "UpdateExperienceSomeSuccess",
+              experience: {
+                updatedEntries: [
+                  {
+                    __typename: "UpdateEntryErrors",
+                    errors: {
+                      error: "UpdateEntryErrors",
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      },
+    } as UpdateExperiencesOnlineMutationResult) // 4
+    // 5
+    .mockResolvedValueOnce({
+      data: {
+        updateExperiences: {
+          __typename: "UpdateExperiencesSomeSuccess",
+          experiences: [
+            {
+              __typename: "UpdateExperienceSomeSuccess",
+              experience: {
+                updatedEntries: [
+                  {
+                    __typename: "UpdateEntrySomeSuccess",
+                    entry: {
+                      dataObjects: [
+                        {
+                          __typename: "DataObjectErrors",
+                          errors: {
+                            meta: {
+                              id: "int",
+                            },
+                            data: "a",
+                            error: null,
+                          },
+                        },
+                      ],
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      },
+    } as UpdateExperiencesOnlineMutationResult) // 5
+    // end 5
+    // 6
+    .mockResolvedValueOnce({
+      data: {
+        updateExperiences: {
+          __typename: "UpdateExperiencesSomeSuccess",
+          experiences: [
+            {
+              __typename: "UpdateExperienceSomeSuccess",
+              experience: {
+                updatedEntries: [
+                  {
+                    __typename: "UpdateEntrySomeSuccess",
+                    entry: {
+                      dataObjects: [
+                        {
+                          __typename: "DataObjectSuccess",
+                          dataObject: {
+                            id: "int",
+                            data: `{"int":10}`,
+                          },
+                        },
+                      ],
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      },
+    } as UpdateExperiencesOnlineMutationResult); // 6
 
-  const $submit = getSubmit();
-  expect(getSubmittingOverlay()).toBeNull();
-  $submit.click();
-  expect(getSubmittingOverlay()).not.toBeNull();
+  /**
+   * When component is rendered
+   */
 
-  let $response = await waitForElement(getSubmissionSuccessResponseDom);
+  render(ui);
 
-  const mock = mockUpdateDataOnline.mock.calls[0][0] as ToInputVariables<
-    UpdateDataObjectInput
-  >;
-  expect(mock.update).toBe(mockEditEntryUpdate);
+  /**
+   * And entry data is changed
+   */
+  const dataInputDom = getDataInput("int", "5");
 
-  expect(mock.variables.input).toMatchObject([
-    {
-      id: "int",
-      data: `{"integer":"5"}`,
-    },
-  ]);
+  /**
+   * Then error notification should not be visible
+   */
+  expect(getErrorsNotificationDom()).toBeNull();
 
-  closeMessage($response);
-  expect(getSubmissionSuccessResponseDom()).toBeNull();
-
-  expect(getSubmittingOverlay()).toBeNull();
-  $submit.click();
-  expect(getSubmittingOverlay()).not.toBeNull();
-  $response = await waitForElement(getOtherErrorsResponseDom);
-  expect(getSubmittingOverlay()).toBeNull();
-
-  expect(getApolloErrorsResponseDom()).toBeNull();
-  $submit.click();
-  $response = await waitForElement(getApolloErrorsResponseDom);
-  expect($response).not.toBeNull();
-  closeMessage($response);
-
-  $submit.click();
-  await waitForElement(getApolloErrorsResponseDom);
-
-  expect(getOtherErrorsResponseDom()).toBeNull();
-  $submit.click();
-  await waitForElement(getOtherErrorsResponseDom);
-
+  /**
+   * When form is submitted
+   */
+  const $submit = getSubmit(); // 1
   $submit.click();
 
   /**
-   * Then the submit response UI should be visible
+   * Then error notification should be visible
    */
-  await waitForElement(getSubmissionSuccessResponseDom);
+  let responseDom = await waitForElement(getErrorsNotificationDom);
+
+  /**
+   * And correct value should be sent to the server
+   */
+
+  const mock = mockUpdateExperiencesOnline.mock.calls[0][0] as ToInputVariables<
+    UpdateDataObjectInput
+  >;
+
+  expect(mock.variables.input[0]).toEqual({
+    experienceId,
+    updateEntries: [
+      {
+        entryId,
+        dataObjects: [
+          {
+            id: "int",
+            data: `{"integer":"5"}`,
+          },
+        ],
+      },
+    ],
+  });
+
+  /**
+   * When error notification is closed
+   */
+  closeMessage(responseDom);
+
+  /**
+   * Then error notification should not be visible
+   */
+  expect(getErrorsNotificationDom()).toBeNull();
+
+  /**
+   * When form is submitted
+   */
+  $submit.click(); // 2
+
+  /**
+   * Then error notification should be visible
+   */
+  responseDom = await waitForElement(getErrorsNotificationDom);
+
+  /**
+   * When error notification is closed
+   */
+  closeMessage(responseDom);
+
+  /**
+   * Then error notification should not be visible
+   */
+  expect(getErrorsNotificationDom()).toBeNull();
+
+  /**
+   * When form is submitted
+   */
+  $submit.click(); // 3
+
+  /**
+   * Then error notification should now be visible
+   */
+  responseDom = await waitForElement(getErrorsNotificationDom);
+
+  /**
+   * When error notification is closed
+   */
+  closeMessage(responseDom);
+
+  /**
+   * Then error notification should not be visible
+   */
+  expect(getErrorsNotificationDom()).toBeNull();
+
+  /**
+   * When form is submitted
+   */
+  $submit.click(); // 4
+
+  /**
+   * Then error notification should now be visible
+   */
+  await waitForElement(getErrorsNotificationDom);
+
+  /**
+   * And field error should not be visible
+   */
+  expect(getDataError("int")).toBeNull();
+
+  /**
+   * When form is submitted
+   */
+  $submit.click(); // 5
+
+  /**
+   * Then success notification should now be visible
+   */
+  responseDom = await waitForElement(getSuccessNotificationDom);
+
+  /**
+   * And error notification should not be visible
+   */
+  expect(getErrorsNotificationDom()).toBeNull();
+
+  /**
+   * And field error should be visible
+   */
+  expect(getDataError("int")).not.toBeNull();
+
+  /**
+   * When success notification is closed
+   */
+  closeMessage(responseDom);
+
+  /**
+   * Then success notification should not be visible
+   */
+  expect(getSuccessNotificationDom()).toBeNull();
+
+  /**
+   * When form is submitted
+   */
+  $submit.click(); // 6
+
+  /**
+   * Then success notification should now be visible
+   */
+  responseDom = await waitForElement(getSuccessNotificationDom);
+
+  /**
+   * And field error should not be visible
+   */
+  expect(getDataError("int")).toBeNull();
 
   /**
    * And global submit button should not be visible
    */
   expect(getSubmit()).toBeNull();
+
+  /**
+   * And data input value should be updated with value from server
+   */
+  expect(dataInputDom.value).toBe("10");
 
   /**
    * When we enter a new value for the int field
@@ -286,14 +460,17 @@ test("submitting only data objects, apollo errors, runtime errors", async () => 
   expect(getSubmit()).not.toBeNull();
 });
 
-test("edit online entry, submit offline - only data objects can be updated", async () => {
+test("edit online entry, submit offline", async () => {
   /**
    * Given user wishes to edit an entry
    */
 
-  const offlineEntry = {
-    id: "en",
-    experienceId: "ex",
+  const experienceId = "ex";
+  const entryId = "en";
+
+  const onlineEntry = {
+    id: entryId,
+    experienceId,
     dataObjects: [
       {
         id: "int",
@@ -306,15 +483,12 @@ test("edit online entry, submit offline - only data objects can be updated", asy
         data: `{"decimal":1.1}`,
       },
     ] as DataObjectFragment[],
-  };
+  } as EntryFragment;
 
-  /**
-   * And we are offline
-   */
-  mockIsConnected.mockReturnValue(false);
   const { ui } = makeComp({
     props: {
-      entry: offlineEntry as EntryFragment,
+      hasConnection: false,
+      entry: onlineEntry,
       experience: {
         id: "ex",
         dataDefinitions: [
@@ -351,7 +525,7 @@ test("edit online entry, submit offline - only data objects can be updated", asy
   /**
    * And success UI should not be visible
    */
-  expect(getSubmissionSuccessResponseDom()).toBeNull();
+  expect(getSuccessNotificationDom()).toBeNull();
 
   /**
    * When form is submitted
@@ -361,7 +535,7 @@ test("edit online entry, submit offline - only data objects can be updated", asy
   /**
    * Then success UI should be visible
    */
-  expect(getSubmissionSuccessResponseDom()).not.toBeNull();
+  expect(getSuccessNotificationDom()).not.toBeNull();
 
   /**
    * And the data field should now show success UI
@@ -369,46 +543,46 @@ test("edit online entry, submit offline - only data objects can be updated", asy
   expect(getDataField("int").classList).toContain("data--success");
 
   /**
-   * And offline ledger is updated appropriately
+   * And cache is updated accordingly
    */
   await wait(() => true);
-  expect(mockUpsertExperienceWithEntry.mock.calls[0]).toEqual([
-    "ex",
-    "offline",
-  ]);
-  expect(mockUpsertExperienceFn).toHaveBeenCalled();
   expect(mockPersistFunc).toHaveBeenCalled();
   expect(mockScrollIntoView).toHaveBeenCalled();
+  expect(mockWriteUnsyncedExperience.mock.calls[0]).toEqual([
+    experienceId,
+    {
+      modifiedEntries: {
+        [entryId]: {
+          int: true,
+        },
+      },
+    },
+  ]);
 });
 
 test("edit offline entry, submit offline", async () => {
-  mockUpsertExperienceWithEntry.mockReturnValue(mockUpsertExperienceFn);
   /**
    * Given user wishes to edit an entry
    */
 
   const entryId = makeOfflineId("en");
+  const experienceId = "ex";
 
   const offlineEntry = {
     id: entryId,
-    experienceId: "ex",
+    experienceId,
     dataObjects: [
       {
         id: "int",
         definitionId: "int",
         data: `{"integer":1}`,
       },
-    ] as DataObjectFragment[],
-  };
-
-  /**
-   * And we are offline
-   */
-  mockIsConnected.mockReturnValue(false);
+    ],
+  } as EntryFragment;
 
   const { ui } = makeComp({
     props: {
-      entry: offlineEntry as EntryFragment,
+      entry: offlineEntry,
       experience: {
         id: "ex",
         dataDefinitions: [
@@ -417,7 +591,7 @@ test("edit offline entry, submit offline", async () => {
             type: DataTypes.INTEGER,
             name: "int",
           },
-        ] as DataDefinitionFragment[],
+        ],
       } as ExperienceFragment,
     },
   });
@@ -440,7 +614,7 @@ test("edit offline entry, submit offline", async () => {
   /**
    * And success UI should not be visible
    */
-  expect(getSubmissionSuccessResponseDom()).toBeNull();
+  expect(getSuccessNotificationDom()).toBeNull();
 
   /**
    * When form is submitted
@@ -450,7 +624,7 @@ test("edit offline entry, submit offline", async () => {
   /**
    * Then success UI should be visible
    */
-  expect(getSubmissionSuccessResponseDom()).not.toBeNull();
+  expect(getSuccessNotificationDom()).not.toBeNull();
 
   /**
    * And the data field should now show success UI
@@ -458,14 +632,22 @@ test("edit offline entry, submit offline", async () => {
   expect(getDataField("int").classList).toContain("data--success");
 
   /**
-   * And offline ledger is updated appropriately
+   * And cache should have been updated accordingly
    */
   await wait(() => true);
-  expect(mockUpsertExperienceFn).toHaveBeenCalled();
   expect(mockPersistFunc).toHaveBeenCalled();
+  const [, arg1, arg2] = mockUpsertExperienceWithEntry.mock.calls[0];
+
+  expect(arg1.dataObjects[0]).toMatchObject({
+    data: '{"integer":"2"}',
+    definitionId: "int",
+    id: "int",
+  });
+
+  expect(arg2).toBe(experienceId);
 });
 
-test("edit offline entry, upload online, one data object updated, one not updated", async () => {
+test("edit offline entry, upload online", async () => {
   /**
    * Given there is entry created offline with 2 data objects:
    * 1 - will be updated using the component
@@ -474,13 +656,8 @@ test("edit offline entry, upload online, one data object updated, one not update
   const offlineEntryId = makeOfflineId(1);
   const experienceId = "ex";
 
-  const definition1Id = "int";
-  const data1OnlineId = "d1on";
-  const data1OfflineId = "d1of";
-
-  const definition2Id = "dec";
-  const data2OnlineId = "d2on";
-  const data2OfflineId = "d2of";
+  const defId = "int";
+  const dataId = "int";
 
   const offlineEntry = {
     id: offlineEntryId,
@@ -488,112 +665,121 @@ test("edit offline entry, upload online, one data object updated, one not update
     experienceId,
     dataObjects: [
       {
-        id: data1OfflineId,
-        definitionId: definition1Id,
+        id: dataId,
+        definitionId: defId,
         data: `{"integer":1}`,
       },
-      {
-        id: data2OfflineId,
-        definitionId: definition2Id,
-        data: `{"decimal":1.1}`,
-      },
-    ] as DataObjectFragment[],
+    ],
   } as EntryFragment;
 
-  /**
-   * And we are online
-   */
-  mockIsConnected.mockReturnValue(true);
-
-  const { ui, mockCreateEntryOnline } = makeComp({
+  const { ui } = makeComp({
     props: {
-      entry: offlineEntry as EntryFragment,
+      entry: offlineEntry,
       hasConnection: true,
       experience: {
         id: experienceId,
         dataDefinitions: [
           {
-            id: definition1Id,
+            id: defId,
             type: DataTypes.INTEGER,
             name: "int",
           },
-          {
-            id: definition2Id,
-            type: DataTypes.DECIMAL,
-            name: "dec",
-          },
-        ] as DataDefinitionFragment[],
+        ],
       } as ExperienceFragment,
     },
   });
 
-  /**
-   * And form will be submitted 4 times and server will respond:
-   * 1 - invalid response
-   * 2 - javascript exception
-   * 3 - none data entry creation error
-   * 4 - data entry creation error
-   * 5 - success
-   */
-
-  const createEntryResponse = {
-    data: {
-      createEntry: {
-        entry: {
-          id: "en",
-          experienceId,
-          clientId: offlineEntryId,
-          dataObjects: [
+  mockUpdateExperiencesOnline
+    .mockResolvedValueOnce(null) // 1
+    .mockRejectedValueOnce(new Error("a")) // 2
+    // 3 no newEntries key
+    .mockResolvedValueOnce({
+      data: {
+        updateExperiences: {
+          __typename: "UpdateExperiencesSomeSuccess",
+          experiences: [
             {
-              definitionId: definition1Id,
-              id: data1OnlineId,
-              clientId: data1OfflineId,
-              data: `{"integer":2}`,
-            },
-            {
-              definitionId: definition2Id,
-              id: data2OnlineId,
-              clientId: data2OfflineId,
-              data: `{"decimal":1.1}`,
+              __typename: "UpdateExperienceSomeSuccess",
+              experience: {},
             },
           ],
         },
       },
-    },
-  } as CreateEntryOnlineMutationResult;
-
-  mockCreateEntryOnline
-    .mockResolvedValueOnce(null) // invalid
-    .mockRejectedValueOnce(new Error("")) // exception
+    } as UpdateExperiencesOnlineMutationResult) // 3
+    // end 3
+    // 4 no data objects error
     .mockResolvedValueOnce({
       data: {
-        createEntry: {
-          errors: {
-            clientId: offlineEntryId,
-            entry: "err",
-          } as CreateOnlineEntryMutation_createEntry_errors,
-        },
-      } as CreateOnlineEntryMutation,
-    }) // none data objects errors
-    .mockResolvedValueOnce({
-      data: {
-        createEntry: {
-          errors: {
-            clientId: offlineEntryId,
-            dataObjectsErrors: [
-              {
-                index: 0,
-                clientId: data1OfflineId,
-                errors: {
-                  data: "is invalid",
-                },
+        updateExperiences: {
+          __typename: "UpdateExperiencesSomeSuccess",
+          experiences: [
+            {
+              __typename: "UpdateExperienceSomeSuccess",
+              experience: {
+                newEntries: [
+                  {
+                    __typename: "CreateEntryErrors",
+                    errors: {},
+                  },
+                ],
               },
-            ],
-          } as CreateOnlineEntryMutation_createEntry_errors,
+            },
+          ],
         },
-      } as CreateOnlineEntryMutation,
-    }) // data objects errors
-    .mockResolvedValueOnce(createEntryResponse); // success
+      },
+    } as UpdateExperiencesOnlineMutationResult) // 4
+    // end 4
+    // 5 there is data objects error
+    .mockResolvedValueOnce({
+      data: {
+        updateExperiences: {
+          __typename: "UpdateExperiencesSomeSuccess",
+          experiences: [
+            {
+              __typename: "UpdateExperienceSomeSuccess",
+              experience: {
+                newEntries: [
+                  {
+                    __typename: "CreateEntryErrors",
+                    errors: {
+                      dataObjects: [
+                        {
+                          meta: {
+                            clientId: dataId,
+                          },
+                          data: "a",
+                        },
+                      ],
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      },
+    } as UpdateExperiencesOnlineMutationResult) // 5
+    // end 5
+    // 6 happy path
+    .mockResolvedValueOnce({
+      data: {
+        updateExperiences: {
+          __typename: "UpdateExperiencesSomeSuccess",
+          experiences: [
+            {
+              __typename: "UpdateExperienceSomeSuccess",
+              experience: {
+                newEntries: [
+                  {
+                    __typename: "CreateEntrySuccess",
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      },
+    } as UpdateExperiencesOnlineMutationResult); // 6
 
   /**
    * When the component is launched
@@ -603,321 +789,147 @@ test("edit offline entry, upload online, one data object updated, one not update
   /**
    * When we update entry data 1 to a new value
    */
-  getDataInput(data1OfflineId, "2");
-
-  /**
-   * And submit button is clicked
-   */
-  getSubmit().click();
+  getDataInput(dataId, "2");
 
   /**
    * Then error UI should not be visible
    */
-  expect(getOtherErrorsResponseDom()).toBeNull();
+  expect(getErrorsNotificationDom()).toBeNull();
 
   /**
-   * But after a while, error UI should be visible
+   * When form is submitted
    */
-  await waitForElement(getOtherErrorsResponseDom);
+  const submitDom = getSubmit();
+  submitDom.click(); // 1
 
   /**
-   * When form is submitted a second time
+   * Then error notification should be visible
    */
-  getSubmit().click();
+  let notificationDom = await waitForElement(getErrorsNotificationDom);
 
   /**
-   * Then error UI should not be visible
+   * When error notification is closed
    */
-  expect(getOtherErrorsResponseDom()).toBeNull();
+  closeMessage(notificationDom);
 
   /**
-   * But after a while, error UI should be visible
+   * Then error notification should not be visible
    */
-  await waitForElement(getOtherErrorsResponseDom);
+  expect(getErrorsNotificationDom()).toBeNull();
 
   /**
-   * When form is submitted a 3rd time
+   * When form is submitted
    */
-  getSubmit().click();
+  submitDom.click(); // 2
 
   /**
-   * Then error UI should not be visible
+   * Then error notification should be visible
    */
-  expect(getSubmissionSuccessResponseDom()).toBeNull();
+  notificationDom = await waitForElement(getErrorsNotificationDom);
 
   /**
-   * But after a while, error UI should be visible
+   * When error notification is closed
    */
-  await waitForElement(getSubmissionSuccessResponseDom);
+  closeMessage(notificationDom);
 
   /**
-   * When form is submitted a fourth time
+   * Then error notification should not be visible
    */
-  getSubmit().click();
+  expect(getErrorsNotificationDom()).toBeNull();
 
   /**
-   * Then general error UI should not be visible
+   * When form is submitted
    */
-  expect(getOtherErrorsResponseDom()).toBeNull();
+  submitDom.click(); // 3
 
   /**
-   * And data 1 error UI should not be visible
+   * Then error notification should be visible
    */
-  expect(getDataError(data1OfflineId)).toBeNull();
+  notificationDom = await waitForElement(getErrorsNotificationDom);
 
   /**
-   * And success UI should not be visible
+   * And success notification should not be visible
    */
-  expect(getSubmissionSuccessResponseDom()).toBeNull();
+  expect(getSuccessNotificationDom()).toBeNull();
 
   /**
-   * But after a while, data 1 error UI should be visible
+   * When form is submitted
    */
-  await waitForElement(() => getDataError(data1OfflineId));
+  submitDom.click(); // 4
 
   /**
-   * And success UI should be visible
+   * Then success notification should be visible
    */
-  expect(getSubmissionSuccessResponseDom()).not.toBeNull();
+  notificationDom = await waitForElement(getSuccessNotificationDom);
 
   /**
-   * When form is submitted the fifth time
+   * And error notification should not be visible
    */
-  getSubmit().click();
+  expect(getErrorsNotificationDom()).toBeNull();
 
   /**
-   * But after a while
+   * When success notification is closed
    */
+  closeMessage(notificationDom);
+
+  /**
+   * Then success notification should not be visible
+   */
+  expect(getSuccessNotificationDom()).toBeNull();
+
+  /**
+   * And field error should not be visible
+   */
+  expect(getDataError(dataId)).toBeNull();
+  expect(getDataField(dataId).classList).not.toContain("error");
+
+  /**
+   * When form is submitted
+   */
+  submitDom.click(); // 5
+
+  /**
+   * Then success notification should be visible
+   */
+  notificationDom = await waitForElement(getSuccessNotificationDom);
+
+  /**
+   * And field error should be visible
+   */
+  expect(getDataError(dataId)).not.toBeNull();
+  expect(getDataField(dataId).classList).toContain("error");
+
+  /**
+   * When form is submitted
+   */
+  submitDom.click(); // 6
   await wait(() => true);
 
   /**
-   * And correct data should have been uploaded to the server
-   */
-  const mock = mockCreateEntryOnline.mock.calls[4][0] as ToVariables<
-    CreateOnlineEntryMutationVariables
-  >;
-
-  const variables: CreateOnlineEntryMutationFnOptions["variables"] = {
-    input: {
-      experienceId,
-      clientId: offlineEntryId,
-      dataObjects: [
-        {
-          definitionId: definition1Id,
-          clientId: data1OfflineId,
-          data: `{"integer":"2"}`,
-        },
-        {
-          definitionId: definition2Id,
-          clientId: data2OfflineId,
-          data: `{"decimal":"1.1"}`,
-        },
-      ],
-    },
-  };
-
-  expect(mock.variables).toEqual(variables);
-
-  /**
-   * And offline entry should be replaced with online entry in experiences
-   */
-  const [arg11, arg12, arg13] = mockUpsertExperienceWithEntry.mock.calls[0];
-
-  expect([arg11, arg12]).toEqual(["ex", "online"]);
-  arg13();
-
-  /**
    * And cache should be flushed from memory
    */
-  expect(mockPersistFunc).toHaveBeenCalled();
 
-  /**
-   * And offline entry data should be removed from cache.
-   */
+  const onDoneFn =
+    mockUpdateExperiencesInCache.mock.calls[
+      mockUpdateExperiencesInCache.mock.calls.length - 1
+    ][0];
+
+  onDoneFn();
+
+  expect(mockPersistFunc).toHaveBeenCalled();
 
   expect(mockWipeReferencesFromCache.mock.calls[0][1]).toEqual([
     makeApolloCacheRef(ENTRY_TYPE_NAME, offlineEntryId),
-    makeApolloCacheRef(DATA_OBJECT_TYPE_NAME, data1OfflineId),
-    makeApolloCacheRef(DATA_OBJECT_TYPE_NAME, data2OfflineId),
+    makeApolloCacheRef(DATA_OBJECT_TYPE_NAME, dataId),
   ]);
-});
-
-test("online entry modified offline, sync online", async () => {
-  /**
-   * Given there is entry created online but modified offline with 2 data
-   * objects:
-   * 1 - will be updated using the component
-   * 2 - will be submitted unchanged
-   */
-  const entryId = "en";
-  const experienceId = "ex";
-
-  const definition1Id = "int";
-  const data1OnlineId = "d1on";
-
-  const definition2Id = "dec";
-  const data2OnlineId = "d2on";
-
-  const entry = {
-    id: entryId,
-    modOffline: true,
-    experienceId,
-    dataObjects: [
-      {
-        id: data1OnlineId,
-        definitionId: definition1Id,
-        data: `{"integer":1}`,
-      },
-      {
-        id: data2OnlineId,
-        definitionId: definition2Id,
-        data: `{"decimal":1.1}`,
-      },
-    ] as DataObjectFragment[],
-  } as EntryFragment;
-
-  /**
-   * And we are online
-   */
-
-  const { ui, mockUpdateDataOnline } = makeComp({
-    props: {
-      entry,
-      hasConnection: true,
-      experience: {
-        id: experienceId,
-        dataDefinitions: [
-          {
-            id: definition1Id,
-            type: DataTypes.INTEGER,
-            name: "int",
-          },
-          {
-            id: definition2Id,
-            type: DataTypes.DECIMAL,
-            name: "dec",
-          },
-        ] as DataDefinitionFragment[],
-      } as ExperienceFragment,
-    },
-  });
-
-  /**
-   * And form will be submitted 4 times and server will respond:
-   * 1 - invalid response
-   * 2 - javascript exception
-   * 3 - none data entry creation error
-   * 4 - data entry creation error
-   * 5 - success
-   */
-
-  const serverResponse = {
-    data: {
-      updateDataObjects: [
-        {
-          id: data1OnlineId,
-          dataObject: {
-            id: data1OnlineId,
-            data: `{"integer":2}`,
-          },
-        },
-        {
-          id: data2OnlineId,
-          dataObject: {
-            id: data2OnlineId,
-            data: `{"decimal":1.1}`,
-          },
-        },
-      ],
-    } as UpdateDataObjects,
-  };
-
-  mockUpdateDataOnline.mockResolvedValue(serverResponse);
-
-  /**
-   * When the component is launched
-   */
-  render(ui);
-
-  /**
-   * And we update entry data 1 to a new value
-   */
-  getDataInput(data1OnlineId, "2");
-
-  /**
-   * And form is submitted
-   */
-  getSubmit().click();
-
-  /**
-   * Then success response UI should not be visible
-  expect(getSubmissionSuccessResponseDom()).toBeNull();
-
-  /**
-   * But after a while, success UI response should be visible
-   */
-  await waitForElement(getSubmissionSuccessResponseDom);
-
-  /**
-   * And correct data should have been sent to the server
-   */
-  expect(
-    (mockUpdateDataOnline.mock.calls[0][0] as any).variables.input,
-  ).toEqual([
-    {
-      id: data1OnlineId,
-      data: `{"integer":"2"}`,
-    },
-    {
-      id: data2OnlineId,
-      data: `{"decimal":"1.1"}`,
-    },
-  ]);
-
-  /**
-   * And experience should be updated with updated entry in cache
-   */
-  expect(mockUpsertExperienceWithEntry.mock.calls[0]).toEqual(["ex", "online"]);
-  expect(mockUpsertExperienceFn.mock.calls[0][1]).toEqual({
-    data: {
-      createEntry: {
-        entry: {
-          id: entryId,
-          modOffline: null,
-          experienceId,
-          dataObjects: [
-            {
-              id: data1OnlineId,
-              definitionId: definition1Id,
-              data: `{"integer":2}`,
-            },
-            {
-              id: data2OnlineId,
-              definitionId: definition2Id,
-              data: `{"decimal":1.1}`,
-            },
-          ] as DataObjectFragment[],
-        } as EntryFragment,
-      },
-    },
-  });
-
-  /**
-   * And cache should be flushed from memory
-   */
-
-  expect(mockPersistFunc).toHaveBeenCalled();
 });
 
 ////////////////////////// HELPER FUNCTIONS ///////////////////////////
 
-const EditEntryP = EditEntryComponent as ComponentType<Partial<ComponentProps>>;
+const EditEntryP = EditEntryComponent as ComponentType<Partial<Props>>;
 
-function makeComp({ props = {} }: { props?: Partial<ComponentProps> } = {}) {
+function makeComp({ props = {} }: { props?: Partial<Props> } = {}) {
   const mockParentDispatch = jest.fn();
-  const mockUpdateDataOnline = jest.fn();
-  const mockCreateEntryOnline = jest.fn();
-  const mockCreateOfflineEntry = jest.fn();
   const persistor = {
     persist: mockPersistFunc as any,
   } as AppPersistor;
@@ -925,20 +937,14 @@ function makeComp({ props = {} }: { props?: Partial<ComponentProps> } = {}) {
   return {
     ui: (
       <EditEntryP
-        createOnlineEntry={mockCreateEntryOnline}
-        createOfflineEntry={mockCreateOfflineEntry}
-        updateDataObjectsOnline={mockUpdateDataOnline}
         dispatch={mockParentDispatch}
         persistor={persistor}
+        updateExperiencesOnline={mockUpdateExperiencesOnline}
         {...props}
       />
     ),
     mockParentDispatch,
-    mockUpdateDataOnline,
-    mockEditEntryUpdate: mockEditEntryUpdateFn,
-    mockCreateEntryOnline,
     mockPersistFunc,
-    mockCreateOfflineEntry,
   };
 }
 
@@ -993,24 +999,14 @@ function destroyModal() {
   closeMessage($element);
 }
 
-function getSubmissionSuccessResponseDom() {
+function getSuccessNotificationDom() {
   return document.getElementById(
     "edit-entry-submission-response-message",
   ) as HTMLDivElement;
 }
 
-function getSubmittingOverlay() {
-  return document.getElementById("submitting-overlay");
-}
-
-function getOtherErrorsResponseDom() {
+function getErrorsNotificationDom() {
   return document.getElementById(
     "edit-entry-other-errors-message",
-  ) as HTMLDivElement;
-}
-
-function getApolloErrorsResponseDom() {
-  return document.getElementById(
-    "edit-entry-apollo-errors-message",
   ) as HTMLDivElement;
 }

@@ -133,7 +133,6 @@ export function Login() {
                   result.data.login) as LoginMutation_login;
 
                 storeUser(user);
-
                 refreshToHome();
               } catch (error) {
                 scrollIntoView(scrollToTopId, {

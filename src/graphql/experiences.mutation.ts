@@ -1,14 +1,6 @@
 import gql from "graphql-tag";
-import {
-  EXPERIENCE_NO_ENTRY_FRAGMENT,
-  EXPERIENCE_FRAGMENT,
-} from "./experience.fragment";
-import {
-  UpdateExperienceMutation,
-  UpdateExperienceMutationVariables,
-} from "./apollo-types/UpdateExperienceMutation";
+import { EXPERIENCE_FRAGMENT } from "./experience.fragment";
 import { DEFINITION_FRAGMENT } from "./data-definition.fragment";
-import { UPDATE_ENTRY_UNION_FRAGMENT } from "./update-definition-and-data.mutation";
 import { useMutation } from "@apollo/react-hooks";
 import {
   MutationFunctionOptions,
@@ -25,32 +17,15 @@ import {
   CreateExperiences,
   CreateExperiencesVariables,
 } from "./apollo-types/CreateExperiences";
-
-export const UPDATE_EXPERIENCE_MUTATION = gql`
-  mutation UpdateExperienceMutation($input: UpdateExperienceInput!) {
-    updateExperience(input: $input) {
-      experience {
-        ...ExperienceNoEntryFragment
-      }
-
-      errors {
-        title
-        clientId
-      }
-    }
-  }
-
-  ${EXPERIENCE_NO_ENTRY_FRAGMENT}
-`;
-
-export type UpdateExperienceMutationFn = MutationFunction<
-  UpdateExperienceMutation,
-  UpdateExperienceMutationVariables
->;
-
-export interface UpdateExperienceMutationProps {
-  updateExperience: UpdateExperienceMutationFn;
-}
+import { DATA_OBJECT_FRAGMENT } from "./data-object-fragment";
+import {
+  DeleteExperiences,
+  DeleteExperiencesVariables,
+} from "./apollo-types/DeleteExperiences";
+import { UpdateExperienceInput } from "./apollo-types/globalTypes";
+import { UpdateExperienceFragment } from "./apollo-types/UpdateExperienceFragment";
+import { CommonError } from "../general-utils";
+import { updateExperiencesInCache } from "../apollo-cache/update-experiences";
 
 ////////////////////////// UPDATE EXPERIENCES SECTION ////////////////////
 
@@ -135,7 +110,7 @@ const UPDATE_DEFINITION_UNION_FRAGMENT = gql`
 `;
 
 const CREATE_ENTRY_ERROR_FRAGMENT = gql`
-  fragment CreateEntryErrorFragment on CreateEntryErrorx {
+  fragment CreateEntryErrorFragment on CreateEntryError {
     meta {
       experienceId
       index
@@ -145,17 +120,21 @@ const CREATE_ENTRY_ERROR_FRAGMENT = gql`
     clientId
     experienceId
     dataObjects {
-      index
+      meta {
+        index
+        id
+        clientId
+      }
       definition
       definitionId
-      data
       clientId
+      data
     }
   }
 `;
 
-const CREATE_ENTRY_ERRORSS_FRAGMENT = gql`
-  fragment CreateEntryErrorssFragment on CreateEntryErrorss {
+const CREATE_ENTRY_ERRORS_FRAGMENT = gql`
+  fragment CreateEntryErrorsFragment on CreateEntryErrors {
     errors {
       ...CreateEntryErrorFragment
     }
@@ -170,6 +149,69 @@ const CREATE_ENTRY_SUCCESS_FRAGMENT = gql`
     }
   }
   ${ENTRY_FRAGMENT}
+`;
+
+const UPDATE_ENTRY_ERROR_FRAGMENT = gql`
+  fragment UpdateEntryErrorFragment on UpdateEntryError {
+    entryId
+    error
+  }
+`;
+
+const DATA_OBJECT_ERROR_FRAGMENT = gql`
+  fragment DataObjectErrorFragment on DataObjectError {
+    meta {
+      index
+      id
+      clientId
+    }
+    definition
+    definitionId
+    clientId
+    data
+    error
+  }
+`;
+
+const UPDATE_ENTRY_FRAGMENT = gql`
+  fragment UpdateEntryFragment on UpdateEntry {
+    entryId
+    updatedAt
+    dataObjects {
+      __typename
+      ... on DataObjectErrors {
+        errors {
+          ...DataObjectErrorFragment
+        }
+      }
+      ... on DataObjectSuccess {
+        dataObject {
+          ...DataObjectFragment
+        }
+      }
+    }
+  }
+
+  ${DATA_OBJECT_ERROR_FRAGMENT}
+  ${DATA_OBJECT_FRAGMENT}
+`;
+
+export const UPDATE_ENTRY_UNION_FRAGMENT = gql`
+  fragment UpdateEntryUnionFragment on UpdateEntryUnion {
+    __typename
+    ... on UpdateEntryErrors {
+      errors {
+        ...UpdateEntryErrorFragment
+      }
+    }
+    ... on UpdateEntrySomeSuccess {
+      entry {
+        ...UpdateEntryFragment
+      }
+    }
+  }
+  ${UPDATE_ENTRY_ERROR_FRAGMENT}
+  ${UPDATE_ENTRY_FRAGMENT}
 `;
 
 const UPDATE_EXPERIENCE_FRAGMENT = gql`
@@ -187,11 +229,25 @@ const UPDATE_EXPERIENCE_FRAGMENT = gql`
     }
     newEntries {
       __typename
-      ... on CreateEntryErrorss {
-        ...CreateEntryErrorssFragment
+      ... on CreateEntryErrors {
+        ...CreateEntryErrorsFragment
       }
       ... on CreateEntrySuccess {
         ...CreateEntrySuccessFragment
+      }
+    }
+    deletedEntries {
+      __typename
+      ... on EntrySuccess {
+        entry {
+          ...EntryFragment
+        }
+      }
+      ... on DeleteEntryErrors {
+        errors {
+          id
+          error
+        }
       }
     }
   }
@@ -199,7 +255,8 @@ const UPDATE_EXPERIENCE_FRAGMENT = gql`
   ${UPDATE_DEFINITION_UNION_FRAGMENT}
   ${UPDATE_ENTRY_UNION_FRAGMENT}
   ${CREATE_ENTRY_SUCCESS_FRAGMENT}
-  ${CREATE_ENTRY_ERRORSS_FRAGMENT}
+  ${CREATE_ENTRY_ERRORS_FRAGMENT}
+  ${ENTRY_FRAGMENT}
 `;
 
 const UPDATE_EXPERIENCE_SOME_SUCCESS_FRAGMENT = gql`
@@ -212,7 +269,7 @@ const UPDATE_EXPERIENCE_SOME_SUCCESS_FRAGMENT = gql`
 `;
 
 const UPDATE_EXPERIENCES_ONLINE_MUTATION = gql`
-  mutation UpdateExperiencesOnline($input: [UpdateAnExperienceInput!]!) {
+  mutation UpdateExperiencesOnline($input: [UpdateExperienceInput!]!) {
     updateExperiences(input: $input) {
       __typename
       ... on UpdateExperiencesAllFail {
@@ -223,7 +280,7 @@ const UPDATE_EXPERIENCES_ONLINE_MUTATION = gql`
         experiences {
           __typename
 
-          ... on UpdateExperienceFullErrors {
+          ... on UpdateExperienceErrors {
             errors {
               ...UpdateExperienceErrorFragment
             }
@@ -242,6 +299,47 @@ const UPDATE_EXPERIENCES_ONLINE_MUTATION = gql`
 
 export function useUpdateExperiencesOnlineMutation(): UseUpdateExperiencesOnlineMutation {
   return useMutation(UPDATE_EXPERIENCES_ONLINE_MUTATION);
+}
+
+export async function updateExperiencesOnlineEffectHelperFunc(
+  input: UpdateExperienceInput[],
+  updateExperiencesOnline: UpdateExperiencesOnlineMutationFn,
+  onUpdateSuccess: (arg: UpdateExperienceFragment) => void,
+  onError: (error?: CommonError) => void,
+  onDone?: () => void,
+) {
+  try {
+    const response = await updateExperiencesOnline({
+      variables: {
+        input,
+      },
+
+      update: updateExperiencesInCache(onDone),
+    });
+
+    const validResponse =
+      response && response.data && response.data.updateExperiences;
+
+    if (!validResponse) {
+      onError();
+      return;
+    }
+
+    if (validResponse.__typename === "UpdateExperiencesAllFail") {
+      onError(validResponse.error);
+    } else {
+      const updateResult = validResponse.experiences[0];
+
+      if (updateResult.__typename === "UpdateExperienceErrors") {
+        onError(updateResult.errors.error);
+      } else {
+        const { experience } = updateResult;
+        onUpdateSuccess(experience);
+      }
+    }
+  } catch (errors) {
+    onError(errors);
+  }
 }
 
 export type UpdateExperiencesOnlineMutationFn = MutationFunction<
@@ -271,6 +369,8 @@ export interface UpdateExperiencesOnlineComponentProps {
 
 ////////////////////////// END UPDATE EXPERIENCES SECTION //////////////////
 
+////////////////////////// START CREATE EXPERIENCES SECTION ////////////////////
+
 const CREATE_EXPERIENCES_MUTATION = gql`
   mutation CreateExperiences(
     $input: [CreateExperienceInput!]!
@@ -285,7 +385,7 @@ const CREATE_EXPERIENCES_MUTATION = gql`
           ...CreateEntryErrorFragment
         }
       }
-      ... on CreateExperienceErrorss {
+      ... on CreateExperienceErrors {
         errors {
           meta {
             index
@@ -337,3 +437,64 @@ type UseCreateExperiencesMutation = [
 export interface CreateExperiencesComponentProps {
   createExperiences: CreateExperiencesMutationFn;
 }
+
+////////////////////////// END CREATE EXPERIENCES SECTION ///////////////
+
+////////////////////////// DELETE EXPERIENCES SECTION ///////////////
+
+export const DELETE_EXPERIENCES_MUTATION = gql`
+  mutation DeleteExperiences($input: [ID!]!) {
+    deleteExperiences(input: $input) {
+      ... on DeleteExperiencesAllFail {
+        error
+      }
+      ... on DeleteExperiencesSomeSuccess {
+        experiences {
+          ... on DeleteExperienceErrors {
+            errors {
+              id
+              error
+            }
+          }
+          ... on DeleteExperienceSuccess {
+            experience {
+              id
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
+export function useDeleteExperiencesMutation(): UseDeleteExperiencesMutation {
+  return useMutation(DELETE_EXPERIENCES_MUTATION);
+}
+
+export type DeleteExperiencesMutationFn = MutationFunction<
+  DeleteExperiences,
+  DeleteExperiencesVariables
+>;
+
+// used to type check test fake mutation function return value e.g. {data: {result: {}}}
+export type DeleteExperiencesMutationResult = ExecutionResult<
+  DeleteExperiences
+>;
+
+// used to type check test fake function calls arguments
+export type DeleteExperiencesMutationFnOptions = MutationFunctionOptions<
+  DeleteExperiences,
+  DeleteExperiencesVariables
+>;
+
+export type UseDeleteExperiencesMutation = [
+  DeleteExperiencesMutationFn,
+  MutationResult<DeleteExperiences>,
+];
+
+// component's props should extend this
+export interface DeleteExperiencesComponentProps {
+  deleteExperiences: DeleteExperiencesMutationFn;
+}
+
+////////////////////////// END DELETE EXPERIENCES SECTION ////////////

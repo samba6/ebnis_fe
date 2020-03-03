@@ -1,684 +1,546 @@
-import React, {
-  Dispatch,
-  useReducer,
-  useContext,
-  useLayoutEffect,
-} from "react";
-import {
-  Formik,
-  FastField,
-  FormikProps,
-  FieldProps,
-  FieldArray,
-  ArrayHelpers,
-  FormikErrors,
-  Field,
-} from "formik";
-import Dropdown from "semantic-ui-react/dist/commonjs/modules/Dropdown";
-import Form from "semantic-ui-react/dist/commonjs/collections/Form";
-import Button from "semantic-ui-react/dist/commonjs/elements/Button";
-import Icon from "semantic-ui-react/dist/commonjs/elements/Icon";
-import Input from "semantic-ui-react/dist/commonjs/elements/Input";
-import Message from "semantic-ui-react/dist/commonjs/collections/Message";
-import TextArea from "semantic-ui-react/dist/commonjs/addons/TextArea";
-import { NavigateFn } from "@reach/router";
+import React, { useReducer, useContext, useEffect } from "react";
 import "./experience-definition.styles.scss";
 import {
   Props,
-  ValidationSchema,
-  EMPTY_FIELD,
-  reducer,
-  State,
-  ActionType,
-  Action,
-  fieldTypeKeys,
-  DispatchType,
-  ServerDataDefinitionsErrorsMap,
   CallerProps,
+  initState,
+  reducer,
+  StateValue,
+  effectFunctions,
+  ActionType,
+  fieldTypeKeys,
+  Submission,
+  DispatchType,
+  FormValidity,
 } from "./experience-definition.utils";
 import {
-  CreateExperienceInput as FormValues,
-  CreateDataDefinition,
-} from "../../graphql/apollo-types/globalTypes";
-import { makeExperienceRoute } from "../../constants/experience-route";
-import { noop, setDocumentTitle, makeSiteTitle } from "../../constants";
-import { EXPERIENCE_DEFINITION_TITLE } from "../../constants/experience-definition-title";
-import { SidebarHeader } from "../SidebarHeader/sidebar-header.component";
-import { FormCtrlError } from "../FormCtrlError/form-ctrl-error.component";
-import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragment";
-import { isConnected } from "../../state/connections";
-import { DropdownItemProps } from "semantic-ui-react";
-import {
-  CreateExperienceMutation_createExperience,
-  CreateExperienceMutation_createExperience_errors,
-  CreateExperienceMutation_createExperience_errors_dataDefinitionsErrors_errors,
-} from "../../graphql/apollo-types/CreateExperienceMutation";
-import makeClassNames from "classnames";
-import { scrollIntoView } from "../scroll-into-view";
-import { ApolloError } from "apollo-client";
+  scrollIntoViewDomId,
+  titleInputDomId,
+  descriptionInputDomId,
+  definitionNameInputDomId,
+  definitionTypeInputDomId,
+  makeDefinitionTypeOptionDomId,
+  submitDomId,
+  resetDomId,
+  notificationErrorCloseId,
+  notificationWarningCloseId,
+  revealDescriptionInputDomId,
+  hideDescriptionInputDomId,
+  makeDefinitionContainerDomId,
+  moveDownDefinitionSelector,
+  moveUpDefinitionSelector,
+  removeDefinitionSelector,
+  addDefinitionSelector,
+} from "./experience-definition.dom";
 import { EbnisAppContext } from "../../context";
-import {
-  addResolvers,
-  ExperienceDefinitionUpdate,
-} from "./experience-definition.injectables";
-import { useDeleteCachedQueriesAndMutationsOnUnmount } from "../use-delete-cached-queries-mutations-on-unmount";
-import { entriesPaginationVariables } from "../../graphql/get-experience-full.query";
-import { useCreateExperienceOnline } from "../../graphql/create-experience.mutation";
 import { useCreateExperienceOfflineMutation } from "./experience-definition.resolvers";
-
-const mainComponentId = "components-experience-definition";
+import { useCreateExperiencesMutation } from "../../graphql/experiences.mutation";
+import { SidebarHeader } from "../SidebarHeader/sidebar-header.component";
+import { DataTypes } from "../../graphql/apollo-types/globalTypes";
+import { Loading } from "../Loading/loading";
+import { FormCtrlError } from "../FormCtrlError/form-ctrl-error.component";
+import { FieldError } from "../../general-utils";
+import makeClassName from "classnames";
+import { addResolvers } from "./experience-definition.injectables";
 
 export function ExperienceDefinitionComponent(props: Props) {
+  const { client } = props;
+  const [stateMachine, dispatch] = useReducer(reducer, undefined, initState);
+
   const {
-    createExperienceOffline,
-    client,
-    navigate,
-    createExperienceOnline,
-  } = props;
+    states: {
+      submission: submissionState,
+      form: {
+        validity: formValidity,
+        fields: {
+          title: titleState,
+          description: descriptionState,
+          dataDefinitions: dataDefinitionsStates,
+        },
+      },
+    },
+    effects: { general: generalEffects },
+  } = stateMachine;
 
-  const [state, dispatch] = useReducer(reducer, {
-    showDescriptionInput: true,
-  } as State);
+  useEffect(() => {
+    if (generalEffects.value !== StateValue.hasEffects) {
+      return;
+    }
 
-  useLayoutEffect(() => {
+    for (const { key, ownArgs } of generalEffects.hasEffects.context.effects) {
+      effectFunctions[key](
+        /* eslint-disable-next-line @typescript-eslint/no-explicit-any*/
+        ownArgs as any,
+        props,
+        { dispatch },
+      );
+    }
+
+    /* eslint-disable-next-line react-hooks/exhaustive-deps*/
+  }, [generalEffects]);
+
+  useEffect(() => {
     addResolvers(client);
-    setDocumentTitle(makeSiteTitle(EXPERIENCE_DEFINITION_TITLE));
-
-    return setDocumentTitle;
-    /* eslint-disable-next-line react-hooks/exhaustive-deps */
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // we use getExperience( instead of getExperience so that getExperiences does
-  // not get deleted
-  useDeleteCachedQueriesAndMutationsOnUnmount(
-    ["getExperience(", "createExperience"],
-    true,
-  );
+  let titleValue = "";
+  let titleErrors: null | FieldError = null;
 
-  const DataDefinitionsComponent = (values: FormValues) => (
-    arrayHelpers: ArrayHelpers,
-  ) => {
-    return (
-      <>
-        {values.dataDefinitions.map((definition, index) => {
-          return (
-            <DataDefinitionComponent
-              key={index}
-              arrayHelpers={arrayHelpers}
-              index={index}
-              definitionsErrorsMap={state.serverDataDefinitionsErrorsMap}
-              formErrors={state.submittedFormErrors}
-              values={values}
-              dispatch={dispatch}
-              field={definition as CreateDataDefinition}
-            />
-          );
-        })}
-      </>
-    );
-  };
-
-  function onSubmit(formikProps: FormikProps<FormValues>) {
-    return async function() {
-      dispatch([ActionType.clearAllErrors]);
-
-      const { validateForm, setSubmitting, values } = formikProps;
-      setSubmitting(true);
-
-      const errors = await validateForm(values);
-
-      if (errors.title || errors.dataDefinitions) {
-        dispatch([ActionType.setFormError, errors]);
-
-        setSubmitting(false);
-        return;
-      }
-
-      try {
-        let result;
-        let experienceId;
-        let fieldErrors: CreateExperienceMutation_createExperience_errors | null = null;
-
-        if (isConnected()) {
-          result = await createExperienceOnline({
-            variables: {
-              createExperienceInput: values,
-              ...entriesPaginationVariables,
-            },
-
-            update: ExperienceDefinitionUpdate,
-          });
-
-          const { experience, errors } = ((result &&
-            result.data &&
-            result.data.createExperience) ||
-            {}) as CreateExperienceMutation_createExperience;
-
-          fieldErrors = errors;
-
-          if (experience) {
-            experienceId = experience.id;
-          }
-        } else {
-          result = await createExperienceOffline({
-            variables: {
-              createExperienceInput: values,
-              ...entriesPaginationVariables,
-            },
-          });
-
-          experienceId = ((result &&
-            result.data &&
-            result.data.createOfflineExperience) as ExperienceFragment).id;
-        }
-
-        if (experienceId) {
-          (navigate as NavigateFn)(makeExperienceRoute(experienceId));
-
-          return;
-        }
-
-        scrollIntoView(mainComponentId);
-
-        if (fieldErrors) {
-          dispatch([ActionType.FIELD_ERRORS, fieldErrors]);
-          return;
-        }
-
-        dispatch([
-          ActionType.setApolloError,
-          {
-            networkError: { message: "Unknown error occurred" },
-          } as ApolloError,
-        ]);
-      } catch (error) {
-        scrollIntoView(mainComponentId);
-
-        dispatch([
-          ActionType.setApolloError,
-          error instanceof ApolloError
-            ? error
-            : ({ networkError: error } as ApolloError),
-        ]);
-      }
-
-      setSubmitting(false);
-    };
-  }
-
-  function renderForm(formikProps: FormikProps<FormValues>) {
-    const { dirty, isSubmitting, values } = formikProps;
-    const { title, dataDefinitions } = values;
-    const formInvalid = dataDefinitions.length === 0 && !title;
-    const submittedFormErrors = state.submittedFormErrors || {};
-
+  if (titleState.states.value === StateValue.changed) {
     const {
-      graphQlError,
-      serverDataDefinitionsErrorsMap,
-      serverOtherErrorsMap,
-    } = state;
+      context: { formValue },
+      states,
+    } = titleState.states.changed;
+    titleValue = formValue;
 
-    return (
-      <Form onSubmit={onSubmit(formikProps)}>
-        <AllErrorsSummaryComponent
-          serverDataDefinitionsErrorsMap={serverDataDefinitionsErrorsMap}
-          serverOtherErrorsMap={serverOtherErrorsMap}
-          graphQlError={graphQlError}
-          dispatch={dispatch}
-        />
-
-        <Field
-          name="title"
-          error={
-            (serverOtherErrorsMap && serverOtherErrorsMap.title) ||
-            submittedFormErrors.title
-          }
-          component={TitleInputComponent}
-        />
-
-        <Field
-          name="description"
-          dispatch={dispatch}
-          showDescriptionInput={state.showDescriptionInput}
-          component={DescriptionInputComponent}
-        />
-
-        <FieldArray
-          name="dataDefinitions"
-          render={DataDefinitionsComponent(values)}
-        />
-
-        <Button
-          className="submit-btn"
-          id="experience-definition-submit-btn"
-          color="green"
-          inverted={true}
-          disabled={!dirty || formInvalid || isSubmitting}
-          loading={isSubmitting}
-          type="submit"
-          fluid={true}
-        >
-          <Icon name="checkmark" /> Submit
-        </Button>
-      </Form>
-    );
+    if (states.value === StateValue.invalid) {
+      titleErrors = states.invalid.context.errors;
+    }
   }
+
+  let descriptionValue = "";
+  let descriptionActive = false;
+  if (descriptionState.value === StateValue.active) {
+    const activeState = descriptionState.active;
+    descriptionActive = true;
+
+    if (activeState.states.value === StateValue.changed) {
+      const changedState = activeState.states.changed;
+      descriptionValue = changedState.context.formValue;
+    }
+  }
+
+  const definitionsLen = dataDefinitionsStates.length;
 
   return (
     <div className="components-experience-definition">
-      <SidebarHeader title="[New] Experience Definition" sidebar={true} />
+      <SidebarHeader title="New Experience Definition" sidebar={true} />
 
-      <div className="main" id={mainComponentId}>
-        <Formik<FormValues>
-          initialValues={{
-            title: "",
-            description: "",
-            dataDefinitions: [{ ...EMPTY_FIELD }],
+      <div className="main">
+        <span
+          className="visually-hidden"
+          id={scrollIntoViewDomId}
+          style={{
+            position: "relative",
+            top: "-40px",
           }}
-          onSubmit={noop}
-          render={renderForm}
-          validationSchema={ValidationSchema}
-          validateOnChange={false}
         />
+
+        <ErrorOrWarning
+          formValidity={formValidity}
+          submissionState={submissionState}
+          dispatch={dispatch}
+        />
+
+        <form
+          className="form"
+          onSubmit={e => {
+            e.preventDefault();
+            dispatch({
+              type: ActionType.SUBMITTING,
+            });
+          }}
+        >
+          <label
+            htmlFor={titleInputDomId}
+            className={makeClassName({
+              field: true,
+              "field--errors": !!titleErrors,
+            })}
+          >
+            <div className="field--label">Title</div>
+
+            <input
+              className="field__control"
+              type="text"
+              id={titleInputDomId}
+              value={titleValue}
+              onChange={e => {
+                const node = e.currentTarget;
+                dispatch({
+                  type: ActionType.FORM_CHANGED,
+                  key: "non-def",
+                  value: node.value,
+                  fieldName: "title",
+                });
+              }}
+            />
+
+            {titleErrors && (
+              <FormCtrlError id={titleInputDomId + "-errors"}>
+                {titleErrors.map(([errorLabel, errorText], index) => {
+                  return (
+                    <div key={index}>
+                      <span>{errorLabel} </span>
+                      <span>{errorText}</span>
+                    </div>
+                  );
+                })}
+              </FormCtrlError>
+            )}
+          </label>
+
+          <div className="field">
+            <label
+              htmlFor={descriptionInputDomId}
+              className="field__label field__label-description"
+            >
+              <span>Description</span>
+
+              {descriptionActive ? (
+                <div
+                  className="field__label-description-toggle"
+                  id={hideDescriptionInputDomId}
+                  onClick={() => {
+                    dispatch({
+                      type: ActionType.TOGGLE_DESCRIPTION,
+                    });
+                  }}
+                >
+                  <span className="chevron-down " />
+                </div>
+              ) : (
+                <div
+                  id={revealDescriptionInputDomId}
+                  className="field__label-description-toggle"
+                  onClick={() => {
+                    dispatch({
+                      type: ActionType.TOGGLE_DESCRIPTION,
+                    });
+                  }}
+                >
+                  <span className="chevron-up" />
+                </div>
+              )}
+            </label>
+
+            <textarea
+              rows={7}
+              className={makeClassName({
+                field__control: true,
+                "field__control--hidden": !descriptionActive,
+              })}
+              id={descriptionInputDomId}
+              value={descriptionValue}
+              onChange={e => {
+                const node = e.currentTarget;
+                dispatch({
+                  type: ActionType.FORM_CHANGED,
+                  key: "non-def",
+                  value: node.value,
+                  fieldName: "description",
+                });
+              }}
+            />
+          </div>
+
+          <div className="data-definitions">
+            {dataDefinitionsStates.map(
+              ({ id, name: nameState, type: typeState }, index) => {
+                let nameValue = "";
+                let nameErrors: null | FieldError = null;
+                if (nameState.states.value === StateValue.changed) {
+                  const {
+                    states,
+                    context: { formValue },
+                  } = nameState.states.changed;
+                  nameValue = formValue;
+
+                  if (states.value === StateValue.invalid) {
+                    nameErrors = states.invalid.context.errors;
+                  }
+                }
+
+                let typeValue = "" as DataTypes;
+                let typeErrors: null | FieldError = null;
+                if (typeState.states.value === StateValue.changed) {
+                  const {
+                    states,
+                    context: { formValue },
+                  } = typeState.states.changed;
+                  typeValue = formValue;
+
+                  if (states.value === StateValue.invalid) {
+                    typeErrors = states.invalid.context.errors;
+                  }
+                }
+
+                return (
+                  <div
+                    key={id}
+                    className={`data-definition`}
+                    id={makeDefinitionContainerDomId(id)}
+                  >
+                    <label
+                      htmlFor={definitionNameInputDomId + id}
+                      className={makeClassName({
+                        field: true,
+                        "field--errors": !!nameErrors,
+                      })}
+                    >
+                      <div className="field--label">Field name</div>
+
+                      <input
+                        type="text"
+                        className="field__control"
+                        id={definitionNameInputDomId + id}
+                        value={nameValue}
+                        onChange={e => {
+                          const node = e.currentTarget;
+                          dispatch({
+                            type: ActionType.FORM_CHANGED,
+                            key: "def",
+                            index,
+                            value: node.value,
+                            fieldName: "name",
+                          });
+                        }}
+                      />
+
+                      {nameErrors && (
+                        <FormCtrlError
+                          id={definitionNameInputDomId + id + "-errors"}
+                        >
+                          {nameErrors.map(([errorLabel, errorText], index) => {
+                            return (
+                              <div key={index}>
+                                <span>{errorLabel} </span>
+                                <span>{errorText}</span>
+                              </div>
+                            );
+                          })}
+                        </FormCtrlError>
+                      )}
+                    </label>
+
+                    <label
+                      htmlFor={definitionTypeInputDomId + id}
+                      className={makeClassName({
+                        field: true,
+                        "field--errors": !!typeErrors,
+                      })}
+                    >
+                      <div className="field--label">Data type</div>
+
+                      <select
+                        className="field__control field__control--select"
+                        id={definitionTypeInputDomId + id}
+                        value={typeValue}
+                        onChange={e => {
+                          const node = e.currentTarget;
+                          dispatch({
+                            type: ActionType.FORM_CHANGED,
+                            key: "def",
+                            index,
+                            value: node.value,
+                            fieldName: "type",
+                          });
+                        }}
+                      >
+                        <option value="">Click to select</option>
+
+                        {fieldTypeKeys.map(fieldType => {
+                          return (
+                            <option
+                              key={fieldType}
+                              value={fieldType}
+                              id={makeDefinitionTypeOptionDomId(fieldType)}
+                            >
+                              {fieldType}
+                            </option>
+                          );
+                        })}
+                      </select>
+
+                      {typeErrors && (
+                        <FormCtrlError
+                          id={definitionTypeInputDomId + id + "-errors"}
+                        >
+                          {typeErrors.map(([errorLabel, errorText], index) => {
+                            return (
+                              <div key={index}>
+                                <span>{errorLabel} </span>
+                                <span>{errorText}</span>
+                              </div>
+                            );
+                          })}
+                        </FormCtrlError>
+                      )}
+                    </label>
+
+                    <div className="data-definition-controls">
+                      <button
+                        type="button"
+                        className={`data-definition-control ${addDefinitionSelector}`}
+                        onClick={() => {
+                          dispatch({
+                            type: ActionType.ADD_DEFINITION,
+                          });
+                        }}
+                      >
+                        +
+                      </button>
+
+                      {definitionsLen !== 1 && (
+                        <button
+                          type="button"
+                          className={`data-definition-control ${removeDefinitionSelector}`}
+                          onClick={() => {
+                            dispatch({
+                              type: ActionType.REMOVE_DEFINITION,
+                              index,
+                            });
+                          }}
+                        >
+                          -
+                        </button>
+                      )}
+
+                      {index !== 0 && (
+                        <button
+                          type="button"
+                          className={`data-definition-control ${moveUpDefinitionSelector}`}
+                          onClick={() => {
+                            dispatch({
+                              type: ActionType.UP_DEFINITION,
+                              index,
+                            });
+                          }}
+                        >
+                          Up
+                        </button>
+                      )}
+
+                      {definitionsLen > 1 && index + 1 !== definitionsLen && (
+                        <button
+                          type="button"
+                          className={`data-definition-control ${moveDownDefinitionSelector}`}
+                          onClick={() => {
+                            dispatch({
+                              type: ActionType.DOWN_DEFINITION,
+                              index,
+                            });
+                          }}
+                        >
+                          Down
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              },
+            )}
+          </div>
+
+          <button type="submit" id={submitDomId} className="submit-btn">
+            Create
+          </button>
+
+          <button
+            id={resetDomId}
+            type="button"
+            className="submit-btn"
+            onClick={() => {
+              dispatch({
+                type: ActionType.RESET_FORM_FIELDS,
+              });
+            }}
+          >
+            Reset
+          </button>
+        </form>
       </div>
     </div>
   );
 }
 
-interface DataDefinitionComponentProps {
-  values: FormValues;
-  arrayHelpers: ArrayHelpers;
-  field: CreateDataDefinition;
-  index: number;
-  dispatch: DispatchType;
-  definitionsErrorsMap: State["serverDataDefinitionsErrorsMap"];
-  formErrors: State["submittedFormErrors"];
-}
-
-function DataDefinitionComponent({
-  values,
-  arrayHelpers,
-  index,
-  definitionsErrorsMap,
-  formErrors,
+function ErrorOrWarning({
+  submissionState,
   dispatch,
-}: DataDefinitionComponentProps) {
-  const formError = getDefinitionErrorFromForm(index, formErrors);
-
-  const serverErrors = definitionsErrorsMap && definitionsErrorsMap[index];
-
-  const formErrorsMap = formError
-    ? formError
-    : ({} as FormikErrors<CreateDataDefinition>);
-
-  const serverErrorsMap = serverErrors
-    ? serverErrors
-    : ({} as CreateExperienceMutation_createExperience_errors_dataDefinitionsErrors_errors);
-
-  return (
-    <div
-      id={`experience-definition-container-${index}`}
-      key={index}
-      className={makeClassNames({
-        "definition-container": true,
-        errors: !!(formError || serverErrors),
-      })}
-    >
-      <Field
-        name={makeFieldName(index, "name")}
-        index={index}
-        component={FieldNameComponent}
-        dispatch={dispatch}
-        error={formErrorsMap.name || serverErrorsMap.name}
-      />
-
-      <FastField
-        index={index}
-        name={makeFieldName(index, "type")}
-        // error={formErrorsMap.type}
-        component={FieldDataTypeComponent}
-      />
-
-      <DefinitionBtnCtrlsComponent
-        index={index}
-        values={values}
-        arrayHelpers={arrayHelpers}
-        dispatch={dispatch}
-      />
-    </div>
-  );
-}
-
-function FieldNameComponent({
-  field,
-  index,
-  error,
-}: FieldProps<FormValues> & {
-  index: number;
-  dispatch: Dispatch<Action>;
-  error?: string;
-}) {
-  const { name, value, ...rest } = field;
-
-  const idPrefix = `field-name-${index}`;
-
-  return (
-    <Form.Field error={!!error}>
-      <label htmlFor={idPrefix}>{`Field ${index + 1} Name`}</label>
-
-      <Input
-        {...rest}
-        value={value}
-        autoComplete="off"
-        name={name}
-        id={idPrefix}
-      />
-
-      {error && <FormCtrlError error={error} id={`${idPrefix}-error`} />}
-    </Form.Field>
-  );
-}
-
-const FIELD_TYPES: DropdownItemProps[] = fieldTypeKeys.map(k => ({
-  value: k,
-  text: k,
-  key: k,
-  content: <span className={`js-${k}`}>{k}</span>,
-}));
-
-function FieldDataTypeComponent({
-  field: { name, value },
-  form: { setFieldValue },
-  index,
-}: FieldProps<FormValues> & {
-  error?: string;
-  index: number;
-}) {
-  const idPrefix = `experience-data-type-${index}`;
-
-  return (
-    <Form.Field>
-      <label htmlFor={name}>{`Field ${index + 1} Data Type`}</label>
-
-      <Dropdown
-        search={true}
-        id={idPrefix}
-        fluid={true}
-        selection={true}
-        value={value}
-        compact={true}
-        options={FIELD_TYPES}
-        onChange={function fieldTypeChanged(_, data) {
-          const val = data.value as string;
-
-          setFieldValue(name, val);
-        }}
-      />
-    </Form.Field>
-  );
-}
-
-/**
- * SUMMARY OF RULES FOR FIELD CTRL BUTTONS
- * 1. If only one field and the field is empty, no button is shown
- * 2. If only one field and the field is filled, add button only is shown
- * 3. Any field that is not completely filled does not get the add button
- *    *completely* means filling field name and selecting a data type
- * 4. The first field never gets an up button
- * 5. The last field never gets a down button
- */
-function DefinitionBtnCtrlsComponent({
-  index,
-  values,
-  arrayHelpers,
-  dispatch,
+  formValidity,
 }: {
-  index: number;
-  values: FormValues;
-  arrayHelpers: ArrayHelpers;
-  dispatch: Dispatch<Action>;
-}) {
-  const dataDefinitions = values.dataDefinitions as CreateDataDefinition[];
-  const definition = dataDefinitions[index];
-  const len = dataDefinitions.length;
-  const isCompletelyFilled = definition.name && definition.type;
-
-  if (len === 1 && !isCompletelyFilled) {
-    return null;
-  }
-
-  const showUpBtn = index > 0;
-  const showDownBtn = len - index !== 1;
-  const index1 = index + 1;
-
-  return (
-    <div className="field-controls">
-      <Button.Group className="control-buttons" basic={true} compact={true}>
-        {isCompletelyFilled && (
-          <Button
-            id={`add-definition-btn-${index}`}
-            type="button"
-            onClick={function onAddDefinitionClicked() {
-              arrayHelpers.insert(index1, { ...EMPTY_FIELD });
-
-              dispatch([ActionType.clearAllErrors]);
-            }}
-          >
-            <Icon name="plus" />
-          </Button>
-        )}
-
-        {len > 1 && (
-          <Button
-            id={`remove-definition-btn---${index}`}
-            type="button"
-            onClick={function onDeleteDefinitionClicked() {
-              arrayHelpers.remove(index);
-
-              dispatch([ActionType.clearAllErrors]);
-            }}
-          >
-            <Icon name="minus" />
-          </Button>
-        )}
-
-        {showUpBtn && (
-          <Button
-            id={`definition-go-up-btn-${index}`}
-            type="button"
-            onClick={function onDefinitionGoUpClicked() {
-              const indexUp = index;
-              const indexDown = index - 1;
-              arrayHelpers.swap(indexUp, indexDown);
-            }}
-          >
-            <Icon name="arrow up" />
-          </Button>
-        )}
-
-        {showDownBtn && (
-          <Button
-            id={`definition-go-down-btn-${index}`}
-            type="button"
-            onClick={function onDefinitionDownClicked() {
-              arrayHelpers.swap(index, index1);
-            }}
-          >
-            <Icon name="arrow down" />
-          </Button>
-        )}
-      </Button.Group>
-    </div>
-  );
-}
-
-function DescriptionInputComponent({
-  field,
-  showDescriptionInput,
-  dispatch,
-}: FieldProps<FormValues> & {
-  showDescriptionInput: boolean;
-  dispatch: Dispatch<Action>;
-}) {
-  return (
-    <Form.Field>
-      <label
-        id="experience-definition-description-toggle"
-        className="description-field-toggle"
-        htmlFor={"experience-definition-description-input"}
-        onClick={() =>
-          dispatch([ActionType.showDescriptionInput, !showDescriptionInput])
-        }
-      >
-        Description
-        {showDescriptionInput ? (
-          <Icon
-            name="caret down"
-            id="experience-definition-description-visible-icon"
-          />
-        ) : (
-          <Icon
-            name="caret left"
-            id="experience-definition-description-not-visible-icon"
-          />
-        )}
-      </label>
-
-      {showDescriptionInput && (
-        <TextArea {...field} id={"experience-definition-description-input"} />
-      )}
-    </Form.Field>
-  );
-}
-
-function TitleInputComponent({
-  field,
-  error,
-}: FieldProps<FormValues> & {
-  error?: string;
-}) {
-  const id = "experience-definition-title-input";
-
-  return (
-    <Form.Field error={!!error}>
-      <label htmlFor={id}>Title</label>
-
-      <Input {...field} autoComplete="off" id={id} />
-
-      <FormCtrlError error={error} id="experience-definition-title-error" />
-    </Form.Field>
-  );
-}
-
-function AllErrorsSummaryComponent({
-  serverDataDefinitionsErrorsMap,
-  serverOtherErrorsMap,
-  graphQlError,
-  dispatch,
-}: Pick<
-  State,
-  "serverDataDefinitionsErrorsMap" | "serverOtherErrorsMap" | "graphQlError"
-> & {
+  submissionState: Submission;
   dispatch: DispatchType;
+  formValidity: FormValidity;
 }) {
-  if (
-    !(serverDataDefinitionsErrorsMap || serverOtherErrorsMap || graphQlError)
-  ) {
+  if (submissionState.value === StateValue.submitting) {
+    return <Loading />;
+  } else if (submissionState.value === StateValue.commonErrors) {
+    return (
+      <div className="notification notification--error">
+        <div
+          id={notificationErrorCloseId}
+          className="notification__close"
+          onClick={() => {
+            dispatch({
+              type: ActionType.CLOSE_SUBMIT_NOTIFICATION,
+            });
+          }}
+        >
+          <div className="notification__close-button notification__close-button--error" />
+        </div>
+
+        <div className="notification__content notification__content--error">
+          {submissionState.commonErrors.context.errors}
+        </div>
+      </div>
+    );
+  } else if (submissionState.value === StateValue.warning) {
+    return (
+      <div className="notification notification--warning">
+        <div
+          id={notificationWarningCloseId}
+          className="notification__close"
+          onClick={() => {
+            dispatch({
+              type: ActionType.CLOSE_SUBMIT_NOTIFICATION,
+            });
+          }}
+        >
+          <button className="notification__close-button notification__close-button--warning" />
+        </div>
+
+        <div className="notification__content notification__content--warning">
+          {submissionState.warning.context.warning}
+        </div>
+      </div>
+    );
+  } else if (formValidity.value === StateValue.invalid) {
+    return (
+      <div className="notification notification--error">
+        <div
+          id={notificationErrorCloseId}
+          className="notification__close"
+          onClick={() => {
+            dispatch({
+              type: ActionType.CLOSE_SUBMIT_NOTIFICATION,
+            });
+          }}
+        >
+          <div className="notification__close-button notification__close-button--error" />
+        </div>
+
+        <div className="notification__content notification__content--error">
+          Errors while creating experience
+        </div>
+      </div>
+    );
+  } else {
     return null;
   }
-
-  const otherErrors = serverOtherErrorsMap
-    ? Object.entries(serverOtherErrorsMap).reduce((acc, [k, v]) => {
-        if (v) {
-          acc.push(
-            <div key={k}>
-              {k} : {v}
-            </div>,
-          );
-        }
-
-        return acc;
-      }, [] as JSX.Element[])
-    : null;
-
-  return (
-    <Message
-      id="experience-definition-errors-summary"
-      style={{ display: "block" }}
-      error={true}
-      onDismiss={() => dispatch([ActionType.clearAllErrors])}
-    >
-      <Message.Header className="graphql-errors-header">
-        Error in submitted form!
-      </Message.Header>
-
-      <Message.Content>
-        {graphQlError && <span>{graphQlError}</span>}
-
-        {otherErrors}
-
-        {serverDataDefinitionsErrorsMap && (
-          <DefinitionsErrorsComponent
-            definitionsErrors={serverDataDefinitionsErrorsMap}
-          />
-        )}
-      </Message.Content>
-    </Message>
-  );
-}
-
-function DefinitionsErrorsComponent({
-  definitionsErrors,
-}: {
-  definitionsErrors: ServerDataDefinitionsErrorsMap;
-}) {
-  return (
-    <>
-      {Object.entries(definitionsErrors).map(([index, errors]) => {
-        return (
-          <div key={index} className="graphql-field-defs-error-inner">
-            <span>Field {Number(index) + 1}</span>
-            {Object.entries(errors).reduce((acc, [k, v]) => {
-              if (v) {
-                acc.push(<span key={k}>{v}</span>);
-              }
-
-              return acc;
-            }, [] as JSX.Element[])}
-          </div>
-        );
-      })}
-    </>
-  );
-}
-
-function makeFieldName(index: number, key: keyof CreateDataDefinition) {
-  return `dataDefinitions[${index}].${key}`;
-}
-
-function getDefinitionErrorFromForm(
-  index: number,
-  formErrors?: FormikErrors<FormValues> | null,
-) {
-  if (!(formErrors && formErrors.dataDefinitions)) {
-    return null;
-  }
-
-  return (formErrors.dataDefinitions as FormikErrors<CreateDataDefinition[]>)[
-    index
-  ];
 }
 
 // istanbul ignore next:
 export default (props: CallerProps) => {
-  const [createExperienceOnline] = useCreateExperienceOnline();
   const [createExperienceOffline] = useCreateExperienceOfflineMutation();
+  const [createExperiences] = useCreateExperiencesMutation();
   const { client } = useContext(EbnisAppContext);
 
   return (
     <ExperienceDefinitionComponent
       client={client}
-      createExperienceOnline={createExperienceOnline}
+      createExperiences={createExperiences}
       createExperienceOffline={createExperienceOffline}
       {...props}
     />

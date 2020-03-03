@@ -44,7 +44,7 @@ import { GraphQLError } from "graphql";
 import {
   UpdateExperiencesOnlineMutationResult,
   CreateExperiencesMutationResult,
-} from "../graphql/update-experience.mutation";
+} from "../graphql/experiences.mutation";
 import { makeOfflineId } from "../constants";
 import { saveOnSyncOfflineExperienceComponentSuccess } from "../apollo-cache/on-sync-offline-experience-component-success";
 import { DataObjectFragment } from "../graphql/apollo-types/DataObjectFragment";
@@ -53,7 +53,7 @@ import {
   writeDeletedExperienceTitle,
   confirmShouldDeleteExperience,
 } from "../apollo-cache/should-delete-experience";
-import { DeleteExperiencesMutationResult } from "../graphql/delete-experiences.mutation";
+import { DeleteExperiencesMutationResult } from "../graphql/experiences.mutation";
 import { removeQueriesAndMutationsFromCache } from "../state/resolvers/delete-references-from-cache";
 
 jest.mock("../apollo-cache/on-sync-offline-experience-component-success");
@@ -331,7 +331,7 @@ test("sync online experience", async () => {
           __typename: "UpdateExperiencesSomeSuccess",
           experiences: [
             {
-              __typename: "UpdateExperienceFullErrors",
+              __typename: "UpdateExperienceErrors",
               errors: {
                 error: "a",
               },
@@ -367,7 +367,7 @@ test("sync online experience", async () => {
                 },
                 newEntries: [
                   {
-                    __typename: "CreateEntryErrorss",
+                    __typename: "CreateEntryErrors",
                     errors: {
                       error: null,
                       clientId: "a",
@@ -767,7 +767,7 @@ test("sync offline experience, navigate to new entry", async () => {
    * 2. networkError
    * 3. GraphQLError
    * 4. Invalid response
-   * 5. CreateExperienceErrorss
+   * 5. CreateExperienceErrors
    * 6. ExperienceSuccess.entriesErrors
    * 7. ExperienceSuccess no entriesErrors
    */
@@ -792,7 +792,7 @@ test("sync offline experience, navigate to new entry", async () => {
       data: {
         createExperiences: [
           {
-            __typename: "CreateExperienceErrorss",
+            __typename: "CreateExperienceErrors",
             errors: {},
           },
         ],
@@ -1153,7 +1153,6 @@ test("delete online experience when there is connection", async () => {
    */
   expect(document.getElementById(errorsNotificationId)).toBeNull();
 
-
   /**
    * When experience deletion is confirmed
    */
@@ -1362,7 +1361,7 @@ describe("reducer", () => {
      * SUBMISSIONS
      * 1. javascript exception
      * 2. Invalid response
-     * 3. CreateExperienceErrorss
+     * 3. CreateExperienceErrors
      * 4. ExperienceSuccess.entriesErrors
      * 5. ExperienceSuccess no entriesErrors
      */
@@ -1377,7 +1376,7 @@ describe("reducer", () => {
         data: {
           createExperiences: [
             {
-              __typename: "CreateExperienceErrorss",
+              __typename: "CreateExperienceErrors",
               errors: {},
             },
           ],

@@ -3,7 +3,6 @@ import {
   LocalResolverFn,
   MUTATION_NAME_createExperienceOffline,
 } from "../../state/resolvers";
-import { CreateExperienceMutationVariables } from "../../graphql/apollo-types/CreateExperienceMutation";
 import { CreateDataDefinition } from "../../graphql/apollo-types/globalTypes";
 import { makeOfflineId } from "../../constants";
 import gql from "graphql-tag";
@@ -14,26 +13,29 @@ import {
 import { EXPERIENCE_FRAGMENT } from "../../graphql/experience.fragment";
 import { insertExperienceInGetExperiencesMiniQuery } from "../../apollo-cache/update-get-experiences-mini-query";
 import { writeUnsyncedExperience } from "../../apollo-cache/unsynced.resolvers";
-// import { incrementOfflineItemCount } from "../../apollo-cache/increment-offline-item-count";
 import { writeExperienceFragmentToCache } from "../../apollo-cache/write-experience-fragment";
+import { useMutation } from "@apollo/react-hooks";
+import {
+  MutationFunction,
+  MutationFunctionOptions,
+  MutationResult,
+  ExecutionResult,
+} from "@apollo/react-common";
+import { CreateExperiencesVariables } from "../../graphql/apollo-types/CreateExperiences";
 
 const createOfflineExperienceResolver: LocalResolverFn<
-  CreateExperienceMutationVariables,
+  CreateExperiencesVariables,
   ExperienceFragment
-> = (
-  _,
-  {
-    createExperienceInput: {
-      description = null,
-      title,
-      dataDefinitions: createDataDefinitions,
-    },
-  },
-  { cache, client },
-) => {
+> = (_, { input: inputs }, { cache, client }) => {
   const today = new Date();
   const timestamp = today.toJSON();
   const experienceId = makeOfflineId(today.getTime());
+
+  const {
+    dataDefinitions: createDataDefinitions,
+    title,
+    description,
+  } = inputs[0];
 
   const dataDefinitions: ExperienceFragment_dataDefinitions[] = (createDataDefinitions as CreateDataDefinition[]).map(
     ({ name, type }, index) => {
@@ -56,7 +58,7 @@ const createOfflineExperienceResolver: LocalResolverFn<
     clientId: experienceId,
     insertedAt: timestamp,
     updatedAt: timestamp,
-    description,
+    description: description as string,
     title,
     dataDefinitions,
     entries: {
@@ -100,27 +102,26 @@ export interface CreateExperienceOfflineMutation {
   createOfflineExperience: ExperienceFragment;
 }
 
-import { useMutation } from "@apollo/react-hooks";
-
-import {
-  MutationFunction,
-  MutationFunctionOptions,
-  MutationResult,
-} from "@apollo/react-common";
-
-export function useCreateExperienceOfflineMutation(): UseCreateExperienceOfflineMutation {
-  return useMutation(CREATE_OFFLINE_EXPERIENCE_MUTATION);
+export function useCreateExperienceOfflineMutation() {
+  return useMutation<
+    CreateExperienceOfflineMutation,
+    CreateExperiencesVariables
+  >(CREATE_OFFLINE_EXPERIENCE_MUTATION);
 }
+
+export type CreateExperienceOfflineMutationResult = ExecutionResult<
+  CreateExperienceOfflineMutation
+>;
 
 export type CreateExperienceOfflineMutationFn = MutationFunction<
   CreateExperienceOfflineMutation,
-  CreateExperienceMutationVariables
+  CreateExperiencesVariables
 >;
 
 // used to type check test mock calls
-export type mutation_nameMutationFnOptions = MutationFunctionOptions<
+export type CreateOfflineExperienceMutationFnOptions = MutationFunctionOptions<
   CreateExperienceOfflineMutation,
-  CreateExperienceMutationVariables
+  CreateExperiencesVariables
 >;
 
 export type UseCreateExperienceOfflineMutation = [

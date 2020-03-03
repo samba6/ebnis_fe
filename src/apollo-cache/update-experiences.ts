@@ -1,6 +1,6 @@
 import { DataProxy } from "apollo-cache";
 import immer, { Draft } from "immer";
-import { UpdateExperiencesOnlineMutationResult } from "../graphql/update-experience.mutation";
+import { UpdateExperiencesOnlineMutationResult } from "../graphql/experiences.mutation";
 import { readExperienceFragment } from "./read-experience-fragment";
 import { writeExperienceFragmentToCache } from "./write-experience-fragment";
 import { UpdateExperienceFragment } from "../graphql/apollo-types/UpdateExperienceFragment";
@@ -17,73 +17,82 @@ import {
 } from "../apollo-cache/unsynced.resolvers";
 import lodashIsEmpty from "lodash/isEmpty";
 
-export function updateExperiencesInCache(
-  dataProxy: DataProxy,
-  result: UpdateExperiencesOnlineMutationResult,
-) {
-  const updateExperiences =
-    result && result.data && result.data.updateExperiences;
+export function updateExperiencesInCache(onDone?: () => void) {
+  return function updateExperiencesInCacheInner(
+    dataProxy: DataProxy,
+    result: UpdateExperiencesOnlineMutationResult,
+  ) {
+    const updateExperiences =
+      result && result.data && result.data.updateExperiences;
 
-  if (!updateExperiences) {
-    return;
-  }
+    if (!updateExperiences) {
+      return;
+    }
 
-  let hasUpdates = false;
-  const updatedIds: { [k: string]: number } = {};
+    let hasUpdates = false;
+    const updatedIds: { [k: string]: number } = {};
 
-  if (updateExperiences.__typename === "UpdateExperiencesSomeSuccess") {
-    const { experiences: updateResults } = updateExperiences;
+    if (updateExperiences.__typename === "UpdateExperiencesSomeSuccess") {
+      const { experiences: updateResults } = updateExperiences;
 
-    for (const updateResult of updateResults) {
-      if (updateResult.__typename === "UpdateExperienceSomeSuccess") {
-        const { experience: result } = updateResult;
-        const { experienceId, updatedAt } = result;
+      for (const updateResult of updateResults) {
+        if (updateResult.__typename === "UpdateExperienceSomeSuccess") {
+          const { experience: result } = updateResult;
+          const { experienceId, updatedAt } = result;
 
-        const experience = readExperienceFragment(dataProxy, experienceId);
+          const experience = readExperienceFragment(dataProxy, experienceId);
 
-        if (!experience) {
-          continue;
-        }
-
-        hasUpdates = true;
-
-        updatedIds[experienceId] = 1;
-
-        const updatedExperience = immer(experience, proxy => {
-          proxy.updatedAt = updatedAt;
-
-          const hasOwnFieldsErrors = updateOwnFields(proxy, result);
-          const hasNewEntriesErrors = addEntries(proxy, result);
-          const [hasDefinitionsErrors, definitionIds] = updateDefinitions(
-            proxy,
-            result,
-          );
-
-          if (
-            !(hasDefinitionsErrors || hasNewEntriesErrors || hasOwnFieldsErrors)
-          ) {
-            proxy.hasUnsaved = null;
+          if (!experience) {
+            continue;
           }
 
-          updateUnsynced(
-            experienceId,
-            hasOwnFieldsErrors,
-            hasNewEntriesErrors,
-            hasDefinitionsErrors,
-            definitionIds,
-          );
-        });
+          hasUpdates = true;
 
-        writeExperienceFragmentToCache(dataProxy, updatedExperience);
+          updatedIds[experienceId] = 1;
+
+          const updatedExperience = immer(experience, proxy => {
+            proxy.updatedAt = updatedAt;
+
+            const hasOwnFieldsErrors = updateOwnFields(proxy, result);
+            const hasNewEntriesErrors = addEntries(proxy, result);
+            const [hasDefinitionsErrors, definitionIds] = updateDefinitions(
+              proxy,
+              result,
+            );
+
+            if (
+              !(
+                hasDefinitionsErrors ||
+                hasNewEntriesErrors ||
+                hasOwnFieldsErrors
+              )
+            ) {
+              proxy.hasUnsaved = null;
+            }
+
+            updateUnsynced(
+              experienceId,
+              hasOwnFieldsErrors,
+              hasNewEntriesErrors,
+              hasDefinitionsErrors,
+              definitionIds,
+            );
+          });
+
+          writeExperienceFragmentToCache(dataProxy, updatedExperience);
+        }
       }
     }
-  }
 
-  if (!hasUpdates) {
-    return;
-  }
+    if (!hasUpdates) {
+      return;
+    }
 
-  floatExperiencesToTheTopInGetExperiencesMiniQuery(dataProxy, updatedIds);
+    floatExperiencesToTheTopInGetExperiencesMiniQuery(dataProxy, updatedIds);
+    if (onDone) {
+      onDone();
+    }
+  };
 }
 
 function updateOwnFields(proxy: DraftState, result: UpdateExperienceFragment) {

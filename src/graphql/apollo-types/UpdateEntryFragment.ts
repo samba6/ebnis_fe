@@ -6,26 +6,33 @@
 // GraphQL fragment: UpdateEntryFragment
 // ====================================================
 
-export interface UpdateEntryFragment_dataObjects_DataObjectFullErrors_errors {
-  __typename: "DataObjectFullError";
-  id: string;
+export interface UpdateEntryFragment_dataObjects_DataObjectErrors_errors_meta {
+  __typename: "DataObjectErrorMeta";
+  index: number;
+  id: string | null;
+  clientId: string | null;
+}
+
+export interface UpdateEntryFragment_dataObjects_DataObjectErrors_errors {
+  __typename: "DataObjectError";
+  meta: UpdateEntryFragment_dataObjects_DataObjectErrors_errors_meta;
   definition: string | null;
   definitionId: string | null;
   clientId: string | null;
+  /**
+   * Error related to the data e.g. a string was supplied for a decimal field.
+   */
+  data: string | null;
   /**
    * For generic errors unrelated to the fields of the data object e.g.
    *   not found error
    */
   error: string | null;
-  /**
-   * Error related to the data e.g. a string was supplied for a decimal field.
-   */
-  data: string | null;
 }
 
-export interface UpdateEntryFragment_dataObjects_DataObjectFullErrors {
-  __typename: "DataObjectFullErrors";
-  errors: UpdateEntryFragment_dataObjects_DataObjectFullErrors_errors;
+export interface UpdateEntryFragment_dataObjects_DataObjectErrors {
+  __typename: "DataObjectErrors";
+  errors: UpdateEntryFragment_dataObjects_DataObjectErrors_errors;
 }
 
 export interface UpdateEntryFragment_dataObjects_DataObjectSuccess_dataObject {
@@ -46,7 +53,7 @@ export interface UpdateEntryFragment_dataObjects_DataObjectSuccess {
   dataObject: UpdateEntryFragment_dataObjects_DataObjectSuccess_dataObject;
 }
 
-export type UpdateEntryFragment_dataObjects = UpdateEntryFragment_dataObjects_DataObjectFullErrors | UpdateEntryFragment_dataObjects_DataObjectSuccess;
+export type UpdateEntryFragment_dataObjects = UpdateEntryFragment_dataObjects_DataObjectErrors | UpdateEntryFragment_dataObjects_DataObjectSuccess;
 
 export interface UpdateEntryFragment {
   __typename: "UpdateEntry";

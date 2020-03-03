@@ -1,6 +1,5 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 import { ApolloClient } from "apollo-client";
-import { CreateOnlineEntryMutation } from "../../graphql/apollo-types/CreateOnlineEntryMutation";
 import { newEntryResolvers } from "./new-entry.resolvers";
 import immer from "immer";
 import {
@@ -10,7 +9,6 @@ import {
   ExperienceFragment_entries_edges,
 } from "../../graphql/apollo-types/ExperienceFragment";
 import { DataProxy } from "apollo-cache";
-import { FetchResult } from "apollo-link";
 import { readExperienceFragment } from "../../apollo-cache/read-experience-fragment";
 import { entryToEdge } from "../../state/resolvers/entry-to-edge";
 import { EntryFragment } from "../../graphql/apollo-types/EntryFragment";
@@ -31,87 +29,60 @@ export function addNewEntryResolvers(client: ApolloClient<{}>) {
  * Upsert the entry into the experience and updates the Get full experience
  * query
  */
-export const upsertExperienceWithEntry: Fn = function updateFn(
-  experienceOrId,
-  mode,
-  onDone,
+export function upsertExperienceWithEntry(
+  dataProxy: DataProxy,
+  entry: EntryFragment,
+  experienceOrId: string | ExperienceFragment,
+  onDone?: () => void,
 ) {
-  return async function updateFnInner(
-    dataProxy,
-    { data: createEntryResponse },
-  ) {
-    const entry = (createEntryResponse &&
-      createEntryResponse.createEntry &&
-      createEntryResponse.createEntry.entry) as EntryFragment;
+  let experience = experienceOrId as ExperienceFragment | null;
 
-    let experience = experienceOrId as ExperienceFragment | null;
+  if (typeof experienceOrId === "string") {
+    experience = readExperienceFragment(dataProxy, experienceOrId);
 
-    if (typeof experienceOrId === "string") {
-      if (!entry) {
-        return;
-      }
-
-      experience = readExperienceFragment(dataProxy, experienceOrId);
-
-      if (!experience) {
-        return;
-      }
+    if (!experience) {
+      return;
     }
+  }
 
-    const updatedExperience = immer(experience as ExperienceFragment, proxy => {
-      const entries = proxy.entries as ExperienceFragment_entries;
-      const edges = entries.edges || [];
+  const updatedExperience = immer(experience as ExperienceFragment, proxy => {
+    const entries = proxy.entries as ExperienceFragment_entries;
+    const edges = entries.edges || [];
 
-      const existingEntry = edges.find(e => {
-        const { id } = (e as ExperienceFragment_entries_edges)
-          .node as EntryFragment;
+    const existingEntry = edges.find(e => {
+      const { id } = (e as ExperienceFragment_entries_edges)
+        .node as EntryFragment;
 
-        return id === entry.id || id === entry.clientId;
-      });
-
-      if (existingEntry) {
-        // update
-        existingEntry.node = entry;
-      } else {
-        edges.unshift(
-          entryToEdge(entry as ExperienceFragment_entries_edges_node),
-        );
-      }
-
-      if (mode === "offline") {
-        proxy.hasUnsaved = true;
-      } else {
-        proxy.hasUnsaved = null;
-      }
-
-      entries.edges = edges;
-      proxy.entries = entries;
+      return id === entry.id || id === entry.clientId;
     });
 
-    writeExperienceFragmentToCache(dataProxy, updatedExperience);
-
-    floatExperienceToTheTopInGetExperiencesMiniQuery(
-      dataProxy,
-      updatedExperience,
-    );
-
-    if (onDone) {
-      onDone();
+    if (existingEntry) {
+      // update
+      existingEntry.node = entry;
+    } else {
+      // insert
+      edges.unshift(
+        entryToEdge(entry as ExperienceFragment_entries_edges_node),
+      );
     }
 
-    return updatedExperience;
-  };
-};
+    proxy.hasUnsaved = true;
+    entries.edges = edges;
+    proxy.entries = entries;
+  });
 
-type Fn<T = string | ExperienceFragment> = (
-  experienceOrId: T,
-  mode: UpsertExperienceInCacheMode,
-  onDone?: () => void,
-) => (
-  proxy: DataProxy,
-  mutationResult: FetchResult<CreateOnlineEntryMutation>,
-) => T extends ExperienceFragment
-  ? Promise<ExperienceFragment>
-  : Promise<ExperienceFragment | undefined>;
+  writeExperienceFragmentToCache(dataProxy, updatedExperience);
+
+  floatExperienceToTheTopInGetExperiencesMiniQuery(
+    dataProxy,
+    updatedExperience,
+  );
+
+  if (onDone) {
+    onDone();
+  }
+
+  return updatedExperience;
+}
 
 export type UpsertExperienceInCacheMode = "online" | "offline";

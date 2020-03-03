@@ -13,17 +13,27 @@ export interface CreateEntryErrorFragment_meta {
   clientId: string | null;
 }
 
-export interface CreateEntryErrorFragment_dataObjects {
-  __typename: "DataObjectErrorx";
+export interface CreateEntryErrorFragment_dataObjects_meta {
+  __typename: "DataObjectErrorMeta";
   index: number;
-  definition: string | null;
-  definitionId: string | null;
-  data: string | null;
+  id: string | null;
   clientId: string | null;
 }
 
+export interface CreateEntryErrorFragment_dataObjects {
+  __typename: "DataObjectError";
+  meta: CreateEntryErrorFragment_dataObjects_meta;
+  definition: string | null;
+  definitionId: string | null;
+  clientId: string | null;
+  /**
+   * Error related to the data e.g. a string was supplied for a decimal field.
+   */
+  data: string | null;
+}
+
 export interface CreateEntryErrorFragment {
-  __typename: "CreateEntryErrorx";
+  __typename: "CreateEntryError";
   meta: CreateEntryErrorFragment_meta;
   /**
    * A catch-all field for when we are unable to create an entry

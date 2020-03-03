@@ -1,6 +1,6 @@
 import { DataProxy } from "apollo-cache";
 import { createExperiencesManualUpdate } from "../apollo-cache/create_experiences-update";
-import { CreateExperiencesMutationResult } from "../graphql/update-experience.mutation";
+import { CreateExperiencesMutationResult } from "../graphql/experiences.mutation";
 import { insertExperiencesInGetExperiencesMiniQuery } from "../apollo-cache/update-get-experiences-mini-query";
 import { readExperienceFragment } from "../apollo-cache/read-experience-fragment";
 import { writeExperienceFragmentToCache } from "../apollo-cache/write-experience-fragment";
@@ -26,22 +26,12 @@ test("invalid response", () => {
   expect(mockInsertExperiencesInGetExperiencesMiniQuery).not.toHaveBeenCalled();
 });
 
-test("null response", () => {
-  createExperiencesManualUpdate(dataProxy, {
-    data: {
-      createExperiences: [null],
-    },
-  });
-
-  expect(mockInsertExperiencesInGetExperiencesMiniQuery).not.toHaveBeenCalled();
-});
-
 test("no success response", () => {
   createExperiencesManualUpdate(dataProxy, {
     data: {
       createExperiences: [
         {
-          __typename: "CreateExperienceErrorss",
+          __typename: "CreateExperienceErrors",
         },
       ],
     },

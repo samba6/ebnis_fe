@@ -14,29 +14,36 @@ export interface UpdateEntryUnionFragment_UpdateEntryErrors_errors {
 
 export interface UpdateEntryUnionFragment_UpdateEntryErrors {
   __typename: "UpdateEntryErrors";
-  errors: UpdateEntryUnionFragment_UpdateEntryErrors_errors | null;
+  errors: UpdateEntryUnionFragment_UpdateEntryErrors_errors;
 }
 
-export interface UpdateEntryUnionFragment_UpdateEntrySomeSuccess_entry_dataObjects_DataObjectFullErrors_errors {
-  __typename: "DataObjectFullError";
-  id: string;
+export interface UpdateEntryUnionFragment_UpdateEntrySomeSuccess_entry_dataObjects_DataObjectErrors_errors_meta {
+  __typename: "DataObjectErrorMeta";
+  index: number;
+  id: string | null;
+  clientId: string | null;
+}
+
+export interface UpdateEntryUnionFragment_UpdateEntrySomeSuccess_entry_dataObjects_DataObjectErrors_errors {
+  __typename: "DataObjectError";
+  meta: UpdateEntryUnionFragment_UpdateEntrySomeSuccess_entry_dataObjects_DataObjectErrors_errors_meta;
   definition: string | null;
   definitionId: string | null;
   clientId: string | null;
+  /**
+   * Error related to the data e.g. a string was supplied for a decimal field.
+   */
+  data: string | null;
   /**
    * For generic errors unrelated to the fields of the data object e.g.
    *   not found error
    */
   error: string | null;
-  /**
-   * Error related to the data e.g. a string was supplied for a decimal field.
-   */
-  data: string | null;
 }
 
-export interface UpdateEntryUnionFragment_UpdateEntrySomeSuccess_entry_dataObjects_DataObjectFullErrors {
-  __typename: "DataObjectFullErrors";
-  errors: UpdateEntryUnionFragment_UpdateEntrySomeSuccess_entry_dataObjects_DataObjectFullErrors_errors;
+export interface UpdateEntryUnionFragment_UpdateEntrySomeSuccess_entry_dataObjects_DataObjectErrors {
+  __typename: "DataObjectErrors";
+  errors: UpdateEntryUnionFragment_UpdateEntrySomeSuccess_entry_dataObjects_DataObjectErrors_errors;
 }
 
 export interface UpdateEntryUnionFragment_UpdateEntrySomeSuccess_entry_dataObjects_DataObjectSuccess_dataObject {
@@ -57,7 +64,7 @@ export interface UpdateEntryUnionFragment_UpdateEntrySomeSuccess_entry_dataObjec
   dataObject: UpdateEntryUnionFragment_UpdateEntrySomeSuccess_entry_dataObjects_DataObjectSuccess_dataObject;
 }
 
-export type UpdateEntryUnionFragment_UpdateEntrySomeSuccess_entry_dataObjects = UpdateEntryUnionFragment_UpdateEntrySomeSuccess_entry_dataObjects_DataObjectFullErrors | UpdateEntryUnionFragment_UpdateEntrySomeSuccess_entry_dataObjects_DataObjectSuccess;
+export type UpdateEntryUnionFragment_UpdateEntrySomeSuccess_entry_dataObjects = UpdateEntryUnionFragment_UpdateEntrySomeSuccess_entry_dataObjects_DataObjectErrors | UpdateEntryUnionFragment_UpdateEntrySomeSuccess_entry_dataObjects_DataObjectSuccess;
 
 export interface UpdateEntryUnionFragment_UpdateEntrySomeSuccess_entry {
   __typename: "UpdateEntry";

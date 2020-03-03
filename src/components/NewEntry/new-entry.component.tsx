@@ -1,6 +1,5 @@
 import React, { useEffect, useReducer, useContext, useCallback } from "react";
 import Form from "semantic-ui-react/dist/commonjs/collections/Form";
-import Message from "semantic-ui-react/dist/commonjs/collections/Message";
 import Button from "semantic-ui-react/dist/commonjs/elements/Button";
 import { NavigateFn } from "@reach/router";
 import "./new-entry.styles.scss";
@@ -14,7 +13,6 @@ import {
   initState,
   NewEntryCallerProps,
   StateValue,
-  SubmittingState,
   FieldState,
   runEffects,
 } from "./new-entry.utils";
@@ -23,7 +21,6 @@ import { setDocumentTitle, makeSiteTitle } from "../../constants";
 import { ExperienceFragment_dataDefinitions } from "../../graphql/apollo-types/ExperienceFragment";
 import makeClassNames from "classnames";
 import { FormCtrlError } from "../FormCtrlError/form-ctrl-error.component";
-import { makeScrollIntoViewId } from "../scroll-into-view";
 import { DataTypes } from "../../graphql/apollo-types/globalTypes";
 import { useCreateOfflineEntryMutation } from "./new-entry.resolvers";
 import { componentFromDataType } from "./component-from-data-type";
@@ -31,29 +28,26 @@ import { InputOnChangeData } from "semantic-ui-react";
 import { addNewEntryResolvers } from "./new-entry.injectables";
 import { EbnisAppContext } from "../../context";
 import { SidebarHeader } from "../SidebarHeader/sidebar-header.component";
-import { useCreateOnlineEntryMutation } from "../../graphql/create-entry.mutation";
 import {
   submitBtnDomId,
-  makeFieldErrorDomId,
-  networkErrorDomId,
   scrollIntoViewNonFieldErrorDomId,
   makeFieldInputId,
-  makeFormFieldSelectorClass,
+  makeInputErrorDomId,
 } from "./new-entry.dom";
 import { Loading } from "../Loading/loading";
-import { MUTATION_NAME_createEntry } from "../../graphql/create-entry.mutation";
 import { cleanupRanQueriesFromCache } from "../../apollo-cache/cleanup-ran-queries-from-cache";
 import {
   QUERY_NAME_getExperience,
   MUTATION_NAME_createOfflineEntry,
 } from "../../state/resolvers";
+import { useUpdateExperiencesOnlineMutation } from "../../graphql/experiences.mutation";
 
 export function NewEntryComponent(props: ComponentProps) {
   const { navigate, experience } = props;
   const [stateMachine, dispatch] = useReducer(reducer, experience, initState);
 
   const {
-    states: { submitting, form },
+    states: { submission, form },
     effects: { general: generalEffects },
   } = stateMachine;
 
@@ -80,29 +74,19 @@ export function NewEntryComponent(props: ComponentProps) {
 
   useEffect(() => {
     const { client, cache, persistor } = props;
+    setDocumentTitle(makeSiteTitle(pageTitle));
     addNewEntryResolvers(client);
 
     return () =>
       cleanupRanQueriesFromCache(
         cache,
-        [
-          QUERY_NAME_getExperience + "(",
-          MUTATION_NAME_createEntry,
-          MUTATION_NAME_createOfflineEntry,
-        ],
+        [QUERY_NAME_getExperience + "(", MUTATION_NAME_createOfflineEntry],
         persistor,
       );
+
+    setDocumentTitle();
     /* eslint-disable-next-line react-hooks/exhaustive-deps*/
   }, []);
-
-  useEffect(
-    function setRouteTitle() {
-      setDocumentTitle(makeSiteTitle(pageTitle));
-
-      return setDocumentTitle;
-    },
-    [pageTitle],
-  );
 
   const onSubmit = useCallback(() => {
     dispatch({
@@ -114,11 +98,18 @@ export function NewEntryComponent(props: ComponentProps) {
 
   return (
     <div className="component-new-entry">
-      {submitting.value === StateValue.active && <Loading />}
+      {submission.value === StateValue.active && <Loading />}
 
       <SidebarHeader title={pageTitle} sidebar={true} />
 
       <div className="main">
+        {submission.value === StateValue.errors && (
+          <span
+            className="js-scroll-into-view"
+            id={scrollIntoViewNonFieldErrorDomId}
+          />
+        )}
+
         <Button
           type="button"
           onClick={goToExperience}
@@ -128,30 +119,21 @@ export function NewEntryComponent(props: ComponentProps) {
           {title}
         </Button>
 
-        {submitting.value === StateValue.errors &&
-          submitting.errors.value === StateValue.nonFieldErrors && (
-            <Message
-              style={{
-                minHeight: "auto",
-                position: "relative",
-                marginTop: 0,
-              }}
-              id={networkErrorDomId}
-              error={true}
-              onDismiss={function onDismiss() {
-                dispatch({ type: ActionType.DISMISS_SERVER_ERRORS });
+        {submission.value === StateValue.errors && (
+          <div className="notification">
+            <span className="text">{submission.errors.context.errors}</span>
+
+            <div
+              id="close-notification"
+              className="close__container"
+              onClick={() => {
+                dispatch({ type: ActionType.DISMISS_NOTIFICATION });
               }}
             >
-              <Message.Content>
-                <span
-                  className="js-scroll-into-view"
-                  id={scrollIntoViewNonFieldErrorDomId}
-                />
-
-                {submitting.errors.nonFieldErrors.context.errors}
-              </Message.Content>
-            </Message>
-          )}
+              <button className="pointer-events-none close" />
+            </div>
+          </div>
+        )}
 
         <Form onSubmit={onSubmit}>
           {dataDefinitions.map((obj, index) => {
@@ -164,7 +146,6 @@ export function NewEntryComponent(props: ComponentProps) {
                 index={index}
                 fieldState={form.fields[index]}
                 dispatch={dispatch}
-                submittingState={submitting}
               />
             );
           })}
@@ -187,10 +168,16 @@ export function NewEntryComponent(props: ComponentProps) {
 
 const DataComponent = React.memo(
   function DataComponentFn(props: DataComponentProps) {
-    const { definition, index, dispatch, fieldState, submittingState } = props;
+    const {
+      definition,
+      index,
+      dispatch,
+      fieldState: {
+        context: { value: currentValue, errors },
+      },
+    } = props;
 
     const { name: fieldTitle, type, id } = definition;
-    const currentValue = fieldState.context.value;
     const inputId = makeFieldInputId(id);
 
     const generic = {
@@ -213,41 +200,27 @@ const DataComponent = React.memo(
     };
 
     const component = componentFromDataType(type, generic);
-    let error = "";
-
-    if (
-      submittingState.value === StateValue.errors &&
-      submittingState.errors.value === StateValue.fieldErrors
-    ) {
-      error = submittingState.errors.fieldErrors.context.errors[index];
-    }
 
     return (
       <Form.Field
         className={makeClassNames({
-          error: !!error,
-          "form-field": true,
-          [makeFormFieldSelectorClass(id)]: true,
+          error: !!errors,
+          relative: true,
         })}
       >
-        <span id={makeScrollIntoViewId(id)} className="js-scroll-into-view" />
-
         <label htmlFor={inputId}>{`[${type}] ${fieldTitle}`}</label>
 
         {component}
 
-        {error && (
-          <FormCtrlError error={error} id={makeFieldErrorDomId(index)} />
+        {errors && (
+          <FormCtrlError id={makeInputErrorDomId(id)}>{errors}</FormCtrlError>
         )}
       </Form.Field>
     );
   },
 
   function DataComponentDiff(prevProps, nextProps) {
-    return (
-      prevProps.fieldState === nextProps.fieldState &&
-      prevProps.submittingState === nextProps.submittingState
-    );
+    return prevProps.fieldState === nextProps.fieldState;
   },
 );
 
@@ -266,21 +239,20 @@ interface DataComponentProps {
   index: number;
   fieldState: FieldState;
   dispatch: DispatchType;
-  submittingState: SubmittingState;
 }
 
 type E = React.ChangeEvent<HTMLInputElement>;
 
 // istanbul ignore next:
 export default (props: NewEntryCallerProps) => {
-  const [createOnlineEntry] = useCreateOnlineEntryMutation();
   const [createOfflineEntry] = useCreateOfflineEntryMutation();
   const { cache, client, persistor } = useContext(EbnisAppContext);
+  const [updateExperiencesOnline] = useUpdateExperiencesOnlineMutation();
 
   return (
     <NewEntryComponent
-      createOnlineEntry={createOnlineEntry}
       createOfflineEntry={createOfflineEntry}
+      updateExperiencesOnline={updateExperiencesOnline}
       client={client}
       persistor={persistor}
       cache={cache}

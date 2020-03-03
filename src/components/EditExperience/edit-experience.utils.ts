@@ -1,13 +1,12 @@
 import { ExperienceNoEntryFragment } from "../../graphql/apollo-types/ExperienceNoEntryFragment";
-import { UpdateExperiencesOnlineComponentProps } from "../../graphql/update-experience.mutation";
+import { UpdateExperiencesOnlineComponentProps } from "../../graphql/experiences.mutation";
 import { Dispatch, Reducer } from "react";
-import { UpdateExperienceMutation_updateExperience_errors } from "../../graphql/apollo-types/UpdateExperienceMutation";
 import { wrapReducer } from "../../logger";
 import immer, { Draft } from "immer";
 import {
   UpdateExperienceOwnFieldsInput,
   UpdateDefinitionInput,
-  UpdateAnExperienceInput,
+  UpdateExperienceInput,
   DataTypes,
 } from "../../graphql/apollo-types/globalTypes";
 import { UpdateExperiencesOnline_updateExperiences_UpdateExperiencesSomeSuccess_experiences } from "../../graphql/apollo-types/UpdateExperiencesOnline";
@@ -26,22 +25,24 @@ import {
 } from "./edit-experience.resolvers";
 import {
   DispatchType as ExperienceDispatchType,
-  ActionType as ExperienceActype,
+  ActionType as ExperienceActionType,
 } from "../Experience/experience.utils";
-import { parseStringError, StringyErrorPayload } from "../../general-utils";
+import {
+  parseStringError,
+  CommonErrorPayload,
+  FORM_CONTAINS_ERRORS_MESSAGE,
+  GENERIC_SERVER_ERROR,
+} from "../../general-utils";
 import { isOfflineId } from "../../constants";
 import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragment";
 
 export enum ActionType {
   SUBMITTING = "@edit-experience/submitting",
-  FORM_ERRORS = "@edit-experience/form-errors",
-  SERVER_ERRORS = "@edit-experience/server-errors",
   FORM_CHANGED = "@edit-experience/form-changed",
   ON_UPDATED_ONLINE = "@edit-experience/on-updated-online",
   ON_UPDATED_OFFLINE = "@edit-experience/on-updated-offline",
   RESET_FORM_FIELDS = "@edit-experience/reset-form-fields",
   CLOSE_SUBMIT_NOTIFICATION = "@edit-experience/close-submit-notification",
-  SERVER_FIELD_ERRORS = "@edit-experience/server-field-errors",
   DEFINITION_CHANGED = "@edit-experience/definition-changed",
   ON_COMMON_ERROR = "@edit-experience/on-common-error",
 }
@@ -107,7 +108,7 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
             break;
 
           case ActionType.ON_COMMON_ERROR:
-            handleOnCommonErrorAction(proxy, payload as StringyErrorPayload);
+            handleOnCommonErrorAction(proxy, payload as CommonErrorPayload);
             break;
         }
       });
@@ -116,10 +117,6 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
   );
 
 ////////////////////////// EFFECTS SECTION /////////////////////////
-
-export const GENERIC_SERVER_ERROR = "Something went wrong - please try again.";
-export const FORM_CONTAINS_ERRORS_MESSAGE =
-  "Form contains errors. Please correct them and save again.";
 
 const submitEffect: DefSubmitEffect["func"] = async (
   { input },
@@ -168,7 +165,7 @@ const submitEffect: DefSubmitEffect["func"] = async (
       variables: {
         input: [updateData],
       },
-      update: updateExperiencesInCache,
+      update: updateExperiencesInCache(),
     });
 
     const validResponse =
@@ -271,7 +268,7 @@ function SyncEditedOfflineExperienceEffectHelper(
   });
 
   parentDispatch({
-    type: ExperienceActype.SYNC_EDITED_OFFLINE_EXPERIENCE,
+    type: ExperienceActionType.SYNC_EDITED_OFFLINE_EXPERIENCE,
     experience: updatedExperience,
     onError: error => {
       dispatch({
@@ -290,7 +287,7 @@ function onExperienceUpdatedEffectHelper(
   const { dispatch } = effectArgs;
 
   switch (updateResult.__typename) {
-    case "UpdateExperienceFullErrors":
+    case "UpdateExperienceErrors":
       {
         const {
           errors: { error },
@@ -443,11 +440,7 @@ function handleDefinitionChangedAction(
   } = proxy;
 
   const field = dataDefinitions[id];
-  handleFormChangedActionHelper(
-    (field as unknown) as FormField,
-    field.context.defaultName,
-    text,
-  );
+  handleFormChangedActionHelper((field as unknown) as FormField, text);
 }
 
 function handleFormChangedAction(
@@ -463,22 +456,10 @@ function handleFormChangedAction(
 
   const field = fields[fieldName];
 
-  handleFormChangedActionHelper(field, field.context.defaults, text);
+  handleFormChangedActionHelper(field, text);
 }
 
-function handleFormChangedActionHelper(
-  field: FormField,
-  defaultVal: string,
-  text: string,
-) {
-  // const trimmedText = text.trim();
-
-  // if (trimmedText === defaultVal) {
-  //   field.states.value = StateValue.unchanged;
-  //   delete field.states[StateValue.changed];
-  //   return;
-  // }
-
+function handleFormChangedActionHelper(field: FormField, text: string) {
   const state = field.states as ChangedState;
   state.value = StateValue.changed;
   state.changed = state.changed || {
@@ -896,7 +877,7 @@ function handleResetFormFieldsAction(proxy: DraftState) {
 
 function handleOnCommonErrorAction(
   proxy: DraftState,
-  payload: StringyErrorPayload,
+  payload: CommonErrorPayload,
 ) {
   const { states } = proxy;
   const submissionState = states.submission as SubmissionErrors;
@@ -986,15 +967,13 @@ interface FieldInValid {
   };
 }
 
-interface Submitting {
-  value: SubmittingVal;
-}
-
 type Submission =
   | {
       value: InActiveVal;
     }
-  | Submitting
+  | {
+      value: SubmittingVal;
+    }
   | SubmissionSuccess
   | SubmissionErrors
   | SubmissionWarning;
@@ -1031,12 +1010,6 @@ export type Action =
   | {
       type: ActionType.SUBMITTING;
     }
-  | {
-      type: ActionType.FORM_ERRORS;
-    }
-  | ({
-      type: ActionType.SERVER_ERRORS;
-    } & ServerErrorPayload)
   | ({
       type: ActionType.FORM_CHANGED;
     } & FormChangedPayload)
@@ -1051,7 +1024,7 @@ export type Action =
     } & DefinitionChangedPayload)
   | ({
       type: ActionType.ON_COMMON_ERROR;
-    } & StringyErrorPayload);
+    } & CommonErrorPayload);
 
 interface OnUpdatedOfflinePayload {
   result: UpdateExperienceOffline["updateExperienceOffline"] | undefined;
@@ -1070,10 +1043,6 @@ interface FormChangedPayload {
 interface DefinitionChangedPayload {
   text: string;
   id: string;
-}
-
-interface ServerErrorPayload {
-  errors: UpdateExperienceMutation_updateExperience_errors;
 }
 
 type DispatchType = Dispatch<Action>;
@@ -1120,7 +1089,4 @@ interface EffectState {
 
 type EffectsList = (DefSubmitEffect | ScrollToViewEffect)[];
 
-type FormInput = Pick<
-  UpdateAnExperienceInput,
-  "ownFields" | "updateDefinitions"
->;
+type FormInput = Pick<UpdateExperienceInput, "ownFields" | "updateDefinitions">;

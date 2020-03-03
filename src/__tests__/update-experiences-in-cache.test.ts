@@ -3,7 +3,7 @@ import { updateExperiencesInCache } from "../apollo-cache/update-experiences";
 import { floatExperiencesToTheTopInGetExperiencesMiniQuery } from "../apollo-cache/update-get-experiences-mini-query";
 import { readExperienceFragment } from "../apollo-cache/read-experience-fragment";
 import { writeExperienceFragmentToCache } from "../apollo-cache/write-experience-fragment";
-import { UpdateExperiencesOnlineMutationResult } from "../graphql/update-experience.mutation";
+import { UpdateExperiencesOnlineMutationResult } from "../graphql/experiences.mutation";
 import {
   getUnsyncedExperience,
   writeUnsyncedExperience,
@@ -36,12 +36,12 @@ beforeEach(() => {
 const dataProxy = {} as DataProxy;
 
 test("no updates", () => {
-  updateExperiencesInCache(dataProxy, {});
+  updateExperiencesInCache()(dataProxy, {});
   expect(mockWriteExperienceFragmentToCache).not.toHaveBeenCalled();
 });
 
 test("all failed", () => {
-  updateExperiencesInCache(dataProxy, {
+  updateExperiencesInCache()(dataProxy, {
     data: {
       updateExperiences: {
         __typename: "UpdateExperiencesAllFail",
@@ -122,13 +122,15 @@ test("some success", () => {
     .mockReturnValueOnce({ definitions: {} }) // 4
     .mockReturnValueOnce(unsynced5); // 5
 
-  updateExperiencesInCache(dataProxy, {
+  const mockOnDone = jest.fn();
+
+  updateExperiencesInCache(mockOnDone)(dataProxy, {
     data: {
       updateExperiences: {
         __typename: "UpdateExperiencesSomeSuccess",
         experiences: [
           {
-            __typename: "UpdateExperienceFullErrors",
+            __typename: "UpdateExperienceErrors",
           },
           {
             __typename: "UpdateExperienceSomeSuccess", // 1
@@ -154,7 +156,7 @@ test("some success", () => {
               ],
               newEntries: [
                 {
-                  __typename: "CreateEntryErrorss",
+                  __typename: "CreateEntryErrors",
                 },
               ],
             },
@@ -204,7 +206,7 @@ test("some success", () => {
               ] as DefinitionErrorsFragment[],
               newEntries: [
                 {
-                  __typename: "CreateEntryErrorss",
+                  __typename: "CreateEntryErrors",
                 },
                 {
                   __typename: "CreateEntrySuccess",
@@ -254,4 +256,6 @@ test("some success", () => {
     "2",
     "3",
   ]);
+
+  expect(mockOnDone).toHaveBeenCalled();
 });

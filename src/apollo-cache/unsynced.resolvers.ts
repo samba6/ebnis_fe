@@ -12,9 +12,9 @@ export function getUnsyncedExperience(
 }
 
 export function writeUnsyncedExperience(id: string, data: UnsyncedData) {
-  const allUnsycned = getUnsyncedExperiences();
-  allUnsycned[id] = data;
-  localStorage.setItem(KEY, JSON.stringify(allUnsycned));
+  const allUnsynced = getUnsyncedExperiences();
+  allUnsynced[id] = data;
+  localStorage.setItem(KEY, JSON.stringify(allUnsynced));
 }
 
 function getUnsyncedExperiences() {
@@ -22,19 +22,19 @@ function getUnsyncedExperiences() {
 }
 
 export function removeUnsyncedExperience(id: string) {
-  const allUnsycned = getUnsyncedExperiences();
-  delete allUnsycned[id];
-  localStorage.setItem(KEY, JSON.stringify(allUnsycned));
+  const allUnsynced = getUnsyncedExperiences();
+  delete allUnsynced[id];
+  localStorage.setItem(KEY, JSON.stringify(allUnsynced));
 }
 
 export function removeUnsyncedExperiences(ids: string[]) {
-  const allUnsycned = getUnsyncedExperiences();
+  const allUnsynced = getUnsyncedExperiences();
 
   ids.forEach(id => {
-    delete allUnsycned[id];
+    delete allUnsynced[id];
   });
 
-  localStorage.setItem(KEY, JSON.stringify(allUnsycned));
+  localStorage.setItem(KEY, JSON.stringify(allUnsynced));
 }
 
 ////////////////////////// TYPES ////////////////////////////
@@ -42,7 +42,7 @@ export function removeUnsyncedExperiences(ids: string[]) {
 type UnsyncedData = true | UnsyncedModifiedExperience;
 
 interface Unsynced {
-  [k: string]: UnsyncedData;
+  [experienceId: string]: UnsyncedData;
 }
 
 export interface ModifiedExperienceUnsyncedDefinition {
@@ -56,12 +56,12 @@ export interface UnsyncedModifiedExperience {
     description?: true;
   };
   definitions?: {
-    [k: string]: ModifiedExperienceUnsyncedDefinition;
+    [definitionId: string]: ModifiedExperienceUnsyncedDefinition;
   };
   newEntries?: true;
   modifiedEntries?: {
-    [k: string]: {
-      [k: string]: true;
+    [entryId: string]: {
+      [dataObjectId: string]: true;
     };
   };
 }

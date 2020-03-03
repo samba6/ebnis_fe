@@ -1,0 +1,8 @@
+.components-form-control-error {
+  background: var(--error-bg-color);
+  color: var(--error-text-color);
+  border: 1px solid var(--error-border-color);
+  border-radius: 4px;
+  margin-top: var(--minimum-radius);
+  padding: 5px;
+}

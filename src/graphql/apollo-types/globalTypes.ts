@@ -18,13 +18,6 @@ export enum DataTypes {
   SINGLE_LINE_TEXT = "SINGLE_LINE_TEXT",
 }
 
-export interface CreateAnEntryInput {
-  clientId?: string | null;
-  dataObjects: CreateDataObject[];
-  insertedAt?: any | null;
-  updatedAt?: any | null;
-}
-
 /**
  * Variables for defining field while defining a new experience
  */
@@ -45,21 +38,10 @@ export interface CreateDataObject {
   updatedAt?: any | null;
 }
 
-export interface CreateEntriesInput {
-  clientId: string;
-  dataObjects: (CreateDataObject | null)[];
-  experienceId: string;
-  insertedAt?: any | null;
-  updatedAt?: any | null;
-}
-
-/**
- * Variables for creating an experience entry
- */
 export interface CreateEntryInput {
   clientId?: string | null;
-  dataObjects: (CreateDataObject | null)[];
-  experienceId: string;
+  dataObjects: CreateDataObject[];
+  experienceId?: string | null;
   insertedAt?: any | null;
   updatedAt?: any | null;
 }
@@ -108,17 +90,6 @@ export interface Registration {
   source: string;
 }
 
-/**
- * Input variables for updating an experience
- */
-export interface UpdateAnExperienceInput {
-  addEntries?: CreateAnEntryInput[] | null;
-  experienceId: string;
-  ownFields?: UpdateExperienceOwnFieldsInput | null;
-  updateDefinitions?: UpdateDefinitionInput[] | null;
-  updateEntries?: UpdateEntryInput[] | null;
-}
-
 export interface UpdateDataObjectInput {
   data: any;
   id: string;
@@ -143,12 +114,15 @@ export interface UpdateEntryInput {
 }
 
 /**
- * Variables for updating an existing Experience
+ * Input variables for updating an experience
  */
 export interface UpdateExperienceInput {
-  description?: string | null;
-  id: string;
-  title?: string | null;
+  addEntries?: CreateEntryInput[] | null;
+  deleteEntries?: string[] | null;
+  experienceId: string;
+  ownFields?: UpdateExperienceOwnFieldsInput | null;
+  updateDefinitions?: UpdateDefinitionInput[] | null;
+  updateEntries?: UpdateEntryInput[] | null;
 }
 
 /**

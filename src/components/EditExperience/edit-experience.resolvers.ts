@@ -12,7 +12,7 @@ import { writeExperienceFragmentToCache } from "../../apollo-cache/write-experie
 import { readExperienceFragment } from "../../apollo-cache/read-experience-fragment";
 import { floatExperienceToTheTopInGetExperiencesMiniQuery } from "../../apollo-cache/update-get-experiences-mini-query";
 import {
-  UpdateAnExperienceInput,
+  UpdateExperienceInput,
   UpdateDefinitionInput,
 } from "../../graphql/apollo-types/globalTypes";
 import { LocalResolverFn } from "../../state/resolvers";
@@ -162,7 +162,7 @@ function updateDefinitions(
 }
 
 export const UPDATE_EXPERIENCE_OFFLINE_MUTATION = gql`
-  mutation UpdateExperienceOffline($input: UpdateAnExperienceInput!) {
+  mutation UpdateExperienceOffline($input: UpdateExperienceInput!) {
     updateExperienceOffline(input: $input) @client {
       __typename
       ... on UpdateExperienceOfflineError {
@@ -220,7 +220,7 @@ interface DefinitionUpdateVal {
 }
 
 export interface UpdateExperienceOfflineVariables {
-  input: UpdateAnExperienceInput;
+  input: UpdateExperienceInput;
 }
 
 type MaybeUnsynced = UnsyncedModifiedExperience | null;

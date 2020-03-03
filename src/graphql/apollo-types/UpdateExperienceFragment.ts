@@ -92,29 +92,36 @@ export interface UpdateExperienceFragment_updatedEntries_UpdateEntryErrors_error
 
 export interface UpdateExperienceFragment_updatedEntries_UpdateEntryErrors {
   __typename: "UpdateEntryErrors";
-  errors: UpdateExperienceFragment_updatedEntries_UpdateEntryErrors_errors | null;
+  errors: UpdateExperienceFragment_updatedEntries_UpdateEntryErrors_errors;
 }
 
-export interface UpdateExperienceFragment_updatedEntries_UpdateEntrySomeSuccess_entry_dataObjects_DataObjectFullErrors_errors {
-  __typename: "DataObjectFullError";
-  id: string;
+export interface UpdateExperienceFragment_updatedEntries_UpdateEntrySomeSuccess_entry_dataObjects_DataObjectErrors_errors_meta {
+  __typename: "DataObjectErrorMeta";
+  index: number;
+  id: string | null;
+  clientId: string | null;
+}
+
+export interface UpdateExperienceFragment_updatedEntries_UpdateEntrySomeSuccess_entry_dataObjects_DataObjectErrors_errors {
+  __typename: "DataObjectError";
+  meta: UpdateExperienceFragment_updatedEntries_UpdateEntrySomeSuccess_entry_dataObjects_DataObjectErrors_errors_meta;
   definition: string | null;
   definitionId: string | null;
   clientId: string | null;
+  /**
+   * Error related to the data e.g. a string was supplied for a decimal field.
+   */
+  data: string | null;
   /**
    * For generic errors unrelated to the fields of the data object e.g.
    *   not found error
    */
   error: string | null;
-  /**
-   * Error related to the data e.g. a string was supplied for a decimal field.
-   */
-  data: string | null;
 }
 
-export interface UpdateExperienceFragment_updatedEntries_UpdateEntrySomeSuccess_entry_dataObjects_DataObjectFullErrors {
-  __typename: "DataObjectFullErrors";
-  errors: UpdateExperienceFragment_updatedEntries_UpdateEntrySomeSuccess_entry_dataObjects_DataObjectFullErrors_errors;
+export interface UpdateExperienceFragment_updatedEntries_UpdateEntrySomeSuccess_entry_dataObjects_DataObjectErrors {
+  __typename: "DataObjectErrors";
+  errors: UpdateExperienceFragment_updatedEntries_UpdateEntrySomeSuccess_entry_dataObjects_DataObjectErrors_errors;
 }
 
 export interface UpdateExperienceFragment_updatedEntries_UpdateEntrySomeSuccess_entry_dataObjects_DataObjectSuccess_dataObject {
@@ -135,7 +142,7 @@ export interface UpdateExperienceFragment_updatedEntries_UpdateEntrySomeSuccess_
   dataObject: UpdateExperienceFragment_updatedEntries_UpdateEntrySomeSuccess_entry_dataObjects_DataObjectSuccess_dataObject;
 }
 
-export type UpdateExperienceFragment_updatedEntries_UpdateEntrySomeSuccess_entry_dataObjects = UpdateExperienceFragment_updatedEntries_UpdateEntrySomeSuccess_entry_dataObjects_DataObjectFullErrors | UpdateExperienceFragment_updatedEntries_UpdateEntrySomeSuccess_entry_dataObjects_DataObjectSuccess;
+export type UpdateExperienceFragment_updatedEntries_UpdateEntrySomeSuccess_entry_dataObjects = UpdateExperienceFragment_updatedEntries_UpdateEntrySomeSuccess_entry_dataObjects_DataObjectErrors | UpdateExperienceFragment_updatedEntries_UpdateEntrySomeSuccess_entry_dataObjects_DataObjectSuccess;
 
 export interface UpdateExperienceFragment_updatedEntries_UpdateEntrySomeSuccess_entry {
   __typename: "UpdateEntry";
@@ -155,25 +162,35 @@ export interface UpdateExperienceFragment_updatedEntries_UpdateEntrySomeSuccess 
 
 export type UpdateExperienceFragment_updatedEntries = UpdateExperienceFragment_updatedEntries_UpdateEntryErrors | UpdateExperienceFragment_updatedEntries_UpdateEntrySomeSuccess;
 
-export interface UpdateExperienceFragment_newEntries_CreateEntryErrorss_errors_meta {
+export interface UpdateExperienceFragment_newEntries_CreateEntryErrors_errors_meta {
   __typename: "CreateEntryErrorMeta";
   experienceId: string;
   index: number;
   clientId: string | null;
 }
 
-export interface UpdateExperienceFragment_newEntries_CreateEntryErrorss_errors_dataObjects {
-  __typename: "DataObjectErrorx";
+export interface UpdateExperienceFragment_newEntries_CreateEntryErrors_errors_dataObjects_meta {
+  __typename: "DataObjectErrorMeta";
   index: number;
-  definition: string | null;
-  definitionId: string | null;
-  data: string | null;
+  id: string | null;
   clientId: string | null;
 }
 
-export interface UpdateExperienceFragment_newEntries_CreateEntryErrorss_errors {
-  __typename: "CreateEntryErrorx";
-  meta: UpdateExperienceFragment_newEntries_CreateEntryErrorss_errors_meta;
+export interface UpdateExperienceFragment_newEntries_CreateEntryErrors_errors_dataObjects {
+  __typename: "DataObjectError";
+  meta: UpdateExperienceFragment_newEntries_CreateEntryErrors_errors_dataObjects_meta;
+  definition: string | null;
+  definitionId: string | null;
+  clientId: string | null;
+  /**
+   * Error related to the data e.g. a string was supplied for a decimal field.
+   */
+  data: string | null;
+}
+
+export interface UpdateExperienceFragment_newEntries_CreateEntryErrors_errors {
+  __typename: "CreateEntryError";
+  meta: UpdateExperienceFragment_newEntries_CreateEntryErrors_errors_meta;
   /**
    * A catch-all field for when we are unable to create an entry
    */
@@ -191,12 +208,12 @@ export interface UpdateExperienceFragment_newEntries_CreateEntryErrorss_errors {
   /**
    * Did we fail because there are errors in the data object object?
    */
-  dataObjects: (UpdateExperienceFragment_newEntries_CreateEntryErrorss_errors_dataObjects | null)[] | null;
+  dataObjects: (UpdateExperienceFragment_newEntries_CreateEntryErrors_errors_dataObjects | null)[] | null;
 }
 
-export interface UpdateExperienceFragment_newEntries_CreateEntryErrorss {
-  __typename: "CreateEntryErrorss";
-  errors: UpdateExperienceFragment_newEntries_CreateEntryErrorss_errors;
+export interface UpdateExperienceFragment_newEntries_CreateEntryErrors {
+  __typename: "CreateEntryErrors";
+  errors: UpdateExperienceFragment_newEntries_CreateEntryErrors_errors;
 }
 
 export interface UpdateExperienceFragment_newEntries_CreateEntrySuccess_entry_dataObjects {
@@ -247,7 +264,71 @@ export interface UpdateExperienceFragment_newEntries_CreateEntrySuccess {
   entry: UpdateExperienceFragment_newEntries_CreateEntrySuccess_entry;
 }
 
-export type UpdateExperienceFragment_newEntries = UpdateExperienceFragment_newEntries_CreateEntryErrorss | UpdateExperienceFragment_newEntries_CreateEntrySuccess;
+export type UpdateExperienceFragment_newEntries = UpdateExperienceFragment_newEntries_CreateEntryErrors | UpdateExperienceFragment_newEntries_CreateEntrySuccess;
+
+export interface UpdateExperienceFragment_deletedEntries_EntrySuccess_entry_dataObjects {
+  __typename: "DataObject";
+  id: string;
+  data: any;
+  definitionId: string;
+  /**
+   * Client ID indicates that data object was created offline
+   */
+  clientId: string | null;
+  insertedAt: any;
+  updatedAt: any;
+}
+
+export interface UpdateExperienceFragment_deletedEntries_EntrySuccess_entry {
+  __typename: "Entry";
+  /**
+   * Entry ID
+   */
+  id: string;
+  /**
+   * The ID of experience to which this entry belongs.
+   */
+  experienceId: string;
+  /**
+   * The client ID which indicates that an entry has been created while server
+   *   is offline and is to be saved. The client ID uniquely
+   *   identifies this entry and will be used to prevent conflict while saving entry
+   *   created offline and must thus be non null in this situation.
+   */
+  clientId: string | null;
+  insertedAt: any;
+  updatedAt: any;
+  /**
+   * Indicates whether entry has been modified offline, in which case this
+   *   property will be true, otherwise it will be falsy
+   */
+  modOffline: boolean | null;
+  /**
+   * The list of data belonging to this entry.
+   */
+  dataObjects: (UpdateExperienceFragment_deletedEntries_EntrySuccess_entry_dataObjects | null)[];
+}
+
+export interface UpdateExperienceFragment_deletedEntries_EntrySuccess {
+  __typename: "EntrySuccess";
+  entry: UpdateExperienceFragment_deletedEntries_EntrySuccess_entry;
+}
+
+export interface UpdateExperienceFragment_deletedEntries_DeleteEntryErrors_errors {
+  __typename: "DeleteEntryError";
+  id: string;
+  /**
+   * This will mostly be 'not found error'
+   */
+  error: string;
+}
+
+export interface UpdateExperienceFragment_deletedEntries_DeleteEntryErrors {
+  __typename: "DeleteEntryErrors";
+  errors: UpdateExperienceFragment_deletedEntries_DeleteEntryErrors_errors;
+}
+
+export type UpdateExperienceFragment_deletedEntries = UpdateExperienceFragment_deletedEntries_EntrySuccess | UpdateExperienceFragment_deletedEntries_DeleteEntryErrors;
 
 export interface UpdateExperienceFragment {
   __typename: "UpdateExperience";
@@ -257,4 +338,5 @@ export interface UpdateExperienceFragment {
   updatedDefinitions: UpdateExperienceFragment_updatedDefinitions[] | null;
   updatedEntries: UpdateExperienceFragment_updatedEntries[] | null;
   newEntries: UpdateExperienceFragment_newEntries[] | null;
+  deletedEntries: UpdateExperienceFragment_deletedEntries[] | null;
 }

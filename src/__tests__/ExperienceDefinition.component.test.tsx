@@ -1,1571 +1,895 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { ComponentType } from "react";
-import "@marko/testing-library/cleanup-after-each";
-import {
-  render,
-  fireEvent,
-  wait,
-  waitForElement,
-} from "@testing-library/react";
+import { render, cleanup, wait, waitForElement } from "@testing-library/react";
 import { ExperienceDefinitionComponent } from "../components/ExperienceDefinition/experience-definition.component";
-import {
-  CreateDataDefinition,
-  DataTypes,
-} from "../graphql/apollo-types/globalTypes";
 import { Props } from "../components/ExperienceDefinition/experience-definition.utils";
-import { fillField, renderWithRouter, closeMessage } from "./test_utils";
-import { makeExperienceRoute } from "../constants/experience-route";
 import {
-  CreateExperienceMutationVariables,
-  CreateExperienceMutation,
-} from "../graphql/apollo-types/CreateExperienceMutation";
+  titleInputDomId,
+  descriptionInputDomId,
+  notificationErrorCloseId,
+  notificationWarningCloseId,
+  submitDomId,
+  revealDescriptionInputDomId,
+  hideDescriptionInputDomId,
+  definitionTypeInputDomId,
+  definitionNameInputDomId,
+  resetDomId,
+  makeDefinitionContainerDomId,
+  removeDefinitionSelector,
+  moveDownDefinitionSelector,
+  addDefinitionSelector,
+  moveUpDefinitionSelector,
+} from "../components/ExperienceDefinition/experience-definition.dom";
 import { isConnected } from "../state/connections";
 import { scrollIntoView } from "../components/scroll-into-view";
-import { CreateExperienceOfflineMutation } from "../components/ExperienceDefinition/experience-definition.resolvers";
-import { ApolloError } from "apollo-client";
-import { GraphQLError } from "graphql";
-import { ExperienceDefinitionUpdate } from "../components/ExperienceDefinition/experience-definition.injectables";
+import { fillField } from "./test_utils";
+import { CreateExperienceOfflineMutationResult } from "../components/ExperienceDefinition/experience-definition.resolvers";
+import { CreateExperiencesMutationResult } from "../graphql/experiences.mutation";
+import { createExperiencesManualUpdate } from "../apollo-cache/create_experiences-update";
 
-jest.mock("../state/connections");
 jest.mock("../components/scroll-into-view");
-jest.mock(
-  "../components/ExperienceDefinition/experience-definition.injectables",
-);
-jest.mock("@apollo/react-hooks");
-jest.mock("../components/SidebarHeader/sidebar-header.component", () => ({
-  SidebarHeader: () => null,
-}));
-
-jest.mock("../components/use-delete-cached-queries-mutations-on-unmount");
-
-const mockIsConnected = isConnected as jest.Mock;
 const mockScrollIntoView = scrollIntoView as jest.Mock;
 
-beforeEach(() => {
-  jest.resetAllMocks();
+jest.mock("../components/SidebarHeader/sidebar-header.component", () => ({
+  SidebarHeader: jest.fn(() => null),
+}));
+
+let mockDataDefinitionId = 1;
+
+jest.mock(
+  "../components/ExperienceDefinition/experience-definition.injectables",
+  () => ({
+    addResolvers: jest.fn(),
+    makeDefinitionId: () => {
+      return "" + mockDataDefinitionId++;
+    },
+  }),
+);
+
+jest.mock("../state/connections");
+const mockIsConnected = isConnected as jest.Mock;
+
+jest.mock("../apollo-cache/create_experiences-update");
+const mockCreateExperiencesManualUpdate = createExperiencesManualUpdate as jest.Mock;
+
+const mockLoadingDomId = "a";
+jest.mock("../components/Loading/loading", () => ({
+  Loading: () => <div id={mockLoadingDomId} />,
+}));
+
+const mockNavigate = jest.fn();
+const mockCreateExperiences = jest.fn();
+const mockCreateExperienceOffline = jest.fn();
+
+afterEach(() => {
+  cleanup();
+  mockIsConnected.mockReset();
+  mockNavigate.mockReset();
+  mockCreateExperiences.mockReset();
+  mockCreateExperienceOffline.mockReset();
+  mockScrollIntoView.mockReset();
+  mockCreateExperiencesManualUpdate.mockReset();
 });
 
-const title = "ab";
-
-const resolvedVal = {
-  data: {
-    createExperience: {
-      experience: { id: "1" },
-    },
-  } as CreateExperienceMutation,
-};
-
-it("adds field from top, creates online experience definition", async () => {
-  const dataDefinitions: CreateDataDefinition[] = [
-    {
-      name: "f0",
-      type: DataTypes.SINGLE_LINE_TEXT,
-    },
-
-    {
-      name: "f1",
-      type: DataTypes.DATETIME,
-    },
-  ];
-
-  const { ui, mockNavigate, mockCreateExperience } = makeComp();
-
-  mockCreateExperience.mockResolvedValue(resolvedVal);
-
-  /**
-   * Given we are using new experience component
-   */
-  render(ui);
-
-  /**
-   * And we complete the title field
-   */
-  fillField(
-    document.getElementById("experience-definition-title-input") as any,
-    title,
-  );
-
-  /**
-   * Then add button of field0 should not be visible
-   */
-  expect(document.getElementById("add-definition-btn-0")).toBeNull();
-
-  /**
-   * When we complete field name field of field0
-   */
-  fillField(
-    document.getElementById("field-name-0") as any,
-    dataDefinitions[0].name,
-  );
-
-  /**
-   * Then add button of field0 should not be visible
-   */
-  expect(document.getElementById("add-definition-btn-0")).toBeNull();
-
-  /**
-   * When we complete data type field of field0
-   */
-  fireEvent.click(
-    (document.getElementById(
-      "experience-data-type-0",
-    ) as HTMLDivElement).getElementsByClassName(
-      `js-${dataDefinitions[0].type}`,
-    )[0] as any,
-  );
-
-  /**
-   * And remove button of field 0 should not be visible
-   */
-  expect(document.getElementById("remove-definition-btn---0")).toBeNull();
-
-  /**
-   * And move down button of field 0 should not be visible
-   */
-  expect(document.getElementById("definition-go-down-btn-0")).toBeNull();
-
-  /**
-   * And move up button of field 0 should not be visible
-   */
-  expect(document.getElementById("definition-go-up-btn-0")).toBeNull();
-
-  /**
-   * And field 2 should not be visible
-   */
-  expect(
-    document.getElementById("experience-definition-container-1"),
-  ).toBeNull();
-
-  /**
-   * When we click on add button of field 0
-   */
-  fireEvent.click(document.getElementById("add-definition-btn-0") as any);
-
-  /**
-   * Then remove button of field 0 should be visible
-   */
-  expect(document.getElementById("remove-definition-btn---0")).not.toBeNull();
-
-  /**
-   * And move down button of field 0 should be visible
-   */
-  expect(document.getElementById("definition-go-down-btn-0")).not.toBeNull();
-
-  /**
-   * And move up button of field 0 should not be visible
-   */
-  expect(document.getElementById("definition-go-up-btn-0")).toBeNull();
-
-  /**
-   * And add button of field 1 should not be visible
-   */
-  expect(document.getElementById("add-definition-btn-1")).toBeNull();
-
-  /**
-   * And remove button of field 1 should be visible
-   */
-  expect(document.getElementById("remove-definition-btn---1")).not.toBeNull();
-
-  /**
-   * And move down button of field 1 should not be visible
-   */
-  expect(document.getElementById("definition-go-down-btn-1")).toBeNull();
-
-  /**
-   * And move up button of field 1 should be visible
-   */
-  expect(document.getElementById("definition-go-up-btn-1")).not.toBeNull();
-
-  /**
-   * When we complete name field of field 1
-   */
-  fillField(
-    document.getElementById("field-name-1") as any,
-    dataDefinitions[1].name,
-  );
-
-  /**
-   * Then add button of field 1 should not be visible
-   */
-  expect(document.getElementById("add-definition-btn-1")).toBeNull();
-
-  /**
-   * When we complete data type field of field 1
-   */
-
-  fireEvent.click(
-    (document.getElementById(
-      "experience-data-type-1",
-    ) as HTMLDivElement).getElementsByClassName(
-      `js-${dataDefinitions[1].type}`,
-    )[0] as any,
-  );
-
-  /**
-   * Then add button of field 1 should now be visible
-   */
-  expect(document.getElementById("add-definition-btn-1") as any).not.toBeNull();
-
-  /**
-   * When we submit the form
-   */
-  fireEvent.click(
-    document.getElementById("experience-definition-submit-btn") as any,
-  );
-
-  /**
-   * Then correct data should be uploaded to the server
-   */
-  await wait(() =>
-    expect(mockCreateExperience.mock.calls[0][0]).toMatchObject({
-      variables: {
-        createExperienceInput: {
-          title,
-          dataDefinitions,
-          description: "",
-        },
-      } as CreateExperienceMutationVariables,
-      update: ExperienceDefinitionUpdate,
-    }),
-  );
-
-  /**
-   * And we should be redirected away from the page
-   */
-  expect(mockNavigate).toBeCalledWith(makeExperienceRoute("1"));
-});
-
-it("adds field in middle", async () => {
-  const dataDefinitions: CreateDataDefinition[] = [
-    {
-      name: "f0",
-      type: DataTypes.SINGLE_LINE_TEXT,
-    },
-
-    {
-      name: "f1",
-      type: DataTypes.DATETIME,
-    },
-
-    {
-      name: "f2",
-      type: DataTypes.INTEGER,
-    },
-  ];
-
-  const { ui, mockNavigate, mockCreateExperience } = makeComp();
-
-  mockCreateExperience.mockResolvedValue(resolvedVal);
-
-  /**
-   * Given we are using new experience component
-   */
-  render(ui);
-
-  /**
-   * And we create and complete 3 field definitions
-   */
-  fillFields(dataDefinitions);
-
-  /**
-   * Then there should not be a field definition at position 3
-   */
-  expect(document.getElementById("field-name-3")).toBeNull();
-
-  /**
-   * When we click on add button of field 1
-   */
-  fireEvent.click(document.getElementById("add-definition-btn-1") as any);
-
-  /**
-   * Then there should be an empty field at position 2
-   */
-
-  expect((document.getElementById("field-name-2") as any).value).toBe("");
-
-  /**
-   * And the field that was formerly at position 2 should now be at position 3
-   */
-  expect((document.getElementById("field-name-3") as any).value).toBe(
-    dataDefinitions[2].name,
-  );
-
-  /**
-   * When we complete the new field and submit the form
-   */
-  fillFieldDefinition("f3", DataTypes.DECIMAL, 2);
-
-  fireEvent.click(
-    document.getElementById("experience-definition-submit-btn") as any,
-  );
-
-  /**
-   * Then correct data should be uploaded to the server
-   */
-  /**
-   * And correct data should be sent to the server
-   */
-  await wait(() =>
-    expect(mockCreateExperience.mock.calls[0][0]).toMatchObject({
-      variables: {
-        createExperienceInput: {
-          title,
-          dataDefinitions: [
-            dataDefinitions[0],
-            dataDefinitions[1],
-            {
-              name: "f3",
-              type: DataTypes.DECIMAL,
-            },
-            dataDefinitions[2],
-          ],
-          description: "",
-        },
-      },
-      update: ExperienceDefinitionUpdate,
-    }),
-  );
-
-  /**
-   * And we should be redirected away from the page
-   */
-  expect(mockNavigate).toBeCalledWith(makeExperienceRoute("1"));
-});
-
-it("adds field at bottom", async () => {
-  const dataDefinitions: CreateDataDefinition[] = [
-    {
-      name: "f0",
-      type: DataTypes.SINGLE_LINE_TEXT,
-    },
-
-    {
-      name: "f1",
-      type: DataTypes.DATETIME,
-    },
-  ];
-
-  const { ui, mockNavigate, mockCreateExperience } = makeComp();
-
-  mockCreateExperience.mockResolvedValue(resolvedVal);
-
-  /**
-   * Given we are using new experience component
-   */
-  render(ui);
-
-  /**
-   * And we create and complete 2 field definitions
-   */
-  fillFields(dataDefinitions);
-
-  /**
-   * Then there should not be a field definition at position 2
-   */
-  expect(document.getElementById("field-name-2")).toBeNull();
-
-  /**
-   * When we click on add button of field 1
-   */
-  fireEvent.click(document.getElementById("add-definition-btn-1") as any);
-
-  /**
-   * Then there should be an empty field at position 2
-   */
-  expect((document.getElementById("field-name-2") as any).value).toBe("");
-
-  /**
-   * When we complete the new field and submit the form
-   */
-
-  fillFieldDefinition("f2", DataTypes.DECIMAL, 2);
-
-  fireEvent.click(
-    document.getElementById("experience-definition-submit-btn") as any,
-  );
-
-  /**
-   * Then correct data should be uploaded to the server
-   */
-  /**
-   * And correct data should be sent to the server
-   */
-  await wait(() =>
-    expect(mockCreateExperience.mock.calls[0][0]).toMatchObject({
-      variables: {
-        createExperienceInput: {
-          title,
-          dataDefinitions: [
-            dataDefinitions[0],
-            dataDefinitions[1],
-            { name: "f2", type: DataTypes.DECIMAL },
-          ],
-          description: "",
-        },
-      },
-      update: ExperienceDefinitionUpdate,
-    }),
-  );
-
-  /**
-   * And we should be redirected away from the page
-   */
-  expect(mockNavigate).toBeCalledWith(makeExperienceRoute("1"));
-});
-
-it("removes field from top", async () => {
-  const dataDefinitions: CreateDataDefinition[] = [
-    {
-      name: "f0",
-      type: DataTypes.SINGLE_LINE_TEXT,
-    },
-
-    {
-      name: "f1",
-      type: DataTypes.DATETIME,
-    },
-  ];
-
-  const { ui, mockNavigate, mockCreateExperience } = makeComp();
-
-  mockCreateExperience.mockResolvedValue(resolvedVal);
-
-  /**
-   * Given we are using new experience component
-   */
-  render(ui);
-
-  /**
-   * And we complete the two fields on screen
-   */
-  fillFields(dataDefinitions);
-
-  /**
-   * And field 1 should have add, remove and up buttons
-   */
-  expect(document.getElementById("add-definition-btn-1") as any).not.toBeNull();
-  expect(document.getElementById("remove-definition-btn---1")).not.toBeNull();
-  expect(document.getElementById("definition-go-up-btn-1")).not.toBeNull();
-
-  /**
-   * When we click on remove button of field 0
-   */
-  fireEvent.click(document.getElementById("remove-definition-btn---0") as any);
-
-  /**
-   * And former field 1 should now be in position 0
-   */
-  expect((document.getElementById("field-name-0") as any).value).toBe("f1");
-
-  /**
-   * And its remove and move up buttons should no longer be visible
-   */
-  expect(document.getElementById("remove-definition-btn---0")).toBeNull();
-  expect(document.getElementById("definition-go-up-btn-0")).toBeNull();
-
-  /**
-   * But its add button should be visible
-   */
-  expect(document.getElementById("add-definition-btn-0") as any).not.toBeNull();
-
-  /**
-   * When we submit the form
-   */
-  fireEvent.click(
-    document.getElementById("experience-definition-submit-btn") as any,
-  );
-
-  /**
-   * Then correct data should be uploaded to the server
-   */
-  await wait(() =>
-    expect(mockCreateExperience.mock.calls[0][0]).toMatchObject({
-      variables: {
-        createExperienceInput: {
-          title,
-          dataDefinitions: [dataDefinitions[1]],
-          description: "",
-        },
-      },
-      update: ExperienceDefinitionUpdate,
-    }),
-  );
-
-  /**
-   * And we should be redirected away from the page
-   */
-  expect(mockNavigate).toBeCalledWith(makeExperienceRoute("1"));
-});
-
-it("removes field from bottom", async () => {
-  const dataDefinitions: CreateDataDefinition[] = [
-    {
-      name: "f0",
-      type: DataTypes.SINGLE_LINE_TEXT,
-    },
-
-    {
-      name: "f1",
-      type: DataTypes.DATETIME,
-    },
-  ];
-
-  const { ui, mockCreateExperience } = makeComp();
-
-  mockCreateExperience.mockResolvedValue(resolvedVal);
-
-  /**
-   * Given we are using new experience component
-   */
-  render(ui);
-
-  /**
-   * And we complete the two fields on screen
-   */
-  fillFields(dataDefinitions);
-
-  /**
-   * Then field 1 should be visible on the screen
-   */
-  expect(document.getElementById("field-name-1")).not.toBeNull();
-
-  /**
-   * And field 0 should have add, remove and down buttons
-   */
-  expect(document.getElementById("add-definition-btn-0") as any).not.toBeNull();
-  expect(document.getElementById("remove-definition-btn---0")).not.toBeNull();
-  expect(document.getElementById("definition-go-down-btn-0")).not.toBeNull();
-
-  /**
-   * When we click on remove button of field 1
-   */
-  fireEvent.click(document.getElementById("remove-definition-btn---1") as any);
-
-  /**
-   * Then field 1 should no longer be visible on the screen
-   */
-  expect(document.getElementById("field-name-1")).toBeNull();
-
-  /**
-   * And field 0's remove and move down buttons should no longer be visible
-   */
-  expect(document.getElementById("remove-definition-btn---0")).toBeNull();
-
-  expect(document.getElementById("definition-go-down-btn-0")).toBeNull();
-
-  /**
-   * But its add button should be visible
-   */
-  expect(document.getElementById("add-definition-btn-0") as any).not.toBeNull();
-
-  /**
-   * When we submit the form
-   */
-  fireEvent.click(
-    document.getElementById("experience-definition-submit-btn") as any,
-  );
-
-  /**
-   * Then correct data should be uploaded to the server
-   */
-  await wait(() =>
-    expect(mockCreateExperience.mock.calls[0][0]).toMatchObject({
-      variables: {
-        createExperienceInput: {
-          title,
-          dataDefinitions: [dataDefinitions[0]],
-          description: "",
-        },
-      },
-      update: ExperienceDefinitionUpdate,
-    }),
-  );
-});
-
-it("removes field from middle", async () => {
-  const dataDefinitions: CreateDataDefinition[] = [
-    {
-      name: "f0",
-      type: DataTypes.SINGLE_LINE_TEXT,
-    },
-
-    {
-      name: "f1",
-      type: DataTypes.DATETIME,
-    },
-
-    {
-      name: "f2",
-      type: DataTypes.DECIMAL,
-    },
-  ];
-
-  const { ui, mockCreateExperience } = makeComp();
-
-  mockCreateExperience.mockResolvedValue(resolvedVal);
-
-  /**
-   * Given we are using new experience component
-   */
-  render(ui);
-
-  /**
-   * And we complete the 3 fields on screen
-   */
-  fillFields(dataDefinitions);
-
-  /**
-   * Then field 1 name should contain text for position 1
-   */
-  expect((document.getElementById("field-name-1") as any).value).toBe(
-    dataDefinitions[1].name,
-  );
-
-  /**
-   * When we click on remove button of field 1
-   */
-  fireEvent.click(document.getElementById("remove-definition-btn---1") as any);
-
-  /**
-   * Then field 1 name should now contain text formerly at position 2 because
-   * former field 1 is no longer on the page and former field 2 has moved up to
-   * position 1
-   */
-  expect((document.getElementById("field-name-1") as any).value).toBe(
-    dataDefinitions[2].name,
-  );
-
-  /**
-   * When we submit the form
-   */
-  fireEvent.click(
-    document.getElementById("experience-definition-submit-btn") as any,
-  );
-
-  /**
-   * Then correct data should be uploaded to the server
-   */
-  await wait(() =>
-    expect(mockCreateExperience.mock.calls[0][0]).toMatchObject({
-      variables: {
-        createExperienceInput: {
-          title,
-          dataDefinitions: [dataDefinitions[0], dataDefinitions[2]],
-          description: "",
-        },
-      } as CreateExperienceMutationVariables,
-      update: ExperienceDefinitionUpdate,
-    }),
-  );
-});
-
-it("moves field up from bottom", async () => {
-  const dataDefinitions: CreateDataDefinition[] = [
-    {
-      name: "f0",
-      type: DataTypes.SINGLE_LINE_TEXT,
-    },
-
-    {
-      name: "f1",
-      type: DataTypes.DATETIME,
-    },
-  ];
-
-  const { ui, mockCreateExperience } = makeComp();
-
-  mockCreateExperience.mockResolvedValue(resolvedVal);
-
-  /**
-   * Given we are using new experience component
-   */
-  render(ui);
-
-  /**
-   * And we complete the two fields on screen
-   */
-  fillFields(dataDefinitions);
-
-  /**
-   * Then field 0 name should have text at position 0
-   */
-  expect((document.getElementById("field-name-0") as any).value).toBe(
-    dataDefinitions[0].name,
-  );
-
-  /**
-   * And field 1 name should have text at position 1
-   */
-  expect((document.getElementById("field-name-1") as any).value).toBe(
-    dataDefinitions[1].name,
-  );
-
-  /**
-   * When we click on move up button of field 1
-   */
-  fireEvent.click(document.getElementById("definition-go-up-btn-1") as any);
-
-  /**
-   * Then field 0 name should have text at position 1 because it has moved up
-   */
-  expect((document.getElementById("field-name-0") as any).value).toBe(
-    dataDefinitions[1].name,
-  );
-
-  /**
-   * And field 1 name should have text at position 0 because it has moved down
-   */
-  expect((document.getElementById("field-name-1") as any).value).toBe(
-    dataDefinitions[0].name,
-  );
-
-  /**
-   * When we submit the form
-   */
-  fireEvent.click(
-    document.getElementById("experience-definition-submit-btn") as any,
-  );
-
-  /**
-   * Then correct data should be uploaded to the server
-   */
-  await wait(() =>
-    expect(mockCreateExperience.mock.calls[0][0]).toMatchObject({
-      variables: {
-        createExperienceInput: {
-          title,
-          dataDefinitions: [dataDefinitions[1], dataDefinitions[0]],
-          description: "",
-        },
-      },
-      update: ExperienceDefinitionUpdate,
-    }),
-  );
-});
-
-it("moves field up from middle", async () => {
-  const dataDefinitions: CreateDataDefinition[] = [
-    {
-      name: "f0",
-      type: DataTypes.SINGLE_LINE_TEXT,
-    },
-
-    {
-      name: "f1",
-      type: DataTypes.DATETIME,
-    },
-
-    {
-      name: "f2",
-      type: DataTypes.DATETIME,
-    },
-  ];
-
-  const { ui, mockCreateExperience } = makeComp();
-
-  mockCreateExperience.mockResolvedValue(resolvedVal);
-
-  /**
-   * Given we are using new experience component
-   */
-  render(ui);
-
-  /**
-   * And we complete the two fields on screen
-   */
-  fillFields(dataDefinitions);
-
-  /**
-   * Then field 0 name should have text at position 0
-   */
-  expect((document.getElementById("field-name-0") as any).value).toBe(
-    dataDefinitions[0].name,
-  );
-
-  /**
-   * And field 1 name should have text at position 1
-   */
-  expect((document.getElementById("field-name-1") as any).value).toBe(
-    dataDefinitions[1].name,
-  );
-
-  /**
-   * When we click on move up button of field 1
-   */
-  fireEvent.click(document.getElementById("definition-go-up-btn-1") as any);
-
-  /**
-   * Then field 0 name should have text at position 1 because it has moved up
-   */
-  expect((document.getElementById("field-name-0") as any).value).toBe(
-    dataDefinitions[1].name,
-  );
-
-  /**
-   * And field 1 name should have text at position 0 because it has moved down
-   */
-  expect((document.getElementById("field-name-1") as any).value).toBe(
-    dataDefinitions[0].name,
-  );
-
-  /**
-   * When we submit the form
-   */
-  fireEvent.click(
-    document.getElementById("experience-definition-submit-btn") as any,
-  );
-
-  /**
-   * Then correct data should be uploaded to the server
-   */
-  await wait(() =>
-    expect(mockCreateExperience.mock.calls[0][0]).toMatchObject({
-      variables: {
-        createExperienceInput: {
-          title,
-          dataDefinitions: [
-            dataDefinitions[1],
-            dataDefinitions[0],
-            dataDefinitions[2],
-          ],
-          description: "",
-        },
-      },
-      update: ExperienceDefinitionUpdate,
-    }),
-  );
-});
-
-it("moves field down from top", async () => {
-  const dataDefinitions: CreateDataDefinition[] = [
-    {
-      name: "f0",
-      type: DataTypes.SINGLE_LINE_TEXT,
-    },
-
-    {
-      name: "f1",
-      type: DataTypes.DATETIME,
-    },
-  ];
-
-  const { ui, mockCreateExperience } = makeComp();
-
-  mockCreateExperience.mockResolvedValue(resolvedVal);
-
-  /**
-   * Given we are using new experience component
-   */
-  render(ui);
-
-  /**
-   * And we complete the two fields on screen
-   */
-  fillFields(dataDefinitions);
-
-  /**
-   * Then field 0 name should have text at position 0
-   */
-  expect((document.getElementById("field-name-0") as any).value).toBe(
-    dataDefinitions[0].name,
-  );
-
-  /**
-   * And field 1 name should have text at position 1
-   */
-  expect((document.getElementById("field-name-1") as any).value).toBe(
-    dataDefinitions[1].name,
-  );
-
-  /**
-   * When we click on move down button of field 0
-   */
-  fireEvent.click(document.getElementById("definition-go-down-btn-0") as any);
-
-  /**
-   * Then field 0 name should have text at position 1 because it has moved up
-   */
-  expect((document.getElementById("field-name-0") as any).value).toBe(
-    dataDefinitions[1].name,
-  );
-
-  /**
-   * And field 1 name should have text at position 0 because it has moved down
-   */
-  expect((document.getElementById("field-name-1") as any).value).toBe(
-    dataDefinitions[0].name,
-  );
-
-  /**
-   * When we submit the form
-   */
-  fireEvent.click(
-    document.getElementById("experience-definition-submit-btn") as any,
-  );
-
-  /**
-   * Then correct data should be uploaded to the server
-   */
-  await wait(() =>
-    expect(mockCreateExperience.mock.calls[0][0]).toMatchObject({
-      variables: {
-        createExperienceInput: {
-          title,
-          dataDefinitions: [dataDefinitions[1], dataDefinitions[0]],
-          description: "",
-        },
-      },
-      update: ExperienceDefinitionUpdate,
-    }),
-  );
-});
-
-it("moves field down from middle", async () => {
-  const dataDefinitions: CreateDataDefinition[] = [
-    {
-      name: "f0",
-      type: DataTypes.SINGLE_LINE_TEXT,
-    },
-
-    {
-      name: "f1",
-      type: DataTypes.DATETIME,
-    },
-
-    {
-      name: "f2",
-      type: DataTypes.DATETIME,
-    },
-  ];
-
-  const { ui, mockCreateExperience } = makeComp();
-
-  mockCreateExperience.mockResolvedValue(resolvedVal);
-
-  /**
-   * Given we are using new experience component
-   */
-  render(ui);
-
-  /**
-   * And we complete the 3 fields on screen
-   */
-  fillFields(dataDefinitions);
-
-  /**
-   * Then field 1 name should have text at position 1
-   */
-  expect((document.getElementById("field-name-1") as any).value).toBe(
-    dataDefinitions[1].name,
-  );
-
-  /**
-   * And field 2 name should have text at position 2
-   */
-  expect((document.getElementById("field-name-2") as any).value).toBe(
-    dataDefinitions[2].name,
-  );
-
-  /**
-   * When we click on move down button of field 1
-   */
-  fireEvent.click(document.getElementById("definition-go-down-btn-1") as any);
-
-  /**
-   * Then field 1 name should have text at position 2 because it has moved up
-   */
-  expect((document.getElementById("field-name-1") as any).value).toBe(
-    dataDefinitions[2].name,
-  );
-
-  /**
-   * Then field 2 name should have text at position 1 because it has moved down
-   */
-  expect((document.getElementById("field-name-2") as any).value).toBe(
-    dataDefinitions[1].name,
-  );
-
-  /**
-   * When we submit the form
-   */
-  fireEvent.click(
-    document.getElementById("experience-definition-submit-btn") as any,
-  );
-
-  /**
-   * Then correct data should be uploaded to the server
-   */
-  await wait(() =>
-    expect(mockCreateExperience.mock.calls[0][0]).toMatchObject({
-      variables: {
-        createExperienceInput: {
-          title,
-          dataDefinitions: [
-            dataDefinitions[0],
-            dataDefinitions[2],
-            dataDefinitions[1],
-          ],
-          description: "",
-        },
-      },
-      update: ExperienceDefinitionUpdate,
-    }),
-  );
-});
-
-it("toggles description field", () => {
+it("renders", async () => {
   const { ui } = makeComp();
 
   /**
-   * Given we are using new experience component
+   * When component is rendered
    */
   render(ui);
 
-  /**
-   * Then description input box should be visible on the page
-   */
-  expect(
-    document.getElementById("experience-definition-description-input"),
-  ).not.toBeNull();
+  const resetDom = document.getElementById(resetDomId) as HTMLElement;
+  resetDom.click();
+
+  ////////////////////////// EMPTY FORM SUBMITTED /////////////////
 
   /**
-   * And an icon indicating that description is showing should be visible on
-   * the page
+   * Then warning notification should not be visible
    */
-  expect(
-    document.getElementById("experience-definition-description-visible-icon"),
-  ).not.toBeNull();
+  expect(getWarningNotification()).toBeNull();
 
   /**
-   * And an icon indicating that description is not showing should not be
-   * visible on the page
+   * And page should not have been scrolled
    */
-  expect(
-    document.getElementById(
-      "experience-definition-description-not-visible-icon",
-    ),
-  ).toBeNull();
+  expect(mockScrollIntoView).not.toHaveBeenCalled();
 
   /**
-   * When we click on the description label
+   * Field errors should not be visible
    */
-  fireEvent.click(
-    document.getElementById("experience-definition-description-toggle") as any,
-  );
 
-  /**
-   * Then description input box should no longer be visible on the page
-   */
-  expect(
-    document.getElementById("experience-definition-description-input"),
-  ).toBeNull();
+  const titleInputDom = document.getElementById(
+    titleInputDomId,
+  ) as HTMLInputElement;
 
-  /**
-   * And an icon indicating that description is not showing should be visible on
-   * the page
-   */
-  expect(
-    document.getElementById(
-      "experience-definition-description-not-visible-icon",
-    ),
-  ).not.toBeNull();
+  const titleFieldDom = titleInputDom.closest(".field") as HTMLElement;
+  const titleInputErrorDomId = titleInputDomId + "-errors";
 
-  /**
-   * And an icon indicating that description is showing should not be
-   * visible on the page
-   */
-  expect(
-    document.getElementById("experience-definition-description-visible-icon"),
-  ).toBeNull();
-});
+  expect(titleFieldDom.classList).not.toContain("field--errors");
+  expect(document.getElementById(titleInputErrorDomId)).toBeNull();
 
-it("renders errors if we get field errors", async () => {
-  const dataDefinitions: CreateDataDefinition[] = [
-    {
-      name: "nf",
-      type: DataTypes.SINGLE_LINE_TEXT,
-    },
+  const definitionNameInputDomId1 = definitionNameInputDomId + 1;
+  const definitionNameErrorDomId1 = definitionNameInputDomId1 + "-errors";
 
-    {
-      name: "nf",
-      type: DataTypes.DATETIME,
-    },
-  ];
+  const definitionNameInputDom1 = document.getElementById(
+    definitionNameInputDomId1,
+  ) as HTMLInputElement;
 
-  const { ui, mockCreateExperience } = makeComp();
-
-  mockCreateExperience.mockResolvedValue({
-    data: {
-      createExperience: {
-        errors: {
-          title: "t",
-          user: null,
-          __typename: "CreateExperienceErrors",
-
-          dataDefinitionsErrors: [
-            {
-              index: 1,
-              errors: {
-                name: "t",
-                type: "t",
-              },
-            },
-          ],
-        },
-      },
-    } as CreateExperienceMutation,
-  });
-
-  /**
-   * Given we are using new exp component
-   */
-  render(ui);
-
-  /**
-   * When we complete two fields, giving them same name
-   */
-  fillFields(dataDefinitions);
-
-  /**
-   * Then no error Uis should be visible
-   */
-  const $definition1Container = document.getElementById(
-    "experience-definition-container-1",
-  ) as HTMLDivElement;
-
-  expect($definition1Container.classList).not.toContain("errors");
-
-  const $definition1 = $definition1Container.querySelector(
+  const definitionNameFieldDom1 = definitionNameInputDom1.closest(
     ".field",
-  ) as HTMLDivElement;
+  ) as HTMLElement;
 
-  expect($definition1.classList).not.toContain("error");
+  expect(definitionNameFieldDom1.classList).not.toContain("field--errors");
+  expect(document.getElementById(definitionNameErrorDomId1)).toBeNull();
 
-  expect(document.getElementById("field-name-1-error")).toBeNull();
+  const definitionTypeInputDomId1 = definitionTypeInputDomId + 1;
+  const definitionTypeErrorDomId1 = definitionTypeInputDomId1 + "-errors";
 
-  expect(
-    document.getElementById("experience-definition-title-error"),
-  ).toBeNull();
+  const definitionTypeInputDom1 = document.getElementById(
+    definitionTypeInputDomId1,
+  ) as HTMLSelectElement;
+
+  const definitionTypeFieldDom1 = definitionTypeInputDom1.closest(
+    ".field",
+  ) as HTMLElement;
+
+  expect(definitionTypeFieldDom1.classList).not.toContain("field--errors");
+  expect(document.getElementById(definitionTypeErrorDomId1)).toBeNull();
 
   /**
-   * When we submit the form
+   * When form is submitted
    */
-
-  fireEvent.click(
-    document.getElementById("experience-definition-submit-btn") as any,
-  );
+  const submitDom = document.getElementById(submitDomId) as HTMLElement;
+  submitDom.click();
+  await wait(() => true);
 
   /**
-   * Then error UIs should be visible
+   * Then warning notification should be visible
    */
-  await wait(() => expect($definition1Container.classList).toContain("errors"));
-
-  expect($definition1.classList).toContain("error");
-
-  expect(document.getElementById("field-name-1-error")).not.toBeNull();
-
-  expect(
-    document.getElementById("experience-definition-title-error"),
-  ).not.toBeNull();
+  const warningNotificationDom = getWarningNotification();
 
   /**
-   * And page should be scrolled up
+   * And field errors should be visible
+   */
+  expect(titleFieldDom.classList).toContain("field--errors");
+  expect(document.getElementById(titleInputErrorDomId)).not.toBeNull();
+  expect(definitionNameFieldDom1.classList).toContain("field--errors");
+  expect(document.getElementById(definitionNameErrorDomId1)).not.toBeNull();
+  expect(definitionTypeFieldDom1.classList).toContain("field--errors");
+  expect(document.getElementById(definitionTypeErrorDomId1)).not.toBeNull();
+
+  /**
+   * And page should be scrolled
    */
   expect(mockScrollIntoView).toHaveBeenCalled();
+  mockScrollIntoView.mockReset();
 
   /**
-   * And error summary Ui should be visible on the page. And when we click on it
+   * When warning notification is closed
+   */
+  warningNotificationDom.click();
+
+  /**
+   * Then warning notification should not be visible
+   */
+  expect(getWarningNotification()).toBeNull();
+
+  /**
+   * When form reset button is clicked
+   */
+  resetDom.click();
+  await wait(() => true);
+
+  /**
+   * Then errors should be cleared
+   */
+  expect(titleFieldDom.classList).not.toContain("field--errors");
+  expect(document.getElementById(titleInputErrorDomId)).toBeNull();
+  expect(definitionNameFieldDom1.classList).not.toContain("field--errors");
+  expect(document.getElementById(definitionNameErrorDomId1)).toBeNull();
+  expect(definitionTypeFieldDom1.classList).not.toContain("field--errors");
+  expect(document.getElementById(definitionTypeErrorDomId1)).toBeNull();
+
+  /**
+   * And page should be scrolled
+   */
+  expect(mockScrollIntoView).toHaveBeenCalled();
+  mockScrollIntoView.mockReset();
+
+  ////////////////////// END EMPTY FORM SUBMITTED /////////////////
+
+  //////////////////// TOGGLE DESCRIPTION INPUT ///////////////
+
+  /**
+   * And description input should be visible
    */
 
-  closeMessage(document.getElementById("experience-definition-errors-summary"));
+  const descriptionInputDom = document.getElementById(
+    descriptionInputDomId,
+  ) as HTMLInputElement;
+
+  expect(descriptionInputDom.classList).not.toContain("field__control--hidden");
+
+  const descriptionHideDom = document.getElementById(
+    hideDescriptionInputDomId,
+  ) as HTMLElement;
 
   /**
-   * Then error summary ui should no longer be visible on the page
+   * When description is hidden
+   */
+  descriptionHideDom.click();
+
+  /**
+   * Then description input should not be visible
+   */
+  expect(descriptionInputDom.classList).toContain("field__control--hidden");
+
+  /**
+   * And hide description UI should not be visible
+   */
+  expect(document.getElementById(hideDescriptionInputDomId)).toBeNull();
+
+  /**
+   * When description is revealed
+   */
+  const descriptionRevealDom = document.getElementById(
+    revealDescriptionInputDomId,
+  ) as HTMLElement;
+
+  descriptionRevealDom.click();
+
+  /**
+   * Then description input should be visible
+   */
+  expect(descriptionInputDom.classList).not.toContain("field__control--hidden");
+
+  /**
+   * And hide description UI should be visible
+   */
+  expect(document.getElementById(hideDescriptionInputDomId)).not.toBeNull();
+
+  /**
+   * And reveal description UI should not be visible
+   */
+  expect(document.getElementById(revealDescriptionInputDomId)).toBeNull();
+
+  //////////////////// END TOGGLE DESCRIPTION INPUT ///////////////
+
+  ////////////////////// add/remove/move definitions //////////////
+
+  /**
+   * And remove/move/up definition should not be visible
+   */
+  const definitionDom1 = document.getElementById(
+    makeDefinitionContainerDomId(1),
+  ) as HTMLElement;
+
+  expect(
+    definitionDom1.getElementsByClassName(removeDefinitionSelector).item(0),
+  ).toBeNull();
+
+  expect(
+    definitionDom1.getElementsByClassName(moveDownDefinitionSelector).item(0),
+  ).toBeNull();
+
+  expect(
+    definitionDom1.getElementsByClassName(moveUpDefinitionSelector).item(0),
+  ).toBeNull();
+
+  /**
+   * And a second definition UI should not be visible
+   */
+  expect(document.getElementById(makeDefinitionContainerDomId(2))).toBeNull();
+
+  /**
+   * When definition is added
+   */
+  (definitionDom1
+    .getElementsByClassName(addDefinitionSelector)
+    .item(0) as HTMLElement).click();
+
+  /**
+   * Then remove/move definition should be visible
+   */
+
+  expect(
+    definitionDom1.getElementsByClassName(removeDefinitionSelector).item(0),
+  ).not.toBeNull();
+
+  const definitionDownDom1 = definitionDom1
+    .getElementsByClassName(moveDownDefinitionSelector)
+    .item(0) as HTMLElement;
+
+  /**
+   * But move up button should still not be visible
+   */
+
+  expect(
+    definitionDom1.getElementsByClassName(moveUpDefinitionSelector).item(0),
+  ).toBeNull();
+
+  /**
+   * Then a second definition UI should be visible
+   */
+  const definitionDom2 = document.getElementById(
+    makeDefinitionContainerDomId(2),
+  ) as HTMLElement;
+
+  /**
+   * And second definition UI should not have a down button
+   * (cos it's the last)
    */
   expect(
-    document.getElementById("experience-definition-errors-summary"),
+    definitionDom2.getElementsByClassName(moveDownDefinitionSelector).item(0),
   ).toBeNull();
-});
 
-it("renders error if all fields not completely filled on submission", async () => {
-  const dataDefinitions: CreateDataDefinition[] = [
-    {
-      name: "nf",
-      type: DataTypes.SINGLE_LINE_TEXT,
-    },
+  /**
+   * When 2nd definition add button is clicked
+   */
+  (definitionDom2
+    .getElementsByClassName(addDefinitionSelector)
+    .item(0) as HTMLElement).click();
 
-    {
-      name: "",
-      type: DataTypes.DATETIME,
-    },
-  ];
+  /**
+   * Then second definition UI should now have a down button
+   * (cos it's no longer the last)
+   */
+  expect(
+    definitionDom2.getElementsByClassName(moveDownDefinitionSelector).item(0),
+  ).not.toBeNull();
 
-  const { ui } = makeComp();
+  /**
+   * When 3rd definition's move up button is clicked
+   */
+  const definitionDom3 = document.getElementById(
+    makeDefinitionContainerDomId(3),
+  ) as HTMLElement;
 
-  render(ui);
+  (definitionDom3
+    .getElementsByClassName(moveUpDefinitionSelector)
+    .item(0) as HTMLElement).click();
 
-  fillFields(dataDefinitions);
+  /**
+   * Then second definition UI should now have a down button
+   * (cos it's the last again)
+   */
+  expect(
+    definitionDom2.getElementsByClassName(moveDownDefinitionSelector).item(0),
+  ).toBeNull();
 
-  const $definition1Container = document.getElementById(
-    "experience-definition-container-1",
-  ) as HTMLDivElement;
+  /**
+   * When definition 1 down is clicked
+   */
+  definitionDownDom1.click();
 
-  expect($definition1Container.classList).not.toContain("errors");
+  /**
+   * Then definition 1 move up should now be visible
+   */
+  expect(
+    definitionDom1.getElementsByClassName(moveUpDefinitionSelector).item(0),
+  ).not.toBeNull();
 
-  const $definition1 = $definition1Container.querySelector(
+  /**
+   * When definition at position 2 is removed
+   */
+  (definitionDom3
+    .getElementsByClassName(removeDefinitionSelector)
+    .item(0) as HTMLElement).click();
+
+  /**
+   * Then definition 1 move up should not be visible
+   */
+  expect(
+    definitionDom1.getElementsByClassName(moveUpDefinitionSelector).item(0),
+  ).toBeNull();
+
+  ////////////////////////// FORM ERRORS ////////////////////////////
+
+  /**
+   * When title field and definition 1 are completed correctly
+   */
+  fillField(titleInputDom, "tt");
+  fillField(definitionNameInputDom1, "n1");
+  fillField(definitionTypeInputDom1, "DATE");
+
+  /**
+   * And definition 2 is completed with same field name value as definition 1
+   */
+
+  const definitionNameInputDomId2 = definitionNameInputDomId + 2;
+
+  const definitionNameInputDom2 = document.getElementById(
+    definitionNameInputDomId2,
+  ) as HTMLInputElement;
+
+  fillField(definitionNameInputDom2, "n1");
+
+  /**
+   * Then definition 2 should not contain error
+   */
+
+  const definitionNameErrorDomId2 = definitionNameInputDomId2 + "-errors";
+
+  const definitionNameFieldDom2 = definitionNameInputDom2.closest(
     ".field",
-  ) as HTMLDivElement;
+  ) as HTMLElement;
 
-  expect($definition1.classList).not.toContain("error");
+  expect(definitionNameFieldDom2.classList).not.toContain("field--errors");
+  expect(document.getElementById(definitionNameErrorDomId2)).toBeNull();
 
-  fireEvent.click(
-    document.getElementById("experience-definition-submit-btn") as any,
-  );
+  const definitionTypeInputDomId2 = definitionTypeInputDomId + 2;
+  const definitionTypeErrorDomId2 = definitionTypeInputDomId2 + "-errors";
 
-  await wait(() => expect($definition1Container.classList).toContain("errors"));
+  const definitionTypeInputDom2 = document.getElementById(
+    definitionTypeInputDomId2,
+  ) as HTMLSelectElement;
 
-  expect($definition1.classList).toContain("error");
-});
+  const definitionTypeFieldDom2 = definitionTypeInputDom2.closest(
+    ".field",
+  ) as HTMLElement;
 
-it("saves experience when we are not connected", async () => {
-  const dataDefinitions: CreateDataDefinition[] = [
-    {
-      name: "f0",
-      type: DataTypes.SINGLE_LINE_TEXT,
-    },
-
-    {
-      name: "f1",
-      type: DataTypes.DATETIME,
-    },
-  ];
+  expect(definitionTypeFieldDom2.classList).not.toContain("field--errors");
+  expect(document.getElementById(definitionTypeErrorDomId2)).toBeNull();
 
   /**
-   * Given server is not connected
+   * And error notification should not be visible
    */
-  const { ui, mockNavigate, mockCreateExperienceOffline } = makeComp(
-    {},
-    {
-      isConnected: false,
-    },
-  );
+  expect(document.getElementById(notificationErrorCloseId)).toBeNull();
 
-  mockCreateExperienceOffline.mockResolvedValue({
-    data: {
-      createOfflineExperience: {
-        id: "1",
+  /**
+   * When form is submitted again
+   */
+  submitDom.click();
+  await wait(() => true);
+
+  /**
+   * Then title and definition 1 should not show errors
+   */
+
+  expect(titleFieldDom.classList).not.toContain("field--errors");
+  expect(document.getElementById(titleInputErrorDomId)).toBeNull();
+  expect(definitionNameFieldDom1.classList).not.toContain("field--errors");
+  expect(document.getElementById(definitionNameErrorDomId1)).toBeNull();
+  expect(definitionTypeFieldDom1.classList).not.toContain("field--errors");
+  expect(document.getElementById(definitionTypeErrorDomId1)).toBeNull();
+
+  /**
+   * But definition 2 should show errors
+   */
+
+  expect(definitionNameFieldDom2.classList).toContain("field--errors");
+  expect(document.getElementById(definitionNameErrorDomId2)).not.toBeNull();
+  expect(definitionTypeFieldDom2.classList).toContain("field--errors");
+  expect(document.getElementById(definitionTypeErrorDomId2)).not.toBeNull();
+
+  /**
+   * And error notification should be visible
+   */
+  let errorsNotificationDom = document.getElementById(
+    notificationErrorCloseId,
+  ) as HTMLElement;
+
+  /**
+   * When error notification is closed
+   */
+  errorsNotificationDom.click();
+
+  /**
+   * Then error notification should no longer be visible
+   */
+  expect(document.getElementById(notificationErrorCloseId)).toBeNull();
+
+  /**
+   * When title is completed with invalid value
+   */
+  fillField(titleInputDom, "a");
+
+  /**
+   * And form is submitted
+   */
+  submitDom.click();
+
+  /**
+   * Then title error should be visible
+   */
+  expect(document.getElementById(titleInputErrorDomId)).not.toBeNull();
+
+  errorsNotificationDom = document.getElementById(
+    notificationErrorCloseId,
+  ) as HTMLElement;
+  errorsNotificationDom.click();
+
+  ////////////////////////// END FORM ERRORS ////////////////////////////
+
+  /////////////////// CREATE EXPERIENCE OFFLINE /////////////////
+
+  /**
+   * When form is filled correctly
+   */
+
+  fillField(titleInputDom, "tt");
+  fillField(definitionNameInputDom2, "n2");
+  fillField(definitionTypeInputDom2, "INTEGER");
+
+  /**
+   * Then error notification should not be visible
+   */
+  expect(document.getElementById(notificationErrorCloseId)).toBeNull();
+
+  /**
+   * And loading UI should not be visible
+   */
+  expect(document.getElementById(mockLoadingDomId)).toBeNull();
+
+  /**
+   * When form is submitted
+   */
+
+  mockCreateExperienceOffline.mockResolvedValueOnce({
+    data: {},
+  } as CreateExperienceOfflineMutationResult);
+
+  submitDom.click();
+
+  /**
+   * And loading UI should be visible
+   */
+  expect(document.getElementById(mockLoadingDomId)).not.toBeNull();
+
+  /**
+   * And after a while, error notification should be visible
+   */
+  errorsNotificationDom = await waitForElement(() => {
+    return document.getElementById(notificationErrorCloseId) as HTMLElement;
+  });
+
+  /**
+   * And loading UI should not be visible
+   */
+  expect(document.getElementById(mockLoadingDomId)).toBeNull();
+
+  /**
+   * And correct data should have been sent to the server
+   */
+  expect(
+    mockCreateExperienceOffline.mock.calls[0][0].variables.input[0],
+  ).toEqual({
+    title: "tt",
+    dataDefinitions: [
+      {
+        name: "n1",
+        type: "DATE",
       },
-    } as CreateExperienceOfflineMutation,
+      {
+        name: "n2",
+        type: "INTEGER",
+      },
+    ],
   });
 
   /**
-   * While we are using new experience component
+   * When error notification is closed
    */
-  render(ui);
+  errorsNotificationDom.click();
 
   /**
-   * When we complete and submit the form
+   * Then error notification should no longer be visible
    */
-  fillFields(dataDefinitions);
+  expect(document.getElementById(notificationErrorCloseId)).toBeNull();
 
-  fireEvent.click(
-    document.getElementById("experience-definition-submit-btn") as any,
+  /**
+   * Then user should not be redirected
+   */
+  expect(mockNavigate).not.toHaveBeenCalled();
+
+  /**
+   * And form is submitted
+   */
+  mockCreateExperienceOffline.mockResolvedValueOnce({
+    data: {
+      createOfflineExperience: { id: "1" },
+    },
+  } as CreateExperienceOfflineMutationResult);
+
+  submitDom.click();
+  await wait(() => true);
+
+  /**
+   * Then user should be redirected
+   */
+  expect(mockNavigate).toHaveBeenCalled();
+
+  /////////////////// END CREATE EXPERIENCE OFFLINE /////////////////
+
+  /**
+   * And definition 1 should have remove/add button visible
+   */
+  expect(
+    definitionDom1.getElementsByClassName(removeDefinitionSelector).item(0),
+  ).not.toBeNull();
+
+  expect(
+    definitionDom1.getElementsByClassName(moveDownDefinitionSelector).item(0),
+  ).not.toBeNull();
+
+  /**
+   * When definition 3 is removed
+   */
+  (definitionDom2
+    .getElementsByClassName(removeDefinitionSelector)
+    .item(0) as HTMLElement).click();
+
+  /**
+   * Then definition 1 remove/add definition should not be visible
+   */
+  expect(
+    definitionDom1.getElementsByClassName(removeDefinitionSelector).item(0),
+  ).toBeNull();
+
+  expect(
+    definitionDom1.getElementsByClassName(moveDownDefinitionSelector).item(0),
+  ).toBeNull();
+
+  /////////////////// CREATE EXPERIENCE ONLINE /////////////////
+  mockCreateExperiences.mockRejectedValueOnce(new Error("a"));
+  mockIsConnected.mockReturnValue(true);
+
+  /**
+   * And error notification should not be visible
+   */
+  expect(document.getElementById(notificationErrorCloseId)).toBeNull();
+
+  /**
+   * When form is submitted
+   */
+  submitDom.click();
+
+  /**
+   * Then error notification should be visible
+   */
+  errorsNotificationDom = await waitForElement(() => {
+    return document.getElementById(notificationErrorCloseId) as HTMLElement;
+  });
+
+  /**
+   * When error notification is closed
+   */
+  errorsNotificationDom.click();
+
+  /**
+   * Then error notification should no longer be visible
+   */
+  expect(document.getElementById(notificationErrorCloseId)).toBeNull();
+
+  mockCreateExperiences.mockResolvedValueOnce(
+    {} as CreateExperiencesMutationResult,
   );
 
-  await wait(() => {
-    expect(mockNavigate).toBeCalledWith(makeExperienceRoute("1"));
+  /**
+   * When form is submitted
+   */
+  submitDom.click();
+
+  /**
+   * Then error notification should be visible
+   */
+  errorsNotificationDom = await waitForElement(() => {
+    return document.getElementById(notificationErrorCloseId) as HTMLElement;
   });
 
   /**
-   * Then correct data should be uploaded to the server
+   * When error notification is closed
    */
-  await wait(() =>
-    expect(mockCreateExperienceOffline.mock.calls[0][0]).toMatchObject({
-      variables: {
-        createExperienceInput: {
-          title,
-          dataDefinitions,
-          description: "",
+  errorsNotificationDom.click();
+
+  /**
+   * Then error notification should no longer be visible
+   */
+  expect(document.getElementById(notificationErrorCloseId)).toBeNull();
+
+  mockCreateExperiences.mockResolvedValueOnce({
+    data: {
+      createExperiences: [
+        {
+          __typename: "CreateExperienceErrors",
+          errors: {
+            title: "a",
+            user: null,
+          },
         },
-      } as CreateExperienceMutationVariables,
-    }),
-  );
-});
-
-it("renders error even if there are no fields error", async () => {
-  const dataDefinitions: CreateDataDefinition[] = [
-    {
-      name: "12",
-      type: DataTypes.SINGLE_LINE_TEXT,
+      ],
     },
-  ];
-
-  const { ui } = makeComp();
-
-  render(ui);
-
-  // title must be of min length  2
-  fillFields(dataDefinitions, { title: "a" });
+  } as CreateExperiencesMutationResult);
 
   /**
-   * Then no error Uis should be visible
+   * When form is submitted
    */
-  let $titleError = document.getElementById(
-    "experience-definition-title-error",
-  );
-
-  expect($titleError).toBeNull();
+  submitDom.click();
 
   /**
-   * When we submit the form
+   * Then error notification should be visible
    */
-
-  fireEvent.click(
-    document.getElementById("experience-definition-submit-btn") as any,
-  );
+  errorsNotificationDom = await waitForElement(() => {
+    return document.getElementById(notificationErrorCloseId) as HTMLElement;
+  });
 
   /**
-   * Then error UIs should be visible
+   * When error notification is closed
    */
-  $titleError = await waitForElement(() =>
-    document.getElementById("experience-definition-title-error"),
-  );
-
-  expect($titleError).not.toBeNull();
-});
-
-it("renders network error", async () => {
-  /**
-   * Given server is not connected
-   */
-  const { ui, mockCreateExperience } = makeComp();
-
-  mockCreateExperience.mockRejectedValue(
-    new ApolloError({
-      networkError: new Error("n"),
-    }),
-  );
+  errorsNotificationDom.click();
 
   /**
-   * While we are using new experience component
+   * Then error notification should no longer be visible
    */
-  render(ui);
+  expect(document.getElementById(notificationErrorCloseId)).toBeNull();
 
-  /**
-   * When we complete and submit the form
-   */
-  fillFields([
-    {
-      name: "f0",
-      type: DataTypes.SINGLE_LINE_TEXT,
+  mockCreateExperiences.mockResolvedValueOnce({
+    data: {
+      createExperiences: [
+        {
+          __typename: "CreateExperienceErrors",
+          errors: {
+            user: "a",
+            dataDefinitions: [
+              {
+                index: 0,
+                name: "a",
+              },
+            ],
+          },
+        },
+      ],
     },
-  ]);
-
-  expect(
-    document.getElementById("experience-definition-errors-summary"),
-  ).toBeNull();
-
-  fireEvent.click(
-    document.getElementById("experience-definition-submit-btn") as any,
-  );
+  } as CreateExperiencesMutationResult);
 
   /**
-   * Then correct data should be uploaded to the server
+   * When form is submitted
    */
-  const $error = await waitForElement(() =>
-    document.getElementById("experience-definition-errors-summary"),
-  );
-
-  expect($error).not.toBeNull();
-});
-
-it("renders graphql error", async () => {
-  /**
-   * Given server is not connected
-   */
-  const { ui, mockCreateExperience } = makeComp();
-
-  mockCreateExperience.mockRejectedValue(
-    new ApolloError({
-      graphQLErrors: [new GraphQLError("n")],
-    }),
-  );
+  submitDom.click();
 
   /**
-   * While we are using new experience component
+   * Then error notification should be visible
    */
-  render(ui);
+  errorsNotificationDom = await waitForElement(() => {
+    return document.getElementById(notificationErrorCloseId) as HTMLElement;
+  });
 
   /**
-   * When we complete and submit the form
+   * When error notification is closed
    */
-  fillFields([
-    {
-      name: "f0",
-      type: DataTypes.SINGLE_LINE_TEXT,
+  errorsNotificationDom.click();
+
+  /**
+   * Then error notification should no longer be visible
+   */
+  expect(document.getElementById(notificationErrorCloseId)).toBeNull();
+
+  mockCreateExperiences.mockReset();
+  mockCreateExperiences.mockResolvedValueOnce({
+    data: {
+      createExperiences: [
+        {
+          __typename: "CreateExperienceErrors",
+          errors: {
+            dataDefinitions: [
+              {
+                index: 0,
+                type: "a",
+              },
+            ],
+          },
+        },
+      ],
     },
-  ]);
-
-  expect(
-    document.getElementById("experience-definition-errors-summary"),
-  ).toBeNull();
-
-  fireEvent.click(
-    document.getElementById("experience-definition-submit-btn") as any,
-  );
+  } as CreateExperiencesMutationResult);
 
   /**
-   * Then correct data should be uploaded to the server
+   * When description input is completed
    */
-  const $error = await waitForElement(() =>
-    document.getElementById("experience-definition-errors-summary"),
-  );
-
-  expect($error).not.toBeNull();
-});
-
-it("renders errors if exception is thrown during submit", async () => {
-  /**
-   * Given server is not connected
-   */
-  const { ui, mockCreateExperience } = makeComp();
-
-  mockCreateExperience.mockRejectedValue(new Error("a"));
+  fillField(descriptionInputDom, "aa");
 
   /**
-   * While we are using new experience component
+   * And form is submitted
    */
-  render(ui);
+  submitDom.click();
 
   /**
-   * When we complete and submit the form
+   * Then error notification should be visible
    */
-  fillFields([
-    {
-      name: "f0",
-      type: DataTypes.SINGLE_LINE_TEXT,
+  errorsNotificationDom = await waitForElement(() => {
+    return document.getElementById(notificationErrorCloseId) as HTMLElement;
+  });
+
+  /**
+   * And correct data must have been sent to the server
+   */
+  expect(mockCreateExperiences.mock.calls[0][0].variables.input[0]).toEqual({
+    title: "tt",
+    description: "aa",
+    dataDefinitions: [
+      {
+        name: "n1",
+        type: "DATE",
+      },
+    ],
+  });
+
+  /**
+   * When description input is cleared
+   */
+  fillField(descriptionInputDom, "");
+
+  mockNavigate.mockReset();
+  mockCreateExperiences.mockReset();
+
+  mockCreateExperiences.mockResolvedValueOnce({
+    data: {
+      createExperiences: [
+        {
+          __typename: "ExperienceSuccess",
+          experience: {
+            id: "a",
+          },
+        },
+      ],
     },
-  ]);
-
-  expect(
-    document.getElementById("experience-definition-errors-summary"),
-  ).toBeNull();
-
-  fireEvent.click(
-    document.getElementById("experience-definition-submit-btn") as any,
-  );
+  } as CreateExperiencesMutationResult);
 
   /**
-   * Then correct data should be uploaded to the server
+   * When form is submitted
    */
-  const $error = await waitForElement(() =>
-    document.getElementById("experience-definition-errors-summary"),
-  );
-
-  expect($error).not.toBeNull();
-});
-
-it("renders errors if server's response is out of shape", async () => {
-  /**
-   * Given server is not connected
-   */
-  const { ui, mockCreateExperience } = makeComp();
-
-  mockCreateExperience.mockResolvedValue({});
+  submitDom.click();
+  await wait(() => true);
 
   /**
-   * While we are using new experience component
+   * Then user should be redirected
    */
-  render(ui);
+  expect(mockNavigate).toHaveBeenCalled();
 
   /**
-   * When we complete and submit the form
+   * And correct data should have been sent to the server
    */
-  fillFields([
-    {
-      name: "f0",
-      type: DataTypes.SINGLE_LINE_TEXT,
-    },
-  ]);
+  const { variables, update } = mockCreateExperiences.mock.calls[0][0];
 
-  expect(
-    document.getElementById("experience-definition-errors-summary"),
-  ).toBeNull();
-
-  fireEvent.click(
-    document.getElementById("experience-definition-submit-btn") as any,
-  );
+  expect(variables.input[0]).toEqual({
+    title: "tt",
+    dataDefinitions: [
+      {
+        name: "n1",
+        type: "DATE",
+      },
+    ],
+  });
 
   /**
-   * Then correct data should be uploaded to the server
+   * And cache should be updated accordingly
    */
-  const $error = await waitForElement(() =>
-    document.getElementById("experience-definition-errors-summary"),
-  );
+  expect(mockCreateExperiencesManualUpdate).not.toHaveBeenCalled();
+  update();
+  expect(mockCreateExperiencesManualUpdate).toHaveBeenCalled();
 
-  expect($error).not.toBeNull();
+  /////////////////// END CREATE EXPERIENCE ONLINE /////////////////
 });
 
 ////////////////////////// HELPER FUNCTIONS ///////////////////////////
 
-const ExperienceDefinitionP = ExperienceDefinitionComponent as ComponentType<
+const ExperienceDefinitionComponentP = ExperienceDefinitionComponent as ComponentType<
   Partial<Props>
 >;
 
-function makeComp(
-  props: Partial<Props> = {},
-  { isConnected = true }: { isConnected?: boolean } = {},
-) {
-  mockIsConnected.mockReturnValue(isConnected);
-
-  const mockCreateExperience = jest.fn();
-  const mockCreateExperienceOffline = jest.fn();
-
-  const { Ui, ...rest } = renderWithRouter(ExperienceDefinitionP);
-
+function makeComp({ props = {} }: { props?: Partial<Props> } = {}) {
   return {
     ui: (
-      <Ui
-        client={{} as any}
-        createExperienceOnline={mockCreateExperience}
+      <ExperienceDefinitionComponentP
+        createExperiences={mockCreateExperiences}
         createExperienceOffline={mockCreateExperienceOffline}
+        navigate={mockNavigate}
         {...props}
       />
     ),
-    mockCreateExperience,
-    mockCreateExperienceOffline,
-    ...rest,
   };
 }
 
-function fillFields(
-  dataDefinitions: CreateDataDefinition[],
-  fieldData: { title?: string } = {},
-) {
-  fillField(
-    document.getElementById("experience-definition-title-input") as any,
-    fieldData.title || title,
-  );
-
-  const len = dataDefinitions.length;
-
-  dataDefinitions.map(({ type, name }, index) => {
-    fillFieldDefinition(name, type, index);
-
-    if (index + 1 < len) {
-      fireEvent.click(
-        document.getElementById(`add-definition-btn-${index}`) as any,
-      );
-    }
-  });
-}
-
-function fillFieldDefinition(name: string, type: string, index: number) {
-  fillField(document.getElementById(`field-name-${index}`) as any, name);
-
-  fireEvent.click(
-    (document.getElementById(
-      `experience-data-type-${index}`,
-    ) as HTMLElement).getElementsByClassName(`js-${type}`)[0] as any,
-  );
+function getWarningNotification() {
+  return document.getElementById(notificationWarningCloseId) as HTMLElement;
 }

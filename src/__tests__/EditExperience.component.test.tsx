@@ -4,11 +4,10 @@ import { render, cleanup, wait, waitForElement } from "@testing-library/react";
 import { EditExperience } from "../components/EditExperience/edit-experience.component";
 import {
   Props,
-  GENERIC_SERVER_ERROR,
-  FORM_CONTAINS_ERRORS_MESSAGE,
   effectFunctions,
   EffectArgs,
 } from "../components/EditExperience/edit-experience.utils";
+import { GENERIC_SERVER_ERROR } from "../general-utils";
 import { ExperienceFragment } from "../graphql/apollo-types/ExperienceFragment";
 import { fillField } from "./test_utils";
 import {
@@ -24,13 +23,14 @@ import {
   successNotificationId,
   definitionErrorSelector,
 } from "../components/EditExperience/edit-experience.dom";
-import { UpdateExperiencesOnlineMutationResult } from "../graphql/update-experience.mutation";
+import { UpdateExperiencesOnlineMutationResult } from "../graphql/experiences.mutation";
 import ApolloClient, { ApolloError } from "apollo-client";
 import { GraphQLError } from "graphql";
 import { scrollIntoView } from "../components/scroll-into-view";
 import { UpdateExperienceOfflineMutationResult } from "../components/EditExperience/edit-experience.resolvers";
 import { makeOfflineId } from "../constants";
-import { UpdateAnExperienceInput } from "../graphql/apollo-types/globalTypes";
+import { UpdateExperienceInput } from "../graphql/apollo-types/globalTypes";
+import { FORM_CONTAINS_ERRORS_MESSAGE } from "../general-utils";
 
 jest.mock("../apollo-cache/update-experiences");
 jest.mock("../components/EditExperience/edit-experience.resolvers");
@@ -82,7 +82,7 @@ describe("components", () => {
      * 6. networkError
      * 7. graphQLErrors
      * 8. UpdateExperiencesAllFail
-     * 9. UpdateExperienceFullErrors
+     * 9. UpdateExperienceErrors
      * 10. UpdateExperienceSomeSuccess: all nulls
      * 11. UpdateExperienceOwnFieldsErrors
      * 12. ExperienceOwnFieldsSuccess
@@ -119,9 +119,9 @@ describe("components", () => {
             __typename: "UpdateExperiencesSomeSuccess",
             experiences: [
               {
-                __typename: "UpdateExperienceFullErrors",
+                __typename: "UpdateExperienceErrors",
                 errors: {
-                  error: "UpdateExperienceFullErrors",
+                  error: "UpdateExperienceErrors",
                 },
               },
             ],
@@ -996,7 +996,7 @@ describe("components", () => {
     fillField(titleInput, cWord);
 
     /**
-     * And form is submiited
+     * And form is submitted
      */
     submitBtn.click();
     await wait(() => true);
@@ -1042,7 +1042,7 @@ describe("components", () => {
     expect(mockScrollIntoView).not.toHaveBeenCalled();
 
     /**
-     * When form is submiited
+     * When form is submitted
      */
     submitBtn.click();
     await wait(() => true);
@@ -1107,7 +1107,7 @@ describe("reducer", () => {
     const experience = { id, title: "t1" } as ExperienceFragment;
     const input = {
       ownFields: { title: "t2" },
-    } as UpdateAnExperienceInput;
+    } as UpdateExperienceInput;
 
     const props = {
       experience,
@@ -1170,7 +1170,7 @@ describe("reducer", () => {
           name: "n22",
         },
       ],
-    } as UpdateAnExperienceInput;
+    } as UpdateExperienceInput;
 
     const props = {
       experience,

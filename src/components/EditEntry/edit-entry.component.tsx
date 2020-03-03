@@ -6,7 +6,7 @@ import React, {
   useCallback,
 } from "react";
 import {
-  ComponentProps,
+  Props,
   ActionType,
   initState,
   reducer,
@@ -25,34 +25,29 @@ import Modal from "semantic-ui-react/dist/commonjs/modules/Modal";
 import makeClassNames from "classnames";
 import { FormCtrlError } from "../FormCtrlError/form-ctrl-error.component";
 import "./edit-entry.styles.scss";
-import { SubmittingOverlay } from "../SubmittingOverlay/submitting-overlay";
+import { Loading } from "../Loading/loading";
 import { componentFromDataType } from "../NewEntry/component-from-data-type";
 import { FormObjVal } from "../Experience/experience.utils";
 import { InputOnChangeData } from "semantic-ui-react";
 import { DataTypes } from "../../graphql/apollo-types/globalTypes";
-import { UpdateDataObjectsResponseFragment_fieldErrors } from "../../graphql/apollo-types/UpdateDataObjectsResponseFragment";
 import { ErrorBoundary } from "../ErrorBoundary/error-boundary.component";
-import { useUpdateDataObjectsOnlineMutation } from "../../graphql/update-definition-and-data.mutation";
 import {
   formErrorsDomId,
   otherErrorsDomId,
-  apolloErrorsDomId,
   ControlName,
   getDataControlDomId,
   scrollToTopId,
 } from "./edit-entry-dom";
-import { useCreateOnlineEntryMutation } from "../../graphql/create-entry.mutation";
 import { EbnisAppContext } from "../../context";
 import { LayoutUnchangingContext, LayoutContext } from "../Layout/layout.utils";
-import { MUTATION_NAME_createEntry } from "../../graphql/create-entry.mutation";
 import { cleanupRanQueriesFromCache } from "../../apollo-cache/cleanup-ran-queries-from-cache";
 import { QUERY_NAME_getExperienceFull } from "../../graphql/get-experience-full.query";
-import { MUTATION_NAME_updateDataObjects } from "../../graphql/update-definition-and-data.mutation";
-import { useCreateOfflineEntryMutation } from "../NewEntry/new-entry.resolvers";
 import { addNewEntryResolvers } from "../NewEntry/new-entry.injectables";
 import { capitalize } from "../../general-utils";
+import { useUpdateExperiencesOnlineMutation } from "../../graphql/experiences.mutation";
+import { DataObjectErrorFragment } from "../../graphql/apollo-types/DataObjectErrorFragment";
 
-export function EditEntryComponent(props: ComponentProps) {
+export function EditEntryComponent(props: Props) {
   const { dispatch: parentDispatch, experience, hasConnection } = props;
 
   const [stateMachine, dispatch] = useReducer(reducer, props, initState);
@@ -97,10 +92,9 @@ export function EditEntryComponent(props: ComponentProps) {
       cleanupRanQueriesFromCache(
         cache,
         [
-          MUTATION_NAME_updateDataObjects,
-          MUTATION_NAME_createEntry,
           "getOfflineItems",
           QUERY_NAME_getExperienceFull + "(",
+          "updateExperiences",
         ],
         persistor,
       );
@@ -115,7 +109,7 @@ export function EditEntryComponent(props: ComponentProps) {
         hasConnection,
       }}
     >
-      {submission.value === StateValue.submitting && <SubmittingOverlay />}
+      {submission.value === StateValue.submitting && <Loading />}
 
       <Modal
         id="edit-entry-modal"
@@ -358,11 +352,7 @@ function SubmissionErrorsComponent({
   state: Submission;
   dispatch: DispatchType;
 }) {
-  if (state.value === StateValue.inactive) {
-    return null;
-  }
-
-  let errors: string | null = null;
+  let errors = "";
   let id = "";
 
   if (state.value === "formErrors") {
@@ -371,12 +361,11 @@ function SubmissionErrorsComponent({
   } else if (state.value === StateValue.otherErrors) {
     errors = state.otherErrors.context.errors;
     id = otherErrorsDomId;
-  } else if (state.value === StateValue.apolloErrors) {
-    errors = state.apolloErrors.context.errors;
-    id = apolloErrorsDomId;
+  } else {
+    return null;
   }
 
-  return errors ? (
+  return (
     <Modal.Content id={id}>
       <Message
         onDismiss={() => {
@@ -389,14 +378,14 @@ function SubmissionErrorsComponent({
         {errors}
       </Message>
     </Modal.Content>
-  ) : null;
+  );
 }
 
 function getFormErrorsComponent(state: DataState) {
   if (state.value === "changed") {
     const { changed } = state;
 
-    let errors = {} as UpdateDataObjectsResponseFragment_fieldErrors;
+    let errors = {} as DataObjectErrorFragment;
 
     if (changed.value === "serverErrors") {
       errors = changed.serverErrors.context.errors;
@@ -410,7 +399,7 @@ function getFormErrorsComponent(state: DataState) {
 
 function getNodesFromObject(obj: { [k: string]: string }) {
   return Object.entries(obj).reduce((acc, [k, v]) => {
-    if (k !== "__typename" && v) {
+    if (v) {
       acc.push(
         <div key={k}>
           <div className="font-extrabold">{capitalize(k)}:</div>
@@ -442,20 +431,16 @@ export function EditEntry(props: CallerProps) {
   const { client, persistor, cache } = useContext(EbnisAppContext);
   const { layoutDispatch } = useContext(LayoutUnchangingContext);
   const { hasConnection } = useContext(LayoutContext);
-  const [updateDataObjectsOnline] = useUpdateDataObjectsOnlineMutation();
-  const [createOnlineEntry] = useCreateOnlineEntryMutation();
-  const [createOfflineEntry] = useCreateOfflineEntryMutation();
+  const [updateExperiencesOnline] = useUpdateExperiencesOnlineMutation();
 
   return (
     <EditEntryComponent
-      createOnlineEntry={createOnlineEntry}
-      updateDataObjectsOnline={updateDataObjectsOnline}
+      updateExperiencesOnline={updateExperiencesOnline}
       client={client}
       persistor={persistor}
       cache={cache}
       layoutDispatch={layoutDispatch}
       hasConnection={hasConnection}
-      createOfflineEntry={createOfflineEntry}
       {...props}
     />
   );

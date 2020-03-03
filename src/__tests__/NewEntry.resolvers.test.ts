@@ -4,18 +4,14 @@ import { CacheContext } from "../state/resolvers";
 import { isOfflineId } from "../constants";
 import { makeTestCache } from "./test_utils";
 import { EntryFragment } from "../graphql/apollo-types/EntryFragment";
-import { upsertExperienceWithEntry } from "../components/NewEntry/new-entry.injectables";
 import { ExperienceFragment } from "../graphql/apollo-types/ExperienceFragment";
-
-jest.mock("../components/NewEntry/new-entry.injectables");
-const mockUpdateExperienceWithNewEntry = upsertExperienceWithEntry as jest.Mock;
 
 jest.mock("../apollo-cache/write-experience-fragment");
 
 const { createOfflineEntry } = newEntryResolvers.Mutation;
 
 it("updates unsaved experience successfully", async () => {
-  const { mockContext, mockUpdateExperienceWithNewEntryInnerFn } = setUp();
+  const { mockContext } = setUp();
 
   const experienceId = "exp-1";
 
@@ -29,20 +25,6 @@ it("updates unsaved experience successfully", async () => {
     data: "2",
     definitionId: "3",
   };
-
-  mockUpdateExperienceWithNewEntryInnerFn.mockResolvedValue({
-    ...experience,
-    entries: {
-      edges: [
-        {
-          node: {
-            experienceId,
-            dataObjects: [dataObject],
-          } as EntryFragment,
-        },
-      ],
-    },
-  });
 
   const {
     __typename,
@@ -65,14 +47,6 @@ it("updates unsaved experience successfully", async () => {
 });
 
 function setUp() {
-  mockUpdateExperienceWithNewEntry.mockReset();
-
-  const mockUpdateExperienceWithNewEntryInnerFn = jest.fn();
-
-  mockUpdateExperienceWithNewEntry.mockReturnValue(
-    mockUpdateExperienceWithNewEntryInnerFn,
-  );
-
   const { cache, ...cacheProps } = makeTestCache();
 
   const mockContext = {
@@ -81,7 +55,6 @@ function setUp() {
 
   return {
     mockContext,
-    mockUpdateExperienceWithNewEntryInnerFn,
     ...cacheProps,
   };
 }

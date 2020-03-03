@@ -310,11 +310,11 @@ describe("component", () => {
      * When we search for title 1
      */
 
-    const searcInputDom = document.getElementById(
+    const searchInputDom = document.getElementById(
       searchTextInputId,
     ) as HTMLInputElement;
 
-    fillField(searcInputDom, "t1");
+    fillField(searchInputDom, "t1");
 
     /**
      * When search is completed
@@ -333,7 +333,7 @@ describe("component", () => {
     /**
      * When search input is clicked
      */
-    searcInputDom.click();
+    searchInputDom.click();
 
     /**
      * Then search results should remain open
@@ -362,7 +362,7 @@ describe("component", () => {
      * When search is run with text that does not match any of the experiences
      * titles
      */
-    fillField(searcInputDom, "t1111");
+    fillField(searchInputDom, "t1111");
 
     /**
      * Then UI indicating no search results should be visible
@@ -387,7 +387,7 @@ describe("component", () => {
     /**
      * When search is conducted again and experience 1 search result is clicked
      */
-    fillField(searcInputDom, "t1");
+    fillField(searchInputDom, "t1");
 
     act(() => {
       jest.runAllTimers();

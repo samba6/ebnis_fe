@@ -33,7 +33,7 @@ module.exports = {
   ],
   setupFilesAfterEnv: ["<rootDir>/config/jest/setupTests.js"],
   testRegex: "src/__tests__/.+?\\.test\\.tsx?$",
-  testEnvironment: "jest-environment-jsdom-fourteen",
+  testEnvironment: "jest-environment-jsdom-sixteen",
   transform: {
     "^.+\\.tsx?$": "<rootDir>/node_modules/babel-jest",
     "^.+\\.jsx?$": "<rootDir>/config/jest/gatsby-preprocess.js",

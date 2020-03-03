@@ -139,17 +139,27 @@ export interface CreateExperiences_createExperiences_ExperienceSuccess_entriesEr
   clientId: string | null;
 }
 
-export interface CreateExperiences_createExperiences_ExperienceSuccess_entriesErrors_dataObjects {
-  __typename: "DataObjectErrorx";
+export interface CreateExperiences_createExperiences_ExperienceSuccess_entriesErrors_dataObjects_meta {
+  __typename: "DataObjectErrorMeta";
   index: number;
-  definition: string | null;
-  definitionId: string | null;
-  data: string | null;
+  id: string | null;
   clientId: string | null;
 }
 
+export interface CreateExperiences_createExperiences_ExperienceSuccess_entriesErrors_dataObjects {
+  __typename: "DataObjectError";
+  meta: CreateExperiences_createExperiences_ExperienceSuccess_entriesErrors_dataObjects_meta;
+  definition: string | null;
+  definitionId: string | null;
+  clientId: string | null;
+  /**
+   * Error related to the data e.g. a string was supplied for a decimal field.
+   */
+  data: string | null;
+}
+
 export interface CreateExperiences_createExperiences_ExperienceSuccess_entriesErrors {
-  __typename: "CreateEntryErrorx";
+  __typename: "CreateEntryError";
   meta: CreateExperiences_createExperiences_ExperienceSuccess_entriesErrors_meta;
   /**
    * A catch-all field for when we are unable to create an entry
@@ -177,7 +187,7 @@ export interface CreateExperiences_createExperiences_ExperienceSuccess {
   entriesErrors: CreateExperiences_createExperiences_ExperienceSuccess_entriesErrors[] | null;
 }
 
-export interface CreateExperiences_createExperiences_CreateExperienceErrorss_errors_meta {
+export interface CreateExperiences_createExperiences_CreateExperienceErrors_errors_meta {
   __typename: "CreateExperienceErrorMeta";
   /**
    * The index of the failing experience in the list of experiences input
@@ -186,7 +196,7 @@ export interface CreateExperiences_createExperiences_CreateExperienceErrorss_err
   clientId: string | null;
 }
 
-export interface CreateExperiences_createExperiences_CreateExperienceErrorss_errors_dataDefinitions {
+export interface CreateExperiences_createExperiences_CreateExperienceErrors_errors_dataDefinitions {
   __typename: "CreateDefinitionErrors";
   index: number;
   /**
@@ -199,9 +209,9 @@ export interface CreateExperiences_createExperiences_CreateExperienceErrorss_err
   type: string | null;
 }
 
-export interface CreateExperiences_createExperiences_CreateExperienceErrorss_errors {
-  __typename: "CreateExperienceErrors1";
-  meta: CreateExperiences_createExperiences_CreateExperienceErrorss_errors_meta;
+export interface CreateExperiences_createExperiences_CreateExperienceErrors_errors {
+  __typename: "CreateExperienceError";
+  meta: CreateExperiences_createExperiences_CreateExperienceErrors_errors_meta;
   /**
    * A catch all for error unrelated to fields of experience e.g. an exception
    *   was raised
@@ -210,21 +220,21 @@ export interface CreateExperiences_createExperiences_CreateExperienceErrorss_err
   title: string | null;
   user: string | null;
   clientId: string | null;
-  dataDefinitions: (CreateExperiences_createExperiences_CreateExperienceErrorss_errors_dataDefinitions | null)[] | null;
+  dataDefinitions: (CreateExperiences_createExperiences_CreateExperienceErrors_errors_dataDefinitions | null)[] | null;
 }
 
-export interface CreateExperiences_createExperiences_CreateExperienceErrorss {
-  __typename: "CreateExperienceErrorss";
-  errors: CreateExperiences_createExperiences_CreateExperienceErrorss_errors;
+export interface CreateExperiences_createExperiences_CreateExperienceErrors {
+  __typename: "CreateExperienceErrors";
+  errors: CreateExperiences_createExperiences_CreateExperienceErrors_errors;
 }
 
-export type CreateExperiences_createExperiences = CreateExperiences_createExperiences_ExperienceSuccess | CreateExperiences_createExperiences_CreateExperienceErrorss;
+export type CreateExperiences_createExperiences = CreateExperiences_createExperiences_ExperienceSuccess | CreateExperiences_createExperiences_CreateExperienceErrors;
 
 export interface CreateExperiences {
   /**
    * Create many experiences
    */
-  createExperiences: (CreateExperiences_createExperiences | null)[] | null;
+  createExperiences: CreateExperiences_createExperiences[] | null;
 }
 
 export interface CreateExperiencesVariables {

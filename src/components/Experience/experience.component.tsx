@@ -35,7 +35,8 @@ import { LayoutContext } from "../Layout/layout.utils";
 import {
   useCreateExperiencesMutation,
   useUpdateExperiencesOnlineMutation,
-} from "../../graphql/update-experience.mutation";
+  useDeleteExperiencesMutation,
+} from "../../graphql/experiences.mutation";
 import {
   successNotificationId,
   closeSubmitNotificationBtnSelector,
@@ -50,12 +51,10 @@ import {
   makeDeleteMenuDomId,
 } from "./experience.dom";
 import { Loading } from "../Loading/loading";
-import { useCreateEntriesMutation } from "../../graphql/create-entries.mutation";
 import { EbnisAppContext } from "../../context";
 import { execOnSyncOfflineExperienceComponentSuccess } from "../../apollo-cache/on-sync-offline-experience-component-success";
 import { EbnisContextProps } from "../../context";
 import { capitalize } from "../../general-utils";
-import { useDeleteExperiencesMutation } from "../../graphql/delete-experiences.mutation";
 import { Modal } from "../Modal/modal-component";
 
 export function ExperienceComponent(props: Props) {
@@ -511,7 +510,6 @@ export function getTitle(arg?: { title: string }) {
 export default (props: CallerProps) => {
   const { hasConnection, navigate, pathname } = useContext(LayoutContext);
   const [updateExperiencesOnline] = useUpdateExperiencesOnlineMutation();
-  const [createEntries] = useCreateEntriesMutation();
   const [createExperiences] = useCreateExperiencesMutation();
   const { client, persistor, cache } = useContext(EbnisAppContext);
   const [deleteExperiences] = useDeleteExperiencesMutation();
@@ -523,7 +521,6 @@ export default (props: CallerProps) => {
       hasConnection={hasConnection}
       updateExperiencesOnline={updateExperiencesOnline}
       navigate={navigate}
-      createEntries={createEntries}
       createExperiences={createExperiences}
       client={client}
       persistor={persistor}

@@ -18,7 +18,7 @@ import {
   effectFunctions,
   FieldServerError,
 } from "./edit-experience.utils";
-import { useUpdateExperiencesOnlineMutation } from "../../graphql/update-experience.mutation";
+import { useUpdateExperiencesOnlineMutation } from "../../graphql/experiences.mutation";
 import { LayoutContext } from "../Layout/layout.utils";
 import { Loading } from "../Loading/loading";
 import {
@@ -41,7 +41,7 @@ import {
   updateExperienceOfflineResolvers,
   useUpdateExperienceOfflineMutation,
 } from "./edit-experience.resolvers";
-import { ActionType as ExperienceActype } from "../Experience/experience.utils";
+import { ActionType as ExperienceActionType } from "../Experience/experience.utils";
 
 enum ClickContext {
   submit = "@edit-experience/submit",
@@ -123,7 +123,7 @@ export function EditExperience(props: Props) {
 
       case ClickContext.closeModal:
         parentDispatch({
-          type: ExperienceActype.ABORTED,
+          type: ExperienceActionType.ABORTED,
         });
         break;
 

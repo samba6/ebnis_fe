@@ -401,17 +401,17 @@ function SearchComponent(props: SearchComponentProps) {
     [],
   );
 
-  const searchFnDebouncedRef = useRef(
+  const searchFnDebounceRef = useRef(
     lodashDebounce(searchFn, searchDebounceTimeoutMs, {
       leading: true,
     }),
   );
 
   useEffect(() => {
-    const debounced = searchFnDebouncedRef.current;
+    const debounce = searchFnDebounceRef.current;
 
     return () => {
-      cleanUpOnSearchExit(debounced);
+      cleanUpOnSearchExit(debounce);
     };
   }, []);
 

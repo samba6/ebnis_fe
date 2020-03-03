@@ -5,9 +5,8 @@ import {
   UpdateExperienceOwnFieldsInput,
   UpdateDefinitionInput,
   CreateExperienceInput,
+  UpdateExperienceInput,
   CreateEntryInput,
-  UpdateAnExperienceInput,
-  CreateAnEntryInput,
 } from "../../graphql/apollo-types/globalTypes";
 import {
   ExperienceFragment,
@@ -20,7 +19,8 @@ import { wrapReducer } from "../../logger";
 import {
   CreateExperiencesComponentProps,
   UpdateExperiencesOnlineComponentProps,
-} from "../../graphql/update-experience.mutation";
+  DeleteExperiencesComponentProps,
+} from "../../graphql/experiences.mutation";
 import {
   getUnsyncedExperience,
   removeUnsyncedExperience,
@@ -28,29 +28,27 @@ import {
 import { DataDefinitionFragment } from "../../graphql/apollo-types/DataDefinitionFragment";
 import ApolloClient, { ApolloError } from "apollo-client";
 import { updateExperiencesInCache } from "../../apollo-cache/update-experiences";
-import { CreateEntriesMutationProps } from "../../graphql/create-entries.mutation";
 import { EntryFragment } from "../../graphql/apollo-types/EntryFragment";
 import { DataObjectFragment } from "../../graphql/apollo-types/DataObjectFragment";
 import { EntryConnectionFragment_edges } from "../../graphql/apollo-types/EntryConnectionFragment";
 import { entriesPaginationVariables } from "../../graphql/get-experience-full.query";
-import { CreateExperiences_createExperiences_CreateExperienceErrorss_errors } from "../../graphql/apollo-types/CreateExperiences";
 import { createExperiencesManualUpdate } from "../../apollo-cache/create_experiences-update";
 import { AppPersistor } from "../../context";
 import { InMemoryCache } from "apollo-cache-inmemory";
-import { parseStringError, StringyErrorPayload } from "../../general-utils";
+import { parseStringError, CommonErrorPayload } from "../../general-utils";
 import { saveOnSyncOfflineExperienceComponentSuccess } from "../../apollo-cache/on-sync-offline-experience-component-success";
 import { isOfflineId } from "../../constants";
 import { CreateEntryErrorFragment_dataObjects } from "../../graphql/apollo-types/CreateEntryErrorFragment";
-import { CreateEntryErrorssFragment_errors_dataObjects } from "../../graphql/apollo-types/CreateEntryErrorssFragment";
 import { UpdateExperienceSomeSuccessFragment } from "../../graphql/apollo-types/UpdateExperienceSomeSuccessFragment";
 import { deleteExperiencesFromCache } from "../../apollo-cache/delete-experiences-from-cache";
 import { removeQueriesAndMutationsFromCache } from "../../state/resolvers/delete-references-from-cache";
-import { DeleteExperiencesComponentProps } from "../../graphql/delete-experiences.mutation";
 import { EXPERIENCES_URL } from "../../routes";
 import {
   confirmShouldDeleteExperience,
   writeDeletedExperienceTitle,
 } from "../../apollo-cache/should-delete-experience";
+import { CreateEntryErrorsFragment_errors_dataObjects } from "../../graphql/apollo-types/CreateEntryErrorsFragment";
+import { CreateExperiences_createExperiences_CreateExperienceErrors_errors } from "../../graphql/apollo-types/CreateExperiences";
 
 export const StateValue = {
   // success: "success" as SuccessVal,
@@ -162,7 +160,7 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
             break;
 
           case ActionType.ON_COMMON_ERROR:
-            handleOnCommonErrorAction(proxy, payload as StringyErrorPayload);
+            handleOnCommonErrorAction(proxy, payload as CommonErrorPayload);
             break;
 
           case ActionType.SYNC_EDITED_OFFLINE_EXPERIENCE:
@@ -204,7 +202,7 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
 
 export const GENERIC_SERVER_ERROR = "Something went wrong - please try again.";
 
-const syncEffect: SyncEffectDef["func"] = (_, props, effectArgs) => {
+const syncEffect: DefSyncEffect["func"] = (_, props, effectArgs) => {
   if (effectArgs.isOffline) {
     syncOfflineExperienceEffectHelper(props, effectArgs);
   } else {
@@ -212,7 +210,7 @@ const syncEffect: SyncEffectDef["func"] = (_, props, effectArgs) => {
   }
 };
 
-type SyncEffectDef = EffectDefinition<"syncEffect">;
+type DefSyncEffect = EffectDefinition<"syncEffect">;
 
 const onSyncOfflineExperienceSuccessEffect: DefOnSyncExperienceSuccessEffect["func"] = async (
   { syncedId, unsyncedIds },
@@ -358,7 +356,7 @@ async function syncOnlineExperienceEffectHelper(
 
   const input = {
     experienceId,
-  } as UpdateAnExperienceInput;
+  } as UpdateExperienceInput;
 
   const { ownFields, definitions: unSyncedDefinitions, newEntries } = unsynced;
   const ownFieldsInput = {} as UpdateExperienceOwnFieldsInput;
@@ -404,7 +402,7 @@ async function syncOnlineExperienceEffectHelper(
       variables: {
         input: [input],
       },
-      update: updateExperiencesInCache,
+      update: updateExperiencesInCache(),
     });
 
     const validResponse =
@@ -427,7 +425,7 @@ async function syncOnlineExperienceEffectHelper(
     } else {
       const syncResult = validResponse.experiences[0];
 
-      if (syncResult.__typename === "UpdateExperienceFullErrors") {
+      if (syncResult.__typename === "UpdateExperienceErrors") {
         dispatch({
           type: ActionType.ON_COMMON_ERROR,
           error: syncResult.errors.error,
@@ -500,7 +498,7 @@ function processUpdateExperienceSomeSuccessEffectHelper(
     newEntries.forEach((n, index) => {
       const label = `Entry ${index + 1}`;
 
-      if (n.__typename === "CreateEntryErrorss") {
+      if (n.__typename === "CreateEntryErrors") {
         const {
           /* eslint-disable-next-line @typescript-eslint/no-unused-vars*/
           __typename,
@@ -517,10 +515,10 @@ function processUpdateExperienceSomeSuccessEffectHelper(
         Object.entries(rest).forEach(([k, v]) => {
           if (v) {
             if (k === "dataObjects") {
-              (v as CreateEntryErrorssFragment_errors_dataObjects[]).forEach(
+              (v as CreateEntryErrorsFragment_errors_dataObjects[]).forEach(
                 d => {
                   const {
-                    index,
+                    meta: { index },
                     /* eslint-disable-next-line @typescript-eslint/no-unused-vars*/
                     __typename,
                     ...rest
@@ -629,7 +627,7 @@ async function syncOfflineExperienceEffectHelper(
     }
 
     switch (validResponses.__typename) {
-      case "CreateExperienceErrorss":
+      case "CreateExperienceErrors":
         if (onError) {
           onError(GENERIC_SERVER_ERROR);
           return;
@@ -759,7 +757,7 @@ function getOfflineEntriesInputEffectHelper(
     }
 
     return acc;
-  }, [] as CreateAnEntryInput[]);
+  }, [] as CreateEntryInput[]);
 }
 
 ////////////////////////// END EFFECTS SECTION /////////////////////////
@@ -862,7 +860,7 @@ function handleCloseSubmitNotificationAction(proxy: DraftState) {
 
 function handleOnCommonErrorAction(
   proxy: DraftState,
-  payload: StringyErrorPayload,
+  payload: CommonErrorPayload,
 ) {
   const { states } = proxy;
   const submissionState = states.submission as SubmissionErrors;
@@ -1017,7 +1015,7 @@ type Action =
     } & SetOfflineExperienceNewlySyncedPayload)
   | ({
       type: ActionType.ON_COMMON_ERROR;
-    } & StringyErrorPayload)
+    } & CommonErrorPayload)
   | ({
       type: ActionType.SYNC_EDITED_OFFLINE_EXPERIENCE;
     } & SyncEditedOfflineExperiencePayload)
@@ -1067,7 +1065,7 @@ interface OnSyncOfflineExperienceSuccessPayload {
 }
 
 interface OnSyncOfflineExperienceErrorsPayload {
-  errors: CreateExperiences_createExperiences_CreateExperienceErrorss_errors;
+  errors: CreateExperiences_createExperiences_CreateExperienceErrors_errors;
 }
 
 type OnModifiedExperienceSyncedData = [string, "success" | string[][]][];
@@ -1100,7 +1098,6 @@ export interface CallerProps extends EbnisComponentProps {
 }
 
 export type Props = CallerProps &
-  CreateEntriesMutationProps &
   UpdateExperiencesOnlineComponentProps &
   DeleteExperiencesComponentProps &
   CreateExperiencesComponentProps & {
@@ -1150,7 +1147,7 @@ export interface EffectState {
 
 type EffectsList = (
   | DefSyncOfflineEditedExperienceEffect
-  | SyncEffectDef
+  | DefSyncEffect
   | DefOnSyncExperienceSuccessEffect
   | DeleteExperienceEffectDefinition
 )[];

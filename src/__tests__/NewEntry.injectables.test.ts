@@ -5,10 +5,6 @@ import {
   ExperienceFragment,
   ExperienceFragment_entries_edges,
 } from "../graphql/apollo-types/ExperienceFragment";
-import {
-  CreateOnlineEntryMutation_createEntry,
-  CreateOnlineEntryMutation,
-} from "../graphql/apollo-types/CreateOnlineEntryMutation";
 import { EntryFragment } from "../graphql/apollo-types/EntryFragment";
 import { writeExperienceFragmentToCache } from "../apollo-cache/write-experience-fragment";
 import { floatExperienceToTheTopInGetExperiencesMiniQuery } from "../apollo-cache/update-get-experiences-mini-query";
@@ -28,7 +24,7 @@ beforeEach(() => {
 
 const dataProxy = {} as DataProxy;
 
-test("replaces experiene entry using entry.id offline", async () => {
+test("replaces experience entry using entry.id offline", () => {
   const experienceId = "ex";
   const entryId = "en";
   const newEntryClientId = "en1";
@@ -49,16 +45,14 @@ test("replaces experiene entry using entry.id offline", async () => {
 
   mockReadGetExperienceFullQueryFromCache.mockReturnValue(experience);
 
-  (await upsertExperienceWithEntry(experienceId, "offline")(dataProxy, {
-    data: {
-      createEntry: {
-        entry: {
-          id: entryId,
-          clientId: newEntryClientId,
-        },
-      } as CreateOnlineEntryMutation_createEntry,
-    },
-  })) as ExperienceFragment;
+  upsertExperienceWithEntry(
+    dataProxy,
+    {
+      id: entryId,
+      clientId: newEntryClientId,
+    } as EntryFragment,
+    experienceId,
+  ) as ExperienceFragment;
 
   const mockWriteExperienceFragmentToCacheArg =
     mockWriteExperienceFragmentToCache.mock.calls[0][1];
@@ -77,7 +71,7 @@ test("replaces experiene entry using entry.id offline", async () => {
   ).toBe(mockWriteExperienceFragmentToCacheArg);
 });
 
-test("replaces entry using experience argument and entry.clientId while online", async () => {
+test("replaces entry using experience argument and entry.clientId while online", () => {
   const experienceId = "ex";
   const onlineId = "enOn";
   const offlineId = "enOff";
@@ -98,20 +92,15 @@ test("replaces entry using experience argument and entry.clientId while online",
 
   const mockOnDone = jest.fn();
 
-  (await upsertExperienceWithEntry(
+  upsertExperienceWithEntry(
+    dataProxy,
+    {
+      id: onlineId,
+      clientId: offlineId,
+    } as EntryFragment,
     experience,
-    "online",
     mockOnDone,
-  )(dataProxy, {
-    data: {
-      createEntry: {
-        entry: {
-          id: onlineId,
-          clientId: offlineId,
-        },
-      } as CreateOnlineEntryMutation_createEntry,
-    },
-  })) as ExperienceFragment;
+  ) as ExperienceFragment;
 
   const mockWriteExperienceFragmentToCacheArg =
     mockWriteExperienceFragmentToCache.mock.calls[0][1];
@@ -132,7 +121,7 @@ test("replaces entry using experience argument and entry.clientId while online",
   expect(mockOnDone).toHaveBeenCalled();
 });
 
-test("inserts entry if existing entry not found", async () => {
+test("inserts entry if existing entry not found", () => {
   const experienceId = "ex";
   const onlineId = "enOn";
   const offlineId = "enOff";
@@ -144,16 +133,14 @@ test("inserts entry if existing entry not found", async () => {
 
   mockReadGetExperienceFullQueryFromCache.mockReturnValue(experience);
 
-  (await upsertExperienceWithEntry(experienceId, "online")(dataProxy, {
-    data: {
-      createEntry: {
-        entry: {
-          id: onlineId,
-          clientId: offlineId,
-        },
-      } as CreateOnlineEntryMutation_createEntry,
-    },
-  })) as ExperienceFragment;
+  upsertExperienceWithEntry(
+    dataProxy,
+    {
+      id: onlineId,
+      clientId: offlineId,
+    } as EntryFragment,
+    experienceId,
+  ) as ExperienceFragment;
 
   const mockWriteExperienceFragmentToCacheArg =
     mockWriteExperienceFragmentToCache.mock.calls[0][1];
@@ -172,18 +159,8 @@ test("inserts entry if existing entry not found", async () => {
   ).toBe(mockWriteExperienceFragmentToCacheArg);
 });
 
-test("with experience id, no entry", async () => {
-  await upsertExperienceWithEntry("1", "online")(dataProxy, {});
-
-  expect(mockWriteExperienceFragmentToCache).not.toHaveBeenCalled();
-});
-
-test("with experience id, experience does not exist", async () => {
-  await upsertExperienceWithEntry("1", "online")(dataProxy, {
-    data: {
-      createEntry: { entry: {} },
-    } as CreateOnlineEntryMutation,
-  });
+test("with experience id, experience does not exist", () => {
+  upsertExperienceWithEntry(dataProxy, {} as EntryFragment, "1");
 
   expect(mockWriteExperienceFragmentToCache).not.toHaveBeenCalled();
 });

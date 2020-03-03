@@ -13,18 +13,61 @@
     padding-bottom: 30px;
   }
 
+  .field__control {
+    border: 1px solid #d1d5da;
+    display: block;
+    border-radius: 3px;
+    outline: none;
+    padding: 8px 8px 0px 8px;
+    display: block;
+    width: 100%;
+
+    &.field__control--hidden {
+      display: none;
+    }
+
+    &.field__control--select {
+      background-color: white;
+    }
+
+    &:active,
+    &:focus {
+      box-shadow: inset -1px -1px 0px 0px #b9b9ef;
+      border-color: #b9b9ef;
+    }
+  }
+
+  .field + .field,
+  .data-definitions {
+    margin-top: 20px;
+  }
+
   .field {
-    @extend %field-margin-bottom;
+    display: block;
+
+    &.field--errors {
+      color: var(--error-text-color);
+
+      .field__control {
+        border-color: var(--error-border-color);
+      }
+    }
   }
 
-  .submit-btn {
-    margin-top: 40px;
+  .data-definition {
+    border: 1px solid $app-color;
+    padding: 10px;
+    border-radius: 4px;
   }
 
-  .definition-container {
+  .data-definition + .data-definition {
+    margin-top: 30px;
+  }
+
+  .data-definitions {
     border: 1px solid $app-color;
     margin-bottom: 20px;
-    padding: 5px;
+    padding: 10px;
     border-radius: 4px;
 
     &.errors {
@@ -32,33 +75,42 @@
     }
   }
 
-  .field-controls {
+  .data-definition-controls {
     display: flex;
     justify-content: flex-end;
+    margin-top: 10px;
   }
 
-  .graphql-errors-header.header {
-    margin-bottom: 1em;
-  }
+  .data-definition-control {
+    border: 1px solid #afafaf;
+    border-radius: 4px;
+    width: 48px;
 
-  // .graphql-field-defs-error-container {
-  //   font-weight: 900;
-  //   font-size: 1.1em;
-  // }
-
-  .graphql-field-defs-error-inner {
-    padding-left: 5px;
-    & > span {
-      display: inline-block;
-
-      &:last-child {
-        padding-left: 0.5em;
-      }
+    & + .data-definition-control {
+      margin-left: 10px;
     }
   }
 
-  .description-field-toggle {
-    opacity: 0.6;
-    cursor: pointer;
+  .submit-btn {
+    border: 1px solid var(--btn-border-neutral-color);
+    border-radius: 4px;
+    padding: 5px;
+
+    & + .submit-btn {
+      margin-left: 10px;
+    }
+  }
+
+  .field__label {
+    font-weight: 700;
+
+    &.field__label-description {
+      display: flex;
+      align-items: center;
+    }
+  }
+
+  .field__label-description-toggle {
+    padding: 10px 35px 10px 10px;
   }
 }

@@ -6,45 +6,45 @@ import {
   ExperienceFragment_dataDefinitions,
 } from "../../graphql/apollo-types/ExperienceFragment";
 import immer, { Draft } from "immer";
-import ApolloClient, { ApolloError } from "apollo-client";
+import ApolloClient from "apollo-client";
 import {
   DataTypes,
   CreateEntryInput,
   CreateDataObject,
 } from "../../graphql/apollo-types/globalTypes";
-import {
-  CreateOnlineEntryMutation_createEntry_errors,
-  CreateOnlineEntryMutation_createEntry_errors_dataObjectsErrors,
-  CreateOnlineEntryMutation_createEntry,
-} from "../../graphql/apollo-types/CreateOnlineEntryMutation";
 import dateFnFormat from "date-fns/format";
 import parseISO from "date-fns/parseISO";
-import { CreateOnlineEntryMutationComponentProps } from "../../graphql/create-entry.mutation";
-import {
-  CreateOfflineEntryMutationComponentProps,
-  CreateOfflineEntryMutationReturned,
-} from "./new-entry.resolvers";
+import { CreateOfflineEntryMutationComponentProps } from "./new-entry.resolvers";
 import { wrapReducer } from "../../logger";
 import { isConnected } from "../../state/connections";
-import { upsertExperienceWithEntry } from "./new-entry.injectables";
 import { scrollIntoView } from "../scroll-into-view";
 import { AppPersistor } from "../../context";
 import { InMemoryCache } from "apollo-cache-inmemory";
+import { scrollIntoViewNonFieldErrorDomId } from "./new-entry.dom";
 import {
-  scrollIntoViewNonFieldErrorDomId,
-  makeFieldErrorDomId,
-} from "./new-entry.dom";
+  UpdateExperiencesOnlineComponentProps,
+  updateExperiencesOnlineEffectHelperFunc,
+} from "../../graphql/experiences.mutation";
+import {
+  CommonErrorPayload,
+  parseStringError,
+  FORM_CONTAINS_ERRORS_MESSAGE,
+} from "../../general-utils";
+import {
+  CreateEntryErrorFragment,
+  CreateEntryErrorFragment_dataObjects,
+} from "../../graphql/apollo-types/CreateEntryErrorFragment";
 
 const NEW_LINE_REGEX = /\n/g;
 export const ISO_DATE_FORMAT = "yyyy-MM-dd";
 const ISO_DATE_TIME_FORMAT = ISO_DATE_FORMAT + "'T'HH:mm:ssXXX";
 
 export enum ActionType {
-  ON_FORM_FIELD_CHANGED = "@components/new-entry/on-form-field-changed",
-  ON_CREATE_ENTRY_EXCEPTION = "@components/new-entry/set-server-errors",
-  ON_CREATE_ENTRY_ERRORS = "@components/new-entry/set-create-entry-errors",
-  DISMISS_SERVER_ERRORS = "@components/new-entry/unset-server-errors",
-  ON_SUBMIT = "@components/new-entry/on-submit",
+  ON_FORM_FIELD_CHANGED = "@new-entry/on-form-field-changed",
+  ON_CREATE_ENTRY_ERRORS = "@new-entry/set-create-entry-errors",
+  DISMISS_NOTIFICATION = "@new-entry/unset-server-errors",
+  ON_SUBMIT = "@new-entry/on-submit",
+  ON_COMMON_ERROR = "@new-entry/on-common-error",
 }
 
 export const StateValue = {
@@ -52,9 +52,7 @@ export const StateValue = {
   hasEffects: "hasEffects" as HasEffects,
   active: "active" as ActiveValue,
   inactive: "inactive" as InActiveValue,
-  errors: "errors" as ErrorsStateValue,
-  fieldErrors: "fieldErrors" as FieldErrorsValue,
-  nonFieldErrors: "nonFieldErrors" as NonFieldErrorsValue,
+  errors: "errors" as ErrorsVal,
 };
 
 export function toISODateString(date: Date) {
@@ -63,8 +61,8 @@ export function toISODateString(date: Date) {
 
 export function toISODatetimeString(date: Date | string) {
   const parsedDate = typeof date === "string" ? parseISO(date) : date;
-  const formatedDate = dateFnFormat(parsedDate, ISO_DATE_TIME_FORMAT);
-  return formatedDate;
+  const formattedDate = dateFnFormat(parsedDate, ISO_DATE_TIME_FORMAT);
+  return formattedDate;
 }
 
 export function formObjToString(type: DataTypes, val: FormObjVal) {
@@ -107,6 +105,7 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
     (prevState, { type, ...payload }) => {
       return immer(prevState, proxy => {
         proxy.effects.general.value = StateValue.noEffect;
+        delete proxy.effects.general[StateValue.hasEffects];
 
         switch (type) {
           case ActionType.ON_FORM_FIELD_CHANGED:
@@ -114,22 +113,22 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
             break;
 
           case ActionType.ON_SUBMIT:
-            handleSubmittingAction(proxy);
+            handleSubmissionAction(proxy);
             break;
 
           case ActionType.ON_CREATE_ENTRY_ERRORS:
             handleOnCreateEntryErrors(
               proxy,
-              payload as CreateOnlineEntryMutation_createEntry_errors,
+              payload as CreateEntryErrorFragment,
             );
             break;
 
-          case ActionType.ON_CREATE_ENTRY_EXCEPTION:
-            handleOnServerErrorsAction(proxy, payload as ServerErrors);
+          case ActionType.DISMISS_NOTIFICATION:
+            proxy.states.submission.value = StateValue.inactive;
             break;
 
-          case ActionType.DISMISS_SERVER_ERRORS:
-            proxy.states.submitting.value = StateValue.inactive;
+          case ActionType.ON_COMMON_ERROR:
+            handleOnCommonErrorAction(proxy, payload as CommonErrorPayload);
             break;
         }
       });
@@ -138,89 +137,75 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
     // true,
   );
 
-const UNKNOWN_ERROR = "Unknown error!";
-
-export function interpretCreateEntryMutationException(payload: Error) {
-  if (payload instanceof ApolloError) {
-    const { graphQLErrors, networkError } = payload;
-
-    if (networkError) {
-      return "Network error!";
-    }
-    return graphQLErrors[0].message;
-  }
-
-  return UNKNOWN_ERROR;
-}
-
 ////////////////////////// EFFECTS SECTION ////////////////////////////
 
-export async function createEntryEffectHelper(
-  { input, onDone }: CreateEntryEffectArgs,
-  {
-    createOnlineEntry,
+export const GENERIC_SERVER_ERROR = "Something went wrong - please try again.";
+
+const createEntryEffect: DefCreateEntryEffect["func"] = async (
+  ownArgs,
+  props,
+  effectArgs,
+) => {
+  const {
     createOfflineEntry,
-  }: Pick<ComponentProps, "createOfflineEntry" | "createOnlineEntry">,
-) {
-  let createResult: CreateOnlineEntryMutation_createEntry;
-  const { experienceId } = input;
+    persistor,
+    experience: { id: experienceId },
+    updateExperiencesOnline,
+  } = props;
+
+  const { dispatch, goToExperience } = effectArgs;
+  const { input } = ownArgs;
 
   if (isConnected()) {
-    const result = await createOnlineEntry({
-      variables: {
-        input,
+    const inputs = [
+      {
+        experienceId,
+        addEntries: [input],
       },
+    ];
 
-      update: upsertExperienceWithEntry(experienceId, "online", onDone),
-    });
+    updateExperiencesOnlineEffectHelperFunc(
+      inputs,
+      updateExperiencesOnline,
+      async experience => {
+        const { newEntries } = experience;
 
-    createResult = ((result && result.data && result.data.createEntry) ||
-      {}) as CreateOnlineEntryMutation_createEntry;
+        if (newEntries && newEntries.length) {
+          const entry0 = newEntries[0];
+
+          if (entry0.__typename === "CreateEntryErrors") {
+            const { errors } = entry0;
+            dispatch({
+              type: ActionType.ON_CREATE_ENTRY_ERRORS,
+              ...errors,
+            });
+
+            return;
+          }
+
+          await persistor.persist();
+          goToExperience();
+
+          return;
+        }
+
+        dispatch({
+          type: ActionType.ON_COMMON_ERROR,
+          error: GENERIC_SERVER_ERROR,
+        });
+      },
+      () => undefined,
+    );
   } else {
-    const result = await createOfflineEntry({
+    createOfflineEntry({
       variables: {
         experienceId,
         dataObjects: input.dataObjects as CreateDataObject[],
       },
     });
 
-    const { entry } = (result &&
-      result.data &&
-      result.data
-        .createOfflineEntry) as CreateOfflineEntryMutationReturned["createOfflineEntry"];
-
-    createResult = { entry } as CreateOnlineEntryMutation_createEntry;
-  }
-
-  return createResult;
-}
-
-const createEntryEffect: DefCreateEntryEffect["func"] = async (
-  ownArgs,
-  { createOnlineEntry, createOfflineEntry, persistor },
-  { dispatch, goToExperience },
-) => {
-  try {
-    const { entry, errors } = await createEntryEffectHelper(ownArgs, {
-      createOnlineEntry,
-      createOfflineEntry,
-    });
-
-    if (errors) {
-      dispatch({ type: ActionType.ON_CREATE_ENTRY_ERRORS, ...errors });
-      return;
-    }
-
     await persistor.persist();
-
-    if (entry) {
-      goToExperience();
-    }
-  } catch (errors) {
-    dispatch({
-      type: ActionType.ON_CREATE_ENTRY_EXCEPTION,
-      errors: interpretCreateEntryMutationException(errors),
-    });
+    goToExperience();
   }
 };
 
@@ -234,13 +219,13 @@ type DefCreateEntryEffect = EffectDefinition<
   CreateEntryEffectArgs
 >;
 
-const scrollToViewEffect: ScrollToViewEffect["func"] = ({ id }) => {
+const scrollToViewEffect: DefScrollToViewEffect["func"] = ({ id }) => {
   scrollIntoView(id, {
     behavior: "smooth",
   });
 };
 
-type ScrollToViewEffect = EffectDefinition<
+type DefScrollToViewEffect = EffectDefinition<
   "scrollToViewEffect",
   {
     id: string;
@@ -290,7 +275,7 @@ export function initState(experience: ExperienceFragment): StateMachine {
 
   return {
     states: {
-      submitting: {
+      submission: {
         value: StateValue.inactive,
       },
       form: {
@@ -306,18 +291,20 @@ export function initState(experience: ExperienceFragment): StateMachine {
   };
 }
 
-async function handleSubmittingAction(proxy: ProxyState) {
+function handleSubmissionAction(proxy: DraftState) {
   const {
     context: { experience },
     states,
   } = proxy;
 
-  states.submitting.value = StateValue.active;
+  states.submission.value = StateValue.active;
   const { dataDefinitions, id: experienceId } = experience;
-  const { form } = states;
+  const {
+    form: { fields },
+  } = states;
 
   const dataObjects = dataObjectsFromFormValues(
-    form.fields,
+    fields,
     dataDefinitions as ExperienceFragment_dataDefinitions[],
   );
 
@@ -334,96 +321,58 @@ async function handleSubmittingAction(proxy: ProxyState) {
   });
 }
 
-export function typedErrorsToString<T extends {}>(errors: T) {
-  return Object.entries(errors).reduce((a, [k, v]) => {
-    if (v && k !== "__typename") {
-      a += `\n${k}: ${v}`;
-    }
-
-    return a;
-  }, "");
-}
-
 function handleOnCreateEntryErrors(
-  stateMachine: ProxyState,
-  payload: CreateOnlineEntryMutation_createEntry_errors,
+  proxy: DraftState,
+  payload: CreateEntryErrorFragment,
 ) {
-  const { states } = stateMachine;
-  const submitting = states.submitting as SubmittingErrors;
-  submitting.value = StateValue.errors;
   const {
-    dataObjectsErrors,
-  } = payload as CreateOnlineEntryMutation_createEntry_errors;
+    states: {
+      form: { fields },
+    },
+  } = proxy;
+  const { dataObjects } = payload as CreateEntryErrorFragment;
 
-  if (!dataObjectsErrors) {
-    submitting.errors = {
-      value: StateValue.nonFieldErrors,
-      nonFieldErrors: {
-        context: {
-          errors: UNKNOWN_ERROR,
-        },
-      },
-    };
-
-    const effects = getRenderEffects(stateMachine);
-    effects.push({
-      key: "scrollToViewEffect",
-      ownArgs: {
-        id: scrollIntoViewNonFieldErrorDomId,
-      },
-    });
-
+  if (!dataObjects) {
+    handleOnCommonErrorAction(proxy, { error: GENERIC_SERVER_ERROR });
     return;
   }
 
-  const fieldErrors = dataObjectsErrors.reduce((acc, field) => {
+  handleOnCommonErrorAction(proxy, { error: FORM_CONTAINS_ERRORS_MESSAGE });
+
+  dataObjects.forEach(field => {
     const {
-      errors,
-      index,
-    } = field as CreateOnlineEntryMutation_createEntry_errors_dataObjectsErrors;
+      /* eslint-disable-next-line @typescript-eslint/no-unused-vars*/
+      __typename,
+      meta: { index },
+      ...errors
+    } = field as CreateEntryErrorFragment_dataObjects;
 
-    acc[index] = typedErrorsToString(errors);
-
-    return acc;
-  }, {} as { [k: string]: string });
-
-  submitting.errors = {
-    value: StateValue.fieldErrors,
-    fieldErrors: {
-      context: {
-        errors: fieldErrors,
-      },
-    },
-  };
-
-  const effects = getRenderEffects(stateMachine);
-
-  effects.push({
-    key: "scrollToViewEffect",
-    ownArgs: {
-      id: getFieldErrorScrollToId(fieldErrors),
-    },
+    const fieldState = fields[index];
+    fieldState.context.errors = Object.entries(errors).filter(x => !!x[1]);
   });
 }
 
-function handleOnServerErrorsAction(
-  stateMachine: ProxyState,
-  { errors }: ServerErrors,
+function handleOnCommonErrorAction(
+  proxy: DraftState,
+  payload: CommonErrorPayload,
 ) {
-  const { states } = stateMachine;
-  const submitting = states.submitting as SubmittingErrors;
-  submitting.value = StateValue.errors;
+  const errors = parseStringError(payload.error);
 
-  submitting.errors = {
-    value: StateValue.nonFieldErrors,
-    nonFieldErrors: {
+  const commonErrorsState = {
+    value: StateValue.errors,
+    errors: {
       context: {
         errors,
       },
     },
+  } as Submission;
+
+  proxy.states.submission = {
+    ...proxy.states.submission,
+    ...commonErrorsState,
   };
 
-  const effects = getRenderEffects(stateMachine);
+  const effects = getRenderEffects(proxy);
   effects.push({
     key: "scrollToViewEffect",
     ownArgs: {
@@ -432,14 +381,7 @@ function handleOnServerErrorsAction(
   });
 }
 
-function getFieldErrorScrollToId(fieldErrors: FieldErrors) {
-  const [keyVal] = Object.entries(fieldErrors);
-
-  const [id] = keyVal;
-  return makeFieldErrorDomId(id);
-}
-
-function getRenderEffects(proxy: ProxyState) {
+function getRenderEffects(proxy: DraftState) {
   const renderEffects = proxy.effects.general as GeneralEffect;
   renderEffects.value = StateValue.hasEffects;
   const effects: EffectsList = [];
@@ -456,29 +398,34 @@ function dataObjectsFromFormValues(
   formFields: StateMachine["states"]["form"]["fields"],
   dataDefinitions: ExperienceFragment_dataDefinitions[],
 ) {
-  return Object.entries(formFields).reduce((acc, [stringIndex, field]) => {
-    const index = Number(stringIndex);
-    const definition = dataDefinitions[
-      index
-    ] as ExperienceFragment_dataDefinitions;
+  return Object.entries(formFields).reduce(
+    (acc, [stringIndex, { context }]) => {
+      delete context.errors;
+      const index = Number(stringIndex);
 
-    const { type, id: definitionId } = definition;
+      const definition = dataDefinitions[
+        index
+      ] as ExperienceFragment_dataDefinitions;
 
-    acc.push({
-      definitionId,
+      const { type, id: definitionId } = definition;
 
-      data: `{"${type.toLowerCase()}":"${formObjToString(
-        type,
-        field.context.value,
-      )}"}`,
-    });
+      acc.push({
+        definitionId,
 
-    return acc;
-  }, [] as CreateDataObject[]);
+        data: `{"${type.toLowerCase()}":"${formObjToString(
+          type,
+          context.value,
+        )}"}`,
+      });
+
+      return acc;
+    },
+    [] as CreateDataObject[],
+  );
 }
 
 function handleFormFieldChangedAction(
-  proxy: ProxyState,
+  proxy: DraftState,
   payload: FieldChangedPayload,
 ) {
   const { fieldIndex, value } = payload;
@@ -496,7 +443,7 @@ export interface NewEntryCallerProps
 }
 
 export type ComponentProps = NewEntryCallerProps &
-  CreateOnlineEntryMutationComponentProps &
+  UpdateExperiencesOnlineComponentProps &
   CreateOfflineEntryMutationComponentProps & {
     client: ApolloClient<{}>;
     persistor: AppPersistor;
@@ -516,6 +463,7 @@ export interface FieldState {
   context: {
     value: FormObjVal;
     definition: ExperienceFragment_dataDefinitions;
+    errors?: [string, string][];
   };
 }
 
@@ -526,6 +474,7 @@ export interface FieldComponentProps {
 }
 
 export type ToString = (val: FormObjVal) => string;
+
 interface FieldChangedPayload {
   fieldIndex: string | number;
   value: FormObjVal;
@@ -535,11 +484,7 @@ interface FieldErrors {
   [k: string]: string;
 }
 
-interface ServerErrors {
-  errors: string;
-}
-
-type ProxyState = Draft<StateMachine>;
+type DraftState = Draft<StateMachine>;
 
 interface StateMachine {
   readonly context: {
@@ -549,39 +494,25 @@ interface StateMachine {
     readonly general: GeneralEffect | { value: NoEffectVal };
   };
   readonly states: {
-    readonly submitting: SubmittingState;
+    readonly submission: Submission;
     readonly form: {
       readonly fields: FormFields;
     };
   };
 }
 
-export type SubmittingState =
-  | SubmittingErrors
+type Submission =
+  | SubmissionErrors
   | { value: ActiveValue }
   | {
       value: InActiveValue;
     };
 
-interface SubmittingErrors {
-  value: ErrorsStateValue;
-  errors: SubmittingFieldErrors | SubmittingNonFieldErrors;
-}
-
-interface SubmittingNonFieldErrors {
-  value: NonFieldErrorsValue;
-  nonFieldErrors: {
+interface SubmissionErrors {
+  value: ErrorsVal;
+  errors: {
     context: {
       errors: string;
-    };
-  };
-}
-
-interface SubmittingFieldErrors {
-  value: FieldErrorsValue;
-  fieldErrors: {
-    context: {
-      errors: FieldErrors;
     };
   };
 }
@@ -593,16 +524,16 @@ interface RunOnceEffectState<IEffect> {
 
 type Action =
   | { type: ActionType.ON_SUBMIT }
-  | { type: ActionType.DISMISS_SERVER_ERRORS }
+  | { type: ActionType.DISMISS_NOTIFICATION }
   | ({
       type: ActionType.ON_CREATE_ENTRY_ERRORS;
-    } & CreateOnlineEntryMutation_createEntry_errors)
+    } & CreateEntryErrorFragment)
   | ({
       type: ActionType.ON_FORM_FIELD_CHANGED;
     } & FieldChangedPayload)
   | ({
-      type: ActionType.ON_CREATE_ENTRY_EXCEPTION;
-    } & ServerErrors);
+      type: ActionType.ON_COMMON_ERROR;
+    } & CommonErrorPayload);
 
 export type DispatchType = Dispatch<Action>;
 
@@ -611,16 +542,14 @@ type NoEffectVal = "noEffect";
 type HasEffects = "hasEffects";
 type InActiveValue = "inactive";
 type ActiveValue = "active";
-type FieldErrorsValue = "fieldErrors";
-type NonFieldErrorsValue = "nonFieldErrors";
-type ErrorsStateValue = "errors";
+type ErrorsVal = "errors";
 /////////////////////// END STRINGY TYPES SECTION /////////////
 
 interface EffectContext {
   effectsArgsObj: ComponentProps;
 }
 
-type EffectsList = (ScrollToViewEffect | DefCreateEntryEffect)[];
+type EffectsList = (DefScrollToViewEffect | DefCreateEntryEffect)[];
 
 interface GeneralEffect {
   value: HasEffects;

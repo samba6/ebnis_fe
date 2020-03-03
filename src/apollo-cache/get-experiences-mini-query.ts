@@ -25,9 +25,7 @@ export function getExperiencesMiniQuery(cache: DataProxy) {
 
     getExperiences = data && data.getExperiences;
   } catch (error) {
-    if (!(error as Error).message.includes("Can't find field getExperiences")) {
-      // throw error;
-    }
+    // throw error;
   }
 
   return getExperiences;

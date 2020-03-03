@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any*/
 import { Reducer, useEffect } from "react";
 import lodashIsEqual from "lodash/isEqual";
-import {doNotLog} from './state/apollo-middlewares';
+import { doNotLog } from "./state/apollo-middlewares";
 
 const isDevEnv = process.env.NODE_ENV === "development";
 const isTestEnv = process.env.NODE_ENV === "test";
@@ -29,12 +29,14 @@ export function wrapReducer<State, Action>(
   }
 
   if (shouldWrap === true || isDevEnv) {
+    const envAction = objectForEnv(action);
+
     console.log(
       "\nprevious state = \n\t",
       objectForEnv(prevState),
 
       "\n\n\nupdate with = \n\t",
-      objectForEnv(action),
+      envAction,
     );
 
     const nextState = reducer(prevState, action);
@@ -42,6 +44,9 @@ export function wrapReducer<State, Action>(
     console.log(
       "\nnext state = \n\t",
       objectForEnv(nextState),
+
+      "\n\n\nupdate with = \n\t",
+      envAction,
 
       "\n\n\nDifferences = \n\t",
       objectForEnv(deepObjectDifference(nextState, prevState)),
@@ -54,31 +59,45 @@ export function wrapReducer<State, Action>(
 }
 
 function deepObjectDifference(
-  compareObject: { [k: string]: any },
-  baseObject: { [k: string]: any },
+  compareObject: KStringAny,
+  baseObject: KStringAny,
 ) {
-  function differences(
-    newObject: { [k: string]: any },
-    baseObjectDiff: { [k: string]: any },
-  ) {
-    return Object.entries(newObject).reduce(
-      (acc, [key, value]) => {
-        const baseValue = baseObjectDiff[key];
+  function differences(newObject: KStringAny, baseObjectDiff: KStringAny) {
+    return Object.entries(newObject).reduce((acc, [key, value]) => {
+      const baseValue = baseObjectDiff[key];
 
-        if (!lodashIsEqual(value, baseValue)) {
-          acc[key] =
-            isPlainObject(baseValue) && isPlainObject(value)
-              ? differences(value, baseValue)
-              : value;
-        }
+      if (!lodashIsEqual(value, baseValue)) {
+        acc[key] =
+          isPlainObject(baseValue) && isPlainObject(value)
+            ? differences(value, baseValue)
+            : Array.isArray(value) && Array.isArray(baseValue)
+            ? diffArray(value, baseValue, differences)
+            : value;
+      }
 
-        return acc;
-      },
-      {} as { [k: string]: any },
-    );
+      return acc;
+    }, {} as KStringAny);
   }
 
   return differences(compareObject, baseObject);
+}
+
+function diffArray(
+  value: any[],
+  baseValue: any[],
+  diffFn: (a: KStringAny, b: KStringAny) => KStringAny,
+) {
+  return value.reduce((acc, x, index) => {
+    const y = baseValue[index];
+
+    if (!y) {
+      acc.push(x);
+      return acc;
+    }
+
+    acc.push(diffFn(x, y));
+    return acc;
+  }, [] as any[]);
 }
 
 function isPlainObject(obj: object) {
@@ -97,4 +116,8 @@ export function useLogger(data: any, tag = "") {
 
     logger("log", tag, data);
   });
+}
+
+interface KStringAny {
+  [k: string]: any;
 }

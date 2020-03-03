@@ -15,8 +15,6 @@ import { upsertExperienceWithEntry } from "./new-entry.injectables";
 import { ENTRY_FRAGMENT } from "../../graphql/entry.fragment";
 import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragment";
 import { EntryFragment } from "../../graphql/apollo-types/EntryFragment";
-// import { incrementOfflineItemCount } from "../../apollo-cache/increment-offline-item-count";
-import { CreateOnlineEntryMutation_createEntry } from "../../graphql/apollo-types/CreateOnlineEntryMutation";
 import {
   getUnsyncedExperience,
   UnsyncedModifiedExperience,
@@ -50,8 +48,8 @@ export interface CreateOfflineEntryMutationReturned {
 
 const createOfflineEntryMutationResolver: LocalResolverFn<
   CreateOfflineEntryMutationVariables,
-  Promise<CreateOfflineEntryMutationReturned["createOfflineEntry"]>
-> = async (_, variables, context) => {
+  CreateOfflineEntryMutationReturned["createOfflineEntry"]
+> = (_, variables, context) => {
   const { cache } = context;
 
   const { experienceId } = variables;
@@ -84,12 +82,11 @@ const createOfflineEntryMutationResolver: LocalResolverFn<
     modOffline: true,
   };
 
-  const experience = (await upsertExperienceWithEntry(experienceId, "offline")(
+  const experience = upsertExperienceWithEntry(
     cache,
-    {
-      data: { createEntry: { entry } as CreateOnlineEntryMutation_createEntry },
-    },
-  )) as ExperienceFragment;
+    entry,
+    experienceId,
+  ) as ExperienceFragment;
 
   updateUnsynced(experienceId);
 
@@ -114,9 +111,8 @@ function updateUnsynced(experienceId: string) {
     return;
   }
 
-  const unsyncedExperience = (getUnsyncedExperience(experienceId) || {
-    newEntries: true,
-  }) as UnsyncedModifiedExperience;
+  const unsyncedExperience = (getUnsyncedExperience(experienceId) ||
+    {}) as UnsyncedModifiedExperience;
 
   unsyncedExperience.newEntries = true;
   writeUnsyncedExperience(experienceId, unsyncedExperience);

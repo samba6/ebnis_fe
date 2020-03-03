@@ -15,6 +15,20 @@ export function capitalize(word: string) {
   return word.charAt(0).toUpperCase() + word.slice(1);
 }
 
-export interface StringyErrorPayload {
-  error: Error | string;
+export const FORM_CONTAINS_ERRORS_MESSAGE =
+  "Form contains errors. Please correct them and save again.";
+
+export const GENERIC_SERVER_ERROR = "Something went wrong - please try again.";
+
+export const NOTHING_TO_SAVE_WARNING_MESSAGE =
+  "Please make changes before saving.";
+
+export interface CommonErrorPayload {
+  error: CommonError;
 }
+
+export type CommonError = Error | string;
+
+type ErrorField = string;
+type ErrorText = string;
+export type FieldError = [ErrorField, ErrorText][];
