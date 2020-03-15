@@ -215,7 +215,7 @@ test("getTitle", () => {
 
 test("sync online experience", async () => {
   const entryOnlineId = "exon";
-  const entryOfflineId = makeOfflineId("exof");
+  const entryOfflineId = makeOfflineId("e");
 
   const { ui } = makeComp({
     experience: {
@@ -250,174 +250,85 @@ test("sync online experience", async () => {
     hasConnection: true,
   });
 
-  /**
-   * SUBMISSIONS:
-   */
-  mockGetUnsyncedExperience
-    .mockReturnValueOnce(null) // 1
-    .mockReturnValueOnce({
-      ownFields: {
-        title: true,
-      },
-    }) // 2
-    .mockReturnValueOnce({
-      definitions: {
-        "2": {
-          name: true,
-        },
-      },
-    }) // 3
-    .mockReturnValueOnce({
-      ownFields: {
-        title: true,
-      },
-    }) // 4
-    .mockReturnValueOnce({
-      ownFields: {
-        title: true,
-      },
-    }) // 5
-    .mockReturnValueOnce({
-      ownFields: {
-        title: true,
-      },
-    }) // 6
-    .mockReturnValueOnce({
-      ownFields: {
-        title: true,
-      },
-    }) // 7
-    .mockReturnValueOnce({
-      ownFields: {
-        title: true,
-      },
-    }) // 8
-    .mockReturnValueOnce({
-      ownFields: {
-        title: true,
-      },
-    }) //  9
-    .mockReturnValueOnce({
-      newEntries: true,
-      ownFields: {
-        title: true,
-      },
-    }); // 10
+  // mockGetUnsyncedExperience
+  //   .mockReturnValueOnce({
+  //     ownFields: {
+  //       title: true,
+  //     },
+  //   }) //  9
+  //   .mockReturnValueOnce({
+  //     newEntries: true,
+  //     ownFields: {
+  //       title: true,
+  //     },
+  //   }); // 10
 
-  mockUpdateExperiencesOnline
-    .mockResolvedValueOnce({}) // 2
-    .mockRejectedValueOnce(new Error("a")) // 3
-    .mockRejectedValueOnce(
-      new ApolloError({
-        networkError: new Error("n"),
-      }),
-    ) // 4
-    .mockRejectedValueOnce(
-      new ApolloError({
-        graphQLErrors: [new GraphQLError("a")],
-      }),
-    ) // 5
-    .mockResolvedValueOnce({
-      data: {
-        updateExperiences: {
-          __typename: "UpdateExperiencesAllFail",
-          error: "a",
-        },
-      },
-    } as UpdateExperiencesOnlineMutationResult) // 6
-    .mockResolvedValueOnce({
-      data: {
-        updateExperiences: {
-          __typename: "UpdateExperiencesSomeSuccess",
-          experiences: [
-            {
-              __typename: "UpdateExperienceErrors",
-              errors: {
-                error: "a",
-              },
-            },
-          ],
-        },
-      },
-    } as UpdateExperiencesOnlineMutationResult) // 7
-    .mockResolvedValueOnce({
-      data: {
-        updateExperiences: {
-          __typename: "UpdateExperiencesSomeSuccess",
-          experiences: [
-            {
-              __typename: "UpdateExperienceSomeSuccess",
-              experience: {},
-            },
-          ],
-        },
-      },
-    } as UpdateExperiencesOnlineMutationResult) // 8
-    .mockResolvedValueOnce({
-      data: {
-        updateExperiences: {
-          __typename: "UpdateExperiencesSomeSuccess",
-          experiences: [
-            {
-              __typename: "UpdateExperienceSomeSuccess",
-              experience: {
-                ownFields: {
-                  __typename: "UpdateExperienceOwnFieldsErrors",
-                  errors: {},
-                },
-                newEntries: [
-                  {
-                    __typename: "CreateEntryErrors",
-                    errors: {
-                      error: null,
-                      clientId: "a",
-                      dataObjects: [
-                        {
-                          definition: null,
-                          data: "a",
-                        },
-                      ],
-                    },
-                  },
-                  {
-                    __typename: "CreateEntrySuccess",
-                  },
-                ],
-                updatedDefinitions: [
-                  {
-                    __typename: "DefinitionErrors",
-                    errors: {
-                      error: null,
-                      name: "a",
-                    },
-                  },
-                  {
-                    __typename: "DefinitionSuccess",
-                  },
-                ],
-              },
-            },
-          ],
-        },
-      },
-    } as UpdateExperiencesOnlineMutationResult) // 9
-    .mockResolvedValueOnce({
-      data: {
-        updateExperiences: {
-          __typename: "UpdateExperiencesSomeSuccess",
-          experiences: [
-            {
-              __typename: "UpdateExperienceSomeSuccess",
-              experience: {
-                ownFields: {
-                  __typename: "ExperienceOwnFieldsSuccess",
-                },
-              },
-            },
-          ],
-        },
-      },
-    } as UpdateExperiencesOnlineMutationResult); // 10
+  // mockUpdateExperiencesOnline
+  //   .mockResolvedValueOnce({
+  //     data: {
+  //       updateExperiences: {
+  //         __typename: "UpdateExperiencesSomeSuccess",
+  //         experiences: [
+  //           {
+  //             __typename: "UpdateExperienceSomeSuccess",
+  //             experience: {
+  //               ownFields: {
+  //                 __typename: "UpdateExperienceOwnFieldsErrors",
+  //                 errors: {},
+  //               },
+  //               newEntries: [
+  //                 {
+  //                   __typename: "CreateEntryErrors",
+  //                   errors: {
+  //                     error: null,
+  //                     clientId: "a",
+  //                     dataObjects: [
+  //                       {
+  //                         definition: null,
+  //                         data: "a",
+  //                       },
+  //                     ],
+  //                   },
+  //                 },
+  //                 {
+  //                   __typename: "CreateEntrySuccess",
+  //                 },
+  //               ],
+  //               updatedDefinitions: [
+  //                 {
+  //                   __typename: "DefinitionErrors",
+  //                   errors: {
+  //                     error: null,
+  //                     name: "a",
+  //                   },
+  //                 },
+  //                 {
+  //                   __typename: "DefinitionSuccess",
+  //                 },
+  //               ],
+  //             },
+  //           },
+  //         ],
+  //       },
+  //     },
+  //   } as UpdateExperiencesOnlineMutationResult) // 9
+  //   .mockResolvedValueOnce({
+  //     data: {
+  //       updateExperiences: {
+  //         __typename: "UpdateExperiencesSomeSuccess",
+  //         experiences: [
+  //           {
+  //             __typename: "UpdateExperienceSomeSuccess",
+  //             experience: {
+  //               ownFields: {
+  //                 __typename: "ExperienceOwnFieldsSuccess",
+  //               },
+  //             },
+  //           },
+  //         ],
+  //       },
+  //     },
+  //   } as UpdateExperiencesOnlineMutationResult); // 10
 
   /**
    * When component is rendered
@@ -428,6 +339,9 @@ test("sync online experience", async () => {
    * Then error UI should not be visible
    */
   expect(document.getElementById(errorsNotificationId)).toBeNull();
+
+  mockGetUnsyncedExperience.mockReturnValueOnce(null);
+  mockUpdateExperiencesOnline.mockResolvedValueOnce(null);
 
   /**
    * When sync button is clicked
@@ -455,6 +369,15 @@ test("sync online experience", async () => {
    */
   expect(document.getElementById(errorsNotificationId)).toBeNull();
 
+  mockGetUnsyncedExperience.mockReturnValueOnce({
+    ownFields: {
+      title: true,
+    },
+  });
+
+  mockUpdateExperiencesOnline.mockReset();
+  mockUpdateExperiencesOnline.mockResolvedValueOnce({});
+
   /**
    * When sync button is clicked
    */
@@ -471,14 +394,8 @@ test("sync online experience", async () => {
   /**
    * Correct data should be sent to server
    */
-  let mockUpdateExperiencesOnlineCalls = mockUpdateExperiencesOnline.mock.calls;
 
-  let mockUpdateExperiencesOnlineArgs =
-    mockUpdateExperiencesOnlineCalls[
-      mockUpdateExperiencesOnlineCalls.length - 1
-    ][0];
-
-  expect(mockUpdateExperiencesOnlineArgs.variables.input).toEqual([
+  expect(mockUpdateExperiencesOnline.mock.calls[0][0].variables.input).toEqual([
     {
       experienceId: "a",
       ownFields: {
@@ -499,6 +416,17 @@ test("sync online experience", async () => {
    */
   expect(document.getElementById(errorsNotificationId)).toBeNull();
 
+  mockGetUnsyncedExperience.mockReturnValueOnce({
+    definitions: {
+      "2": {
+        name: true,
+      },
+    },
+  });
+
+  mockUpdateExperiencesOnline.mockReset();
+  mockUpdateExperiencesOnline.mockRejectedValueOnce(new Error("a"));
+
   /**
    * When sync button is clicked
    */
@@ -515,14 +443,8 @@ test("sync online experience", async () => {
   /**
    * Correct data should be sent to server
    */
-  mockUpdateExperiencesOnlineCalls = mockUpdateExperiencesOnline.mock.calls;
 
-  mockUpdateExperiencesOnlineArgs =
-    mockUpdateExperiencesOnlineCalls[
-      mockUpdateExperiencesOnlineCalls.length - 1
-    ][0];
-
-  expect(mockUpdateExperiencesOnlineArgs.variables.input).toEqual([
+  expect(mockUpdateExperiencesOnline.mock.calls[0][0].variables.input).toEqual([
     {
       experienceId: "a",
       updateDefinitions: [
@@ -545,6 +467,18 @@ test("sync online experience", async () => {
    * Then error UI should not be visible
    */
   expect(document.getElementById(errorsNotificationId)).toBeNull();
+
+  mockGetUnsyncedExperience.mockReturnValueOnce({
+    ownFields: {
+      title: true,
+    },
+  });
+
+  mockUpdateExperiencesOnline.mockRejectedValueOnce(
+    new ApolloError({
+      networkError: new Error("n"),
+    }),
+  );
 
   /**
    * When sync button is clicked
@@ -571,6 +505,18 @@ test("sync online experience", async () => {
    */
   expect(document.getElementById(errorsNotificationId)).toBeNull();
 
+  mockGetUnsyncedExperience.mockReturnValueOnce({
+    ownFields: {
+      title: true,
+    },
+  });
+
+  mockUpdateExperiencesOnline.mockRejectedValueOnce(
+    new ApolloError({
+      graphQLErrors: [new GraphQLError("a")],
+    }),
+  );
+
   /**
    * When sync button is clicked
    */
@@ -595,6 +541,21 @@ test("sync online experience", async () => {
    * Then error UI should not be visible
    */
   expect(document.getElementById(errorsNotificationId)).toBeNull();
+
+  mockGetUnsyncedExperience.mockReturnValueOnce({
+    ownFields: {
+      title: true,
+    },
+  });
+
+  mockUpdateExperiencesOnline.mockResolvedValueOnce({
+    data: {
+      updateExperiences: {
+        __typename: "UpdateExperiencesAllFail",
+        error: "a",
+      },
+    },
+  } as UpdateExperiencesOnlineMutationResult);
 
   /**
    * When sync button is clicked
@@ -621,10 +582,32 @@ test("sync online experience", async () => {
    */
   expect(document.getElementById(errorsNotificationId)).toBeNull();
 
+  mockGetUnsyncedExperience.mockReturnValueOnce({
+    ownFields: {
+      title: true,
+    },
+  });
+
+  mockUpdateExperiencesOnline.mockResolvedValueOnce({
+    data: {
+      updateExperiences: {
+        __typename: "UpdateExperiencesSomeSuccess",
+        experiences: [
+          {
+            __typename: "UpdateExperienceErrors",
+            errors: {
+              error: "a",
+            },
+          },
+        ],
+      },
+    },
+  } as UpdateExperiencesOnlineMutationResult); // 7
+
   /**
    * When sync button is clicked
    */
-  syncBtn.click(); // 7
+  syncBtn.click();
   await wait(() => true);
 
   /**
@@ -646,6 +629,26 @@ test("sync online experience", async () => {
    */
   expect(document.getElementById(errorsNotificationId)).toBeNull();
 
+  mockGetUnsyncedExperience.mockReturnValueOnce({
+    ownFields: {
+      title: true,
+    },
+  });
+
+  mockUpdateExperiencesOnline.mockResolvedValueOnce({
+    data: {
+      updateExperiences: {
+        __typename: "UpdateExperiencesSomeSuccess",
+        experiences: [
+          {
+            __typename: "UpdateExperienceSomeSuccess",
+            experience: {},
+          },
+        ],
+      },
+    },
+  } as UpdateExperiencesOnlineMutationResult);
+
   /**
    * When sync button is clicked
    */
@@ -663,6 +666,64 @@ test("sync online experience", async () => {
    * And success notification should not be visible
    */
   expect(document.getElementById(successNotificationId)).toBeNull();
+
+  mockGetUnsyncedExperience.mockReturnValueOnce({
+    ownFields: {
+      title: true,
+    },
+  }); //  9
+
+  mockUpdateExperiencesOnline.mockResolvedValueOnce({
+    data: {
+      updateExperiences: {
+        __typename: "UpdateExperiencesSomeSuccess",
+        experiences: [
+          {
+            __typename: "UpdateExperienceSomeSuccess",
+            experience: {
+              ownFields: {
+                __typename: "UpdateExperienceOwnFieldsErrors",
+                errors: {},
+              },
+              newEntries: [
+                {
+                  __typename: "CreateEntryErrors",
+                  errors: {
+                    error: null,
+                    clientId: "a",
+                    dataObjects: [
+                      {
+                        meta: {
+                          index: 0,
+                        },
+                        definition: null,
+                        data: "a",
+                      },
+                    ],
+                  },
+                },
+                {
+                  __typename: "CreateEntrySuccess",
+                },
+              ],
+              updatedDefinitions: [
+                {
+                  __typename: "DefinitionErrors",
+                  errors: {
+                    error: null,
+                    name: "a",
+                  },
+                },
+                {
+                  __typename: "DefinitionSuccess",
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  } as UpdateExperiencesOnlineMutationResult); // 9
 
   /**
    * When sync button is clicked
@@ -700,10 +761,35 @@ test("sync online experience", async () => {
 
   expect(errorNotifications).toHaveLength(2);
 
+  mockGetUnsyncedExperience.mockReturnValueOnce({
+    newEntries: true,
+    ownFields: {
+      title: true,
+    },
+  });
+
+  mockUpdateExperiencesOnline.mockResolvedValueOnce({
+    data: {
+      updateExperiences: {
+        __typename: "UpdateExperiencesSomeSuccess",
+        experiences: [
+          {
+            __typename: "UpdateExperienceSomeSuccess",
+            experience: {
+              ownFields: {
+                __typename: "ExperienceOwnFieldsSuccess",
+              },
+            },
+          },
+        ],
+      },
+    },
+  } as UpdateExperiencesOnlineMutationResult);
+
   /**
    * When sync button is clicked
    */
-  syncBtn.click(); // 10
+  syncBtn.click();
   await wait(() => true);
 
   /**

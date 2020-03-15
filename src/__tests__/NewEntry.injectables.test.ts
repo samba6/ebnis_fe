@@ -108,7 +108,7 @@ test("replaces entry using experience argument and entry.clientId while online",
   const edges = mockWriteExperienceFragmentToCacheArg.entries
     .edges as ExperienceFragment_entries_edges[];
   const node = edges[0].node as EntryFragment;
-  expect(mockWriteExperienceFragmentToCacheArg.hasUnsaved).toBeNull();
+  expect(mockWriteExperienceFragmentToCacheArg.hasUnsaved).toBe(true);
   expect(edges).toHaveLength(1);
   expect(mockWriteExperienceFragmentToCacheArg.id).toBe(experienceId);
   expect(node.id).toBe(onlineId);
@@ -148,7 +148,7 @@ test("inserts entry if existing entry not found", () => {
   const edges = mockWriteExperienceFragmentToCacheArg.entries
     .edges as ExperienceFragment_entries_edges[];
   const node = edges[0].node as EntryFragment;
-  expect(mockWriteExperienceFragmentToCacheArg.hasUnsaved).toBeNull();
+  expect(mockWriteExperienceFragmentToCacheArg.hasUnsaved).toBe(true);
   expect(edges).toHaveLength(1);
   expect(mockWriteExperienceFragmentToCacheArg.id).toBe(experienceId);
   expect(node.id).toBe(onlineId);

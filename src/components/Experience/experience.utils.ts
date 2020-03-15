@@ -47,7 +47,6 @@ import {
   confirmShouldDeleteExperience,
   writeDeletedExperienceTitle,
 } from "../../apollo-cache/should-delete-experience";
-import { CreateEntryErrorsFragment_errors_dataObjects } from "../../graphql/apollo-types/CreateEntryErrorsFragment";
 import { CreateExperiences_createExperiences_CreateExperienceErrors_errors } from "../../graphql/apollo-types/CreateExperiences";
 
 export const StateValue = {
@@ -515,24 +514,22 @@ function processUpdateExperienceSomeSuccessEffectHelper(
         Object.entries(rest).forEach(([k, v]) => {
           if (v) {
             if (k === "dataObjects") {
-              (v as CreateEntryErrorsFragment_errors_dataObjects[]).forEach(
-                d => {
-                  const {
-                    meta: { index },
-                    /* eslint-disable-next-line @typescript-eslint/no-unused-vars*/
-                    __typename,
-                    ...rest
-                  } = d as CreateEntryErrorFragment_dataObjects;
+              (v as CreateEntryErrorFragment_dataObjects[]).forEach(d => {
+                const {
+                  meta: { index },
+                  /* eslint-disable-next-line @typescript-eslint/no-unused-vars*/
+                  __typename,
+                  ...rest
+                } = d as CreateEntryErrorFragment_dataObjects;
 
-                  const label = `Data ${index + 1}`;
+                const label = `Data ${index + 1}`;
 
-                  Object.entries(rest).forEach(([k, v]) => {
-                    if (v) {
-                      errors.push([k, `${label}: ${v}`]);
-                    }
-                  });
-                },
-              );
+                Object.entries(rest).forEach(([k, v]) => {
+                  if (v) {
+                    errors.push([k, `${label}: ${v}`]);
+                  }
+                });
+              });
             } else {
               errors.push([k, v]);
             }
