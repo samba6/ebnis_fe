@@ -1,3 +1,4 @@
+/* istanbul ignore file */
 import { DataProxy } from "apollo-cache";
 import { ExperienceFragment } from "../graphql/apollo-types/ExperienceFragment";
 import {

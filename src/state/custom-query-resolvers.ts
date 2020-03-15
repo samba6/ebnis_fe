@@ -1,3 +1,4 @@
+/* istanbul ignore file */
 import { CacheResolver } from "apollo-cache-inmemory";
 
 const getExperience: CacheResolver = (_, args, { getCacheKey }) =>

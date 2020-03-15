@@ -26,7 +26,8 @@ import { CreateExperiencesVariables } from "../../graphql/apollo-types/CreateExp
 const createOfflineExperienceResolver: LocalResolverFn<
   CreateExperiencesVariables,
   ExperienceFragment
-> = (_, { input: inputs }, { cache, client }) => {
+> = (_, variables, { cache, client }) => {
+  const { input: inputs } = variables;
   const today = new Date();
   const timestamp = today.toJSON();
   const experienceId = makeOfflineId(today.getTime());
@@ -86,11 +87,8 @@ const createOfflineExperienceResolver: LocalResolverFn<
 };
 
 export const CREATE_OFFLINE_EXPERIENCE_MUTATION = gql`
-  mutation CreateOfflineExperienceMutation(
-    $createExperienceInput: CreateExperienceInput!
-  ) {
-    createOfflineExperience(createExperienceInput: $createExperienceInput)
-      @client {
+  mutation CreateOfflineExperienceMutation($input: CreateExperienceInput!) {
+    createOfflineExperience(input: $input) @client {
       ...ExperienceFragment
     }
   }
@@ -102,6 +100,7 @@ export interface CreateExperienceOfflineMutation {
   createOfflineExperience: ExperienceFragment;
 }
 
+// istanbul ignore next:
 export function useCreateExperienceOfflineMutation() {
   return useMutation<
     CreateExperienceOfflineMutation,

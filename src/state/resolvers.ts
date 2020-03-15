@@ -1,3 +1,4 @@
+/* istanbul ignore file */
 import { ApolloClient } from "apollo-client";
 import { InMemoryCache } from "apollo-cache-inmemory";
 
@@ -39,7 +40,5 @@ export function initState() {
 }
 
 export const MUTATION_NAME_createExperienceOffline = "createOfflineExperience";
-
 export const MUTATION_NAME_createOfflineEntry = "createOfflineEntry";
-
 export const QUERY_NAME_getExperience = "getExperience";

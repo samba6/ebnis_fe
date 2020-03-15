@@ -1,3 +1,4 @@
+/* istanbul ignore file */
 export const getBackendUrls = (uri?: string) => {
   const apiUrl = uri || process.env.API_URL;
 

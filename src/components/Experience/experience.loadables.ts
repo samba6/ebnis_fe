@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* istanbul ignore file */
 import Loadable from "react-loadable";
 import { LoadableLoading } from "../Loading/loading";
 

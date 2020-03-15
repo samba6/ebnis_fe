@@ -120,6 +120,7 @@ function updateUnsynced(experienceId: string) {
 
 ////////////////////////// TYPES SECTION ////////////////////////////
 
+// istanbul ignore next:
 export function useCreateOfflineEntryMutation(): UseCreateOfflineEntryMutation {
   return useMutation(CREATE_OFFLINE_ENTRY_MUTATION);
 }

@@ -1,3 +1,4 @@
+/* istanbul ignore file */
 import { EXPERIENCES_URL } from "./routes";
 
 export async function refreshToHome() {

@@ -59,9 +59,8 @@ import { removeQueriesAndMutationsFromCache } from "../state/resolvers/delete-re
 jest.mock("../apollo-cache/on-sync-offline-experience-component-success");
 const mockSaveOnSyncOfflineExperienceComponentSuccess = saveOnSyncOfflineExperienceComponentSuccess as jest.Mock;
 
-jest.mock("../components/Experience/loadables", () => ({
+jest.mock("../components/Experience/experience.loadables", () => ({
   EditExperience: () => <div id="js-editor" />,
-
   EditEntry: () => <div id="entry-edit-modal" />,
 }));
 

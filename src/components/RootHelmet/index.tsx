@@ -1,3 +1,4 @@
+/* istanbul ignore file */
 import React from "react";
 import { Helmet } from "react-helmet-async";
 import { THEME_COLOR } from "../../constants";

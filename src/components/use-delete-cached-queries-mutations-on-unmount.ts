@@ -1,3 +1,4 @@
+/* istanbul ignore file */
 import { useContext, useEffect } from "react";
 import { EbnisAppContext } from "../context";
 import { cleanupRanQueriesFromCache } from "../apollo-cache/cleanup-ran-queries-from-cache";
@@ -7,7 +8,6 @@ export function useDeleteCachedQueriesAndMutationsOnUnmount(
   shouldDelete?: boolean,
 ) {
   const { cache, persistor } = useContext(EbnisAppContext);
-
 
   useEffect(() => {
     if (!shouldDelete) {

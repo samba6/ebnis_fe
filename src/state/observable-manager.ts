@@ -1,3 +1,4 @@
+/* istanbul ignore file */
 import { Observable } from "zen-observable-ts";
 import { E2EWindowObject } from "./apollo-setup";
 
@@ -27,9 +28,9 @@ export function makeObservable(globals: E2EWindowObject) {
 export type EmitData = (params: EmitPayload) => void;
 
 export type EmitPayload =
-  | {
+  | ({
       type: EmitActionType.connectionChanged;
-    } & EmitActionConnectionChangedPayload
+    } & EmitActionConnectionChangedPayload)
   | {
       type: EmitActionType.random;
     };

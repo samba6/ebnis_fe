@@ -230,6 +230,7 @@ type DraftUnsynced = Draft<MaybeUnsynced>;
 
 ////////////////////////// USE MUTATIONS SECTION //////////////////
 
+// istanbul ignore next:
 export function useUpdateExperienceOfflineMutation(): UseUpdateExperienceOfflineMutation {
   return useMutation(UPDATE_EXPERIENCE_OFFLINE_MUTATION);
 }

@@ -1,3 +1,4 @@
+/* istanbul ignore file */
 import { InMemoryCache } from "apollo-cache-inmemory";
 
 /**

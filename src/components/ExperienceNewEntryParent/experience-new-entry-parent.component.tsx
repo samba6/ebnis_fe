@@ -2,7 +2,10 @@ import React, { useEffect } from "react";
 import { Loading } from "../Loading/loading";
 import { NEW_ENTRY_URL } from "../../constants/new-entry-route";
 import { NavigateFn } from "@reach/router";
-import { NewEntry, ExperienceRoute } from "./loadables";
+import {
+  NewEntry,
+  ExperienceRoute,
+} from "./experience-new-entry-parent.loadables";
 import { RouteComponentProps } from "@reach/router";
 import { NewEntryRouteParams } from "../../routes";
 import { useGetExperienceFullQuery } from "./experience-new-entry-parent.injectables";

@@ -12,11 +12,13 @@ import { GetExperienceFullQueryResult } from "../graphql/get-experience-full.que
 import { GetExperienceFull_getExperience } from "../graphql/apollo-types/GetExperienceFull";
 import { useQuery } from "@apollo/react-hooks";
 
-jest.mock("../components/ExperienceNewEntryParent/loadables", () => ({
-  NewEntry: () => <div id="new-entry-page" />,
-
-  ExperienceRoute: () => <div id="experience-page" />,
-}));
+jest.mock(
+  "../components/ExperienceNewEntryParent/experience-new-entry-parent.loadables",
+  () => ({
+    NewEntry: () => <div id="new-entry-page" />,
+    ExperienceRoute: () => <div id="experience-page" />,
+  }),
+);
 
 jest.mock("../components/Loading/loading", () => ({
   Loading: () => <div id="a-a-l" />,

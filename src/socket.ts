@@ -1,3 +1,4 @@
+/* istanbul ignore file */
 import { Socket } from "phoenix";
 import { getBackendUrls } from "./state/get-backend-urls";
 import { storeConnectionStatus } from "./state/connections";

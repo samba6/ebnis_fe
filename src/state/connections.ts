@@ -1,3 +1,4 @@
+/* istanbul ignore file */
 import { EmitActionType } from "./observable-manager";
 
 export function makeConnectionObject() {
@@ -20,7 +21,7 @@ export function storeConnectionStatus(
   isConnected: boolean,
   mode: "auto" | "manual" = "auto",
 ) {
-  let prevConnectionStatus = getConnectionStatus();
+  const prevConnectionStatus = getConnectionStatus();
 
   // "auto" means the status was adopted from inside phoenix socket and manual
   // means we set it ourselves. The manual mode is necessary so we can
@@ -35,7 +36,7 @@ export function storeConnectionStatus(
     return;
   }
 
-  let { emitData, connectionStatus } = window.____ebnis;
+  const { emitData, connectionStatus } = window.____ebnis;
   connectionStatus.mode = mode;
   connectionStatus.isConnected = isConnected;
 

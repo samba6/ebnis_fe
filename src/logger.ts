@@ -1,3 +1,4 @@
+/* istanbul ignore file */
 /* eslint-disable @typescript-eslint/no-explicit-any*/
 import { Reducer, useEffect } from "react";
 import lodashIsEqual from "lodash/isEqual";

@@ -1,3 +1,4 @@
+/* istanbul ignore file */
 const ID_PREFIX = "js-scroll-into-view-";
 
 export function makeScrollIntoViewId(id: string) {

@@ -1,3 +1,4 @@
+/* istanbul ignore file */
 import { ApolloLink } from "apollo-link";
 import { onError } from "apollo-link-error";
 import { getToken } from "./users";

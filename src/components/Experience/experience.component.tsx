@@ -29,7 +29,7 @@ import {
   ExperienceFragment_entries_edges_node,
 } from "../../graphql/apollo-types/ExperienceFragment";
 import makeClassNames from "classnames";
-import { EditExperience } from "./loadables";
+import { EditExperience } from "./experience.loadables";
 import { isOfflineId } from "../../constants";
 import { LayoutContext } from "../Layout/layout.utils";
 import {

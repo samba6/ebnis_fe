@@ -1,10 +1,10 @@
+/* istanbul ignore file */
 import { UserFragment } from "../graphql/apollo-types/UserFragment";
 
 const USER_KEY = "nOQhAH4V54h9MMBS3BSwtE/2eZeQWHRnPfoC4K+RDuWairX";
 const LOGGED_OUT_USER_KEY = "m9k5IrZMdh+JcsGm";
 
 export function getUser() {
-  // istanbul ignore next: branch required only for ssr
   if (typeof window === "undefined") {
     return null;
   }
@@ -42,7 +42,6 @@ export function logoutUser() {
 }
 
 export function getLoggedOutUser() {
-  // istanbul ignore next: branch required only for ssr
   if (typeof window === "undefined") {
     return null;
   }
