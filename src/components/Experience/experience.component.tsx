@@ -49,6 +49,7 @@ import {
   okDeleteExperienceDomId,
   cancelDeleteExperienceDomId,
   makeDeleteMenuDomId,
+  experienceNoEntriesDomId,
 } from "./experience.dom";
 import { Loading } from "../Loading/loading";
 import { EbnisAppContext } from "../../context";
@@ -158,7 +159,7 @@ export function ExperienceComponent(props: Props) {
       return (
         <Link
           className="no-entries"
-          id="experience-no-entries"
+          id={experienceNoEntriesDomId}
           to={makeNewEntryRoute(experience.id)}
         >
           No entries. Click here to add one

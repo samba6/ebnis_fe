@@ -50,6 +50,8 @@ import {
   makeExperienceTitleDomId,
   experienceMenuSelector,
   deleteExperienceSelector,
+  noExperiencesInfoDomId,
+  newExperienceButtonDomId,
 } from "./my-experiences.dom";
 import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragment";
 import { LayoutContext } from "../Layout/layout.utils";
@@ -129,7 +131,7 @@ export function MyExperiences(props: Props) {
     doc.addEventListener("click", onClick);
 
     return () => {
-      setDocumentTitle;
+      setDocumentTitle();
       doc.removeEventListener("click", onClick);
     };
     /* eslint-disable-next-line react-hooks/exhaustive-deps*/
@@ -170,7 +172,7 @@ export function MyExperiences(props: Props) {
             <Link
               to={EXPERIENCE_DEFINITION_URL}
               className="no-experiences-info"
-              id="no-experiences-info"
+              id={noExperiencesInfoDomId}
             >
               Click here to create your first experience
             </Link>
@@ -193,7 +195,7 @@ export function MyExperiences(props: Props) {
 
           <Link
             className="new-experience-button"
-            id="new-experience-button"
+            id={newExperienceButtonDomId}
             to={EXPERIENCE_DEFINITION_URL}
           >
             +

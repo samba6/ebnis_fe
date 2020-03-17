@@ -42,6 +42,8 @@ import { FormCtrlError } from "../FormCtrlError/form-ctrl-error.component";
 import { FieldError } from "../../general-utils";
 import makeClassName from "classnames";
 import { addResolvers } from "./experience-definition.injectables";
+import { setDocumentTitle, makeSiteTitle } from "../../constants";
+import { EXPERIENCE_DEFINITION_TITLE } from "../../constants/experience-definition-title";
 
 export function ExperienceDefinitionComponent(props: Props) {
   const { client } = props;
@@ -80,7 +82,10 @@ export function ExperienceDefinitionComponent(props: Props) {
   }, [generalEffects]);
 
   useEffect(() => {
+    setDocumentTitle(makeSiteTitle(EXPERIENCE_DEFINITION_TITLE));
     addResolvers(client);
+
+    return setDocumentTitle;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

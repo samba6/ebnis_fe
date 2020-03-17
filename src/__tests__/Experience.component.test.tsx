@@ -38,6 +38,7 @@ import {
   cancelDeleteExperienceDomId,
   makeDeleteMenuDomId,
   okDeleteExperienceDomId,
+  experienceNoEntriesDomId,
 } from "../components/Experience/experience.dom";
 import { ApolloError } from "apollo-client";
 import { GraphQLError } from "graphql";
@@ -130,7 +131,7 @@ it("renders ui to show empty entries", () => {
   /**
    * And we should see texts informing us that there are no entries
    */
-  expect(document.getElementById("experience-no-entries")).not.toBeNull();
+  expect(document.getElementById(experienceNoEntriesDomId)).not.toBeNull();
 });
 
 it("renders entries when `entries prop provided`", () => {
