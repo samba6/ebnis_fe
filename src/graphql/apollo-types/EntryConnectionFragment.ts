@@ -51,11 +51,6 @@ export interface EntryConnectionFragment_edges_node {
   insertedAt: any;
   updatedAt: any;
   /**
-   * Indicates whether entry has been modified offline, in which case this
-   *   property will be true, otherwise it will be falsy
-   */
-  modOffline: boolean | null;
-  /**
    * The list of data belonging to this entry.
    */
   dataObjects: (EntryConnectionFragment_edges_node_dataObjects | null)[];

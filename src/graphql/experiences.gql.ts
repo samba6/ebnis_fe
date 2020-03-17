@@ -275,17 +275,14 @@ const UPDATE_EXPERIENCES_ONLINE_MUTATION = gql`
       ... on UpdateExperiencesAllFail {
         error
       }
-
       ... on UpdateExperiencesSomeSuccess {
         experiences {
           __typename
-
           ... on UpdateExperienceErrors {
             errors {
               ...UpdateExperienceErrorFragment
             }
           }
-
           ... on UpdateExperienceSomeSuccess {
             ...UpdateExperienceSomeSuccessFragment
           }
@@ -371,12 +368,13 @@ export interface UpdateExperiencesOnlineComponentProps {
 
 ////////////////////////// START CREATE EXPERIENCES SECTION ////////////////////
 
-const CREATE_EXPERIENCES_MUTATION = gql`
+export const CREATE_EXPERIENCES_MUTATION = gql`
   mutation CreateExperiences(
     $input: [CreateExperienceInput!]!
     $entriesPagination: PaginationInput!
   ) {
     createExperiences(input: $input) {
+      __typename
       ... on ExperienceSuccess {
         experience {
           ...ExperienceFragment

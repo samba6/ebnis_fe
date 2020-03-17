@@ -6,6 +6,7 @@ import React, {
   useReducer,
   useContext,
   useLayoutEffect,
+  useRef,
 } from "react";
 import { Link } from "../Link";
 import "./experience.styles.scss";
@@ -20,9 +21,10 @@ import {
   effectFunctions,
   DispatchType,
   SubmissionOnOnlineExperienceSynced,
+  ExperienceContext,
 } from "./experience.utils";
 import { makeNewEntryRoute } from "../../constants/new-entry-route";
-import { Entry } from "../Entry/entry.component";
+import Entry from "../Entry/entry.component";
 import {
   ExperienceFragment_entries,
   ExperienceFragment_entries_edges,
@@ -36,19 +38,20 @@ import {
   useCreateExperiencesMutation,
   useUpdateExperiencesOnlineMutation,
   useDeleteExperiencesMutation,
-} from "../../graphql/experiences.mutation";
+} from "../../graphql/experiences.gql";
 import {
-  successNotificationId,
+  offlineExperienceSyncedNotificationSuccessSelector,
   closeSubmitNotificationBtnSelector,
   errorsNotificationId,
   syncButtonId,
-  newEntryTriggerId,
-  experienceMenuTriggerDomId,
+  newEntryTriggerSelector,
   onOnlineExperienceSyncedNotificationErrorDom,
-  onOnlineExperienceSyncedNotificationSuccessDom,
+  onlineExperienceSyncedNotificationSuccessDom,
   okDeleteExperienceDomId,
   cancelDeleteExperienceDomId,
   makeDeleteMenuDomId,
+  experienceNoEntriesDomId,
+  experienceOptionsMenuTriggerSelector,
 } from "./experience.dom";
 import { Loading } from "../Loading/loading";
 import { EbnisAppContext } from "../../context";
@@ -105,7 +108,9 @@ export function ExperienceComponent(props: Props) {
     );
   }, [experience, entriesJSX]);
 
-  // istanbul ignore next:
+  const mainRef = useRef<null | HTMLDivElement>(null);
+
+  // istanbul ignore next: offline experience synced - read from localStorage
   useLayoutEffect(() => {
     execOnSyncOfflineExperienceComponentSuccess(
       pathname,
@@ -119,11 +124,9 @@ export function ExperienceComponent(props: Props) {
     );
 
     const cb = () => {
-      const menuTrigger = document.getElementById(
-        experienceMenuTriggerDomId,
-      ) as HTMLElement;
-
-      menuTrigger.classList.remove("is-active");
+      ((mainRef.current as HTMLDivElement)
+        .getElementsByClassName(experienceOptionsMenuTriggerSelector)
+        .item(0) as HTMLElement).classList.remove("is-active");
     };
 
     document.documentElement.addEventListener("click", cb);
@@ -158,7 +161,7 @@ export function ExperienceComponent(props: Props) {
       return (
         <Link
           className="no-entries"
-          id="experience-no-entries"
+          id={experienceNoEntriesDomId}
           to={makeNewEntryRoute(experience.id)}
         >
           No entries. Click here to add one
@@ -167,7 +170,12 @@ export function ExperienceComponent(props: Props) {
     }
 
     return (
-      <>
+      <ExperienceContext.Provider
+        value={{
+          experience,
+          experienceDispatch: dispatch,
+        }}
+      >
         {entryNodes.map((entryNode, index) => {
           return (
             <Entry
@@ -180,7 +188,7 @@ export function ExperienceComponent(props: Props) {
             />
           );
         })}
-      </>
+      </ExperienceContext.Provider>
     );
   }
 
@@ -265,6 +273,7 @@ export function ExperienceComponent(props: Props) {
           "border-part-offline": isPartOffline,
         })}
         id={id}
+        ref={mainRef}
       >
         <div className="m-2">
           {submissionState.value === StateValue.onOnlineExperienceSynced && (
@@ -288,8 +297,10 @@ export function ExperienceComponent(props: Props) {
           {offlineExperienceNewlySynced && (
             /*istanbul ignore next:*/
             <div
-              id={successNotificationId}
-              className="notification is-success is-light"
+              className={makeClassNames({
+                "notification is-success is-light": true,
+                [offlineExperienceSyncedNotificationSuccessSelector]: true,
+              })}
             >
               <button
                 onClick={closeSubmitNotificationHandler}
@@ -371,8 +382,10 @@ function OptionsMenuComponent({
 
   return (
     <div
-      className="options-menu__trigger dropdown is-hoverable"
-      id={experienceMenuTriggerDomId}
+      className={makeClassNames({
+        dropdown: true,
+        [experienceOptionsMenuTriggerSelector]: true,
+      })}
       onClick={e => {
         e.currentTarget.classList.toggle("is-active");
       }}
@@ -394,8 +407,10 @@ function OptionsMenuComponent({
       <div className="dropdown-menu" id="dropdown-menu2" role="menu">
         <div className="dropdown-content">
           <a
-            id={newEntryTriggerId}
-            className="text-lg font-extrabold dropdown-item"
+            className={makeClassNames({
+              "font-bold dropdown-item": true,
+              [newEntryTriggerSelector]: true,
+            })}
             onClick={() => {
               navigate(makeNewEntryRoute(id));
             }}
@@ -462,7 +477,7 @@ function OnOnlineExperienceSyncedNotifications({
               <div
                 className={makeClassNames({
                   "notification is-light mb-2": true,
-                  [`is-success ${onOnlineExperienceSyncedNotificationSuccessDom}`]:
+                  [`is-success ${onlineExperienceSyncedNotificationSuccessDom}`]:
                     value === "success",
                   [`is-danger ${onOnlineExperienceSyncedNotificationErrorDom}`]:
                     value !== "success",

@@ -1,4 +1,3 @@
-@import "../../styles/variables";
 @import "../../styles/extensions";
 
 .components-experience-definition {
@@ -11,51 +10,23 @@
 
   .form {
     padding-bottom: 30px;
-  }
 
-  .field__control {
-    border: 1px solid #d1d5da;
-    display: block;
-    border-radius: 3px;
-    outline: none;
-    padding: 8px 8px 0px 8px;
-    display: block;
-    width: 100%;
+    &__label-description {
+      display: flex;
+      align-items: center;
 
-    &.field__control--hidden {
-      display: none;
-    }
-
-    &.field__control--select {
-      background-color: white;
-    }
-
-    &:active,
-    &:focus {
-      box-shadow: inset -1px -1px 0px 0px #b9b9ef;
-      border-color: #b9b9ef;
-    }
-  }
-
-  .field + .field,
-  .data-definitions {
-    margin-top: 20px;
-  }
-
-  .field {
-    display: block;
-
-    &.field--errors {
-      color: var(--error-text-color);
-
-      .field__control {
-        border-color: var(--error-border-color);
+      &-toggle {
+        padding: 10px 35px 10px 10px;
       }
     }
   }
 
+  .data-definitions {
+    margin-top: 20px;
+  }
+
   .data-definition {
-    border: 1px solid $app-color;
+    border: 1px solid var(--app-color);
     padding: 10px;
     border-radius: 4px;
   }
@@ -65,13 +36,13 @@
   }
 
   .data-definitions {
-    border: 1px solid $app-color;
+    border: 1px solid var(--app-color);
     margin-bottom: 20px;
     padding: 10px;
     border-radius: 4px;
 
     &.errors {
-      border-color: $error-color;
+      border-color: var(--error-text-color);
     }
   }
 
@@ -92,25 +63,10 @@
   }
 
   .submit-btn {
-    border: 1px solid var(--btn-border-neutral-color);
-    border-radius: 4px;
-    padding: 5px;
+    @extend %button;
 
     & + .submit-btn {
       margin-left: 10px;
     }
-  }
-
-  .field__label {
-    font-weight: 700;
-
-    &.field__label-description {
-      display: flex;
-      align-items: center;
-    }
-  }
-
-  .field__label-description-toggle {
-    padding: 10px 35px 10px 10px;
   }
 }

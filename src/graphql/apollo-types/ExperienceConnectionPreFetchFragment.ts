@@ -73,11 +73,6 @@ export interface ExperienceConnectionPreFetchFragment_edges_node_entries_edges_n
   insertedAt: any;
   updatedAt: any;
   /**
-   * Indicates whether entry has been modified offline, in which case this
-   *   property will be true, otherwise it will be falsy
-   */
-  modOffline: boolean | null;
-  /**
    * The list of data belonging to this entry.
    */
   dataObjects: (ExperienceConnectionPreFetchFragment_edges_node_entries_edges_node_dataObjects | null)[];

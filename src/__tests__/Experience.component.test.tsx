@@ -31,20 +31,21 @@ import {
   syncButtonId,
   errorsNotificationId,
   closeSubmitNotificationBtnSelector,
-  successNotificationId,
-  newEntryTriggerId,
-  onOnlineExperienceSyncedNotificationSuccessDom,
+  offlineExperienceSyncedNotificationSuccessSelector,
+  newEntryTriggerSelector,
+  onlineExperienceSyncedNotificationSuccessDom,
   onOnlineExperienceSyncedNotificationErrorDom,
   cancelDeleteExperienceDomId,
   makeDeleteMenuDomId,
   okDeleteExperienceDomId,
+  experienceNoEntriesDomId,
 } from "../components/Experience/experience.dom";
 import { ApolloError } from "apollo-client";
 import { GraphQLError } from "graphql";
 import {
   UpdateExperiencesOnlineMutationResult,
   CreateExperiencesMutationResult,
-} from "../graphql/experiences.mutation";
+} from "../graphql/experiences.gql";
 import { makeOfflineId } from "../constants";
 import { saveOnSyncOfflineExperienceComponentSuccess } from "../apollo-cache/on-sync-offline-experience-component-success";
 import { DataObjectFragment } from "../graphql/apollo-types/DataObjectFragment";
@@ -53,7 +54,7 @@ import {
   writeDeletedExperienceTitle,
   confirmShouldDeleteExperience,
 } from "../apollo-cache/should-delete-experience";
-import { DeleteExperiencesMutationResult } from "../graphql/experiences.mutation";
+import { DeleteExperiencesMutationResult } from "../graphql/experiences.gql";
 import { removeQueriesAndMutationsFromCache } from "../state/resolvers/delete-references-from-cache";
 
 jest.mock("../apollo-cache/on-sync-offline-experience-component-success");
@@ -64,9 +65,9 @@ jest.mock("../components/Experience/experience.loadables", () => ({
   EditEntry: () => <div id="entry-edit-modal" />,
 }));
 
-jest.mock("../components/Entry/entry.component", () => ({
-  Entry: () => <div id="default-entry" />,
-}));
+jest.mock("../components/Entry/entry.component", () => () => (
+  <div id="default-entry" />
+));
 
 jest.mock("../apollo-cache/unsynced.resolvers");
 const mockGetUnsyncedExperience = getUnsyncedExperience as jest.Mock;
@@ -106,774 +107,903 @@ beforeEach(() => {
   mockConfirmShouldDeleteExperience.mockReset();
 });
 
-it("renders ui to show empty entries", () => {
-  const mockOnDelete = jest.fn();
+describe("component", () => {
+  it("renders ui to show empty entries", () => {
+    const mockOnDelete = jest.fn();
 
-  const { ui } = makeComp({
-    experience: {
-      id: "1",
-      entries: {
-        edges: [],
+    const { ui } = makeComp({
+      experience: {
+        id: "1",
+        entries: {
+          edges: [],
+        },
+      } as any,
+
+      menuOptions: {
+        onDelete: mockOnDelete,
       },
-    } as any,
+    });
 
-    menuOptions: {
-      onDelete: mockOnDelete,
-    },
+    /**
+     * When we use the component
+     */
+    render(ui);
+
+    /**
+     * And we should see texts informing us that there are no entries
+     */
+    expect(document.getElementById(experienceNoEntriesDomId)).not.toBeNull();
   });
 
-  /**
-   * When we use the component
-   */
-  render(ui);
+  it("renders entries when `entries prop provided`", () => {
+    /**
+     * Given that experience and associated entries exist in the system
+     */
+    const edges = [
+      {
+        node: {
+          id: "a",
+        },
+      },
+    ] as ExperienceFragment_entries_edges[];
 
-  /**
-   * And we should see texts informing us that there are no entries
-   */
-  expect(document.getElementById("experience-no-entries")).not.toBeNull();
-});
+    const fieldDefs = [{}] as ExperienceFragment_dataDefinitions[];
 
-it("renders entries when `entries prop provided`", () => {
-  /**
-   * Given that experience and associated entries exist in the system
-   */
-  const edges = [
-    {
-      node: {
+    const { ui } = makeComp({
+      experience: {
+        id: "1",
+        fieldDefs,
+
+        entries: { edges },
+      } as any,
+    });
+
+    /**
+     * When we start using the component
+     */
+    render(ui);
+
+    /**
+     * Then we should not see text informing us there are not entries (of course
+     * we have several)
+     */
+    expect(document.getElementById("experience-no-entries")).toBeNull();
+    expect(document.getElementById("default-entry")).not.toBeNull();
+  });
+
+  it("renders entries when `entriesJSX prop provided` and sets entry id", () => {
+    /**
+     * Given that experience and associated entries exist in the system
+     */
+
+    const { ui } = makeComp({
+      experience: {} as any,
+      entriesJSX: <div id="custom-entry" />,
+    });
+
+    /**
+     * When we start using the component
+     */
+    render(ui);
+
+    expect(document.getElementById(`custom-entry`)).not.toBeNull();
+  });
+
+  it("toggles experience editor", () => {
+    const { ui } = makeComp({
+      experience: {
         id: "a",
-      },
-    },
-  ] as ExperienceFragment_entries_edges[];
-
-  const fieldDefs = [{}] as ExperienceFragment_dataDefinitions[];
-
-  const { ui } = makeComp({
-    experience: {
-      id: "1",
-      fieldDefs,
-
-      entries: { edges },
-    } as any,
-  });
-
-  /**
-   * When we start using the component
-   */
-  render(ui);
-
-  /**
-   * Then we should not see text informing us there are not entries (of course
-   * we have several)
-   */
-  expect(document.getElementById("experience-no-entries")).toBeNull();
-  expect(document.getElementById("default-entry")).not.toBeNull();
-});
-
-it("renders entries when `entriesJSX prop provided` and sets entry id", () => {
-  /**
-   * Given that experience and associated entries exist in the system
-   */
-
-  const { ui } = makeComp({
-    experience: {} as any,
-    entriesJSX: <div id="custom-entry" />,
-  });
-
-  /**
-   * When we start using the component
-   */
-  render(ui);
-
-  expect(document.getElementById(`custom-entry`)).not.toBeNull();
-});
-
-it("toggles experience editor", () => {
-  const { ui } = makeComp({
-    experience: {
-      id: "a",
-      entries: {
-        edges: [],
-      },
-    } as any,
-    menuOptions: { onEdit: {} } as any,
-  });
-
-  render(ui);
-
-  expect(document.getElementById("js-editor")).toBeNull();
-
-  (document.getElementById("experience-a-edit-menu") as HTMLDivElement).click();
-
-  expect(document.getElementById("js-editor")).not.toBeNull();
-});
-
-test("getTitle", () => {
-  expect(getTitle({ title: "a" })).toEqual("a");
-  expect(getTitle()).toEqual("Experience");
-});
-
-test("sync online experience", async () => {
-  const entryOnlineId = "exon";
-  const entryOfflineId = makeOfflineId("e");
-
-  const { ui } = makeComp({
-    experience: {
-      title: "t1",
-      id: "a",
-      entries: {
-        edges: [
-          {
-            node: {
-              id: entryOnlineId,
-            },
-          },
-          {
-            node: {
-              id: entryOfflineId,
-              dataObjects: [] as DataObjectFragment[],
-            },
-          },
-        ] as ExperienceFragment_entries_edges[],
-      },
-      hasUnsaved: true,
-      dataDefinitions: [
-        {
-          id: "1",
+        entries: {
+          edges: [],
         },
-        {
-          id: "2",
-          name: "2a",
-        },
-      ],
-    } as ExperienceFragment,
-    hasConnection: true,
+      } as any,
+      menuOptions: { onEdit: {} } as any,
+    });
+
+    render(ui);
+
+    expect(document.getElementById("js-editor")).toBeNull();
+
+    (document.getElementById(
+      "experience-a-edit-menu",
+    ) as HTMLDivElement).click();
+
+    expect(document.getElementById("js-editor")).not.toBeNull();
   });
 
-  // mockGetUnsyncedExperience
-  //   .mockReturnValueOnce({
-  //     ownFields: {
-  //       title: true,
-  //     },
-  //   }) //  9
-  //   .mockReturnValueOnce({
-  //     newEntries: true,
-  //     ownFields: {
-  //       title: true,
-  //     },
-  //   }); // 10
-
-  // mockUpdateExperiencesOnline
-  //   .mockResolvedValueOnce({
-  //     data: {
-  //       updateExperiences: {
-  //         __typename: "UpdateExperiencesSomeSuccess",
-  //         experiences: [
-  //           {
-  //             __typename: "UpdateExperienceSomeSuccess",
-  //             experience: {
-  //               ownFields: {
-  //                 __typename: "UpdateExperienceOwnFieldsErrors",
-  //                 errors: {},
-  //               },
-  //               newEntries: [
-  //                 {
-  //                   __typename: "CreateEntryErrors",
-  //                   errors: {
-  //                     error: null,
-  //                     clientId: "a",
-  //                     dataObjects: [
-  //                       {
-  //                         definition: null,
-  //                         data: "a",
-  //                       },
-  //                     ],
-  //                   },
-  //                 },
-  //                 {
-  //                   __typename: "CreateEntrySuccess",
-  //                 },
-  //               ],
-  //               updatedDefinitions: [
-  //                 {
-  //                   __typename: "DefinitionErrors",
-  //                   errors: {
-  //                     error: null,
-  //                     name: "a",
-  //                   },
-  //                 },
-  //                 {
-  //                   __typename: "DefinitionSuccess",
-  //                 },
-  //               ],
-  //             },
-  //           },
-  //         ],
-  //       },
-  //     },
-  //   } as UpdateExperiencesOnlineMutationResult) // 9
-  //   .mockResolvedValueOnce({
-  //     data: {
-  //       updateExperiences: {
-  //         __typename: "UpdateExperiencesSomeSuccess",
-  //         experiences: [
-  //           {
-  //             __typename: "UpdateExperienceSomeSuccess",
-  //             experience: {
-  //               ownFields: {
-  //                 __typename: "ExperienceOwnFieldsSuccess",
-  //               },
-  //             },
-  //           },
-  //         ],
-  //       },
-  //     },
-  //   } as UpdateExperiencesOnlineMutationResult); // 10
-
-  /**
-   * When component is rendered
-   */
-  render(ui);
-
-  /**
-   * Then error UI should not be visible
-   */
-  expect(document.getElementById(errorsNotificationId)).toBeNull();
-
-  mockGetUnsyncedExperience.mockReturnValueOnce(null);
-  mockUpdateExperiencesOnline.mockResolvedValueOnce(null);
-
-  /**
-   * When sync button is clicked
-   */
-  const syncBtn = document.getElementById(syncButtonId) as HTMLButtonElement;
-  syncBtn.click(); // 1
-  await wait(() => true);
-
-  /**
-   * Then error UI should be visible
-   */
-  await waitForElement(() => {
-    return document.getElementById(errorsNotificationId);
+  test("getTitle", () => {
+    expect(getTitle({ title: "a" })).toEqual("a");
+    expect(getTitle()).toEqual("Experience");
   });
 
-  /**
-   * When error UI is closed
-   */
-  (document.getElementsByClassName(
-    closeSubmitNotificationBtnSelector,
-  )[0] as HTMLElement).click();
+  test("sync online experience", async () => {
+    const entryOnlineId = "exon";
+    const entryOfflineId = makeOfflineId("e");
 
-  /**
-   * Then error UI should not be visible
-   */
-  expect(document.getElementById(errorsNotificationId)).toBeNull();
-
-  mockGetUnsyncedExperience.mockReturnValueOnce({
-    ownFields: {
-      title: true,
-    },
-  });
-
-  mockUpdateExperiencesOnline.mockReset();
-  mockUpdateExperiencesOnline.mockResolvedValueOnce({});
-
-  /**
-   * When sync button is clicked
-   */
-  syncBtn.click(); //2
-  await wait(() => true);
-
-  /**
-   * Then error UI should be visible
-   */
-  await waitForElement(() => {
-    return document.getElementById(errorsNotificationId);
-  });
-
-  /**
-   * Correct data should be sent to server
-   */
-
-  expect(mockUpdateExperiencesOnline.mock.calls[0][0].variables.input).toEqual([
-    {
-      experienceId: "a",
-      ownFields: {
+    const { ui } = makeComp({
+      experience: {
         title: "t1",
-      },
-    },
-  ]);
-
-  /**
-   * When error UI is closed
-   */
-  (document.getElementsByClassName(
-    closeSubmitNotificationBtnSelector,
-  )[0] as HTMLElement).click();
-
-  /**
-   * Then error UI should not be visible
-   */
-  expect(document.getElementById(errorsNotificationId)).toBeNull();
-
-  mockGetUnsyncedExperience.mockReturnValueOnce({
-    definitions: {
-      "2": {
-        name: true,
-      },
-    },
-  });
-
-  mockUpdateExperiencesOnline.mockReset();
-  mockUpdateExperiencesOnline.mockRejectedValueOnce(new Error("a"));
-
-  /**
-   * When sync button is clicked
-   */
-  syncBtn.click(); // 3
-  await wait(() => true);
-
-  /**
-   * Then error UI should be visible
-   */
-  await waitForElement(() => {
-    return document.getElementById(errorsNotificationId);
-  });
-
-  /**
-   * Correct data should be sent to server
-   */
-
-  expect(mockUpdateExperiencesOnline.mock.calls[0][0].variables.input).toEqual([
-    {
-      experienceId: "a",
-      updateDefinitions: [
-        {
-          id: "2",
-          name: "2a",
-        },
-      ],
-    },
-  ]);
-
-  /**
-   * When error UI is closed
-   */
-  (document.getElementsByClassName(
-    closeSubmitNotificationBtnSelector,
-  )[0] as HTMLElement).click();
-
-  /**
-   * Then error UI should not be visible
-   */
-  expect(document.getElementById(errorsNotificationId)).toBeNull();
-
-  mockGetUnsyncedExperience.mockReturnValueOnce({
-    ownFields: {
-      title: true,
-    },
-  });
-
-  mockUpdateExperiencesOnline.mockRejectedValueOnce(
-    new ApolloError({
-      networkError: new Error("n"),
-    }),
-  );
-
-  /**
-   * When sync button is clicked
-   */
-  syncBtn.click(); // 4
-  await wait(() => true);
-
-  /**
-   * Then error UI should be visible
-   */
-  await waitForElement(() => {
-    return document.getElementById(errorsNotificationId);
-  });
-
-  /**
-   * When error UI is closed
-   */
-  (document.getElementsByClassName(
-    closeSubmitNotificationBtnSelector,
-  )[0] as HTMLElement).click();
-
-  /**
-   * Then error UI should not be visible
-   */
-  expect(document.getElementById(errorsNotificationId)).toBeNull();
-
-  mockGetUnsyncedExperience.mockReturnValueOnce({
-    ownFields: {
-      title: true,
-    },
-  });
-
-  mockUpdateExperiencesOnline.mockRejectedValueOnce(
-    new ApolloError({
-      graphQLErrors: [new GraphQLError("a")],
-    }),
-  );
-
-  /**
-   * When sync button is clicked
-   */
-  syncBtn.click(); // 5
-  await wait(() => true);
-
-  /**
-   * Then error UI should be visible
-   */
-  await waitForElement(() => {
-    return document.getElementById(errorsNotificationId);
-  });
-
-  /**
-   * When error UI is closed
-   */
-  (document.getElementsByClassName(
-    closeSubmitNotificationBtnSelector,
-  )[0] as HTMLElement).click();
-
-  /**
-   * Then error UI should not be visible
-   */
-  expect(document.getElementById(errorsNotificationId)).toBeNull();
-
-  mockGetUnsyncedExperience.mockReturnValueOnce({
-    ownFields: {
-      title: true,
-    },
-  });
-
-  mockUpdateExperiencesOnline.mockResolvedValueOnce({
-    data: {
-      updateExperiences: {
-        __typename: "UpdateExperiencesAllFail",
-        error: "a",
-      },
-    },
-  } as UpdateExperiencesOnlineMutationResult);
-
-  /**
-   * When sync button is clicked
-   */
-  syncBtn.click(); // 6
-  await wait(() => true);
-
-  /**
-   * Then error UI should be visible
-   */
-  await waitForElement(() => {
-    return document.getElementById(errorsNotificationId);
-  });
-
-  /**
-   * When error UI is closed
-   */
-  (document.getElementsByClassName(
-    closeSubmitNotificationBtnSelector,
-  )[0] as HTMLElement).click();
-
-  /**
-   * Then error UI should not be visible
-   */
-  expect(document.getElementById(errorsNotificationId)).toBeNull();
-
-  mockGetUnsyncedExperience.mockReturnValueOnce({
-    ownFields: {
-      title: true,
-    },
-  });
-
-  mockUpdateExperiencesOnline.mockResolvedValueOnce({
-    data: {
-      updateExperiences: {
-        __typename: "UpdateExperiencesSomeSuccess",
-        experiences: [
-          {
-            __typename: "UpdateExperienceErrors",
-            errors: {
-              error: "a",
-            },
-          },
-        ],
-      },
-    },
-  } as UpdateExperiencesOnlineMutationResult); // 7
-
-  /**
-   * When sync button is clicked
-   */
-  syncBtn.click();
-  await wait(() => true);
-
-  /**
-   * Then error UI should be visible
-   */
-  await waitForElement(() => {
-    return document.getElementById(errorsNotificationId);
-  });
-
-  /**
-   * When error UI is closed
-   */
-  (document.getElementsByClassName(
-    closeSubmitNotificationBtnSelector,
-  )[0] as HTMLElement).click();
-
-  /**
-   * Then error UI should not be visible
-   */
-  expect(document.getElementById(errorsNotificationId)).toBeNull();
-
-  mockGetUnsyncedExperience.mockReturnValueOnce({
-    ownFields: {
-      title: true,
-    },
-  });
-
-  mockUpdateExperiencesOnline.mockResolvedValueOnce({
-    data: {
-      updateExperiences: {
-        __typename: "UpdateExperiencesSomeSuccess",
-        experiences: [
-          {
-            __typename: "UpdateExperienceSomeSuccess",
-            experience: {},
-          },
-        ],
-      },
-    },
-  } as UpdateExperiencesOnlineMutationResult);
-
-  /**
-   * When sync button is clicked
-   */
-  syncBtn.click(); // 8
-  await wait(() => true);
-
-  /**
-   * Then error UI should be visible
-   */
-  await waitForElement(() => {
-    return document.getElementById(errorsNotificationId);
-  });
-
-  /**
-   * And success notification should not be visible
-   */
-  expect(document.getElementById(successNotificationId)).toBeNull();
-
-  mockGetUnsyncedExperience.mockReturnValueOnce({
-    ownFields: {
-      title: true,
-    },
-  }); //  9
-
-  mockUpdateExperiencesOnline.mockResolvedValueOnce({
-    data: {
-      updateExperiences: {
-        __typename: "UpdateExperiencesSomeSuccess",
-        experiences: [
-          {
-            __typename: "UpdateExperienceSomeSuccess",
-            experience: {
-              ownFields: {
-                __typename: "UpdateExperienceOwnFieldsErrors",
-                errors: {},
+        id: "a",
+        entries: {
+          edges: [
+            {
+              node: {
+                id: entryOnlineId,
               },
-              newEntries: [
-                {
-                  __typename: "CreateEntryErrors",
-                  errors: {
-                    error: null,
-                    clientId: "a",
-                    dataObjects: [
-                      {
-                        meta: {
-                          index: 0,
-                        },
-                        definition: null,
-                        data: "a",
-                      },
-                    ],
-                  },
-                },
-                {
-                  __typename: "CreateEntrySuccess",
-                },
-              ],
-              updatedDefinitions: [
-                {
-                  __typename: "DefinitionErrors",
-                  errors: {
-                    error: null,
-                    name: "a",
-                  },
-                },
-                {
-                  __typename: "DefinitionSuccess",
-                },
-              ],
             },
+            {
+              node: {
+                id: entryOfflineId,
+                dataObjects: [] as DataObjectFragment[],
+              },
+            },
+          ] as ExperienceFragment_entries_edges[],
+        },
+        hasUnsaved: true,
+        dataDefinitions: [
+          {
+            id: "1",
+          },
+          {
+            id: "2",
+            name: "2a",
+          },
+        ],
+      } as ExperienceFragment,
+      hasConnection: true,
+    });
+
+    // mockGetUnsyncedExperience
+    //   .mockReturnValueOnce({
+    //     ownFields: {
+    //       title: true,
+    //     },
+    //   }) //  9
+    //   .mockReturnValueOnce({
+    //     newEntries: true,
+    //     ownFields: {
+    //       title: true,
+    //     },
+    //   }); // 10
+
+    // mockUpdateExperiencesOnline
+    //   .mockResolvedValueOnce({
+    //     data: {
+    //       updateExperiences: {
+    //         __typename: "UpdateExperiencesSomeSuccess",
+    //         experiences: [
+    //           {
+    //             __typename: "UpdateExperienceSomeSuccess",
+    //             experience: {
+    //               ownFields: {
+    //                 __typename: "UpdateExperienceOwnFieldsErrors",
+    //                 errors: {},
+    //               },
+    //               newEntries: [
+    //                 {
+    //                   __typename: "CreateEntryErrors",
+    //                   errors: {
+    //                     error: null,
+    //                     clientId: "a",
+    //                     dataObjects: [
+    //                       {
+    //                         definition: null,
+    //                         data: "a",
+    //                       },
+    //                     ],
+    //                   },
+    //                 },
+    //                 {
+    //                   __typename: "CreateEntrySuccess",
+    //                 },
+    //               ],
+    //               updatedDefinitions: [
+    //                 {
+    //                   __typename: "DefinitionErrors",
+    //                   errors: {
+    //                     error: null,
+    //                     name: "a",
+    //                   },
+    //                 },
+    //                 {
+    //                   __typename: "DefinitionSuccess",
+    //                 },
+    //               ],
+    //             },
+    //           },
+    //         ],
+    //       },
+    //     },
+    //   } as UpdateExperiencesOnlineMutationResult) // 9
+    //   .mockResolvedValueOnce({
+    //     data: {
+    //       updateExperiences: {
+    //         __typename: "UpdateExperiencesSomeSuccess",
+    //         experiences: [
+    //           {
+    //             __typename: "UpdateExperienceSomeSuccess",
+    //             experience: {
+    //               ownFields: {
+    //                 __typename: "ExperienceOwnFieldsSuccess",
+    //               },
+    //             },
+    //           },
+    //         ],
+    //       },
+    //     },
+    //   } as UpdateExperiencesOnlineMutationResult); // 10
+
+    /**
+     * When component is rendered
+     */
+    render(ui);
+
+    /**
+     * Then error UI should not be visible
+     */
+    expect(document.getElementById(errorsNotificationId)).toBeNull();
+
+    mockGetUnsyncedExperience.mockReturnValueOnce(null);
+    mockUpdateExperiencesOnline.mockResolvedValueOnce(null);
+
+    /**
+     * When sync button is clicked
+     */
+    const syncBtn = document.getElementById(syncButtonId) as HTMLButtonElement;
+    syncBtn.click(); // 1
+    await wait(() => true);
+
+    /**
+     * Then error UI should be visible
+     */
+    await waitForElement(() => {
+      return document.getElementById(errorsNotificationId);
+    });
+
+    /**
+     * When error UI is closed
+     */
+    (document.getElementsByClassName(
+      closeSubmitNotificationBtnSelector,
+    )[0] as HTMLElement).click();
+
+    /**
+     * Then error UI should not be visible
+     */
+    expect(document.getElementById(errorsNotificationId)).toBeNull();
+
+    mockGetUnsyncedExperience.mockReturnValueOnce({
+      ownFields: {
+        title: true,
+      },
+    });
+
+    mockUpdateExperiencesOnline.mockReset();
+    mockUpdateExperiencesOnline.mockResolvedValueOnce({});
+
+    /**
+     * When sync button is clicked
+     */
+    syncBtn.click(); //2
+    await wait(() => true);
+
+    /**
+     * Then error UI should be visible
+     */
+    await waitForElement(() => {
+      return document.getElementById(errorsNotificationId);
+    });
+
+    /**
+     * Correct data should be sent to server
+     */
+
+    expect(
+      mockUpdateExperiencesOnline.mock.calls[0][0].variables.input,
+    ).toEqual([
+      {
+        experienceId: "a",
+        ownFields: {
+          title: "t1",
+        },
+      },
+    ]);
+
+    /**
+     * When error UI is closed
+     */
+    (document.getElementsByClassName(
+      closeSubmitNotificationBtnSelector,
+    )[0] as HTMLElement).click();
+
+    /**
+     * Then error UI should not be visible
+     */
+    expect(document.getElementById(errorsNotificationId)).toBeNull();
+
+    mockGetUnsyncedExperience.mockReturnValueOnce({
+      definitions: {
+        "2": {
+          name: true,
+        },
+      },
+    });
+
+    mockUpdateExperiencesOnline.mockReset();
+    mockUpdateExperiencesOnline.mockRejectedValueOnce(new Error("a"));
+
+    /**
+     * When sync button is clicked
+     */
+    syncBtn.click(); // 3
+    await wait(() => true);
+
+    /**
+     * Then error UI should be visible
+     */
+    await waitForElement(() => {
+      return document.getElementById(errorsNotificationId);
+    });
+
+    /**
+     * Correct data should be sent to server
+     */
+
+    expect(
+      mockUpdateExperiencesOnline.mock.calls[0][0].variables.input,
+    ).toEqual([
+      {
+        experienceId: "a",
+        updateDefinitions: [
+          {
+            id: "2",
+            name: "2a",
           },
         ],
       },
-    },
-  } as UpdateExperiencesOnlineMutationResult); // 9
+    ]);
 
-  /**
-   * When sync button is clicked
-   */
-  syncBtn.click(); // 9
-  await wait(() => true);
+    /**
+     * When error UI is closed
+     */
+    (document.getElementsByClassName(
+      closeSubmitNotificationBtnSelector,
+    )[0] as HTMLElement).click();
 
-  /**
-   * Then success and error notifications should be visible
-   */
-  let errorNotifications = (null as unknown) as HTMLCollection;
+    /**
+     * Then error UI should not be visible
+     */
+    expect(document.getElementById(errorsNotificationId)).toBeNull();
 
-  const onSyncErrorNotificationDom = await waitForElement(() => {
-    errorNotifications = document.getElementsByClassName(
-      onOnlineExperienceSyncedNotificationErrorDom,
+    mockGetUnsyncedExperience.mockReturnValueOnce({
+      ownFields: {
+        title: true,
+      },
+    });
+
+    mockUpdateExperiencesOnline.mockRejectedValueOnce(
+      new ApolloError({
+        networkError: new Error("n"),
+      }),
     );
 
-    return errorNotifications.item(0) as HTMLElement;
-  });
+    /**
+     * When sync button is clicked
+     */
+    syncBtn.click(); // 4
+    await wait(() => true);
 
-  expect(errorNotifications).toHaveLength(3);
+    /**
+     * Then error UI should be visible
+     */
+    await waitForElement(() => {
+      return document.getElementById(errorsNotificationId);
+    });
 
-  expect(
-    document.getElementsByClassName(
-      onOnlineExperienceSyncedNotificationSuccessDom,
-    ),
-  ).toHaveLength(2);
+    /**
+     * When error UI is closed
+     */
+    (document.getElementsByClassName(
+      closeSubmitNotificationBtnSelector,
+    )[0] as HTMLElement).click();
 
-  /**
-   * When one of the success notifications is closed
-   */
-  (onSyncErrorNotificationDom
-    .getElementsByClassName("delete")
-    .item(0) as HTMLElement).click();
+    /**
+     * Then error UI should not be visible
+     */
+    expect(document.getElementById(errorsNotificationId)).toBeNull();
 
-  expect(errorNotifications).toHaveLength(2);
-
-  mockGetUnsyncedExperience.mockReturnValueOnce({
-    newEntries: true,
-    ownFields: {
-      title: true,
-    },
-  });
-
-  mockUpdateExperiencesOnline.mockResolvedValueOnce({
-    data: {
-      updateExperiences: {
-        __typename: "UpdateExperiencesSomeSuccess",
-        experiences: [
-          {
-            __typename: "UpdateExperienceSomeSuccess",
-            experience: {
-              ownFields: {
-                __typename: "ExperienceOwnFieldsSuccess",
-              },
-            },
-          },
-        ],
+    mockGetUnsyncedExperience.mockReturnValueOnce({
+      ownFields: {
+        title: true,
       },
-    },
-  } as UpdateExperiencesOnlineMutationResult);
+    });
 
-  /**
-   * When sync button is clicked
-   */
-  syncBtn.click();
-  await wait(() => true);
-
-  /**
-   * Then sync success notification should be visible
-   */
-  const syncSuccessNotification = await waitForElement(() => {
-    return document
-      .getElementsByClassName(onOnlineExperienceSyncedNotificationSuccessDom)
-      .item(0) as HTMLElement;
-  });
-
-  /**
-   * And sync error notification should not be visible
-   */
-  expect(
-    document.getElementsByClassName(
-      onOnlineExperienceSyncedNotificationErrorDom,
-    ),
-  ).toHaveLength(0);
-
-  /**
-   * When sync error notification dismiss button is clicked
-   */
-  syncSuccessNotification.click();
-});
-
-test("sync offline experience, navigate to new entry", async () => {
-  const experienceId = makeOfflineId(1);
-
-  const { mockNavigate, ui } = makeComp({
-    experience: {
-      id: experienceId,
-      title: "t1",
-      entries: {
-        edges: [
-          {
-            node: {
-              id: "e1",
-              clientId: "e1",
-              dataObjects: [
-                {
-                  id: "1",
-                },
-              ],
-            },
-          },
-        ] as ExperienceFragment_entries_edges[],
-      },
-      dataDefinitions: [
-        {
-          id: "1",
-        },
-      ],
-    } as ExperienceFragment,
-    hasConnection: true,
-  });
-
-  /**
-   * SUBMISSIONS
-   * 1. javascript exception
-   * 2. networkError
-   * 3. GraphQLError
-   * 4. Invalid response
-   * 5. CreateExperienceErrors
-   * 6. ExperienceSuccess.entriesErrors
-   * 7. ExperienceSuccess no entriesErrors
-   */
-  mockCreateExperiences
-    .mockRejectedValueOnce(new Error("a")) // 1
-    .mockRejectedValueOnce(
-      new ApolloError({
-        networkError: new Error("a"),
-      }),
-    ) // 2
-    .mockRejectedValueOnce(
+    mockUpdateExperiencesOnline.mockRejectedValueOnce(
       new ApolloError({
         graphQLErrors: [new GraphQLError("a")],
       }),
-    ) // 3
-    .mockResolvedValueOnce({
+    );
+
+    /**
+     * When sync button is clicked
+     */
+    syncBtn.click(); // 5
+    await wait(() => true);
+
+    /**
+     * Then error UI should be visible
+     */
+    await waitForElement(() => {
+      return document.getElementById(errorsNotificationId);
+    });
+
+    /**
+     * When error UI is closed
+     */
+    (document.getElementsByClassName(
+      closeSubmitNotificationBtnSelector,
+    )[0] as HTMLElement).click();
+
+    /**
+     * Then error UI should not be visible
+     */
+    expect(document.getElementById(errorsNotificationId)).toBeNull();
+
+    mockGetUnsyncedExperience.mockReturnValueOnce({
+      ownFields: {
+        title: true,
+      },
+    });
+
+    mockUpdateExperiencesOnline.mockResolvedValueOnce({
+      data: {
+        updateExperiences: {
+          __typename: "UpdateExperiencesAllFail",
+          error: "a",
+        },
+      },
+    } as UpdateExperiencesOnlineMutationResult);
+
+    /**
+     * When sync button is clicked
+     */
+    syncBtn.click(); // 6
+    await wait(() => true);
+
+    /**
+     * Then error UI should be visible
+     */
+    await waitForElement(() => {
+      return document.getElementById(errorsNotificationId);
+    });
+
+    /**
+     * When error UI is closed
+     */
+    (document.getElementsByClassName(
+      closeSubmitNotificationBtnSelector,
+    )[0] as HTMLElement).click();
+
+    /**
+     * Then error UI should not be visible
+     */
+    expect(document.getElementById(errorsNotificationId)).toBeNull();
+
+    mockGetUnsyncedExperience.mockReturnValueOnce({
+      ownFields: {
+        title: true,
+      },
+    });
+
+    mockUpdateExperiencesOnline.mockResolvedValueOnce({
+      data: {
+        updateExperiences: {
+          __typename: "UpdateExperiencesSomeSuccess",
+          experiences: [
+            {
+              __typename: "UpdateExperienceErrors",
+              errors: {
+                error: "a",
+              },
+            },
+          ],
+        },
+      },
+    } as UpdateExperiencesOnlineMutationResult); // 7
+
+    /**
+     * When sync button is clicked
+     */
+    syncBtn.click();
+    await wait(() => true);
+
+    /**
+     * Then error UI should be visible
+     */
+    await waitForElement(() => {
+      return document.getElementById(errorsNotificationId);
+    });
+
+    /**
+     * When error UI is closed
+     */
+    (document.getElementsByClassName(
+      closeSubmitNotificationBtnSelector,
+    )[0] as HTMLElement).click();
+
+    /**
+     * Then error UI should not be visible
+     */
+    expect(document.getElementById(errorsNotificationId)).toBeNull();
+
+    mockGetUnsyncedExperience.mockReturnValueOnce({
+      ownFields: {
+        title: true,
+      },
+    });
+
+    mockUpdateExperiencesOnline.mockResolvedValueOnce({
+      data: {
+        updateExperiences: {
+          __typename: "UpdateExperiencesSomeSuccess",
+          experiences: [
+            {
+              __typename: "UpdateExperienceSomeSuccess",
+              experience: {},
+            },
+          ],
+        },
+      },
+    } as UpdateExperiencesOnlineMutationResult);
+
+    /**
+     * When sync button is clicked
+     */
+    syncBtn.click(); // 8
+    await wait(() => true);
+
+    /**
+     * Then error UI should be visible
+     */
+    await waitForElement(() => {
+      return document.getElementById(errorsNotificationId);
+    });
+
+    /**
+     * And success notification should not be visible
+     */
+    expect(
+      document.getElementById(
+        offlineExperienceSyncedNotificationSuccessSelector,
+      ),
+    ).toBeNull();
+
+    mockGetUnsyncedExperience.mockReturnValueOnce({
+      ownFields: {
+        title: true,
+      },
+    }); //  9
+
+    mockUpdateExperiencesOnline.mockResolvedValueOnce({
+      data: {
+        updateExperiences: {
+          __typename: "UpdateExperiencesSomeSuccess",
+          experiences: [
+            {
+              __typename: "UpdateExperienceSomeSuccess",
+              experience: {
+                ownFields: {
+                  __typename: "UpdateExperienceOwnFieldsErrors",
+                  errors: {},
+                },
+                newEntries: [
+                  {
+                    __typename: "CreateEntryErrors",
+                    errors: {
+                      error: null,
+                      clientId: "a",
+                      dataObjects: [
+                        {
+                          meta: {
+                            index: 0,
+                          },
+                          definition: null,
+                          data: "a",
+                        },
+                      ],
+                    },
+                  },
+                  {
+                    __typename: "CreateEntrySuccess",
+                  },
+                ],
+                updatedDefinitions: [
+                  {
+                    __typename: "DefinitionErrors",
+                    errors: {
+                      error: null,
+                      name: "a",
+                    },
+                  },
+                  {
+                    __typename: "DefinitionSuccess",
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      },
+    } as UpdateExperiencesOnlineMutationResult); // 9
+
+    /**
+     * When sync button is clicked
+     */
+    syncBtn.click(); // 9
+    await wait(() => true);
+
+    /**
+     * Then success and error notifications should be visible
+     */
+    let errorNotifications = (null as unknown) as HTMLCollection;
+
+    const onSyncErrorNotificationDom = await waitForElement(() => {
+      errorNotifications = document.getElementsByClassName(
+        onOnlineExperienceSyncedNotificationErrorDom,
+      );
+
+      return errorNotifications.item(0) as HTMLElement;
+    });
+
+    expect(errorNotifications).toHaveLength(3);
+
+    expect(
+      document.getElementsByClassName(
+        onlineExperienceSyncedNotificationSuccessDom,
+      ),
+    ).toHaveLength(2);
+
+    /**
+     * When one of the success notifications is closed
+     */
+    (onSyncErrorNotificationDom
+      .getElementsByClassName("delete")
+      .item(0) as HTMLElement).click();
+
+    expect(errorNotifications).toHaveLength(2);
+
+    mockGetUnsyncedExperience.mockReturnValueOnce({
+      newEntries: true,
+      ownFields: {
+        title: true,
+      },
+    });
+
+    mockUpdateExperiencesOnline.mockResolvedValueOnce({
+      data: {
+        updateExperiences: {
+          __typename: "UpdateExperiencesSomeSuccess",
+          experiences: [
+            {
+              __typename: "UpdateExperienceSomeSuccess",
+              experience: {
+                ownFields: {
+                  __typename: "ExperienceOwnFieldsSuccess",
+                },
+              },
+            },
+          ],
+        },
+      },
+    } as UpdateExperiencesOnlineMutationResult);
+
+    /**
+     * When sync button is clicked
+     */
+    syncBtn.click();
+    await wait(() => true);
+
+    /**
+     * Then sync success notification should be visible
+     */
+    const syncSuccessNotification = await waitForElement(() => {
+      return document
+        .getElementsByClassName(onlineExperienceSyncedNotificationSuccessDom)
+        .item(0) as HTMLElement;
+    });
+
+    /**
+     * And sync error notification should not be visible
+     */
+    expect(
+      document.getElementsByClassName(
+        onOnlineExperienceSyncedNotificationErrorDom,
+      ),
+    ).toHaveLength(0);
+
+    /**
+     * When sync error notification dismiss button is clicked
+     */
+    syncSuccessNotification.click();
+  });
+
+  test("sync offline experience, navigate to new entry", async () => {
+    const experienceId = makeOfflineId(1);
+
+    const { mockNavigate, ui } = makeComp({
+      experience: {
+        id: experienceId,
+        title: "t1",
+        entries: {
+          edges: [
+            {
+              node: {
+                id: "e1",
+                clientId: "e1",
+                dataObjects: [
+                  {
+                    id: "1",
+                  },
+                ],
+              },
+            },
+          ] as ExperienceFragment_entries_edges[],
+        },
+        dataDefinitions: [
+          {
+            id: "1",
+          },
+        ],
+      } as ExperienceFragment,
+      hasConnection: true,
+    });
+
+    /**
+     * When component is rendered
+     */
+    render(ui);
+
+    /**
+     * Then page navigation function should not be invoked
+     */
+    expect(mockNavigate).not.toHaveBeenCalled();
+
+    /**
+     * When new entry button is clicked
+     */
+    (document
+      .getElementsByClassName(newEntryTriggerSelector)
+      .item(0) as HTMLElement).click();
+
+    /**
+     * Then page navigation function should be invoked
+     */
+    expect(mockNavigate).toHaveBeenCalled();
+    (mockNavigate as any).mockReset();
+
+    /**
+     * And error notification should not be visible
+     */
+    expect(document.getElementById(errorsNotificationId)).toBeNull();
+
+    /**
+     * When sync button is clicked
+     */
+    mockCreateExperiences.mockRejectedValueOnce(new Error("a")); // 1
+    const syncBtn = document.getElementById(syncButtonId) as HTMLElement;
+    syncBtn.click(); // 1
+    await wait(() => true);
+
+    /**
+     * Then error UI should be visible
+     */
+    await waitForElement(() => {
+      return document.getElementById(errorsNotificationId);
+    });
+
+    /**
+     * When error UI is closed
+     */
+    (document.getElementsByClassName(
+      closeSubmitNotificationBtnSelector,
+    )[0] as HTMLElement).click();
+
+    /**
+     * Then error UI should not be visible
+     */
+    expect(document.getElementById(errorsNotificationId)).toBeNull();
+
+    mockCreateExperiences.mockRejectedValueOnce(
+      new ApolloError({
+        networkError: new Error("a"),
+      }),
+    );
+    syncBtn.click();
+    await wait(() => true);
+
+    /**
+     * Then error UI should be visible
+     */
+    await waitForElement(() => {
+      return document.getElementById(errorsNotificationId);
+    });
+
+    /**
+     * When error UI is closed
+     */
+    (document.getElementsByClassName(
+      closeSubmitNotificationBtnSelector,
+    )[0] as HTMLElement).click();
+
+    /**
+     * Then error UI should not be visible
+     */
+    expect(document.getElementById(errorsNotificationId)).toBeNull();
+
+    /**
+     * When sync button is clicked
+     */
+    mockCreateExperiences.mockRejectedValueOnce(
+      new ApolloError({
+        graphQLErrors: [new GraphQLError("a")],
+      }),
+    );
+    syncBtn.click();
+    await wait(() => true);
+
+    /**
+     * Then error UI should be visible
+     */
+    await waitForElement(() => {
+      return document.getElementById(errorsNotificationId);
+    });
+
+    /**
+     * When error UI is closed
+     */
+    (document.getElementsByClassName(
+      closeSubmitNotificationBtnSelector,
+    )[0] as HTMLElement).click();
+
+    /**
+     * Then error UI should not be visible
+     */
+    expect(document.getElementById(errorsNotificationId)).toBeNull();
+
+    /**
+     * When sync button is clicked
+     */
+    mockCreateExperiences.mockResolvedValueOnce({
       data: {
         createExperiences: [],
       },
-    } as CreateExperiencesMutationResult) // 4
-    .mockResolvedValueOnce({
+    } as CreateExperiencesMutationResult);
+    syncBtn.click();
+    await wait(() => true);
+
+    /**
+     * Then error UI should be visible
+     */
+    await waitForElement(() => {
+      return document.getElementById(errorsNotificationId);
+    });
+
+    /**
+     * When error UI is closed
+     */
+    (document.getElementsByClassName(
+      closeSubmitNotificationBtnSelector,
+    )[0] as HTMLElement).click();
+
+    /**
+     * Then error UI should not be visible
+     */
+    expect(document.getElementById(errorsNotificationId)).toBeNull();
+
+    /**
+     * When sync button is clicked
+     */
+    mockCreateExperiences.mockResolvedValueOnce({
       data: {
         createExperiences: [
           {
@@ -882,8 +1012,33 @@ test("sync offline experience, navigate to new entry", async () => {
           },
         ],
       },
-    } as CreateExperiencesMutationResult) // 5
-    .mockResolvedValueOnce({
+    } as CreateExperiencesMutationResult);
+    syncBtn.click();
+    await wait(() => true);
+
+    /**
+     * Then error UI should be visible
+     */
+    await waitForElement(() => {
+      return document.getElementById(errorsNotificationId);
+    });
+
+    /**
+     * When error UI is closed
+     */
+    (document.getElementsByClassName(
+      closeSubmitNotificationBtnSelector,
+    )[0] as HTMLElement).click();
+
+    /**
+     * Then error UI should not be visible
+     */
+    expect(document.getElementById(errorsNotificationId)).toBeNull();
+
+    /**
+     * When sync button is clicked
+     */
+    mockCreateExperiences.mockResolvedValueOnce({
       data: {
         createExperiences: [
           {
@@ -892,8 +1047,30 @@ test("sync offline experience, navigate to new entry", async () => {
           },
         ],
       },
-    } as CreateExperiencesMutationResult) // 6
-    .mockResolvedValueOnce({
+    } as CreateExperiencesMutationResult);
+    syncBtn.click();
+    await wait(() => true);
+
+    /**
+     * Then error UI should be visible
+     */
+    await waitForElement(() => {
+      return document.getElementById(errorsNotificationId);
+    });
+
+    /**
+     * And cache cleanup functions should not be invoked
+     */
+    expect(
+      mockSaveOnSyncOfflineExperienceComponentSuccess,
+    ).not.toHaveBeenCalled();
+    expect(mockRemoveUnsyncedExperience).not.toHaveBeenCalled();
+    expect(mockPersistFunc).not.toHaveBeenCalled();
+
+    /**
+     * When sync button is clicked
+     */
+    mockCreateExperiences.mockResolvedValueOnce({
       data: {
         createExperiences: [
           {
@@ -904,479 +1081,305 @@ test("sync offline experience, navigate to new entry", async () => {
           },
         ],
       },
-    } as CreateExperiencesMutationResult); // 7
+    } as CreateExperiencesMutationResult);
+    syncBtn.click();
+    await wait(() => true);
+    jest.runAllTimers();
 
-  /**
-   * When component is rendered
-   */
-  render(ui);
+    /**
+     * And cache cleanup functions should be invoked
+     */
+    expect(mockPersistFunc).toHaveBeenCalled();
+    expect(mockRemoveUnsyncedExperience.mock.calls[0][0]).toBe(experienceId);
 
-  /**
-   * Then page navigation function should not be invoked
-   */
-  expect(mockNavigate).not.toHaveBeenCalled();
+    expect(
+      mockSaveOnSyncOfflineExperienceComponentSuccess.mock.calls[0][0],
+    ).toEqual([experienceId, "e1", "a"]);
 
-  /**
-   * When new entry button is clicked
-   */
-  (document.getElementById(newEntryTriggerId) as HTMLElement).click();
-
-  /**
-   * Then page navigation function should be invoked
-   */
-  expect(mockNavigate).toHaveBeenCalled();
-  (mockNavigate as any).mockReset();
-
-  /**
-   * And error notification should not be visible
-   */
-  expect(document.getElementById(errorsNotificationId)).toBeNull();
-
-  /**
-   * When sync button is clicked
-   */
-  const syncBtn = document.getElementById(syncButtonId) as HTMLElement;
-  syncBtn.click(); // 1
-  await wait(() => true);
-
-  /**
-   * Then error UI should be visible
-   */
-  await waitForElement(() => {
-    return document.getElementById(errorsNotificationId);
+    /**
+     * And error UI should not be visible
+     */
+    expect(document.getElementById(errorsNotificationId)).toBeNull();
   });
 
-  /**
-   * When error UI is closed
-   */
-  (document.getElementsByClassName(
-    closeSubmitNotificationBtnSelector,
-  )[0] as HTMLElement).click();
+  test("delete offline experience", async () => {
+    const experienceId = makeOfflineId(1);
 
-  /**
-   * Then error UI should not be visible
-   */
-  expect(document.getElementById(errorsNotificationId)).toBeNull();
-
-  syncBtn.click(); // 2
-  await wait(() => true);
-
-  /**
-   * Then error UI should be visible
-   */
-  await waitForElement(() => {
-    return document.getElementById(errorsNotificationId);
-  });
-
-  /**
-   * When error UI is closed
-   */
-  (document.getElementsByClassName(
-    closeSubmitNotificationBtnSelector,
-  )[0] as HTMLElement).click();
-
-  /**
-   * Then error UI should not be visible
-   */
-  expect(document.getElementById(errorsNotificationId)).toBeNull();
-
-  /**
-   * When sync button is clicked
-   */
-  syncBtn.click(); // 3
-  await wait(() => true);
-
-  /**
-   * Then error UI should be visible
-   */
-  await waitForElement(() => {
-    return document.getElementById(errorsNotificationId);
-  });
-
-  /**
-   * When error UI is closed
-   */
-  (document.getElementsByClassName(
-    closeSubmitNotificationBtnSelector,
-  )[0] as HTMLElement).click();
-
-  /**
-   * Then error UI should not be visible
-   */
-  expect(document.getElementById(errorsNotificationId)).toBeNull();
-
-  /**
-   * When sync button is clicked
-   */
-  syncBtn.click(); // 4
-  await wait(() => true);
-
-  /**
-   * Then error UI should be visible
-   */
-  await waitForElement(() => {
-    return document.getElementById(errorsNotificationId);
-  });
-
-  /**
-   * When error UI is closed
-   */
-  (document.getElementsByClassName(
-    closeSubmitNotificationBtnSelector,
-  )[0] as HTMLElement).click();
-
-  /**
-   * Then error UI should not be visible
-   */
-  expect(document.getElementById(errorsNotificationId)).toBeNull();
-
-  /**
-   * When sync button is clicked
-   */
-  syncBtn.click(); // 5
-  await wait(() => true);
-
-  /**
-   * Then error UI should be visible
-   */
-  await waitForElement(() => {
-    return document.getElementById(errorsNotificationId);
-  });
-
-  /**
-   * When error UI is closed
-   */
-  (document.getElementsByClassName(
-    closeSubmitNotificationBtnSelector,
-  )[0] as HTMLElement).click();
-
-  /**
-   * Then error UI should not be visible
-   */
-  expect(document.getElementById(errorsNotificationId)).toBeNull();
-
-  /**
-   * When sync button is clicked
-   */
-  syncBtn.click(); // 6
-  await wait(() => true);
-
-  /**
-   * Then error UI should be visible
-   */
-  await waitForElement(() => {
-    return document.getElementById(errorsNotificationId);
-  });
-
-  /**
-   * And cache cleanup functions should not be invoked
-   */
-  expect(
-    mockSaveOnSyncOfflineExperienceComponentSuccess,
-  ).not.toHaveBeenCalled();
-  expect(mockRemoveUnsyncedExperience).not.toHaveBeenCalled();
-  expect(mockPersistFunc).not.toHaveBeenCalled();
-
-  /**
-   * When sync button is clicked
-   */
-  syncBtn.click(); // 6
-  await wait(() => true);
-  jest.runAllTimers();
-
-  /**
-   * And cache cleanup functions should be invoked
-   */
-  expect(mockPersistFunc).toHaveBeenCalled();
-  expect(mockRemoveUnsyncedExperience.mock.calls[0][0]).toBe(experienceId);
-
-  expect(
-    mockSaveOnSyncOfflineExperienceComponentSuccess.mock.calls[0][0],
-  ).toEqual([experienceId, "e1", "a"]);
-
-  /**
-   * And error UI should not be visible
-   */
-  expect(document.getElementById(errorsNotificationId)).toBeNull();
-});
-
-test("delete offline experience", async () => {
-  const experienceId = makeOfflineId(1);
-
-  const { ui, mockNavigate } = makeComp({
-    experience: {
-      id: experienceId,
-      title: "t1",
-      entries: {
-        edges: [] as ExperienceFragment_entries_edges[],
-      },
-    } as ExperienceFragment,
-  });
-
-  /**
-   * When component is rendered
-   */
-  render(ui);
-
-  /**
-   * Then delete prompt should not be visible
-   */
-  expect(document.getElementById(cancelDeleteExperienceDomId)).toBeNull();
-
-  /**
-   * When delete experience menu is clicked
-   */
-  const deleteExperienceMenuDom = document.getElementById(
-    makeDeleteMenuDomId(experienceId),
-  ) as HTMLElement;
-
-  deleteExperienceMenuDom.click();
-
-  /**
-   * Then delete prompt should be visible
-   */
-  const cancelDeleteExperienceDom = document.getElementById(
-    cancelDeleteExperienceDomId,
-  ) as HTMLElement;
-
-  /**
-   * When user cancels experience deletion
-   */
-  cancelDeleteExperienceDom.click();
-
-  /**
-   * Then delete prompt should not be visible
-   */
-  expect(document.getElementById(cancelDeleteExperienceDomId)).toBeNull();
-  expect(document.getElementById(okDeleteExperienceDomId)).toBeNull();
-
-  /**
-   * When delete experience menu is clicked
-   */
-  deleteExperienceMenuDom.click();
-
-  /**
-   * Then delete experience should be visible, and when clicked
-   */
-  (document.getElementById(okDeleteExperienceDomId) as HTMLElement).click();
-  await wait(() => true);
-
-  /**
-   * Experience should be deleted
-   */
-  expect(mockDeleteExperiencesFromCache.mock.calls[0][2]).toEqual([
-    experienceId,
-  ]);
-
-  expect(mockWriteDeletedExperienceTitle.mock.calls[0][0]).toBe("t1");
-  expect(mockPersistFunc.mock.calls).toHaveLength(1);
-  expect(mockNavigate).toHaveBeenCalled();
-});
-
-test("delete online experience when there is connection", async () => {
-  mockDeleteExperiences
-    .mockRejectedValueOnce(new Error("a")) // 1
-    .mockResolvedValueOnce({} as DeleteExperiencesMutationResult) // 2
-    .mockResolvedValueOnce({
-      data: {
-        deleteExperiences: {
-          __typename: "DeleteExperiencesAllFail",
-          error: "a",
+    const { ui, mockNavigate } = makeComp({
+      experience: {
+        id: experienceId,
+        title: "t1",
+        entries: {
+          edges: [] as ExperienceFragment_entries_edges[],
         },
-      },
-    } as DeleteExperiencesMutationResult) // 3
-    .mockResolvedValueOnce({
-      data: {
-        deleteExperiences: {
-          __typename: "DeleteExperiencesSomeSuccess",
-          experiences: [
-            {
-              __typename: "DeleteExperienceErrors",
-              errors: {
-                error: "b",
+      } as ExperienceFragment,
+    });
+
+    /**
+     * When component is rendered
+     */
+    render(ui);
+
+    /**
+     * Then delete prompt should not be visible
+     */
+    expect(document.getElementById(cancelDeleteExperienceDomId)).toBeNull();
+
+    /**
+     * When delete experience menu is clicked
+     */
+    const deleteExperienceMenuDom = document.getElementById(
+      makeDeleteMenuDomId(experienceId),
+    ) as HTMLElement;
+
+    deleteExperienceMenuDom.click();
+
+    /**
+     * Then delete prompt should be visible
+     */
+    const cancelDeleteExperienceDom = document.getElementById(
+      cancelDeleteExperienceDomId,
+    ) as HTMLElement;
+
+    /**
+     * When user cancels experience deletion
+     */
+    cancelDeleteExperienceDom.click();
+
+    /**
+     * Then delete prompt should not be visible
+     */
+    expect(document.getElementById(cancelDeleteExperienceDomId)).toBeNull();
+    expect(document.getElementById(okDeleteExperienceDomId)).toBeNull();
+
+    /**
+     * When delete experience menu is clicked
+     */
+    deleteExperienceMenuDom.click();
+
+    /**
+     * Then delete experience should be visible, and when clicked
+     */
+    (document.getElementById(okDeleteExperienceDomId) as HTMLElement).click();
+    await wait(() => true);
+
+    /**
+     * Experience should be deleted
+     */
+    expect(mockDeleteExperiencesFromCache.mock.calls[0][2]).toEqual([
+      experienceId,
+    ]);
+
+    expect(mockWriteDeletedExperienceTitle.mock.calls[0][0]).toBe("t1");
+    expect(mockPersistFunc.mock.calls).toHaveLength(1);
+    expect(mockNavigate).toHaveBeenCalled();
+  });
+
+  test("delete online experience when there is connection", async () => {
+    mockDeleteExperiences
+      .mockRejectedValueOnce(new Error("a")) // 1
+      .mockResolvedValueOnce({} as DeleteExperiencesMutationResult) // 2
+      .mockResolvedValueOnce({
+        data: {
+          deleteExperiences: {
+            __typename: "DeleteExperiencesAllFail",
+            error: "a",
+          },
+        },
+      } as DeleteExperiencesMutationResult) // 3
+      .mockResolvedValueOnce({
+        data: {
+          deleteExperiences: {
+            __typename: "DeleteExperiencesSomeSuccess",
+            experiences: [
+              {
+                __typename: "DeleteExperienceErrors",
+                errors: {
+                  error: "b",
+                },
               },
-            },
-          ],
+            ],
+          },
         },
-      },
-    } as DeleteExperiencesMutationResult) // 4
-    .mockResolvedValueOnce({
-      data: {
-        deleteExperiences: {
-          __typename: "DeleteExperiencesSomeSuccess",
-          experiences: [
-            {
-              __typename: "DeleteExperienceSuccess",
-            },
-          ],
+      } as DeleteExperiencesMutationResult) // 4
+      .mockResolvedValueOnce({
+        data: {
+          deleteExperiences: {
+            __typename: "DeleteExperiencesSomeSuccess",
+            experiences: [
+              {
+                __typename: "DeleteExperienceSuccess",
+              },
+            ],
+          },
         },
-      },
-    } as DeleteExperiencesMutationResult); // 5
+      } as DeleteExperiencesMutationResult); // 5
 
-  mockConfirmShouldDeleteExperience.mockResolvedValue(true);
+    mockConfirmShouldDeleteExperience.mockResolvedValue(true);
 
-  const experienceId = "ex";
+    const experienceId = "ex";
 
-  const { ui, mockNavigate } = makeComp({
-    experience: {
-      id: experienceId,
-      title: "t1",
-      entries: {
-        edges: [] as ExperienceFragment_entries_edges[],
-      },
-    } as ExperienceFragment,
-    hasUnsaved: true,
+    const { ui, mockNavigate } = makeComp({
+      experience: {
+        id: experienceId,
+        title: "t1",
+        entries: {
+          edges: [] as ExperienceFragment_entries_edges[],
+        },
+      } as ExperienceFragment,
+      hasUnsaved: true,
+    });
+
+    /**
+     * When component is rendered
+     */
+    render(ui);
+
+    /**
+     * Then error notification should not be visible
+     */
+    expect(document.getElementById(errorsNotificationId)).toBeNull();
+
+    /**
+     * When experience deletion is confirmed
+     */
+    (document.getElementById(okDeleteExperienceDomId) as HTMLElement).click();
+    await wait(() => true);
+
+    /**
+     * Error notification should be visible
+     */
+    let errorsNotificationDom = await waitForElement(() => {
+      return document.getElementById(errorsNotificationId) as HTMLElement;
+    });
+
+    /**
+     * When error notification is dismissed
+     */
+    (errorsNotificationDom
+      .getElementsByClassName(closeSubmitNotificationBtnSelector)
+      .item(0) as HTMLElement).click();
+
+    /**
+     * Then error notification should not be visible
+     */
+    expect(document.getElementById(errorsNotificationId)).toBeNull();
+
+    //////////////////////////  ////////////////////////////
+
+    /**
+     * When delete experience menu is clicked - 2
+     */
+    (document.getElementById(
+      makeDeleteMenuDomId(experienceId),
+    ) as HTMLElement).click();
+
+    (document.getElementById(okDeleteExperienceDomId) as HTMLElement).click();
+    await wait(() => true);
+
+    /**
+     * Error notification should be visible
+     */
+    errorsNotificationDom = await waitForElement(() => {
+      return document.getElementById(errorsNotificationId) as HTMLElement;
+    });
+
+    /**
+     * When error notification is dismissed
+     */
+    (errorsNotificationDom
+      .getElementsByClassName(closeSubmitNotificationBtnSelector)
+      .item(0) as HTMLElement).click();
+
+    /**
+     * Then error notification should not be visible
+     */
+    expect(document.getElementById(errorsNotificationId)).toBeNull();
+    //////////////////////////  ////////////////////////////
+
+    /**
+     * When delete experience menu is clicked - 3
+     */
+    (document.getElementById(
+      makeDeleteMenuDomId(experienceId),
+    ) as HTMLElement).click();
+
+    (document.getElementById(okDeleteExperienceDomId) as HTMLElement).click();
+    await wait(() => true);
+
+    /**
+     * Error notification should be visible
+     */
+    errorsNotificationDom = await waitForElement(() => {
+      return document.getElementById(errorsNotificationId) as HTMLElement;
+    });
+
+    /**
+     * When error notification is dismissed
+     */
+    (errorsNotificationDom
+      .getElementsByClassName(closeSubmitNotificationBtnSelector)
+      .item(0) as HTMLElement).click();
+
+    /**
+     * Then error notification should not be visible
+     */
+    expect(document.getElementById(errorsNotificationId)).toBeNull();
+
+    /**
+     * When delete experience menu is clicked - 4
+     */
+    (document.getElementById(
+      makeDeleteMenuDomId(experienceId),
+    ) as HTMLElement).click();
+
+    (document.getElementById(okDeleteExperienceDomId) as HTMLElement).click();
+    await wait(() => true);
+
+    /**
+     * Error notification should be visible
+     */
+    errorsNotificationDom = await waitForElement(() => {
+      return document.getElementById(errorsNotificationId) as HTMLElement;
+    });
+
+    /**
+     * When error notification is dismissed
+     */
+    (errorsNotificationDom
+      .getElementsByClassName(closeSubmitNotificationBtnSelector)
+      .item(0) as HTMLElement).click();
+
+    /**
+     * Then error notification should not be visible
+     */
+    expect(document.getElementById(errorsNotificationId)).toBeNull();
+
+    /**
+     * When delete experience menu is clicked - 5
+     */
+    (document.getElementById(
+      makeDeleteMenuDomId(experienceId),
+    ) as HTMLElement).click();
+
+    (document.getElementById(okDeleteExperienceDomId) as HTMLElement).click();
+    await wait(() => true);
+    await wait(() => true);
+
+    /**
+     * Experience should be deleted
+     */
+    expect(mockDeleteExperiencesFromCache.mock.calls[0][2]).toEqual([
+      experienceId,
+    ]);
+
+    await wait(() => true);
+
+    expect(mockRemoveQueriesAndMutationsFromCache).toHaveBeenCalled();
+    expect(mockWriteDeletedExperienceTitle.mock.calls[0][0]).toBe("t1");
+    expect(mockPersistFunc.mock.calls).toHaveLength(1);
+    expect(mockNavigate).toHaveBeenCalled();
   });
-
-  /**
-   * When component is rendered
-   */
-  render(ui);
-
-  /**
-   * Then error notification should not be visible
-   */
-  expect(document.getElementById(errorsNotificationId)).toBeNull();
-
-  /**
-   * When experience deletion is confirmed
-   */
-  (document.getElementById(okDeleteExperienceDomId) as HTMLElement).click();
-  await wait(() => true);
-
-  /**
-   * Error notification should be visible
-   */
-  let errorsNotificationDom = await waitForElement(() => {
-    return document.getElementById(errorsNotificationId) as HTMLElement;
-  });
-
-  /**
-   * When error notification is dismissed
-   */
-  (errorsNotificationDom
-    .getElementsByClassName(closeSubmitNotificationBtnSelector)
-    .item(0) as HTMLElement).click();
-
-  /**
-   * Then error notification should not be visible
-   */
-  expect(document.getElementById(errorsNotificationId)).toBeNull();
-
-  //////////////////////////  ////////////////////////////
-
-  /**
-   * When delete experience menu is clicked - 2
-   */
-  (document.getElementById(
-    makeDeleteMenuDomId(experienceId),
-  ) as HTMLElement).click();
-
-  (document.getElementById(okDeleteExperienceDomId) as HTMLElement).click();
-  await wait(() => true);
-
-  /**
-   * Error notification should be visible
-   */
-  errorsNotificationDom = await waitForElement(() => {
-    return document.getElementById(errorsNotificationId) as HTMLElement;
-  });
-
-  /**
-   * When error notification is dismissed
-   */
-  (errorsNotificationDom
-    .getElementsByClassName(closeSubmitNotificationBtnSelector)
-    .item(0) as HTMLElement).click();
-
-  /**
-   * Then error notification should not be visible
-   */
-  expect(document.getElementById(errorsNotificationId)).toBeNull();
-  //////////////////////////  ////////////////////////////
-
-  /**
-   * When delete experience menu is clicked - 3
-   */
-  (document.getElementById(
-    makeDeleteMenuDomId(experienceId),
-  ) as HTMLElement).click();
-
-  (document.getElementById(okDeleteExperienceDomId) as HTMLElement).click();
-  await wait(() => true);
-
-  /**
-   * Error notification should be visible
-   */
-  errorsNotificationDom = await waitForElement(() => {
-    return document.getElementById(errorsNotificationId) as HTMLElement;
-  });
-
-  /**
-   * When error notification is dismissed
-   */
-  (errorsNotificationDom
-    .getElementsByClassName(closeSubmitNotificationBtnSelector)
-    .item(0) as HTMLElement).click();
-
-  /**
-   * Then error notification should not be visible
-   */
-  expect(document.getElementById(errorsNotificationId)).toBeNull();
-
-  /**
-   * When delete experience menu is clicked - 4
-   */
-  (document.getElementById(
-    makeDeleteMenuDomId(experienceId),
-  ) as HTMLElement).click();
-
-  (document.getElementById(okDeleteExperienceDomId) as HTMLElement).click();
-  await wait(() => true);
-
-  /**
-   * Error notification should be visible
-   */
-  errorsNotificationDom = await waitForElement(() => {
-    return document.getElementById(errorsNotificationId) as HTMLElement;
-  });
-
-  /**
-   * When error notification is dismissed
-   */
-  (errorsNotificationDom
-    .getElementsByClassName(closeSubmitNotificationBtnSelector)
-    .item(0) as HTMLElement).click();
-
-  /**
-   * Then error notification should not be visible
-   */
-  expect(document.getElementById(errorsNotificationId)).toBeNull();
-
-  /**
-   * When delete experience menu is clicked - 5
-   */
-  (document.getElementById(
-    makeDeleteMenuDomId(experienceId),
-  ) as HTMLElement).click();
-
-  (document.getElementById(okDeleteExperienceDomId) as HTMLElement).click();
-  await wait(() => true);
-  await wait(() => true);
-
-  /**
-   * Experience should be deleted
-   */
-  expect(mockDeleteExperiencesFromCache.mock.calls[0][2]).toEqual([
-    experienceId,
-  ]);
-
-  await wait(() => true);
-
-  expect(mockRemoveQueriesAndMutationsFromCache).toHaveBeenCalled();
-  expect(mockWriteDeletedExperienceTitle.mock.calls[0][0]).toBe("t1");
-  expect(mockPersistFunc.mock.calls).toHaveLength(1);
-  expect(mockNavigate).toHaveBeenCalled();
 });
 
 describe("reducer", () => {

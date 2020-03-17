@@ -1,9 +1,17 @@
-import React, { useState, useMemo } from "react";
-import Dropdown from "semantic-ui-react/dist/commonjs/modules/Dropdown";
-import Form from "semantic-ui-react/dist/commonjs/collections/Form";
-import { Props } from "./date-field.utils";
-import "./date-field.styles.scss";
+import React, { useState, useMemo, ReactNode } from "react";
+import { Props, LABELS } from "./date-field.utils";
+import "./date-field.styles.css";
 import getDaysInMonth from "date-fns/getDaysInMonth";
+import Dropdown from "../Dropdown/dropdown-component";
+import {
+  makeMonthItemSelector,
+  makeDayItemSelector,
+  selectedItemClassName,
+  makeYearItemSelector,
+  dayDropdownSelector,
+  monthDropdownSelector,
+  yearDropdownSelector,
+} from "./date-field.dom";
 
 const MONTHS_DROP_DOWN_OPTIONS = [
   "Jan",
@@ -22,7 +30,7 @@ const MONTHS_DROP_DOWN_OPTIONS = [
   key: index,
   text: m,
   value: index,
-  content: <span className={`js-date-field-input-month-${m}`}>{m}</span>,
+  content: <span className={makeMonthItemSelector(m)}>{m}</span>,
 }));
 
 export const DAYS = Array.from<
@@ -31,7 +39,7 @@ export const DAYS = Array.from<
     key: number;
     text: string;
     value: number;
-    content: JSX.Element;
+    content: ReactNode;
   }
 >({ length: 31 }, (_, index) => {
   const dayIndex = index + 1;
@@ -41,37 +49,16 @@ export const DAYS = Array.from<
     key: dayIndex,
     text,
     value: dayIndex,
-    content: (
-      <span className={`text js-date-field-input-day-${dayIndex}`}>
-        {dayIndex}
-      </span>
-    ),
+    content: <span className={makeDayItemSelector(dayIndex)}>{dayIndex}</span>,
   };
 });
 
-const LABELS = {
-  day: "Day",
-  month: "Month",
-  year: "Year",
-};
-
 export function DateField(props: Props) {
-  const { className, onChange, value, name: compName } = props;
-
-  const fieldNames = useMemo(() => {
-    return Object.keys(LABELS).reduce(
-      (acc, k) => {
-        acc[k] = compName + "." + k;
-        return acc;
-      },
-      {} as { [k in keyof typeof LABELS]: string },
-    );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const { className = "", onChange, value, name: compName } = props;
 
   const { years, currYr, currMonth, currDay } = useMemo(
     function() {
-      return getToday(value, fieldNames.year);
+      return getToday(value);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [value],
@@ -94,49 +81,31 @@ export function DateField(props: Props) {
   }
 
   return (
-    <Form.Field
-      className={`${className || ""} components-date-field light-border`}
-      id={`date-field-input-${compName}`}
-    >
+    <div className={`${className} date-field light-border`}>
       <div>
         <label className="field_label">{LABELS.day}</label>
 
         <Dropdown
-          search={true}
-          fluid={true}
-          selection={true}
-          id={`date-field-input-${fieldNames.day}`}
-          name={fieldNames.day}
-          compact={true}
-          basic={true}
+          className={dayDropdownSelector}
+          selectedItemClassName={selectedItemClassName}
           options={dayOptions}
           defaultValue={currDay}
-          onChange={async function(_, data) {
-            const dataVal = data.value as number;
-            setSelectedDay(dataVal);
-            setDate({ d: dataVal });
+          onChange={function(_, data) {
+            setSelectedDay(data);
+            setDate({ d: data });
           }}
         />
       </div>
 
       <div>
-        <label
-          htmlFor={`date-field-input-${fieldNames.month}`}
-          className="field_label"
-        >
-          {LABELS.month}
-        </label>
+        <label className="field_label">{LABELS.month}</label>
+
         <Dropdown
-          search={true}
-          fluid={true}
-          selection={true}
-          id={`date-field-input-${fieldNames.month}`}
-          name={fieldNames.month}
-          compact={true}
+          className={monthDropdownSelector}
+          selectedItemClassName={selectedItemClassName}
           options={MONTHS_DROP_DOWN_OPTIONS}
           defaultValue={currMonth}
-          onChange={function(_, data) {
-            const dataVal = data.value as number;
+          onChange={function(_, dataVal) {
             setSelectedMonth(dataVal);
             setDate({ m: dataVal });
           }}
@@ -144,33 +113,24 @@ export function DateField(props: Props) {
       </div>
 
       <div>
-        <label
-          htmlFor={`date-field-input-${fieldNames.year}`}
-          className="field_label"
-        >
-          {LABELS.year}
-        </label>
+        <label className="field_label">{LABELS.year}</label>
+
         <Dropdown
-          search={true}
-          fluid={true}
-          selection={true}
-          compact={true}
-          id={`date-field-input-${fieldNames.year}`}
-          name={fieldNames.year}
+          className={yearDropdownSelector}
+          selectedItemClassName={selectedItemClassName}
           options={years}
           defaultValue={currYr}
-          onChange={function(_, data) {
-            const dataVal = data.value as number;
+          onChange={function(_, dataVal) {
             setSelectedYear(dataVal);
             setDate({ y: dataVal });
           }}
         />
       </div>
-    </Form.Field>
+    </div>
   );
 }
 
-function getToday(today: Date, fieldName: string) {
+function getToday(today: Date) {
   const currYr = today.getFullYear();
   const years = [];
 
@@ -181,9 +141,7 @@ function getToday(today: Date, fieldName: string) {
       text: year + "",
       value: year,
       content: (
-        <span className="text" id={`date-field-input-${fieldName}-${year}`}>
-          {year}
-        </span>
+        <span className={`text ${makeYearItemSelector(year)}`}>{year}</span>
       ),
     });
   }

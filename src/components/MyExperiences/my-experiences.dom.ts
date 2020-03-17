@@ -8,6 +8,8 @@ export const searchTextInputId = `${domPrefix}-search-input`;
 export const noSearchMatchId = `${domPrefix}-no-search-match`;
 export const experienceMenuSelector = `js-${domPrefix}-experience-dropdown`;
 export const deleteExperienceSelector = `js-${domPrefix}-delete-experience`;
+export const noExperiencesInfoDomId = "no-experiences-info";
+export const newExperienceButtonDomId = "new-experience-button";
 
 export function makeExperienceTitleDomId(id: Id) {
   return `${domPrefix}-go-to-details-${id}`;

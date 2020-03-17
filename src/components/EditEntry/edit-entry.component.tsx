@@ -4,6 +4,7 @@ import React, {
   Fragment,
   useEffect,
   useCallback,
+  ChangeEvent,
 } from "react";
 import {
   Props,
@@ -28,7 +29,6 @@ import "./edit-entry.styles.scss";
 import { Loading } from "../Loading/loading";
 import { componentFromDataType } from "../NewEntry/component-from-data-type";
 import { FormObjVal } from "../Experience/experience.utils";
-import { InputOnChangeData } from "semantic-ui-react";
 import { DataTypes } from "../../graphql/apollo-types/globalTypes";
 import { ErrorBoundary } from "../ErrorBoundary/error-boundary.component";
 import {
@@ -37,6 +37,9 @@ import {
   ControlName,
   getDataControlDomId,
   scrollToTopId,
+  editEntryComponentDomId,
+  editEntrySubmissionResponseDomId,
+  editEntrySubmitDomId,
 } from "./edit-entry-dom";
 import { EbnisAppContext } from "../../context";
 import { LayoutUnchangingContext, LayoutContext } from "../Layout/layout.utils";
@@ -44,11 +47,12 @@ import { cleanupRanQueriesFromCache } from "../../apollo-cache/cleanup-ran-queri
 import { QUERY_NAME_getExperienceFull } from "../../graphql/get-experience-full.query";
 import { addNewEntryResolvers } from "../NewEntry/new-entry.injectables";
 import { capitalize } from "../../general-utils";
-import { useUpdateExperiencesOnlineMutation } from "../../graphql/experiences.mutation";
+import { useUpdateExperiencesOnlineMutation } from "../../graphql/experiences.gql";
 import { DataObjectErrorFragment } from "../../graphql/apollo-types/DataObjectErrorFragment";
+import { ExperienceContext } from "../Experience/experience.utils";
 
 export function EditEntryComponent(props: Props) {
-  const { dispatch: parentDispatch, experience, hasConnection } = props;
+  const { entryDispatch, experience, hasConnection } = props;
 
   const [stateMachine, dispatch] = useReducer(reducer, props, initState);
   const {
@@ -112,15 +116,16 @@ export function EditEntryComponent(props: Props) {
       {submission.value === StateValue.submitting && <Loading />}
 
       <Modal
-        id="edit-entry-modal"
+        id={editEntryComponentDomId}
         open={true}
         closeIcon={true}
         onClose={() => {
+          // istanbul ignore next:
           if (submission.value === StateValue.submitting) {
             return;
           }
 
-          parentDispatch({
+          entryDispatch({
             type: ActionType.DESTROYED,
           });
         }}
@@ -163,7 +168,7 @@ export function EditEntryComponent(props: Props) {
                   positive={true}
                   compact={true}
                   type="submit"
-                  id="edit-entry-submit"
+                  id={editEntrySubmitDomId}
                   className="edit-entry-definition-submit"
                   onClick={onSubmit}
                 >
@@ -208,7 +213,7 @@ function SubmissionSuccessResponseComponent({
     } = state;
 
     return (
-      <Modal.Content id="edit-entry-submission-response-message">
+      <Modal.Content id={editEntrySubmissionResponseDomId}>
         <Message
           onDismiss={() => {
             dispatch({
@@ -327,11 +332,11 @@ function getComponentFromDataType(
             rawFormVal: val,
           });
         }
-      : (_: E, { value: rawFormVal }: InputOnChangeData) => {
+      : (e: ChangeEvent<HTMLInputElement>) => {
           dispatch({
             type: ActionType.DATA_CHANGED,
             id,
-            rawFormVal,
+            rawFormVal: e.target.value,
           });
         };
 
@@ -432,6 +437,7 @@ export function EditEntry(props: CallerProps) {
   const { layoutDispatch } = useContext(LayoutUnchangingContext);
   const { hasConnection } = useContext(LayoutContext);
   const [updateExperiencesOnline] = useUpdateExperiencesOnlineMutation();
+  const { experienceDispatch } = useContext(ExperienceContext);
 
   return (
     <EditEntryComponent
@@ -441,6 +447,7 @@ export function EditEntry(props: CallerProps) {
       cache={cache}
       layoutDispatch={layoutDispatch}
       hasConnection={hasConnection}
+      experienceDispatch={experienceDispatch}
       {...props}
     />
   );

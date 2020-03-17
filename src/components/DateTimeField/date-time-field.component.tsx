@@ -1,10 +1,16 @@
 import React, { useState, useMemo } from "react";
-import Dropdown from "semantic-ui-react/dist/commonjs/modules/Dropdown";
-import Form from "semantic-ui-react/dist/commonjs/collections/Form";
+import Dropdown from "../Dropdown/dropdown-component";
 import { DateField } from "../DateField/date-field.component";
 import { FormObjVal } from "../Experience/experience.utils";
 import { Props } from "./date-time-field.utils";
-import "../DateField/date-field.styles.scss";
+import "../DateField/date-field.styles.css";
+import {
+  selectedItemClassName,
+  makeHourItemSelector,
+  makeMinuteItemSelector,
+  hourDropdownSelector,
+  minuteDropdownSelector,
+} from "../DateField/date-field.dom";
 
 interface DropdownOptions {
   key: number;
@@ -23,9 +29,7 @@ export const HOUR_OPTIONS = Array.from<undefined, DropdownOptions>(
       text,
       value: hrIndex,
       content: (
-        <span className={`text js-datetime-field-input-hour-${text}`}>
-          {text}
-        </span>
+        <span className={`text ${makeHourItemSelector(text)}`}>{text}</span>
       ),
     };
   },
@@ -41,9 +45,7 @@ export const MINUTE_OPTIONS = Array.from<void, DropdownOptions>(
       text,
       value: minIndex,
       content: (
-        <span className={`text js-datetime-field-input-minute-${text}`}>
-          {text}
-        </span>
+        <span className={`text ${makeMinuteItemSelector(text)}`}>{text}</span>
       ),
     };
   },
@@ -85,7 +87,7 @@ export function DateTimeField(props: Props) {
   }, []);
 
   return (
-    <Form.Field
+    <div
       className={`${className || ""} datetime-field light-border`}
       id={`datetime-field-input-${compName}`}
     >
@@ -93,45 +95,41 @@ export function DateTimeField(props: Props) {
         name={fieldNames.date}
         value={datetime}
         onChange={setDateVal}
+        className="datetime-field__date"
       />
 
-      <div className="datetime-field-time">
-        <div>
+      <div className="datetime-field__time">
+        <div className="datetime-field__hour">
           <label className="field_label">Hour</label>
 
           <Dropdown
-            search={true}
-            fluid={true}
-            selection={true}
-            compact={true}
+            selectedItemClassName={selectedItemClassName}
             id={`datetime-hour-field-${fieldNames.hr}`}
-            name={fieldNames.hr}
             options={HOUR_OPTIONS}
             defaultValue={datetime.getHours()}
             onChange={function dropDownHrChanged(_, data) {
-              setDateTimeVal({ h: data.value as number });
+              setDateTimeVal({ h: data as number });
             }}
+            className={hourDropdownSelector}
           />
         </div>
 
         <div>
           <label className="field_label">Minute</label>
+
           <Dropdown
-            search={true}
-            fluid={true}
-            selection={true}
-            compact={true}
+            selectedItemClassName={selectedItemClassName}
             id={`datetime-minute-field-${fieldNames.min}`}
-            name={fieldNames.min}
             options={MINUTE_OPTIONS}
             defaultValue={datetime.getMinutes()}
             onChange={function dropDownMinChanged(_, data) {
-              setDateTimeVal({ m: data.value as number });
+              setDateTimeVal({ m: data as number });
             }}
+            className={minuteDropdownSelector}
           />
         </div>
       </div>
-    </Form.Field>
+    </div>
   );
 }
 

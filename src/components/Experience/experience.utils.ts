@@ -7,20 +7,22 @@ import {
   CreateExperienceInput,
   UpdateExperienceInput,
   CreateEntryInput,
+  UpdateEntryInput,
+  UpdateDataObjectInput,
 } from "../../graphql/apollo-types/globalTypes";
 import {
   ExperienceFragment,
   ExperienceFragment_entries_edges,
 } from "../../graphql/apollo-types/ExperienceFragment";
 import { EbnisComponentProps } from "../../types";
-import { Reducer, Dispatch } from "react";
+import { Reducer, Dispatch, createContext } from "react";
 import immer, { Draft } from "immer";
 import { wrapReducer } from "../../logger";
 import {
   CreateExperiencesComponentProps,
   UpdateExperiencesOnlineComponentProps,
   DeleteExperiencesComponentProps,
-} from "../../graphql/experiences.mutation";
+} from "../../graphql/experiences.gql";
 import {
   getUnsyncedExperience,
   removeUnsyncedExperience,
@@ -63,29 +65,28 @@ export const StateValue = {
   onOnlineExperienceSynced: "onOnlineExperienceSynced" as OnOnlineExperienceSynced,
 };
 
+export const DISPLAY_DATE_FORMAT_STRING = "dd/MM/yyyy";
+export const DISPLAY_TIME_FORMAT_STRING = " HH:mm";
+const DISPLAY_DATETIME_FORMAT_STRING =
+  DISPLAY_DATE_FORMAT_STRING + DISPLAY_TIME_FORMAT_STRING;
+
 export const displayFieldType = {
   [DataTypes.SINGLE_LINE_TEXT](text: string) {
     return text;
   },
-
   [DataTypes.MULTI_LINE_TEXT](text: string) {
     return text;
   },
-
   [DataTypes.DATE](text: string) {
-    return dateFnFormat(new Date(text), "dd/MM/yyyy");
+    return dateFnFormat(new Date(text), DISPLAY_DATE_FORMAT_STRING);
   },
-
   [DataTypes.DATETIME](text: string) {
     const date = parseISO(text);
-
     return formatDatetime(date);
   },
-
   [DataTypes.DECIMAL](text: string) {
     return Number(text);
   },
-
   [DataTypes.INTEGER](text: string) {
     return Number(text);
   },
@@ -197,6 +198,160 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
 
     // true,
   );
+
+////////////////////////// STATE UPDATE SECTION /////////////////////
+export function initState(props: Props): StateMachine {
+  return {
+    context: {},
+    effects: {
+      general: {
+        value: StateValue.noEffect,
+      },
+    },
+    states: {
+      submission: { value: StateValue.inactive },
+      editExperience: { value: StateValue.idle },
+      deleteExperience: {
+        value: confirmShouldDeleteExperience(props.experience.id)
+          ? StateValue.active
+          : StateValue.inactive,
+      },
+    },
+  };
+}
+
+function handleSyncAction(proxy: DraftState) {
+  proxy.states.submission.value = StateValue.submitting;
+
+  const effects = getGeneralEffects(proxy);
+
+  effects.push({
+    key: "syncEffect",
+    ownArgs: {},
+  });
+}
+
+function handleOtherErrorsAction(
+  proxy: DraftState,
+  payload: OtherErrorsPayload,
+) {
+  const { states } = proxy;
+  const submissionState = states.submission as SubmissionErrors;
+  submissionState.value = StateValue.errors;
+  submissionState.errors = {
+    context: {
+      errors: payload.errors,
+    },
+  };
+}
+
+function handleOnModifiedExperienceSyncedAction(
+  proxy: DraftState,
+  payload: OnModifiedExperienceSyncedPayload,
+) {
+  const { data } = payload;
+  const {
+    states: { submission },
+  } = proxy;
+
+  submission.value = StateValue.onOnlineExperienceSynced;
+
+  (submission as SubmissionOnOnlineExperienceSynced).onOnlineExperienceSynced = {
+    context: { data },
+    states: {
+      notifications: data.map(() => true),
+    },
+  };
+}
+
+function handleOnSyncOfflineExperienceErrorsAction(
+  proxy: DraftState,
+  payload: OnSyncOfflineExperienceErrorsPayload,
+) {
+  const {
+    /* eslint-disable-next-line @typescript-eslint/no-unused-vars*/
+    errors: { meta, ...errors },
+  } = payload;
+
+  handleOtherErrorsAction(proxy, { errors: JSON.stringify(errors) });
+}
+
+function handleOnSyncOfflineExperienceSuccessAction(
+  proxy: DraftState,
+  payload: OnSyncOfflineExperienceSuccessPayload,
+) {
+  proxy.states.submission.value = StateValue.inactive;
+
+  const effects = getGeneralEffects(proxy);
+  effects.push({
+    key: "onSyncOfflineExperienceSuccessEffect",
+    ownArgs: payload.data,
+  });
+}
+
+function handleCloseSubmitNotificationAction(proxy: DraftState) {
+  const { context, states } = proxy;
+  states.submission.value = StateValue.inactive;
+  context.offlineExperienceNewlySynced = false;
+}
+
+function handleOnCommonErrorAction(
+  proxy: DraftState,
+  payload: CommonErrorPayload,
+) {
+  const { states } = proxy;
+  const submissionState = states.submission as SubmissionErrors;
+  submissionState.value = StateValue.errors;
+  submissionState.errors = {
+    context: {
+      errors: parseStringError(payload.error),
+    },
+  };
+}
+
+function handleSyncEditedOfflineExperienceAction(
+  proxy: DraftState,
+  payload: SyncEditedOfflineExperiencePayload,
+) {
+  const effects = getGeneralEffects(proxy);
+  effects.push({
+    key: "syncEditedOfflineExperienceEffect",
+    ownArgs: payload,
+  });
+}
+
+function handleEditExperienceAction(proxy: DraftState) {
+  const { states } = proxy;
+  const editExperience = states.editExperience;
+  editExperience.value = StateValue.editing;
+}
+
+function handleOnCloseOnlineExperienceSyncedNotificationAction(
+  proxy: DraftState,
+  payload: CloseOnOnlineExperienceSyncedNotificationPayload,
+) {
+  const {
+    states: { submission },
+  } = proxy;
+
+  const {
+    onOnlineExperienceSynced: {
+      states: { notifications },
+    },
+  } = submission as SubmissionOnOnlineExperienceSynced;
+  notifications[payload.index] = false;
+}
+
+function handleDeleteExperienceAction(proxy: DraftState) {
+  const effects = getGeneralEffects(proxy);
+  effects.push({
+    key: "deleteExperienceEffect",
+    ownArgs: {},
+  });
+}
+
+////////////////////////// END STATE UPDATE SECTION /////////////////
+
 ////////////////////////// EFFECTS SECTION /////////////////////////
 
 export const GENERIC_SERVER_ERROR = "Something went wrong - please try again.";
@@ -341,7 +496,7 @@ async function syncOnlineExperienceEffectHelper(
 ) {
   const { dispatch } = effectArgs;
   const { updateExperiencesOnline, experience } = props;
-  const { id: experienceId } = experience;
+  const { id: experienceId, entries } = experience;
   const unsynced = getUnsyncedExperience(experienceId);
 
   if (!unsynced) {
@@ -357,7 +512,13 @@ async function syncOnlineExperienceEffectHelper(
     experienceId,
   } as UpdateExperienceInput;
 
-  const { ownFields, definitions: unSyncedDefinitions, newEntries } = unsynced;
+  const {
+    ownFields,
+    definitions: unSyncedDefinitions,
+    newEntries,
+    modifiedEntries,
+  } = unsynced;
+
   const ownFieldsInput = {} as UpdateExperienceOwnFieldsInput;
 
   if (ownFields) {
@@ -394,6 +555,34 @@ async function syncOnlineExperienceEffectHelper(
     input.addEntries = getOfflineEntriesInputEffectHelper(
       experience.entries.edges as EntryConnectionFragment_edges[],
     );
+  }
+
+  if (modifiedEntries) {
+    const updateEntriesInput: UpdateEntryInput[] = [];
+    input.updateEntries = updateEntriesInput;
+
+    (entries.edges as EntryConnectionFragment_edges[]).forEach(edge => {
+      const { id, dataObjects } = (edge as EntryConnectionFragment_edges)
+        .node as EntryFragment;
+
+      const modifiedEntry = modifiedEntries[id];
+
+      if (modifiedEntry) {
+        const updateEntryInput = { entryId: id } as UpdateEntryInput;
+        updateEntriesInput.push(updateEntryInput);
+
+        const updateDataObjectInput: UpdateDataObjectInput[] = [];
+        updateEntryInput.dataObjects = updateDataObjectInput;
+
+        (dataObjects as DataObjectFragment[]).forEach(obj => {
+          const { id, data, updatedAt } = obj as DataObjectFragment;
+
+          if (modifiedEntry[id]) {
+            updateDataObjectInput.push({ id, data, updatedAt });
+          }
+        });
+      }
+    });
   }
 
   try {
@@ -451,7 +640,12 @@ function processUpdateExperienceSomeSuccessEffectHelper(
   effectArgs: EffectArgs,
 ) {
   const { experience } = syncResult;
-  const { ownFields, updatedDefinitions, newEntries } = experience;
+  const {
+    ownFields,
+    updatedDefinitions,
+    newEntries,
+    updatedEntries,
+  } = experience;
   const result: OnModifiedExperienceSyncedData = [];
   const { dispatch } = effectArgs;
 
@@ -463,6 +657,42 @@ function processUpdateExperienceSomeSuccessEffectHelper(
         result.push([k, "success"]);
       });
     }
+  }
+
+  if (updatedEntries) {
+    updatedEntries.forEach((e, index) => {
+      const label = `Updated entry ${index}`;
+
+      if (e.__typename === "UpdateEntryErrors") {
+        const { error } = e.errors;
+        result.push([label, [["", error]]]);
+      } else {
+        e.entry.dataObjects.forEach((d, index) => {
+          const label = `Data ${index + 1}`;
+
+          if (d.__typename === "DataObjectErrors") {
+            const {
+              /* eslint-disable-next-line @typescript-eslint/no-unused-vars*/
+              __typename,
+              /* eslint-disable-next-line @typescript-eslint/no-unused-vars*/
+              meta,
+              ...rest
+            } = d.errors;
+
+            const errors = [] as string[][];
+            result.push([label, errors]);
+
+            Object.entries(rest).forEach(([k, v]) => {
+              if (v) {
+                errors.push([k, `${label}: ${v}`]);
+              }
+            });
+          } else {
+            result.push([label, "success"]);
+          }
+        });
+      }
+    });
   }
 
   if (updatedDefinitions) {
@@ -495,7 +725,7 @@ function processUpdateExperienceSomeSuccessEffectHelper(
 
   if (newEntries) {
     newEntries.forEach((n, index) => {
-      const label = `Entry ${index + 1}`;
+      const label = `New Entry ${index + 1}`;
 
       if (n.__typename === "CreateEntryErrors") {
         const {
@@ -759,163 +989,14 @@ function getOfflineEntriesInputEffectHelper(
 
 ////////////////////////// END EFFECTS SECTION /////////////////////////
 
-////////////////////////// STATE UPDATE SECTION /////////////////////
-export function initState(props: Props): StateMachine {
-  return {
-    context: {},
-    effects: {
-      general: {
-        value: StateValue.noEffect,
-      },
-    },
-    states: {
-      submission: { value: StateValue.inactive },
-      editExperience: { value: StateValue.idle },
-      deleteExperience: {
-        value: confirmShouldDeleteExperience(props.experience.id)
-          ? StateValue.active
-          : StateValue.inactive,
-      },
-    },
-  };
-}
-
-function handleSyncAction(proxy: DraftState) {
-  proxy.states.submission.value = StateValue.submitting;
-
-  const effects = getGeneralEffects(proxy);
-
-  effects.push({
-    key: "syncEffect",
-    ownArgs: {},
-  });
-}
-
-function handleOtherErrorsAction(
-  proxy: DraftState,
-  payload: OtherErrorsPayload,
-) {
-  const { states } = proxy;
-  const submissionState = states.submission as SubmissionErrors;
-  submissionState.value = StateValue.errors;
-  submissionState.errors = {
-    context: {
-      errors: payload.errors,
-    },
-  };
-}
-
-function handleOnModifiedExperienceSyncedAction(
-  proxy: DraftState,
-  payload: OnModifiedExperienceSyncedPayload,
-) {
-  const { data } = payload;
-  const {
-    states: { submission },
-  } = proxy;
-
-  submission.value = StateValue.onOnlineExperienceSynced;
-
-  (submission as SubmissionOnOnlineExperienceSynced).onOnlineExperienceSynced = {
-    context: { data },
-    states: {
-      notifications: data.map(() => true),
-    },
-  };
-}
-
-function handleOnSyncOfflineExperienceErrorsAction(
-  proxy: DraftState,
-  payload: OnSyncOfflineExperienceErrorsPayload,
-) {
-  const {
-    /* eslint-disable-next-line @typescript-eslint/no-unused-vars*/
-    errors: { meta, ...errors },
-  } = payload;
-
-  handleOtherErrorsAction(proxy, { errors: JSON.stringify(errors) });
-}
-
-function handleOnSyncOfflineExperienceSuccessAction(
-  proxy: DraftState,
-  payload: OnSyncOfflineExperienceSuccessPayload,
-) {
-  proxy.states.submission.value = StateValue.inactive;
-
-  const effects = getGeneralEffects(proxy);
-  effects.push({
-    key: "onSyncOfflineExperienceSuccessEffect",
-    ownArgs: payload.data,
-  });
-}
-
-function handleCloseSubmitNotificationAction(proxy: DraftState) {
-  const { context, states } = proxy;
-  states.submission.value = StateValue.inactive;
-  context.offlineExperienceNewlySynced = false;
-}
-
-function handleOnCommonErrorAction(
-  proxy: DraftState,
-  payload: CommonErrorPayload,
-) {
-  const { states } = proxy;
-  const submissionState = states.submission as SubmissionErrors;
-  submissionState.value = StateValue.errors;
-  submissionState.errors = {
-    context: {
-      errors: parseStringError(payload.error),
-    },
-  };
-}
-
-function handleSyncEditedOfflineExperienceAction(
-  proxy: DraftState,
-  payload: SyncEditedOfflineExperiencePayload,
-) {
-  const effects = getGeneralEffects(proxy);
-  effects.push({
-    key: "syncEditedOfflineExperienceEffect",
-    ownArgs: payload,
-  });
-}
-
-function handleEditExperienceAction(proxy: DraftState) {
-  const { states } = proxy;
-  const editExperience = states.editExperience;
-  editExperience.value = StateValue.editing;
-}
-
-function handleOnCloseOnlineExperienceSyncedNotificationAction(
-  proxy: DraftState,
-  payload: CloseOnOnlineExperienceSyncedNotificationPayload,
-) {
-  const {
-    states: { submission },
-  } = proxy;
-
-  const {
-    onOnlineExperienceSynced: {
-      states: { notifications },
-    },
-  } = submission as SubmissionOnOnlineExperienceSynced;
-  notifications[payload.index] = false;
-}
-
-function handleDeleteExperienceAction(proxy: DraftState) {
-  const effects = getGeneralEffects(proxy);
-  effects.push({
-    key: "deleteExperienceEffect",
-    ownArgs: {},
-  });
-}
-
-////////////////////////// END STATE UPDATE SECTION /////////////////
-
 export function formatDatetime(date: Date | string) {
   date = typeof date === "string" ? parseISO(date) : date;
-  return dateFnFormat(date, "dd/MM/yyyy HH:mm:ss");
+  return dateFnFormat(date, DISPLAY_DATETIME_FORMAT_STRING);
 }
+
+export const ExperienceContext = createContext<ExperienceContextValue>(
+  {} as ExperienceContextValue,
+);
 
 ////////////////////////// TYPES SECTION ///////////////////////
 
@@ -1148,3 +1229,8 @@ type EffectsList = (
   | DefOnSyncExperienceSuccessEffect
   | DeleteExperienceEffectDefinition
 )[];
+
+interface ExperienceContextValue {
+  experience: ExperienceFragment;
+  experienceDispatch: DispatchType;
+}

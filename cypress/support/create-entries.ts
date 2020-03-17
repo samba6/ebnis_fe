@@ -4,7 +4,7 @@ import {
   CreateEntriesMutation,
   CreateEntriesMutationVariables,
 } from "../../src/graphql/apollo-types/CreateEntriesMutation";
-import { CREATE_ENTRIES_MUTATION } from "../../src/graphql/create-entries.mutation";
+import { CREATE_ENTRIES_MUTATION } from "../../src/graphql/experiences.mutation";
 import { EntryFragment } from "../../src/graphql/apollo-types/EntryFragment";
 import {
   CreateOfflineEntryMutationVariables,
@@ -21,12 +21,9 @@ export function createExperienceEntries(input: CreateEntriesInput[]) {
   }).then(result => {
     const data = result && result.data && result.data.createEntries;
 
-    const entries = data.reduce(
-      (acc, obj) => {
-        return acc.concat(obj.entries);
-      },
-      [] as EntryFragment[],
-    );
+    const entries = data.reduce((acc, obj) => {
+      return acc.concat(obj.entries);
+    }, [] as EntryFragment[]);
 
     return entries;
   });

@@ -3,10 +3,14 @@ import { DataTypes } from "../../src/graphql/apollo-types/globalTypes";
 import { EXPERIENCES_URL } from "../../src/routes";
 import { EXPERIENCE_DEFINITION_TITLE } from "../../src/constants/experience-definition-title";
 import { MY_EXPERIENCES_TITLE } from "../../src/constants/my-experiences-title";
-import { createSavedExperience } from "../support/create-experience";
+import { createOnlineExperience } from "../support/create-experience";
 import { persistCache } from "../support/mutate";
 import { ExperienceFragment } from "../../src/graphql/apollo-types/ExperienceFragment";
-import { makeExperienceTitleDomId } from "../../src/components/MyExperiences/my-experiences.dom";
+import {
+  makeExperienceTitleDomId,
+  noExperiencesInfoDomId,
+  newExperienceButtonDomId,
+} from "../../src/components/MyExperiences/my-experiences.dom";
 
 const title = "aa";
 
@@ -31,7 +35,7 @@ context("my experiences page", () => {
     /**
      * When we click on link to create new experience
      */
-    cy.get("#no-experiences-info").click();
+    cy.get("#" + noExperiencesInfoDomId).click();
 
     /**
      * Then we should be taken to new experience definition page
@@ -49,7 +53,7 @@ context("my experiences page", () => {
     /**
      * And click on the button
      */
-    cy.get("#new-experience-button").click();
+    cy.get("#" + newExperienceButtonDomId).click();
 
     /**
      * Then we should be taken to new experience definition page
@@ -61,7 +65,7 @@ context("my experiences page", () => {
     /**
      * Given there is an experience in the system
      */
-    const p = createSavedExperience({
+    const p = createOnlineExperience({
       title,
       dataDefinitions: [
         {

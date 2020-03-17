@@ -18,7 +18,7 @@ import {
   effectFunctions,
   FieldServerError,
 } from "./edit-experience.utils";
-import { useUpdateExperiencesOnlineMutation } from "../../graphql/experiences.mutation";
+import { useUpdateExperiencesOnlineMutation } from "../../graphql/experiences.gql";
 import { LayoutContext } from "../Layout/layout.utils";
 import { Loading } from "../Loading/loading";
 import {

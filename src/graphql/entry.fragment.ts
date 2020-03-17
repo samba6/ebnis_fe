@@ -8,7 +8,6 @@ export const ENTRY_FRAGMENT = gql`
     clientId
     insertedAt
     updatedAt
-    modOffline
     dataObjects {
       ...DataObjectFragment
     }

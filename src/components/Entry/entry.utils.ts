@@ -7,50 +7,62 @@ import {
   Action as EditEntryAction,
 } from "../EditEntry/edit-entry-utils";
 import { wrapReducer } from "../../logger";
+import immer, { Draft } from "immer";
 
-export enum ActionType {
-  editClicked = "@components/entry/edit-clicked",
+export enum EntryActionType {
+  editClicked = "@entry/edit-clicked",
 }
 
-export const reducer: Reducer<State, EntryAction> = (state, action) =>
-  wrapReducer(state, action, (previousState, { type }) => {
-    switch (type) {
-      case ActionType.editClicked: {
-        return {
-          ...previousState,
-          stateValue: "editing",
-        };
-      }
+export const reducer: Reducer<StateMachine, EntryAction> = (state, action) =>
+  wrapReducer(
+    state,
+    action,
+    (previousState, { type }) => {
+      return immer(previousState, proxy => {
+        switch (type) {
+          case EntryActionType.editClicked:
+            proxy.stateValue = "editing";
+            break;
 
-      case EditEntryActionTypes.DESTROYED: {
-        return {
-          ...previousState,
-          stateValue: "idle",
-        };
-      }
+          case EditEntryActionTypes.DESTROYED:
+            proxy.stateValue = "idle";
+            break;
+        }
+      });
+    },
+    // true
+  );
 
-      default: {
-        return previousState;
-      }
-    }
-  });
+////////////////////////// STATE UPDATE SECTION ////////////////////////////
 
-export interface State {
+export function initState(): StateMachine {
+  return {
+    stateValue: "idle",
+  };
+}
+
+////////////////////// END STATE UPDATE SECTION /////////////////////
+
+type DraftState = Draft<StateMachine>;
+
+export interface StateMachine {
   readonly stateValue: "idle" | "editing";
 }
 
-export type DispatchType = Dispatch<EntryAction>;
+export type EntryDispatchType = Dispatch<EntryAction>;
 
 export type EntryAction =
   | EditEntryAction
   | {
-      type: ActionType.editClicked;
+      type: EntryActionType.editClicked;
     };
 
-export interface Props extends EbnisComponentProps {
+export interface CallerProps extends EbnisComponentProps {
   entry: EntryFragment;
   experience: ExperienceFragment;
   entriesLen: number;
   index: number;
   className?: string;
 }
+
+export type Props = CallerProps;

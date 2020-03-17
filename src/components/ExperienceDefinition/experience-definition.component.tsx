@@ -34,7 +34,7 @@ import {
 } from "./experience-definition.dom";
 import { EbnisAppContext } from "../../context";
 import { useCreateExperienceOfflineMutation } from "./experience-definition.resolvers";
-import { useCreateExperiencesMutation } from "../../graphql/experiences.mutation";
+import { useCreateExperiencesMutation } from "../../graphql/experiences.gql";
 import { SidebarHeader } from "../SidebarHeader/sidebar-header.component";
 import { DataTypes } from "../../graphql/apollo-types/globalTypes";
 import { Loading } from "../Loading/loading";
@@ -42,6 +42,8 @@ import { FormCtrlError } from "../FormCtrlError/form-ctrl-error.component";
 import { FieldError } from "../../general-utils";
 import makeClassName from "classnames";
 import { addResolvers } from "./experience-definition.injectables";
+import { setDocumentTitle, makeSiteTitle } from "../../constants";
+import { EXPERIENCE_DEFINITION_TITLE } from "../../constants/experience-definition-title";
 
 export function ExperienceDefinitionComponent(props: Props) {
   const { client } = props;
@@ -80,7 +82,10 @@ export function ExperienceDefinitionComponent(props: Props) {
   }, [generalEffects]);
 
   useEffect(() => {
+    setDocumentTitle(makeSiteTitle(EXPERIENCE_DEFINITION_TITLE));
     addResolvers(client);
+
+    return setDocumentTitle;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -145,14 +150,14 @@ export function ExperienceDefinitionComponent(props: Props) {
           <label
             htmlFor={titleInputDomId}
             className={makeClassName({
-              field: true,
-              "field--errors": !!titleErrors,
+              form__field: true,
+              "form__field--errors": !!titleErrors,
             })}
           >
-            <div className="field--label">Title</div>
+            <div className="form__label">Title</div>
 
             <input
-              className="field__control"
+              className="form__control"
               type="text"
               id={titleInputDomId}
               value={titleValue}
@@ -181,16 +186,16 @@ export function ExperienceDefinitionComponent(props: Props) {
             )}
           </label>
 
-          <div className="field">
+          <div className="form__field">
             <label
               htmlFor={descriptionInputDomId}
-              className="field__label field__label-description"
+              className="form__label form__label-description"
             >
               <span>Description</span>
 
               {descriptionActive ? (
                 <div
-                  className="field__label-description-toggle"
+                  className="form__label-description-toggle"
                   id={hideDescriptionInputDomId}
                   onClick={() => {
                     dispatch({
@@ -203,7 +208,7 @@ export function ExperienceDefinitionComponent(props: Props) {
               ) : (
                 <div
                   id={revealDescriptionInputDomId}
-                  className="field__label-description-toggle"
+                  className="form__label-description-toggle"
                   onClick={() => {
                     dispatch({
                       type: ActionType.TOGGLE_DESCRIPTION,
@@ -218,8 +223,8 @@ export function ExperienceDefinitionComponent(props: Props) {
             <textarea
               rows={7}
               className={makeClassName({
-                field__control: true,
-                "field__control--hidden": !descriptionActive,
+                form__control: true,
+                "form__control--hidden": !descriptionActive,
               })}
               id={descriptionInputDomId}
               value={descriptionValue}
@@ -275,15 +280,15 @@ export function ExperienceDefinitionComponent(props: Props) {
                     <label
                       htmlFor={definitionNameInputDomId + id}
                       className={makeClassName({
-                        field: true,
-                        "field--errors": !!nameErrors,
+                        form__field: true,
+                        "form__field--errors": !!nameErrors,
                       })}
                     >
-                      <div className="field--label">Field name</div>
+                      <div className="form__label">Field name</div>
 
                       <input
                         type="text"
-                        className="field__control"
+                        className="form__control"
                         id={definitionNameInputDomId + id}
                         value={nameValue}
                         onChange={e => {
@@ -317,14 +322,14 @@ export function ExperienceDefinitionComponent(props: Props) {
                     <label
                       htmlFor={definitionTypeInputDomId + id}
                       className={makeClassName({
-                        field: true,
-                        "field--errors": !!typeErrors,
+                        form__field: true,
+                        "form__field--errors": !!typeErrors,
                       })}
                     >
-                      <div className="field--label">Data type</div>
+                      <div className="form__label">Data type</div>
 
                       <select
-                        className="field__control field__control--select"
+                        className="form__control form__control--select"
                         id={definitionTypeInputDomId + id}
                         value={typeValue}
                         onChange={e => {

@@ -11,27 +11,33 @@ import {
 } from "../../graphql/apollo-types/ExperienceFragment";
 import Icon from "semantic-ui-react/dist/commonjs/elements/Icon";
 import Dropdown from "semantic-ui-react/dist/commonjs/modules/Dropdown";
-import { Props, ActionType, reducer, DispatchType } from "./entry.utils";
 import {
-  EntryFragment_dataObjects,
-  EntryFragment,
-} from "../../graphql/apollo-types/EntryFragment";
+  Props,
+  EntryActionType,
+  reducer,
+  EntryDispatchType,
+  CallerProps,
+  initState,
+} from "./entry.utils";
+import { EntryFragment_dataObjects } from "../../graphql/apollo-types/EntryFragment";
 import { EditEntry } from "../EditEntry/edit-entry.component";
 import { DataDefinitionFragment } from "../../graphql/apollo-types/DataDefinitionFragment";
-import { isOfflineId } from "../../constants";
+import {
+  entryValueDomSelector,
+  entryOptionsSelector,
+  entryEditMenuItemSelector,
+} from "./entry.dom";
+import { getOnlineStatus } from "./entry.injectables";
 
 export function Entry(props: Props) {
   const { entry, experience, className = "", ...fieldProps } = props;
-  const { id: entryId, modOffline } = entry;
-  const isOffline = isOfflineId(entryId);
-  const isPartOffline = !isOffline && modOffline;
-  const isOnline = !isOffline && !modOffline;
+  const [stateMachine, dispatch] = useReducer(reducer, props, initState);
+
+  // istanbul ignore next:
+  const { isOffline, isOnline, isPartOffline } =
+    getOnlineStatus(props.entry) || {};
+
   const definitions = experience.dataDefinitions as DataDefinitionFragment[];
-
-  const [state, dispatch] = useReducer(reducer, {
-    stateValue: "idle",
-  });
-
   const containerId = props.id || `entry-container-${entry.id}`;
 
   const dataObjects = entry.dataObjects as ExperienceFragment_entries_edges_node_dataObjects[];
@@ -55,8 +61,12 @@ export function Entry(props: Props) {
       })}
       id={containerId}
     >
-      {state.stateValue === "editing" && (
-        <EditEntry entry={entry} experience={experience} dispatch={dispatch} />
+      {stateMachine.stateValue === "editing" && (
+        <EditEntry
+          entry={entry}
+          experience={experience}
+          entryDispatch={dispatch}
+        />
       )}
 
       {dataObjects.map((dataObject, index) => {
@@ -70,7 +80,6 @@ export function Entry(props: Props) {
             definition={definition}
             index={index}
             dataObjectsLen={dataObjectsLen}
-            entry={entry}
             dispatch={dispatch}
           />
         );
@@ -92,20 +101,13 @@ function DataComponent(props: {
   definition: ExperienceFragment_dataDefinitions;
   index: number;
   dataObjectsLen: number;
-  entry: EntryFragment;
-  dispatch: DispatchType;
+  dispatch: EntryDispatchType;
 }) {
-  const { dataObject, definition, index, entry, dispatch } = props;
-
+  const { dataObject, definition, index, dispatch } = props;
   const { definitionId, data } = dataObject;
-
   const { type, name: fieldName } = definition;
-
   const [fieldData] = Object.values(JSON.parse(data));
-  const text = displayFieldType[type](fieldData);
-  const { id: entryId } = entry;
-  const entryIdPrefix = "entry-" + entryId;
-  const definitionIdPrefix = entryIdPrefix + "-" + definitionId;
+  const text = displayFieldType[type](fieldData as string);
 
   return (
     <div
@@ -122,18 +124,20 @@ function DataComponent(props: {
 
           {index === 0 && (
             <Dropdown
-              className="field__options"
+              className={makeClassNames({
+                field__options: true,
+                [entryOptionsSelector]: true,
+              })}
               icon="ellipsis vertical"
               direction="left"
-              id={`${entryIdPrefix}-menu-trigger`}
             >
               <Dropdown.Menu>
                 {dispatch && (
                   <Dropdown.Header
-                    id={`${entryIdPrefix}-edit-trigger`}
+                    className={entryEditMenuItemSelector}
                     onClick={() => {
                       dispatch({
-                        type: ActionType.editClicked,
+                        type: EntryActionType.editClicked,
                       });
                     }}
                     style={
@@ -159,7 +163,12 @@ function DataComponent(props: {
           )}
         </div>
 
-        <div className="mr-2 field__value" id={`${definitionIdPrefix}-value`}>
+        <div
+          className={makeClassNames({
+            "mr-2 field__value": true,
+            [entryValueDomSelector]: true,
+          })}
+        >
           {(text + "").split("\\n").map((t, index) => (
             <Fragment key={index}>
               {t}
@@ -171,3 +180,8 @@ function DataComponent(props: {
     </div>
   );
 }
+
+// istanbul ignore next:
+export default (props: CallerProps) => {
+  return <Entry {...props} />;
+};
