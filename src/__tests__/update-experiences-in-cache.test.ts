@@ -14,6 +14,8 @@ import { DefinitionErrorsFragment } from "../graphql/apollo-types/DefinitionErro
 import { DefinitionSuccessFragment } from "../graphql/apollo-types/DefinitionSuccessFragment";
 import { UpdateExperienceSomeSuccessFragment } from "../graphql/apollo-types/UpdateExperienceSomeSuccessFragment";
 import { ExperienceFragment } from "../graphql/apollo-types/ExperienceFragment";
+import { EntryConnectionFragment_edges } from "../graphql/apollo-types/EntryConnectionFragment";
+import { EntryFragment } from "../graphql/apollo-types/EntryFragment";
 
 jest.mock("../apollo-cache/unsynced.resolvers");
 const mockGetUnsyncedExperience = getUnsyncedExperience as jest.Mock;
@@ -160,7 +162,7 @@ test("some success", () => {
                 },
               ],
             },
-          } as UpdateExperienceSomeSuccessFragment,
+          } as UpdateExperienceSomeSuccessFragment, // 3
           {
             // 4
             __typename: "UpdateExperienceSomeSuccess",
@@ -183,6 +185,7 @@ test("some success", () => {
                   __typename: "CreateEntrySuccess",
                   entry: {
                     clientId: "3enc1",
+                    id: "3enc1",
                   },
                 },
               ],
@@ -212,6 +215,7 @@ test("some success", () => {
                   __typename: "CreateEntrySuccess",
                   entry: {
                     clientId: "4enc2",
+                    id: "4enc2",
                   },
                 },
               ],
@@ -230,23 +234,35 @@ test("some success", () => {
 
   expect(
     mockWriteExperienceFragmentToCache.mock.calls.reduce((acc, [, t]) => {
-      acc[t.id] = {
+      const { id } = t;
+      const entriesId = (t.entries || { edges: [] }).edges.map(
+        (e: EntryConnectionFragment_edges) => {
+          return (e.node as EntryFragment).id;
+        },
+      );
+
+      acc[id] = {
         hasUnsaved: t.hasUnsaved,
+        entriesId,
       };
       return acc;
     }, {}),
   ).toEqual({
     "1": {
       hasUnsaved: null,
+      entriesId: [],
     },
     "2": {
       hasUnsaved: undefined,
+      entriesId: [],
     },
     "3": {
       hasUnsaved: null,
+      entriesId: ["3enc1", "3enc2"],
     },
     "4": {
       hasUnsaved: undefined,
+      entriesId: ["4enc2", "4enc1"],
     },
   });
 

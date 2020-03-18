@@ -89,6 +89,7 @@ export function updateExperiencesInCache(onDone?: () => void) {
     }
 
     floatExperiencesToTheTopInGetExperiencesMiniQuery(dataProxy, updatedIds);
+    // istanbul ignore next:
     if (onDone) {
       onDone();
     }
@@ -167,29 +168,37 @@ function addEntries(proxy: DraftState, result: UpdateExperienceFragment) {
 
   let hasUpdates = false;
 
-  const entryIdToEdge = (proxy.entries
+  const existingEntryIdToEdgeMap = (proxy.entries
     .edges as EntryConnectionFragment_edges[]).reduce((acc, e) => {
     const edge = e as EntryConnectionFragment_edges;
     acc[(edge.node as EntryFragment).id] = edge;
     return acc;
   }, {} as { [k: string]: EntryConnectionFragment_edges });
 
+  const entriesToBeAdd: EntryConnectionFragment_edges[] = [];
+
   newEntries.forEach(maybeNew => {
     if (maybeNew.__typename === "CreateEntrySuccess") {
       const { entry } = maybeNew;
+      const edge = entryToEdge(entry);
       const clientId = entry.clientId as string;
 
-      if (entryIdToEdge[clientId]) {
-        entryIdToEdge[clientId] = entryToEdge(entry);
-        hasUpdates = true;
+      if (existingEntryIdToEdgeMap[clientId]) {
+        existingEntryIdToEdgeMap[clientId] = edge;
+      } else {
+        entriesToBeAdd.push(edge);
       }
+
+      hasUpdates = true;
     } else {
       hasErrors = true;
     }
   });
 
   if (hasUpdates) {
-    proxy.entries.edges = Object.values(entryIdToEdge);
+    proxy.entries.edges = entriesToBeAdd
+      .reverse()
+      .concat(Object.values(existingEntryIdToEdgeMap));
   }
 
   return hasErrors;

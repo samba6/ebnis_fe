@@ -1,10 +1,9 @@
 import React, { useState, useMemo } from "react";
 import Dropdown from "semantic-ui-react/dist/commonjs/modules/Dropdown";
-import Form from "semantic-ui-react/dist/commonjs/collections/Form";
 import { DateField } from "../DateField/date-field.component";
 import { FormObjVal } from "../Experience/experience.utils";
 import { Props } from "./date-time-field.utils";
-import "../DateField/date-field.styles.scss";
+import "../DateField/date-field.styles.css";
 
 interface DropdownOptions {
   key: number;
@@ -85,7 +84,7 @@ export function DateTimeField(props: Props) {
   }, []);
 
   return (
-    <Form.Field
+    <div
       className={`${className || ""} datetime-field light-border`}
       id={`datetime-field-input-${compName}`}
     >
@@ -93,10 +92,11 @@ export function DateTimeField(props: Props) {
         name={fieldNames.date}
         value={datetime}
         onChange={setDateVal}
+        className="datetime-field__date"
       />
 
-      <div className="datetime-field-time">
-        <div>
+      <div className="datetime-field__time">
+        <div className="datetime-field__hour">
           <label className="field_label">Hour</label>
 
           <Dropdown
@@ -131,7 +131,7 @@ export function DateTimeField(props: Props) {
           />
         </div>
       </div>
-    </Form.Field>
+    </div>
   );
 }
 

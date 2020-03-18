@@ -11,6 +11,7 @@
   --error-close-border-color: #c17b83;
   --minimum-radius: 3px;
   --btn-border-neutral-color: #afafaf;
+  --light-blue-border: #d0e6ef;
 }
 
 .bulma {
@@ -20,24 +21,20 @@
     max-width: var(--modal-content-width);
   }
 
-  & .modal-card-body {
-    /* border: $modal-card-foot-border-top; */
-  }
-
   & .modal-background {
     pointer-events: none;
   }
 
   & .field.error {
-    color: $error-color;
+    color: var(--error-text-color);
 
     & label {
-      color: $error-color;
+      color: var(--error-text-color);
     }
 
     & input {
-      color: $error-color;
-      border-color: $error-color;
+      color: var(--error-text-color);
+      border-color: var(--error-text-color);
     }
   }
 }

@@ -23,158 +23,46 @@ context("experience definition page", () => {
     cy.registerUser(USER_REGISTRATION_OBJECT);
   });
 
+  const experienceOnlineTitle = "Experience 1";
+
   it.only("succeeds when online", () => {
-    /**
-     * Given we are on experiences page
-     */
-    cy.visit(EXPERIENCE_DEFINITION_URL);
-
-    /**
-     * Then we should see the page title
-     */
-    cy.title().should("contain", EXPERIENCE_DEFINITION_TITLE);
-
-    /**
-     * When we complete the title field with new experience definition title
-     */
-    const title = "Experience 1";
-    cy.get("#" + titleInputDomId).type(title);
-
-    /**
-     * And we complete the description field
-     */
-    cy.get("#" + descriptionInputDomId).type("cool exp");
-
-    cy.get("#" + makeDefinitionContainerDomId(1)).within(() => {
-      /**
-       * And we complete the field name and field type
-       */
-      cy.get("#" + definitionNameInputDomId + "1").type("field 1");
-      cy.get("#" + definitionTypeInputDomId + "1").select(DataTypes.DATE);
-
-      /**
-       * And add one more field button is clicked
-       */
-      cy.get("." + addDefinitionSelector)
-        .first()
-        .click();
-    });
-
-    cy.get("#" + makeDefinitionContainerDomId(2)).within(() => {
-      /**
-       * And we complete the field name and field type
-       */
-      cy.get("#" + definitionNameInputDomId + "2").type("field 2");
-      cy.get("#" + definitionTypeInputDomId + "2").select(DataTypes.DATETIME);
-
-      /**
-       * And add one more field button is clicked
-       */
-      cy.get("." + addDefinitionSelector)
-        .first()
-        .click();
-    });
-
-    cy.get("#" + makeDefinitionContainerDomId(3)).within(() => {
-      /**
-       * And we complete the field name and field type
-       */
-      cy.get("#" + definitionNameInputDomId + "3").type("field 3");
-      cy.get("#" + definitionTypeInputDomId + "3").select(DataTypes.DECIMAL);
-
-      /**
-       * And add one more field button is clicked
-       */
-      cy.get("." + addDefinitionSelector)
-        .first()
-        .click();
-    });
-
-    cy.get("#" + makeDefinitionContainerDomId(4)).within(() => {
-      /**
-       * And we complete the field name and field type
-       */
-      cy.get("#" + definitionNameInputDomId + "4").type("field 4");
-      cy.get("#" + definitionTypeInputDomId + "4").select(DataTypes.INTEGER);
-
-      /**
-       * And add one more field button is clicked
-       */
-      cy.get("." + addDefinitionSelector)
-        .first()
-        .click();
-    });
-
-    cy.get("#" + makeDefinitionContainerDomId(5)).within(() => {
-      /**
-       * And we complete the field name and field type
-       */
-      cy.get("#" + definitionNameInputDomId + "5").type("field 5");
-      cy.get("#" + definitionTypeInputDomId + "5").select(
-        DataTypes.MULTI_LINE_TEXT,
-      );
-
-      /**
-       * And add one more field button is clicked
-       */
-      cy.get("." + addDefinitionSelector)
-        .first()
-        .click();
-    });
-
-    cy.get("#" + makeDefinitionContainerDomId(6)).within(() => {
-      /**
-       * And we complete the field name and field type
-       */
-      cy.get("#" + definitionNameInputDomId + "6").type("field 6");
-      cy.get("#" + definitionTypeInputDomId + "6").select(
-        DataTypes.SINGLE_LINE_TEXT,
-      );
-    });
-
-    /**
-     * And submit the form
-     */
-    cy.get("#" + submitDomId).click();
-
-    /**
-     * Then we should see the new title we just created
-     */
-    cy.title().should("contain", title);
-
-    /**
-     * When link to create new entry is clicked
-     */
-    cy.get("#" + experienceNoEntriesDomId).click();
-
-    /**
-     * And new entry is created
-     */
-    cy.get("#" + newEntrySubmitDomId).click();
-  });
-
-  it("fails when online and title already exists", () => {
-    /**
-     * Given that an experience definition with known title exists in the
-     * system
-     */
-    const title = "new experience title";
-
     const p = createOnlineExperience({
-      title,
+      title: experienceOnlineTitle,
       dataDefinitions: [
         {
-          type: DataTypes.DATE,
-          name: "na",
+          name: "aa",
+          type: DataTypes.INTEGER,
         },
       ],
     });
 
     cy.wrap(p).then(() => {
       /**
-       * When we visit the page
+       * Given we are on experiences page
        */
       cy.visit(EXPERIENCE_DEFINITION_URL);
+
+      /**
+       * Then we should see the page title
+       */
+      cy.title().should("contain", EXPERIENCE_DEFINITION_TITLE);
+
+      /**
+       * When we complete the title field with existing experience title
+       */
+      cy.get("#" + titleInputDomId)
+        .as("titleDomInput")
+        .type(experienceOnlineTitle);
+
+      cy.get("#" + makeDefinitionContainerDomId(1))
+        .as("field1")
+        .within(() => {
+          /**
+           * And we complete the field name and field type
+           */
+          cy.get("#" + definitionNameInputDomId + "1").type("field 1");
+          cy.get("#" + definitionTypeInputDomId + "1").select(DataTypes.DATE);
+        });
 
       /**
        * Then we should not see any error
@@ -182,18 +70,125 @@ context("experience definition page", () => {
       cy.get("#" + notificationErrorCloseId).should("not.exist");
 
       /**
-       * And complete the form with same title as in the system and submit
+       * And submit the form
        */
-
-      cy.get("#" + titleInputDomId).type(title);
-      cy.get("#" + definitionNameInputDomId + "1").type("aa");
-      cy.get("#" + definitionTypeInputDomId + "1").select(DataTypes.DATE);
       cy.get("#" + submitDomId).click();
 
       /**
-       * Then we should see error
+       * Then we should see errors
        */
       cy.get("#" + notificationErrorCloseId).should("exist");
+
+      /**
+       * When we complete the title field with new experience title
+       */
+      cy.get("@titleDomInput").type("1");
+
+      /**
+       * And we complete the description field
+       */
+      cy.get("#" + descriptionInputDomId).type("cool exp");
+
+      cy.get("@field1").within(() => {
+        /**
+         * And add one more field button is clicked
+         */
+        cy.get("." + addDefinitionSelector)
+          .first()
+          .click();
+      });
+
+      cy.get("#" + makeDefinitionContainerDomId(2)).within(() => {
+        /**
+         * And we complete the field name and field type
+         */
+        cy.get("#" + definitionNameInputDomId + "2").type("field 2");
+        cy.get("#" + definitionTypeInputDomId + "2").select(DataTypes.DATETIME);
+
+        /**
+         * And add one more field button is clicked
+         */
+        cy.get("." + addDefinitionSelector)
+          .first()
+          .click();
+      });
+
+      cy.get("#" + makeDefinitionContainerDomId(3)).within(() => {
+        /**
+         * And we complete the field name and field type
+         */
+        cy.get("#" + definitionNameInputDomId + "3").type("field 3");
+        cy.get("#" + definitionTypeInputDomId + "3").select(DataTypes.DECIMAL);
+
+        /**
+         * And add one more field button is clicked
+         */
+        cy.get("." + addDefinitionSelector)
+          .first()
+          .click();
+      });
+
+      cy.get("#" + makeDefinitionContainerDomId(4)).within(() => {
+        /**
+         * And we complete the field name and field type
+         */
+        cy.get("#" + definitionNameInputDomId + "4").type("field 4");
+        cy.get("#" + definitionTypeInputDomId + "4").select(DataTypes.INTEGER);
+
+        /**
+         * And add one more field button is clicked
+         */
+        cy.get("." + addDefinitionSelector)
+          .first()
+          .click();
+      });
+
+      cy.get("#" + makeDefinitionContainerDomId(5)).within(() => {
+        /**
+         * And we complete the field name and field type
+         */
+        cy.get("#" + definitionNameInputDomId + "5").type("field 5");
+        cy.get("#" + definitionTypeInputDomId + "5").select(
+          DataTypes.MULTI_LINE_TEXT,
+        );
+
+        /**
+         * And add one more field button is clicked
+         */
+        cy.get("." + addDefinitionSelector)
+          .first()
+          .click();
+      });
+
+      cy.get("#" + makeDefinitionContainerDomId(6)).within(() => {
+        /**
+         * And we complete the field name and field type
+         */
+        cy.get("#" + definitionNameInputDomId + "6").type("field 6");
+        cy.get("#" + definitionTypeInputDomId + "6").select(
+          DataTypes.SINGLE_LINE_TEXT,
+        );
+      });
+
+      /**
+       * And submit the form
+       */
+      cy.get("#" + submitDomId).click();
+
+      /**
+       * Then we should see the new title we just created
+       */
+      cy.title().should("contain", experienceOnlineTitle);
+
+      /**
+       * When link to create new entry is clicked
+       */
+      cy.get("#" + experienceNoEntriesDomId).click();
+
+      /**
+       * And new entry is created
+       */
+      cy.get("#" + newEntrySubmitDomId).click();
     });
   });
 

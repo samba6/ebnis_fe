@@ -2,7 +2,7 @@ import { USER_REGISTRATION_OBJECT } from "../support/user-registration-object";
 import { DataTypes } from "../../src/graphql/apollo-types/globalTypes";
 import { makeNewEntryRoute } from "../../src/constants/new-entry-route";
 import {
-  createSavedExperience,
+  createOnlineExperience,
   createOfflineExperience,
 } from "../support/create-experience";
 import { ExperienceFragment } from "../../src/graphql/apollo-types/ExperienceFragment";
@@ -26,7 +26,7 @@ context("new entry page", () => {
      */
     const fieldName = "aa";
 
-    const p = createSavedExperience({
+    const p = createOnlineExperience({
       title,
       dataDefinitions: [
         {
@@ -76,7 +76,7 @@ context("new entry page", () => {
      */
     const fieldName = "Total purchases";
 
-    const p = createSavedExperience({
+    const p = createOnlineExperience({
       title,
       dataDefinitions: [
         {

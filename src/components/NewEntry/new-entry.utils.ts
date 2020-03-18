@@ -194,7 +194,7 @@ const createEntryEffect: DefCreateEntryEffect["func"] = async (
           error: GENERIC_SERVER_ERROR,
         });
       },
-      () => undefined,
+      async () => undefined,
     );
   } else {
     createOfflineEntry({
