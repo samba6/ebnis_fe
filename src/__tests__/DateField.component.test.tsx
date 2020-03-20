@@ -6,9 +6,18 @@ import formatDate from "date-fns/format";
 import addDays from "date-fns/addDays";
 import addYears from "date-fns/addYears";
 import addMonths from "date-fns/addMonths";
-
 import { DateField } from "../components/DateField/date-field.component";
 import { Props } from "../components/DateField/date-field.utils";
+import {
+  makeComponentDomId,
+  selectedItemClassName,
+  makeDayDomId,
+  makeMonthDomId,
+  makeYearDomId,
+  makeYearItemSelector,
+  makeMonthItemSelector,
+  makeDayItemSelector,
+} from "../components/DateField/date-field.dom";
 
 type P = ComponentType<Partial<Props>>;
 const DateFieldP = DateField as P;
@@ -24,35 +33,48 @@ it("renders ", () => {
   /**
    * Given that we want the component to render today's date
    */
-  render(<DateFieldP value={currentDate} onChange={mockSetValue} name="f" />);
+  const name = "f";
+  const componentId = makeComponentDomId(name);
+  const dayFieldDomId = makeDayDomId(componentId);
+  const monthFieldDomId = makeMonthDomId(componentId);
+  const yearFieldDomId = makeYearDomId(componentId);
+
+  render(
+    <DateFieldP value={currentDate} onChange={mockSetValue} name={name} />,
+  );
 
   /**
    * Then today's date should be visible on the page
    */
   const [y, m, d] = formatDate(currentDate, "yyyy MMM d").split(" ");
 
-  const $day = document.getElementById(
-    "date-field-input-f.day",
-  ) as HTMLDivElement;
+  const dayFieldDom = document.getElementById(dayFieldDomId) as HTMLDivElement;
 
   expect(
-    ($day.getElementsByClassName("active")[0] as HTMLDivElement).textContent,
+    (dayFieldDom
+      .getElementsByClassName(selectedItemClassName)
+      .item(0) as HTMLDivElement).textContent,
   ).toEqual(d);
 
-  const $month = document.getElementById(
-    `date-field-input-f.month`,
+  const monthFieldDom = document.getElementById(
+    monthFieldDomId,
   ) as HTMLDivElement;
+  // debug();
 
   expect(
-    ($month.getElementsByClassName("active")[0] as HTMLDivElement).textContent,
+    (monthFieldDom.getElementsByClassName(
+      selectedItemClassName,
+    )[0] as HTMLDivElement).textContent,
   ).toEqual(m);
 
-  const $year = document.getElementById(
-    "date-field-input-f.year",
+  const yearFieldDom = document.getElementById(
+    yearFieldDomId,
   ) as HTMLDivElement;
 
   expect(
-    ($year.getElementsByClassName("active")[0] as HTMLDivElement).textContent,
+    (yearFieldDom.getElementsByClassName(
+      selectedItemClassName,
+    )[0] as HTMLDivElement).textContent,
   ).toEqual(y);
 
   /**
@@ -61,42 +83,48 @@ it("renders ", () => {
   const newDate = addMonths(addDays(addYears(currentDate, -2), -5), -3);
   const [y1, m1, d1] = formatDate(newDate, "yyyy MMM d").split(" ");
 
-  (document.getElementById(`date-field-input-f.year-${y1}`) as any).click();
+  (yearFieldDom
+    .getElementsByClassName(makeYearItemSelector(y1))
+    .item(0) as HTMLElement).click();
 
-  ($month.getElementsByClassName(
-    `js-date-field-input-month-${m1}`,
-  )[0] as any).click();
+  (monthFieldDom
+    .getElementsByClassName(makeMonthItemSelector(m1))
+    .item(0) as HTMLElement).click();
 
-  ($day.getElementsByClassName(
-    `js-date-field-input-day-${d1}`,
-  )[0] as any).click();
+  (dayFieldDom
+    .getElementsByClassName(makeDayItemSelector(d1))
+    .item(0) as HTMLElement).click();
 
   /**
    * Then the new date should have been set
    */
   expect(
-    ($year.getElementsByClassName("active")[0] as HTMLDivElement).textContent,
+    (yearFieldDom.getElementsByClassName(
+      selectedItemClassName,
+    )[0] as HTMLDivElement).textContent,
   ).toEqual(y1);
 
   const [c01, c02] = mockSetValue.mock.calls[0];
-  expect(c01).toEqual("f");
+  expect(c01).toEqual(name);
   expect(c02.getFullYear()).toBe(currentDate.getFullYear() - 2); // 2 years ago
 
   expect(
-    ($month.getElementsByClassName("active")[0] as HTMLDivElement).textContent,
+    (monthFieldDom.getElementsByClassName(
+      selectedItemClassName,
+    )[0] as HTMLDivElement).textContent,
   ).toEqual(m1);
 
   const [c11, c12] = mockSetValue.mock.calls[1];
-
-  expect(c11).toEqual("f");
-
+  expect(c11).toEqual(name);
   expect(c12.getMonth()).toBe(currentDate.getMonth() - 3); // 3 months ago
 
   expect(
-    ($day.getElementsByClassName("active")[0] as HTMLDivElement).textContent,
+    (dayFieldDom
+      .getElementsByClassName(selectedItemClassName)
+      .item(0) as HTMLDivElement).textContent,
   ).toEqual(d1);
 
   const [c21, c22] = mockSetValue.mock.calls[2];
-  expect(c21).toEqual("f");
+  expect(c21).toEqual(name);
   expect(c22.getDate()).toBe(currentDate.getDate() - 5); // 5 days ago
 });

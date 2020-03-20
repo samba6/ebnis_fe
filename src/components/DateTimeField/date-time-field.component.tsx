@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import Dropdown from "semantic-ui-react/dist/commonjs/modules/Dropdown";
+import Dropdown from "../Dropdown/dropdown-component";
 import { DateField } from "../DateField/date-field.component";
 import { FormObjVal } from "../Experience/experience.utils";
 import { Props } from "./date-time-field.utils";
@@ -100,16 +100,11 @@ export function DateTimeField(props: Props) {
           <label className="field_label">Hour</label>
 
           <Dropdown
-            search={true}
-            fluid={true}
-            selection={true}
-            compact={true}
-            id={`datetime-hour-field-${fieldNames.hr}`}
-            name={fieldNames.hr}
+            controlId={`datetime-hour-field-${fieldNames.hr}`}
             options={HOUR_OPTIONS}
             defaultValue={datetime.getHours()}
             onChange={function dropDownHrChanged(_, data) {
-              setDateTimeVal({ h: data.value as number });
+              setDateTimeVal({ h: data as number });
             }}
           />
         </div>
@@ -117,16 +112,11 @@ export function DateTimeField(props: Props) {
         <div>
           <label className="field_label">Minute</label>
           <Dropdown
-            search={true}
-            fluid={true}
-            selection={true}
-            compact={true}
-            id={`datetime-minute-field-${fieldNames.min}`}
-            name={fieldNames.min}
+            controlId={`datetime-minute-field-${fieldNames.min}`}
             options={MINUTE_OPTIONS}
             defaultValue={datetime.getMinutes()}
             onChange={function dropDownMinChanged(_, data) {
-              setDateTimeVal({ m: data.value as number });
+              setDateTimeVal({ m: data as number });
             }}
           />
         </div>
