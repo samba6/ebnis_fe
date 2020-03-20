@@ -59,15 +59,6 @@ export function DateField(props: Props) {
   const componentId = makeComponentDomId(compName);
   const yearDomId = makeYearDomId(componentId);
 
-  const fieldNames = useMemo(() => {
-    return Object.keys(LABELS).reduce((acc, k) => {
-      // { day: 'compName.day', month: 'compName.month', year: 'compName.year' }
-      acc[k] = compName + "." + k;
-      return acc;
-    }, {} as { [k in keyof typeof LABELS]: string });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   const { years, currYr, currMonth, currDay } = useMemo(
     function() {
       return getToday(value);
@@ -110,12 +101,7 @@ export function DateField(props: Props) {
       </div>
 
       <div>
-        <label
-          htmlFor={`date-field-input-${fieldNames.month}`}
-          className="field_label"
-        >
-          {LABELS.month}
-        </label>
+        <label className="field_label">{LABELS.month}</label>
 
         <Dropdown
           selectedItemClassName={selectedItemClassName}
@@ -130,12 +116,7 @@ export function DateField(props: Props) {
       </div>
 
       <div>
-        <label
-          htmlFor={`date-field-input-${fieldNames.year}`}
-          className="field_label"
-        >
-          {LABELS.year}
-        </label>
+        <label className="field_label">{LABELS.year}</label>
 
         <Dropdown
           selectedItemClassName={selectedItemClassName}

@@ -4,6 +4,7 @@ import { DateField } from "../DateField/date-field.component";
 import { FormObjVal } from "../Experience/experience.utils";
 import { Props } from "./date-time-field.utils";
 import "../DateField/date-field.styles.css";
+import { selectedItemClassName } from "../DateField/date-field.dom";
 
 interface DropdownOptions {
   key: number;
@@ -100,7 +101,8 @@ export function DateTimeField(props: Props) {
           <label className="field_label">Hour</label>
 
           <Dropdown
-            controlId={`datetime-hour-field-${fieldNames.hr}`}
+            selectedItemClassName={selectedItemClassName}
+            id={`datetime-hour-field-${fieldNames.hr}`}
             options={HOUR_OPTIONS}
             defaultValue={datetime.getHours()}
             onChange={function dropDownHrChanged(_, data) {
@@ -111,8 +113,10 @@ export function DateTimeField(props: Props) {
 
         <div>
           <label className="field_label">Minute</label>
+
           <Dropdown
-            controlId={`datetime-minute-field-${fieldNames.min}`}
+            selectedItemClassName={selectedItemClassName}
+            id={`datetime-minute-field-${fieldNames.min}`}
             options={MINUTE_OPTIONS}
             defaultValue={datetime.getMinutes()}
             onChange={function dropDownMinChanged(_, data) {
