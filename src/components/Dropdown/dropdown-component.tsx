@@ -6,14 +6,16 @@ import "./dropdown.styles.css";
 const domPrefix = "ebnis-dropdown";
 const domSelectorClass = `js-${domPrefix}`;
 
-export function Dropdown<Value = string | number>({
-  selectedItemClassName = "",
-  controlId = "",
-  onChange,
-  defaultValue,
-  options,
-  ...rest
-}: Props<Value>) {
+export function Dropdown<Value = string | number>(props: Props<Value>) {
+  const {
+    selectedItemClassName = "",
+    controlId = "",
+    onChange,
+    defaultValue,
+    options,
+    ...rest
+  } = props;
+
   const [state, setState] = useState<StateMachine<Value>>(() => {
     let selectedIndex = -1;
     let index = 0;
@@ -41,8 +43,8 @@ export function Dropdown<Value = string | number>({
 
   const { usedOptions, inputVal, showingOptions, selectedOption } = state;
 
-  const inputRef = useRef<HTMLInputElement | null>(null);
-  const componentRef = useRef<HTMLDivElement | null>(null);
+  const inputDomRef = useRef<HTMLInputElement | null>(null);
+  const componentDomRef = useRef<HTMLDivElement | null>(null);
   const selectedText = selectedOption.text || selectedOption.value;
 
   const closeAndReset = useCallback(() => {
@@ -56,6 +58,7 @@ export function Dropdown<Value = string | number>({
       return;
     }
 
+    // evt.stopImmediatePropagation();
     closeAndReset();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -78,46 +81,51 @@ export function Dropdown<Value = string | number>({
   }, []);
 
   useEffect(() => {
+    const thisComponentDom = componentDomRef.current as HTMLElement;
+
     if (showingOptions) {
-      const element = (componentRef.current as HTMLElement).querySelector(
+      const selectedItemDom = thisComponentDom.querySelector(
         ".dropdown__item--selected",
       );
 
-      if (element) {
-        element.scrollIntoView({ block: "nearest" });
+      if (selectedItemDom) {
+        selectedItemDom.scrollIntoView({ block: "nearest" });
       }
+      thisComponentDom.style.zIndex = "2";
+    } else {
+      thisComponentDom.style.zIndex = "initial";
     }
   }, [showingOptions]);
 
+  const onComponentClick = useCallback(() => {
+    setState(s => {
+      return s.inputVal === ""
+        ? {
+            ...s,
+            usedOptions: options,
+            showingOptions: !s.showingOptions,
+          }
+        : s;
+    });
+
+    (inputDomRef.current as HTMLInputElement).focus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <div
-      ref={componentRef}
-      className={"ebnis-dropdown " + domSelectorClass}
-      id={domPrefix}
+      ref={componentDomRef}
+      className={`${domPrefix} ${domSelectorClass}`}
       onKeyDown={e => {
         if (e.key === "Escape") {
           closeAndReset();
         }
       }}
-      onClick={() => {
-        setState(s => {
-          if (inputVal !== "") {
-            return s;
-          }
-
-          return {
-            ...s,
-            usedOptions: options,
-            showingOptions: !showingOptions,
-          };
-        });
-
-        (inputRef.current as HTMLInputElement).focus();
-      }}
+      onClick={onComponentClick}
       {...rest}
     >
       <input
-        ref={inputRef}
+        ref={inputDomRef}
         className="dropdown__input"
         tabIndex={0}
         autoComplete="off"
@@ -198,7 +206,7 @@ export function Dropdown<Value = string | number>({
                 });
 
                 onChange(e, value);
-                (inputRef.current as HTMLInputElement).focus();
+                (inputDomRef.current as HTMLInputElement).focus();
               }}
             >
               {selectedContent}

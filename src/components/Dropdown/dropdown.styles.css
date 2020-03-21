@@ -1,3 +1,7 @@
+.no-clicks {
+  pointer-events: none;
+}
+
 .ebnis-dropdown {
   border: 1px solid #ece7e7;
   position: relative;

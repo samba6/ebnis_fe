@@ -29,16 +29,15 @@ it("renders ", () => {
   // we also hard code the hour otherwise test will fail at 00:xy hours
   // well we need to hard code the day also otherwise failure on the 30th
   const currentDate = new Date("2019-05-28T07:25");
-
-  /**
-   * Given that we want the component to render today's date
-   */
   const name = "f";
   const componentId = makeComponentDomId(name);
   const dayFieldDomId = makeDayDomId(componentId);
   const monthFieldDomId = makeMonthDomId(componentId);
   const yearFieldDomId = makeYearDomId(componentId);
 
+  /**
+   * Given that we want the component to render today's date
+   */
   render(
     <DateFieldP value={currentDate} onChange={mockSetValue} name={name} />,
   );

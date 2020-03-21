@@ -8,10 +8,13 @@ import addYears from "date-fns/addYears";
 import addMonths from "date-fns/addMonths";
 import addMinutes from "date-fns/addMinutes";
 import addHours from "date-fns/addHours";
-
 import { DateTimeField } from "../components/DateTimeField/date-time-field.component";
 import { Props } from "../components/DateTimeField/date-time-field.utils";
-import { selectedItemClassName } from "../components/DateField/date-field.dom";
+import {
+  selectedItemClassName,
+  makeHourItemSelector,
+  makeMinuteItemSelector,
+} from "../components/DateField/date-field.dom";
 
 type P = ComponentType<Partial<Props>>;
 const DateTimeFieldP = DateTimeField as P;
@@ -23,7 +26,6 @@ it("renders ", () => {
   // we also hard code the hour otherwise test will fail at 00:xy hours
   // well we need to hard code the day also otherwise failure on the 30th
   const currentDate = new Date("2019-05-28T07:25");
-
   const name = "f";
 
   /**
@@ -36,7 +38,7 @@ it("renders ", () => {
   /**
    * Then the date should be visible on the page
    */
-  const [, , , h, mi] = formatDate(currentDate, "yyyy MMM d HH mm").split(" ");
+  const [h, mi] = formatDate(currentDate, "HH mm").split(" ");
 
   const hourFieldDom = document.getElementById(
     `datetime-hour-field-f.hr`,
@@ -67,14 +69,14 @@ it("renders ", () => {
     -4,
   );
 
-  const [, , , h1, mi1] = formatDate(newDate, "yyyy MMM d HH mm").split(" ");
+  const [h1, m1] = formatDate(newDate, "HH mm").split(" ");
 
   (document
-    .getElementsByClassName(`js-datetime-field-input-hour-${h1}`)
+    .getElementsByClassName(makeHourItemSelector(h1))
     .item(0) as HTMLElement).click();
 
   (document
-    .getElementsByClassName(`js-datetime-field-input-minute-${mi1}`)
+    .getElementsByClassName(makeMinuteItemSelector(m1))
     .item(0) as HTMLElement).click();
 
   /**
@@ -99,5 +101,5 @@ it("renders ", () => {
     (minuteFieldDom
       .getElementsByClassName(selectedItemClassName)
       .item(0) as HTMLDivElement).textContent,
-  ).toEqual(mi1);
+  ).toEqual(m1);
 });

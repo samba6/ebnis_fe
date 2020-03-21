@@ -4,7 +4,11 @@ import { DateField } from "../DateField/date-field.component";
 import { FormObjVal } from "../Experience/experience.utils";
 import { Props } from "./date-time-field.utils";
 import "../DateField/date-field.styles.css";
-import { selectedItemClassName } from "../DateField/date-field.dom";
+import {
+  selectedItemClassName,
+  makeHourItemSelector,
+  makeMinuteItemSelector,
+} from "../DateField/date-field.dom";
 
 interface DropdownOptions {
   key: number;
@@ -23,9 +27,7 @@ export const HOUR_OPTIONS = Array.from<undefined, DropdownOptions>(
       text,
       value: hrIndex,
       content: (
-        <span className={`text js-datetime-field-input-hour-${text}`}>
-          {text}
-        </span>
+        <span className={`text ${makeHourItemSelector(text)}`}>{text}</span>
       ),
     };
   },
@@ -41,9 +43,7 @@ export const MINUTE_OPTIONS = Array.from<void, DropdownOptions>(
       text,
       value: minIndex,
       content: (
-        <span className={`text js-datetime-field-input-minute-${text}`}>
-          {text}
-        </span>
+        <span className={`text ${makeMinuteItemSelector(text)}`}>{text}</span>
       ),
     };
   },

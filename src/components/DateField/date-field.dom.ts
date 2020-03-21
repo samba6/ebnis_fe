@@ -1,4 +1,5 @@
 const domPrefix = "ebnis-date-field";
+const datetimeDomPrefix = "ebnis-datetime-field";
 export const selectedItemClassName = `${domPrefix}-item-selected`;
 
 export function makeComponentDomId(name: string) {
@@ -27,4 +28,12 @@ export function makeMonthDomId(compId: string) {
 
 export function makeYearDomId(compId: string) {
   return `${compId}-year`;
+}
+
+export function makeHourItemSelector(hour: number | string) {
+  return `js-${datetimeDomPrefix}-hour-${hour}`;
+}
+
+export function makeMinuteItemSelector(minutes: number | string) {
+  return `js-${datetimeDomPrefix}-minute-${minutes}`;
 }
