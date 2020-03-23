@@ -4,6 +4,7 @@ import React, {
   Fragment,
   useEffect,
   useCallback,
+  ChangeEvent,
 } from "react";
 import {
   Props,
@@ -28,7 +29,6 @@ import "./edit-entry.styles.scss";
 import { Loading } from "../Loading/loading";
 import { componentFromDataType } from "../NewEntry/component-from-data-type";
 import { FormObjVal } from "../Experience/experience.utils";
-import { InputOnChangeData } from "semantic-ui-react";
 import { DataTypes } from "../../graphql/apollo-types/globalTypes";
 import { ErrorBoundary } from "../ErrorBoundary/error-boundary.component";
 import {
@@ -327,11 +327,11 @@ function getComponentFromDataType(
             rawFormVal: val,
           });
         }
-      : (_: E, { value: rawFormVal }: InputOnChangeData) => {
+      : (e: ChangeEvent<HTMLInputElement>) => {
           dispatch({
             type: ActionType.DATA_CHANGED,
             id,
-            rawFormVal,
+            rawFormVal: e.target.value,
           });
         };
 

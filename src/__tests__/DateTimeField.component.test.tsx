@@ -38,7 +38,7 @@ it("renders ", () => {
   /**
    * Then the date should be visible on the page
    */
-  const [h, mi] = formatDate(currentDate, "HH mm").split(" ");
+  const [h, m] = formatDate(currentDate, "HH mm").split(" ");
 
   const hourFieldDom = document.getElementById(
     `datetime-hour-field-f.hr`,
@@ -58,7 +58,7 @@ it("renders ", () => {
     (minuteFieldDom
       .getElementsByClassName(selectedItemClassName)
       .item(0) as HTMLElement).textContent,
-  ).toEqual(mi);
+  ).toEqual(m);
 
   /**
    * When we change the date to two years, 3 months, 5 days, 2 hours and

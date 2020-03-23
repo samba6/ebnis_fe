@@ -7,7 +7,6 @@ import "./src/styles/semantic-theme/semantic.less";
 import "./src/styles/globals.scss";
 import "./src/styles/tailwind.css";
 import "@fortawesome/fontawesome-free/css/all.css";
-import "./src/styles/globals-css.css";
 import {
   buildClientCache,
   restoreCacheOrPurgeStorage,

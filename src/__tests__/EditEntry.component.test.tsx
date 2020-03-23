@@ -140,7 +140,7 @@ test("renders error boundary", () => {
   expect(mockParentDispatch).toHaveBeenCalled();
 });
 
-test("edit online entry, submit online", async () => {
+test.only("edit online entry, submit online", async () => {
   const experienceId = "ex";
   const entryId = "en";
 
@@ -282,7 +282,7 @@ test("edit online entry, submit online", async () => {
    * When component is rendered
    */
 
-  render(ui);
+  const { debug } = render(ui);
 
   /**
    * And entry data is changed
@@ -293,12 +293,14 @@ test("edit online entry, submit online", async () => {
    * Then error notification should not be visible
    */
   expect(getErrorsNotificationDom()).toBeNull();
+  debug();
+  return;
 
   /**
    * When form is submitted
    */
-  const $submit = getSubmit(); // 1
-  $submit.click();
+  const submitDom = getSubmit(); // 1
+  submitDom.click();
 
   /**
    * Then error notification should be visible
@@ -341,7 +343,7 @@ test("edit online entry, submit online", async () => {
   /**
    * When form is submitted
    */
-  $submit.click(); // 2
+  submitDom.click(); // 2
 
   /**
    * Then error notification should be visible
@@ -361,7 +363,7 @@ test("edit online entry, submit online", async () => {
   /**
    * When form is submitted
    */
-  $submit.click(); // 3
+  submitDom.click(); // 3
 
   /**
    * Then error notification should now be visible
@@ -381,7 +383,7 @@ test("edit online entry, submit online", async () => {
   /**
    * When form is submitted
    */
-  $submit.click(); // 4
+  submitDom.click(); // 4
 
   /**
    * Then error notification should now be visible
@@ -396,7 +398,7 @@ test("edit online entry, submit online", async () => {
   /**
    * When form is submitted
    */
-  $submit.click(); // 5
+  submitDom.click(); // 5
 
   /**
    * Then success notification should now be visible
@@ -426,7 +428,7 @@ test("edit online entry, submit online", async () => {
   /**
    * When form is submitted
    */
-  $submit.click(); // 6
+  submitDom.click(); // 6
 
   /**
    * Then success notification should now be visible

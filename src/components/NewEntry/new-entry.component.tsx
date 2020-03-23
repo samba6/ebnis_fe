@@ -1,6 +1,11 @@
-import React, { useEffect, useReducer, useContext, useCallback } from "react";
-import Form from "semantic-ui-react/dist/commonjs/collections/Form";
-import Button from "semantic-ui-react/dist/commonjs/elements/Button";
+import React, {
+  useEffect,
+  useReducer,
+  useContext,
+  useCallback,
+  FormEvent,
+  ChangeEvent,
+} from "react";
 import { NavigateFn } from "@reach/router";
 import "./new-entry.styles.scss";
 import {
@@ -24,7 +29,6 @@ import { FormCtrlError } from "../FormCtrlError/form-ctrl-error.component";
 import { DataTypes } from "../../graphql/apollo-types/globalTypes";
 import { useCreateOfflineEntryMutation } from "./new-entry.resolvers";
 import { componentFromDataType } from "./component-from-data-type";
-import { InputOnChangeData } from "semantic-ui-react";
 import { addNewEntryResolvers } from "./new-entry.injectables";
 import { EbnisAppContext } from "../../context";
 import { SidebarHeader } from "../SidebarHeader/sidebar-header.component";
@@ -88,7 +92,8 @@ export function NewEntryComponent(props: ComponentProps) {
     /* eslint-disable-next-line react-hooks/exhaustive-deps*/
   }, []);
 
-  const onSubmit = useCallback(() => {
+  const onSubmit = useCallback((e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
     dispatch({
       type: ActionType.ON_SUBMIT,
     });
@@ -110,14 +115,13 @@ export function NewEntryComponent(props: ComponentProps) {
           />
         )}
 
-        <Button
+        <button
           type="button"
           onClick={goToExperience}
-          className="title"
-          basic={true}
+          className="back-to-details"
         >
           {title}
-        </Button>
+        </button>
 
         {submission.value === StateValue.errors && (
           <div className="notification">
@@ -135,7 +139,7 @@ export function NewEntryComponent(props: ComponentProps) {
           </div>
         )}
 
-        <Form onSubmit={onSubmit}>
+        <form className="form" onSubmit={onSubmit}>
           {dataDefinitions.map((obj, index) => {
             const definition = obj as ExperienceFragment_dataDefinitions;
 
@@ -149,18 +153,15 @@ export function NewEntryComponent(props: ComponentProps) {
               />
             );
           })}
-
-          <Button
+          <button
             className="submit-btn"
             id={submitBtnDomId}
             type="submit"
-            inverted={true}
             color="green"
-            fluid={true}
           >
             Submit
-          </Button>
-        </Form>
+          </button>
+        </form>
       </div>
     </div>
   );
@@ -187,7 +188,9 @@ const DataComponent = React.memo(
       onChange:
         type === DataTypes.DATE || type === DataTypes.DATETIME
           ? makeDateChangedFn(dispatch, index)
-          : (_: E, { value: inputVal }: InputOnChangeData) => {
+          : (e: ChangeEvent<HTMLInputElement>) => {
+              const inputVal = e.currentTarget.value;
+
               dispatch({
                 type: ActionType.ON_FORM_FIELD_CHANGED,
                 fieldIndex: index,
@@ -202,20 +205,24 @@ const DataComponent = React.memo(
     const component = componentFromDataType(type, generic);
 
     return (
-      <Form.Field
+      <div
         className={makeClassNames({
           error: !!errors,
           relative: true,
+          form__field: true,
         })}
       >
-        <label htmlFor={inputId}>{`[${type}] ${fieldTitle}`}</label>
+        <label
+          className="form__label"
+          htmlFor={inputId}
+        >{`[${type}] ${fieldTitle}`}</label>
 
         {component}
 
         {errors && (
           <FormCtrlError id={makeInputErrorDomId(id)}>{errors}</FormCtrlError>
         )}
-      </Form.Field>
+      </div>
     );
   },
 

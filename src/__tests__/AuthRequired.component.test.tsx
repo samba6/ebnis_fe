@@ -5,7 +5,7 @@ import { render } from "@testing-library/react";
 import {
   AuthRequired,
   Props,
-} from "../components/AuthRequired/auth-required.componnet";
+} from "../components/AuthRequired/auth-required.component";
 import { useUser } from "../components/use-user";
 import { redirectToLogin } from "../components/AuthRequired/auth-required.injectables";
 

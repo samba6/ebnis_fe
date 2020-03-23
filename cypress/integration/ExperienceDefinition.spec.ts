@@ -16,6 +16,7 @@ import {
 } from "../../src/components/ExperienceDefinition/experience-definition.dom";
 import { experienceNoEntriesDomId } from "../../src/components/Experience/experience.dom";
 import { submitBtnDomId as newEntrySubmitDomId } from "../../src/components/NewEntry/new-entry.dom";
+import formatDate from "date-fns/format";
 
 context("experience definition page", () => {
   beforeEach(() => {
@@ -184,6 +185,11 @@ context("experience definition page", () => {
        * When link to create new entry is clicked
        */
       cy.get("#" + experienceNoEntriesDomId).click();
+
+      const testDate = new Date("2019-05-28T07:25");
+      const [y, m, d, h, mi] = formatDate(testDate, "yyyy MMM d HH mm").split(
+        " ",
+      );
 
       /**
        * And new entry is created

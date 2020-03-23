@@ -792,13 +792,14 @@ function handleCreateEntryAction(proxy: DraftState) {
 
 function formObjFromRawString(val: string): FormObjVal {
   const [[k, v]] = Object.entries(JSON.parse(val));
+  const value = v as string;
 
   switch (k) {
     case "datetime":
-      return parseISO(v);
+      return parseISO(value);
 
     case "date":
-      return parse(v, ISO_DATE_FORMAT, new Date());
+      return parse(value, ISO_DATE_FORMAT, new Date());
 
     default:
       return (("" + v) as string).trim();

@@ -220,81 +220,6 @@ it("sets field defaults, creates entry online", async () => {
     experience,
   });
 
-  mockUpdateExperiencesOnline
-    // 1 - errors no dataObjects errors
-    .mockResolvedValueOnce({
-      data: {
-        updateExperiences: {
-          __typename: "UpdateExperiencesSomeSuccess",
-          experiences: [
-            {
-              __typename: "UpdateExperienceSomeSuccess",
-              experience: {
-                newEntries: [
-                  {
-                    __typename: "CreateEntryErrors",
-                    errors: {},
-                  },
-                ],
-              },
-            },
-          ],
-        },
-      },
-    } as UpdateExperiencesOnlineMutationResult)
-    // end 1 - errors no dataObjects errors
-    // 2 dataObjects errors
-    .mockResolvedValueOnce({
-      data: {
-        updateExperiences: {
-          __typename: "UpdateExperiencesSomeSuccess",
-          experiences: [
-            {
-              __typename: "UpdateExperienceSomeSuccess",
-              experience: {
-                newEntries: [
-                  {
-                    __typename: "CreateEntryErrors",
-                    errors: {
-                      dataObjects: [
-                        {
-                          meta: {
-                            index: 0,
-                          },
-                          definition: "a",
-                          clientId: "",
-                        },
-                      ],
-                    },
-                  },
-                ],
-              },
-            },
-          ],
-        },
-      },
-    } as UpdateExperiencesOnlineMutationResult)
-    // end 2 dataObjects errors
-    .mockResolvedValueOnce({
-      data: {
-        updateExperiences: {
-          __typename: "UpdateExperiencesSomeSuccess",
-          experiences: [
-            {
-              __typename: "UpdateExperienceSomeSuccess",
-              experience: {
-                newEntries: [
-                  {
-                    __typename: "CreateEntrySuccess",
-                  },
-                ],
-              },
-            },
-          ],
-        },
-      },
-    } as UpdateExperiencesOnlineMutationResult); // 3 happy path
-
   /**
    * When component is rendered
    */
@@ -309,7 +234,30 @@ it("sets field defaults, creates entry online", async () => {
    * When form is submitted without making any changes
    */
   const submitDom = document.getElementById(submitBtnDomId) as HTMLElement;
-  submitDom.click(); // 1
+
+  // 1 - errors no dataObjects errors
+  mockUpdateExperiencesOnline.mockResolvedValueOnce({
+    data: {
+      updateExperiences: {
+        __typename: "UpdateExperiencesSomeSuccess",
+        experiences: [
+          {
+            __typename: "UpdateExperienceSomeSuccess",
+            experience: {
+              newEntries: [
+                {
+                  __typename: "CreateEntryErrors",
+                  errors: {},
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  } as UpdateExperiencesOnlineMutationResult);
+
+  submitDom.click();
 
   /**
    * Then error notification should be visible
@@ -377,7 +325,10 @@ it("sets field defaults, creates entry online", async () => {
   /**
    * Then field error should not to be visible
    */
-  const decimalFieldDom = decimalInputDom.closest(".field") as HTMLElement;
+  const decimalFieldDom = decimalInputDom.closest(
+    ".form__field",
+  ) as HTMLElement;
+
   expect(decimalFieldDom.classList).not.toContain("error");
   const decimalErrorDomId = makeInputErrorDomId("f1");
   expect(document.getElementById(decimalErrorDomId)).toBeNull();
@@ -385,6 +336,38 @@ it("sets field defaults, creates entry online", async () => {
   /**
    * When form is submitted again
    */
+  // 2 dataObjects errors
+  mockUpdateExperiencesOnline.mockResolvedValueOnce({
+    data: {
+      updateExperiences: {
+        __typename: "UpdateExperiencesSomeSuccess",
+        experiences: [
+          {
+            __typename: "UpdateExperienceSomeSuccess",
+            experience: {
+              newEntries: [
+                {
+                  __typename: "CreateEntryErrors",
+                  errors: {
+                    dataObjects: [
+                      {
+                        meta: {
+                          index: 0,
+                        },
+                        definition: "a",
+                        clientId: "",
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  } as UpdateExperiencesOnlineMutationResult);
+
   submitDom.click(); // 2
 
   /**
@@ -422,8 +405,30 @@ it("sets field defaults, creates entry online", async () => {
 
   /**
    * When form is submitted again
+   * happy path
    */
-  submitDom.click(); // 3
+
+  mockUpdateExperiencesOnline.mockResolvedValueOnce({
+    data: {
+      updateExperiences: {
+        __typename: "UpdateExperiencesSomeSuccess",
+        experiences: [
+          {
+            __typename: "UpdateExperienceSomeSuccess",
+            experience: {
+              newEntries: [
+                {
+                  __typename: "CreateEntrySuccess",
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  } as UpdateExperiencesOnlineMutationResult);
+
+  submitDom.click();
 
   /**
    * Then error notification should not be visible

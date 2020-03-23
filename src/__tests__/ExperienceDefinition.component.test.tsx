@@ -102,10 +102,10 @@ it("renders", async () => {
     titleInputDomId,
   ) as HTMLInputElement;
 
-  const titleFieldDom = titleInputDom.closest(".field") as HTMLElement;
+  const titleFieldDom = titleInputDom.closest(".form__field") as HTMLElement;
   const titleInputErrorDomId = titleInputDomId + "-errors";
 
-  expect(titleFieldDom.classList).not.toContain("field--errors");
+  expect(titleFieldDom.classList).not.toContain("form__field--errors");
   expect(document.getElementById(titleInputErrorDomId)).toBeNull();
 
   const definitionNameInputDomId1 = definitionNameInputDomId + 1;
@@ -116,10 +116,12 @@ it("renders", async () => {
   ) as HTMLInputElement;
 
   const definitionNameFieldDom1 = definitionNameInputDom1.closest(
-    ".field",
+    ".form__field",
   ) as HTMLElement;
 
-  expect(definitionNameFieldDom1.classList).not.toContain("field--errors");
+  expect(definitionNameFieldDom1.classList).not.toContain(
+    "form__field--errors",
+  );
   expect(document.getElementById(definitionNameErrorDomId1)).toBeNull();
 
   const definitionTypeInputDomId1 = definitionTypeInputDomId + 1;
@@ -130,10 +132,12 @@ it("renders", async () => {
   ) as HTMLSelectElement;
 
   const definitionTypeFieldDom1 = definitionTypeInputDom1.closest(
-    ".field",
+    ".form__field",
   ) as HTMLElement;
 
-  expect(definitionTypeFieldDom1.classList).not.toContain("field--errors");
+  expect(definitionTypeFieldDom1.classList).not.toContain(
+    "form__field--errors",
+  );
   expect(document.getElementById(definitionTypeErrorDomId1)).toBeNull();
 
   /**
@@ -151,11 +155,11 @@ it("renders", async () => {
   /**
    * And field errors should be visible
    */
-  expect(titleFieldDom.classList).toContain("field--errors");
+  expect(titleFieldDom.classList).toContain("form__field--errors");
   expect(document.getElementById(titleInputErrorDomId)).not.toBeNull();
-  expect(definitionNameFieldDom1.classList).toContain("field--errors");
+  expect(definitionNameFieldDom1.classList).toContain("form__field--errors");
   expect(document.getElementById(definitionNameErrorDomId1)).not.toBeNull();
-  expect(definitionTypeFieldDom1.classList).toContain("field--errors");
+  expect(definitionTypeFieldDom1.classList).toContain("form__field--errors");
   expect(document.getElementById(definitionTypeErrorDomId1)).not.toBeNull();
 
   /**
@@ -183,11 +187,15 @@ it("renders", async () => {
   /**
    * Then errors should be cleared
    */
-  expect(titleFieldDom.classList).not.toContain("field--errors");
+  expect(titleFieldDom.classList).not.toContain("form__field--errors");
   expect(document.getElementById(titleInputErrorDomId)).toBeNull();
-  expect(definitionNameFieldDom1.classList).not.toContain("field--errors");
+  expect(definitionNameFieldDom1.classList).not.toContain(
+    "form__field--errors",
+  );
   expect(document.getElementById(definitionNameErrorDomId1)).toBeNull();
-  expect(definitionTypeFieldDom1.classList).not.toContain("field--errors");
+  expect(definitionTypeFieldDom1.classList).not.toContain(
+    "form__field--errors",
+  );
   expect(document.getElementById(definitionTypeErrorDomId1)).toBeNull();
 
   /**
@@ -208,7 +216,7 @@ it("renders", async () => {
     descriptionInputDomId,
   ) as HTMLInputElement;
 
-  expect(descriptionInputDom.classList).not.toContain("field__control--hidden");
+  expect(descriptionInputDom.classList).not.toContain("form__control--hidden");
 
   const descriptionHideDom = document.getElementById(
     hideDescriptionInputDomId,
@@ -222,7 +230,7 @@ it("renders", async () => {
   /**
    * Then description input should not be visible
    */
-  expect(descriptionInputDom.classList).toContain("field__control--hidden");
+  expect(descriptionInputDom.classList).toContain("form__control--hidden");
 
   /**
    * And hide description UI should not be visible
@@ -241,7 +249,7 @@ it("renders", async () => {
   /**
    * Then description input should be visible
    */
-  expect(descriptionInputDom.classList).not.toContain("field__control--hidden");
+  expect(descriptionInputDom.classList).not.toContain("form__control--hidden");
 
   /**
    * And hide description UI should be visible
@@ -411,10 +419,12 @@ it("renders", async () => {
   const definitionNameErrorDomId2 = definitionNameInputDomId2 + "-errors";
 
   const definitionNameFieldDom2 = definitionNameInputDom2.closest(
-    ".field",
+    ".form__field",
   ) as HTMLElement;
 
-  expect(definitionNameFieldDom2.classList).not.toContain("field--errors");
+  expect(definitionNameFieldDom2.classList).not.toContain(
+    "form__field--errors",
+  );
   expect(document.getElementById(definitionNameErrorDomId2)).toBeNull();
 
   const definitionTypeInputDomId2 = definitionTypeInputDomId + 2;
@@ -425,10 +435,12 @@ it("renders", async () => {
   ) as HTMLSelectElement;
 
   const definitionTypeFieldDom2 = definitionTypeInputDom2.closest(
-    ".field",
+    ".form__field",
   ) as HTMLElement;
 
-  expect(definitionTypeFieldDom2.classList).not.toContain("field--errors");
+  expect(definitionTypeFieldDom2.classList).not.toContain(
+    "form__field--errors",
+  );
   expect(document.getElementById(definitionTypeErrorDomId2)).toBeNull();
 
   /**
@@ -446,20 +458,24 @@ it("renders", async () => {
    * Then title and definition 1 should not show errors
    */
 
-  expect(titleFieldDom.classList).not.toContain("field--errors");
+  expect(titleFieldDom.classList).not.toContain("form__field--errors");
   expect(document.getElementById(titleInputErrorDomId)).toBeNull();
-  expect(definitionNameFieldDom1.classList).not.toContain("field--errors");
+  expect(definitionNameFieldDom1.classList).not.toContain(
+    "form__field--errors",
+  );
   expect(document.getElementById(definitionNameErrorDomId1)).toBeNull();
-  expect(definitionTypeFieldDom1.classList).not.toContain("field--errors");
+  expect(definitionTypeFieldDom1.classList).not.toContain(
+    "form__field--errors",
+  );
   expect(document.getElementById(definitionTypeErrorDomId1)).toBeNull();
 
   /**
    * But definition 2 should show errors
    */
 
-  expect(definitionNameFieldDom2.classList).toContain("field--errors");
+  expect(definitionNameFieldDom2.classList).toContain("form__field--errors");
   expect(document.getElementById(definitionNameErrorDomId2)).not.toBeNull();
-  expect(definitionTypeFieldDom2.classList).toContain("field--errors");
+  expect(definitionTypeFieldDom2.classList).toContain("form__field--errors");
   expect(document.getElementById(definitionTypeErrorDomId2)).not.toBeNull();
 
   /**
