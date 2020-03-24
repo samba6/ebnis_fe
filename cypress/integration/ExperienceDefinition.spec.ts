@@ -15,7 +15,28 @@ import {
   addDefinitionSelector,
 } from "../../src/components/ExperienceDefinition/experience-definition.dom";
 import { experienceNoEntriesDomId } from "../../src/components/Experience/experience.dom";
-import { submitBtnDomId as newEntrySubmitDomId } from "../../src/components/NewEntry/new-entry.dom";
+import {
+  submitBtnDomId as newEntrySubmitDomId,
+  NEW_ENTRY_DOCUMENT_TITLE_PREFIX,
+  dateComponentDomSelector,
+  datetimeComponentDomSelector,
+  integerInputDomSelector,
+  decimalInputDomSelector,
+  singleLineInputDomSelector,
+  multiLineInputDomSelector,
+} from "../../src/components/NewEntry/new-entry.dom";
+import {
+  makeYearItemSelector,
+  yearDropdownSelector,
+  makeDayItemSelector,
+  dayDropdownSelector,
+  makeMonthItemSelector,
+  monthDropdownSelector,
+  makeMinuteItemSelector,
+  minuteDropdownSelector,
+  makeHourItemSelector,
+  hourDropdownSelector,
+} from "../../src/components/DateField/date-field.dom";
 import formatDate from "date-fns/format";
 
 context("experience definition page", () => {
@@ -186,10 +207,90 @@ context("experience definition page", () => {
        */
       cy.get("#" + experienceNoEntriesDomId).click();
 
-      const testDate = new Date("2019-05-28T07:25");
-      const [y, m, d, h, mi] = formatDate(testDate, "yyyy MMM d HH mm").split(
-        " ",
-      );
+      /**
+       * Then page should navigate to 'new entry' page
+       */
+      cy.title().should("contain", NEW_ENTRY_DOCUMENT_TITLE_PREFIX);
+
+      /**
+       * When fields are completed
+       */
+
+      const lastYear = new Date().getFullYear() - 1;
+      const testDate = new Date(`${lastYear}-05-28T07:25`);
+      const [year, month, day, hours, minutes] = formatDate(
+        testDate,
+        "yyyy MMM d HH mm",
+      ).split(" ");
+
+      cy.get("." + dateComponentDomSelector)
+        .first()
+        .within(() => {
+          cy.get("." + dayDropdownSelector)
+            .first()
+            .click()
+            .within(() => {
+              cy.get("." + makeDayItemSelector(day))
+                .first()
+                .click();
+            });
+
+          cy.get("." + monthDropdownSelector)
+            .first()
+            .click()
+            .within(() => {
+              cy.get("." + makeMonthItemSelector(month))
+                .first()
+                .click();
+            });
+
+          cy.get("." + yearDropdownSelector)
+            .first()
+            .click()
+            .within(() => {
+              cy.get("." + makeYearItemSelector(year))
+                .first()
+                .click();
+            });
+        });
+
+      cy.get("." + datetimeComponentDomSelector)
+        .first()
+        .within(() => {
+          cy.get("." + hourDropdownSelector)
+            .first()
+            .click()
+            .within(() => {
+              cy.get("." + makeHourItemSelector(hours))
+                .first()
+                .click();
+            });
+
+          cy.get("." + minuteDropdownSelector)
+            .first()
+            .click()
+            .within(() => {
+              cy.get("." + makeMinuteItemSelector(minutes))
+                .first()
+                .click();
+            });
+        });
+
+      cy.get("." + integerInputDomSelector)
+        .first()
+        .type("5");
+
+      cy.get("." + decimalInputDomSelector)
+        .first()
+        .type("5.5");
+
+      cy.get("." + singleLineInputDomSelector)
+        .first()
+        .type("aa");
+
+      cy.get("." + multiLineInputDomSelector)
+        .first()
+        .type("bb\ncc");
 
       /**
        * And new entry is created

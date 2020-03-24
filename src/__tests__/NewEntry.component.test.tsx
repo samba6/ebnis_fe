@@ -235,7 +235,7 @@ it("sets field defaults, creates entry online", async () => {
    */
   const submitDom = document.getElementById(submitBtnDomId) as HTMLElement;
 
-  // 1 - errors no dataObjects errors
+  // no dataObjects errors
   mockUpdateExperiencesOnline.mockResolvedValueOnce({
     data: {
       updateExperiences: {

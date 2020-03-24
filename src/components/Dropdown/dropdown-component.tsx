@@ -2,9 +2,7 @@ import React, { useState, useRef, useCallback, useEffect } from "react";
 import makeClassNames from "classnames";
 import { StateMachine, Option, Props } from "./dropdown.utils";
 import "./dropdown.styles.css";
-
-const domPrefix = "ebnis-dropdown";
-const domSelectorClass = `js-${domPrefix}`;
+import { dropdownDomSelectorClass } from "./dropdown.dom";
 
 export function Dropdown<Value = string | number>(props: Props<Value>) {
   const {
@@ -13,6 +11,7 @@ export function Dropdown<Value = string | number>(props: Props<Value>) {
     onChange,
     defaultValue,
     options,
+    className = "",
     ...rest
   } = props;
 
@@ -54,7 +53,7 @@ export function Dropdown<Value = string | number>(props: Props<Value>) {
   }, []);
 
   const documentClickListener = useCallback((evt: MouseEvent) => {
-    if ((evt.target as HTMLElement).closest("." + domSelectorClass)) {
+    if ((evt.target as HTMLElement).closest("." + dropdownDomSelectorClass)) {
       return;
     }
 
@@ -115,7 +114,10 @@ export function Dropdown<Value = string | number>(props: Props<Value>) {
   return (
     <div
       ref={componentDomRef}
-      className={`${domPrefix} ${domSelectorClass}`}
+      className={makeClassNames({
+        [`ebnis-dropdown ${dropdownDomSelectorClass}`]: true,
+        [className]: !!className,
+      })}
       onKeyDown={e => {
         if (e.key === "Escape") {
           closeAndReset();

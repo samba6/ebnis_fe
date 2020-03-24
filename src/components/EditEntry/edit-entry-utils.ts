@@ -807,7 +807,13 @@ function formObjFromRawString(val: string): FormObjVal {
 }
 
 function formObjToCompareString(type: DataTypes, val: FormObjVal) {
-  const stringVal = formObjToString(type, val);
+  let stringVal = val;
+
+  if (
+    !((type === DataTypes.DECIMAL || type === DataTypes.INTEGER) && val === "")
+  ) {
+    stringVal = formObjToString(type, val);
+  }
 
   return [val, stringVal];
 }

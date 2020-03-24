@@ -6,12 +6,11 @@ import Dropdown from "../Dropdown/dropdown-component";
 import {
   makeMonthItemSelector,
   makeDayItemSelector,
-  makeComponentDomId,
   selectedItemClassName,
-  makeDayDomId,
-  makeMonthDomId,
-  makeYearDomId,
   makeYearItemSelector,
+  dayDropdownSelector,
+  monthDropdownSelector,
+  yearDropdownSelector,
 } from "./date-field.dom";
 
 const MONTHS_DROP_DOWN_OPTIONS = [
@@ -56,8 +55,6 @@ export const DAYS = Array.from<
 
 export function DateField(props: Props) {
   const { className = "", onChange, value, name: compName } = props;
-  const componentId = makeComponentDomId(compName);
-  const yearDomId = makeYearDomId(componentId);
 
   const { years, currYr, currMonth, currDay } = useMemo(
     function() {
@@ -84,13 +81,13 @@ export function DateField(props: Props) {
   }
 
   return (
-    <div className={`${className} date-field light-border`} id={componentId}>
+    <div className={`${className} date-field light-border`}>
       <div>
         <label className="field_label">{LABELS.day}</label>
 
         <Dropdown
+          className={dayDropdownSelector}
           selectedItemClassName={selectedItemClassName}
-          id={makeDayDomId(componentId)}
           options={dayOptions}
           defaultValue={currDay}
           onChange={function(_, data) {
@@ -104,8 +101,8 @@ export function DateField(props: Props) {
         <label className="field_label">{LABELS.month}</label>
 
         <Dropdown
+          className={monthDropdownSelector}
           selectedItemClassName={selectedItemClassName}
-          id={makeMonthDomId(componentId)}
           options={MONTHS_DROP_DOWN_OPTIONS}
           defaultValue={currMonth}
           onChange={function(_, dataVal) {
@@ -119,8 +116,8 @@ export function DateField(props: Props) {
         <label className="field_label">{LABELS.year}</label>
 
         <Dropdown
+          className={yearDropdownSelector}
           selectedItemClassName={selectedItemClassName}
-          id={yearDomId}
           options={years}
           defaultValue={currYr}
           onChange={function(_, dataVal) {

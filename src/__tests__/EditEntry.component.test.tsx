@@ -140,7 +140,7 @@ test("renders error boundary", () => {
   expect(mockParentDispatch).toHaveBeenCalled();
 });
 
-test.only("edit online entry, submit online", async () => {
+test("edit online entry, submit online", async () => {
   const experienceId = "ex";
   const entryId = "en";
 
@@ -172,117 +172,11 @@ test.only("edit online entry, submit online", async () => {
     },
   });
 
-  // we received empty data
-  mockUpdateExperiencesOnline
-    .mockResolvedValueOnce({}) // 1
-    .mockRejectedValueOnce(new Error("t")) // 2
-    .mockResolvedValueOnce({
-      data: {
-        updateExperiences: {
-          __typename: "UpdateExperiencesSomeSuccess",
-          experiences: [
-            {
-              __typename: "UpdateExperienceSomeSuccess",
-              experience: {},
-            },
-          ],
-        },
-      },
-    } as UpdateExperiencesOnlineMutationResult) // 3
-    .mockResolvedValueOnce({
-      data: {
-        updateExperiences: {
-          __typename: "UpdateExperiencesSomeSuccess",
-          experiences: [
-            {
-              __typename: "UpdateExperienceSomeSuccess",
-              experience: {
-                updatedEntries: [
-                  {
-                    __typename: "UpdateEntryErrors",
-                    errors: {
-                      error: "UpdateEntryErrors",
-                    },
-                  },
-                ],
-              },
-            },
-          ],
-        },
-      },
-    } as UpdateExperiencesOnlineMutationResult) // 4
-    // 5
-    .mockResolvedValueOnce({
-      data: {
-        updateExperiences: {
-          __typename: "UpdateExperiencesSomeSuccess",
-          experiences: [
-            {
-              __typename: "UpdateExperienceSomeSuccess",
-              experience: {
-                updatedEntries: [
-                  {
-                    __typename: "UpdateEntrySomeSuccess",
-                    entry: {
-                      dataObjects: [
-                        {
-                          __typename: "DataObjectErrors",
-                          errors: {
-                            meta: {
-                              id: "int",
-                            },
-                            data: "a",
-                            error: null,
-                          },
-                        },
-                      ],
-                    },
-                  },
-                ],
-              },
-            },
-          ],
-        },
-      },
-    } as UpdateExperiencesOnlineMutationResult) // 5
-    // end 5
-    // 6
-    .mockResolvedValueOnce({
-      data: {
-        updateExperiences: {
-          __typename: "UpdateExperiencesSomeSuccess",
-          experiences: [
-            {
-              __typename: "UpdateExperienceSomeSuccess",
-              experience: {
-                updatedEntries: [
-                  {
-                    __typename: "UpdateEntrySomeSuccess",
-                    entry: {
-                      dataObjects: [
-                        {
-                          __typename: "DataObjectSuccess",
-                          dataObject: {
-                            id: "int",
-                            data: `{"int":10}`,
-                          },
-                        },
-                      ],
-                    },
-                  },
-                ],
-              },
-            },
-          ],
-        },
-      },
-    } as UpdateExperiencesOnlineMutationResult); // 6
-
   /**
    * When component is rendered
    */
 
-  const { debug } = render(ui);
+  render(ui);
 
   /**
    * And entry data is changed
@@ -293,13 +187,12 @@ test.only("edit online entry, submit online", async () => {
    * Then error notification should not be visible
    */
   expect(getErrorsNotificationDom()).toBeNull();
-  debug();
-  return;
 
   /**
    * When form is submitted
    */
-  const submitDom = getSubmit(); // 1
+  const submitDom = getSubmit();
+  mockUpdateExperiencesOnline.mockResolvedValueOnce({});
   submitDom.click();
 
   /**
@@ -343,7 +236,8 @@ test.only("edit online entry, submit online", async () => {
   /**
    * When form is submitted
    */
-  submitDom.click(); // 2
+  mockUpdateExperiencesOnline.mockRejectedValueOnce(new Error("t"));
+  submitDom.click();
 
   /**
    * Then error notification should be visible
@@ -363,7 +257,20 @@ test.only("edit online entry, submit online", async () => {
   /**
    * When form is submitted
    */
-  submitDom.click(); // 3
+  mockUpdateExperiencesOnline.mockResolvedValueOnce({
+    data: {
+      updateExperiences: {
+        __typename: "UpdateExperiencesSomeSuccess",
+        experiences: [
+          {
+            __typename: "UpdateExperienceSomeSuccess",
+            experience: {},
+          },
+        ],
+      },
+    },
+  } as UpdateExperiencesOnlineMutationResult);
+  submitDom.click();
 
   /**
    * Then error notification should now be visible
@@ -383,7 +290,29 @@ test.only("edit online entry, submit online", async () => {
   /**
    * When form is submitted
    */
-  submitDom.click(); // 4
+  mockUpdateExperiencesOnline.mockResolvedValueOnce({
+    data: {
+      updateExperiences: {
+        __typename: "UpdateExperiencesSomeSuccess",
+        experiences: [
+          {
+            __typename: "UpdateExperienceSomeSuccess",
+            experience: {
+              updatedEntries: [
+                {
+                  __typename: "UpdateEntryErrors",
+                  errors: {
+                    error: "UpdateEntryErrors",
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  } as UpdateExperiencesOnlineMutationResult);
+  submitDom.click();
 
   /**
    * Then error notification should now be visible
@@ -398,7 +327,40 @@ test.only("edit online entry, submit online", async () => {
   /**
    * When form is submitted
    */
-  submitDom.click(); // 5
+  mockUpdateExperiencesOnline.mockResolvedValueOnce({
+    data: {
+      updateExperiences: {
+        __typename: "UpdateExperiencesSomeSuccess",
+        experiences: [
+          {
+            __typename: "UpdateExperienceSomeSuccess",
+            experience: {
+              updatedEntries: [
+                {
+                  __typename: "UpdateEntrySomeSuccess",
+                  entry: {
+                    dataObjects: [
+                      {
+                        __typename: "DataObjectErrors",
+                        errors: {
+                          meta: {
+                            id: "int",
+                          },
+                          data: "a",
+                          error: null,
+                        },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  } as UpdateExperiencesOnlineMutationResult);
+  submitDom.click();
 
   /**
    * Then success notification should now be visible
@@ -428,7 +390,37 @@ test.only("edit online entry, submit online", async () => {
   /**
    * When form is submitted
    */
-  submitDom.click(); // 6
+  mockUpdateExperiencesOnline.mockResolvedValueOnce({
+    data: {
+      updateExperiences: {
+        __typename: "UpdateExperiencesSomeSuccess",
+        experiences: [
+          {
+            __typename: "UpdateExperienceSomeSuccess",
+            experience: {
+              updatedEntries: [
+                {
+                  __typename: "UpdateEntrySomeSuccess",
+                  entry: {
+                    dataObjects: [
+                      {
+                        __typename: "DataObjectSuccess",
+                        dataObject: {
+                          id: "int",
+                          data: `{"int":10}`,
+                        },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  } as UpdateExperiencesOnlineMutationResult);
+  submitDom.click();
 
   /**
    * Then success notification should now be visible
@@ -691,98 +683,6 @@ test("edit offline entry, upload online", async () => {
     },
   });
 
-  mockUpdateExperiencesOnline
-    .mockResolvedValueOnce(null) // 1
-    .mockRejectedValueOnce(new Error("a")) // 2
-    // 3 no newEntries key
-    .mockResolvedValueOnce({
-      data: {
-        updateExperiences: {
-          __typename: "UpdateExperiencesSomeSuccess",
-          experiences: [
-            {
-              __typename: "UpdateExperienceSomeSuccess",
-              experience: {},
-            },
-          ],
-        },
-      },
-    } as UpdateExperiencesOnlineMutationResult) // 3
-    // end 3
-    // 4 no data objects error
-    .mockResolvedValueOnce({
-      data: {
-        updateExperiences: {
-          __typename: "UpdateExperiencesSomeSuccess",
-          experiences: [
-            {
-              __typename: "UpdateExperienceSomeSuccess",
-              experience: {
-                newEntries: [
-                  {
-                    __typename: "CreateEntryErrors",
-                    errors: {},
-                  },
-                ],
-              },
-            },
-          ],
-        },
-      },
-    } as UpdateExperiencesOnlineMutationResult) // 4
-    // end 4
-    // 5 there is data objects error
-    .mockResolvedValueOnce({
-      data: {
-        updateExperiences: {
-          __typename: "UpdateExperiencesSomeSuccess",
-          experiences: [
-            {
-              __typename: "UpdateExperienceSomeSuccess",
-              experience: {
-                newEntries: [
-                  {
-                    __typename: "CreateEntryErrors",
-                    errors: {
-                      dataObjects: [
-                        {
-                          meta: {
-                            clientId: dataId,
-                          },
-                          data: "a",
-                        },
-                      ],
-                    },
-                  },
-                ],
-              },
-            },
-          ],
-        },
-      },
-    } as UpdateExperiencesOnlineMutationResult) // 5
-    // end 5
-    // 6 happy path
-    .mockResolvedValueOnce({
-      data: {
-        updateExperiences: {
-          __typename: "UpdateExperiencesSomeSuccess",
-          experiences: [
-            {
-              __typename: "UpdateExperienceSomeSuccess",
-              experience: {
-                newEntries: [
-                  {
-                    __typename: "CreateEntrySuccess",
-                  },
-                ],
-              },
-            },
-          ],
-        },
-      },
-    } as UpdateExperiencesOnlineMutationResult); // 6
-
   /**
    * When the component is launched
    */
@@ -802,6 +702,7 @@ test("edit offline entry, upload online", async () => {
    * When form is submitted
    */
   const submitDom = getSubmit();
+  mockUpdateExperiencesOnline.mockResolvedValueOnce(null); // 1
   submitDom.click(); // 1
 
   /**
@@ -822,6 +723,7 @@ test("edit offline entry, upload online", async () => {
   /**
    * When form is submitted
    */
+  mockUpdateExperiencesOnline.mockRejectedValueOnce(new Error("a")); // 2
   submitDom.click(); // 2
 
   /**
@@ -841,7 +743,21 @@ test("edit offline entry, upload online", async () => {
 
   /**
    * When form is submitted
+   * no newEntries key
    */
+  mockUpdateExperiencesOnline.mockResolvedValueOnce({
+    data: {
+      updateExperiences: {
+        __typename: "UpdateExperiencesSomeSuccess",
+        experiences: [
+          {
+            __typename: "UpdateExperienceSomeSuccess",
+            experience: {},
+          },
+        ],
+      },
+    },
+  } as UpdateExperiencesOnlineMutationResult); // 3
   submitDom.click(); // 3
 
   /**
@@ -856,7 +772,28 @@ test("edit offline entry, upload online", async () => {
 
   /**
    * When form is submitted
+   * no data objects error
    */
+  mockUpdateExperiencesOnline.mockResolvedValueOnce({
+    data: {
+      updateExperiences: {
+        __typename: "UpdateExperiencesSomeSuccess",
+        experiences: [
+          {
+            __typename: "UpdateExperienceSomeSuccess",
+            experience: {
+              newEntries: [
+                {
+                  __typename: "CreateEntryErrors",
+                  errors: {},
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  } as UpdateExperiencesOnlineMutationResult); // 4
   submitDom.click(); // 4
 
   /**
@@ -887,7 +824,37 @@ test("edit offline entry, upload online", async () => {
 
   /**
    * When form is submitted
+   * there is data objects error
    */
+  mockUpdateExperiencesOnline.mockResolvedValueOnce({
+    data: {
+      updateExperiences: {
+        __typename: "UpdateExperiencesSomeSuccess",
+        experiences: [
+          {
+            __typename: "UpdateExperienceSomeSuccess",
+            experience: {
+              newEntries: [
+                {
+                  __typename: "CreateEntryErrors",
+                  errors: {
+                    dataObjects: [
+                      {
+                        meta: {
+                          clientId: dataId,
+                        },
+                        data: "a",
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  } as UpdateExperiencesOnlineMutationResult); // 5
   submitDom.click(); // 5
 
   /**
@@ -903,18 +870,36 @@ test("edit offline entry, upload online", async () => {
 
   /**
    * When form is submitted
+   * happy path
    */
-  submitDom.click(); // 6
+  mockUpdateExperiencesOnline.mockReset();
+  mockUpdateExperiencesOnline.mockResolvedValue({
+    data: {
+      updateExperiences: {
+        __typename: "UpdateExperiencesSomeSuccess",
+        experiences: [
+          {
+            __typename: "UpdateExperienceSomeSuccess",
+            experience: {
+              newEntries: [
+                {
+                  __typename: "CreateEntrySuccess",
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  } as UpdateExperiencesOnlineMutationResult);
+  submitDom.click();
   await wait(() => true);
 
   /**
    * And cache should be flushed from memory
    */
 
-  const onDoneFn =
-    mockUpdateExperiencesInCache.mock.calls[
-      mockUpdateExperiencesInCache.mock.calls.length - 1
-    ][0];
+  const onDoneFn = mockUpdateExperiencesInCache.mock.calls[0][0];
 
   onDoneFn();
 

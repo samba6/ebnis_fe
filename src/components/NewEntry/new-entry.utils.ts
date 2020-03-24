@@ -34,6 +34,7 @@ import {
   CreateEntryErrorFragment,
   CreateEntryErrorFragment_dataObjects,
 } from "../../graphql/apollo-types/CreateEntryErrorFragment";
+import { NEW_ENTRY_DOCUMENT_TITLE_PREFIX } from "./new-entry.dom";
 
 const NEW_LINE_REGEX = /\n/g;
 export const ISO_DATE_FORMAT = "yyyy-MM-dd";
@@ -79,7 +80,7 @@ export function formObjToString(type: DataTypes, val: FormObjVal) {
 
     case DataTypes.DECIMAL:
     case DataTypes.INTEGER:
-      toString = (val || 0) + "";
+      toString = (val || "0") + "";
       break;
 
     case DataTypes.SINGLE_LINE_TEXT:
@@ -95,7 +96,7 @@ export function formObjToString(type: DataTypes, val: FormObjVal) {
 }
 
 export function makePageTitle(exp: ExperienceFragment | null | undefined) {
-  return "[New Entry] " + ((exp && exp.title) || "entry");
+  return NEW_ENTRY_DOCUMENT_TITLE_PREFIX + ((exp && exp.title) || "entry");
 }
 
 export const reducer: Reducer<StateMachine, Action> = (state, action) =>

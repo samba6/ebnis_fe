@@ -9,14 +9,13 @@ import addMonths from "date-fns/addMonths";
 import { DateField } from "../components/DateField/date-field.component";
 import { Props } from "../components/DateField/date-field.utils";
 import {
-  makeComponentDomId,
   selectedItemClassName,
-  makeDayDomId,
-  makeMonthDomId,
-  makeYearDomId,
   makeYearItemSelector,
   makeMonthItemSelector,
   makeDayItemSelector,
+  dayDropdownSelector,
+  monthDropdownSelector,
+  yearDropdownSelector,
 } from "../components/DateField/date-field.dom";
 
 type P = ComponentType<Partial<Props>>;
@@ -31,10 +30,6 @@ it("renders ", () => {
    */
   const testDate = new Date("2019-05-28T07:25");
   const name = "f";
-  const componentId = makeComponentDomId(name);
-  const dayFieldDomId = makeDayDomId(componentId);
-  const monthFieldDomId = makeMonthDomId(componentId);
-  const yearFieldDomId = makeYearDomId(componentId);
 
   /**
    * Given that we want the component to render today's date
@@ -46,7 +41,9 @@ it("renders ", () => {
    */
   const [y, m, d] = formatDate(testDate, "yyyy MMM d").split(" ");
 
-  const dayFieldDom = document.getElementById(dayFieldDomId) as HTMLDivElement;
+  const dayFieldDom = document
+    .getElementsByClassName(dayDropdownSelector)
+    .item(0) as HTMLDivElement;
 
   expect(
     (dayFieldDom
@@ -54,10 +51,9 @@ it("renders ", () => {
       .item(0) as HTMLDivElement).textContent,
   ).toEqual(d);
 
-  const monthFieldDom = document.getElementById(
-    monthFieldDomId,
-  ) as HTMLDivElement;
-  // debug();
+  const monthFieldDom = document
+    .getElementsByClassName(monthDropdownSelector)
+    .item(0) as HTMLDivElement;
 
   expect(
     (monthFieldDom.getElementsByClassName(
@@ -65,9 +61,9 @@ it("renders ", () => {
     )[0] as HTMLDivElement).textContent,
   ).toEqual(m);
 
-  const yearFieldDom = document.getElementById(
-    yearFieldDomId,
-  ) as HTMLDivElement;
+  const yearFieldDom = document
+    .getElementsByClassName(yearDropdownSelector)
+    .item(0) as HTMLDivElement;
 
   expect(
     (yearFieldDom.getElementsByClassName(

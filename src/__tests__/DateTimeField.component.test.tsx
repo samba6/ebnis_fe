@@ -14,6 +14,8 @@ import {
   selectedItemClassName,
   makeHourItemSelector,
   makeMinuteItemSelector,
+  hourDropdownSelector,
+  minuteDropdownSelector,
 } from "../components/DateField/date-field.dom";
 
 type P = ComponentType<Partial<Props>>;
@@ -40,9 +42,9 @@ it("renders ", () => {
    */
   const [h, m] = formatDate(currentDate, "HH mm").split(" ");
 
-  const hourFieldDom = document.getElementById(
-    `datetime-hour-field-f.hr`,
-  ) as HTMLDivElement;
+  const hourFieldDom = document
+    .getElementsByClassName(hourDropdownSelector)
+    .item(0) as HTMLDivElement;
 
   expect(
     (hourFieldDom
@@ -50,9 +52,9 @@ it("renders ", () => {
       .item(0) as HTMLElement).textContent,
   ).toEqual(h);
 
-  const minuteFieldDom = document.getElementById(
-    `datetime-minute-field-f.min`,
-  ) as HTMLDivElement;
+  const minuteFieldDom = document
+    .getElementsByClassName(minuteDropdownSelector)
+    .item(0) as HTMLDivElement;
 
   expect(
     (minuteFieldDom

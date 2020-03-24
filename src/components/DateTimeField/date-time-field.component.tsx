@@ -8,6 +8,8 @@ import {
   selectedItemClassName,
   makeHourItemSelector,
   makeMinuteItemSelector,
+  hourDropdownSelector,
+  minuteDropdownSelector,
 } from "../DateField/date-field.dom";
 
 interface DropdownOptions {
@@ -108,6 +110,7 @@ export function DateTimeField(props: Props) {
             onChange={function dropDownHrChanged(_, data) {
               setDateTimeVal({ h: data as number });
             }}
+            className={hourDropdownSelector}
           />
         </div>
 
@@ -122,6 +125,7 @@ export function DateTimeField(props: Props) {
             onChange={function dropDownMinChanged(_, data) {
               setDateTimeVal({ m: data as number });
             }}
+            className={minuteDropdownSelector}
           />
         </div>
       </div>
