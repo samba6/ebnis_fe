@@ -63,29 +63,28 @@ export const StateValue = {
   onOnlineExperienceSynced: "onOnlineExperienceSynced" as OnOnlineExperienceSynced,
 };
 
+export const DISPLAY_DATE_FORMAT_STRING = "dd/MM/yyyy";
+export const DISPLAY_TIME_FORMAT_STRING = " HH:mm";
+const DISPLAY_DATETIME_FORMAT_STRING =
+  DISPLAY_DATE_FORMAT_STRING + DISPLAY_TIME_FORMAT_STRING;
+
 export const displayFieldType = {
   [DataTypes.SINGLE_LINE_TEXT](text: string) {
     return text;
   },
-
   [DataTypes.MULTI_LINE_TEXT](text: string) {
     return text;
   },
-
   [DataTypes.DATE](text: string) {
-    return dateFnFormat(new Date(text), "dd/MM/yyyy");
+    return dateFnFormat(new Date(text), DISPLAY_DATE_FORMAT_STRING);
   },
-
   [DataTypes.DATETIME](text: string) {
     const date = parseISO(text);
-
     return formatDatetime(date);
   },
-
   [DataTypes.DECIMAL](text: string) {
     return Number(text);
   },
-
   [DataTypes.INTEGER](text: string) {
     return Number(text);
   },
@@ -914,7 +913,7 @@ function handleDeleteExperienceAction(proxy: DraftState) {
 
 export function formatDatetime(date: Date | string) {
   date = typeof date === "string" ? parseISO(date) : date;
-  return dateFnFormat(date, "dd/MM/yyyy HH:mm:ss");
+  return dateFnFormat(date, DISPLAY_DATETIME_FORMAT_STRING);
 }
 
 ////////////////////////// TYPES SECTION ///////////////////////

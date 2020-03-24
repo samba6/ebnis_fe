@@ -15,6 +15,7 @@ import {
   ActionType as EditEntryActionType,
 } from "../components/EditEntry/edit-entry-utils";
 import { EditEntry } from "../components/EditEntry/edit-entry.component";
+import { entryValueDomSelector } from "../components/Entry/entry.dom";
 
 jest.mock("../components/EditEntry/edit-entry.component", () => ({
   EditEntry: jest.fn(() => {
@@ -93,7 +94,9 @@ it("renders multi line text", () => {
   render(ui);
 
   expect(
-    (document.getElementById(`entry-2-2-value`) as HTMLDivElement).textContent,
+    (document
+      .getElementsByClassName(entryValueDomSelector)
+      .item(0) as HTMLDivElement).textContent,
   ).toContain("c2");
 });
 
@@ -127,7 +130,9 @@ it("renders date field", () => {
   render(ui);
 
   expect(
-    (document.getElementById(`entry-3-3-value`) as HTMLDivElement).textContent,
+    (document
+      .getElementsByClassName(entryValueDomSelector)
+      .item(0) as HTMLDivElement).textContent,
   ).toContain("2019");
 });
 
@@ -159,7 +164,7 @@ it("renders datetime field", () => {
   });
 
   render(ui);
-  expect(true).toBe(true)
+  expect(true).toBe(true);
 });
 
 it("renders decimal field", () => {

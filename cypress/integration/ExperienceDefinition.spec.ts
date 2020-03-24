@@ -38,6 +38,11 @@ import {
   hourDropdownSelector,
 } from "../../src/components/DateField/date-field.dom";
 import formatDate from "date-fns/format";
+import { entryValueDomSelector } from "../../src/components/Entry/entry.dom";
+import {
+  DISPLAY_TIME_FORMAT_STRING,
+  DISPLAY_DATE_FORMAT_STRING,
+} from "../../src/components/Experience/experience.utils";
 
 context("experience definition page", () => {
   beforeEach(() => {
@@ -45,11 +50,12 @@ context("experience definition page", () => {
     cy.registerUser(USER_REGISTRATION_OBJECT);
   });
 
-  const experienceOnlineTitle = "Experience 1";
+  const firstOnlineExperienceTitle = "Experience 1";
+  const secondOnlineExperienceTitle = firstOnlineExperienceTitle + "1";
 
   it.only("succeeds when online", () => {
     const p = createOnlineExperience({
-      title: experienceOnlineTitle,
+      title: firstOnlineExperienceTitle,
       dataDefinitions: [
         {
           name: "aa",
@@ -74,7 +80,7 @@ context("experience definition page", () => {
        */
       cy.get("#" + titleInputDomId)
         .as("titleDomInput")
-        .type(experienceOnlineTitle);
+        .type(firstOnlineExperienceTitle);
 
       cy.get("#" + makeDefinitionContainerDomId(1))
         .as("field1")
@@ -200,7 +206,7 @@ context("experience definition page", () => {
       /**
        * Then we should see the new title we just created
        */
-      cy.title().should("contain", experienceOnlineTitle);
+      cy.title().should("contain", secondOnlineExperienceTitle);
 
       /**
        * When link to create new entry is clicked
@@ -296,6 +302,48 @@ context("experience definition page", () => {
        * And new entry is created
        */
       cy.get("#" + newEntrySubmitDomId).click();
+
+      /**
+       * Then user should be returned to experience detail page
+       */
+      cy.title().should("contain", secondOnlineExperienceTitle);
+
+      /**
+       * And newly created entry data should be visible
+       */
+      cy.get("." + entryValueDomSelector).each((dom, index) => {
+        const value = dom.text();
+
+        switch (index) {
+          case 0:
+            expect(value).to.eq(
+              formatDate(testDate, DISPLAY_DATE_FORMAT_STRING),
+            );
+            break;
+
+          case 1:
+            expect(value).to.contain(
+              formatDate(testDate, DISPLAY_TIME_FORMAT_STRING),
+            );
+            break;
+
+          case 2:
+            expect(value).to.eq("5.5");
+            break;
+
+          case 3:
+            expect(value).to.eq("5");
+            break;
+
+          case 4:
+            expect(dom[0].innerText).to.eq("bb\ncc\n");
+            break;
+
+          case 5:
+            expect(value).to.eq("aa");
+            break;
+        }
+      });
     });
   });
 

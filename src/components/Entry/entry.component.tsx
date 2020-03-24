@@ -19,6 +19,7 @@ import {
 import { EditEntry } from "../EditEntry/edit-entry.component";
 import { DataDefinitionFragment } from "../../graphql/apollo-types/DataDefinitionFragment";
 import { isOfflineId } from "../../constants";
+import { entryValueDomSelector } from "./entry.dom";
 
 export function Entry(props: Props) {
   const { entry, experience, className = "", ...fieldProps } = props;
@@ -102,10 +103,9 @@ function DataComponent(props: {
   const { type, name: fieldName } = definition;
 
   const [fieldData] = Object.values(JSON.parse(data));
-  const text = displayFieldType[type](fieldData);
+  const text = displayFieldType[type](fieldData as string);
   const { id: entryId } = entry;
   const entryIdPrefix = "entry-" + entryId;
-  const definitionIdPrefix = entryIdPrefix + "-" + definitionId;
 
   return (
     <div
@@ -159,7 +159,12 @@ function DataComponent(props: {
           )}
         </div>
 
-        <div className="mr-2 field__value" id={`${definitionIdPrefix}-value`}>
+        <div
+          className={makeClassNames({
+            "mr-2 field__value": true,
+            [entryValueDomSelector]: true,
+          })}
+        >
           {(text + "").split("\\n").map((t, index) => (
             <Fragment key={index}>
               {t}
