@@ -14,7 +14,11 @@ import {
   makeDefinitionContainerDomId,
   addDefinitionSelector,
 } from "../../src/components/ExperienceDefinition/experience-definition.dom";
-import { experienceNoEntriesDomId } from "../../src/components/Experience/experience.dom";
+import {
+  experienceNoEntriesDomId,
+  experienceOptionsMenuTriggerSelector,
+  newEntryTriggerSelector,
+} from "../../src/components/Experience/experience.dom";
 import {
   submitBtnDomId as newEntrySubmitDomId,
   NEW_ENTRY_DOCUMENT_TITLE_PREFIX,
@@ -299,7 +303,7 @@ context("experience definition page", () => {
         .type("bb\ncc");
 
       /**
-       * And new entry is created
+       * And new entry is created with updated data
        */
       cy.get("#" + newEntrySubmitDomId).click();
 
@@ -344,6 +348,70 @@ context("experience definition page", () => {
             break;
         }
       });
+
+      /**
+       * When connection goes away
+       */
+      cy.setConnectionStatus(false);
+
+      /**
+       * And UI to create new entry is triggered
+       */
+      cy.get("." + experienceOptionsMenuTriggerSelector)
+        .click()
+        .within(() => {
+          cy.get("." + newEntryTriggerSelector).click();
+        });
+
+      /**
+       * Then page should navigate to 'new entry' page
+       */
+      cy.title().should("contain", NEW_ENTRY_DOCUMENT_TITLE_PREFIX);
+
+      /**
+       * And new entry is created with  default data
+       */
+      cy.get("#" + newEntrySubmitDomId).click();
+      const today = new Date();
+
+      /**
+       * Then user should be returned to experience detail page
+       */
+      cy.title().should("contain", secondOnlineExperienceTitle);
+
+      /**
+       * And newly created entry data should be visible
+       */
+      cy.get("." + entryValueDomSelector).each((dom, index) => {
+        const value = dom.text();
+
+        switch (index) {
+          case 0:
+            expect(value).to.eq(formatDate(today, DISPLAY_DATE_FORMAT_STRING));
+            break;
+
+          case 1:
+            expect(value).to.contain(
+              formatDate(today, DISPLAY_TIME_FORMAT_STRING),
+            );
+            break;
+
+          case 2:
+          case 3:
+            expect(value).to.eq("0");
+            break;
+
+          case 4:
+          case 5:
+            expect(value).to.eq("");
+            break;
+        }
+      });
+
+      /**
+       * When connection returns
+       */
+      cy.setConnectionStatus(true);
     });
   });
 

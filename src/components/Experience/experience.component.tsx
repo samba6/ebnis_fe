@@ -6,6 +6,7 @@ import React, {
   useReducer,
   useContext,
   useLayoutEffect,
+  useRef,
 } from "react";
 import { Link } from "../Link";
 import "./experience.styles.scss";
@@ -42,14 +43,14 @@ import {
   closeSubmitNotificationBtnSelector,
   errorsNotificationId,
   syncButtonId,
-  newEntryTriggerId,
-  experienceMenuTriggerDomId,
+  newEntryTriggerSelector,
   onOnlineExperienceSyncedNotificationErrorDom,
   onOnlineExperienceSyncedNotificationSuccessDom,
   okDeleteExperienceDomId,
   cancelDeleteExperienceDomId,
   makeDeleteMenuDomId,
   experienceNoEntriesDomId,
+  experienceOptionsMenuTriggerSelector,
 } from "./experience.dom";
 import { Loading } from "../Loading/loading";
 import { EbnisAppContext } from "../../context";
@@ -106,6 +107,8 @@ export function ExperienceComponent(props: Props) {
     );
   }, [experience, entriesJSX]);
 
+  const mainRef = useRef<null | HTMLDivElement>(null);
+
   // istanbul ignore next:
   useLayoutEffect(() => {
     execOnSyncOfflineExperienceComponentSuccess(
@@ -120,11 +123,9 @@ export function ExperienceComponent(props: Props) {
     );
 
     const cb = () => {
-      const menuTrigger = document.getElementById(
-        experienceMenuTriggerDomId,
-      ) as HTMLElement;
-
-      menuTrigger.classList.remove("is-active");
+      ((mainRef.current as HTMLDivElement)
+        .getElementsByClassName(experienceOptionsMenuTriggerSelector)
+        .item(0) as HTMLElement).classList.remove("is-active");
     };
 
     document.documentElement.addEventListener("click", cb);
@@ -266,6 +267,7 @@ export function ExperienceComponent(props: Props) {
           "border-part-offline": isPartOffline,
         })}
         id={id}
+        ref={mainRef}
       >
         <div className="m-2">
           {submissionState.value === StateValue.onOnlineExperienceSynced && (
@@ -372,8 +374,10 @@ function OptionsMenuComponent({
 
   return (
     <div
-      className="options-menu__trigger dropdown is-hoverable"
-      id={experienceMenuTriggerDomId}
+      className={makeClassNames({
+        dropdown: true,
+        [experienceOptionsMenuTriggerSelector]: true,
+      })}
       onClick={e => {
         e.currentTarget.classList.toggle("is-active");
       }}
@@ -395,8 +399,10 @@ function OptionsMenuComponent({
       <div className="dropdown-menu" id="dropdown-menu2" role="menu">
         <div className="dropdown-content">
           <a
-            id={newEntryTriggerId}
-            className="text-lg font-extrabold dropdown-item"
+            className={makeClassNames({
+              "font-bold dropdown-item": true,
+              [newEntryTriggerSelector]: true,
+            })}
             onClick={() => {
               navigate(makeNewEntryRoute(id));
             }}

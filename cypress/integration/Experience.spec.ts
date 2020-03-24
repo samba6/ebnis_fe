@@ -9,7 +9,7 @@ import {
   getDefinitionControlId,
   ControlName,
 } from "../../src/components/EditEntry/edit-entry-dom";
-import { newEntryTriggerId } from "../../src/components/Experience/experience.dom";
+import { newEntryTriggerSelector } from "../../src/components/Experience/experience.dom";
 
 const title = "ex";
 
@@ -64,7 +64,7 @@ context("ExperienceComponent", () => {
        * When we click new experience button in the menu
        */
       cy.get("#experience-options-menu").click();
-      cy.get("#" + newEntryTriggerId).click();
+      cy.get("#" + newEntryTriggerSelector).click();
 
       /**
        * Then we should be redirected to new entry page

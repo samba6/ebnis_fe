@@ -32,7 +32,7 @@ import {
   errorsNotificationId,
   closeSubmitNotificationBtnSelector,
   successNotificationId,
-  newEntryTriggerId,
+  newEntryTriggerSelector,
   onOnlineExperienceSyncedNotificationSuccessDom,
   onOnlineExperienceSyncedNotificationErrorDom,
   cancelDeleteExperienceDomId,
@@ -920,7 +920,9 @@ test("sync offline experience, navigate to new entry", async () => {
   /**
    * When new entry button is clicked
    */
-  (document.getElementById(newEntryTriggerId) as HTMLElement).click();
+  (document
+    .getElementsByClassName(newEntryTriggerSelector)
+    .item(0) as HTMLElement).click();
 
   /**
    * Then page navigation function should be invoked
