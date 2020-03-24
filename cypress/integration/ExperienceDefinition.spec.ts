@@ -380,7 +380,7 @@ context("experience definition page", () => {
       cy.title().should("contain", secondOnlineExperienceTitle);
 
       /**
-       * And newly created entry data should be visible
+       * And newly created entry data (default Values) should be visible
        */
       cy.get("." + entryValueDomSelector).each((dom, index) => {
         const value = dom.text();
