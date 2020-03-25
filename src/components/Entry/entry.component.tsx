@@ -12,14 +12,15 @@ import {
 import Icon from "semantic-ui-react/dist/commonjs/elements/Icon";
 import Dropdown from "semantic-ui-react/dist/commonjs/modules/Dropdown";
 import { Props, ActionType, reducer, DispatchType } from "./entry.utils";
-import {
-  EntryFragment_dataObjects,
-  EntryFragment,
-} from "../../graphql/apollo-types/EntryFragment";
+import { EntryFragment_dataObjects } from "../../graphql/apollo-types/EntryFragment";
 import { EditEntry } from "../EditEntry/edit-entry.component";
 import { DataDefinitionFragment } from "../../graphql/apollo-types/DataDefinitionFragment";
 import { isOfflineId } from "../../constants";
-import { entryValueDomSelector } from "./entry.dom";
+import {
+  entryValueDomSelector,
+  entryOptionsSelector,
+  entryEditMenuItemSelector,
+} from "./entry.dom";
 
 export function Entry(props: Props) {
   const { entry, experience, className = "", ...fieldProps } = props;
@@ -71,7 +72,6 @@ export function Entry(props: Props) {
             definition={definition}
             index={index}
             dataObjectsLen={dataObjectsLen}
-            entry={entry}
             dispatch={dispatch}
           />
         );
@@ -93,19 +93,13 @@ function DataComponent(props: {
   definition: ExperienceFragment_dataDefinitions;
   index: number;
   dataObjectsLen: number;
-  entry: EntryFragment;
   dispatch: DispatchType;
 }) {
-  const { dataObject, definition, index, entry, dispatch } = props;
-
+  const { dataObject, definition, index, dispatch } = props;
   const { definitionId, data } = dataObject;
-
   const { type, name: fieldName } = definition;
-
   const [fieldData] = Object.values(JSON.parse(data));
   const text = displayFieldType[type](fieldData as string);
-  const { id: entryId } = entry;
-  const entryIdPrefix = "entry-" + entryId;
 
   return (
     <div
@@ -122,15 +116,17 @@ function DataComponent(props: {
 
           {index === 0 && (
             <Dropdown
-              className="field__options"
+              className={makeClassNames({
+                field__options: true,
+                [entryOptionsSelector]: true,
+              })}
               icon="ellipsis vertical"
               direction="left"
-              id={`${entryIdPrefix}-menu-trigger`}
             >
               <Dropdown.Menu>
                 {dispatch && (
                   <Dropdown.Header
-                    id={`${entryIdPrefix}-edit-trigger`}
+                    className={entryEditMenuItemSelector}
                     onClick={() => {
                       dispatch({
                         type: ActionType.editClicked,

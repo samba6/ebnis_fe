@@ -18,6 +18,8 @@ import {
   experienceNoEntriesDomId,
   experienceOptionsMenuTriggerSelector,
   newEntryTriggerSelector,
+  experienceSyncedNotificationSuccessDom,
+  syncButtonId,
 } from "../../src/components/Experience/experience.dom";
 import {
   submitBtnDomId as newEntrySubmitDomId,
@@ -42,11 +44,20 @@ import {
   hourDropdownSelector,
 } from "../../src/components/DateField/date-field.dom";
 import formatDate from "date-fns/format";
-import { entryValueDomSelector } from "../../src/components/Entry/entry.dom";
+import {
+  entryValueDomSelector,
+  entryOptionsSelector,
+  entryEditMenuItemSelector,
+} from "../../src/components/Entry/entry.dom";
 import {
   DISPLAY_TIME_FORMAT_STRING,
   DISPLAY_DATE_FORMAT_STRING,
 } from "../../src/components/Experience/experience.utils";
+import {
+  editEntryComponentDomId,
+  editEntrySubmissionResponseDomId,
+  editEntrySubmitDomId,
+} from "../../src/components/EditEntry/edit-entry-dom";
 
 context("experience definition page", () => {
   beforeEach(() => {
@@ -372,46 +383,105 @@ context("experience definition page", () => {
        * And new entry is created with  default data
        */
       cy.get("#" + newEntrySubmitDomId).click();
-      const today = new Date();
 
       /**
        * Then user should be returned to experience detail page
        */
       cy.title().should("contain", secondOnlineExperienceTitle);
+      const today = new Date();
 
       /**
        * And newly created entry data (default Values) should be visible
        */
-      cy.get("." + entryValueDomSelector).each((dom, index) => {
-        const value = dom.text();
+      cy.get("." + entryValueDomSelector)
+        .first()
+        .each((dom, index) => {
+          const value = dom.text();
 
-        switch (index) {
-          case 0:
-            expect(value).to.eq(formatDate(today, DISPLAY_DATE_FORMAT_STRING));
-            break;
+          switch (index) {
+            case 0:
+              expect(value).to.eq(
+                formatDate(today, DISPLAY_DATE_FORMAT_STRING),
+              );
+              break;
 
-          case 1:
-            expect(value).to.contain(
-              formatDate(today, DISPLAY_TIME_FORMAT_STRING),
-            );
-            break;
+            case 1:
+              expect(value).to.contain(
+                formatDate(today, DISPLAY_TIME_FORMAT_STRING),
+              );
+              break;
 
-          case 2:
-          case 3:
-            expect(value).to.eq("0");
-            break;
+            case 2:
+            case 3:
+              expect(value).to.eq("0");
+              break;
 
-          case 4:
-          case 5:
-            expect(value).to.eq("");
-            break;
-        }
-      });
+            case 4:
+            case 5:
+              expect(value).to.eq("");
+              break;
+          }
+        });
 
       /**
        * When connection returns
        */
       cy.setConnectionStatus(true);
+
+      /**
+       * Then success notification should not be visible
+       */
+      cy.get("." + experienceSyncedNotificationSuccessDom).should("not.exist");
+
+      /**
+       * When sync button is clicked
+       */
+      cy.get("#" + syncButtonId).click();
+
+      /**
+       * Then success notification should be visible
+       */
+      cy.get("." + experienceSyncedNotificationSuccessDom).should("exist");
+
+      /**
+       * When edit entry UI is invoked
+       */
+      cy.get("." + entryOptionsSelector)
+        .first()
+        .click()
+        .within(() => {
+          cy.get("." + entryEditMenuItemSelector)
+            .first()
+            .click();
+        });
+
+      /**
+       * Then entry UI should be visible
+       * And when one of the fields is changed
+       */
+      cy.get("#" + editEntryComponentDomId)
+        .should("exist")
+        .within(() => {
+          cy.get("." + integerInputDomSelector)
+            .as("integerInputNode")
+            .should("have.value", "0")
+            .type("1");
+        });
+
+      /**
+       * Then success response should not be visible
+       */
+      cy.get("#" + editEntrySubmissionResponseDomId).should("not.exist");
+
+      /**
+       * When changes made to entry are submitted
+       */
+      cy.get("#" + editEntrySubmitDomId).click();
+
+      /**
+       * Then success response should be visible
+       */
+      cy.get("#" + editEntrySubmissionResponseDomId).should("exist");
     });
   });
 

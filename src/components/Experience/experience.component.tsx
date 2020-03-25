@@ -45,7 +45,7 @@ import {
   syncButtonId,
   newEntryTriggerSelector,
   onOnlineExperienceSyncedNotificationErrorDom,
-  onOnlineExperienceSyncedNotificationSuccessDom,
+  experienceSyncedNotificationSuccessDom,
   okDeleteExperienceDomId,
   cancelDeleteExperienceDomId,
   makeDeleteMenuDomId,
@@ -109,7 +109,7 @@ export function ExperienceComponent(props: Props) {
 
   const mainRef = useRef<null | HTMLDivElement>(null);
 
-  // istanbul ignore next:
+  // istanbul ignore next: offline experience synced - read from localStorage
   useLayoutEffect(() => {
     execOnSyncOfflineExperienceComponentSuccess(
       pathname,
@@ -469,7 +469,7 @@ function OnOnlineExperienceSyncedNotifications({
               <div
                 className={makeClassNames({
                   "notification is-light mb-2": true,
-                  [`is-success ${onOnlineExperienceSyncedNotificationSuccessDom}`]:
+                  [`is-success ${experienceSyncedNotificationSuccessDom}`]:
                     value === "success",
                   [`is-danger ${onOnlineExperienceSyncedNotificationErrorDom}`]:
                     value !== "success",

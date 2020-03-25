@@ -21,6 +21,7 @@ import { AppPersistor } from "../context";
 import {
   ControlName,
   getDataControlDomId,
+  editEntryComponentDomId,
 } from "../components/EditEntry/edit-entry-dom";
 /* eslint-disable-next-line @typescript-eslint/no-unused-vars*/
 import { CreateOfflineEntryMutationReturned } from "../components/NewEntry/new-entry.resolvers";
@@ -136,7 +137,7 @@ test("renders error boundary", () => {
   render(ui);
 
   expect(document.getElementById("edit-entry-error-fallback")).not.toBeNull();
-  closeMessage(document.getElementById("edit-entry-modal"));
+  closeMessage(document.getElementById(editEntryComponentDomId));
   expect(mockParentDispatch).toHaveBeenCalled();
 });
 
@@ -982,7 +983,7 @@ function MockDateTimeField(props: DateTimeProps) {
 }
 
 function destroyModal() {
-  const $element = document.getElementById("edit-entry-modal");
+  const $element = document.getElementById(editEntryComponentDomId);
   closeMessage($element);
 }
 

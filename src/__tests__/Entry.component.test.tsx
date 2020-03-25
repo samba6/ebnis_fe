@@ -15,7 +15,10 @@ import {
   ActionType as EditEntryActionType,
 } from "../components/EditEntry/edit-entry-utils";
 import { EditEntry } from "../components/EditEntry/edit-entry.component";
-import { entryValueDomSelector } from "../components/Entry/entry.dom";
+import {
+  entryValueDomSelector,
+  entryEditMenuItemSelector,
+} from "../components/Entry/entry.dom";
 
 jest.mock("../components/EditEntry/edit-entry.component", () => ({
   EditEntry: jest.fn(() => {
@@ -55,7 +58,9 @@ it("renders single line text", () => {
 
   render(ui);
 
-  (document.getElementById(`entry-1-edit-trigger`) as HTMLElement).click();
+  (document
+    .getElementsByClassName(entryEditMenuItemSelector)
+    .item(0) as HTMLElement).click();
 
   const lastRender = mockEditEntry.mock.calls.length - 1;
 

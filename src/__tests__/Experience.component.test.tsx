@@ -33,7 +33,7 @@ import {
   closeSubmitNotificationBtnSelector,
   successNotificationId,
   newEntryTriggerSelector,
-  onOnlineExperienceSyncedNotificationSuccessDom,
+  experienceSyncedNotificationSuccessDom,
   onOnlineExperienceSyncedNotificationErrorDom,
   cancelDeleteExperienceDomId,
   makeDeleteMenuDomId,
@@ -747,9 +747,7 @@ test("sync online experience", async () => {
   expect(errorNotifications).toHaveLength(3);
 
   expect(
-    document.getElementsByClassName(
-      onOnlineExperienceSyncedNotificationSuccessDom,
-    ),
+    document.getElementsByClassName(experienceSyncedNotificationSuccessDom),
   ).toHaveLength(2);
 
   /**
@@ -797,7 +795,7 @@ test("sync online experience", async () => {
    */
   const syncSuccessNotification = await waitForElement(() => {
     return document
-      .getElementsByClassName(onOnlineExperienceSyncedNotificationSuccessDom)
+      .getElementsByClassName(experienceSyncedNotificationSuccessDom)
       .item(0) as HTMLElement;
   });
 
@@ -848,66 +846,6 @@ test("sync offline experience, navigate to new entry", async () => {
   });
 
   /**
-   * SUBMISSIONS
-   * 1. javascript exception
-   * 2. networkError
-   * 3. GraphQLError
-   * 4. Invalid response
-   * 5. CreateExperienceErrors
-   * 6. ExperienceSuccess.entriesErrors
-   * 7. ExperienceSuccess no entriesErrors
-   */
-  mockCreateExperiences
-    .mockRejectedValueOnce(new Error("a")) // 1
-    .mockRejectedValueOnce(
-      new ApolloError({
-        networkError: new Error("a"),
-      }),
-    ) // 2
-    .mockRejectedValueOnce(
-      new ApolloError({
-        graphQLErrors: [new GraphQLError("a")],
-      }),
-    ) // 3
-    .mockResolvedValueOnce({
-      data: {
-        createExperiences: [],
-      },
-    } as CreateExperiencesMutationResult) // 4
-    .mockResolvedValueOnce({
-      data: {
-        createExperiences: [
-          {
-            __typename: "CreateExperienceErrors",
-            errors: {},
-          },
-        ],
-      },
-    } as CreateExperiencesMutationResult) // 5
-    .mockResolvedValueOnce({
-      data: {
-        createExperiences: [
-          {
-            __typename: "ExperienceSuccess",
-            entriesErrors: [{}],
-          },
-        ],
-      },
-    } as CreateExperiencesMutationResult) // 6
-    .mockResolvedValueOnce({
-      data: {
-        createExperiences: [
-          {
-            __typename: "ExperienceSuccess",
-            experience: {
-              id: "a",
-            },
-          },
-        ],
-      },
-    } as CreateExperiencesMutationResult); // 7
-
-  /**
    * When component is rendered
    */
   render(ui);
@@ -938,6 +876,7 @@ test("sync offline experience, navigate to new entry", async () => {
   /**
    * When sync button is clicked
    */
+  mockCreateExperiences.mockRejectedValueOnce(new Error("a")); // 1
   const syncBtn = document.getElementById(syncButtonId) as HTMLElement;
   syncBtn.click(); // 1
   await wait(() => true);
@@ -961,7 +900,12 @@ test("sync offline experience, navigate to new entry", async () => {
    */
   expect(document.getElementById(errorsNotificationId)).toBeNull();
 
-  syncBtn.click(); // 2
+  mockCreateExperiences.mockRejectedValueOnce(
+    new ApolloError({
+      networkError: new Error("a"),
+    }),
+  );
+  syncBtn.click();
   await wait(() => true);
 
   /**
@@ -986,7 +930,12 @@ test("sync offline experience, navigate to new entry", async () => {
   /**
    * When sync button is clicked
    */
-  syncBtn.click(); // 3
+  mockCreateExperiences.mockRejectedValueOnce(
+    new ApolloError({
+      graphQLErrors: [new GraphQLError("a")],
+    }),
+  );
+  syncBtn.click();
   await wait(() => true);
 
   /**
@@ -1011,7 +960,12 @@ test("sync offline experience, navigate to new entry", async () => {
   /**
    * When sync button is clicked
    */
-  syncBtn.click(); // 4
+  mockCreateExperiences.mockResolvedValueOnce({
+    data: {
+      createExperiences: [],
+    },
+  } as CreateExperiencesMutationResult);
+  syncBtn.click();
   await wait(() => true);
 
   /**
@@ -1036,7 +990,17 @@ test("sync offline experience, navigate to new entry", async () => {
   /**
    * When sync button is clicked
    */
-  syncBtn.click(); // 5
+  mockCreateExperiences.mockResolvedValueOnce({
+    data: {
+      createExperiences: [
+        {
+          __typename: "CreateExperienceErrors",
+          errors: {},
+        },
+      ],
+    },
+  } as CreateExperiencesMutationResult);
+  syncBtn.click();
   await wait(() => true);
 
   /**
@@ -1061,7 +1025,17 @@ test("sync offline experience, navigate to new entry", async () => {
   /**
    * When sync button is clicked
    */
-  syncBtn.click(); // 6
+  mockCreateExperiences.mockResolvedValueOnce({
+    data: {
+      createExperiences: [
+        {
+          __typename: "ExperienceSuccess",
+          entriesErrors: [{}],
+        },
+      ],
+    },
+  } as CreateExperiencesMutationResult);
+  syncBtn.click();
   await wait(() => true);
 
   /**
@@ -1083,7 +1057,19 @@ test("sync offline experience, navigate to new entry", async () => {
   /**
    * When sync button is clicked
    */
-  syncBtn.click(); // 6
+  mockCreateExperiences.mockResolvedValueOnce({
+    data: {
+      createExperiences: [
+        {
+          __typename: "ExperienceSuccess",
+          experience: {
+            id: "a",
+          },
+        },
+      ],
+    },
+  } as CreateExperiencesMutationResult);
+  syncBtn.click();
   await wait(() => true);
   jest.runAllTimers();
 

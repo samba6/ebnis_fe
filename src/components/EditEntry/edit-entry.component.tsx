@@ -37,6 +37,9 @@ import {
   ControlName,
   getDataControlDomId,
   scrollToTopId,
+  editEntryComponentDomId,
+  editEntrySubmissionResponseDomId,
+  editEntrySubmitDomId,
 } from "./edit-entry-dom";
 import { EbnisAppContext } from "../../context";
 import { LayoutUnchangingContext, LayoutContext } from "../Layout/layout.utils";
@@ -112,7 +115,7 @@ export function EditEntryComponent(props: Props) {
       {submission.value === StateValue.submitting && <Loading />}
 
       <Modal
-        id="edit-entry-modal"
+        id={editEntryComponentDomId}
         open={true}
         closeIcon={true}
         onClose={() => {
@@ -163,7 +166,7 @@ export function EditEntryComponent(props: Props) {
                   positive={true}
                   compact={true}
                   type="submit"
-                  id="edit-entry-submit"
+                  id={editEntrySubmitDomId}
                   className="edit-entry-definition-submit"
                   onClick={onSubmit}
                 >
@@ -208,7 +211,7 @@ function SubmissionSuccessResponseComponent({
     } = state;
 
     return (
-      <Modal.Content id="edit-entry-submission-response-message">
+      <Modal.Content id={editEntrySubmissionResponseDomId}>
         <Message
           onDismiss={() => {
             dispatch({
