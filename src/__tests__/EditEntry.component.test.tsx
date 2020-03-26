@@ -642,7 +642,7 @@ test("edit offline entry, submit offline", async () => {
   expect(arg2).toBe(experienceId);
 });
 
-test("edit offline entry, upload online", async () => {
+test("online experience: edit offline entry, upload online", async () => {
   /**
    * Given there is entry created offline with 2 data objects:
    * 1 - will be updated using the component
@@ -703,8 +703,8 @@ test("edit offline entry, upload online", async () => {
    * When form is submitted
    */
   const submitDom = getSubmit();
-  mockUpdateExperiencesOnline.mockResolvedValueOnce(null); // 1
-  submitDom.click(); // 1
+  mockUpdateExperiencesOnline.mockResolvedValue(null);
+  submitDom.click();
 
   /**
    * Then error notification should be visible
@@ -724,8 +724,8 @@ test("edit offline entry, upload online", async () => {
   /**
    * When form is submitted
    */
-  mockUpdateExperiencesOnline.mockRejectedValueOnce(new Error("a")); // 2
-  submitDom.click(); // 2
+  mockUpdateExperiencesOnline.mockRejectedValue(new Error("a"));
+  submitDom.click();
 
   /**
    * Then error notification should be visible
@@ -746,7 +746,7 @@ test("edit offline entry, upload online", async () => {
    * When form is submitted
    * no newEntries key
    */
-  mockUpdateExperiencesOnline.mockResolvedValueOnce({
+  mockUpdateExperiencesOnline.mockResolvedValue({
     data: {
       updateExperiences: {
         __typename: "UpdateExperiencesSomeSuccess",
@@ -758,8 +758,8 @@ test("edit offline entry, upload online", async () => {
         ],
       },
     },
-  } as UpdateExperiencesOnlineMutationResult); // 3
-  submitDom.click(); // 3
+  } as UpdateExperiencesOnlineMutationResult);
+  submitDom.click();
 
   /**
    * Then error notification should be visible
@@ -775,7 +775,7 @@ test("edit offline entry, upload online", async () => {
    * When form is submitted
    * no data objects error
    */
-  mockUpdateExperiencesOnline.mockResolvedValueOnce({
+  mockUpdateExperiencesOnline.mockResolvedValue({
     data: {
       updateExperiences: {
         __typename: "UpdateExperiencesSomeSuccess",
@@ -794,8 +794,8 @@ test("edit offline entry, upload online", async () => {
         ],
       },
     },
-  } as UpdateExperiencesOnlineMutationResult); // 4
-  submitDom.click(); // 4
+  } as UpdateExperiencesOnlineMutationResult);
+  submitDom.click();
 
   /**
    * Then success notification should be visible
@@ -827,7 +827,7 @@ test("edit offline entry, upload online", async () => {
    * When form is submitted
    * there is data objects error
    */
-  mockUpdateExperiencesOnline.mockResolvedValueOnce({
+  mockUpdateExperiencesOnline.mockResolvedValue({
     data: {
       updateExperiences: {
         __typename: "UpdateExperiencesSomeSuccess",
@@ -855,8 +855,8 @@ test("edit offline entry, upload online", async () => {
         ],
       },
     },
-  } as UpdateExperiencesOnlineMutationResult); // 5
-  submitDom.click(); // 5
+  } as UpdateExperiencesOnlineMutationResult);
+  submitDom.click();
 
   /**
    * Then success notification should be visible
@@ -910,6 +910,10 @@ test("edit offline entry, upload online", async () => {
     makeApolloCacheRef(ENTRY_TYPE_NAME, offlineEntryId),
     makeApolloCacheRef(DATA_OBJECT_TYPE_NAME, dataId),
   ]);
+});
+
+test("edit offline experience entry, submit online", async () => {
+  expect(1).toBe(1);
 });
 
 ////////////////////////// HELPER FUNCTIONS ///////////////////////////

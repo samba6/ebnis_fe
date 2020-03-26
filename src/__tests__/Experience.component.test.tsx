@@ -31,9 +31,9 @@ import {
   syncButtonId,
   errorsNotificationId,
   closeSubmitNotificationBtnSelector,
-  successNotificationId,
+  offlineExperienceSyncedNotificationSuccessSelector,
   newEntryTriggerSelector,
-  experienceSyncedNotificationSuccessDom,
+  onlineExperienceSyncedNotificationSuccessDom,
   onOnlineExperienceSyncedNotificationErrorDom,
   cancelDeleteExperienceDomId,
   makeDeleteMenuDomId,
@@ -665,7 +665,9 @@ test("sync online experience", async () => {
   /**
    * And success notification should not be visible
    */
-  expect(document.getElementById(successNotificationId)).toBeNull();
+  expect(
+    document.getElementById(offlineExperienceSyncedNotificationSuccessSelector),
+  ).toBeNull();
 
   mockGetUnsyncedExperience.mockReturnValueOnce({
     ownFields: {
@@ -747,7 +749,9 @@ test("sync online experience", async () => {
   expect(errorNotifications).toHaveLength(3);
 
   expect(
-    document.getElementsByClassName(experienceSyncedNotificationSuccessDom),
+    document.getElementsByClassName(
+      onlineExperienceSyncedNotificationSuccessDom,
+    ),
   ).toHaveLength(2);
 
   /**
@@ -795,7 +799,7 @@ test("sync online experience", async () => {
    */
   const syncSuccessNotification = await waitForElement(() => {
     return document
-      .getElementsByClassName(experienceSyncedNotificationSuccessDom)
+      .getElementsByClassName(onlineExperienceSyncedNotificationSuccessDom)
       .item(0) as HTMLElement;
   });
 

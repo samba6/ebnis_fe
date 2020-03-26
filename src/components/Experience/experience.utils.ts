@@ -13,7 +13,7 @@ import {
   ExperienceFragment_entries_edges,
 } from "../../graphql/apollo-types/ExperienceFragment";
 import { EbnisComponentProps } from "../../types";
-import { Reducer, Dispatch } from "react";
+import { Reducer, Dispatch, createContext } from "react";
 import immer, { Draft } from "immer";
 import { wrapReducer } from "../../logger";
 import {
@@ -916,6 +916,10 @@ export function formatDatetime(date: Date | string) {
   return dateFnFormat(date, DISPLAY_DATETIME_FORMAT_STRING);
 }
 
+export const ExperienceContext = createContext<ExperienceContextValue>(
+  {} as ExperienceContextValue,
+);
+
 ////////////////////////// TYPES SECTION ///////////////////////
 
 type DraftState = Draft<StateMachine>;
@@ -1147,3 +1151,8 @@ type EffectsList = (
   | DefOnSyncExperienceSuccessEffect
   | DeleteExperienceEffectDefinition
 )[];
+
+interface ExperienceContextValue {
+  experience: ExperienceFragment;
+  experienceDispatch: DispatchType;
+}

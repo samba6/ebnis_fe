@@ -223,7 +223,6 @@ function SyncEditedOfflineExperienceEffectHelper(
 ) {
   const { parentDispatch, experience } = props;
   const { dispatch } = effectArgs;
-
   const { ownFields, updateDefinitions: definitionsInput } = input;
 
   const updatedExperience = immer(experience, proxy => {

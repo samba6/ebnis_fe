@@ -49,6 +49,7 @@ import { addNewEntryResolvers } from "../NewEntry/new-entry.injectables";
 import { capitalize } from "../../general-utils";
 import { useUpdateExperiencesOnlineMutation } from "../../graphql/experiences.mutation";
 import { DataObjectErrorFragment } from "../../graphql/apollo-types/DataObjectErrorFragment";
+import { ExperienceContext } from "../Experience/experience.utils";
 
 export function EditEntryComponent(props: Props) {
   const { dispatch: parentDispatch, experience, hasConnection } = props;
@@ -435,6 +436,7 @@ export function EditEntry(props: CallerProps) {
   const { layoutDispatch } = useContext(LayoutUnchangingContext);
   const { hasConnection } = useContext(LayoutContext);
   const [updateExperiencesOnline] = useUpdateExperiencesOnlineMutation();
+  const { experienceDispatch } = useContext(ExperienceContext);
 
   return (
     <EditEntryComponent
@@ -444,6 +446,7 @@ export function EditEntry(props: CallerProps) {
       cache={cache}
       layoutDispatch={layoutDispatch}
       hasConnection={hasConnection}
+      experienceDispatch={experienceDispatch}
       {...props}
     />
   );

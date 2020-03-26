@@ -21,6 +21,7 @@ import {
   effectFunctions,
   DispatchType,
   SubmissionOnOnlineExperienceSynced,
+  ExperienceContext,
 } from "./experience.utils";
 import { makeNewEntryRoute } from "../../constants/new-entry-route";
 import { Entry } from "../Entry/entry.component";
@@ -39,13 +40,13 @@ import {
   useDeleteExperiencesMutation,
 } from "../../graphql/experiences.mutation";
 import {
-  successNotificationId,
+  offlineExperienceSyncedNotificationSuccessSelector,
   closeSubmitNotificationBtnSelector,
   errorsNotificationId,
   syncButtonId,
   newEntryTriggerSelector,
   onOnlineExperienceSyncedNotificationErrorDom,
-  experienceSyncedNotificationSuccessDom,
+  onlineExperienceSyncedNotificationSuccessDom,
   okDeleteExperienceDomId,
   cancelDeleteExperienceDomId,
   makeDeleteMenuDomId,
@@ -169,7 +170,12 @@ export function ExperienceComponent(props: Props) {
     }
 
     return (
-      <>
+      <ExperienceContext.Provider
+        value={{
+          experience,
+          experienceDispatch: dispatch,
+        }}
+      >
         {entryNodes.map((entryNode, index) => {
           return (
             <Entry
@@ -182,7 +188,7 @@ export function ExperienceComponent(props: Props) {
             />
           );
         })}
-      </>
+      </ExperienceContext.Provider>
     );
   }
 
@@ -291,8 +297,10 @@ export function ExperienceComponent(props: Props) {
           {offlineExperienceNewlySynced && (
             /*istanbul ignore next:*/
             <div
-              id={successNotificationId}
-              className="notification is-success is-light"
+              className={makeClassNames({
+                "notification is-success is-light": true,
+                [offlineExperienceSyncedNotificationSuccessSelector]: true,
+              })}
             >
               <button
                 onClick={closeSubmitNotificationHandler}
@@ -469,7 +477,7 @@ function OnOnlineExperienceSyncedNotifications({
               <div
                 className={makeClassNames({
                   "notification is-light mb-2": true,
-                  [`is-success ${experienceSyncedNotificationSuccessDom}`]:
+                  [`is-success ${onlineExperienceSyncedNotificationSuccessDom}`]:
                     value === "success",
                   [`is-danger ${onOnlineExperienceSyncedNotificationErrorDom}`]:
                     value !== "success",

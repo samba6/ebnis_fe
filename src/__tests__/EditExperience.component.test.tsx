@@ -52,7 +52,7 @@ afterEach(() => {
 });
 
 describe("components", () => {
-  it("online", async () => {
+  test("online", async () => {
     const experienceId = "ex";
 
     const { ui } = makeComp({
@@ -71,164 +71,6 @@ describe("components", () => {
         hasConnection: true,
       },
     });
-
-    /**
-     * Submissions:
-     * 1. no edits
-     * 2. invalid update results
-     * 3. no edits - ownFields
-     * 4. ownFields form invalid
-     * 5. JS exception
-     * 6. networkError
-     * 7. graphQLErrors
-     * 8. UpdateExperiencesAllFail
-     * 9. UpdateExperienceErrors
-     * 10. UpdateExperienceSomeSuccess: all nulls
-     * 11. UpdateExperienceOwnFieldsErrors
-     * 12. ExperienceOwnFieldsSuccess
-     * 13. definition form invalid
-     * 14. no edits - definitions
-     * 15. DefinitionError
-     * 16. DefinitionSuccess
-     */
-
-    mockUpdateExperiencesOnline
-      .mockResolvedValueOnce({}) // 2
-      .mockRejectedValueOnce(new Error("a")) // 5
-      .mockRejectedValueOnce(
-        new ApolloError({
-          networkError: new Error("a"),
-        }),
-      ) // 6
-      .mockRejectedValueOnce(
-        new ApolloError({
-          graphQLErrors: [new GraphQLError("a")],
-        }),
-      ) // 7
-      .mockResolvedValueOnce({
-        data: {
-          updateExperiences: {
-            __typename: "UpdateExperiencesAllFail",
-            error: "UpdateExperiencesAllFail",
-          },
-        },
-      } as UpdateExperiencesOnlineMutationResult) // 8
-      .mockResolvedValueOnce({
-        data: {
-          updateExperiences: {
-            __typename: "UpdateExperiencesSomeSuccess",
-            experiences: [
-              {
-                __typename: "UpdateExperienceErrors",
-                errors: {
-                  error: "UpdateExperienceErrors",
-                },
-              },
-            ],
-          },
-        },
-      } as UpdateExperiencesOnlineMutationResult) // 9
-      .mockResolvedValueOnce({
-        data: {
-          updateExperiences: {
-            __typename: "UpdateExperiencesSomeSuccess",
-            experiences: [
-              {
-                __typename: "UpdateExperienceSomeSuccess",
-                experience: {},
-              },
-            ],
-          },
-        },
-      } as UpdateExperiencesOnlineMutationResult) // 10
-      .mockResolvedValueOnce({
-        data: {
-          updateExperiences: {
-            __typename: "UpdateExperiencesSomeSuccess",
-            experiences: [
-              {
-                __typename: "UpdateExperienceSomeSuccess",
-                experience: {
-                  ownFields: {
-                    __typename: "UpdateExperienceOwnFieldsErrors",
-                    errors: {
-                      title: "t",
-                    },
-                  },
-                },
-              },
-            ],
-          },
-        },
-      } as UpdateExperiencesOnlineMutationResult) // 11
-      .mockResolvedValueOnce({
-        data: {
-          updateExperiences: {
-            __typename: "UpdateExperiencesSomeSuccess",
-            experiences: [
-              {
-                __typename: "UpdateExperienceSomeSuccess",
-                experience: {
-                  ownFields: {
-                    __typename: "ExperienceOwnFieldsSuccess",
-                    data: {
-                      title: "t3",
-                      description: "d3",
-                    },
-                  },
-                },
-              },
-            ],
-          },
-        },
-      } as UpdateExperiencesOnlineMutationResult) // 12
-      .mockResolvedValueOnce({
-        data: {
-          updateExperiences: {
-            __typename: "UpdateExperiencesSomeSuccess",
-            experiences: [
-              {
-                __typename: "UpdateExperienceSomeSuccess",
-                experience: {
-                  updatedDefinitions: [
-                    {
-                      __typename: "DefinitionErrors",
-                      errors: {
-                        id: "f1",
-                        name: "a",
-                        error: null,
-                      },
-                    },
-                  ],
-                },
-              },
-            ],
-          },
-        },
-      } as UpdateExperiencesOnlineMutationResult) // 15
-      .mockResolvedValueOnce({
-        data: {
-          updateExperiences: {
-            __typename: "UpdateExperiencesSomeSuccess",
-            experiences: [
-              {
-                __typename: "UpdateExperienceSomeSuccess",
-                experience: {
-                  updatedDefinitions: [
-                    {
-                      __typename: "DefinitionSuccess",
-                      definition: {
-                        id: "f1",
-                        name: "a2",
-                      },
-                    },
-                  ],
-                },
-              },
-            ],
-          },
-        },
-      } as UpdateExperiencesOnlineMutationResult); // 16
 
     render(ui);
 
@@ -255,10 +97,10 @@ describe("components", () => {
     expect(document.getElementById(warningNotificationId)).toBeNull();
 
     /**
-     * When form is submitted
+     * When form is submitted without any edits
      */
     const submitBtn = document.getElementById(submitBtnId) as HTMLButtonElement;
-    submitBtn.click(); // 1
+    submitBtn.click();
 
     /**
      * Then warning UI should be visible
@@ -276,9 +118,10 @@ describe("components", () => {
     expect(document.getElementById(errorsNotificationId)).toBeNull();
 
     /**
-     * When form is re-submitted (2)
+     * When form is re-submitted
      */
-    submitBtn.click(); // 2
+    mockUpdateExperiencesOnline.mockResolvedValue({});
+    submitBtn.click();
 
     /**
      * Then error UI should be visible
@@ -300,9 +143,9 @@ describe("components", () => {
     fillField(titleInput, "t1");
 
     /**
-     * And form is submitted again (3)
+     * And form is submitted again (no edits - ownFields)
      */
-    submitBtn.click(); // 3
+    submitBtn.click();
 
     /**
      * Then warning UI should be visible
@@ -328,9 +171,9 @@ describe("components", () => {
     ).not.toContain("error");
 
     /**
-     * When form is submitted again (4)
+     * When form is submitted again (ownFields form invalid)
      */
-    submitBtn.click(); // 4
+    submitBtn.click();
 
     /**
      * Then error UI should be visible
@@ -381,9 +224,10 @@ describe("components", () => {
     fillField(descriptionInput, "d2");
 
     /**
-     * And form is re-submitted (5)
+     * And form is re-submitted
      */
-    submitBtn.click(); // 5
+    mockUpdateExperiencesOnline.mockRejectedValue(new Error("a"));
+    submitBtn.click();
 
     /**
      * Then error notification should be visible
@@ -405,57 +249,14 @@ describe("components", () => {
     expect(document.getElementById(errorsNotificationId)).toBeNull();
 
     /**
-     * When form is re-submitted (6)
+     * When form is re-submitted
      */
-    submitBtn.click(); // 6
-
-    /**
-     * Then error UI should be visible again
-     */
-    errorsNotification = await waitForElement(() => {
-      return document.getElementById(errorsNotificationId) as HTMLElement;
-    });
-
-    /**
-     * When error UI is closed
-     */
-    (errorsNotification.querySelector(
-      `.${closeSubmitNotificationBtnSelector}`,
-    ) as HTMLElement).click();
-
-    /**
-     * Then error UI should no longer be visible
-     */
-    expect(document.getElementById(errorsNotificationId)).toBeNull();
-
-    /**
-     * When form is re-submitted (7)
-     */
-    submitBtn.click(); // 7
-
-    /**
-     * Then error UI should be visible again
-     */
-    errorsNotification = await waitForElement(() => {
-      return document.getElementById(errorsNotificationId) as HTMLElement;
-    });
-
-    /**
-     * When error UI is closed
-     */
-    (errorsNotification.querySelector(
-      `.${closeSubmitNotificationBtnSelector}`,
-    ) as HTMLElement).click();
-
-    /**
-     * Then error UI should no longer be visible
-     */
-    expect(document.getElementById(errorsNotificationId)).toBeNull();
-
-    /**
-     * When form is re-submitted (8)
-     */
-    submitBtn.click(); // 8
+    mockUpdateExperiencesOnline.mockRejectedValue(
+      new ApolloError({
+        networkError: new Error("a"),
+      }),
+    );
+    submitBtn.click();
 
     /**
      * Then error UI should be visible again
@@ -479,7 +280,12 @@ describe("components", () => {
     /**
      * When form is re-submitted
      */
-    submitBtn.click(); // 9
+    mockUpdateExperiencesOnline.mockRejectedValue(
+      new ApolloError({
+        graphQLErrors: [new GraphQLError("a")],
+      }),
+    );
+    submitBtn.click();
 
     /**
      * Then error UI should be visible again
@@ -503,7 +309,91 @@ describe("components", () => {
     /**
      * When form is re-submitted
      */
-    submitBtn.click(); // 10
+    mockUpdateExperiencesOnline.mockResolvedValue({
+      data: {
+        updateExperiences: {
+          __typename: "UpdateExperiencesAllFail",
+          error: "UpdateExperiencesAllFail",
+        },
+      },
+    } as UpdateExperiencesOnlineMutationResult);
+    submitBtn.click();
+
+    /**
+     * Then error UI should be visible again
+     */
+    errorsNotification = await waitForElement(() => {
+      return document.getElementById(errorsNotificationId) as HTMLElement;
+    });
+
+    /**
+     * When error UI is closed
+     */
+    (errorsNotification.querySelector(
+      `.${closeSubmitNotificationBtnSelector}`,
+    ) as HTMLElement).click();
+
+    /**
+     * Then error UI should no longer be visible
+     */
+    expect(document.getElementById(errorsNotificationId)).toBeNull();
+
+    /**
+     * When form is re-submitted
+     */
+    mockUpdateExperiencesOnline.mockResolvedValue({
+      data: {
+        updateExperiences: {
+          __typename: "UpdateExperiencesSomeSuccess",
+          experiences: [
+            {
+              __typename: "UpdateExperienceErrors",
+              errors: {
+                error: "UpdateExperienceErrors",
+              },
+            },
+          ],
+        },
+      },
+    } as UpdateExperiencesOnlineMutationResult);
+    submitBtn.click();
+
+    /**
+     * Then error UI should be visible again
+     */
+    errorsNotification = await waitForElement(() => {
+      return document.getElementById(errorsNotificationId) as HTMLElement;
+    });
+
+    /**
+     * When error UI is closed
+     */
+    (errorsNotification.querySelector(
+      `.${closeSubmitNotificationBtnSelector}`,
+    ) as HTMLElement).click();
+
+    /**
+     * Then error UI should no longer be visible
+     */
+    expect(document.getElementById(errorsNotificationId)).toBeNull();
+
+    /**
+     * When form is re-submitted
+     */
+    mockUpdateExperiencesOnline.mockResolvedValue({
+      data: {
+        updateExperiences: {
+          __typename: "UpdateExperiencesSomeSuccess",
+          experiences: [
+            {
+              __typename: "UpdateExperienceSomeSuccess",
+              experience: {},
+            },
+          ],
+        },
+      },
+    } as UpdateExperiencesOnlineMutationResult);
+    submitBtn.click();
 
     /**
      * Then error UI should be visible again
@@ -533,7 +423,27 @@ describe("components", () => {
     /**
      * And form is re-submitted
      */
-    submitBtn.click(); // 11
+    mockUpdateExperiencesOnline.mockResolvedValue({
+      data: {
+        updateExperiences: {
+          __typename: "UpdateExperiencesSomeSuccess",
+          experiences: [
+            {
+              __typename: "UpdateExperienceSomeSuccess",
+              experience: {
+                ownFields: {
+                  __typename: "UpdateExperienceOwnFieldsErrors",
+                  errors: {
+                    title: "t",
+                  },
+                },
+              },
+            },
+          ],
+        },
+      },
+    } as UpdateExperiencesOnlineMutationResult);
+    submitBtn.click();
 
     /**
      * Then error UIs should be visible again
@@ -551,7 +461,28 @@ describe("components", () => {
     /**
      * When form is re-submitted
      */
-    submitBtn.click(); // 12
+    mockUpdateExperiencesOnline.mockResolvedValue({
+      data: {
+        updateExperiences: {
+          __typename: "UpdateExperiencesSomeSuccess",
+          experiences: [
+            {
+              __typename: "UpdateExperienceSomeSuccess",
+              experience: {
+                ownFields: {
+                  __typename: "ExperienceOwnFieldsSuccess",
+                  data: {
+                    title: "t3",
+                    description: "d3",
+                  },
+                },
+              },
+            },
+          ],
+        },
+      },
+    } as UpdateExperiencesOnlineMutationResult);
+    submitBtn.click();
 
     /**
      * Then success UI should be visible
@@ -631,10 +562,9 @@ describe("components", () => {
     expect(mockScrollIntoView).not.toHaveBeenCalled();
 
     /**
-     * When form is submitted
+     * When form is submitted (definition form invalid)
      */
-    submitBtn.click(); // 13
-
+    submitBtn.click();
     await wait(() => true);
 
     /**
@@ -683,9 +613,9 @@ describe("components", () => {
     expect(document.getElementById(warningNotificationId)).toBeNull();
 
     /**
-     * When form is submitted
+     * When form is submitted (no edits - definitions)
      */
-    submitBtn.click(); // 14
+    submitBtn.click();
     await wait(() => true);
 
     /**
@@ -721,7 +651,31 @@ describe("components", () => {
     /**
      * When form is submitted
      */
-    submitBtn.click(); // 15
+    mockUpdateExperiencesOnline.mockResolvedValue({
+      data: {
+        updateExperiences: {
+          __typename: "UpdateExperiencesSomeSuccess",
+          experiences: [
+            {
+              __typename: "UpdateExperienceSomeSuccess",
+              experience: {
+                updatedDefinitions: [
+                  {
+                    __typename: "DefinitionErrors",
+                    errors: {
+                      id: "f1",
+                      name: "a",
+                      error: null,
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      },
+    } as UpdateExperiencesOnlineMutationResult);
+    submitBtn.click();
 
     /**
      * Then error UIs should be visible
@@ -742,7 +696,30 @@ describe("components", () => {
     /**
      * When form is submitted
      */
-    submitBtn.click(); // 16
+    mockUpdateExperiencesOnline.mockResolvedValue({
+      data: {
+        updateExperiences: {
+          __typename: "UpdateExperiencesSomeSuccess",
+          experiences: [
+            {
+              __typename: "UpdateExperienceSomeSuccess",
+              experience: {
+                updatedDefinitions: [
+                  {
+                    __typename: "DefinitionSuccess",
+                    definition: {
+                      id: "f1",
+                      name: "a2",
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      },
+    } as UpdateExperiencesOnlineMutationResult);
+    submitBtn.click();
 
     /**
      * Then success UI should be visible

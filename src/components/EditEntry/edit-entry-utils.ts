@@ -4,7 +4,11 @@ import { Dispatch, Reducer, createContext } from "react";
 import immer, { Draft } from "immer";
 import { ExperienceFragment } from "../../graphql/apollo-types/ExperienceFragment";
 import { DataObjectFragment } from "../../graphql/apollo-types/DataObjectFragment";
-import { FormObjVal } from "../Experience/experience.utils";
+import {
+  FormObjVal,
+  DispatchType as ExperienceDispatchType,
+  ActionType as ExperienceActionType,
+} from "../Experience/experience.utils";
 import {
   DataTypes,
   UpdateDataObjectInput,
@@ -45,6 +49,7 @@ import {
   UnsyncedModifiedExperience,
   writeUnsyncedExperience,
 } from "../../apollo-cache/unsynced.resolvers";
+import { EntryConnectionFragment_edges } from "../../graphql/apollo-types/EntryConnectionFragment";
 
 export enum ActionType {
   SUBMITTING = "@component/edit-entry/submitting",
@@ -257,6 +262,75 @@ type DefCreateEntryOnlineEffect = EffectDefinition<
   }
 >;
 
+const createExperienceOnlineEffect: DefCreateExperienceOnlineEffect["func"] = (
+  { dataStates },
+  props,
+) => {
+  const {
+    experience,
+    entry: { id: entryId, dataObjects },
+    experienceDispatch,
+    dispatch,
+  } = props;
+
+  const updatedDataObjects: DataObjectFragment[] = dataObjects.map(obj => {
+    const { id, ...rest } = obj as DataObjectFragment;
+    const dataState = dataStates[id];
+
+    const {
+      context: {
+        defaults: { type, parsedVal },
+      },
+    } = dataState;
+
+    const formValue =
+      dataState.value === "changed"
+        ? dataState.changed.context.formValue
+        : parsedVal;
+
+    return {
+      ...rest,
+      id,
+      clientId: id,
+      data: makeDataObjectData(type, formValue),
+    } as DataObjectFragment;
+  });
+
+  const updatedExperience = immer(experience, proxy => {
+    const edges = proxy.entries.edges as EntryConnectionFragment_edges[];
+
+    for (let index = 0; index < edges.length; index++) {
+      const edge = edges[index] as EntryConnectionFragment_edges;
+      const node = edge.node as EntryFragment;
+
+      if (node.id === entryId) {
+        node.dataObjects = updatedDataObjects;
+        edge.node = node;
+        break;
+      }
+    }
+    proxy.entries.edges = edges;
+  });
+
+  experienceDispatch({
+    type: ExperienceActionType.SYNC_EDITED_OFFLINE_EXPERIENCE,
+    experience: updatedExperience,
+    onError: error => {
+      dispatch({
+        type: ActionType.ON_COMMON_ERROR,
+        error,
+      });
+    },
+  });
+};
+
+type DefCreateExperienceOnlineEffect = EffectDefinition<
+  "createExperienceOnlineEffect",
+  {
+    dataStates: DataStates;
+  }
+>;
+
 const updateEntryOfflineEffect: DefUpdateEntryOfflineEffect["func"] = async (
   { entry, updatedDataIds },
   { client, persistor },
@@ -377,6 +451,7 @@ export const effectFunctions = {
   createEntryOnlineEffect,
   updateEntryOfflineEffect,
   scrollToViewEffect,
+  createExperienceOnlineEffect,
 };
 
 function dispatchCommonError(dispatch: DispatchType, error: CommonError) {
@@ -401,7 +476,7 @@ function handleSubmissionAction(proxy: DraftState, payload: SubmittingPayload) {
   }
 
   if (proxy.states.mode.value === StateValue.offline) {
-    handleCreateEntryAction(proxy);
+    handleCreateEntryOrExperienceAction(proxy);
     return;
   }
 
@@ -731,11 +806,15 @@ function setEditingData(proxy: DraftState) {
   }
 }
 
-function handleCreateEntryAction(proxy: DraftState) {
+function handleCreateEntryOrExperienceAction(proxy: DraftState) {
   const {
     states,
     context: { entry },
   } = proxy;
+
+  const { dataStates } = states;
+  const { experienceId } = entry;
+  const effects = getGeneralEffects(proxy);
 
   states.submission = {
     value: StateValue.submitting,
@@ -746,7 +825,14 @@ function handleCreateEntryAction(proxy: DraftState) {
     },
   };
 
-  const { dataStates } = states;
+  if (isOfflineId(experienceId)) {
+    effects.push({
+      key: "createExperienceOnlineEffect",
+      ownArgs: { dataStates },
+    });
+
+    return;
+  }
 
   const dataObjects = entry.dataObjects.map(obj => {
     const { id, definitionId } = obj as DataObjectFragment;
@@ -770,7 +856,6 @@ function handleCreateEntryAction(proxy: DraftState) {
     };
   });
 
-  const effects = getGeneralEffects(proxy);
   const { updatedAt, insertedAt, clientId } = entry;
 
   effects.push({
@@ -784,8 +869,6 @@ function handleCreateEntryAction(proxy: DraftState) {
       },
     },
   });
-
-  return;
 }
 
 ///// STATE UPDATE... HELPERS
@@ -1015,6 +1098,7 @@ type EffectsList = (
   | DefUpdateEntryOnlineEffect
   | DefUpdateEntryOfflineEffect
   | ScrollToViewEffect
+  | DefCreateExperienceOnlineEffect
 )[];
 
 interface EffectArgs {
@@ -1149,6 +1233,7 @@ export type Props = UpdateExperiencesOnlineComponentProps &
     cache: InMemoryCache;
     layoutDispatch: LayoutDispatchType;
     hasConnection: LayoutContextValue["hasConnection"];
+    experienceDispatch: ExperienceDispatchType;
   };
 
 export interface CallerProps {
