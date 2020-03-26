@@ -265,13 +265,15 @@ type DefCreateEntryOnlineEffect = EffectDefinition<
 const createExperienceOnlineEffect: DefCreateExperienceOnlineEffect["func"] = (
   { dataStates },
   props,
+  effectArgs,
 ) => {
   const {
     experience,
     entry: { id: entryId, dataObjects },
     experienceDispatch,
-    dispatch,
   } = props;
+
+  const { dispatch } = effectArgs;
 
   const updatedDataObjects: DataObjectFragment[] = dataObjects.map(obj => {
     const { id, ...rest } = obj as DataObjectFragment;
@@ -1101,7 +1103,7 @@ type EffectsList = (
   | DefCreateExperienceOnlineEffect
 )[];
 
-interface EffectArgs {
+export interface EffectArgs {
   dispatch: DispatchType;
 }
 
