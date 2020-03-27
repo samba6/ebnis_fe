@@ -24,7 +24,7 @@ import {
   ExperienceContext,
 } from "./experience.utils";
 import { makeNewEntryRoute } from "../../constants/new-entry-route";
-import { Entry } from "../Entry/entry.component";
+import Entry from "../Entry/entry.component";
 import {
   ExperienceFragment_entries,
   ExperienceFragment_entries_edges,

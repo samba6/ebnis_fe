@@ -16,6 +16,7 @@ import {
   removeUnsyncedExperience,
 } from "../apollo-cache/unsynced.resolvers";
 import lodashIsEmpty from "lodash/isEmpty";
+import { DataObjectFragment } from "../graphql/apollo-types/DataObjectFragment";
 
 export function updateExperiencesInCache(onDone?: () => void) {
   return function updateExperiencesInCacheInner(
@@ -47,7 +48,6 @@ export function updateExperiencesInCache(onDone?: () => void) {
           }
 
           hasUpdates = true;
-
           updatedIds[experienceId] = 1;
 
           const updatedExperience = immer(experience, proxy => {
@@ -55,6 +55,10 @@ export function updateExperiencesInCache(onDone?: () => void) {
 
             const hasOwnFieldsErrors = updateOwnFields(proxy, result);
             const hasNewEntriesErrors = addEntries(proxy, result);
+            const [
+              hasUpdatedEntriesErrors,
+              updatedEntriesIdsToDelete,
+            ] = updateEntries(proxy, result);
             const [hasDefinitionsErrors, definitionIds] = updateDefinitions(
               proxy,
               result,
@@ -64,7 +68,8 @@ export function updateExperiencesInCache(onDone?: () => void) {
               !(
                 hasDefinitionsErrors ||
                 hasNewEntriesErrors ||
-                hasOwnFieldsErrors
+                hasOwnFieldsErrors ||
+                hasUpdatedEntriesErrors
               )
             ) {
               proxy.hasUnsaved = null;
@@ -76,6 +81,8 @@ export function updateExperiencesInCache(onDone?: () => void) {
               hasNewEntriesErrors,
               hasDefinitionsErrors,
               definitionIds,
+              hasUpdatedEntriesErrors,
+              updatedEntriesIdsToDelete,
             );
           });
 
@@ -118,6 +125,79 @@ function updateOwnFields(proxy: DraftState, result: UpdateExperienceFragment) {
   return hasErrors;
 }
 
+interface UpdatedEntries {
+  [entryId: string]: UpdatedDataObjects;
+}
+
+interface UpdatedDataObjects {
+  [dataObjectId: string]: DataObjectFragment;
+}
+
+type UpdatedEntriesIdsToDelete = [string, string[]][];
+
+function updateEntries(
+  proxy: DraftState,
+  result: UpdateExperienceFragment,
+): [boolean, UpdatedEntriesIdsToDelete] {
+  let hasErrors = false;
+  const { updatedEntries } = result;
+
+  if (!updatedEntries) {
+    return [hasErrors, []];
+  }
+
+  let hasUpdates = false;
+  const deletes: UpdatedEntriesIdsToDelete = [];
+
+  const updates = updatedEntries.reduce((acc, e) => {
+    if (e.__typename === "UpdateEntrySomeSuccess") {
+      const { entryId, dataObjects } = e.entry;
+      const dataObjectsWithErrorIds: string[] = [];
+      const idToUpdatedDataObjectMap = {} as UpdatedDataObjects;
+      let isDataObjectUpdated = false;
+
+      dataObjects.forEach(d => {
+        if (d.__typename === "DataObjectSuccess") {
+          hasUpdates = true;
+          isDataObjectUpdated = true;
+          const { dataObject } = d;
+          idToUpdatedDataObjectMap[dataObject.id] = dataObject;
+        } else {
+          dataObjectsWithErrorIds.push(d.errors.meta.id as string);
+        }
+      });
+
+      deletes.push([entryId, dataObjectsWithErrorIds]);
+
+      if (isDataObjectUpdated) {
+        acc[entryId] = idToUpdatedDataObjectMap;
+      }
+    } else {
+      hasErrors = true;
+    }
+
+    return acc;
+  }, {} as UpdatedEntries);
+
+  if (hasUpdates) {
+    (proxy.entries.edges as EntryConnectionFragment_edges[]).forEach(edge => {
+      const node = (edge as EntryConnectionFragment_edges)
+        .node as EntryFragment;
+
+      const idToUpdatedDataObjectMap = updates[node.id];
+
+      if (idToUpdatedDataObjectMap) {
+        node.dataObjects = node.dataObjects.map(d => {
+          const dataObject = d as DataObjectFragment;
+          return idToUpdatedDataObjectMap[dataObject.id] || dataObject;
+        });
+      }
+    });
+  }
+
+  return [hasErrors, deletes];
+}
+
 function updateDefinitions(
   proxy: DraftState,
   result: UpdateExperienceFragment,
@@ -144,7 +224,7 @@ function updateDefinitions(
     }
 
     return acc;
-  }, {} as { [k: string]: DataDefinitionFragment });
+  }, {} as { [definitionId: string]: DataDefinitionFragment });
 
   if (!hasUpdates) {
     return [hasErrors, updatedDefinitionIds];
@@ -210,6 +290,8 @@ function updateUnsynced(
   hasNewEntriesErrors: boolean,
   hasDefinitionsErrors: boolean,
   definitionIds: string[],
+  hasUpdatedEntriesErrors: boolean,
+  updatedEntriesIdsToDelete: UpdatedEntriesIdsToDelete,
 ) {
   const unsynced = getUnsyncedExperience(experienceId);
 
@@ -233,6 +315,25 @@ function updateUnsynced(
     } else {
       definitionIds.forEach(id => {
         delete unsyncedDefinitions[id];
+      });
+    }
+  }
+
+  const unsyncedModifiedEntries = unsynced.modifiedEntries;
+
+  if (unsyncedModifiedEntries) {
+    if (!hasUpdatedEntriesErrors) {
+      delete unsynced.modifiedEntries;
+    } else {
+      updatedEntriesIdsToDelete.forEach(([entryId, dataObjectsIds]) => {
+        if (!dataObjectsIds.length) {
+          delete unsyncedModifiedEntries[entryId];
+        } else {
+          const unsyncedModifiedEntry = unsyncedModifiedEntries[entryId];
+          dataObjectsIds.forEach(id => {
+            delete unsyncedModifiedEntry[id];
+          });
+        }
       });
     }
   }

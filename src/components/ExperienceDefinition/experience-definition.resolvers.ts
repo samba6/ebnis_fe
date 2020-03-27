@@ -35,7 +35,7 @@ const createOfflineExperienceResolver: LocalResolverFn<
   const {
     dataDefinitions: createDataDefinitions,
     title,
-    description,
+    description = null,
   } = inputs[0];
 
   const dataDefinitions: ExperienceFragment_dataDefinitions[] = (createDataDefinitions as CreateDataDefinition[]).map(

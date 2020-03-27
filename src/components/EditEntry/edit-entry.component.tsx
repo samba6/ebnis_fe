@@ -52,7 +52,7 @@ import { DataObjectErrorFragment } from "../../graphql/apollo-types/DataObjectEr
 import { ExperienceContext } from "../Experience/experience.utils";
 
 export function EditEntryComponent(props: Props) {
-  const { dispatch: parentDispatch, experience, hasConnection } = props;
+  const { entryDispatch, experience, hasConnection } = props;
 
   const [stateMachine, dispatch] = useReducer(reducer, props, initState);
   const {
@@ -120,11 +120,12 @@ export function EditEntryComponent(props: Props) {
         open={true}
         closeIcon={true}
         onClose={() => {
+          // istanbul ignore next:
           if (submission.value === StateValue.submitting) {
             return;
           }
 
-          parentDispatch({
+          entryDispatch({
             type: ActionType.DESTROYED,
           });
         }}

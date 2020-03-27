@@ -271,11 +271,6 @@ export interface UpdateExperiencesOnline_updateExperiences_UpdateExperiencesSome
   insertedAt: any;
   updatedAt: any;
   /**
-   * Indicates whether entry has been modified offline, in which case this
-   *   property will be true, otherwise it will be falsy
-   */
-  modOffline: boolean | null;
-  /**
    * The list of data belonging to this entry.
    */
   dataObjects: (UpdateExperiencesOnline_updateExperiences_UpdateExperiencesSomeSuccess_experiences_UpdateExperienceSomeSuccess_experience_newEntries_CreateEntrySuccess_entry_dataObjects | null)[];
@@ -320,11 +315,6 @@ export interface UpdateExperiencesOnline_updateExperiences_UpdateExperiencesSome
   clientId: string | null;
   insertedAt: any;
   updatedAt: any;
-  /**
-   * Indicates whether entry has been modified offline, in which case this
-   *   property will be true, otherwise it will be falsy
-   */
-  modOffline: boolean | null;
   /**
    * The list of data belonging to this entry.
    */

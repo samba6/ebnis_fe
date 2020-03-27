@@ -33,6 +33,7 @@ import {
   parseStringError,
   CommonError,
   FORM_CONTAINS_ERRORS_MESSAGE,
+  GENERIC_SERVER_ERROR,
 } from "../../general-utils";
 import {
   UpdateExperiencesOnlineComponentProps,
@@ -50,6 +51,7 @@ import {
   writeUnsyncedExperience,
 } from "../../apollo-cache/unsynced.resolvers";
 import { EntryConnectionFragment_edges } from "../../graphql/apollo-types/EntryConnectionFragment";
+import { EntryDispatchType } from "../Entry/entry.utils";
 
 export enum ActionType {
   SUBMITTING = "@component/edit-entry/submitting",
@@ -74,75 +76,7 @@ export const StateValue = {
   otherErrors: "otherErrors" as OtherErrorsVal,
   online: "online" as OnlineVal,
   offline: "offline" as OfflineVal,
-  modifiedOffline: "modifiedOffline" as ModifiedOfflineVal,
 };
-
-export function initState(props: Props): StateMachine {
-  const { entry, experience, hasConnection } = props;
-  const { id: entryId, modOffline } = entry;
-
-  const idToDefinitionMap = (experience.dataDefinitions as DataDefinitionFragment[]).reduce(
-    (acc, d) => {
-      const definition = d as DataDefinitionFragment;
-      acc[definition.id] = definition;
-      return acc;
-    },
-    {} as { [k: string]: DataDefinitionFragment },
-  );
-
-  const dataStates = entry.dataObjects.reduce((statesMap, obj) => {
-    const data = obj as DataObjectFragment;
-    const { id, definitionId } = data;
-    const { type, name: definitionName } = idToDefinitionMap[definitionId];
-
-    statesMap[id] = {
-      value: "unchanged",
-
-      unchanged: {
-        context: {},
-      },
-
-      context: {
-        defaults: {
-          ...data,
-          parsedVal: formObjFromRawString(data.data),
-          type,
-          definitionName,
-        } as DataState["context"]["defaults"],
-      },
-    };
-
-    return statesMap;
-  }, {} as DataStates);
-
-  return {
-    effects: {
-      general: {
-        value: StateValue.noEffect,
-      },
-    },
-    context: {
-      entry,
-      hasConnection,
-    },
-    states: {
-      mode: {
-        value: isOfflineId(entryId)
-          ? StateValue.offline
-          : modOffline === true
-          ? StateValue.modifiedOffline
-          : StateValue.online,
-      },
-      editingData: {
-        value: StateValue.inactive,
-      },
-      submission: {
-        value: StateValue.inactive,
-      },
-      dataStates,
-    },
-  };
-}
 
 export const reducer: Reducer<StateMachine, Action> = (state, action) =>
   wrapReducer<StateMachine, Action>(
@@ -191,281 +125,66 @@ export const reducer: Reducer<StateMachine, Action> = (state, action) =>
     // true,
   );
 
-////////////////////////// EFFECT FUNCTIONS SECTION ////////////////////////
+export function initState(props: Props): StateMachine {
+  const { entry, experience, hasConnection } = props;
+  const { id: entryId } = entry;
 
-export const GENERIC_SERVER_ERROR = "Something went wrong - please try again.";
-
-const createEntryOnlineEffect: DefCreateEntryOnlineEffect["func"] = async (
-  { input },
-  { updateExperiencesOnline, persistor, cache, entry: { experienceId } },
-  { dispatch },
-) => {
-  updateExperiencesOnlineEffectHelperFunc(
-    [
-      {
-        experienceId,
-        addEntries: [input],
-      },
-    ],
-    updateExperiencesOnline,
-    experience => {
-      const { newEntries } = experience;
-
-      if (newEntries && newEntries.length) {
-        const entry0 = newEntries[0];
-
-        // We only deal with error case because on success, onDone callback will
-        // be invoked which will cause apollo to unmount this component.
-        if (entry0.__typename === "CreateEntryErrors") {
-          const { errors } = entry0;
-          dispatch({
-            type: ActionType.ON_CREATE_ENTRY_ERRORS,
-            errors,
-          });
-        }
-
-        return;
-      }
-
-      dispatch({
-        type: ActionType.ON_COMMON_ERROR,
-        error: GENERIC_SERVER_ERROR,
-      });
+  const idToDefinitionMap = (experience.dataDefinitions as DataDefinitionFragment[]).reduce(
+    (acc, d) => {
+      const definition = d as DataDefinitionFragment;
+      acc[definition.id] = definition;
+      return acc;
     },
-    error => dispatchCommonError(dispatch, error || GENERIC_SERVER_ERROR),
-    () => {
-      const { clientId, dataObjects } = input;
-
-      wipeReferencesFromCache(
-        cache,
-        [makeApolloCacheRef(ENTRY_TYPE_NAME, clientId as string)].concat(
-          dataObjects.map(d => {
-            const dataObj = d as DataObjectFragment;
-
-            return makeApolloCacheRef(
-              DATA_OBJECT_TYPE_NAME,
-              dataObj.clientId as string,
-            );
-          }),
-        ),
-      );
-
-      persistor.persist();
-    },
+    {} as { [k: string]: DataDefinitionFragment },
   );
-};
 
-type DefCreateEntryOnlineEffect = EffectDefinition<
-  "createEntryOnlineEffect",
-  {
-    input: CreateEntryInput;
-  }
->;
+  const dataStates = entry.dataObjects.reduce((statesMap, obj) => {
+    const data = obj as DataObjectFragment;
+    const { id, definitionId } = data;
+    const { type, name: definitionName } = idToDefinitionMap[definitionId];
 
-const createExperienceOnlineEffect: DefCreateExperienceOnlineEffect["func"] = (
-  { dataStates },
-  props,
-  effectArgs,
-) => {
-  const {
-    experience,
-    entry: { id: entryId, dataObjects },
-    experienceDispatch,
-  } = props;
-
-  const { dispatch } = effectArgs;
-
-  const updatedDataObjects: DataObjectFragment[] = dataObjects.map(obj => {
-    const { id, ...rest } = obj as DataObjectFragment;
-    const dataState = dataStates[id];
-
-    const {
+    statesMap[id] = {
+      value: "unchanged",
+      unchanged: {
+        context: {},
+      },
       context: {
-        defaults: { type, parsedVal },
+        defaults: {
+          ...data,
+          parsedVal: formObjFromRawString(data.data),
+          type,
+          definitionName,
+        } as DataState["context"]["defaults"],
       },
-    } = dataState;
+    };
 
-    const formValue =
-      dataState.value === "changed"
-        ? dataState.changed.context.formValue
-        : parsedVal;
+    return statesMap;
+  }, {} as DataStates);
 
-    return {
-      ...rest,
-      id,
-      clientId: id,
-      data: makeDataObjectData(type, formValue),
-    } as DataObjectFragment;
-  });
-
-  const updatedExperience = immer(experience, proxy => {
-    const edges = proxy.entries.edges as EntryConnectionFragment_edges[];
-
-    for (let index = 0; index < edges.length; index++) {
-      const edge = edges[index] as EntryConnectionFragment_edges;
-      const node = edge.node as EntryFragment;
-
-      if (node.id === entryId) {
-        node.dataObjects = updatedDataObjects;
-        edge.node = node;
-        break;
-      }
-    }
-    proxy.entries.edges = edges;
-  });
-
-  experienceDispatch({
-    type: ExperienceActionType.SYNC_EDITED_OFFLINE_EXPERIENCE,
-    experience: updatedExperience,
-    onError: error => {
-      dispatch({
-        type: ActionType.ON_COMMON_ERROR,
-        error,
-      });
+  return {
+    effects: {
+      general: {
+        value: StateValue.noEffect,
+      },
     },
-  });
-};
-
-type DefCreateExperienceOnlineEffect = EffectDefinition<
-  "createExperienceOnlineEffect",
-  {
-    dataStates: DataStates;
-  }
->;
-
-const updateEntryOfflineEffect: DefUpdateEntryOfflineEffect["func"] = async (
-  { entry, updatedDataIds },
-  { client, persistor },
-) => {
-  const { experienceId, id: entryId } = entry;
-
-  (await upsertExperienceWithEntry(
-    client,
-    entry,
-    experienceId,
-  )) as ExperienceFragment;
-
-  if (!isOfflineId(experienceId)) {
-    const unsyncedExperience = (getUnsyncedExperience(experienceId) ||
-      {}) as UnsyncedModifiedExperience;
-
-    const unsyncedModifiedEntries = unsyncedExperience.modifiedEntries || {};
-    const unsyncedModifiedEntry = unsyncedModifiedEntries[entryId] || {};
-    unsyncedModifiedEntries[entryId] = unsyncedModifiedEntry;
-    unsyncedExperience.modifiedEntries = unsyncedModifiedEntries;
-
-    updatedDataIds.forEach(id => {
-      unsyncedModifiedEntry[id] = true;
-    });
-
-    writeUnsyncedExperience(experienceId, unsyncedExperience);
-  }
-
-  await persistor.persist();
-};
-
-type DefUpdateEntryOfflineEffect = EffectDefinition<
-  "updateEntryOfflineEffect",
-  {
-    entry: EntryFragment;
-    updatedDataIds: string[];
-  }
->;
-
-const updateEntryOnlineEffect: DefUpdateEntryOnlineEffect["func"] = async (
-  { dataInput },
-  props,
-  effectArgs,
-) => {
-  const {
-    entry: { id: entryId, experienceId },
-    updateExperiencesOnline,
-  } = props;
-
-  const { dispatch } = effectArgs;
-
-  const input = {
-    experienceId,
-    updateEntries: [
-      {
-        entryId,
-        dataObjects: dataInput,
+    context: {
+      entry,
+      hasConnection,
+    },
+    states: {
+      mode: {
+        value: isOfflineId(entryId) ? StateValue.offline : StateValue.online,
       },
-    ],
+      editingData: {
+        value: StateValue.inactive,
+      },
+      submission: {
+        value: StateValue.inactive,
+      },
+      dataStates,
+    },
   };
-
-  updateExperiencesOnlineEffectHelperFunc(
-    [input],
-    updateExperiencesOnline,
-    experience => {
-      const { updatedEntries } = experience;
-
-      if (updatedEntries && updatedEntries.length) {
-        const updatedEntry0 = updatedEntries[0];
-
-        if (updatedEntry0.__typename === "UpdateEntryErrors") {
-          dispatchCommonError(dispatch, updatedEntry0.errors.error);
-        } else {
-          const {
-            entry: { dataObjects },
-          } = updatedEntry0;
-
-          dispatch({
-            type: ActionType.UPDATE_ENTRY_ONLINE_RESPONSE,
-            dataObjects,
-          });
-        }
-
-        return;
-      }
-
-      dispatch({
-        type: ActionType.ON_COMMON_ERROR,
-        error: GENERIC_SERVER_ERROR,
-      });
-    },
-    error => dispatchCommonError(dispatch, error || GENERIC_SERVER_ERROR),
-  );
-};
-
-type DefUpdateEntryOnlineEffect = EffectDefinition<
-  "updateEntryOnlineEffect",
-  {
-    dataInput: UpdateDataObjectInput[];
-  }
->;
-
-const scrollToViewEffect: ScrollToViewEffect["func"] = ({ id }) => {
-  scrollIntoView(id, {
-    behavior: "smooth",
-  });
-};
-
-type ScrollToViewEffect = EffectDefinition<
-  "scrollToViewEffect",
-  {
-    id: string;
-  }
->;
-
-export const effectFunctions = {
-  updateEntryOnlineEffect,
-  createEntryOnlineEffect,
-  updateEntryOfflineEffect,
-  scrollToViewEffect,
-  createExperienceOnlineEffect,
-};
-
-function dispatchCommonError(dispatch: DispatchType, error: CommonError) {
-  dispatch({
-    type: ActionType.ON_COMMON_ERROR,
-    error,
-  });
 }
-
-////////////////////////// END EFFECT FUNCTIONS SECTION /////////////////
-
-/////////////////// STATE UPDATE FUNCTIONS SECTION /////////////
 
 function handleSubmissionAction(proxy: DraftState, payload: SubmittingPayload) {
   proxy.states.submission.value = StateValue.submitting;
@@ -942,7 +661,7 @@ function getDataObjectsForOfflineUpdate(
 
 function getDataObjectsForOnlineUpdate(proxy: DraftState) {
   const {
-    states: { dataStates, mode },
+    states: { dataStates },
   } = proxy;
 
   const inputs: UpdateDataObjectInput[] = [];
@@ -950,7 +669,7 @@ function getDataObjectsForOnlineUpdate(proxy: DraftState) {
   for (const [id, dataState] of Object.entries(dataStates)) {
     const {
       context: {
-        defaults: { type, parsedVal },
+        defaults: { type },
       },
     } = dataState;
 
@@ -964,11 +683,6 @@ function getDataObjectsForOnlineUpdate(proxy: DraftState) {
       inputs.push({
         id,
         data: makeDataObjectData(type, formValue),
-      });
-    } else if (mode.value === StateValue.modifiedOffline) {
-      inputs.push({
-        id,
-        data: makeDataObjectData(type, parsedVal),
       });
     }
   }
@@ -988,7 +702,6 @@ function handleUpdateEntryOfflineAction(proxy: DraftState) {
 
   const updateTime = new Date().toJSON();
   entry.updatedAt = updateTime;
-  entry.modOffline = true;
 
   const [updatedCount, updatedDataIds] = getDataObjectsForOfflineUpdate(
     entry.dataObjects as DataObjectFragment[],
@@ -1035,6 +748,279 @@ function handleUpdateEntryOfflineAction(proxy: DraftState) {
 
 export const EditEntryContext = createContext<ContextValue>({} as ContextValue);
 
+////////////////////////// EFFECT FUNCTIONS SECTION ////////////////////////
+
+const createEntryOnlineEffect: DefCreateEntryOnlineEffect["func"] = async (
+  { input },
+  { updateExperiencesOnline, persistor, cache, entry: { experienceId } },
+  { dispatch },
+) => {
+  updateExperiencesOnlineEffectHelperFunc(
+    [
+      {
+        experienceId,
+        addEntries: [input],
+      },
+    ],
+    updateExperiencesOnline,
+    experience => {
+      const { newEntries } = experience;
+
+      if (newEntries && newEntries.length) {
+        const entry0 = newEntries[0];
+
+        // We only deal with error case because on success, onDone callback will
+        // be invoked which will cause apollo to unmount this component.
+        if (entry0.__typename === "CreateEntryErrors") {
+          const { errors } = entry0;
+          dispatch({
+            type: ActionType.ON_CREATE_ENTRY_ERRORS,
+            errors,
+          });
+        }
+
+        return;
+      }
+
+      dispatch({
+        type: ActionType.ON_COMMON_ERROR,
+        error: GENERIC_SERVER_ERROR,
+      });
+    },
+    error => dispatchCommonError(dispatch, error || GENERIC_SERVER_ERROR),
+    () => {
+      const { clientId, dataObjects } = input;
+
+      wipeReferencesFromCache(
+        cache,
+        [makeApolloCacheRef(ENTRY_TYPE_NAME, clientId as string)].concat(
+          dataObjects.map(d => {
+            const dataObj = d as DataObjectFragment;
+
+            return makeApolloCacheRef(
+              DATA_OBJECT_TYPE_NAME,
+              dataObj.clientId as string,
+            );
+          }),
+        ),
+      );
+
+      persistor.persist();
+    },
+  );
+};
+
+type DefCreateEntryOnlineEffect = EffectDefinition<
+  "createEntryOnlineEffect",
+  {
+    input: CreateEntryInput;
+  }
+>;
+
+const createExperienceOnlineEffect: DefCreateExperienceOnlineEffect["func"] = (
+  { dataStates },
+  props,
+  effectArgs,
+) => {
+  const {
+    experience,
+    entry: { id: entryId, dataObjects },
+    experienceDispatch,
+  } = props;
+
+  const { dispatch } = effectArgs;
+
+  const updatedDataObjects: DataObjectFragment[] = dataObjects.map(obj => {
+    const { id, ...rest } = obj as DataObjectFragment;
+    const dataState = dataStates[id];
+
+    const {
+      context: {
+        defaults: { type, parsedVal },
+      },
+    } = dataState;
+
+    const formValue =
+      dataState.value === "changed"
+        ? dataState.changed.context.formValue
+        : parsedVal;
+
+    return {
+      ...rest,
+      id,
+      clientId: id,
+      data: makeDataObjectData(type, formValue),
+    } as DataObjectFragment;
+  });
+
+  const updatedExperience = immer(experience, proxy => {
+    const edges = proxy.entries.edges as EntryConnectionFragment_edges[];
+
+    for (let index = 0; index < edges.length; index++) {
+      const edge = edges[index] as EntryConnectionFragment_edges;
+      const node = edge.node as EntryFragment;
+
+      if (node.id === entryId) {
+        node.dataObjects = updatedDataObjects;
+        break;
+      }
+    }
+  });
+
+  experienceDispatch({
+    type: ExperienceActionType.SYNC_EDITED_OFFLINE_EXPERIENCE,
+    experience: updatedExperience,
+    onError: error => {
+      dispatch({
+        type: ActionType.ON_COMMON_ERROR,
+        error,
+      });
+    },
+  });
+};
+
+type DefCreateExperienceOnlineEffect = EffectDefinition<
+  "createExperienceOnlineEffect",
+  {
+    dataStates: DataStates;
+  }
+>;
+
+const updateEntryOfflineEffect: DefUpdateEntryOfflineEffect["func"] = async (
+  { entry, updatedDataIds },
+  props,
+) => {
+  const { experienceId, id: entryId } = entry;
+  const { client, persistor } = props;
+
+  (await upsertExperienceWithEntry(
+    client,
+    entry,
+    experienceId,
+  )) as ExperienceFragment;
+
+  if (!isOfflineId(experienceId)) {
+    const unsyncedExperience = (getUnsyncedExperience(experienceId) ||
+      {}) as UnsyncedModifiedExperience;
+
+    const unsyncedModifiedEntries = unsyncedExperience.modifiedEntries || {};
+    const unsyncedModifiedEntry = unsyncedModifiedEntries[entryId] || {};
+    unsyncedModifiedEntries[entryId] = unsyncedModifiedEntry;
+    unsyncedExperience.modifiedEntries = unsyncedModifiedEntries;
+
+    updatedDataIds.forEach(id => {
+      unsyncedModifiedEntry[id] = true;
+    });
+
+    writeUnsyncedExperience(experienceId, unsyncedExperience);
+  }
+
+  await persistor.persist();
+};
+
+type DefUpdateEntryOfflineEffect = EffectDefinition<
+  "updateEntryOfflineEffect",
+  {
+    entry: EntryFragment;
+    updatedDataIds: string[];
+  }
+>;
+
+const updateEntryOnlineEffect: DefUpdateEntryOnlineEffect["func"] = async (
+  { dataInput },
+  props,
+  effectArgs,
+) => {
+  const {
+    entry: { id: entryId, experienceId },
+    updateExperiencesOnline,
+  } = props;
+
+  const { dispatch } = effectArgs;
+
+  const input = {
+    experienceId,
+    updateEntries: [
+      {
+        entryId,
+        dataObjects: dataInput,
+      },
+    ],
+  };
+
+  updateExperiencesOnlineEffectHelperFunc(
+    [input],
+    updateExperiencesOnline,
+    experience => {
+      const { updatedEntries } = experience;
+
+      if (updatedEntries && updatedEntries.length) {
+        const updatedEntry0 = updatedEntries[0];
+
+        if (updatedEntry0.__typename === "UpdateEntryErrors") {
+          dispatchCommonError(dispatch, updatedEntry0.errors.error);
+        } else {
+          const {
+            entry: { dataObjects },
+          } = updatedEntry0;
+
+          dispatch({
+            type: ActionType.UPDATE_ENTRY_ONLINE_RESPONSE,
+            dataObjects,
+          });
+        }
+
+        return;
+      }
+
+      dispatch({
+        type: ActionType.ON_COMMON_ERROR,
+        error: GENERIC_SERVER_ERROR,
+      });
+    },
+    error => dispatchCommonError(dispatch, error || GENERIC_SERVER_ERROR),
+  );
+};
+
+type DefUpdateEntryOnlineEffect = EffectDefinition<
+  "updateEntryOnlineEffect",
+  {
+    dataInput: UpdateDataObjectInput[];
+  }
+>;
+
+const scrollToViewEffect: ScrollToViewEffect["func"] = ({ id }) => {
+  scrollIntoView(id, {
+    behavior: "smooth",
+  });
+};
+
+type ScrollToViewEffect = EffectDefinition<
+  "scrollToViewEffect",
+  {
+    id: string;
+  }
+>;
+
+export const effectFunctions = {
+  updateEntryOnlineEffect,
+  createEntryOnlineEffect,
+  updateEntryOfflineEffect,
+  scrollToViewEffect,
+  createExperienceOnlineEffect,
+};
+
+function dispatchCommonError(dispatch: DispatchType, error: CommonError) {
+  dispatch({
+    type: ActionType.ON_COMMON_ERROR,
+    error,
+  });
+}
+
+////////////////////////// END EFFECT FUNCTIONS SECTION /////////////////
+
+/////////////////// STATE UPDATE FUNCTIONS SECTION /////////////
+
 ////////////////////////// TYPES SECTION ////////////////////////
 
 type DraftState = Draft<StateMachine>;
@@ -1048,10 +1034,7 @@ export interface StateMachine {
     general: EffectState | { value: NoEffectVal };
   };
   states: {
-    readonly mode:
-      | { value: OfflineVal }
-      | { value: OnlineVal }
-      | { value: ModifiedOfflineVal };
+    readonly mode: { value: OfflineVal } | { value: OnlineVal };
     readonly dataStates: DataStates;
     readonly editingData: {
       value: ActiveVal | InActiveVal;
@@ -1072,7 +1055,6 @@ type ApolloErrorValue = "apolloErrors";
 type OtherErrorsVal = "otherErrors";
 type OnlineVal = "online";
 type OfflineVal = "offline";
-type ModifiedOfflineVal = "modifiedOffline";
 ////////////////////////// END STRINGY TYPES SECTION //////////////////
 
 interface ContextValue {
@@ -1241,7 +1223,7 @@ export type Props = UpdateExperiencesOnlineComponentProps &
 export interface CallerProps {
   entry: EntryFragment;
   experience: ExperienceFragment;
-  dispatch: DispatchType;
+  entryDispatch: EntryDispatchType;
 }
 
 export type DispatchType = Dispatch<Action>;

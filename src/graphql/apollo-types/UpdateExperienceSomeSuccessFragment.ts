@@ -249,11 +249,6 @@ export interface UpdateExperienceSomeSuccessFragment_experience_newEntries_Creat
   insertedAt: any;
   updatedAt: any;
   /**
-   * Indicates whether entry has been modified offline, in which case this
-   *   property will be true, otherwise it will be falsy
-   */
-  modOffline: boolean | null;
-  /**
    * The list of data belonging to this entry.
    */
   dataObjects: (UpdateExperienceSomeSuccessFragment_experience_newEntries_CreateEntrySuccess_entry_dataObjects | null)[];
@@ -298,11 +293,6 @@ export interface UpdateExperienceSomeSuccessFragment_experience_deletedEntries_E
   clientId: string | null;
   insertedAt: any;
   updatedAt: any;
-  /**
-   * Indicates whether entry has been modified offline, in which case this
-   *   property will be true, otherwise it will be falsy
-   */
-  modOffline: boolean | null;
   /**
    * The list of data belonging to this entry.
    */

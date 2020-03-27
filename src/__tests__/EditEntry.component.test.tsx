@@ -72,7 +72,7 @@ const mockUpdateExperiencesOnline = jest.fn();
 
 let errorConsoleSpy: jest.SpyInstance;
 const mockPersistFunc = jest.fn();
-const mockParentDispatch = jest.fn();
+const mockEntryDispatch = jest.fn();
 
 beforeEach(() => {
   jest.resetAllMocks();
@@ -112,7 +112,7 @@ describe("component", () => {
 
     destroyModal();
 
-    expect((mockParentDispatch.mock.calls[0][0] as any).type).toEqual(
+    expect((mockEntryDispatch.mock.calls[0][0] as any).type).toEqual(
       ActionType.DESTROYED,
     );
 
@@ -149,7 +149,7 @@ describe("component", () => {
 
     expect(document.getElementById("edit-entry-error-fallback")).not.toBeNull();
     closeMessage(document.getElementById(editEntryComponentDomId));
-    expect(mockParentDispatch).toHaveBeenCalled();
+    expect(mockEntryDispatch).toHaveBeenCalled();
   });
 
   test("edit online entry, submit online", async () => {
@@ -960,12 +960,12 @@ describe("reducer", () => {
       entries: {
         edges: [
           {
-            node: entry,
-          },
-          {
             node: {
               id: "2",
             },
+          },
+          {
+            node: entry,
           },
         ],
       },
@@ -975,7 +975,7 @@ describe("reducer", () => {
       entry,
       experience,
       hasConnection: true,
-      experienceDispatch: mockParentDispatch as any,
+      experienceDispatch: mockEntryDispatch as any,
     } as Props;
 
     const zerothState = initState(props);
@@ -998,20 +998,25 @@ describe("reducer", () => {
 
     const dataStates = secondState.states.dataStates;
 
-    expect(mockParentDispatch).not.toHaveBeenCalled();
+    expect(mockEntryDispatch).not.toHaveBeenCalled();
     effectFunctions.createExperienceOnlineEffect(
       { dataStates },
       props,
       effectArgs,
     );
 
-    const call = mockParentDispatch.mock.calls[0][0];
+    const call = mockEntryDispatch.mock.calls[0][0];
     const updatedExperience = call.experience;
 
     expect(updatedExperience).toMatchObject({
       id: experienceId,
       entries: {
         edges: [
+          {
+            node: {
+              id: "2",
+            },
+          },
           {
             node: {
               id: entryId,
@@ -1028,11 +1033,6 @@ describe("reducer", () => {
                   data: `{"integer":"2"}`,
                 },
               ],
-            },
-          },
-          {
-            node: {
-              id: "2",
             },
           },
         ],
@@ -1057,7 +1057,7 @@ function makeComp({ props = {} }: { props?: Partial<Props> } = {}) {
   return {
     ui: (
       <EditEntryP
-        dispatch={mockParentDispatch}
+        entryDispatch={mockEntryDispatch}
         persistor={persistor}
         updateExperiencesOnline={mockUpdateExperiencesOnline}
         {...props}

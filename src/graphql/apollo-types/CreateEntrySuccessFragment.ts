@@ -39,11 +39,6 @@ export interface CreateEntrySuccessFragment_entry {
   insertedAt: any;
   updatedAt: any;
   /**
-   * Indicates whether entry has been modified offline, in which case this
-   *   property will be true, otherwise it will be falsy
-   */
-  modOffline: boolean | null;
-  /**
    * The list of data belonging to this entry.
    */
   dataObjects: (CreateEntrySuccessFragment_entry_dataObjects | null)[];
