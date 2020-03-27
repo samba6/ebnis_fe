@@ -161,6 +161,11 @@ test("some success", () => {
                   __typename: "CreateEntryErrors",
                 },
               ],
+              updatedEntries: [
+                {
+                  __typename: "UpdateEntryErrors",
+                },
+              ],
             },
           } as UpdateExperienceSomeSuccessFragment, // 3
           {
@@ -187,6 +192,12 @@ test("some success", () => {
                     clientId: "3enc1",
                     id: "3enc1",
                   },
+                },
+              ],
+              updatedEntries: [
+                {
+                  __typename: "UpdateEntrySomeSuccess",
+                  entry: {},
                 },
               ],
             },

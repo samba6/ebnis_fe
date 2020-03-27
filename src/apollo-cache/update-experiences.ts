@@ -39,6 +39,7 @@ export function updateExperiencesInCache(onDone?: () => void) {
       for (const updateResult of updateResults) {
         if (updateResult.__typename === "UpdateExperienceSomeSuccess") {
           const { experience: result } = updateResult;
+          console.log(JSON.stringify(result, null, 2));
           const { experienceId, updatedAt } = result;
 
           const experience = readExperienceFragment(dataProxy, experienceId);
@@ -55,10 +56,18 @@ export function updateExperiencesInCache(onDone?: () => void) {
 
             const hasOwnFieldsErrors = updateOwnFields(proxy, result);
             const hasNewEntriesErrors = addEntries(proxy, result);
+
             const [
               hasUpdatedEntriesErrors,
               updatedEntriesIdsToDelete,
             ] = updateEntries(proxy, result);
+
+            console.log(
+              `\n\t\tLogging start\n\n\n\n label\n`,
+              [hasUpdatedEntriesErrors, updatedEntriesIdsToDelete],
+              `\n\n\n\n\t\tLogging ends\n`,
+            );
+
             const [hasDefinitionsErrors, definitionIds] = updateDefinitions(
               proxy,
               result,
