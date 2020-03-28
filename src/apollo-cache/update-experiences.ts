@@ -31,7 +31,7 @@ export function updateExperiencesInCache(onDone?: () => void) {
     }
 
     let hasUpdates = false;
-    const updatedIds: { [k: string]: number } = {};
+    const updatedIds: { [experienceId: string]: 1 } = {};
 
     if (updateExperiences.__typename === "UpdateExperiencesSomeSuccess") {
       const { experiences: updateResults } = updateExperiences;
@@ -39,7 +39,6 @@ export function updateExperiencesInCache(onDone?: () => void) {
       for (const updateResult of updateResults) {
         if (updateResult.__typename === "UpdateExperienceSomeSuccess") {
           const { experience: result } = updateResult;
-          console.log(JSON.stringify(result, null, 2));
           const { experienceId, updatedAt } = result;
 
           const experience = readExperienceFragment(dataProxy, experienceId);
@@ -62,25 +61,18 @@ export function updateExperiencesInCache(onDone?: () => void) {
               updatedEntriesIdsToDelete,
             ] = updateEntries(proxy, result);
 
-            console.log(
-              `\n\t\tLogging start\n\n\n\n label\n`,
-              [hasUpdatedEntriesErrors, updatedEntriesIdsToDelete],
-              `\n\n\n\n\t\tLogging ends\n`,
-            );
-
             const [hasDefinitionsErrors, definitionIds] = updateDefinitions(
               proxy,
               result,
             );
 
-            if (
-              !(
-                hasDefinitionsErrors ||
-                hasNewEntriesErrors ||
-                hasOwnFieldsErrors ||
-                hasUpdatedEntriesErrors
-              )
-            ) {
+            const hasError =
+              hasDefinitionsErrors ||
+              hasNewEntriesErrors ||
+              hasOwnFieldsErrors ||
+              hasUpdatedEntriesErrors;
+
+            if (!hasError) {
               proxy.hasUnsaved = null;
             }
 
@@ -134,16 +126,6 @@ function updateOwnFields(proxy: DraftState, result: UpdateExperienceFragment) {
   return hasErrors;
 }
 
-interface UpdatedEntries {
-  [entryId: string]: UpdatedDataObjects;
-}
-
-interface UpdatedDataObjects {
-  [dataObjectId: string]: DataObjectFragment;
-}
-
-type UpdatedEntriesIdsToDelete = [string, string[]][];
-
 function updateEntries(
   proxy: DraftState,
   result: UpdateExperienceFragment,
@@ -173,6 +155,7 @@ function updateEntries(
           idToUpdatedDataObjectMap[dataObject.id] = dataObject;
         } else {
           dataObjectsWithErrorIds.push(d.errors.meta.id as string);
+          hasErrors = true;
         }
       });
 
@@ -355,3 +338,13 @@ function updateUnsynced(
 }
 
 type DraftState = Draft<ExperienceFragment>;
+
+interface UpdatedEntries {
+  [entryId: string]: UpdatedDataObjects;
+}
+
+interface UpdatedDataObjects {
+  [dataObjectId: string]: DataObjectFragment;
+}
+
+type UpdatedEntriesIdsToDelete = [string, string[]][];

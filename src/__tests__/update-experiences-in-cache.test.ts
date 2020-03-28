@@ -57,72 +57,237 @@ test("all failed", () => {
 });
 
 test("some success", () => {
-  mockReadExperienceFragment
-    .mockReturnValueOnce(null) // 1
-    .mockReturnValueOnce({
-      id: "1",
-    }) // 2
-    .mockReturnValueOnce({
-      id: "2",
-      entries: {
-        edges: [],
+  mockReadExperienceFragment.mockReturnValueOnce(null); // 1
+
+  const updatedExperience1 = {
+    __typename: "UpdateExperienceSomeSuccess", // 1
+    experience: {},
+  };
+
+  mockReadExperienceFragment.mockReturnValueOnce({
+    id: "1",
+  }); // 2
+
+  mockGetUnsyncedExperience.mockReturnValueOnce(null); // 2
+
+  const updatedExperience2 = {
+    __typename: "UpdateExperienceSomeSuccess", // 2
+    experience: {
+      experienceId: "1",
+    },
+  } as UpdateExperienceSomeSuccessFragment;
+
+  mockReadExperienceFragment.mockReturnValueOnce({
+    id: "2",
+    entries: {
+      edges: [],
+    },
+  }); // 3
+
+  mockGetUnsyncedExperience.mockReturnValueOnce({}); // 3
+
+  const updatedExperience3 = {
+    __typename: "UpdateExperienceSomeSuccess", // 3
+    experience: {
+      experienceId: "2",
+      ownFields: {
+        __typename: "UpdateExperienceOwnFieldsErrors",
       },
-    }) // 3
-    .mockReturnValueOnce({
-      id: "3",
-      dataDefinitions: [
+      updatedDefinitions: [
         {
-          id: "3dd1",
-        },
-        {
-          id: "3dd2",
-        },
-      ],
-      entries: {
-        edges: [
-          {
-            node: {
-              id: "3enc1",
-            },
-          },
-          {
-            node: {
-              id: "3enc2",
-            },
-          },
-        ],
-      },
-    } as ExperienceFragment) // 4
-    .mockReturnValueOnce({
-      id: "4",
-      dataDefinitions: [
-        {
-          id: "4dd1",
+          __typename: "DefinitionErrors",
         },
       ],
-      entries: {
-        edges: [
-          {
-            node: {
-              id: "4enc1",
-            },
-          },
-        ],
+      newEntries: [
+        {
+          __typename: "CreateEntryErrors",
+        },
+      ],
+      updatedEntries: [
+        {
+          __typename: "UpdateEntryErrors",
+        },
+      ],
+    },
+  } as UpdateExperienceSomeSuccessFragment;
+
+  mockReadExperienceFragment.mockReturnValueOnce({
+    id: "3",
+    dataDefinitions: [
+      {
+        id: "3dd1",
       },
-    } as ExperienceFragment); // 5
+      {
+        id: "3dd2",
+      },
+    ],
+    entries: {
+      edges: [
+        {
+          // created
+          node: {
+            id: "3enc1",
+          },
+        },
+        {
+          // updated
+          node: {
+            id: "3enc2",
+            dataObjects: [
+              {
+                id: "3do1",
+              },
+            ],
+          },
+        },
+      ],
+    },
+  } as ExperienceFragment); // 4
+
+  mockGetUnsyncedExperience.mockReturnValueOnce({
+    definitions: {},
+    modifiedEntries: {},
+  }); // 4
+
+  const updatedExperience4 = {
+    __typename: "UpdateExperienceSomeSuccess",
+    experience: {
+      experienceId: "3",
+      ownFields: {
+        __typename: "ExperienceOwnFieldsSuccess",
+        data: {},
+      },
+      updatedDefinitions: [
+        {
+          __typename: "DefinitionSuccess",
+          definition: {
+            id: "3dd1",
+          },
+        },
+      ] as DefinitionSuccessFragment[],
+      newEntries: [
+        {
+          __typename: "CreateEntrySuccess",
+          entry: {
+            clientId: "3enc1",
+            id: "3enc1",
+          },
+        },
+      ],
+      updatedEntries: [
+        {
+          __typename: "UpdateEntrySomeSuccess",
+          entry: {
+            entryId: "3enc2",
+            dataObjects: [
+              {
+                __typename: "DataObjectSuccess",
+                dataObject: {
+                  id: "3do1",
+                },
+              },
+            ],
+          },
+        },
+      ],
+    },
+  } as UpdateExperienceSomeSuccessFragment; // 4
+
+  mockReadExperienceFragment.mockReturnValueOnce({
+    id: "4",
+    dataDefinitions: [
+      {
+        id: "4dd1",
+      },
+    ],
+    entries: {
+      edges: [
+        {
+          // updated
+          node: {
+            id: "4enc1",
+            dataObjects: [
+              {
+                id: "4do1",
+              },
+              {
+                id: "4do2",
+              },
+            ],
+          },
+        },
+      ],
+    },
+  } as ExperienceFragment); // 5
 
   const unsynced5 = {
     definitions: {
-      "4enc1": { name: true },
+      "4dd1": { name: true },
     },
     newEntries: true,
+    modifiedEntries: {
+      "4enc1": {},
+    },
   } as UnsyncedModifiedExperience;
 
-  mockGetUnsyncedExperience
-    .mockReturnValueOnce(null) // 2
-    .mockReturnValueOnce({}) // 3
-    .mockReturnValueOnce({ definitions: {} }) // 4
-    .mockReturnValueOnce(unsynced5); // 5
+  mockGetUnsyncedExperience.mockReturnValueOnce(unsynced5); // 5
+
+  const updatedExperience5 = {
+    __typename: "UpdateExperienceSomeSuccess",
+    experience: {
+      experienceId: "4",
+      updatedDefinitions: [
+        {
+          __typename: "DefinitionErrors",
+        },
+        {
+          __typename: "DefinitionSuccess",
+          definition: {
+            id: "4dd1",
+          },
+        },
+      ] as DefinitionErrorsFragment[],
+      newEntries: [
+        {
+          __typename: "CreateEntryErrors",
+        },
+        {
+          __typename: "CreateEntrySuccess",
+          entry: {
+            clientId: "4enc2",
+            id: "4enc2",
+          },
+        },
+      ],
+      updatedEntries: [
+        {
+          __typename: "UpdateEntryError",
+        },
+        {
+          __typename: "UpdateEntrySomeSuccess",
+          entry: {
+            entryId: "4enc1",
+            dataObjects: [
+              {
+                __typename: "DataObjectSuccess",
+                dataObject: {
+                  id: "4do1",
+                },
+              },
+              {
+                __typename: "DataObjectErrors",
+                errors: {
+                  meta: {
+                    id: "4do2",
+                  },
+                },
+              },
+            ],
+          },
+        },
+      ],
+    },
+  } as UpdateExperienceSomeSuccessFragment; // 5
 
   const mockOnDone = jest.fn();
 
@@ -134,104 +299,11 @@ test("some success", () => {
           {
             __typename: "UpdateExperienceErrors",
           },
-          {
-            __typename: "UpdateExperienceSomeSuccess", // 1
-            experience: {},
-          },
-          {
-            __typename: "UpdateExperienceSomeSuccess", // 2
-            experience: {
-              experienceId: "1",
-            },
-          } as UpdateExperienceSomeSuccessFragment,
-          {
-            __typename: "UpdateExperienceSomeSuccess", // 3
-            experience: {
-              experienceId: "2",
-              ownFields: {
-                __typename: "UpdateExperienceOwnFieldsErrors",
-              },
-              updatedDefinitions: [
-                {
-                  __typename: "DefinitionErrors",
-                },
-              ],
-              newEntries: [
-                {
-                  __typename: "CreateEntryErrors",
-                },
-              ],
-              updatedEntries: [
-                {
-                  __typename: "UpdateEntryErrors",
-                },
-              ],
-            },
-          } as UpdateExperienceSomeSuccessFragment, // 3
-          {
-            // 4
-            __typename: "UpdateExperienceSomeSuccess",
-            experience: {
-              experienceId: "3",
-              ownFields: {
-                __typename: "ExperienceOwnFieldsSuccess",
-                data: {},
-              },
-              updatedDefinitions: [
-                {
-                  __typename: "DefinitionSuccess",
-                  definition: {
-                    id: "3dd1",
-                  },
-                },
-              ] as DefinitionSuccessFragment[],
-              newEntries: [
-                {
-                  __typename: "CreateEntrySuccess",
-                  entry: {
-                    clientId: "3enc1",
-                    id: "3enc1",
-                  },
-                },
-              ],
-              updatedEntries: [
-                {
-                  __typename: "UpdateEntrySomeSuccess",
-                  entry: {},
-                },
-              ],
-            },
-          } as UpdateExperienceSomeSuccessFragment, // 4
-          {
-            // 5
-            __typename: "UpdateExperienceSomeSuccess",
-            experience: {
-              experienceId: "4",
-              updatedDefinitions: [
-                {
-                  __typename: "DefinitionErrors",
-                },
-                {
-                  __typename: "DefinitionSuccess",
-                  definition: {
-                    id: "4dd1",
-                  },
-                },
-              ] as DefinitionErrorsFragment[],
-              newEntries: [
-                {
-                  __typename: "CreateEntryErrors",
-                },
-                {
-                  __typename: "CreateEntrySuccess",
-                  entry: {
-                    clientId: "4enc2",
-                    id: "4enc2",
-                  },
-                },
-              ],
-            },
-          } as UpdateExperienceSomeSuccessFragment, // 5
+          updatedExperience1,
+          updatedExperience2,
+          updatedExperience3,
+          updatedExperience4,
+          updatedExperience5,
         ],
       },
     },
