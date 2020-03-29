@@ -26,6 +26,7 @@ import { fillField } from "./test_utils";
 import { CreateExperienceOfflineMutationResult } from "../components/ExperienceDefinition/experience-definition.resolvers";
 import { CreateExperiencesMutationResult } from "../graphql/experiences.mutation";
 import { createExperiencesManualUpdate } from "../apollo-cache/create_experiences-update";
+import { DataTypes } from "../graphql/apollo-types/globalTypes";
 
 jest.mock("../components/scroll-into-view");
 const mockScrollIntoView = scrollIntoView as jest.Mock;
@@ -574,11 +575,11 @@ it("renders", async () => {
     dataDefinitions: [
       {
         name: "n1",
-        type: "DATE",
+        type: DataTypes.DATE,
       },
       {
         name: "n2",
-        type: "INTEGER",
+        type: DataTypes.INTEGER,
       },
     ],
   });
