@@ -57,39 +57,28 @@ test("all failed", () => {
 });
 
 test("some success", () => {
-  mockReadExperienceFragment.mockReturnValueOnce(null); // 1
-
-  const updatedExperience1 = {
-    __typename: "UpdateExperienceSomeSuccess", // 1
+  const updateExperienceResult1 = {
+    __typename: "UpdateExperienceSomeSuccess",
     experience: {},
   };
 
-  mockReadExperienceFragment.mockReturnValueOnce({
-    id: "1",
-  }); // 2
+  const mockReadExperienceFragmentReturnValue1 = null;
 
-  mockGetUnsyncedExperience.mockReturnValueOnce(null); // 2
-
-  const updatedExperience2 = {
-    __typename: "UpdateExperienceSomeSuccess", // 2
+  const updateExperienceResult2 = {
+    __typename: "UpdateExperienceSomeSuccess",
     experience: {
-      experienceId: "1",
+      experienceId: "2",
     },
   } as UpdateExperienceSomeSuccessFragment;
 
-  mockReadExperienceFragment.mockReturnValueOnce({
+  const mockReadExperienceFragmentReturnValue2 = {
     id: "2",
-    entries: {
-      edges: [],
-    },
-  }); // 3
+  };
 
-  mockGetUnsyncedExperience.mockReturnValueOnce({}); // 3
-
-  const updatedExperience3 = {
-    __typename: "UpdateExperienceSomeSuccess", // 3
+  const updateExperienceResult3 = {
+    __typename: "UpdateExperienceSomeSuccess",
     experience: {
-      experienceId: "2",
+      experienceId: "3",
       ownFields: {
         __typename: "UpdateExperienceOwnFieldsErrors",
       },
@@ -111,48 +100,19 @@ test("some success", () => {
     },
   } as UpdateExperienceSomeSuccessFragment;
 
-  mockReadExperienceFragment.mockReturnValueOnce({
+  const mockReadExperienceFragmentReturnValue3 = {
     id: "3",
-    dataDefinitions: [
-      {
-        id: "3dd1",
-      },
-      {
-        id: "3dd2",
-      },
-    ],
     entries: {
-      edges: [
-        {
-          // created
-          node: {
-            id: "3enc1",
-          },
-        },
-        {
-          // updated
-          node: {
-            id: "3enc2",
-            dataObjects: [
-              {
-                id: "3do1",
-              },
-            ],
-          },
-        },
-      ],
+      edges: [],
     },
-  } as ExperienceFragment); // 4
+  };
 
-  mockGetUnsyncedExperience.mockReturnValueOnce({
-    definitions: {},
-    modifiedEntries: {},
-  }); // 4
+  const mockGetUnsyncedExperienceReturnValue3 = {};
 
-  const updatedExperience4 = {
+  const updateExperienceResult4 = {
     __typename: "UpdateExperienceSomeSuccess",
     experience: {
-      experienceId: "3",
+      experienceId: "4",
       ownFields: {
         __typename: "ExperienceOwnFieldsSuccess",
         data: {},
@@ -161,7 +121,7 @@ test("some success", () => {
         {
           __typename: "DefinitionSuccess",
           definition: {
-            id: "3dd1",
+            id: "4dd1",
           },
         },
       ] as DefinitionSuccessFragment[],
@@ -169,31 +129,73 @@ test("some success", () => {
         {
           __typename: "CreateEntrySuccess",
           entry: {
-            clientId: "3enc1",
-            id: "3enc1",
-          },
-        },
-      ],
-      updatedEntries: [
-        {
-          __typename: "UpdateEntrySomeSuccess",
-          entry: {
-            entryId: "3enc2",
-            dataObjects: [
-              {
-                __typename: "DataObjectSuccess",
-                dataObject: {
-                  id: "3do1",
-                },
-              },
-            ],
+            // offline entry synced
+            clientId: "4enc1",
+            id: "4enc1",
           },
         },
       ],
     },
   } as UpdateExperienceSomeSuccessFragment; // 4
 
-  mockReadExperienceFragment.mockReturnValueOnce({
+  const mockReadExperienceFragmentReturnValue4 = {
+    id: "4",
+    dataDefinitions: [
+      {
+        id: "4dd1",
+      },
+      {
+        id: "4dd2",
+      },
+    ],
+    entries: {
+      edges: [
+        {
+          // offline entry synced
+          node: {
+            id: "4enc1",
+          },
+        },
+      ],
+    },
+  } as ExperienceFragment;
+
+  const mockGetUnsyncedExperienceReturnValue4 = {
+    definitions: {},
+    modifiedEntries: {},
+  };
+
+  const updateExperienceResult5 = {
+    __typename: "UpdateExperienceSomeSuccess",
+    experience: {
+      experienceId: "5",
+      updatedDefinitions: [
+        {
+          __typename: "DefinitionErrors",
+        },
+        {
+          __typename: "DefinitionSuccess",
+          definition: {
+            id: "4dd1",
+          },
+        },
+      ] as DefinitionErrorsFragment[],
+      newEntries: [
+        {
+          __typename: "CreateEntryErrors",
+        },
+        {
+          __typename: "CreateEntrySuccess",
+          entry: {
+            clientId: "4enc2",
+            id: "4enc2",
+          },
+        },
+      ],
+    },
+  } as UpdateExperienceSomeSuccessFragment;
+
+  const mockReadExperienceFragmentReturnValue5 = {
     id: "4",
     dataDefinitions: [
       {
@@ -218,9 +220,9 @@ test("some success", () => {
         },
       ],
     },
-  } as ExperienceFragment); // 5
+  } as ExperienceFragment;
 
-  const unsynced5 = {
+  const mockGetUnsyncedExperienceReturnValue5 = {
     definitions: {
       "4dd1": { name: true },
     },
@@ -230,64 +232,17 @@ test("some success", () => {
     },
   } as UnsyncedModifiedExperience;
 
-  mockGetUnsyncedExperience.mockReturnValueOnce(unsynced5); // 5
+  mockReadExperienceFragment
+    .mockReturnValueOnce(mockReadExperienceFragmentReturnValue1)
+    .mockReturnValueOnce(mockReadExperienceFragmentReturnValue2)
+    .mockReturnValueOnce(mockReadExperienceFragmentReturnValue3)
+    .mockReturnValueOnce(mockReadExperienceFragmentReturnValue4)
+    .mockReturnValueOnce(mockReadExperienceFragmentReturnValue5);
 
-  const updatedExperience5 = {
-    __typename: "UpdateExperienceSomeSuccess",
-    experience: {
-      experienceId: "4",
-      updatedDefinitions: [
-        {
-          __typename: "DefinitionErrors",
-        },
-        {
-          __typename: "DefinitionSuccess",
-          definition: {
-            id: "4dd1",
-          },
-        },
-      ] as DefinitionErrorsFragment[],
-      newEntries: [
-        {
-          __typename: "CreateEntryErrors",
-        },
-        {
-          __typename: "CreateEntrySuccess",
-          entry: {
-            clientId: "4enc2",
-            id: "4enc2",
-          },
-        },
-      ],
-      updatedEntries: [
-        {
-          __typename: "UpdateEntryError",
-        },
-        {
-          __typename: "UpdateEntrySomeSuccess",
-          entry: {
-            entryId: "4enc1",
-            dataObjects: [
-              {
-                __typename: "DataObjectSuccess",
-                dataObject: {
-                  id: "4do1",
-                },
-              },
-              {
-                __typename: "DataObjectErrors",
-                errors: {
-                  meta: {
-                    id: "4do2",
-                  },
-                },
-              },
-            ],
-          },
-        },
-      ],
-    },
-  } as UpdateExperienceSomeSuccessFragment; // 5
+  mockGetUnsyncedExperience
+    .mockReturnValueOnce(mockGetUnsyncedExperienceReturnValue3)
+    .mockReturnValueOnce(mockGetUnsyncedExperienceReturnValue4)
+    .mockReturnValueOnce(mockGetUnsyncedExperienceReturnValue5);
 
   const mockOnDone = jest.fn();
 
@@ -299,11 +254,11 @@ test("some success", () => {
           {
             __typename: "UpdateExperienceErrors",
           },
-          updatedExperience1,
-          updatedExperience2,
-          updatedExperience3,
-          updatedExperience4,
-          updatedExperience5,
+          updateExperienceResult1,
+          updateExperienceResult2,
+          updateExperienceResult3,
+          updateExperienceResult4,
+          updateExperienceResult5,
         ],
       },
     },
@@ -349,7 +304,10 @@ test("some success", () => {
     },
   });
 
-  expect(mockWriteUnsyncedExperience.mock.calls[0]).toEqual(["4", unsynced5]);
+  expect(mockWriteUnsyncedExperience.mock.calls[0]).toEqual([
+    "4",
+    mockGetUnsyncedExperienceReturnValue5,
+  ]);
 
   expect(mockRemoveUnsyncedExperience.mock.calls.map(x => x[0])).toEqual([
     "2",
@@ -357,4 +315,228 @@ test("some success", () => {
   ]);
 
   expect(mockOnDone).toHaveBeenCalled();
+});
+
+test.only("updated entries", () => {
+  const updatedExperience1 = {
+    __typename: "UpdateExperienceSomeSuccess",
+    experience: {
+      experienceId: "1",
+      updatedEntries: [
+        {
+          __typename: "UpdateEntrySomeSuccess",
+          entry: {
+            entryId: "en11",
+            dataObjects: [
+              {
+                __typename: "DataObjectSuccess",
+                dataObject: {
+                  id: "do11",
+                },
+              },
+            ],
+          },
+        },
+      ],
+    },
+  } as UpdateExperienceSomeSuccessFragment;
+
+  const mockGetUnsyncedExperienceReturnValue1 = {
+    modifiedEntries: {},
+  } as UnsyncedModifiedExperience;
+
+  const mockReadExperienceFragmentReturnValue1 = {
+    id: "1",
+    entries: {
+      edges: [
+        {
+          // updated
+          node: {
+            id: "en21",
+            dataObjects: [
+              {
+                // updated
+                id: "do21",
+              },
+              {
+                // not updated
+                id: "do22",
+              },
+            ],
+          },
+        },
+        {
+          // not updated
+          node: {
+            id: "en22",
+          },
+        },
+      ],
+    },
+  } as ExperienceFragment;
+
+  const updatedExperience2 = {
+    __typename: "UpdateExperienceSomeSuccess",
+    experience: {
+      experienceId: "2",
+      updatedEntries: [
+        {
+          __typename: "UpdateEntryErrors",
+        },
+        {
+          __typename: "UpdateEntrySomeSuccess",
+          entry: {
+            entryId: "en21",
+            dataObjects: [
+              {
+                __typename: "DataObjectErrors",
+              },
+              {
+                __typename: "DataObjectSuccess",
+                dataObject: {
+                  id: "do21",
+                },
+              },
+            ],
+          },
+        },
+      ],
+    },
+  } as UpdateExperienceSomeSuccessFragment;
+
+  const mockGetUnsyncedExperienceReturnValue2 = {
+    modifiedEntries: {
+      en21: {
+        do21: true,
+        do22: true,
+      },
+    },
+  } as UnsyncedModifiedExperience;
+
+  const mockReadExperienceFragmentReturnValue2 = {
+    id: "1",
+    entries: {
+      edges: [
+        {
+          // updated
+          node: {
+            id: "en21",
+            dataObjects: [
+              {
+                // updated
+                id: "do21",
+              },
+              {
+                // not updated
+                id: "do22",
+              },
+            ],
+          },
+        },
+        {
+          // not updated
+          node: {
+            id: "en22",
+          },
+        },
+      ],
+    },
+  } as ExperienceFragment;
+
+  const updatedExperience3 = {
+    __typename: "UpdateExperienceSomeSuccess",
+    experience: {
+      experienceId: "3",
+      updatedEntries: [
+        {
+          __typename: "UpdateEntryErrors",
+        },
+        {
+          __typename: "UpdateEntrySomeSuccess",
+          entry: {
+            entryId: "en31",
+            dataObjects: [
+              {
+                __typename: "DataObjectSuccess",
+                dataObject: {
+                  id: "do31",
+                },
+              },
+            ],
+          },
+        },
+      ],
+    },
+  } as UpdateExperienceSomeSuccessFragment;
+
+  const mockGetUnsyncedExperienceReturnValue3 = {
+    modifiedEntries: {
+      en31: {},
+    },
+  } as UnsyncedModifiedExperience;
+
+  const mockReadExperienceFragmentReturnValue3 = {
+    id: "3",
+    entries: {
+      edges: [
+        {
+          node: {
+            id: "en31",
+            dataObjects: [{}],
+          },
+        },
+      ],
+    },
+  } as ExperienceFragment;
+
+  mockGetUnsyncedExperience
+    .mockReturnValueOnce(mockGetUnsyncedExperienceReturnValue1)
+    .mockReturnValueOnce(mockGetUnsyncedExperienceReturnValue2)
+    .mockReturnValueOnce(mockGetUnsyncedExperienceReturnValue3);
+
+  mockReadExperienceFragment
+    .mockReturnValueOnce(mockReadExperienceFragmentReturnValue1)
+    .mockReturnValueOnce(mockReadExperienceFragmentReturnValue2)
+    .mockReturnValueOnce(mockReadExperienceFragmentReturnValue3);
+
+  updateExperiencesInCache()(dataProxy, {
+    data: {
+      updateExperiences: {
+        __typename: "UpdateExperiencesSomeSuccess",
+        experiences: [
+          updatedExperience1,
+          updatedExperience2,
+          updatedExperience3,
+        ],
+      },
+    },
+  } as UpdateExperiencesOnlineMutationResult);
+
+  expect(
+    mockFloatExperiencesToTheTopInGetExperiencesMiniQuery.mock.calls[0][1],
+  ).toEqual({
+    "1": 1,
+    "2": 1,
+    "3": 1,
+  });
+
+  expect(mockRemoveUnsyncedExperience.mock.calls).toEqual([["1"]]);
+  expect(mockWriteUnsyncedExperience.mock.calls).toEqual([
+    [
+      "2",
+      {
+        modifiedEntries: {
+          en21: {
+            do22: true,
+          },
+        },
+      },
+    ],
+    [
+      "3",
+      {
+        modifiedEntries: {},
+      },
+    ],
+  ]);
 });

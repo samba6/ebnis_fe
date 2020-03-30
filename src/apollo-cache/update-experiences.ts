@@ -97,7 +97,6 @@ export function updateExperiencesInCache(onDone?: () => void) {
     }
 
     floatExperiencesToTheTopInGetExperiencesMiniQuery(dataProxy, updatedIds);
-    // istanbul ignore next:
     if (onDone) {
       onDone();
     }
@@ -143,26 +142,31 @@ function updateEntries(
   const updates = updatedEntries.reduce((acc, e) => {
     if (e.__typename === "UpdateEntrySomeSuccess") {
       const { entryId, dataObjects } = e.entry;
-      const dataObjectsWithErrorIds: string[] = [];
+      const dataObjectsIdsToDelete: string[] = [];
       const idToUpdatedDataObjectMap = {} as UpdatedDataObjects;
-      let isDataObjectUpdated = false;
+      let hasDataObjectError = false;
 
       dataObjects.forEach(d => {
         if (d.__typename === "DataObjectSuccess") {
-          hasUpdates = true;
-          isDataObjectUpdated = true;
           const { dataObject } = d;
-          idToUpdatedDataObjectMap[dataObject.id] = dataObject;
+          const { id } = dataObject;
+          idToUpdatedDataObjectMap[id] = dataObject;
+          acc[entryId] = idToUpdatedDataObjectMap;
+          dataObjectsIdsToDelete.push(id);
+          hasUpdates = true;
         } else {
-          dataObjectsWithErrorIds.push(d.errors.meta.id as string);
-          hasErrors = true;
+          hasDataObjectError = true;
         }
       });
 
-      deletes.push([entryId, dataObjectsWithErrorIds]);
-
-      if (isDataObjectUpdated) {
-        acc[entryId] = idToUpdatedDataObjectMap;
+      if (hasDataObjectError) {
+        // if there are data object errors, we only purge data objects that
+        // succeed
+        deletes.push([entryId, dataObjectsIdsToDelete]);
+        hasErrors = true;
+      } else {
+        // if no data object errors, we purge the entire entryId
+        deletes.push([entryId, []]);
       }
     } else {
       hasErrors = true;
@@ -242,23 +246,24 @@ function addEntries(proxy: DraftState, result: UpdateExperienceFragment) {
 
   const existingEntryIdToEdgeMap = (proxy.entries
     .edges as EntryConnectionFragment_edges[]).reduce((acc, e) => {
-    const edge = e as EntryConnectionFragment_edges;
-    acc[(edge.node as EntryFragment).id] = edge;
+    const entryEdge = e as EntryConnectionFragment_edges;
+    acc[(entryEdge.node as EntryFragment).id] = entryEdge;
     return acc;
   }, {} as { [k: string]: EntryConnectionFragment_edges });
 
-  const entriesToBeAdd: EntryConnectionFragment_edges[] = [];
+  const entriesEdgesToBeAdded: EntryConnectionFragment_edges[] = [];
 
   newEntries.forEach(maybeNew => {
     if (maybeNew.__typename === "CreateEntrySuccess") {
       const { entry } = maybeNew;
-      const edge = entryToEdge(entry);
+      const entryEdge = entryToEdge(entry);
       const clientId = entry.clientId as string;
 
       if (existingEntryIdToEdgeMap[clientId]) {
-        existingEntryIdToEdgeMap[clientId] = edge;
+        // offline entry synced`
+        existingEntryIdToEdgeMap[clientId] = entryEdge;
       } else {
-        entriesToBeAdd.push(edge);
+        entriesEdgesToBeAdded.push(entryEdge);
       }
 
       hasUpdates = true;
@@ -268,7 +273,7 @@ function addEntries(proxy: DraftState, result: UpdateExperienceFragment) {
   });
 
   if (hasUpdates) {
-    proxy.entries.edges = entriesToBeAdd
+    proxy.entries.edges = entriesEdgesToBeAdded
       .reverse()
       .concat(Object.values(existingEntryIdToEdgeMap));
   }
@@ -330,7 +335,7 @@ function updateUnsynced(
     }
   }
 
-  if (lodashIsEmpty(unsynced)) {
+  if (!Object.keys(unsynced).length) {
     removeUnsyncedExperience(experienceId);
   } else {
     writeUnsyncedExperience(experienceId, unsynced);
