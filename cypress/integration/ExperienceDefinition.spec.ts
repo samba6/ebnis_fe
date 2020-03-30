@@ -66,9 +66,9 @@ context("experience definition page", () => {
     cy.registerUser(USER_REGISTRATION_OBJECT);
   });
 
-  const firstOnlineExperienceTitle = "Experience 1";
+  const firstOnlineExperienceTitle = "OnExp";
   const secondOnlineExperienceTitle = firstOnlineExperienceTitle + "1";
-  const offlineExperienceTitle = "Offline experience";
+  const offlineExperienceTitle = "OffExp";
 
   it("create experience online", () => {
     const p = createOnlineExperience({
@@ -107,7 +107,7 @@ context("experience definition page", () => {
           /**
            * And we complete the field name and field type
            */
-          cy.get("#" + definitionNameInputDomId + "1").type("field 1");
+          cy.get("#" + definitionNameInputDomId + "1").type("f1");
           cy.get("#" + definitionTypeInputDomId + "1").select(DataTypes.DATE);
         });
 
@@ -126,13 +126,13 @@ context("experience definition page", () => {
        */
       cy.get("#" + notificationErrorCloseId).should("exist");
 
-      ///////////////////// CREATE EXPERIENCE ONLINE ////////////////////
+      ///////////////////// CREATE EXPERIENCE ////////////////////
 
       /**
        * When title and description fields are completed with new data
        */
       cy.get("@titleDomInput").type("1");
-      cy.get("#" + descriptionInputDomId).type("cool exp");
+      cy.get("#" + descriptionInputDomId).type("dd");
 
       cy.get("@field1").within(() => {
         /**
@@ -150,7 +150,7 @@ context("experience definition page", () => {
         /**
          * And we complete the field name and field type
          */
-        cy.get("#" + definitionNameInputDomId + "2").type("field 2");
+        cy.get("#" + definitionNameInputDomId + "2").type("f2");
         cy.get("#" + definitionTypeInputDomId + "2").select(DataTypes.DATETIME);
 
         /**
@@ -168,7 +168,7 @@ context("experience definition page", () => {
         /**
          * And we complete the field name and field type
          */
-        cy.get("#" + definitionNameInputDomId + "3").type("field 3");
+        cy.get("#" + definitionNameInputDomId + "3").type("f3");
         cy.get("#" + definitionTypeInputDomId + "3").select(DataTypes.DECIMAL);
 
         /**
@@ -183,7 +183,7 @@ context("experience definition page", () => {
         /**
          * And we complete the field name and field type
          */
-        cy.get("#" + definitionNameInputDomId + "4").type("field 4");
+        cy.get("#" + definitionNameInputDomId + "4").type("f4");
         cy.get("#" + definitionTypeInputDomId + "4").select(DataTypes.INTEGER);
 
         /**
@@ -198,7 +198,7 @@ context("experience definition page", () => {
         /**
          * And we complete the field name and field type
          */
-        cy.get("#" + definitionNameInputDomId + "5").type("field 5");
+        cy.get("#" + definitionNameInputDomId + "5").type("f5");
         cy.get("#" + definitionTypeInputDomId + "5").select(
           DataTypes.MULTI_LINE_TEXT,
         );
@@ -215,7 +215,7 @@ context("experience definition page", () => {
         /**
          * And we complete the field name and field type
          */
-        cy.get("#" + definitionNameInputDomId + "6").type("field 6");
+        cy.get("#" + definitionNameInputDomId + "6").type("f6");
         cy.get("#" + definitionTypeInputDomId + "6").select(
           DataTypes.SINGLE_LINE_TEXT,
         );
@@ -370,7 +370,7 @@ context("experience definition page", () => {
         }
       });
 
-      /////////////// ONLINE EXPERIENCE: CREATE OFFLINE ENTRY ///////////////
+      //////////////////// CREATE OFFLINE ENTRY /////////////////////////
 
       /**
        * When connection goes away
@@ -502,7 +502,7 @@ context("experience definition page", () => {
     });
   });
 
-  it.only("create experience offline", () => {
+  it("offline", () => {
     /**
      * Given we are on experiences page
      */
@@ -521,7 +521,7 @@ context("experience definition page", () => {
      * When title and description fields are completed
      */
     cy.get("#" + titleInputDomId).type(offlineExperienceTitle);
-    cy.get("#" + descriptionInputDomId).type("new experience description");
+    cy.get("#" + descriptionInputDomId).type("dd");
 
     /**
      * And field data is completed
@@ -530,7 +530,7 @@ context("experience definition page", () => {
       /**
        * And field name and field type are completed
        */
-      cy.get("#" + definitionNameInputDomId + "1").type("field 1");
+      cy.get("#" + definitionNameInputDomId + "1").type("f1");
       cy.get("#" + definitionTypeInputDomId + "1").select(DataTypes.INTEGER);
     });
 
