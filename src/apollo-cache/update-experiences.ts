@@ -342,6 +342,70 @@ function updateUnsynced(
   }
 }
 
+function updateDefinitions1({
+  updatedDefinitions,
+}: UpdateExperienceFragment): null | UpdateDefinitionsResults {
+  if (!updatedDefinitions) {
+    return null;
+  }
+
+  let hasErrors = false;
+
+  const updates = updatedDefinitions.reduce((acc, d) => {
+    if (d.__typename === "DefinitionSuccess") {
+      const { definition } = d;
+      acc[definition.id] = definition;
+    } else {
+      hasErrors = true;
+    }
+
+    return acc;
+  }, {} as { [definitionId: string]: DataDefinitionFragment });
+
+  return [hasErrors, updates];
+}
+
+type UpdateEntriesResults = [
+  boolean,
+  { [entryId: string]: { [dataObjectId: string]: DataObjectFragment } },
+];
+
+function updateEntries1({
+  updatedEntries,
+}: UpdateExperienceFragment): null | UpdateEntriesResults {
+  if (!updatedEntries) {
+    return null;
+  }
+
+  let hasErrors = false;
+
+  const updates = updatedEntries.reduce((acc, e) => {
+    if (e.__typename === "UpdateEntrySomeSuccess") {
+      const { entryId, dataObjects } = e.entry;
+
+      dataObjects.forEach(d => {
+        if (d.__typename === "DataObjectSuccess") {
+          const { dataObject } = d;
+          const { id } = dataObject;
+        } else {
+          hasErrors = true;
+        }
+      });
+    } else {
+      hasErrors = true;
+    }
+
+    return acc;
+  }, {} as { [entryId: string]: { [dataObjectId: string]: DataObjectFragment } });
+
+  return [hasErrors, updates];
+}
+
+type UpdateDefinitionsResults = [
+  boolean,
+  { [definitionId: string]: DataDefinitionFragment },
+];
+
 type DraftState = Draft<ExperienceFragment>;
 
 interface UpdatedEntries {
