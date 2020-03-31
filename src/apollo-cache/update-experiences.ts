@@ -15,7 +15,6 @@ import {
   writeUnsyncedExperience,
   removeUnsyncedExperience,
 } from "../apollo-cache/unsynced.resolvers";
-import lodashIsEmpty from "lodash/isEmpty";
 import { DataObjectFragment } from "../graphql/apollo-types/DataObjectFragment";
 
 export function updateExperiencesInCache(onDone?: () => void) {
@@ -143,7 +142,7 @@ function updateEntries(
     if (e.__typename === "UpdateEntrySomeSuccess") {
       const { entryId, dataObjects } = e.entry;
       const dataObjectsIdsToDelete: string[] = [];
-      const idToUpdatedDataObjectMap = {} as UpdatedDataObjects;
+      const idToUpdatedDataObjectMap = {} as IdToDataObjectMap;
       let hasDataObjectError = false;
 
       dataObjects.forEach(d => {
@@ -344,17 +343,20 @@ function updateUnsynced(
 
 function updateDefinitions1({
   updatedDefinitions,
-}: UpdateExperienceFragment): null | UpdateDefinitionsResults {
+}: UpdateExperienceFragment): [HasError, null | UpdateDefinitionsResults] {
+  let hasErrors = false;
+
   if (!updatedDefinitions) {
-    return null;
+    return [hasErrors, null];
   }
 
-  let hasErrors = false;
+  let hasUpdates = false;
 
   const updates = updatedDefinitions.reduce((acc, d) => {
     if (d.__typename === "DefinitionSuccess") {
       const { definition } = d;
       acc[definition.id] = definition;
+      hasUpdates = true;
     } else {
       hasErrors = true;
     }
@@ -362,58 +364,113 @@ function updateDefinitions1({
     return acc;
   }, {} as { [definitionId: string]: DataDefinitionFragment });
 
-  return [hasErrors, updates];
+  return [hasErrors, hasUpdates ? updates : null];
 }
-
-type UpdateEntriesResults = [
-  boolean,
-  { [entryId: string]: { [dataObjectId: string]: DataObjectFragment } },
-];
 
 function updateEntries1({
   updatedEntries,
-}: UpdateExperienceFragment): null | UpdateEntriesResults {
+}: UpdateExperienceFragment): [HasError, null | UpdateEntriesResults] {
+  let hasErrors = false;
+
   if (!updatedEntries) {
-    return null;
+    return [hasErrors, null];
   }
 
-  let hasErrors = false;
+  let hasUpdates = false;
 
   const updates = updatedEntries.reduce((acc, e) => {
     if (e.__typename === "UpdateEntrySomeSuccess") {
       const { entryId, dataObjects } = e.entry;
 
-      dataObjects.forEach(d => {
+      acc[entryId] = dataObjects.reduce((dAcc, d) => {
         if (d.__typename === "DataObjectSuccess") {
           const { dataObject } = d;
-          const { id } = dataObject;
+          dAcc.push(dataObject);
+          hasUpdates = true;
         } else {
           hasErrors = true;
         }
-      });
+
+        return dAcc;
+      }, {} as DataObjectFragment[]);
     } else {
       hasErrors = true;
     }
 
     return acc;
-  }, {} as { [entryId: string]: { [dataObjectId: string]: DataObjectFragment } });
+  }, {} as UpdateEntriesResults);
 
-  return [hasErrors, updates];
+  return [hasErrors, hasUpdates ? updates : null];
 }
 
-type UpdateDefinitionsResults = [
-  boolean,
-  { [definitionId: string]: DataDefinitionFragment },
-];
+interface NewEntriesResult {
+  [clientId: string]: EntryFragment;
+}
+
+function addEntries1({
+  newEntries,
+}: UpdateExperienceFragment): [HasError, null | NewEntriesResult] {
+  let hasErrors = false;
+
+  if (!newEntries) {
+    return [hasErrors, null];
+  }
+
+  let hasUpdates = false;
+
+  const updates = newEntries.reduce((acc, maybeNew) => {
+    if (maybeNew.__typename === "CreateEntrySuccess") {
+      const { entry } = maybeNew;
+      acc[entry.clientId as string] = entry;
+      hasUpdates = true;
+    } else {
+      hasErrors = true;
+    }
+
+    return acc;
+  }, {} as NewEntriesResult);
+
+  return [hasErrors, hasUpdates ? updates : null];
+}
+
+export function getUpdatedExperiencesFromCache(
+  result: UpdateExperiencesOnlineMutationResult,
+) {
+  const updates: [][] = [];
+
+  const updateExperiences =
+    result && result.data && result.data.updateExperiences;
+
+  if (!updateExperiences) {
+    return updates;
+  }
+}
+
+// export function updateExperiencesInCache1(onDone?: () => void) {
+//   return function updateExperiencesInCacheInner(
+//     dataProxy: DataProxy,
+//     result: UpdateExperiencesOnlineMutationResult,
+//   ) {};
+// }
+
+type UpdateDefinitionsResults = {
+  [definitionId: string]: DataDefinitionFragment;
+};
 
 type DraftState = Draft<ExperienceFragment>;
 
 interface UpdatedEntries {
-  [entryId: string]: UpdatedDataObjects;
-}
-
-interface UpdatedDataObjects {
-  [dataObjectId: string]: DataObjectFragment;
+  [entryId: string]: IdToDataObjectMap;
 }
 
 type UpdatedEntriesIdsToDelete = [string, string[]][];
+
+type HasError = boolean;
+
+interface UpdateEntriesResults {
+  [entryId: string]: DataObjectFragment[];
+}
+
+interface IdToDataObjectMap {
+  [dataObjectId: string]: DataObjectFragment;
+}
