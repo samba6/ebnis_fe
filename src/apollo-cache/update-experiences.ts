@@ -341,39 +341,80 @@ function updateUnsynced(
   }
 }
 
-function updateDefinitions1({
-  updatedDefinitions,
-}: UpdateExperienceFragment): [HasError, null | UpdateDefinitionsResults] {
+function updateOwnFields1(
+  { ownFields }: UpdateExperienceFragment,
+  proxy: DraftState,
+): UpdateOwnFieldsResult {
   let hasErrors = false;
 
-  if (!updatedDefinitions) {
-    return [hasErrors, null];
+  if (!ownFields) {
+    return hasErrors;
   }
 
-  let hasUpdates = false;
+  if (ownFields.__typename === "ExperienceOwnFieldsSuccess") {
+    const {
+      data: { title, description },
+    } = ownFields;
 
-  const updates = updatedDefinitions.reduce((acc, d) => {
-    if (d.__typename === "DefinitionSuccess") {
-      const { definition } = d;
-      acc[definition.id] = definition;
-      hasUpdates = true;
-    } else {
-      hasErrors = true;
-    }
+    proxy.title = title;
+    proxy.description = description;
 
-    return acc;
-  }, {} as { [definitionId: string]: DataDefinitionFragment });
+    return hasErrors;
+  }
 
-  return [hasErrors, hasUpdates ? updates : null];
+  hasErrors = true;
+  return hasErrors;
 }
 
-function updateEntries1({
-  updatedEntries,
-}: UpdateExperienceFragment): [HasError, null | UpdateEntriesResults] {
+function updateDefinitions1(
+  { updatedDefinitions: updatedDefinitionResults }: UpdateExperienceFragment,
+  proxy: DraftState,
+): UpdateDefinitionsResults {
+  let hasErrors = false;
+
+  if (!updatedDefinitionResults) {
+    return [hasErrors, []];
+  }
+
+  const [
+    updatedDefinitions,
+    definitionIdsForRemoval,
+  ] = updatedDefinitionResults.reduce(
+    (acc, d) => {
+      if (d.__typename === "DefinitionSuccess") {
+        const [updates, definitionIdsForRemoval] = acc;
+
+        const { definition: updatedDefinition } = d;
+        const { id } = updatedDefinition;
+        definitionIdsForRemoval.push(id);
+        updates[id] = updatedDefinition;
+      } else {
+        hasErrors = true;
+      }
+
+      return acc;
+    },
+    [{}, []] as [{ [definitionId: string]: DataDefinitionFragment }, string[]],
+  );
+
+  if (definitionIdsForRemoval.length) {
+    proxy.dataDefinitions = proxy.dataDefinitions.map(o => {
+      const oldDefinition = o as DataDefinitionFragment;
+      return updatedDefinitions[oldDefinition.id] || oldDefinition;
+    });
+  }
+
+  return [hasErrors, definitionIdsForRemoval];
+}
+
+function updateEntries1(
+  { updatedEntries }: UpdateExperienceFragment,
+  proxy: DraftState,
+): UpdateEntriesResult {
   let hasErrors = false;
 
   if (!updatedEntries) {
-    return [hasErrors, null];
+    return [hasErrors, []];
   }
 
   let hasUpdates = false;
@@ -381,44 +422,70 @@ function updateEntries1({
   const updates = updatedEntries.reduce((acc, e) => {
     if (e.__typename === "UpdateEntrySomeSuccess") {
       const { entryId, dataObjects } = e.entry;
+      let thisEntryIsUpdated = false;
 
-      acc[entryId] = dataObjects.reduce((dAcc, d) => {
+      const idToDataObjectMap = dataObjects.reduce((dAcc, d) => {
         if (d.__typename === "DataObjectSuccess") {
-          const { dataObject } = d;
-          dAcc.push(dataObject);
+          thisEntryIsUpdated = true;
           hasUpdates = true;
+          const { dataObject } = d;
+          dAcc[dataObject.id] = dataObject;
         } else {
           hasErrors = true;
         }
 
         return dAcc;
-      }, {} as DataObjectFragment[]);
+      }, {} as { [dataObjectId: string]: DataObjectFragment });
+
+      if (thisEntryIsUpdated) {
+        acc[entryId] = idToDataObjectMap;
+      }
     } else {
       hasErrors = true;
     }
 
     return acc;
-  }, {} as UpdateEntriesResults);
+  }, {} as { [entryId: string]: { [dataObjectId: string]: DataObjectFragment } });
 
-  return [hasErrors, hasUpdates ? updates : null];
+  const returnValue: [string, string[]][] = [];
+
+  if (hasUpdates) {
+    (proxy.entries.edges as EntryConnectionFragment_edges[]).forEach(e => {
+      const node = (e as EntryConnectionFragment_edges).node as EntryFragment;
+      const { id: entryId } = node;
+      const idToUpdatedDataObjectMap = updates[entryId];
+
+      if (idToUpdatedDataObjectMap) {
+        const updatedDataObjectIds: string[] = [];
+        node.dataObjects = (node.dataObjects as DataObjectFragment[]).map(
+          dataObject => {
+            const { id } = dataObject;
+            updatedDataObjectIds.push(id);
+            return idToUpdatedDataObjectMap[id] || dataObject;
+          },
+        );
+
+        returnValue.push([entryId, updatedDataObjectIds]);
+      }
+    });
+  }
+
+  return [hasErrors, returnValue];
 }
 
-interface NewEntriesResult {
-  [clientId: string]: EntryFragment;
-}
-
-function addEntries1({
-  newEntries,
-}: UpdateExperienceFragment): [HasError, null | NewEntriesResult] {
+function addEntries1(
+  { newEntries }: UpdateExperienceFragment,
+  proxy: DraftState,
+): AddEntriesResult {
   let hasErrors = false;
 
   if (!newEntries) {
-    return [hasErrors, null];
+    return hasErrors;
   }
 
   let hasUpdates = false;
 
-  const updates = newEntries.reduce((acc, maybeNew) => {
+  const clientIdToNewEntryMap = newEntries.reduce((acc, maybeNew) => {
     if (maybeNew.__typename === "CreateEntrySuccess") {
       const { entry } = maybeNew;
       acc[entry.clientId as string] = entry;
@@ -428,15 +495,27 @@ function addEntries1({
     }
 
     return acc;
-  }, {} as NewEntriesResult);
+  }, {} as { [clientId: string]: EntryFragment });
 
-  return [hasErrors, hasUpdates ? updates : null];
+  if (hasUpdates) {
+    (proxy.entries.edges as EntryConnectionFragment_edges[]).forEach(e => {
+      const edge = e as EntryConnectionFragment_edges;
+      const node = edge.node as EntryFragment;
+      const newEntry = clientIdToNewEntryMap[node.id];
+      if (newEntry) {
+        edge.node = newEntry;
+      }
+    });
+  }
+
+  return hasErrors;
 }
 
-export function getUpdatedExperiencesFromCache(
+function getExperiencesAndUpdateData(
+  dataProxy: DataProxy,
   result: UpdateExperiencesOnlineMutationResult,
 ) {
-  const updates: [][] = [];
+  const updates: ExperienceAndUpdateData[] = [];
 
   const updateExperiences =
     result && result.data && result.data.updateExperiences;
@@ -444,18 +523,68 @@ export function getUpdatedExperiencesFromCache(
   if (!updateExperiences) {
     return updates;
   }
+
+  if (updateExperiences.__typename === "UpdateExperiencesAllFail") {
+    return updates;
+  } else {
+    return updateExperiences.experiences.reduce((acc, updateResult) => {
+      if (updateResult.__typename === "UpdateExperienceSomeSuccess") {
+        const { experience: result } = updateResult;
+        const { experienceId, updatedAt } = result;
+        const experience = readExperienceFragment(dataProxy, experienceId);
+
+        if (experience) {
+          // const updatedExperience =
+          immer(experience, proxy => {
+            proxy.updatedAt = updatedAt;
+
+            const hasOwnFieldsErrors = updateOwnFields1(result, proxy);
+
+            const [
+              hasDefinitionsErrors,
+              definitionIdsForRemoval,
+            ] = updateDefinitions1(result, proxy);
+
+            const hasNewEntriesErrors = addEntries1(result, proxy);
+            const [hasUpdatedEntriesErrors] = updateEntries1(result, proxy);
+
+            const noErrors =
+              !hasOwnFieldsErrors &&
+              !hasDefinitionsErrors &&
+              !hasNewEntriesErrors &&
+              !hasUpdatedEntriesErrors;
+
+            if (noErrors) {
+              proxy.hasUnsaved = null;
+            }
+          });
+        }
+      }
+      return acc;
+    }, [] as ExperienceAndUpdateData[]);
+  }
 }
 
-// export function updateExperiencesInCache1(onDone?: () => void) {
-//   return function updateExperiencesInCacheInner(
-//     dataProxy: DataProxy,
-//     result: UpdateExperiencesOnlineMutationResult,
-//   ) {};
-// }
+export function updateExperiences(
+  dataProxy: DataProxy,
+  updateData: ExperienceAndUpdateData[],
+) {
+  updateData.forEach(([updatedExperience]) => {
+    writeExperienceFragmentToCache(dataProxy, updatedExperience);
+  });
+}
 
-type UpdateDefinitionsResults = {
-  [definitionId: string]: DataDefinitionFragment;
-};
+type AddEntriesResult = HasError;
+
+type ExperienceAndUpdateData = [
+  ExperienceFragment,
+  UpdateOwnFieldsResult,
+  UpdateDefinitionsResults,
+  AddEntriesResult,
+  UpdateEntriesResult,
+];
+
+type UpdateDefinitionsResults = [HasError, string[]];
 
 type DraftState = Draft<ExperienceFragment>;
 
@@ -467,10 +596,10 @@ type UpdatedEntriesIdsToDelete = [string, string[]][];
 
 type HasError = boolean;
 
-interface UpdateEntriesResults {
-  [entryId: string]: DataObjectFragment[];
-}
+type UpdateEntriesResult = [HasError, [string, string[]][]];
 
 interface IdToDataObjectMap {
   [dataObjectId: string]: DataObjectFragment;
 }
+
+type UpdateOwnFieldsResult = HasError;

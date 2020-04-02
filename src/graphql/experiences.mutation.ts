@@ -279,13 +279,11 @@ const UPDATE_EXPERIENCES_ONLINE_MUTATION = gql`
       ... on UpdateExperiencesSomeSuccess {
         experiences {
           __typename
-
           ... on UpdateExperienceErrors {
             errors {
               ...UpdateExperienceErrorFragment
             }
           }
-
           ... on UpdateExperienceSomeSuccess {
             ...UpdateExperienceSomeSuccessFragment
           }
