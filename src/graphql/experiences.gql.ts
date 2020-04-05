@@ -275,7 +275,6 @@ const UPDATE_EXPERIENCES_ONLINE_MUTATION = gql`
       ... on UpdateExperiencesAllFail {
         error
       }
-
       ... on UpdateExperiencesSomeSuccess {
         experiences {
           __typename

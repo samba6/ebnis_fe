@@ -1,6 +1,6 @@
 import { DataProxy } from "apollo-cache";
 // import immer, { Draft } from "immer";
-import { CreateExperiencesMutationResult } from "../graphql/experiences.mutation";
+import { CreateExperiencesMutationResult } from "../graphql/experiences.gql";
 import {
   ExperienceFragment,
   ExperienceFragment_entries_edges,

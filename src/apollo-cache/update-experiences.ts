@@ -1,6 +1,6 @@
 import { DataProxy } from "apollo-cache";
 import immer, { Draft } from "immer";
-import { UpdateExperiencesOnlineMutationResult } from "../graphql/experiences.mutation";
+import { UpdateExperiencesOnlineMutationResult } from "../graphql/experiences.gql";
 import { readExperienceFragment } from "./read-experience-fragment";
 import { writeExperienceFragmentToCache } from "./write-experience-fragment";
 import { UpdateExperienceFragment } from "../graphql/apollo-types/UpdateExperienceFragment";
@@ -16,6 +16,172 @@ import {
   removeUnsyncedExperience,
 } from "../apollo-cache/unsynced.resolvers";
 import { DataObjectFragment } from "../graphql/apollo-types/DataObjectFragment";
+
+export function getSuccessfulResults(
+  result: UpdateExperiencesOnlineMutationResult,
+) {
+  const updateExperiences =
+    result && result.data && result.data.updateExperiences;
+
+  if (!updateExperiences) {
+    return [];
+  }
+
+  if (updateExperiences.__typename === "UpdateExperiencesAllFail") {
+    return [];
+  } else {
+    return updateExperiences.experiences.reduce((acc, updateResult) => {
+      if (updateResult.__typename === "UpdateExperienceSomeSuccess") {
+        acc.push(updateResult.experience);
+      }
+
+      return acc;
+    }, [] as UpdateExperienceFragment[]);
+  }
+}
+
+export function mapUpdateDataAndErrors(
+  results: [ExperienceFragment, UpdateExperienceFragment][],
+): MapUpdateDataAndErrors {
+  return results.map(([experience, updateResult]) => {
+    return [
+      experience,
+      mapOwnFieldsUpdatesAndErrors(updateResult),
+      mapDefinitionsUpdatesAndErrors(updateResult),
+      mapNewEntriesUpdatesAndErrors(updateResult),
+      mapUpdatedEntriesUpdatesAndErrors(updateResult),
+    ];
+  });
+}
+
+function mapUpdatedEntriesUpdatesAndErrors({
+  updatedEntries,
+}: UpdateExperienceFragment): MapUpdatedEntriesUpdatesAndErrors {
+  let hasErrors = false;
+
+  if (!updatedEntries) {
+    return [null, hasErrors];
+  }
+
+  let hasSuccess = false;
+  const updates = updatedEntries.reduce((entriesIdsAcc, update) => {
+    if (update.__typename === "UpdateEntrySomeSuccess") {
+      const { entryId, dataObjects } = update.entry;
+      let hasLocalSuccess = false;
+
+      const dataObjectUpdates = dataObjects.reduce((dataObjectsAcc, data) => {
+        if (data.__typename === "DataObjectSuccess") {
+          hasSuccess = true;
+          hasLocalSuccess = true;
+          const { dataObject } = data;
+          dataObjectsAcc[dataObject.id] = dataObject;
+        } else {
+          hasErrors = true;
+        }
+
+        return dataObjectsAcc;
+      }, {} as IdToDataObjectMap);
+
+      if (hasLocalSuccess) {
+        entriesIdsAcc[entryId] = dataObjectUpdates;
+      }
+    } else {
+      hasErrors = true;
+    }
+    return entriesIdsAcc;
+  }, {} as MapUpdatedEntriesSuccesses);
+
+  return [hasSuccess ? updates : null, hasErrors];
+}
+
+function mapNewEntriesUpdatesAndErrors({
+  newEntries,
+}: UpdateExperienceFragment): MapNewEntriesUpdatesAndErrors {
+  let hasErrors = false;
+
+  if (!newEntries) {
+    return [null, hasErrors];
+  }
+
+  let hasSuccess = false;
+
+  const updates = newEntries.reduce((acc, update) => {
+    if (update.__typename === "CreateEntrySuccess") {
+      hasSuccess = true;
+      const { entry } = update;
+      acc[entry.clientId as string] = entry;
+    } else {
+      hasErrors = true;
+    }
+
+    return acc;
+  }, {} as MapNewEntriesUpdatesSuccesses);
+
+  return [hasSuccess ? updates : null, hasErrors];
+}
+
+function mapDefinitionsUpdatesAndErrors({
+  updatedDefinitions,
+}: UpdateExperienceFragment): MapDefinitionsUpdatesAndErrors {
+  let hasErrors = false;
+
+  if (!updatedDefinitions) {
+    return [null, hasErrors];
+  }
+
+  let hasSuccess = false;
+
+  const updates = updatedDefinitions.reduce((acc, update) => {
+    if (update.__typename === "DefinitionSuccess") {
+      hasSuccess = true;
+      const { definition } = update;
+      acc[definition.id] = definition;
+    } else {
+      hasErrors = true;
+    }
+    return acc;
+  }, {} as MapDefinitionsUpdatesSuccesses);
+
+  return [hasSuccess ? updates : null, hasErrors];
+}
+
+function mapOwnFieldsUpdatesAndErrors({
+  ownFields,
+}: UpdateExperienceFragment): MapOwnFieldsUpdatesAndErrors {
+  let hasErrors = false;
+
+  if (!ownFields) {
+    return [null, hasErrors];
+  }
+
+  if (ownFields.__typename === "UpdateExperienceOwnFieldsErrors") {
+    hasErrors = true;
+    return [null, hasErrors];
+  } else {
+    const {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      __typename,
+      ...rest
+    } = ownFields.data;
+    return [rest, hasErrors];
+  }
+}
+
+// istanbul ignore next:
+function mapUpdatedDataToCachedExperience(
+  dataProxy: DataProxy,
+  results: UpdateExperienceFragment[],
+) {
+  return results.reduce((acc, result) => {
+    const experience = readExperienceFragment(dataProxy, result.experienceId);
+
+    if (experience) {
+      acc.push([experience, result]);
+    }
+
+    return acc;
+  }, [] as [ExperienceFragment, UpdateExperienceFragment][]);
+}
 
 export function updateExperiencesInCache(onDone?: () => void) {
   return function updateExperiencesInCacheInner(
@@ -172,7 +338,7 @@ function updateEntries(
     }
 
     return acc;
-  }, {} as UpdatedEntries);
+  }, {} as MapUpdatedEntriesSuccesses);
 
   if (hasUpdates) {
     (proxy.entries.edges as EntryConnectionFragment_edges[]).forEach(edge => {
@@ -588,7 +754,7 @@ type UpdateDefinitionsResults = [HasError, string[]];
 
 type DraftState = Draft<ExperienceFragment>;
 
-interface UpdatedEntries {
+interface MapUpdatedEntriesSuccesses {
   [entryId: string]: IdToDataObjectMap;
 }
 
@@ -603,3 +769,38 @@ interface IdToDataObjectMap {
 }
 
 type UpdateOwnFieldsResult = HasError;
+
+type MapUpdateDataAndErrors = [
+  ExperienceFragment,
+  MapOwnFieldsUpdatesAndErrors,
+  MapDefinitionsUpdatesAndErrors,
+  MapNewEntriesUpdatesAndErrors,
+  MapUpdatedEntriesUpdatesAndErrors,
+][];
+
+type MapOwnFieldsUpdatesAndErrors = [
+  null | Pick<ExperienceFragment, "title" | "description">,
+  boolean,
+];
+
+type MapDefinitionsUpdatesAndErrors = [
+  null | MapDefinitionsUpdatesSuccesses,
+  boolean,
+];
+interface MapDefinitionsUpdatesSuccesses {
+  [definitionId: string]: DataDefinitionFragment;
+}
+
+type MapNewEntriesUpdatesAndErrors = [
+  null | MapNewEntriesUpdatesSuccesses,
+  boolean,
+];
+
+interface MapNewEntriesUpdatesSuccesses {
+  [clientId: string]: EntryFragment;
+}
+
+type MapUpdatedEntriesUpdatesAndErrors = [
+  null | MapUpdatedEntriesSuccesses,
+  boolean,
+];

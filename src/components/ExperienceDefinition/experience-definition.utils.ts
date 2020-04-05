@@ -19,7 +19,7 @@ import {
 } from "../../general-utils";
 import { scrollIntoView } from "../scroll-into-view";
 import { scrollIntoViewDomId } from "./experience-definition.dom";
-import { CreateExperiencesComponentProps } from "../../graphql/experiences.mutation";
+import { CreateExperiencesComponentProps } from "../../graphql/experiences.gql";
 import { entriesPaginationVariables } from "../../graphql/get-experience-full.query";
 import { makeExperienceRoute } from "../../constants/experience-route";
 import { isConnected } from "../../state/connections";

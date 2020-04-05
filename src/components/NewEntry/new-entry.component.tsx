@@ -44,7 +44,7 @@ import {
   QUERY_NAME_getExperience,
   MUTATION_NAME_createOfflineEntry,
 } from "../../state/resolvers";
-import { useUpdateExperiencesOnlineMutation } from "../../graphql/experiences.mutation";
+import { useUpdateExperiencesOnlineMutation } from "../../graphql/experiences.gql";
 
 export function NewEntryComponent(props: ComponentProps) {
   const { navigate, experience } = props;

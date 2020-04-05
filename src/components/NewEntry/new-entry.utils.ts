@@ -24,7 +24,7 @@ import { scrollIntoViewNonFieldErrorDomId } from "./new-entry.dom";
 import {
   UpdateExperiencesOnlineComponentProps,
   updateExperiencesOnlineEffectHelperFunc,
-} from "../../graphql/experiences.mutation";
+} from "../../graphql/experiences.gql";
 import {
   CommonErrorPayload,
   parseStringError,

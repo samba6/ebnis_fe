@@ -45,7 +45,7 @@ import { GraphQLError } from "graphql";
 import {
   UpdateExperiencesOnlineMutationResult,
   CreateExperiencesMutationResult,
-} from "../graphql/experiences.mutation";
+} from "../graphql/experiences.gql";
 import { makeOfflineId } from "../constants";
 import { saveOnSyncOfflineExperienceComponentSuccess } from "../apollo-cache/on-sync-offline-experience-component-success";
 import { DataObjectFragment } from "../graphql/apollo-types/DataObjectFragment";
@@ -54,7 +54,7 @@ import {
   writeDeletedExperienceTitle,
   confirmShouldDeleteExperience,
 } from "../apollo-cache/should-delete-experience";
-import { DeleteExperiencesMutationResult } from "../graphql/experiences.mutation";
+import { DeleteExperiencesMutationResult } from "../graphql/experiences.gql";
 import { removeQueriesAndMutationsFromCache } from "../state/resolvers/delete-references-from-cache";
 
 jest.mock("../apollo-cache/on-sync-offline-experience-component-success");

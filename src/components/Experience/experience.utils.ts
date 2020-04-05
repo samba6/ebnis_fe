@@ -22,7 +22,7 @@ import {
   CreateExperiencesComponentProps,
   UpdateExperiencesOnlineComponentProps,
   DeleteExperiencesComponentProps,
-} from "../../graphql/experiences.mutation";
+} from "../../graphql/experiences.gql";
 import {
   getUnsyncedExperience,
   removeUnsyncedExperience,

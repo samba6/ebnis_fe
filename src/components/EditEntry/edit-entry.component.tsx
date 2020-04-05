@@ -47,7 +47,7 @@ import { cleanupRanQueriesFromCache } from "../../apollo-cache/cleanup-ran-queri
 import { QUERY_NAME_getExperienceFull } from "../../graphql/get-experience-full.query";
 import { addNewEntryResolvers } from "../NewEntry/new-entry.injectables";
 import { capitalize } from "../../general-utils";
-import { useUpdateExperiencesOnlineMutation } from "../../graphql/experiences.mutation";
+import { useUpdateExperiencesOnlineMutation } from "../../graphql/experiences.gql";
 import { DataObjectErrorFragment } from "../../graphql/apollo-types/DataObjectErrorFragment";
 import { ExperienceContext } from "../Experience/experience.utils";
 

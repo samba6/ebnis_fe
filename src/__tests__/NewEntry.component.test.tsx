@@ -35,7 +35,7 @@ import {
 } from "../components/NewEntry/new-entry.dom";
 import { Props as DateTimeProps } from "../components/DateTimeField/date-time-field.utils";
 import { toISODatetimeString } from "../components/NewEntry/new-entry.utils";
-import { UpdateExperiencesOnlineMutationResult } from "../graphql/experiences.mutation";
+import { UpdateExperiencesOnlineMutationResult } from "../graphql/experiences.gql";
 
 jest.mock("../components/NewEntry/new-entry.injectables");
 

@@ -1,6 +1,6 @@
 import { DataProxy } from "apollo-cache";
 import { createExperiencesManualUpdate } from "../apollo-cache/create_experiences-update";
-import { CreateExperiencesMutationResult } from "../graphql/experiences.mutation";
+import { CreateExperiencesMutationResult } from "../graphql/experiences.gql";
 import { insertExperiencesInGetExperiencesMiniQuery } from "../apollo-cache/update-get-experiences-mini-query";
 import { readExperienceFragment } from "../apollo-cache/read-experience-fragment";
 import { writeExperienceFragmentToCache } from "../apollo-cache/write-experience-fragment";

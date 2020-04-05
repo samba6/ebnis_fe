@@ -35,7 +35,7 @@ import { CreateOfflineEntryMutationReturned } from "../components/NewEntry/new-e
 import { wipeReferencesFromCache } from "../state/resolvers/delete-references-from-cache";
 import { ENTRY_TYPE_NAME, DATA_OBJECT_TYPE_NAME } from "../graphql/types";
 import { scrollIntoView } from "../components/scroll-into-view";
-import { UpdateExperiencesOnlineMutationResult } from "../graphql/experiences.mutation";
+import { UpdateExperiencesOnlineMutationResult } from "../graphql/experiences.gql";
 import { writeUnsyncedExperience } from "../apollo-cache/unsynced.resolvers";
 import { upsertExperienceWithEntry } from "../components/NewEntry/new-entry.injectables";
 import { updateExperiencesInCache } from "../apollo-cache/update-experiences";

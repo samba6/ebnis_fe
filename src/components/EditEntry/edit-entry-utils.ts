@@ -38,7 +38,7 @@ import {
 import {
   UpdateExperiencesOnlineComponentProps,
   updateExperiencesOnlineEffectHelperFunc,
-} from "../../graphql/experiences.mutation";
+} from "../../graphql/experiences.gql";
 import { UpdateEntryFragment_dataObjects } from "../../graphql/apollo-types/UpdateEntryFragment";
 import {
   CreateEntryErrorFragment,

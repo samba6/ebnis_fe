@@ -23,7 +23,7 @@ import {
   successNotificationId,
   definitionErrorSelector,
 } from "../components/EditExperience/edit-experience.dom";
-import { UpdateExperiencesOnlineMutationResult } from "../graphql/experiences.mutation";
+import { UpdateExperiencesOnlineMutationResult } from "../graphql/experiences.gql";
 import ApolloClient, { ApolloError } from "apollo-client";
 import { GraphQLError } from "graphql";
 import { scrollIntoView } from "../components/scroll-into-view";

@@ -24,7 +24,7 @@ import { isConnected } from "../state/connections";
 import { scrollIntoView } from "../components/scroll-into-view";
 import { fillField } from "./test_utils";
 import { CreateExperienceOfflineMutationResult } from "../components/ExperienceDefinition/experience-definition.resolvers";
-import { CreateExperiencesMutationResult } from "../graphql/experiences.mutation";
+import { CreateExperiencesMutationResult } from "../graphql/experiences.gql";
 import { createExperiencesManualUpdate } from "../apollo-cache/create_experiences-update";
 import { DataTypes } from "../graphql/apollo-types/globalTypes";
 

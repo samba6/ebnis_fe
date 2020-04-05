@@ -34,7 +34,7 @@ import {
 } from "./experience-definition.dom";
 import { EbnisAppContext } from "../../context";
 import { useCreateExperienceOfflineMutation } from "./experience-definition.resolvers";
-import { useCreateExperiencesMutation } from "../../graphql/experiences.mutation";
+import { useCreateExperiencesMutation } from "../../graphql/experiences.gql";
 import { SidebarHeader } from "../SidebarHeader/sidebar-header.component";
 import { DataTypes } from "../../graphql/apollo-types/globalTypes";
 import { Loading } from "../Loading/loading";

@@ -38,7 +38,7 @@ import {
   useCreateExperiencesMutation,
   useUpdateExperiencesOnlineMutation,
   useDeleteExperiencesMutation,
-} from "../../graphql/experiences.mutation";
+} from "../../graphql/experiences.gql";
 import {
   offlineExperienceSyncedNotificationSuccessSelector,
   closeSubmitNotificationBtnSelector,
