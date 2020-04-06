@@ -23,11 +23,8 @@ import {
   removeUnsyncedExperience,
   UnsyncedModifiedExperience,
 } from "../apollo-cache/unsynced.resolvers";
-import { DefinitionErrorsFragment } from "../graphql/apollo-types/DefinitionErrorsFragment";
-import { DefinitionSuccessFragment } from "../graphql/apollo-types/DefinitionSuccessFragment";
 import { UpdateExperienceSomeSuccessFragment } from "../graphql/apollo-types/UpdateExperienceSomeSuccessFragment";
 import { ExperienceFragment } from "../graphql/apollo-types/ExperienceFragment";
-import { EntryConnectionFragment_edges } from "../graphql/apollo-types/EntryConnectionFragment";
 import { EntryFragment } from "../graphql/apollo-types/EntryFragment";
 import { UpdateExperienceFragment } from "../graphql/apollo-types/UpdateExperienceFragment";
 import { DataDefinitionFragment } from "../graphql/apollo-types/DataDefinitionFragment";
@@ -108,18 +105,21 @@ describe("filter successfully updated experiences", () => {
             experiences: [
               {
                 __typename: "UpdateExperienceErrors",
+                errors: {
+                  experienceId: "1",
+                },
               },
               {
                 __typename: "UpdateExperienceSomeSuccess",
                 experience: {
-                  experienceId: "1",
+                  experienceId: "2",
                 },
               },
             ],
           },
         },
       } as UpdateExperiencesOnlineMutationResult),
-    ).toEqual([{ experienceId: "1" }]);
+    ).toEqual([{ experienceId: "2" }]);
   });
 });
 
@@ -749,11 +749,13 @@ describe("apply changes and get clean-up data", () => {
               edges: [
                 {
                   node: {
+                    // success == remove from unsynced
                     id: "1",
                   },
                 },
                 {
                   node: {
+                    // error == leave in unsynced
                     id: "2",
                   },
                 },
@@ -790,7 +792,12 @@ describe("apply changes and get clean-up data", () => {
           },
         },
       ],
-      [["1", putEmptyCleanUpData(StateValues.newEntriesCleanUp, "newEntries")]],
+      [
+        [
+          "1",
+          putEmptyCleanUpData(StateValues.newEntriesNoCleanUp, "newEntries"),
+        ],
+      ],
     ]);
   });
 
@@ -1191,24 +1198,316 @@ describe("clean up unsynced data now synced", () => {
 test("integration", () => {
   const mockOnDone = jest.fn();
 
+  const updatedExperience0 = {
+    __typename: "UpdateExperienceErrors",
+  };
+
+  const updatedExperience1 = {
+    __typename: "UpdateExperienceSomeSuccess",
+    experience: {
+      experienceId: "1",
+    },
+  } as UpdateExperienceSomeSuccessFragment;
+
+  const mockExperienceFragment1 = null;
+
+  const updatedExperience2 = {
+    __typename: "UpdateExperienceSomeSuccess",
+    experience: {
+      experienceId: "2",
+    },
+  } as UpdateExperienceSomeSuccessFragment;
+
+  const mockExperienceFragment2 = {
+    id: "2",
+  } as ExperienceFragment;
+
+  const mockUnsynced2 = null;
+
+  const updatedExperience3 = {
+    __typename: "UpdateExperienceSomeSuccess",
+    experience: {
+      experienceId: "3",
+      ownFields: {
+        __typename: "ExperienceOwnFieldsSuccess",
+        data: {
+          title: "3tt",
+          description: "3dd",
+        },
+      },
+      updatedDefinitions: [
+        {
+          __typename: "DefinitionSuccess",
+          definition: {
+            id: "3dd1",
+            name: "3dddN1",
+          },
+        },
+      ],
+    },
+  } as UpdateExperienceSomeSuccessFragment;
+
+  const mockExperienceFragment3 = {
+    id: "3",
+    title: "3t",
+    description: "3d",
+    dataDefinitions: [
+      {
+        id: "3dd1",
+        name: "3ddN1",
+      },
+      {
+        id: "3dd2",
+        name: "3ddN2",
+      },
+    ],
+  } as ExperienceFragment;
+
+  const mockUnsynced3 = {
+    ownFields: {},
+    definitions: {
+      "3dd1": {},
+    },
+  } as UnsyncedModifiedExperience;
+
+  const updatedExperience4 = {
+    __typename: "UpdateExperienceSomeSuccess",
+    experience: {
+      experienceId: "4",
+      newEntries: [
+        {
+          __typename: "CreateEntrySuccess",
+          entry: {
+            // create success
+            id: "4en1",
+            clientId: "4en1", // diff from cache'
+            dataObjects: [
+              {
+                id: "4ddo1", // diff from cache'
+                data: "4ddod1", // diff from cache'
+              },
+            ],
+          },
+        },
+        {
+          __typename: "CreateEntryErrors",
+        },
+      ],
+      updatedEntries: [
+        {
+          __typename: "UpdateEntryErrors",
+        },
+        {
+          __typename: "UpdateEntrySomeSuccess",
+          entry: {
+            entryId: "4en2",
+            dataObjects: [
+              {
+                __typename: "DataObjectErrors",
+              },
+              {
+                __typename: "DataObjectSuccess",
+                dataObject: {
+                  id: "4do1",
+                  data: "4ddod1", // diff from cache'
+                },
+              },
+            ],
+          },
+        },
+      ],
+    },
+  } as UpdateExperienceSomeSuccessFragment;
+
+  const mockExperienceFragment4 = {
+    id: "4",
+    entries: {
+      edges: [
+        {
+          node: {
+            // create success
+            id: "4en1",
+            clientId: "no", // diff from server's
+            dataObjects: [
+              {
+                id: "4do1", // diff from server's
+                data: "4dod1", // diff from server's
+              },
+            ],
+          },
+        },
+        {
+          node: {
+            // update success
+            id: "4en2",
+            dataObjects: [
+              {
+                // update success
+                id: "4do1",
+                data: "4dod1", // diff from server's
+              },
+              {
+                // update failed
+                id: "4do2",
+                data: "4dod2",
+              },
+            ],
+          },
+        },
+        {
+          node: {
+            // untouched
+            id: "4en3",
+            dataObjects: [
+              {
+                id: "4do1",
+                data: "4dod2",
+              },
+            ],
+          },
+        },
+      ],
+    },
+  } as ExperienceFragment;
+
+  const mockUnsynced4 = {
+    newEntries: true,
+    modifiedEntries: {
+      "4en2": {
+        "4do1": true, // success
+        "4do2": true, // failed
+      },
+    },
+  } as UnsyncedModifiedExperience;
+
   const serverResult = {
     data: {
       updateExperiences: {
         __typename: "UpdateExperiencesSomeSuccess",
         experiences: [
-          {
-            __typename: "UpdateExperienceErrors",
-          },
-          {
-            __typename: "UpdateExperienceSomeSuccess",
-            experience: {},
-          },
+          updatedExperience0,
+          updatedExperience1,
+          updatedExperience2,
+          updatedExperience3,
+          updatedExperience4,
         ],
       },
     },
   } as UpdateExperiencesOnlineMutationResult;
 
+  mockReadExperienceFragment
+    .mockReturnValueOnce(mockExperienceFragment1)
+    .mockReturnValueOnce(mockExperienceFragment2)
+    .mockReturnValueOnce(mockExperienceFragment3)
+    .mockReturnValueOnce(mockExperienceFragment4);
+
+  mockGetUnsyncedExperience
+    .mockReturnValueOnce(mockUnsynced2)
+    .mockReturnValueOnce(mockUnsynced3)
+    .mockReturnValueOnce(mockUnsynced4);
+
   updateExperiencesInCache1(mockOnDone)(dataProxy, serverResult);
+
+  expect(
+    mockFloatExperiencesToTheTopInGetExperiencesMiniQuery.mock.calls[0][1],
+  ).toEqual({
+    "2": 1,
+    "3": 1,
+    "4": 1,
+  });
+
+  expect(
+    mockWriteExperienceFragmentToCache.mock.calls.map(([, b]) => b),
+  ).toEqual([
+    {
+      id: "2",
+    },
+    {
+      id: "3",
+      title: "3tt",
+      description: "3dd",
+      dataDefinitions: [
+        {
+          id: "3dd1",
+          name: "3dddN1",
+        },
+        {
+          id: "3dd2",
+          name: "3ddN2",
+        },
+      ],
+    },
+    {
+      id: "4",
+      entries: {
+        edges: [
+          {
+            node: {
+              // create success
+              id: "4en1",
+              clientId: "4en1",
+              dataObjects: [
+                {
+                  id: "4ddo1",
+                  data: "4ddod1",
+                },
+              ],
+            },
+          },
+          {
+            node: {
+              // update success
+              id: "4en2",
+              dataObjects: [
+                {
+                  // update success
+                  id: "4do1",
+                  data: "4ddod1",
+                },
+                {
+                  // update failed
+                  id: "4do2",
+                  data: "4dod2",
+                },
+              ],
+            },
+          },
+          {
+            node: {
+              // untouched
+              id: "4en3",
+              dataObjects: [
+                {
+                  id: "4do1",
+                  data: "4dod2",
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ]);
+
+  expect(
+    mockRemoveUnsyncedExperience.mock.calls.map(x => {
+      return x[0];
+    }),
+  ).toEqual(["3"]);
+
+  expect(mockWriteUnsyncedExperience.mock.calls).toEqual([
+    [
+      "4",
+      {
+        newEntries: true,
+        modifiedEntries: {
+          "4en2": {
+            "4do2": true, // failed
+          },
+        },
+      },
+    ],
+  ]);
 
   expect(mockOnDone).toHaveBeenCalled();
 });

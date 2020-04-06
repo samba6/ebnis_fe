@@ -125,13 +125,13 @@ export function getChangesAndCleanUpData(
 
         cleanUpData.push(dataDefinitionIdsToCleanUp);
 
-        const shouldCleanUpNewEntries = applyNewEntriesChanges(
-          proxy,
-          newEntriesUpdates,
-          newEntriesErrorStatus,
-        );
+        applyNewEntriesChanges(proxy, newEntriesUpdates);
 
-        cleanUpData.push(shouldCleanUpNewEntries);
+        cleanUpData.push(
+          newEntriesErrorStatus === StateValues.newEntriesHasErrors
+            ? StateValues.newEntriesNoCleanUp
+            : StateValues.newEntriesCleanUp,
+        );
 
         const entryIdDataObjectsIdsToCleanUp = applyUpdatedEntriesChanges(
           proxy,
@@ -192,16 +192,10 @@ function applyUpdatedEntriesChanges(
 function applyNewEntriesChanges(
   proxy: DraftState,
   newEntriesUpdates: MapNewEntriesUpdatesSuccesses | null,
-  errorStatus: NewEntriesErrorsStatus,
 ) {
   if (!newEntriesUpdates) {
-    return errorStatus === StateValues.newEntriesHasErrors
-      ? StateValues.newEntriesNoCleanUp
-      : StateValues.newEntriesCleanUp;
+    return;
   }
-
-  let shouldCleanUp: NewEntriesCleanUp | NewEntriesNoCleanUp =
-    StateValues.newEntriesNoCleanUp;
 
   (proxy.entries.edges as EntryConnectionFragment_edges[]).forEach(e => {
     const edge = e as EntryConnectionFragment_edges;
@@ -209,11 +203,8 @@ function applyNewEntriesChanges(
     const newEntry = newEntriesUpdates[node.id];
     if (newEntry) {
       edge.node = newEntry;
-      shouldCleanUp = StateValues.newEntriesCleanUp;
     }
   });
-
-  return shouldCleanUp;
 }
 
 function applyDefinitionsChanges(
@@ -370,7 +361,6 @@ function mapOwnFieldsUpdatesAndErrors({
   }
 }
 
-// istanbul ignore next:
 function mapUpdatedDataToCachedExperience(
   dataProxy: DataProxy,
   results: UpdateExperienceFragment[],
@@ -451,6 +441,41 @@ export function updateExperiencesInCache1(onDone?: () => void) {
     dataProxy: DataProxy,
     result: UpdateExperiencesOnlineMutationResult,
   ) {
+    const successfulResults = getSuccessfulResults(result);
+    const cachedExperienceToUpdateDataList = mapUpdatedDataToCachedExperience(
+      dataProxy,
+      successfulResults,
+    );
+
+    const updateData = mapUpdateDataAndErrors(cachedExperienceToUpdateDataList);
+
+    const [
+      updatedExperiences, //
+      cleanUpDataList,
+    ] = getChangesAndCleanUpData(updateData);
+
+    const updatedIds: { [experienceId: string]: 1 } = {};
+    updatedExperiences.forEach(experience => {
+      writeExperienceFragmentToCache(dataProxy, experience);
+      updatedIds[experience.id] = 1;
+    });
+
+    cleanUpDataList.forEach(([experienceId, data]) => {
+      const unsynced = getUnsyncedExperience(experienceId);
+
+      if (unsynced) {
+        const updatedUnsynced = cleanUpSynced(unsynced, data);
+
+        if (!Object.keys(updatedUnsynced).length) {
+          removeUnsyncedExperience(experienceId);
+        } else {
+          writeUnsyncedExperience(experienceId, updatedUnsynced);
+        }
+      }
+    });
+
+    floatExperiencesToTheTopInGetExperiencesMiniQuery(dataProxy, updatedIds);
+
     // istanbul ignore next:
     if (onDone) {
       onDone();
