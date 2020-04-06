@@ -412,13 +412,6 @@ describe("updates and errors - updated entries", () => {
   });
 });
 
-// [
-//   true/false,
-//   [...definitionsIds],
-//   true/false,
-//   [, [entryId, ...dataIds] [ entryId, ...dataIds ] ]
-// ]
-
 describe("apply changes and get clean up data", () => {
   const noUpdatesHasErrors = [null, true];
   const noUpdatesNoErrors = [null, false];
@@ -857,7 +850,72 @@ describe("apply changes and get clean up data", () => {
           },
         },
       ],
-      [["1", ...putCleanUpDefaults(["1"], "updatedEntries")]],
+      [["1", ...putCleanUpDefaults([["1", "1"]], "updatedEntries")]],
+    ]);
+  });
+
+  test("updated entries - entry success, data object error and success", () => {
+    expect(
+      getChangesAndCleanUpData([
+        [
+          {
+            id: "1",
+            entries: {
+              edges: [
+                {
+                  node: {
+                    id: "1",
+                    dataObjects: [
+                      {
+                        id: "1",
+                      },
+                      {
+                        id: "2",
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          } as ExperienceFragment,
+          noUpdatesNoErrors,
+          noUpdatesNoErrors,
+          noUpdatesNoErrors,
+          [
+            {
+              "1": {
+                "1": { id: "1", data: "1" } as DataObjectFragment,
+              },
+            },
+            true,
+          ] as MapUpdatedEntriesUpdatesAndErrors,
+        ],
+      ] as MapUpdateDataAndErrors),
+    ).toEqual([
+      [
+        {
+          id: "1",
+          entries: {
+            edges: [
+              {
+                node: {
+                  id: "1",
+                  dataObjects: [
+                    {
+                      id: "1",
+                      data: "1",
+                    },
+                    {
+                      id: "2",
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        },
+      ],
+      [["1", ...putCleanUpDefaults([["1", "1"]], "updatedEntries")]],
     ]);
   });
 });

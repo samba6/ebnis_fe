@@ -54,17 +54,6 @@ export function mapUpdateDataAndErrors(
   });
 }
 
-type ChangedExperienceAndCleanUpData = [ExperienceFragment[], CleanUpData[]];
-
-// [
-//   experienceId,
-//   shouldCleanUpOwnFields,
-//   dataDefinitionIdsToCleanUp,
-//   shouldCleanUpNewEntries,
-//   [entryIdToCleanUp, ...dataObjectsIdsToCleanUp]
-// ]
-type CleanUpData = [string, boolean, string[], boolean, [string][]];
-
 export function getChangesAndCleanUpData(
   updateData: MapUpdateDataAndErrors,
 ): ChangedExperienceAndCleanUpData {
@@ -108,9 +97,12 @@ export function getChangesAndCleanUpData(
         const shouldCleanUpNewEntries = !hasNewEntriesErrors;
         cleanUpData.push(shouldCleanUpNewEntries);
 
-        applyUpdatedEntriesChanges(proxy, updatedEntriesUpdates);
+        const entryIdDataObjectsIdsToCleanUp = applyUpdatedEntriesChanges(
+          proxy,
+          updatedEntriesUpdates,
+        );
 
-        cleanUpData.push([]);
+        cleanUpData.push(entryIdDataObjectsIdsToCleanUp);
       });
 
       updatedExperiences.push(updatedExperience);
@@ -124,24 +116,41 @@ function applyUpdatedEntriesChanges(
   proxy: DraftState,
   updatedEntriesUpdates: MapUpdatedEntriesSuccesses | null,
 ) {
+  const idsToCleanUp: string[][] = [];
+
   if (!updatedEntriesUpdates) {
-    return;
+    return idsToCleanUp;
   }
 
   (proxy.entries.edges as EntryConnectionFragment_edges[]).forEach(e => {
     const edge = e as EntryConnectionFragment_edges;
     const node = edge.node as EntryFragment;
-    const idToUpdatedDataObjectMap = updatedEntriesUpdates[node.id];
+    const { id: entryId } = node;
+    const idToUpdatedDataObjectMap = updatedEntriesUpdates[entryId];
 
     if (idToUpdatedDataObjectMap) {
+      const dataObjectsIdsToCleanUp: string[] = [];
+
       node.dataObjects = node.dataObjects.map(d => {
-        const data = d as DataObjectFragment;
-        const { id } = data;
+        const dataObject = d as DataObjectFragment;
+        const { id } = dataObject;
         const updatedDataObject = idToUpdatedDataObjectMap[id];
-        return updatedDataObject ? updatedDataObject : data;
+
+        if (updatedDataObject) {
+          dataObjectsIdsToCleanUp.push(id);
+          return updatedDataObject;
+        }
+
+        return dataObject;
       });
+
+      if (dataObjectsIdsToCleanUp.length) {
+        idsToCleanUp.push([entryId, ...dataObjectsIdsToCleanUp]);
+      }
     }
   });
+
+  return idsToCleanUp;
 }
 
 function applyNewEntriesChanges(
@@ -653,239 +662,6 @@ function updateUnsynced(
   }
 }
 
-function updateOwnFields1(
-  { ownFields }: UpdateExperienceFragment,
-  proxy: DraftState,
-): UpdateOwnFieldsResult {
-  let hasErrors = false;
-
-  if (!ownFields) {
-    return hasErrors;
-  }
-
-  if (ownFields.__typename === "ExperienceOwnFieldsSuccess") {
-    const {
-      data: { title, description },
-    } = ownFields;
-
-    proxy.title = title;
-    proxy.description = description;
-
-    return hasErrors;
-  }
-
-  hasErrors = true;
-  return hasErrors;
-}
-
-function updateDefinitions1(
-  { updatedDefinitions: updatedDefinitionResults }: UpdateExperienceFragment,
-  proxy: DraftState,
-): UpdateDefinitionsResults {
-  let hasErrors = false;
-
-  if (!updatedDefinitionResults) {
-    return [hasErrors, []];
-  }
-
-  const [
-    updatedDefinitions,
-    definitionIdsForRemoval,
-  ] = updatedDefinitionResults.reduce(
-    (acc, d) => {
-      if (d.__typename === "DefinitionSuccess") {
-        const [updates, definitionIdsForRemoval] = acc;
-
-        const { definition: updatedDefinition } = d;
-        const { id } = updatedDefinition;
-        definitionIdsForRemoval.push(id);
-        updates[id] = updatedDefinition;
-      } else {
-        hasErrors = true;
-      }
-
-      return acc;
-    },
-    [{}, []] as [{ [definitionId: string]: DataDefinitionFragment }, string[]],
-  );
-
-  if (definitionIdsForRemoval.length) {
-    proxy.dataDefinitions = proxy.dataDefinitions.map(o => {
-      const oldDefinition = o as DataDefinitionFragment;
-      return updatedDefinitions[oldDefinition.id] || oldDefinition;
-    });
-  }
-
-  return [hasErrors, definitionIdsForRemoval];
-}
-
-function updateEntries1(
-  { updatedEntries }: UpdateExperienceFragment,
-  proxy: DraftState,
-): UpdateEntriesResult {
-  let hasErrors = false;
-
-  if (!updatedEntries) {
-    return [hasErrors, []];
-  }
-
-  let hasUpdates = false;
-
-  const updates = updatedEntries.reduce((acc, e) => {
-    if (e.__typename === "UpdateEntrySomeSuccess") {
-      const { entryId, dataObjects } = e.entry;
-      let thisEntryIsUpdated = false;
-
-      const idToDataObjectMap = dataObjects.reduce((dAcc, d) => {
-        if (d.__typename === "DataObjectSuccess") {
-          thisEntryIsUpdated = true;
-          hasUpdates = true;
-          const { dataObject } = d;
-          dAcc[dataObject.id] = dataObject;
-        } else {
-          hasErrors = true;
-        }
-
-        return dAcc;
-      }, {} as { [dataObjectId: string]: DataObjectFragment });
-
-      if (thisEntryIsUpdated) {
-        acc[entryId] = idToDataObjectMap;
-      }
-    } else {
-      hasErrors = true;
-    }
-
-    return acc;
-  }, {} as { [entryId: string]: { [dataObjectId: string]: DataObjectFragment } });
-
-  const returnValue: [string, string[]][] = [];
-
-  if (hasUpdates) {
-    (proxy.entries.edges as EntryConnectionFragment_edges[]).forEach(e => {
-      const node = (e as EntryConnectionFragment_edges).node as EntryFragment;
-      const { id: entryId } = node;
-      const idToUpdatedDataObjectMap = updates[entryId];
-
-      if (idToUpdatedDataObjectMap) {
-        const updatedDataObjectIds: string[] = [];
-        node.dataObjects = (node.dataObjects as DataObjectFragment[]).map(
-          dataObject => {
-            const { id } = dataObject;
-            updatedDataObjectIds.push(id);
-            return idToUpdatedDataObjectMap[id] || dataObject;
-          },
-        );
-
-        returnValue.push([entryId, updatedDataObjectIds]);
-      }
-    });
-  }
-
-  return [hasErrors, returnValue];
-}
-
-function addEntries1(
-  { newEntries }: UpdateExperienceFragment,
-  proxy: DraftState,
-): AddEntriesResult {
-  let hasErrors = false;
-
-  if (!newEntries) {
-    return hasErrors;
-  }
-
-  let hasUpdates = false;
-
-  const clientIdToNewEntryMap = newEntries.reduce((acc, maybeNew) => {
-    if (maybeNew.__typename === "CreateEntrySuccess") {
-      const { entry } = maybeNew;
-      acc[entry.clientId as string] = entry;
-      hasUpdates = true;
-    } else {
-      hasErrors = true;
-    }
-
-    return acc;
-  }, {} as { [clientId: string]: EntryFragment });
-
-  if (hasUpdates) {
-    (proxy.entries.edges as EntryConnectionFragment_edges[]).forEach(e => {
-      const edge = e as EntryConnectionFragment_edges;
-      const node = edge.node as EntryFragment;
-      const newEntry = clientIdToNewEntryMap[node.id];
-      if (newEntry) {
-        edge.node = newEntry;
-      }
-    });
-  }
-
-  return hasErrors;
-}
-
-function getExperiencesAndUpdateData(
-  dataProxy: DataProxy,
-  result: UpdateExperiencesOnlineMutationResult,
-) {
-  const updates: ExperienceAndUpdateData[] = [];
-
-  const updateExperiences =
-    result && result.data && result.data.updateExperiences;
-
-  if (!updateExperiences) {
-    return updates;
-  }
-
-  if (updateExperiences.__typename === "UpdateExperiencesAllFail") {
-    return updates;
-  } else {
-    return updateExperiences.experiences.reduce((acc, updateResult) => {
-      if (updateResult.__typename === "UpdateExperienceSomeSuccess") {
-        const { experience: result } = updateResult;
-        const { experienceId, updatedAt } = result;
-        const experience = readExperienceFragment(dataProxy, experienceId);
-
-        if (experience) {
-          // const updatedExperience =
-          immer(experience, proxy => {
-            proxy.updatedAt = updatedAt;
-
-            const hasOwnFieldsErrors = updateOwnFields1(result, proxy);
-
-            const [
-              hasDefinitionsErrors,
-              definitionIdsForRemoval,
-            ] = updateDefinitions1(result, proxy);
-
-            const hasNewEntriesErrors = addEntries1(result, proxy);
-            const [hasUpdatedEntriesErrors] = updateEntries1(result, proxy);
-
-            const noErrors =
-              !hasOwnFieldsErrors &&
-              !hasDefinitionsErrors &&
-              !hasNewEntriesErrors &&
-              !hasUpdatedEntriesErrors;
-
-            if (noErrors) {
-              proxy.hasUnsaved = null;
-            }
-          });
-        }
-      }
-      return acc;
-    }, [] as ExperienceAndUpdateData[]);
-  }
-}
-
-export function updateExperiences(
-  dataProxy: DataProxy,
-  updateData: ExperienceAndUpdateData[],
-) {
-  updateData.forEach(([updatedExperience]) => {
-    writeExperienceFragmentToCache(dataProxy, updatedExperience);
-  });
-}
-
 type AddEntriesResult = HasError;
 
 type ExperienceAndUpdateData = [
@@ -955,3 +731,14 @@ export type MapUpdatedEntriesUpdatesAndErrors = [
   null | MapUpdatedEntriesSuccesses,
   boolean,
 ];
+
+type ChangedExperienceAndCleanUpData = [ExperienceFragment[], CleanUpData[]];
+
+// [
+//   experienceId,
+//   shouldCleanUpOwnFields,
+//   dataDefinitionIdsToCleanUp,
+//   shouldCleanUpNewEntries,
+//   [entryIdToCleanUp, ...dataObjectsIdsToCleanUp][]
+// ]
+type CleanUpData = [string, boolean, string[], boolean, string[][]];
