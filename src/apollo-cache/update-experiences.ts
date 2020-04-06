@@ -54,6 +54,152 @@ export function mapUpdateDataAndErrors(
   });
 }
 
+type ChangedExperienceAndCleanUpData = [ExperienceFragment[], CleanUpData[]];
+
+// [
+//   experienceId,
+//   shouldCleanUpOwnFields,
+//   dataDefinitionIdsToCleanUp,
+//   shouldCleanUpNewEntries,
+//   [entryIdToCleanUp, ...dataObjectsIdsToCleanUp]
+// ]
+type CleanUpData = [string, boolean, string[], boolean, [string][]];
+
+export function getChangesAndCleanUpData(
+  updateData: MapUpdateDataAndErrors,
+): ChangedExperienceAndCleanUpData {
+  const updatedExperiences: ExperienceFragment[] = [];
+  const allCleanUpData: CleanUpData[] = [];
+
+  updateData.forEach(
+    ([
+      experience,
+      [ownFieldsUpdates, hasOwnFieldsErrors],
+      [definitionsUpdates, hasDefinitionsErrors],
+      [newEntriesUpdates, hasNewEntriesErrors],
+      [updatedEntriesUpdates, hasUpdatedEntriesErrors],
+    ]) => {
+      if (
+        hasOwnFieldsErrors &&
+        hasDefinitionsErrors &&
+        hasNewEntriesErrors &&
+        hasUpdatedEntriesErrors
+      ) {
+        return;
+      }
+
+      const cleanUpData = ([experience.id] as unknown) as CleanUpData;
+
+      allCleanUpData.push(cleanUpData);
+
+      const updatedExperience = immer(experience, proxy => {
+        applyOwnFieldsChanges(proxy, ownFieldsUpdates);
+        const shouldCleanUpOwnFields = !hasOwnFieldsErrors;
+        cleanUpData.push(shouldCleanUpOwnFields);
+
+        const dataDefinitionIdsToCleanUp = applyDefinitionsChanges(
+          proxy,
+          definitionsUpdates,
+        );
+
+        cleanUpData.push(dataDefinitionIdsToCleanUp);
+
+        applyNewEntriesChanges(proxy, newEntriesUpdates);
+        const shouldCleanUpNewEntries = !hasNewEntriesErrors;
+        cleanUpData.push(shouldCleanUpNewEntries);
+
+        applyUpdatedEntriesChanges(proxy, updatedEntriesUpdates);
+
+        cleanUpData.push([]);
+      });
+
+      updatedExperiences.push(updatedExperience);
+    },
+  );
+
+  return [updatedExperiences, allCleanUpData];
+}
+
+function applyUpdatedEntriesChanges(
+  proxy: DraftState,
+  updatedEntriesUpdates: MapUpdatedEntriesSuccesses | null,
+) {
+  if (!updatedEntriesUpdates) {
+    return;
+  }
+
+  (proxy.entries.edges as EntryConnectionFragment_edges[]).forEach(e => {
+    const edge = e as EntryConnectionFragment_edges;
+    const node = edge.node as EntryFragment;
+    const idToUpdatedDataObjectMap = updatedEntriesUpdates[node.id];
+
+    if (idToUpdatedDataObjectMap) {
+      node.dataObjects = node.dataObjects.map(d => {
+        const data = d as DataObjectFragment;
+        const { id } = data;
+        const updatedDataObject = idToUpdatedDataObjectMap[id];
+        return updatedDataObject ? updatedDataObject : data;
+      });
+    }
+  });
+}
+
+function applyNewEntriesChanges(
+  proxy: DraftState,
+  newEntriesUpdates: MapNewEntriesUpdatesSuccesses | null,
+) {
+  if (!newEntriesUpdates) {
+    return;
+  }
+
+  (proxy.entries.edges as EntryConnectionFragment_edges[]).forEach(e => {
+    const edge = e as EntryConnectionFragment_edges;
+    const node = edge.node as EntryFragment;
+    const newEntry = newEntriesUpdates[node.id];
+    if (newEntry) {
+      edge.node = newEntry;
+    }
+  });
+}
+
+function applyDefinitionsChanges(
+  proxy: DraftState,
+  definitionsUpdates: MapDefinitionsUpdatesSuccesses | null,
+): string[] {
+  const dataDefinitionIdsToCleanUp: string[] = [];
+
+  if (!definitionsUpdates) {
+    return dataDefinitionIdsToCleanUp;
+  }
+
+  proxy.dataDefinitions = proxy.dataDefinitions.map(d => {
+    const definition = d as DataDefinitionFragment;
+    const { id } = definition;
+    const update = definitionsUpdates[id];
+
+    if (update) {
+      dataDefinitionIdsToCleanUp.push(id);
+      return update;
+    }
+    return definition;
+  });
+
+  return dataDefinitionIdsToCleanUp;
+}
+
+function applyOwnFieldsChanges(
+  proxy: DraftState,
+  ownFieldsUpdates: MapOwnFieldsUpdatesSuccess | null,
+) {
+  if (!ownFieldsUpdates) {
+    return;
+  }
+
+  const { title, description } = ownFieldsUpdates;
+  proxy.title = title;
+  proxy.description = description;
+}
+
 function mapUpdatedEntriesUpdatesAndErrors({
   updatedEntries,
 }: UpdateExperienceFragment): MapUpdatedEntriesUpdatesAndErrors {
@@ -770,7 +916,7 @@ interface IdToDataObjectMap {
 
 type UpdateOwnFieldsResult = HasError;
 
-type MapUpdateDataAndErrors = [
+export type MapUpdateDataAndErrors = [
   ExperienceFragment,
   MapOwnFieldsUpdatesAndErrors,
   MapDefinitionsUpdatesAndErrors,
@@ -778,12 +924,17 @@ type MapUpdateDataAndErrors = [
   MapUpdatedEntriesUpdatesAndErrors,
 ][];
 
+type MapOwnFieldsUpdatesSuccess = Pick<
+  ExperienceFragment,
+  "title" | "description"
+>;
+
 type MapOwnFieldsUpdatesAndErrors = [
-  null | Pick<ExperienceFragment, "title" | "description">,
+  null | MapOwnFieldsUpdatesSuccess,
   boolean,
 ];
 
-type MapDefinitionsUpdatesAndErrors = [
+export type MapDefinitionsUpdatesAndErrors = [
   null | MapDefinitionsUpdatesSuccesses,
   boolean,
 ];
@@ -791,7 +942,7 @@ interface MapDefinitionsUpdatesSuccesses {
   [definitionId: string]: DataDefinitionFragment;
 }
 
-type MapNewEntriesUpdatesAndErrors = [
+export type MapNewEntriesUpdatesAndErrors = [
   null | MapNewEntriesUpdatesSuccesses,
   boolean,
 ];
@@ -800,7 +951,7 @@ interface MapNewEntriesUpdatesSuccesses {
   [clientId: string]: EntryFragment;
 }
 
-type MapUpdatedEntriesUpdatesAndErrors = [
+export type MapUpdatedEntriesUpdatesAndErrors = [
   null | MapUpdatedEntriesSuccesses,
   boolean,
 ];

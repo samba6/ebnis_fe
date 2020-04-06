@@ -3,6 +3,11 @@ import { DataProxy } from "apollo-cache";
 import {
   getSuccessfulResults,
   mapUpdateDataAndErrors,
+  MapUpdateDataAndErrors,
+  getChangesAndCleanUpData,
+  MapDefinitionsUpdatesAndErrors,
+  MapNewEntriesUpdatesAndErrors,
+  MapUpdatedEntriesUpdatesAndErrors,
 } from "../apollo-cache/update-experiences";
 import { floatExperiencesToTheTopInGetExperiencesMiniQuery } from "../apollo-cache/update-get-experiences-mini-query";
 import { readExperienceFragment } from "../apollo-cache/read-experience-fragment";
@@ -21,6 +26,8 @@ import { ExperienceFragment } from "../graphql/apollo-types/ExperienceFragment";
 import { EntryConnectionFragment_edges } from "../graphql/apollo-types/EntryConnectionFragment";
 import { EntryFragment } from "../graphql/apollo-types/EntryFragment";
 import { UpdateExperienceFragment } from "../graphql/apollo-types/UpdateExperienceFragment";
+import { DataDefinitionFragment } from "../graphql/apollo-types/DataDefinitionFragment";
+import { DataObjectFragment } from "../graphql/apollo-types/DataObjectFragment";
 
 jest.mock("../apollo-cache/unsynced.resolvers");
 const mockGetUnsyncedExperience = getUnsyncedExperience as jest.Mock;
@@ -405,6 +412,456 @@ describe("updates and errors - updated entries", () => {
   });
 });
 
+// [
+//   true/false,
+//   [...definitionsIds],
+//   true/false,
+//   [, [entryId, ...dataIds] [ entryId, ...dataIds ] ]
+// ]
+
+describe("apply changes and get clean up data", () => {
+  const noUpdatesHasErrors = [null, true];
+  const noUpdatesNoErrors = [null, false];
+
+  test("all fail", () => {
+    expect(
+      getChangesAndCleanUpData([
+        [
+          {
+            id: "1",
+          } as ExperienceFragment,
+          noUpdatesHasErrors,
+          noUpdatesHasErrors,
+          noUpdatesHasErrors,
+          noUpdatesHasErrors,
+        ],
+      ] as MapUpdateDataAndErrors),
+    ).toEqual([[], []]);
+  });
+
+  test("ownFields - no success", () => {
+    expect(
+      getChangesAndCleanUpData([
+        [
+          {
+            id: "1",
+          } as ExperienceFragment,
+          noUpdatesHasErrors,
+          noUpdatesNoErrors,
+          noUpdatesNoErrors,
+          noUpdatesNoErrors,
+        ],
+      ] as MapUpdateDataAndErrors),
+    ).toEqual([
+      [{ id: "1" }],
+      [["1", ...putCleanUpDefaults(false, "ownFields")]],
+    ]);
+  });
+
+  test("ownFields - no error", () => {
+    const updateData = { title: "a", description: "b" };
+
+    expect(
+      getChangesAndCleanUpData([
+        [
+          {
+            id: "z",
+            title: "1",
+            description: "2",
+          } as ExperienceFragment,
+          [updateData, false],
+          noUpdatesNoErrors,
+          noUpdatesNoErrors,
+          noUpdatesNoErrors,
+        ],
+      ] as MapUpdateDataAndErrors),
+    ).toEqual([
+      [{ id: "z", ...updateData }],
+      [["z", ...putCleanUpDefaults(true, "ownFields")]],
+    ]);
+  });
+
+  test("data definitions - no success", () => {
+    expect(
+      getChangesAndCleanUpData([
+        [
+          {
+            id: "z",
+          } as ExperienceFragment,
+          noUpdatesNoErrors,
+          noUpdatesHasErrors,
+          noUpdatesNoErrors,
+          noUpdatesNoErrors,
+        ],
+      ] as MapUpdateDataAndErrors),
+    ).toEqual([
+      [{ id: "z" }],
+      [["z", ...putCleanUpDefaults([], "definitions")]],
+    ]);
+  });
+
+  test("data definitions - no error", () => {
+    expect(
+      getChangesAndCleanUpData([
+        [
+          {
+            id: "z",
+            dataDefinitions: [
+              {
+                id: "1",
+                name: "a",
+              },
+            ],
+          } as ExperienceFragment,
+          noUpdatesNoErrors,
+          [
+            {
+              "1": { id: "1", name: "b" } as DataDefinitionFragment,
+            },
+            false,
+          ] as MapDefinitionsUpdatesAndErrors,
+          noUpdatesNoErrors,
+          noUpdatesNoErrors,
+        ],
+      ] as MapUpdateDataAndErrors),
+    ).toEqual([
+      [
+        {
+          id: "z",
+          dataDefinitions: [
+            {
+              id: "1",
+              name: "b",
+            },
+          ],
+        },
+      ],
+      [["z", ...putCleanUpDefaults(["1"], "definitions")]],
+    ]);
+  });
+
+  test("data definitions - error and success", () => {
+    expect(
+      getChangesAndCleanUpData([
+        [
+          {
+            id: "z",
+            dataDefinitions: [
+              {
+                id: "1",
+                name: "a",
+              },
+              {
+                id: "2",
+              },
+            ],
+          } as ExperienceFragment,
+          noUpdatesNoErrors,
+          [
+            {
+              "1": { id: "1", name: "b" } as DataDefinitionFragment,
+            },
+            true,
+          ] as MapDefinitionsUpdatesAndErrors,
+          noUpdatesNoErrors,
+          noUpdatesNoErrors,
+        ],
+      ] as MapUpdateDataAndErrors),
+    ).toEqual([
+      [
+        {
+          id: "z",
+          dataDefinitions: [
+            {
+              id: "1",
+              name: "b",
+            },
+            {
+              id: "2",
+            },
+          ],
+        },
+      ],
+      [["z", ...putCleanUpDefaults(["1"], "definitions")]],
+    ]);
+  });
+
+  test("new entries - no success", () => {
+    expect(
+      getChangesAndCleanUpData([
+        [
+          {
+            id: "1",
+          } as ExperienceFragment,
+          noUpdatesNoErrors,
+          noUpdatesNoErrors,
+          noUpdatesHasErrors,
+          noUpdatesNoErrors,
+        ],
+      ] as MapUpdateDataAndErrors),
+    ).toEqual([
+      [{ id: "1" }],
+      [["1", ...putCleanUpDefaults(false, "newEntries")]],
+    ]);
+  });
+
+  test("new entries - no error", () => {
+    expect(
+      getChangesAndCleanUpData([
+        [
+          {
+            id: "1",
+            entries: {
+              edges: [
+                {
+                  node: {
+                    id: "1",
+                  },
+                },
+              ],
+            },
+          } as ExperienceFragment,
+          noUpdatesNoErrors,
+          noUpdatesNoErrors,
+          [
+            { "1": { id: "1", dataObjects: [{}] } as EntryFragment },
+            false,
+          ] as MapNewEntriesUpdatesAndErrors,
+          noUpdatesNoErrors,
+        ],
+      ] as MapUpdateDataAndErrors),
+    ).toEqual([
+      [
+        {
+          id: "1",
+          entries: {
+            edges: [
+              {
+                node: {
+                  id: "1",
+                  dataObjects: [{}],
+                },
+              },
+            ],
+          },
+        },
+      ],
+      [["1", ...putCleanUpDefaults(true, "newEntries")]],
+    ]);
+  });
+
+  test("new entries - success and error", () => {
+    expect(
+      getChangesAndCleanUpData([
+        [
+          {
+            id: "1",
+            entries: {
+              edges: [
+                {
+                  node: {
+                    id: "1",
+                  },
+                },
+                {
+                  node: {
+                    id: "2",
+                  },
+                },
+              ],
+            },
+          } as ExperienceFragment,
+          noUpdatesNoErrors,
+          noUpdatesNoErrors,
+          [
+            { "1": { id: "1", dataObjects: [{}] } as EntryFragment },
+            true,
+          ] as MapNewEntriesUpdatesAndErrors,
+          noUpdatesNoErrors,
+        ],
+      ] as MapUpdateDataAndErrors),
+    ).toEqual([
+      [
+        {
+          id: "1",
+          entries: {
+            edges: [
+              {
+                node: {
+                  id: "1",
+                  dataObjects: [{}],
+                },
+              },
+              {
+                node: {
+                  id: "2",
+                },
+              },
+            ],
+          },
+        },
+      ],
+      [["1", ...putCleanUpDefaults(false, "newEntries")]],
+    ]);
+  });
+
+  test("updated entries - no entry success", () => {
+    expect(
+      getChangesAndCleanUpData([
+        [
+          {
+            id: "1",
+            entries: {
+              edges: [
+                {
+                  node: {
+                    id: "1",
+                  },
+                },
+              ],
+            },
+          } as ExperienceFragment,
+          noUpdatesNoErrors,
+          noUpdatesNoErrors,
+          noUpdatesNoErrors,
+          [{}, false] as MapUpdatedEntriesUpdatesAndErrors,
+        ],
+      ] as MapUpdateDataAndErrors),
+    ).toEqual([
+      [
+        {
+          id: "1",
+          entries: {
+            edges: [
+              {
+                node: {
+                  id: "1",
+                },
+              },
+            ],
+          },
+        },
+      ],
+      [["1", ...putCleanUpDefaults([], "updatedEntries")]],
+    ]);
+  });
+
+  test("updated entries - entry success, no data object success", () => {
+    expect(
+      getChangesAndCleanUpData([
+        [
+          {
+            id: "1",
+            entries: {
+              edges: [
+                {
+                  node: {
+                    id: "1",
+                    dataObjects: [
+                      {
+                        id: "1",
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          } as ExperienceFragment,
+          noUpdatesNoErrors,
+          noUpdatesNoErrors,
+          noUpdatesNoErrors,
+          [
+            {
+              "1": {},
+            },
+            false,
+          ] as MapUpdatedEntriesUpdatesAndErrors,
+        ],
+      ] as MapUpdateDataAndErrors),
+    ).toEqual([
+      [
+        {
+          id: "1",
+          entries: {
+            edges: [
+              {
+                node: {
+                  id: "1",
+                  dataObjects: [
+                    {
+                      id: "1",
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        },
+      ],
+      [["1", ...putCleanUpDefaults([], "updatedEntries")]],
+    ]);
+  });
+
+  test("updated entries - entry success, no data object error", () => {
+    expect(
+      getChangesAndCleanUpData([
+        [
+          {
+            id: "1",
+            entries: {
+              edges: [
+                {
+                  node: {
+                    id: "1",
+                    dataObjects: [
+                      {
+                        id: "1",
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          } as ExperienceFragment,
+          noUpdatesNoErrors,
+          noUpdatesNoErrors,
+          noUpdatesNoErrors,
+          [
+            {
+              "1": {
+                "1": { id: "1", data: "1" } as DataObjectFragment,
+              },
+            },
+            false,
+          ] as MapUpdatedEntriesUpdatesAndErrors,
+        ],
+      ] as MapUpdateDataAndErrors),
+    ).toEqual([
+      [
+        {
+          id: "1",
+          entries: {
+            edges: [
+              {
+                node: {
+                  id: "1",
+                  dataObjects: [
+                    {
+                      id: "1",
+                      data: "1",
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        },
+      ],
+      [["1", ...putCleanUpDefaults(["1"], "updatedEntries")]],
+    ]);
+  });
+});
+
 const t = [null, false];
 function insertEmptyUpdates(
   data: any,
@@ -419,5 +876,21 @@ function insertEmptyUpdates(
       return [t, t, data, t];
     case "updatedEntries":
       return [t, t, t, data];
+  }
+}
+
+function putCleanUpDefaults(
+  data: any,
+  updated: "ownFields" | "definitions" | "newEntries" | "updatedEntries",
+) {
+  switch (updated) {
+    case "ownFields":
+      return [data, [], true, []];
+    case "definitions":
+      return [true, data, true, []];
+    case "newEntries":
+      return [true, [], data, []];
+    case "updatedEntries":
+      return [true, [], true, data];
   }
 }
