@@ -8,7 +8,7 @@ import {
   MapDefinitionsUpdatesAndErrors,
   MapNewEntriesUpdatesAndErrors,
   MapUpdatedEntriesUpdatesAndErrors,
-  updateExperiencesInCache1,
+  updateExperiencesInCache,
   CleanUpData,
   StateValues,
   cleanUpSynced,
@@ -1143,7 +1143,20 @@ describe("clean up unsynced data now synced", () => {
     });
   });
 
-  test("updated entries - clean up, entry not in unsynced", () => {
+  test("updated entries - clean up, modifiedEntries not in cache", () => {
+    const unsynced = {
+      newEntries: true,
+    } as UnsyncedModifiedExperience;
+
+    const cleanUpData = putEmptyCleanUpData([["2"]], "updatedEntries");
+    cleanUpData[2] = StateValues.newEntriesNoCleanUp;
+
+    expect(cleanUpSynced(unsynced, cleanUpData)).toEqual({
+      newEntries: true,
+    });
+  });
+
+  test("updated entries - clean up, entry not in cached unsynced", () => {
     const unsynced = {
       modifiedEntries: {
         "1": {},
@@ -1406,7 +1419,7 @@ test("integration", () => {
     .mockReturnValueOnce(mockUnsynced3)
     .mockReturnValueOnce(mockUnsynced4);
 
-  updateExperiencesInCache1(mockOnDone)(dataProxy, serverResult);
+  updateExperiencesInCache(mockOnDone)(dataProxy, serverResult);
 
   expect(
     mockFloatExperiencesToTheTopInGetExperiencesMiniQuery.mock.calls[0][1],
