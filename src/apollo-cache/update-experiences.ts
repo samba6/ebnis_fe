@@ -17,6 +17,34 @@ import {
 } from "../apollo-cache/unsynced.resolvers";
 import { DataObjectFragment } from "../graphql/apollo-types/DataObjectFragment";
 
+export const StateValues = {
+  ownFieldsCleanUp: "clean-up-own-fields" as OwnFieldsCleanUp,
+  ownFieldsNoCleanUp: "no-clean-up-own-fields" as OwnFieldsNoCleanUp,
+  newEntriesCleanUp: "clean-up-new-entries" as NewEntriesCleanUp,
+  newEntriesNoCleanUp: "no-clean-up-new-entries" as NewEntriesNoCleanUp,
+  ownFieldsHasErrors: "has-own-fields-errors" as OwnFieldsHasErrors,
+  ownFieldsNoErrors: "no-own-fields-errors" as OwnFieldsNoErrors,
+  dataDefinitionHasErrors: "data-definitions-has-errors" as DataDefinitionHasErrors,
+  dataDefinitionsNoErrors: "data-definitions-no-errors" as DataDefinitionsNoErrors,
+  newEntriesHasErrors: "new-entries-has-errors" as NewEntriesHasErrors,
+  newEntriesNoErrors: "new-entries-no-errors" as NewEntriesNoErrors,
+  updatedEntriesHasErrors: "updated-entries-has-errors" as UpdatedEntriesHasErrors,
+  updatedEntriesNoErrors: "updated-entries-no-errors" as UpdatedEntriesNoErrors,
+};
+
+type OwnFieldsCleanUp = "clean-up-own-fields";
+type OwnFieldsNoCleanUp = "no-clean-up-own-fields";
+type NewEntriesCleanUp = "clean-up-new-entries";
+type NewEntriesNoCleanUp = "no-clean-up=new-entries";
+type OwnFieldsHasErrors = "has-own-fields-errors";
+type OwnFieldsNoErrors = "no-own-fields-errors";
+type DataDefinitionHasErrors = "data-definitions-has-errors";
+type DataDefinitionsNoErrors = "data-definitions-no-errors";
+type NewEntriesHasErrors = "new-entries-has-errors";
+type NewEntriesNoErrors = "new-entries-no-errors";
+type UpdatedEntriesHasErrors = "updated-entries-has-errors";
+type UpdatedEntriesNoErrors = "updated-entries-no-errors";
+
 export function getSuccessfulResults(
   result: UpdateExperiencesOnlineMutationResult,
 ) {
@@ -78,13 +106,16 @@ export function getChangesAndCleanUpData(
       }
 
       const cleanUpData = ([experience.id] as unknown) as CleanUpData;
-
       allCleanUpData.push(cleanUpData);
 
       const updatedExperience = immer(experience, proxy => {
         applyOwnFieldsChanges(proxy, ownFieldsUpdates);
-        const shouldCleanUpOwnFields = !hasOwnFieldsErrors;
-        cleanUpData.push(shouldCleanUpOwnFields);
+
+        cleanUpData.push(
+          hasOwnFieldsErrors
+            ? StateValues.ownFieldsNoCleanUp
+            : StateValues.ownFieldsCleanUp,
+        );
 
         const dataDefinitionIdsToCleanUp = applyDefinitionsChanges(
           proxy,
@@ -95,7 +126,11 @@ export function getChangesAndCleanUpData(
 
         applyNewEntriesChanges(proxy, newEntriesUpdates);
         const shouldCleanUpNewEntries = !hasNewEntriesErrors;
-        cleanUpData.push(shouldCleanUpNewEntries);
+        cleanUpData.push(
+          hasNewEntriesErrors
+            ? StateValues.newEntriesNoCleanUp
+            : StateValues.newEntriesCleanUp,
+        );
 
         const entryIdDataObjectsIdsToCleanUp = applyUpdatedEntriesChanges(
           proxy,
@@ -212,10 +247,10 @@ function applyOwnFieldsChanges(
 function mapUpdatedEntriesUpdatesAndErrors({
   updatedEntries,
 }: UpdateExperienceFragment): MapUpdatedEntriesUpdatesAndErrors {
-  let hasErrors = false;
+  let errorStatus = StateValues.updatedEntriesNoErrors;
 
   if (!updatedEntries) {
-    return [null, hasErrors];
+    return [null, errorStatus];
   }
 
   let hasSuccess = false;
@@ -231,7 +266,7 @@ function mapUpdatedEntriesUpdatesAndErrors({
           const { dataObject } = data;
           dataObjectsAcc[dataObject.id] = dataObject;
         } else {
-          hasErrors = true;
+          errorStatus = StateValues.updatedEntriesHasErrors;
         }
 
         return dataObjectsAcc;
@@ -241,21 +276,21 @@ function mapUpdatedEntriesUpdatesAndErrors({
         entriesIdsAcc[entryId] = dataObjectUpdates;
       }
     } else {
-      hasErrors = true;
+      errorStatus = StateValues.updatedEntriesHasErrors;
     }
     return entriesIdsAcc;
   }, {} as MapUpdatedEntriesSuccesses);
 
-  return [hasSuccess ? updates : null, hasErrors];
+  return [hasSuccess ? updates : null, errorStatus];
 }
 
 function mapNewEntriesUpdatesAndErrors({
   newEntries,
 }: UpdateExperienceFragment): MapNewEntriesUpdatesAndErrors {
-  let hasErrors = false;
+  let errorStatus = StateValues.newEntriesNoErrors;
 
   if (!newEntries) {
-    return [null, hasErrors];
+    return [null, errorStatus];
   }
 
   let hasSuccess = false;
@@ -266,22 +301,22 @@ function mapNewEntriesUpdatesAndErrors({
       const { entry } = update;
       acc[entry.clientId as string] = entry;
     } else {
-      hasErrors = true;
+      errorStatus = StateValues.newEntriesHasErrors;
     }
 
     return acc;
   }, {} as MapNewEntriesUpdatesSuccesses);
 
-  return [hasSuccess ? updates : null, hasErrors];
+  return [hasSuccess ? updates : null, errorStatus];
 }
 
 function mapDefinitionsUpdatesAndErrors({
   updatedDefinitions,
 }: UpdateExperienceFragment): MapDefinitionsUpdatesAndErrors {
-  let hasErrors = false;
+  let errorStatus = StateValues.dataDefinitionsNoErrors;
 
   if (!updatedDefinitions) {
-    return [null, hasErrors];
+    return [null, errorStatus];
   }
 
   let hasSuccess = false;
@@ -292,33 +327,33 @@ function mapDefinitionsUpdatesAndErrors({
       const { definition } = update;
       acc[definition.id] = definition;
     } else {
-      hasErrors = true;
+      errorStatus = StateValues.dataDefinitionHasErrors;
     }
     return acc;
   }, {} as MapDefinitionsUpdatesSuccesses);
 
-  return [hasSuccess ? updates : null, hasErrors];
+  return [hasSuccess ? updates : null, errorStatus];
 }
 
 function mapOwnFieldsUpdatesAndErrors({
   ownFields,
 }: UpdateExperienceFragment): MapOwnFieldsUpdatesAndErrors {
-  let hasErrors = false;
+  let errorStatus = StateValues.ownFieldsNoErrors;
 
   if (!ownFields) {
-    return [null, hasErrors];
+    return [null, errorStatus];
   }
 
   if (ownFields.__typename === "UpdateExperienceOwnFieldsErrors") {
-    hasErrors = true;
-    return [null, hasErrors];
+    errorStatus = StateValues.ownFieldsHasErrors;
+    return [null, errorStatus];
   } else {
     const {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       __typename,
       ...rest
     } = ownFields.data;
-    return [rest, hasErrors];
+    return [rest, errorStatus];
   }
 }
 
@@ -336,6 +371,18 @@ function mapUpdatedDataToCachedExperience(
 
     return acc;
   }, [] as [ExperienceFragment, UpdateExperienceFragment][]);
+}
+
+export function updateExperiencesInCache1(onDone?: () => void) {
+  return function updateExperiencesInCacheInner(
+    dataProxy: DataProxy,
+    result: UpdateExperiencesOnlineMutationResult,
+  ) {
+    // istanbul ignore next:
+    if (onDone) {
+      onDone();
+    }
+  };
 }
 
 export function updateExperiencesInCache(onDone?: () => void) {
@@ -707,20 +754,21 @@ type MapOwnFieldsUpdatesSuccess = Pick<
 
 type MapOwnFieldsUpdatesAndErrors = [
   null | MapOwnFieldsUpdatesSuccess,
-  boolean,
+  OwnFieldsHasErrors | OwnFieldsNoErrors,
 ];
 
 export type MapDefinitionsUpdatesAndErrors = [
   null | MapDefinitionsUpdatesSuccesses,
-  boolean,
+  DataDefinitionHasErrors | DataDefinitionsNoErrors,
 ];
+
 interface MapDefinitionsUpdatesSuccesses {
   [definitionId: string]: DataDefinitionFragment;
 }
 
 export type MapNewEntriesUpdatesAndErrors = [
   null | MapNewEntriesUpdatesSuccesses,
-  boolean,
+  NewEntriesHasErrors | NewEntriesNoErrors,
 ];
 
 interface MapNewEntriesUpdatesSuccesses {
@@ -729,7 +777,7 @@ interface MapNewEntriesUpdatesSuccesses {
 
 export type MapUpdatedEntriesUpdatesAndErrors = [
   null | MapUpdatedEntriesSuccesses,
-  boolean,
+  UpdatedEntriesHasErrors | UpdatedEntriesNoErrors,
 ];
 
 type ChangedExperienceAndCleanUpData = [ExperienceFragment[], CleanUpData[]];
@@ -741,4 +789,10 @@ type ChangedExperienceAndCleanUpData = [ExperienceFragment[], CleanUpData[]];
 //   shouldCleanUpNewEntries,
 //   [entryIdToCleanUp, ...dataObjectsIdsToCleanUp][]
 // ]
-type CleanUpData = [string, boolean, string[], boolean, string[][]];
+export type CleanUpData = [
+  string,
+  OwnFieldsCleanUp | OwnFieldsNoCleanUp,
+  string[],
+  NewEntriesCleanUp | NewEntriesNoCleanUp,
+  string[][],
+];

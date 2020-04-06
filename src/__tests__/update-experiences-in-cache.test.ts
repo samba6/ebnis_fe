@@ -8,6 +8,9 @@ import {
   MapDefinitionsUpdatesAndErrors,
   MapNewEntriesUpdatesAndErrors,
   MapUpdatedEntriesUpdatesAndErrors,
+  updateExperiencesInCache1,
+  CleanUpData,
+  StateValues,
 } from "../apollo-cache/update-experiences";
 import { floatExperiencesToTheTopInGetExperiencesMiniQuery } from "../apollo-cache/update-get-experiences-mini-query";
 import { readExperienceFragment } from "../apollo-cache/read-experience-fragment";
@@ -100,7 +103,15 @@ describe("update changes and errors - ownFields", () => {
       mapUpdateDataAndErrors([
         [{} as ExperienceFragment, {} as UpdateExperienceFragment],
       ]),
-    ).toEqual([[{}, ...insertEmptyUpdates([null, false], "ownFields")]]);
+    ).toEqual([
+      [
+        {},
+        ...insertEmptyUpdates(
+          [null, StateValues.ownFieldsNoErrors],
+          "ownFields",
+        ),
+      ],
+    ]);
   });
 
   test("failed", () => {
@@ -115,7 +126,15 @@ describe("update changes and errors - ownFields", () => {
           } as UpdateExperienceFragment,
         ],
       ]),
-    ).toEqual([[{}, ...insertEmptyUpdates([null, true], "ownFields")]]);
+    ).toEqual([
+      [
+        {},
+        ...insertEmptyUpdates(
+          [null, StateValues.ownFieldsHasErrors],
+          "ownFields",
+        ),
+      ],
+    ]);
   });
 
   test("success", () => {
@@ -143,7 +162,7 @@ describe("update changes and errors - ownFields", () => {
               title: "a",
               description: "b",
             },
-            false,
+            StateValues.ownFieldsNoErrors,
           ],
           "ownFields",
         ),
@@ -167,7 +186,15 @@ describe("update changes and errors - definitions", () => {
           } as UpdateExperienceFragment,
         ],
       ]),
-    ).toEqual([[{}, ...insertEmptyUpdates([null, true], "definitions")]]);
+    ).toEqual([
+      [
+        {},
+        ...insertEmptyUpdates(
+          [null, StateValues.dataDefinitionHasErrors],
+          "definitions",
+        ),
+      ],
+    ]);
   });
 
   test("all success", () => {
@@ -188,7 +215,13 @@ describe("update changes and errors - definitions", () => {
         ],
       ]),
     ).toEqual([
-      [{}, ...insertEmptyUpdates([{ "1": { id: "1" } }, false], "definitions")],
+      [
+        {},
+        ...insertEmptyUpdates(
+          [{ "1": { id: "1" } }, StateValues.dataDefinitionsNoErrors],
+          "definitions",
+        ),
+      ],
     ]);
   });
 
@@ -213,7 +246,13 @@ describe("update changes and errors - definitions", () => {
         ],
       ]),
     ).toEqual([
-      [{}, ...insertEmptyUpdates([{ "1": { id: "1" } }, true], "definitions")],
+      [
+        {},
+        ...insertEmptyUpdates(
+          [{ "1": { id: "1" } }, StateValues.dataDefinitionHasErrors],
+          "definitions",
+        ),
+      ],
     ]);
   });
 });
@@ -233,7 +272,15 @@ describe("update changes and errors - new entries", () => {
           } as UpdateExperienceFragment,
         ],
       ]),
-    ).toEqual([[{}, ...insertEmptyUpdates([null, true], "newEntries")]]);
+    ).toEqual([
+      [
+        {},
+        ...insertEmptyUpdates(
+          [null, StateValues.newEntriesHasErrors],
+          "newEntries",
+        ),
+      ],
+    ]);
   });
 
   test("no error", () => {
@@ -257,7 +304,7 @@ describe("update changes and errors - new entries", () => {
       [
         {},
         ...insertEmptyUpdates(
-          [{ "1": { clientId: "1" } }, false],
+          [{ "1": { clientId: "1" } }, StateValues.newEntriesNoErrors],
           "newEntries",
         ),
       ],
@@ -287,7 +334,10 @@ describe("update changes and errors - new entries", () => {
     ).toEqual([
       [
         {},
-        ...insertEmptyUpdates([{ "1": { clientId: "1" } }, true], "newEntries"),
+        ...insertEmptyUpdates(
+          [{ "1": { clientId: "1" } }, StateValues.newEntriesHasErrors],
+          "newEntries",
+        ),
       ],
     ]);
   });
@@ -323,7 +373,15 @@ describe("updates and errors - updated entries", () => {
           } as UpdateExperienceFragment,
         ],
       ]),
-    ).toEqual([[{}, ...insertEmptyUpdates([null, true], "updatedEntries")]]);
+    ).toEqual([
+      [
+        {},
+        ...insertEmptyUpdates(
+          [null, StateValues.updatedEntriesHasErrors],
+          "updatedEntries",
+        ),
+      ],
+    ]);
   });
 
   test("no entry.dataObjects success", () => {
@@ -347,7 +405,15 @@ describe("updates and errors - updated entries", () => {
           } as UpdateExperienceFragment,
         ],
       ]),
-    ).toEqual([[{}, ...insertEmptyUpdates([null, true], "updatedEntries")]]);
+    ).toEqual([
+      [
+        {},
+        ...insertEmptyUpdates(
+          [null, StateValues.updatedEntriesHasErrors],
+          "updatedEntries",
+        ),
+      ],
+    ]);
   });
 
   test("entry.dataObjects all success", () => {
@@ -370,7 +436,7 @@ describe("updates and errors - updated entries", () => {
                 "2": { id: "2" },
               },
             },
-            false,
+            StateValues.updatedEntriesNoErrors,
           ],
           "updatedEntries",
         ),
@@ -403,7 +469,7 @@ describe("updates and errors - updated entries", () => {
                 "2": { id: "2" },
               },
             },
-            true,
+            StateValues.updatedEntriesHasErrors,
           ],
           "updatedEntries",
         ),
@@ -412,7 +478,7 @@ describe("updates and errors - updated entries", () => {
   });
 });
 
-describe("apply changes and get clean up data", () => {
+describe("apply changes and get clean-up data", () => {
   const noUpdatesHasErrors = [null, true];
   const noUpdatesNoErrors = [null, false];
 
@@ -447,7 +513,15 @@ describe("apply changes and get clean up data", () => {
       ] as MapUpdateDataAndErrors),
     ).toEqual([
       [{ id: "1" }],
-      [["1", ...putCleanUpDefaults(false, "ownFields")]],
+      [
+        [
+          "1",
+          ...putCleanUpDataDefaults(
+            StateValues.ownFieldsNoCleanUp,
+            "ownFields",
+          ),
+        ],
+      ],
     ]);
   });
 
@@ -470,7 +544,12 @@ describe("apply changes and get clean up data", () => {
       ] as MapUpdateDataAndErrors),
     ).toEqual([
       [{ id: "z", ...updateData }],
-      [["z", ...putCleanUpDefaults(true, "ownFields")]],
+      [
+        [
+          "z",
+          ...putCleanUpDataDefaults(StateValues.ownFieldsCleanUp, "ownFields"),
+        ],
+      ],
     ]);
   });
 
@@ -489,7 +568,7 @@ describe("apply changes and get clean up data", () => {
       ] as MapUpdateDataAndErrors),
     ).toEqual([
       [{ id: "z" }],
-      [["z", ...putCleanUpDefaults([], "definitions")]],
+      [["z", ...putCleanUpDataDefaults([], "definitions")]],
     ]);
   });
 
@@ -529,7 +608,7 @@ describe("apply changes and get clean up data", () => {
           ],
         },
       ],
-      [["z", ...putCleanUpDefaults(["1"], "definitions")]],
+      [["z", ...putCleanUpDataDefaults(["1"], "definitions")]],
     ]);
   });
 
@@ -575,7 +654,7 @@ describe("apply changes and get clean up data", () => {
           ],
         },
       ],
-      [["z", ...putCleanUpDefaults(["1"], "definitions")]],
+      [["z", ...putCleanUpDataDefaults(["1"], "definitions")]],
     ]);
   });
 
@@ -594,7 +673,15 @@ describe("apply changes and get clean up data", () => {
       ] as MapUpdateDataAndErrors),
     ).toEqual([
       [{ id: "1" }],
-      [["1", ...putCleanUpDefaults(false, "newEntries")]],
+      [
+        [
+          "1",
+          ...putCleanUpDataDefaults(
+            StateValues.newEntriesNoCleanUp,
+            "newEntries",
+          ),
+        ],
+      ],
     ]);
   });
 
@@ -639,7 +726,15 @@ describe("apply changes and get clean up data", () => {
           },
         },
       ],
-      [["1", ...putCleanUpDefaults(true, "newEntries")]],
+      [
+        [
+          "1",
+          ...putCleanUpDataDefaults(
+            StateValues.newEntriesCleanUp,
+            "newEntries",
+          ),
+        ],
+      ],
     ]);
   });
 
@@ -694,7 +789,15 @@ describe("apply changes and get clean up data", () => {
           },
         },
       ],
-      [["1", ...putCleanUpDefaults(false, "newEntries")]],
+      [
+        [
+          "1",
+          ...putCleanUpDataDefaults(
+            StateValues.newEntriesNoCleanUp,
+            "newEntries",
+          ),
+        ],
+      ],
     ]);
   });
 
@@ -735,7 +838,7 @@ describe("apply changes and get clean up data", () => {
           },
         },
       ],
-      [["1", ...putCleanUpDefaults([], "updatedEntries")]],
+      [["1", ...putCleanUpDataDefaults([], "updatedEntries")]],
     ]);
   });
 
@@ -791,7 +894,7 @@ describe("apply changes and get clean up data", () => {
           },
         },
       ],
-      [["1", ...putCleanUpDefaults([], "updatedEntries")]],
+      [["1", ...putCleanUpDataDefaults([], "updatedEntries")]],
     ]);
   });
 
@@ -850,7 +953,7 @@ describe("apply changes and get clean up data", () => {
           },
         },
       ],
-      [["1", ...putCleanUpDefaults([["1", "1"]], "updatedEntries")]],
+      [["1", ...putCleanUpDataDefaults([["1", "1"]], "updatedEntries")]],
     ]);
   });
 
@@ -915,40 +1018,115 @@ describe("apply changes and get clean up data", () => {
           },
         },
       ],
-      [["1", ...putCleanUpDefaults([["1", "1"]], "updatedEntries")]],
+      [["1", ...putCleanUpDataDefaults([["1", "1"]], "updatedEntries")]],
     ]);
   });
 });
 
-const t = [null, false];
+describe("clean up unsynced data now synced", () => {
+  test("ownFields - yes", () => {
+    const unsynced = {
+      ownFields: {},
+    } as UnsyncedModifiedExperience;
+
+    const cleanUpData = ([true] as unknown) as CleanUpData;
+
+    expect(cleanUpUnsyncedOwnFields(unsynced, cleanUpData)).toEqual({});
+  });
+});
+
+test("integration", () => {
+  const mockOnDone = jest.fn();
+
+  const serverResult = {
+    data: {
+      updateExperiences: {
+        __typename: "UpdateExperiencesSomeSuccess",
+        experiences: [
+          {
+            __typename: "UpdateExperienceErrors",
+          },
+          {
+            __typename: "UpdateExperienceSomeSuccess",
+            experience: {},
+          },
+        ],
+      },
+    },
+  } as UpdateExperiencesOnlineMutationResult;
+
+  updateExperiencesInCache1(mockOnDone)(dataProxy, serverResult);
+
+  expect(mockOnDone).toHaveBeenCalled();
+});
+
+const ownFieldsEmptyUpdates = [null, StateValues.ownFieldsNoErrors];
+
+const dataDefinitionsEmptyUpdates = [
+  null, //
+  StateValues.dataDefinitionsNoErrors,
+];
+const newEntriesEmptyUpdates = [null, StateValues.newEntriesNoErrors];
+const updatedEntriesEmptyUpdates = [null, StateValues.updatedEntriesNoErrors];
+
 function insertEmptyUpdates(
   data: any,
   updated: "ownFields" | "definitions" | "newEntries" | "updatedEntries",
 ) {
   switch (updated) {
     case "ownFields":
-      return [data, t, t, t];
+      return [
+        data,
+        dataDefinitionsEmptyUpdates,
+        newEntriesEmptyUpdates,
+        updatedEntriesEmptyUpdates,
+      ];
     case "definitions":
-      return [t, data, t, t];
+      return [
+        ownFieldsEmptyUpdates,
+        data,
+        newEntriesEmptyUpdates,
+        updatedEntriesEmptyUpdates,
+      ];
     case "newEntries":
-      return [t, t, data, t];
+      return [
+        ownFieldsEmptyUpdates,
+        dataDefinitionsEmptyUpdates,
+        data,
+        updatedEntriesEmptyUpdates,
+      ];
     case "updatedEntries":
-      return [t, t, t, data];
+      return [
+        ownFieldsEmptyUpdates,
+        dataDefinitionsEmptyUpdates,
+        newEntriesEmptyUpdates,
+        data,
+      ];
   }
 }
 
-function putCleanUpDefaults(
+function putCleanUpDataDefaults(
   data: any,
   updated: "ownFields" | "definitions" | "newEntries" | "updatedEntries",
 ) {
   switch (updated) {
     case "ownFields":
-      return [data, [], true, []];
+      return [data, [], StateValues.newEntriesCleanUp, []];
     case "definitions":
-      return [true, data, true, []];
+      return [
+        StateValues.ownFieldsCleanUp,
+        data,
+        StateValues.newEntriesCleanUp,
+        [],
+      ];
     case "newEntries":
-      return [true, [], data, []];
+      return [StateValues.ownFieldsCleanUp, [], data, []];
     case "updatedEntries":
-      return [true, [], true, data];
+      return [
+        StateValues.ownFieldsCleanUp,
+        [],
+        StateValues.newEntriesCleanUp,
+        data,
+      ];
   }
 }
