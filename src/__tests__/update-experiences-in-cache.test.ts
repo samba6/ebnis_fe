@@ -190,7 +190,7 @@ describe("update changes and errors - definitions", () => {
       [
         {},
         ...insertEmptyUpdates(
-          [null, StateValues.dataDefinitionHasErrors],
+          [null, StateValues.dataDefinitionsHasErrors],
           "definitions",
         ),
       ],
@@ -249,7 +249,7 @@ describe("update changes and errors - definitions", () => {
       [
         {},
         ...insertEmptyUpdates(
-          [{ "1": { id: "1" } }, StateValues.dataDefinitionHasErrors],
+          [{ "1": { id: "1" } }, StateValues.dataDefinitionsHasErrors],
           "definitions",
         ),
       ],
@@ -478,10 +478,32 @@ describe("updates and errors - updated entries", () => {
   });
 });
 
-describe("apply changes and get clean-up data", () => {
-  const noUpdatesHasErrors = [null, true];
-  const noUpdatesNoErrors = [null, false];
+const ownFieldsEmptyUpdatesNoErrors = [null, StateValues.ownFieldsNoErrors];
+const dataDefinitionsEmptyUpdatesNoErrors = [
+  null, //
+  StateValues.dataDefinitionsNoErrors,
+];
+const newEntriesEmptyUpdatesNoErrors = [null, StateValues.newEntriesNoErrors];
+const updatedEntriesEmptyUpdatesNoErrors = [
+  null,
+  StateValues.updatedEntriesNoErrors,
+];
 
+const ownFieldsEmptyUpdatesHasErrors = [null, StateValues.ownFieldsHasErrors];
+const dataDefinitionsEmptyUpdatesHasErrors = [
+  null, //
+  StateValues.dataDefinitionsHasErrors,
+];
+const newEntriesEmptyUpdatesHasErrors = [
+  null, //
+  StateValues.newEntriesHasErrors,
+];
+const updatedEntriesEmptyUpdatesHasErrors = [
+  null,
+  StateValues.updatedEntriesHasErrors,
+];
+
+describe("apply changes and get clean-up data", () => {
   test("all fail", () => {
     expect(
       getChangesAndCleanUpData([
@@ -489,43 +511,40 @@ describe("apply changes and get clean-up data", () => {
           {
             id: "1",
           } as ExperienceFragment,
-          noUpdatesHasErrors,
-          noUpdatesHasErrors,
-          noUpdatesHasErrors,
-          noUpdatesHasErrors,
+          ownFieldsEmptyUpdatesHasErrors,
+          dataDefinitionsEmptyUpdatesHasErrors,
+          newEntriesEmptyUpdatesHasErrors,
+          updatedEntriesEmptyUpdatesHasErrors,
         ],
       ] as MapUpdateDataAndErrors),
     ).toEqual([[], []]);
   });
 
-  test("ownFields - no success", () => {
+  test("ownFields - no success, has errors", () => {
     expect(
       getChangesAndCleanUpData([
         [
           {
             id: "1",
           } as ExperienceFragment,
-          noUpdatesHasErrors,
-          noUpdatesNoErrors,
-          noUpdatesNoErrors,
-          noUpdatesNoErrors,
+          ownFieldsEmptyUpdatesHasErrors,
+          dataDefinitionsEmptyUpdatesNoErrors,
+          newEntriesEmptyUpdatesNoErrors,
+          updatedEntriesEmptyUpdatesNoErrors,
         ],
       ] as MapUpdateDataAndErrors),
     ).toEqual([
       [{ id: "1" }],
       [
         [
-          "1",
-          ...putCleanUpDataDefaults(
-            StateValues.ownFieldsNoCleanUp,
-            "ownFields",
-          ),
+          "1", //
+          putEmptyCleanUpData(StateValues.ownFieldsNoCleanUp, "ownFields"),
         ],
       ],
     ]);
   });
 
-  test("ownFields - no error", () => {
+  test("ownFields - has success, no error", () => {
     const updateData = { title: "a", description: "b" };
 
     expect(
@@ -536,20 +555,15 @@ describe("apply changes and get clean-up data", () => {
             title: "1",
             description: "2",
           } as ExperienceFragment,
-          [updateData, false],
-          noUpdatesNoErrors,
-          noUpdatesNoErrors,
-          noUpdatesNoErrors,
+          [updateData, StateValues.ownFieldsNoErrors],
+          dataDefinitionsEmptyUpdatesNoErrors,
+          newEntriesEmptyUpdatesNoErrors,
+          updatedEntriesEmptyUpdatesNoErrors,
         ],
       ] as MapUpdateDataAndErrors),
     ).toEqual([
       [{ id: "z", ...updateData }],
-      [
-        [
-          "z",
-          ...putCleanUpDataDefaults(StateValues.ownFieldsCleanUp, "ownFields"),
-        ],
-      ],
+      [["z", putEmptyCleanUpData(StateValues.ownFieldsCleanUp, "ownFields")]],
     ]);
   });
 
@@ -560,19 +574,16 @@ describe("apply changes and get clean-up data", () => {
           {
             id: "z",
           } as ExperienceFragment,
-          noUpdatesNoErrors,
-          noUpdatesHasErrors,
-          noUpdatesNoErrors,
-          noUpdatesNoErrors,
+          ownFieldsEmptyUpdatesNoErrors,
+          dataDefinitionsEmptyUpdatesHasErrors,
+          newEntriesEmptyUpdatesNoErrors,
+          updatedEntriesEmptyUpdatesNoErrors,
         ],
       ] as MapUpdateDataAndErrors),
-    ).toEqual([
-      [{ id: "z" }],
-      [["z", ...putCleanUpDataDefaults([], "definitions")]],
-    ]);
+    ).toEqual([[{ id: "z" }], [["z", putEmptyCleanUpData([], "definitions")]]]);
   });
 
-  test("data definitions - no error", () => {
+  test("data definitions - has success, no error", () => {
     expect(
       getChangesAndCleanUpData([
         [
@@ -585,15 +596,15 @@ describe("apply changes and get clean-up data", () => {
               },
             ],
           } as ExperienceFragment,
-          noUpdatesNoErrors,
+          ownFieldsEmptyUpdatesNoErrors,
           [
             {
               "1": { id: "1", name: "b" } as DataDefinitionFragment,
             },
-            false,
+            StateValues.dataDefinitionsNoErrors,
           ] as MapDefinitionsUpdatesAndErrors,
-          noUpdatesNoErrors,
-          noUpdatesNoErrors,
+          newEntriesEmptyUpdatesNoErrors,
+          updatedEntriesEmptyUpdatesNoErrors,
         ],
       ] as MapUpdateDataAndErrors),
     ).toEqual([
@@ -608,7 +619,7 @@ describe("apply changes and get clean-up data", () => {
           ],
         },
       ],
-      [["z", ...putCleanUpDataDefaults(["1"], "definitions")]],
+      [["z", putEmptyCleanUpData(["1"], "definitions")]],
     ]);
   });
 
@@ -628,15 +639,15 @@ describe("apply changes and get clean-up data", () => {
               },
             ],
           } as ExperienceFragment,
-          noUpdatesNoErrors,
+          ownFieldsEmptyUpdatesNoErrors,
           [
             {
               "1": { id: "1", name: "b" } as DataDefinitionFragment,
             },
-            true,
+            StateValues.dataDefinitionsHasErrors,
           ] as MapDefinitionsUpdatesAndErrors,
-          noUpdatesNoErrors,
-          noUpdatesNoErrors,
+          newEntriesEmptyUpdatesNoErrors,
+          updatedEntriesEmptyUpdatesNoErrors,
         ],
       ] as MapUpdateDataAndErrors),
     ).toEqual([
@@ -654,21 +665,21 @@ describe("apply changes and get clean-up data", () => {
           ],
         },
       ],
-      [["z", ...putCleanUpDataDefaults(["1"], "definitions")]],
+      [["z", putEmptyCleanUpData(["1"], "definitions")]],
     ]);
   });
 
-  test("new entries - no success", () => {
+  test("new entries - no success, has errors", () => {
     expect(
       getChangesAndCleanUpData([
         [
           {
             id: "1",
           } as ExperienceFragment,
-          noUpdatesNoErrors,
-          noUpdatesNoErrors,
-          noUpdatesHasErrors,
-          noUpdatesNoErrors,
+          ownFieldsEmptyUpdatesNoErrors,
+          dataDefinitionsEmptyUpdatesNoErrors,
+          newEntriesEmptyUpdatesHasErrors,
+          updatedEntriesEmptyUpdatesNoErrors,
         ],
       ] as MapUpdateDataAndErrors),
     ).toEqual([
@@ -676,16 +687,13 @@ describe("apply changes and get clean-up data", () => {
       [
         [
           "1",
-          ...putCleanUpDataDefaults(
-            StateValues.newEntriesNoCleanUp,
-            "newEntries",
-          ),
+          putEmptyCleanUpData(StateValues.newEntriesNoCleanUp, "newEntries"),
         ],
       ],
     ]);
   });
 
-  test("new entries - no error", () => {
+  test("new entries - has success, no error", () => {
     expect(
       getChangesAndCleanUpData([
         [
@@ -701,13 +709,13 @@ describe("apply changes and get clean-up data", () => {
               ],
             },
           } as ExperienceFragment,
-          noUpdatesNoErrors,
-          noUpdatesNoErrors,
+          ownFieldsEmptyUpdatesNoErrors,
+          dataDefinitionsEmptyUpdatesNoErrors,
           [
             { "1": { id: "1", dataObjects: [{}] } as EntryFragment },
-            false,
+            StateValues.newEntriesNoErrors,
           ] as MapNewEntriesUpdatesAndErrors,
-          noUpdatesNoErrors,
+          updatedEntriesEmptyUpdatesNoErrors,
         ],
       ] as MapUpdateDataAndErrors),
     ).toEqual([
@@ -726,15 +734,7 @@ describe("apply changes and get clean-up data", () => {
           },
         },
       ],
-      [
-        [
-          "1",
-          ...putCleanUpDataDefaults(
-            StateValues.newEntriesCleanUp,
-            "newEntries",
-          ),
-        ],
-      ],
+      [["1", putEmptyCleanUpData(StateValues.newEntriesCleanUp, "newEntries")]],
     ]);
   });
 
@@ -759,13 +759,13 @@ describe("apply changes and get clean-up data", () => {
               ],
             },
           } as ExperienceFragment,
-          noUpdatesNoErrors,
-          noUpdatesNoErrors,
+          ownFieldsEmptyUpdatesNoErrors,
+          dataDefinitionsEmptyUpdatesNoErrors,
           [
             { "1": { id: "1", dataObjects: [{}] } as EntryFragment },
-            true,
+            StateValues.newEntriesHasErrors,
           ] as MapNewEntriesUpdatesAndErrors,
-          noUpdatesNoErrors,
+          updatedEntriesEmptyUpdatesNoErrors,
         ],
       ] as MapUpdateDataAndErrors),
     ).toEqual([
@@ -789,15 +789,7 @@ describe("apply changes and get clean-up data", () => {
           },
         },
       ],
-      [
-        [
-          "1",
-          ...putCleanUpDataDefaults(
-            StateValues.newEntriesNoCleanUp,
-            "newEntries",
-          ),
-        ],
-      ],
+      [["1", putEmptyCleanUpData(StateValues.newEntriesCleanUp, "newEntries")]],
     ]);
   });
 
@@ -817,10 +809,13 @@ describe("apply changes and get clean-up data", () => {
               ],
             },
           } as ExperienceFragment,
-          noUpdatesNoErrors,
-          noUpdatesNoErrors,
-          noUpdatesNoErrors,
-          [{}, false] as MapUpdatedEntriesUpdatesAndErrors,
+          ownFieldsEmptyUpdatesNoErrors,
+          dataDefinitionsEmptyUpdatesNoErrors,
+          newEntriesEmptyUpdatesNoErrors,
+          [
+            {},
+            StateValues.updatedEntriesNoErrors,
+          ] as MapUpdatedEntriesUpdatesAndErrors,
         ],
       ] as MapUpdateDataAndErrors),
     ).toEqual([
@@ -838,7 +833,7 @@ describe("apply changes and get clean-up data", () => {
           },
         },
       ],
-      [["1", ...putCleanUpDataDefaults([], "updatedEntries")]],
+      [["1", putEmptyCleanUpData([], "updatedEntries")]],
     ]);
   });
 
@@ -863,14 +858,14 @@ describe("apply changes and get clean-up data", () => {
               ],
             },
           } as ExperienceFragment,
-          noUpdatesNoErrors,
-          noUpdatesNoErrors,
-          noUpdatesNoErrors,
+          ownFieldsEmptyUpdatesNoErrors,
+          dataDefinitionsEmptyUpdatesNoErrors,
+          newEntriesEmptyUpdatesNoErrors,
           [
             {
               "1": {},
             },
-            false,
+            StateValues.updatedEntriesNoErrors,
           ] as MapUpdatedEntriesUpdatesAndErrors,
         ],
       ] as MapUpdateDataAndErrors),
@@ -894,7 +889,7 @@ describe("apply changes and get clean-up data", () => {
           },
         },
       ],
-      [["1", ...putCleanUpDataDefaults([], "updatedEntries")]],
+      [["1", putEmptyCleanUpData([], "updatedEntries")]],
     ]);
   });
 
@@ -919,16 +914,16 @@ describe("apply changes and get clean-up data", () => {
               ],
             },
           } as ExperienceFragment,
-          noUpdatesNoErrors,
-          noUpdatesNoErrors,
-          noUpdatesNoErrors,
+          ownFieldsEmptyUpdatesNoErrors,
+          dataDefinitionsEmptyUpdatesNoErrors,
+          newEntriesEmptyUpdatesNoErrors,
           [
             {
               "1": {
                 "1": { id: "1", data: "1" } as DataObjectFragment,
               },
             },
-            false,
+            StateValues.updatedEntriesNoErrors,
           ] as MapUpdatedEntriesUpdatesAndErrors,
         ],
       ] as MapUpdateDataAndErrors),
@@ -953,7 +948,7 @@ describe("apply changes and get clean-up data", () => {
           },
         },
       ],
-      [["1", ...putCleanUpDataDefaults([["1", "1"]], "updatedEntries")]],
+      [["1", putEmptyCleanUpData([["1", "1"]], "updatedEntries")]],
     ]);
   });
 
@@ -981,16 +976,16 @@ describe("apply changes and get clean-up data", () => {
               ],
             },
           } as ExperienceFragment,
-          noUpdatesNoErrors,
-          noUpdatesNoErrors,
-          noUpdatesNoErrors,
+          ownFieldsEmptyUpdatesNoErrors,
+          dataDefinitionsEmptyUpdatesNoErrors,
+          newEntriesEmptyUpdatesNoErrors,
           [
             {
               "1": {
                 "1": { id: "1", data: "1" } as DataObjectFragment,
               },
             },
-            true,
+            StateValues.updatedEntriesHasErrors,
           ] as MapUpdatedEntriesUpdatesAndErrors,
         ],
       ] as MapUpdateDataAndErrors),
@@ -1018,7 +1013,7 @@ describe("apply changes and get clean-up data", () => {
           },
         },
       ],
-      [["1", ...putCleanUpDataDefaults([["1", "1"]], "updatedEntries")]],
+      [["1", putEmptyCleanUpData([["1", "1"]], "updatedEntries")]],
     ]);
   });
 });
@@ -1029,7 +1024,9 @@ describe("clean up unsynced data now synced", () => {
       ownFields: {},
     } as UnsyncedModifiedExperience;
 
-    const cleanUpData = ([true] as unknown) as CleanUpData;
+    const cleanUpData = ([
+      StateValues.ownFieldsCleanUp,
+    ] as unknown) as CleanUpData;
 
     expect(cleanUpUnsyncedOwnFields(unsynced, cleanUpData)).toEqual({});
   });
@@ -1060,15 +1057,6 @@ test("integration", () => {
   expect(mockOnDone).toHaveBeenCalled();
 });
 
-const ownFieldsEmptyUpdates = [null, StateValues.ownFieldsNoErrors];
-
-const dataDefinitionsEmptyUpdates = [
-  null, //
-  StateValues.dataDefinitionsNoErrors,
-];
-const newEntriesEmptyUpdates = [null, StateValues.newEntriesNoErrors];
-const updatedEntriesEmptyUpdates = [null, StateValues.updatedEntriesNoErrors];
-
 function insertEmptyUpdates(
   data: any,
   updated: "ownFields" | "definitions" | "newEntries" | "updatedEntries",
@@ -1077,35 +1065,35 @@ function insertEmptyUpdates(
     case "ownFields":
       return [
         data,
-        dataDefinitionsEmptyUpdates,
-        newEntriesEmptyUpdates,
-        updatedEntriesEmptyUpdates,
+        dataDefinitionsEmptyUpdatesNoErrors,
+        newEntriesEmptyUpdatesNoErrors,
+        updatedEntriesEmptyUpdatesNoErrors,
       ];
     case "definitions":
       return [
-        ownFieldsEmptyUpdates,
+        ownFieldsEmptyUpdatesNoErrors,
         data,
-        newEntriesEmptyUpdates,
-        updatedEntriesEmptyUpdates,
+        newEntriesEmptyUpdatesNoErrors,
+        updatedEntriesEmptyUpdatesNoErrors,
       ];
     case "newEntries":
       return [
-        ownFieldsEmptyUpdates,
-        dataDefinitionsEmptyUpdates,
+        ownFieldsEmptyUpdatesNoErrors,
+        dataDefinitionsEmptyUpdatesNoErrors,
         data,
-        updatedEntriesEmptyUpdates,
+        updatedEntriesEmptyUpdatesNoErrors,
       ];
     case "updatedEntries":
       return [
-        ownFieldsEmptyUpdates,
-        dataDefinitionsEmptyUpdates,
-        newEntriesEmptyUpdates,
+        ownFieldsEmptyUpdatesNoErrors,
+        dataDefinitionsEmptyUpdatesNoErrors,
+        newEntriesEmptyUpdatesNoErrors,
         data,
       ];
   }
 }
 
-function putCleanUpDataDefaults(
+function putEmptyCleanUpData(
   data: any,
   updated: "ownFields" | "definitions" | "newEntries" | "updatedEntries",
 ) {

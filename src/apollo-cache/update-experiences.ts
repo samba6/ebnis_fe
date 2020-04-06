@@ -24,7 +24,7 @@ export const StateValues = {
   newEntriesNoCleanUp: "no-clean-up-new-entries" as NewEntriesNoCleanUp,
   ownFieldsHasErrors: "has-own-fields-errors" as OwnFieldsHasErrors,
   ownFieldsNoErrors: "no-own-fields-errors" as OwnFieldsNoErrors,
-  dataDefinitionHasErrors: "data-definitions-has-errors" as DataDefinitionHasErrors,
+  dataDefinitionsHasErrors: "data-definitions-has-errors" as DataDefinitionsHasErrors,
   dataDefinitionsNoErrors: "data-definitions-no-errors" as DataDefinitionsNoErrors,
   newEntriesHasErrors: "new-entries-has-errors" as NewEntriesHasErrors,
   newEntriesNoErrors: "new-entries-no-errors" as NewEntriesNoErrors,
@@ -38,7 +38,7 @@ type NewEntriesCleanUp = "clean-up-new-entries";
 type NewEntriesNoCleanUp = "no-clean-up=new-entries";
 type OwnFieldsHasErrors = "has-own-fields-errors";
 type OwnFieldsNoErrors = "no-own-fields-errors";
-type DataDefinitionHasErrors = "data-definitions-has-errors";
+type DataDefinitionsHasErrors = "data-definitions-has-errors";
 type DataDefinitionsNoErrors = "data-definitions-no-errors";
 type NewEntriesHasErrors = "new-entries-has-errors";
 type NewEntriesNoErrors = "new-entries-no-errors";
@@ -86,33 +86,33 @@ export function getChangesAndCleanUpData(
   updateData: MapUpdateDataAndErrors,
 ): ChangedExperienceAndCleanUpData {
   const updatedExperiences: ExperienceFragment[] = [];
-  const allCleanUpData: CleanUpData[] = [];
+  const allCleanUpData: AllCleanUpData = [];
 
   updateData.forEach(
     ([
       experience,
-      [ownFieldsUpdates, hasOwnFieldsErrors],
+      [ownFieldsUpdates, ownFieldsErrorsStatus],
       [definitionsUpdates, hasDefinitionsErrors],
-      [newEntriesUpdates, hasNewEntriesErrors],
+      [newEntriesUpdates, newEntriesErrorStatus],
       [updatedEntriesUpdates, hasUpdatedEntriesErrors],
     ]) => {
       if (
-        hasOwnFieldsErrors &&
-        hasDefinitionsErrors &&
-        hasNewEntriesErrors &&
-        hasUpdatedEntriesErrors
+        ownFieldsErrorsStatus === StateValues.ownFieldsHasErrors &&
+        hasDefinitionsErrors === StateValues.dataDefinitionsHasErrors &&
+        newEntriesErrorStatus === StateValues.newEntriesHasErrors &&
+        hasUpdatedEntriesErrors === StateValues.updatedEntriesHasErrors
       ) {
         return;
       }
 
-      const cleanUpData = ([experience.id] as unknown) as CleanUpData;
-      allCleanUpData.push(cleanUpData);
+      const cleanUpData = ([] as unknown) as CleanUpData;
+      allCleanUpData.push([experience.id, cleanUpData]);
 
       const updatedExperience = immer(experience, proxy => {
         applyOwnFieldsChanges(proxy, ownFieldsUpdates);
 
         cleanUpData.push(
-          hasOwnFieldsErrors
+          ownFieldsErrorsStatus === StateValues.ownFieldsHasErrors
             ? StateValues.ownFieldsNoCleanUp
             : StateValues.ownFieldsCleanUp,
         );
@@ -124,13 +124,13 @@ export function getChangesAndCleanUpData(
 
         cleanUpData.push(dataDefinitionIdsToCleanUp);
 
-        applyNewEntriesChanges(proxy, newEntriesUpdates);
-        const shouldCleanUpNewEntries = !hasNewEntriesErrors;
-        cleanUpData.push(
-          hasNewEntriesErrors
-            ? StateValues.newEntriesNoCleanUp
-            : StateValues.newEntriesCleanUp,
+        const shouldCleanUpNewEntries = applyNewEntriesChanges(
+          proxy,
+          newEntriesUpdates,
+          newEntriesErrorStatus,
         );
+
+        cleanUpData.push(shouldCleanUpNewEntries);
 
         const entryIdDataObjectsIdsToCleanUp = applyUpdatedEntriesChanges(
           proxy,
@@ -191,10 +191,16 @@ function applyUpdatedEntriesChanges(
 function applyNewEntriesChanges(
   proxy: DraftState,
   newEntriesUpdates: MapNewEntriesUpdatesSuccesses | null,
+  errorStatus: NewEntriesErrorsStatus,
 ) {
   if (!newEntriesUpdates) {
-    return;
+    return errorStatus === StateValues.newEntriesHasErrors
+      ? StateValues.newEntriesNoCleanUp
+      : StateValues.newEntriesCleanUp;
   }
+
+  let shouldCleanUp: NewEntriesCleanUp | NewEntriesNoCleanUp =
+    StateValues.newEntriesNoCleanUp;
 
   (proxy.entries.edges as EntryConnectionFragment_edges[]).forEach(e => {
     const edge = e as EntryConnectionFragment_edges;
@@ -202,8 +208,11 @@ function applyNewEntriesChanges(
     const newEntry = newEntriesUpdates[node.id];
     if (newEntry) {
       edge.node = newEntry;
+      shouldCleanUp = StateValues.newEntriesCleanUp;
     }
   });
+
+  return shouldCleanUp;
 }
 
 function applyDefinitionsChanges(
@@ -247,7 +256,8 @@ function applyOwnFieldsChanges(
 function mapUpdatedEntriesUpdatesAndErrors({
   updatedEntries,
 }: UpdateExperienceFragment): MapUpdatedEntriesUpdatesAndErrors {
-  let errorStatus = StateValues.updatedEntriesNoErrors;
+  let errorStatus: UpdatedEntriesHasErrors | UpdatedEntriesNoErrors =
+    StateValues.updatedEntriesNoErrors;
 
   if (!updatedEntries) {
     return [null, errorStatus];
@@ -313,7 +323,8 @@ function mapNewEntriesUpdatesAndErrors({
 function mapDefinitionsUpdatesAndErrors({
   updatedDefinitions,
 }: UpdateExperienceFragment): MapDefinitionsUpdatesAndErrors {
-  let errorStatus = StateValues.dataDefinitionsNoErrors;
+  let errorStatus: DataDefinitionsHasErrors | DataDefinitionsNoErrors =
+    StateValues.dataDefinitionsNoErrors;
 
   if (!updatedDefinitions) {
     return [null, errorStatus];
@@ -327,7 +338,7 @@ function mapDefinitionsUpdatesAndErrors({
       const { definition } = update;
       acc[definition.id] = definition;
     } else {
-      errorStatus = StateValues.dataDefinitionHasErrors;
+      errorStatus = StateValues.dataDefinitionsHasErrors;
     }
     return acc;
   }, {} as MapDefinitionsUpdatesSuccesses);
@@ -759,7 +770,7 @@ type MapOwnFieldsUpdatesAndErrors = [
 
 export type MapDefinitionsUpdatesAndErrors = [
   null | MapDefinitionsUpdatesSuccesses,
-  DataDefinitionHasErrors | DataDefinitionsNoErrors,
+  DataDefinitionsHasErrors | DataDefinitionsNoErrors,
 ];
 
 interface MapDefinitionsUpdatesSuccesses {
@@ -768,8 +779,10 @@ interface MapDefinitionsUpdatesSuccesses {
 
 export type MapNewEntriesUpdatesAndErrors = [
   null | MapNewEntriesUpdatesSuccesses,
-  NewEntriesHasErrors | NewEntriesNoErrors,
+  NewEntriesErrorsStatus,
 ];
+
+type NewEntriesErrorsStatus = NewEntriesHasErrors | NewEntriesNoErrors;
 
 interface MapNewEntriesUpdatesSuccesses {
   [clientId: string]: EntryFragment;
@@ -780,19 +793,19 @@ export type MapUpdatedEntriesUpdatesAndErrors = [
   UpdatedEntriesHasErrors | UpdatedEntriesNoErrors,
 ];
 
-type ChangedExperienceAndCleanUpData = [ExperienceFragment[], CleanUpData[]];
+type ChangedExperienceAndCleanUpData = [ExperienceFragment[], AllCleanUpData];
 
 // [
-//   experienceId,
 //   shouldCleanUpOwnFields,
 //   dataDefinitionIdsToCleanUp,
 //   shouldCleanUpNewEntries,
 //   [entryIdToCleanUp, ...dataObjectsIdsToCleanUp][]
 // ]
 export type CleanUpData = [
-  string,
   OwnFieldsCleanUp | OwnFieldsNoCleanUp,
   string[],
   NewEntriesCleanUp | NewEntriesNoCleanUp,
   string[][],
 ];
+
+type AllCleanUpData = [string, CleanUpData][];
