@@ -14,6 +14,7 @@ import {
   getUnsyncedExperience,
   writeUnsyncedExperience,
   removeUnsyncedExperience,
+  UnsyncedModifiedExperience,
 } from "../apollo-cache/unsynced.resolvers";
 import { DataObjectFragment } from "../graphql/apollo-types/DataObjectFragment";
 
@@ -297,7 +298,7 @@ function mapUpdatedEntriesUpdatesAndErrors({
 function mapNewEntriesUpdatesAndErrors({
   newEntries,
 }: UpdateExperienceFragment): MapNewEntriesUpdatesAndErrors {
-  let errorStatus = StateValues.newEntriesNoErrors;
+  let errorStatus: NewEntriesErrorsStatus = StateValues.newEntriesNoErrors;
 
   if (!newEntries) {
     return [null, errorStatus];
@@ -349,7 +350,8 @@ function mapDefinitionsUpdatesAndErrors({
 function mapOwnFieldsUpdatesAndErrors({
   ownFields,
 }: UpdateExperienceFragment): MapOwnFieldsUpdatesAndErrors {
-  let errorStatus = StateValues.ownFieldsNoErrors;
+  let errorStatus: OwnFieldsHasErrors | OwnFieldsNoErrors =
+    StateValues.ownFieldsNoErrors;
 
   if (!ownFields) {
     return [null, errorStatus];
@@ -382,6 +384,66 @@ function mapUpdatedDataToCachedExperience(
 
     return acc;
   }, [] as [ExperienceFragment, UpdateExperienceFragment][]);
+}
+
+export function cleanUpSynced(
+  unsynced: UnsyncedModifiedExperience,
+  [
+    shouldCleanUpOwnFields,
+    definitionsIdsToCleanUp,
+    shouldCleanUpNewEntries,
+    entryIdDataObjectsIdsToCleanUp,
+  ]: CleanUpData,
+) {
+  if (shouldCleanUpOwnFields === StateValues.ownFieldsCleanUp) {
+    delete unsynced.ownFields;
+  }
+
+  if (definitionsIdsToCleanUp.length) {
+    const unsyncedDefinitions = unsynced.definitions;
+
+    if (unsyncedDefinitions) {
+      definitionsIdsToCleanUp.forEach(id => {
+        delete unsyncedDefinitions[id];
+      });
+
+      if (!Object.keys(unsyncedDefinitions).length) {
+        delete unsynced.definitions;
+      }
+    }
+  }
+
+  if (shouldCleanUpNewEntries === StateValues.newEntriesCleanUp) {
+    delete unsynced.newEntries;
+  }
+
+  if (entryIdDataObjectsIdsToCleanUp.length) {
+    const { modifiedEntries: unsyncedEntries } = unsynced;
+
+    if (unsyncedEntries) {
+      entryIdDataObjectsIdsToCleanUp.forEach(
+        ([entryId, ...dataObjectsIdsToCleanUp]) => {
+          const unsyncedEntry = unsyncedEntries[entryId];
+
+          if (unsyncedEntry) {
+            dataObjectsIdsToCleanUp.forEach(dataId => {
+              delete unsyncedEntry[dataId];
+            });
+
+            if (!Object.keys(unsyncedEntry).length) {
+              delete unsyncedEntries[entryId];
+            }
+          }
+        },
+      );
+
+      if (!Object.keys(unsyncedEntries).length) {
+        delete unsynced.modifiedEntries;
+      }
+    }
+  }
+
+  return unsynced;
 }
 
 export function updateExperiencesInCache1(onDone?: () => void) {

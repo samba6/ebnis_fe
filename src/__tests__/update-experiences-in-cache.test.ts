@@ -11,6 +11,7 @@ import {
   updateExperiencesInCache1,
   CleanUpData,
   StateValues,
+  cleanUpSynced,
 } from "../apollo-cache/update-experiences";
 import { floatExperiencesToTheTopInGetExperiencesMiniQuery } from "../apollo-cache/update-get-experiences-mini-query";
 import { readExperienceFragment } from "../apollo-cache/read-experience-fragment";
@@ -51,6 +52,31 @@ beforeEach(() => {
 });
 
 const dataProxy = {} as DataProxy;
+
+const ownFieldsEmptyUpdatesNoErrors = [null, StateValues.ownFieldsNoErrors];
+const dataDefinitionsEmptyUpdatesNoErrors = [
+  null, //
+  StateValues.dataDefinitionsNoErrors,
+];
+const newEntriesEmptyUpdatesNoErrors = [null, StateValues.newEntriesNoErrors];
+const updatedEntriesEmptyUpdatesNoErrors = [
+  null,
+  StateValues.updatedEntriesNoErrors,
+];
+
+const ownFieldsEmptyUpdatesHasErrors = [null, StateValues.ownFieldsHasErrors];
+const dataDefinitionsEmptyUpdatesHasErrors = [
+  null, //
+  StateValues.dataDefinitionsHasErrors,
+];
+const newEntriesEmptyUpdatesHasErrors = [
+  null, //
+  StateValues.newEntriesHasErrors,
+];
+const updatedEntriesEmptyUpdatesHasErrors = [
+  null,
+  StateValues.updatedEntriesHasErrors,
+];
 
 describe("filter successfully updated experiences", () => {
   test("result is empty", () => {
@@ -478,31 +504,6 @@ describe("updates and errors - updated entries", () => {
   });
 });
 
-const ownFieldsEmptyUpdatesNoErrors = [null, StateValues.ownFieldsNoErrors];
-const dataDefinitionsEmptyUpdatesNoErrors = [
-  null, //
-  StateValues.dataDefinitionsNoErrors,
-];
-const newEntriesEmptyUpdatesNoErrors = [null, StateValues.newEntriesNoErrors];
-const updatedEntriesEmptyUpdatesNoErrors = [
-  null,
-  StateValues.updatedEntriesNoErrors,
-];
-
-const ownFieldsEmptyUpdatesHasErrors = [null, StateValues.ownFieldsHasErrors];
-const dataDefinitionsEmptyUpdatesHasErrors = [
-  null, //
-  StateValues.dataDefinitionsHasErrors,
-];
-const newEntriesEmptyUpdatesHasErrors = [
-  null, //
-  StateValues.newEntriesHasErrors,
-];
-const updatedEntriesEmptyUpdatesHasErrors = [
-  null,
-  StateValues.updatedEntriesHasErrors,
-];
-
 describe("apply changes and get clean-up data", () => {
   test("all fail", () => {
     expect(
@@ -623,7 +624,7 @@ describe("apply changes and get clean-up data", () => {
     ]);
   });
 
-  test("data definitions - error and success", () => {
+  test("data definitions - has error, has success", () => {
     expect(
       getChangesAndCleanUpData([
         [
@@ -1019,16 +1020,171 @@ describe("apply changes and get clean-up data", () => {
 });
 
 describe("clean up unsynced data now synced", () => {
-  test("ownFields - yes", () => {
+  test("ownFields - clean up", () => {
     const unsynced = {
       ownFields: {},
     } as UnsyncedModifiedExperience;
 
-    const cleanUpData = ([
+    const cleanUpData = putEmptyCleanUpData(
       StateValues.ownFieldsCleanUp,
-    ] as unknown) as CleanUpData;
+      "ownFields",
+    );
 
-    expect(cleanUpUnsyncedOwnFields(unsynced, cleanUpData)).toEqual({});
+    expect(cleanUpSynced(unsynced, cleanUpData)).toEqual({});
+  });
+
+  test("ownFields - no clean up", () => {
+    const unsynced = {
+      ownFields: {},
+    } as UnsyncedModifiedExperience;
+
+    const cleanUpData = putEmptyCleanUpData(
+      StateValues.ownFieldsNoCleanUp,
+      "ownFields",
+    );
+
+    expect(cleanUpSynced(unsynced, cleanUpData)).toEqual({
+      ownFields: {},
+    });
+  });
+
+  test("data definitions - clean up, unsynced def not found", () => {
+    const unsynced = {} as UnsyncedModifiedExperience;
+    const cleanUpData = putEmptyCleanUpData(["1"], "definitions");
+    expect(cleanUpSynced(unsynced, cleanUpData)).toEqual({});
+  });
+
+  test("data definitions - clean up, unsynced def found, not all cleaned", () => {
+    const unsynced = {
+      definitions: {
+        "1": {},
+        "2": {},
+      },
+    } as UnsyncedModifiedExperience;
+
+    const cleanUpData = putEmptyCleanUpData(["1"], "definitions");
+
+    expect(cleanUpSynced(unsynced, cleanUpData)).toEqual({
+      definitions: {
+        "2": {},
+      },
+    });
+  });
+
+  test("data definitions - clean up, unsynced def found, all cleaned", () => {
+    const unsynced = {
+      definitions: {
+        "1": {},
+      },
+    } as UnsyncedModifiedExperience;
+
+    const cleanUpData = putEmptyCleanUpData(["1"], "definitions");
+
+    expect(cleanUpSynced(unsynced, cleanUpData)).toEqual({});
+  });
+
+  test("new entries - clean up", () => {
+    const unsynced = {
+      newEntries: true,
+    } as UnsyncedModifiedExperience;
+
+    const cleanUpData = putEmptyCleanUpData(
+      StateValues.newEntriesCleanUp,
+      "newEntries",
+    );
+
+    expect(cleanUpSynced(unsynced, cleanUpData)).toEqual({});
+  });
+
+  test("new entries - no clean up", () => {
+    const unsynced = {
+      newEntries: true,
+    } as UnsyncedModifiedExperience;
+
+    const cleanUpData = putEmptyCleanUpData(
+      StateValues.newEntriesNoCleanUp,
+      "newEntries",
+    );
+
+    expect(cleanUpSynced(unsynced, cleanUpData)).toEqual({
+      newEntries: true,
+    });
+  });
+
+  test("updated entries - no clean up", () => {
+    const unsynced = {
+      modifiedEntries: {},
+    } as UnsyncedModifiedExperience;
+
+    const cleanUpData = putEmptyCleanUpData([], "updatedEntries");
+
+    expect(cleanUpSynced(unsynced, cleanUpData)).toEqual({
+      modifiedEntries: {},
+    });
+  });
+
+  test("updated entries - clean up, no unsynced", () => {
+    const unsynced = {
+      ownFields: {},
+    } as UnsyncedModifiedExperience;
+
+    const cleanUpData = putEmptyCleanUpData([], "updatedEntries");
+    cleanUpData[0] = StateValues.ownFieldsNoCleanUp;
+
+    expect(cleanUpSynced(unsynced, cleanUpData)).toEqual({
+      ownFields: {},
+    });
+  });
+
+  test("updated entries - clean up, entry not in unsynced", () => {
+    const unsynced = {
+      modifiedEntries: {
+        "1": {},
+      },
+    } as UnsyncedModifiedExperience;
+
+    const cleanUpData = putEmptyCleanUpData([["2"]], "updatedEntries");
+
+    expect(cleanUpSynced(unsynced, cleanUpData)).toEqual({
+      modifiedEntries: {
+        "1": {},
+      },
+    });
+  });
+
+  test("updated entries - clean up, all unsynced cleaned", () => {
+    const unsynced = {
+      modifiedEntries: {
+        "1": {
+          "1": true,
+        },
+      },
+    } as UnsyncedModifiedExperience;
+
+    const cleanUpData = putEmptyCleanUpData([["1", "1"]], "updatedEntries");
+
+    expect(cleanUpSynced(unsynced, cleanUpData)).toEqual({});
+  });
+
+  test("updated entries - clean up, not all unsynced cleaned", () => {
+    const unsynced = {
+      modifiedEntries: {
+        "1": {
+          "1": true,
+          "2": true,
+        },
+      },
+    } as UnsyncedModifiedExperience;
+
+    const cleanUpData = putEmptyCleanUpData([["1", "1"]], "updatedEntries");
+
+    expect(cleanUpSynced(unsynced, cleanUpData)).toEqual({
+      modifiedEntries: {
+        "1": {
+          "2": true,
+        },
+      },
+    });
   });
 });
 
@@ -1096,7 +1252,7 @@ function insertEmptyUpdates(
 function putEmptyCleanUpData(
   data: any,
   updated: "ownFields" | "definitions" | "newEntries" | "updatedEntries",
-) {
+): CleanUpData {
   switch (updated) {
     case "ownFields":
       return [data, [], StateValues.newEntriesCleanUp, []];
