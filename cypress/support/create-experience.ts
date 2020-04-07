@@ -1,6 +1,6 @@
 import { mutate, persistCache } from "./mutate";
 import { CreateExperienceInput } from "../../src/graphql/apollo-types/globalTypes";
-import { CREATE_EXPERIENCES_MUTATION } from "../../src/graphql/experiences.mutation";
+import { CREATE_EXPERIENCES_MUTATION } from "../../src/graphql/experiences.gql";
 import {
   CreateExperiences,
   CreateExperiencesVariables,
