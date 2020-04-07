@@ -1198,6 +1198,14 @@ test("integration", () => {
           },
         },
       ],
+      newEntries: [
+        {
+          __typename: "CreateEntrySuccess",
+          entry: {
+            id: "3en1",
+          },
+        },
+      ],
     },
   } as UpdateExperienceSomeSuccessFragment;
 
@@ -1215,6 +1223,9 @@ test("integration", () => {
         name: "3ddN2",
       },
     ],
+    entries: {
+      edges: [] as any,
+    },
   } as ExperienceFragment;
 
   const mockUnsynced3 = {
@@ -1395,6 +1406,13 @@ test("integration", () => {
           name: "3ddN2",
         },
       ],
+      entries: {
+        edges: [
+          entryToEdge({
+            id: "3en1",
+          } as EntryFragment),
+        ],
+      },
     },
     {
       id: "4",
