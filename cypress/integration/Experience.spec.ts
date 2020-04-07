@@ -1,175 +1,616 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { USER_REGISTRATION_OBJECT } from "../support/user-registration-object";
-import { makeExperienceRoute } from "../../src/constants/experience-route";
 import { DataTypes } from "../../src/graphql/apollo-types/globalTypes";
-import { ExperienceFragment } from "../../src/graphql/apollo-types/ExperienceFragment";
-import { createSavedExperience } from "../support/create-experience";
-import { createExperienceEntries } from "../support/create-entries";
-import { DataDefinitionFragment } from "../../src/graphql/apollo-types/DataDefinitionFragment";
+import { EXPERIENCE_DEFINITION_URL } from "../../src/routes";
+import { EXPERIENCE_DEFINITION_TITLE } from "../../src/constants/experience-definition-title";
+import { createOnlineExperience } from "../support/create-experience";
 import {
-  getDefinitionControlId,
-  ControlName,
+  titleInputDomId,
+  descriptionInputDomId,
+  definitionNameInputDomId,
+  definitionTypeInputDomId,
+  submitDomId,
+  notificationErrorCloseId,
+  makeDefinitionContainerDomId,
+  addDefinitionSelector,
+} from "../../src/components/ExperienceDefinition/experience-definition.dom";
+import {
+  experienceNoEntriesDomId,
+  experienceOptionsMenuTriggerSelector,
+  newEntryTriggerSelector,
+  onlineExperienceSyncedNotificationSuccessDom,
+  syncButtonId,
+  offlineExperienceSyncedNotificationSuccessSelector,
+} from "../../src/components/Experience/experience.dom";
+import {
+  submitBtnDomId as newEntrySubmitDomId,
+  NEW_ENTRY_DOCUMENT_TITLE_PREFIX,
+  dateComponentDomSelector,
+  datetimeComponentDomSelector,
+  integerInputDomSelector,
+  decimalInputDomSelector,
+  singleLineInputDomSelector,
+  multiLineInputDomSelector,
+} from "../../src/components/NewEntry/new-entry.dom";
+import {
+  makeYearItemSelector,
+  yearDropdownSelector,
+  makeDayItemSelector,
+  dayDropdownSelector,
+  makeMonthItemSelector,
+  monthDropdownSelector,
+  makeMinuteItemSelector,
+  minuteDropdownSelector,
+  makeHourItemSelector,
+  hourDropdownSelector,
+} from "../../src/components/DateField/date-field.dom";
+import formatDate from "date-fns/format";
+import {
+  entryValueDomSelector,
+  entryOptionsSelector,
+  entryEditMenuItemSelector,
+} from "../../src/components/Entry/entry.dom";
+import {
+  DISPLAY_TIME_FORMAT_STRING,
+  DISPLAY_DATE_FORMAT_STRING,
+} from "../../src/components/Experience/experience.utils";
+import {
+  editEntryComponentDomId,
+  editEntrySubmissionResponseDomId,
+  editEntrySubmitDomId,
 } from "../../src/components/EditEntry/edit-entry-dom";
-import { newEntryTriggerSelector } from "../../src/components/Experience/experience.dom";
 
-const title = "ex";
-
-beforeEach(() => {
-  cy.checkoutSession();
-  cy.registerUser(USER_REGISTRATION_OBJECT);
-});
-
-context("ExperienceComponent", () => {
-  it("shows that there are no entries", () => {
-    /**
-     * Given there is an experience in the system with no entries
-     */
-
-    cy.wrap(createExperience()).then((experience: ExperienceFragment) => {
-      cy.visit(makeExperienceRoute(experience.id));
-
-      /**
-       * Then we should see the title
-       */
-      cy.title().should("contain", title);
-
-      /**
-       * When we click on 'no entry' link
-       */
-      cy.get("#experience-no-entries").click();
-
-      /**
-       * Then we should be redirected to new entry page
-       */
-      cy.title().should("contain", `[New Entry] ${title}`);
-    });
+context("experience definition page", () => {
+  beforeEach(() => {
+    cy.checkoutSession();
+    cy.registerUser(USER_REGISTRATION_OBJECT);
   });
 
-  it("list entries", () => {
-    /**
-     * Given there is an experience in the system with entries
-     */
-    const p = createEntry(createExperience()).then(([experience]) => {
-      return experience;
+  const firstOnlineExperienceTitle = "OnExp";
+  const secondOnlineExperienceTitle = firstOnlineExperienceTitle + "1";
+  const offlineExperienceTitle = "OffExp";
+
+  it("create experience online", () => {
+    const p = createOnlineExperience({
+      title: firstOnlineExperienceTitle,
+      dataDefinitions: [
+        {
+          name: "aa",
+          type: DataTypes.INTEGER,
+        },
+      ],
     });
 
-    cy.wrap(p).then((experience: ExperienceFragment) => {
-      const { id } = experience;
+    cy.wrap(p).then(() => {
       /**
-       * When we visit experience page
+       * Given we are on experiences page
        */
-
-      cy.visit(makeExperienceRoute(id));
+      cy.visit(EXPERIENCE_DEFINITION_URL);
 
       /**
-       * When we click new experience button in the menu
+       * Then we should see the page title
        */
-      cy.get("#experience-options-menu").click();
-      cy.get("#" + newEntryTriggerSelector).click();
+      cy.title().should("contain", EXPERIENCE_DEFINITION_TITLE);
+
+      ///////////////////// EXPERIENCE TITLE ERROR ///////////////////
 
       /**
-       * Then we should be redirected to new entry page
+       * When we complete the title field with existing experience title
        */
-      cy.title().should("contain", `[New Entry] ${title}`);
-    });
-  });
-});
+      cy.get("#" + titleInputDomId)
+        .as("titleDomInput")
+        .type(firstOnlineExperienceTitle);
 
-context("EditEntryComponent", () => {
-  it("edits definitions while online", () => {
-    const p = createEntry(createExperience(3));
+      cy.get("#" + makeDefinitionContainerDomId(1))
+        .as("field1")
+        .within(() => {
+          /**
+           * And we complete the field name and field type
+           */
+          cy.get("#" + definitionNameInputDomId + "1").type("f1");
+          cy.get("#" + definitionTypeInputDomId + "1").select(DataTypes.DATE);
+        });
 
-    cy.wrap(p).then(([experience, entry]) => {
-      const [
-        definition1,
-        definition2,
-        definition3,
-      ] = experience.dataDefinitions.sort((a, b) => (a.name < b.name ? -1 : 1));
+      /**
+       * Then error notification should not be visible
+       */
+      cy.get("#" + notificationErrorCloseId).should("not.exist");
 
-      cy.visit(makeExperienceRoute(experience.id));
-      const entryIdPrefix = `#entry-${entry.id}`;
-      cy.get(`${entryIdPrefix}-menu-trigger`).click();
-      cy.get(`${entryIdPrefix}-edit-trigger`).click();
+      /**
+       * When form is submitted
+       */
+      cy.get("#" + submitDomId).click();
 
-      cy.get("#edit-entry-experience-title").should(
-        "have.text",
-        experience.title,
+      /**
+       * Then error notification should be visible
+       */
+      cy.get("#" + notificationErrorCloseId).should("exist");
+
+      ///////////////////// CREATE EXPERIENCE ////////////////////
+
+      /**
+       * When title and description fields are completed with new data
+       */
+      cy.get("@titleDomInput").type("1");
+      cy.get("#" + descriptionInputDomId).type("dd");
+
+      cy.get("@field1").within(() => {
+        /**
+         * And add 'another field' button is clicked
+         */
+        cy.get("." + addDefinitionSelector)
+          .first()
+          .click();
+      });
+
+      /**
+       * And second field is completed
+       */
+      cy.get("#" + makeDefinitionContainerDomId(2)).within(() => {
+        /**
+         * And we complete the field name and field type
+         */
+        cy.get("#" + definitionNameInputDomId + "2").type("f2");
+        cy.get("#" + definitionTypeInputDomId + "2").select(DataTypes.DATETIME);
+
+        /**
+         * And add one more field button is clicked
+         */
+        cy.get("." + addDefinitionSelector)
+          .first()
+          .click();
+      });
+
+      /**
+       * And 3rd field is completed
+       */
+      cy.get("#" + makeDefinitionContainerDomId(3)).within(() => {
+        /**
+         * And we complete the field name and field type
+         */
+        cy.get("#" + definitionNameInputDomId + "3").type("f3");
+        cy.get("#" + definitionTypeInputDomId + "3").select(DataTypes.DECIMAL);
+
+        /**
+         * And add one more field button is clicked
+         */
+        cy.get("." + addDefinitionSelector)
+          .first()
+          .click();
+      });
+
+      cy.get("#" + makeDefinitionContainerDomId(4)).within(() => {
+        /**
+         * And we complete the field name and field type
+         */
+        cy.get("#" + definitionNameInputDomId + "4").type("f4");
+        cy.get("#" + definitionTypeInputDomId + "4").select(DataTypes.INTEGER);
+
+        /**
+         * And add one more field button is clicked
+         */
+        cy.get("." + addDefinitionSelector)
+          .first()
+          .click();
+      });
+
+      cy.get("#" + makeDefinitionContainerDomId(5)).within(() => {
+        /**
+         * And we complete the field name and field type
+         */
+        cy.get("#" + definitionNameInputDomId + "5").type("f5");
+        cy.get("#" + definitionTypeInputDomId + "5").select(
+          DataTypes.MULTI_LINE_TEXT,
+        );
+
+        /**
+         * And add one more field button is clicked
+         */
+        cy.get("." + addDefinitionSelector)
+          .first()
+          .click();
+      });
+
+      cy.get("#" + makeDefinitionContainerDomId(6)).within(() => {
+        /**
+         * And we complete the field name and field type
+         */
+        cy.get("#" + definitionNameInputDomId + "6").type("f6");
+        cy.get("#" + definitionTypeInputDomId + "6").select(
+          DataTypes.SINGLE_LINE_TEXT,
+        );
+      });
+
+      /**
+       * And form is submitted
+       */
+      cy.get("#" + submitDomId).click();
+
+      /**
+       * Then we should see the new title we just created
+       */
+      cy.title().should("contain", secondOnlineExperienceTitle);
+
+      ////////////////////// CREATE ONLINE ENTRY //////////////////////
+
+      /**
+       * When link to create new entry is clicked
+       */
+      cy.get("#" + experienceNoEntriesDomId).click();
+
+      /**
+       * Then page should navigate to 'new entry' page
+       */
+      cy.title().should("contain", NEW_ENTRY_DOCUMENT_TITLE_PREFIX);
+
+      /**
+       * When fields are completed
+       */
+
+      const lastYear = new Date().getFullYear() - 1;
+      const testDate = new Date(`${lastYear}-05-28T07:25`);
+      const [year, month, day, hours, minutes] = formatDate(
+        testDate,
+        "yyyy MMM d HH mm",
+      ).split(" ");
+
+      cy.get("." + dateComponentDomSelector)
+        .first()
+        .within(() => {
+          cy.get("." + dayDropdownSelector)
+            .first()
+            .click()
+            .within(() => {
+              cy.get("." + makeDayItemSelector(day))
+                .first()
+                .click();
+            });
+
+          cy.get("." + monthDropdownSelector)
+            .first()
+            .click()
+            .within(() => {
+              cy.get("." + makeMonthItemSelector(month))
+                .first()
+                .click();
+            });
+
+          cy.get("." + yearDropdownSelector)
+            .first()
+            .click()
+            .within(() => {
+              cy.get("." + makeYearItemSelector(year))
+                .first()
+                .click();
+            });
+        });
+
+      cy.get("." + datetimeComponentDomSelector)
+        .first()
+        .within(() => {
+          cy.get("." + hourDropdownSelector)
+            .first()
+            .click()
+            .within(() => {
+              cy.get("." + makeHourItemSelector(hours))
+                .first()
+                .click();
+            });
+
+          cy.get("." + minuteDropdownSelector)
+            .first()
+            .click()
+            .within(() => {
+              cy.get("." + makeMinuteItemSelector(minutes))
+                .first()
+                .click();
+            });
+        });
+
+      cy.get("." + integerInputDomSelector)
+        .first()
+        .type("5");
+
+      cy.get("." + decimalInputDomSelector)
+        .first()
+        .type("5.5");
+
+      cy.get("." + singleLineInputDomSelector)
+        .first()
+        .type("aa");
+
+      cy.get("." + multiLineInputDomSelector)
+        .first()
+        .type("bb\ncc");
+
+      /**
+       * And new entry is created with updated data
+       */
+      cy.get("#" + newEntrySubmitDomId).click();
+
+      /**
+       * Then user should be returned to experience detail page
+       */
+      cy.title().should("contain", secondOnlineExperienceTitle);
+
+      /**
+       * And newly created entry data should be visible
+       */
+      cy.get("." + entryValueDomSelector).each((dom, index) => {
+        const value = dom.text();
+
+        switch (index) {
+          case 0:
+            expect(value).to.eq(
+              formatDate(testDate, DISPLAY_DATE_FORMAT_STRING),
+            );
+            break;
+
+          case 1:
+            expect(value).to.contain(
+              formatDate(testDate, DISPLAY_TIME_FORMAT_STRING),
+            );
+            break;
+
+          case 2:
+            expect(value).to.eq("5.5");
+            break;
+
+          case 3:
+            expect(value).to.eq("5");
+            break;
+
+          case 4:
+            expect(dom[0].innerText).to.eq("bb\ncc\n");
+            break;
+
+          case 5:
+            expect(value).to.eq("aa");
+            break;
+        }
+      });
+
+      //////////////////// CREATE OFFLINE ENTRY /////////////////////////
+
+      /**
+       * When connection goes away
+       */
+      cy.setConnectionStatus(false);
+
+      /**
+       * And UI to create new entry is triggered
+       */
+      cy.get("." + experienceOptionsMenuTriggerSelector)
+        .click()
+        .within(() => {
+          cy.get("." + newEntryTriggerSelector).click();
+        });
+
+      /**
+       * Then page should navigate to 'new entry' page
+       */
+      cy.title().should("contain", NEW_ENTRY_DOCUMENT_TITLE_PREFIX);
+
+      /**
+       * When new entry is created with  default data
+       */
+      cy.get("#" + newEntrySubmitDomId).click();
+
+      /**
+       * Then user should be returned to experience detail page
+       */
+      cy.title().should("contain", secondOnlineExperienceTitle);
+      const today = new Date();
+
+      /**
+       * And newly created entry data (default Values) should be visible
+       */
+      cy.get("." + entryValueDomSelector)
+        .first()
+        .each((dom, index) => {
+          const value = dom.text();
+
+          switch (index) {
+            case 0:
+              expect(value).to.eq(
+                formatDate(today, DISPLAY_DATE_FORMAT_STRING),
+              );
+              break;
+
+            case 1:
+              expect(value).to.contain(
+                formatDate(today, DISPLAY_TIME_FORMAT_STRING),
+              );
+              break;
+
+            case 2:
+            case 3:
+              expect(value).to.eq("0");
+              break;
+
+            case 4:
+            case 5:
+              expect(value).to.eq("");
+              break;
+          }
+        });
+
+      ////////////////////////// SYNC CHANGES //////////////////////
+
+      /**
+       * When connection returns
+       */
+      cy.setConnectionStatus(true);
+
+      /**
+       * Then success notification should not be visible
+       */
+      cy.get("." + onlineExperienceSyncedNotificationSuccessDom).should(
+        "not.exist",
       );
 
-      const definitionId1 = definition1.id;
+      /**
+       * When sync button is clicked
+       */
+      cy.get("#" + syncButtonId).click();
 
-      cy.get(
-        "#" + getDefinitionControlId(definitionId1, ControlName.edit),
-      ).click();
+      /**
+       * Then success notification should be visible
+       */
+      cy.get("." + onlineExperienceSyncedNotificationSuccessDom).should(
+        "exist",
+      );
 
-      cy.get(
-        "#" + getDefinitionControlId(definitionId1, ControlName.input),
-      ).type("b");
+      /**
+       * When edit entry UI is invoked
+       */
+      cy.get("." + entryOptionsSelector)
+        .first()
+        .click()
+        .within(() => {
+          cy.get("." + entryEditMenuItemSelector)
+            .first()
+            .click();
+        });
 
-      cy.get(
-        "#" + getDefinitionControlId(definitionId1, ControlName.name),
-      ).should("not.exist");
+      /**
+       * Then entry UI should be visible
+       * And when one of the fields is changed
+       */
+      cy.get("#" + editEntryComponentDomId)
+        .should("exist")
+        .within(() => {
+          cy.get("." + integerInputDomSelector)
+            .should("have.value", "0")
+            .type("1");
+        });
 
-      const definitionId2 = definition2.id;
+      /**
+       * Then edit entry success response should not be visible
+       */
+      cy.get("#" + editEntrySubmissionResponseDomId).should("not.exist");
 
-      cy.get(
-        "#" + getDefinitionControlId(definitionId2, ControlName.edit),
-      ).click();
+      /**
+       * When changes made to entry are submitted
+       */
+      cy.get("#" + editEntrySubmitDomId).click();
 
-      cy.get("#" + getDefinitionControlId(definitionId2, ControlName.input))
-        .clear()
-        .type(definition3.name);
-
-      cy.get(
-        "#" + getDefinitionControlId(definitionId2, ControlName.error),
-      ).should("not.exist");
-
-      cy.get(`.edit-entry-definition-submit`).click();
-
-      cy.get(
-        "#" + getDefinitionControlId(definitionId1, ControlName.name),
-      ).should("have.value", "a1b");
-
-      cy.get(
-        "#" + getDefinitionControlId(definitionId2, ControlName.error),
-      ).should("exist");
+      /**
+       * Then edit entry success response should be visible
+       */
+      cy.get("#" + editEntrySubmissionResponseDomId).should("exist");
     });
+  });
+
+  it("offline", () => {
+    /**
+     * Given we are on experiences page
+     */
+    cy.visit(EXPERIENCE_DEFINITION_URL);
+
+    /**
+     * Then we should see the page title
+     */
+    cy.title().should("contain", EXPERIENCE_DEFINITION_TITLE);
+
+    cy.setConnectionStatus(false);
+
+    ////////////////////////// CREATE OFFLINE EXPERIENCE //////////////
+
+    /**
+     * When title and description fields are completed
+     */
+    cy.get("#" + titleInputDomId).type(offlineExperienceTitle);
+    cy.get("#" + descriptionInputDomId).type("dd");
+
+    /**
+     * And field data is completed
+     */
+    cy.get("#" + makeDefinitionContainerDomId(1)).within(() => {
+      /**
+       * And field name and field type are completed
+       */
+      cy.get("#" + definitionNameInputDomId + "1").type("f1");
+      cy.get("#" + definitionTypeInputDomId + "1").select(DataTypes.INTEGER);
+    });
+
+    /**
+     * And form is submitted
+     */
+    cy.get("#" + submitDomId).click();
+
+    /**
+     * Then we should see the new title we just created
+     */
+    cy.title().should("contain", offlineExperienceTitle);
+
+    ////////////// CREATE OFFLINE ENTRY FOR OFFLINE EXPERIENCE ////////
+
+    /**
+     * When link to create new entry is clicked
+     */
+    cy.get("#" + experienceNoEntriesDomId).click();
+
+    /**
+     * Then page should navigate to 'new entry' page
+     */
+    cy.title().should("contain", NEW_ENTRY_DOCUMENT_TITLE_PREFIX);
+
+    /**
+     * When new entry is created with  default data
+     */
+    cy.get("#" + newEntrySubmitDomId).click();
+
+    /**
+     * Then user should be returned to experience detail page
+     */
+    cy.title().should("contain", offlineExperienceTitle);
+
+    ////////////// OFFLINE EXPERIENCE: EDIT ENTRY ONLINE /////////
+
+    cy.setConnectionStatus(true);
+
+    /**
+     * When edit entry UI is invoked
+     */
+    cy.get("." + entryOptionsSelector)
+      .first()
+      .click()
+      .within(() => {
+        cy.get("." + entryEditMenuItemSelector)
+          .first()
+          .click();
+      });
+
+    /**
+     * Then entry UI should be visible
+     * And when one of the fields is changed
+     */
+    cy.get("#" + editEntryComponentDomId)
+      .should("exist")
+      .within(() => {
+        cy.get("." + integerInputDomSelector)
+          .should("have.value", "0")
+          .type("1");
+      });
+
+    /**
+     * Then success notification should not be visible
+     */
+    cy.get("." + offlineExperienceSyncedNotificationSuccessSelector).should(
+      "not.exist",
+    );
+
+    /**
+     * When changes made to entry are submitted
+     */
+    cy.get("#" + editEntrySubmitDomId).click();
+
+    /**
+     * Then success notification should be visible
+     */
+    cy.get("." + offlineExperienceSyncedNotificationSuccessSelector).should(
+      "exist",
+    );
   });
 });
-
-function createEntry(experiencePromise: Promise<ExperienceFragment>) {
-  return experiencePromise.then(experience => {
-    const id = experience.id;
-    const dataObjects = experience.dataDefinitions.map((d, index) => {
-      const { id: definitionId } = d as DataDefinitionFragment;
-      return {
-        definitionId,
-        data: `{"integer":${index + 1}}`,
-      };
-    });
-
-    return createExperienceEntries([
-      {
-        experienceId: id,
-        clientId: "1",
-        dataObjects,
-      },
-    ]).then(entries => {
-      return [experience, entries[0]];
-    });
-  });
-}
-
-function createExperience(howManyDefinitions = 1) {
-  const dataDefinitions = Array.from(
-    { length: howManyDefinitions },
-    (_, index) => ({
-      name: `a${index + 1}`,
-      type: DataTypes.INTEGER,
-    }),
-  );
-
-  return createSavedExperience({
-    title,
-    dataDefinitions,
-  });
-}
