@@ -2,13 +2,11 @@
 import { DataProxy } from "apollo-cache";
 import {
   filterSuccessfulUpdates,
-  extractDataForUpdatingAndCleanUp,
-  UpdatesData,
-  applyUpdatesToExperiences,
   updateExperiencesInCache,
   CleanUpData,
   StateValues,
   updateUnSyncedLedger,
+  applyUpdatesAndGetCleanUpData,
 } from "../apollo-cache/update-experiences";
 import { floatExperiencesToTopInGetExperiencesMiniQuery } from "../apollo-cache/update-get-experiences-mini-query";
 import { readExperienceFragment } from "../apollo-cache/read-experience-fragment";
@@ -25,7 +23,6 @@ import { ExperienceFragment } from "../graphql/apollo-types/ExperienceFragment";
 import { EntryFragment } from "../graphql/apollo-types/EntryFragment";
 import { UpdateExperienceFragment } from "../graphql/apollo-types/UpdateExperienceFragment";
 import { DataDefinitionFragment } from "../graphql/apollo-types/DataDefinitionFragment";
-import { DataObjectFragment } from "../graphql/apollo-types/DataObjectFragment";
 import { entryToEdge } from "../state/resolvers/entry-to-edge";
 
 jest.mock("../apollo-cache/unsynced.resolvers");
@@ -100,862 +97,481 @@ const testExperience = {
   id: "a",
 } as ExperienceFragment;
 
-describe("get changes and clean up data - ownFields", () => {
-  test("ownFields: failed", () => {
-    const received = extractDataForUpdatingAndCleanUp([
-      [
-        testExperience,
-        {
-          ownFields: {
-            __typename: "UpdateExperienceOwnFieldsErrors",
+describe("apply updates and get clean up data", () => {
+  describe("ownFields", () => {
+    test("failed", () => {
+      const received = applyUpdatesAndGetCleanUpData([
+        [
+          testExperience,
+          {
+            ownFields: {
+              __typename: "UpdateExperienceOwnFieldsErrors",
+            },
+          } as UpdateExperienceFragment,
+        ],
+      ]);
+
+      const cleanUpData = putEmptyCleanUpData(
+        StateValues.ownFieldsNoCleanUp,
+        0,
+      );
+
+      const expected = [
+        [testExperience],
+        [[testExperience.id, ...cleanUpData]],
+      ];
+
+      expect(received).toEqual(expected);
+    });
+
+    test("ownFields: success", () => {
+      const ownFieldsUpdates = {
+        title: "a",
+        description: "b",
+      };
+
+      const received = applyUpdatesAndGetCleanUpData([
+        [
+          testExperience,
+          {
+            ownFields: {
+              __typename: "ExperienceOwnFieldsSuccess",
+              data: ownFieldsUpdates,
+            },
+          } as UpdateExperienceFragment,
+        ],
+      ]);
+
+      const cleanUpData = putEmptyCleanUpData(StateValues.ownFieldsCleanUp, 0);
+
+      const expected = [
+        [{ ...testExperience, ...ownFieldsUpdates }],
+        [[testExperience.id, ...cleanUpData]],
+      ];
+
+      expect(received).toEqual(expected);
+    });
+  });
+
+  describe("definitions", () => {
+    test("all failed", () => {
+      const received = applyUpdatesAndGetCleanUpData([
+        [
+          testExperience,
+          {
+            updatedDefinitions: [
+              {
+                __typename: "DefinitionErrors",
+              },
+            ],
+          } as UpdateExperienceFragment,
+        ],
+      ]);
+
+      const cleanUpData = putEmptyCleanUpData([], 1);
+
+      const expected = [
+        [testExperience],
+        [[testExperience.id, ...cleanUpData]],
+      ];
+
+      expect(received).toEqual(expected);
+    });
+
+    test("all success", () => {
+      const updatedDefinition = {
+        id: "a",
+        name: "b",
+      } as DataDefinitionFragment;
+
+      const received = applyUpdatesAndGetCleanUpData([
+        [
+          {
+            ...testExperience,
+            dataDefinitions: [
+              {
+                ...updatedDefinition,
+                name: "a",
+              },
+              {
+                // not updated
+                id: "t",
+              },
+            ] as DataDefinitionFragment[],
           },
-        } as UpdateExperienceFragment,
-      ],
-    ]);
+          {
+            updatedDefinitions: [
+              {
+                __typename: "DefinitionSuccess",
+                definition: updatedDefinition,
+              },
+            ],
+          } as UpdateExperienceFragment,
+        ],
+      ]);
 
-    const [updateData, cleanUpData] = putEmptyUpdatesAndCleanUpData(
-      null,
-      StateValues.ownFieldsNoCleanUp,
-      0,
-    );
+      const cleanUpData = putEmptyCleanUpData([updatedDefinition.id], 1);
 
-    const expected = [
-      [[testExperience, ...updateData]],
-      [[testExperience.id, ...cleanUpData]],
-    ];
+      const expected = [
+        [
+          {
+            ...testExperience,
+            dataDefinitions: [
+              updatedDefinition,
+              {
+                id: "t",
+              },
+            ],
+          },
+        ],
+        [[testExperience.id, ...cleanUpData]],
+      ];
 
-    expect(received).toEqual(expected);
+      expect(received).toEqual(expected);
+    });
   });
 
-  test("ownFields: success", () => {
-    const received = extractDataForUpdatingAndCleanUp([
-      [
-        testExperience,
-        {
-          ownFields: {
-            __typename: "ExperienceOwnFieldsSuccess",
-            data: {
-              title: "a",
-              description: "b",
+  describe("new entries", () => {
+    test("brand new error, no success", () => {
+      const experience = {
+        ...testExperience,
+        entries: {
+          edges: [],
+        } as any,
+      };
+
+      const received = applyUpdatesAndGetCleanUpData([
+        [
+          experience,
+          {
+            newEntries: [
+              {
+                __typename: "CreateEntryErrors",
+              },
+            ],
+          } as UpdateExperienceFragment,
+        ],
+      ]);
+
+      const cleanUpData = putEmptyCleanUpData(
+        StateValues.newEntriesNoCleanUp,
+        2,
+      );
+
+      const expected = [[experience], [[testExperience.id, ...cleanUpData]]];
+
+      expect(received).toEqual(expected);
+    });
+
+    test("offline synced success - no error,", () => {
+      const offlineEntry = {
+        id: "z",
+      };
+
+      const newEntry = {
+        id: "3",
+        clientId: offlineEntry.id,
+      };
+
+      const received = applyUpdatesAndGetCleanUpData([
+        [
+          {
+            ...testExperience,
+            entries: {
+              edges: [
+                {
+                  node: offlineEntry,
+                },
+              ],
+            } as any,
+          },
+          {
+            newEntries: [
+              {
+                __typename: "CreateEntrySuccess",
+                entry: newEntry,
+              },
+            ],
+          } as UpdateExperienceFragment,
+        ],
+      ]);
+
+      const cleanUpData = putEmptyCleanUpData(StateValues.newEntriesCleanUp, 2);
+
+      const expected = [
+        [
+          {
+            ...testExperience,
+            entries: {
+              edges: [
+                {
+                  node: newEntry,
+                },
+              ],
             },
           },
-        } as UpdateExperienceFragment,
-      ],
-    ]);
+        ],
+        [[testExperience.id, ...cleanUpData]],
+      ];
 
-    const ownFieldsUpdates = {
-      title: "a",
-      description: "b",
-    };
+      expect(received).toEqual(expected);
+    });
 
-    const [updateData, cleanUpData] = putEmptyUpdatesAndCleanUpData(
-      ownFieldsUpdates,
-      StateValues.ownFieldsCleanUp,
-      0,
-    );
+    test("brand new success/no error, offline synced error/no success", () => {
+      const newEntry = {
+        id: "b",
+      };
 
-    const expected = [
-      [[testExperience, ...updateData]],
-      [[testExperience.id, ...cleanUpData]],
-    ];
-
-    expect(received).toEqual(expected);
-  });
-});
-
-describe("get changes and clean up data - definitions", () => {
-  test("all failed", () => {
-    const received = extractDataForUpdatingAndCleanUp([
-      [
-        testExperience,
-        {
-          updatedDefinitions: [
-            {
-              __typename: "DefinitionErrors",
-            },
-          ],
-        } as UpdateExperienceFragment,
-      ],
-    ]);
-
-    const [updateData, cleanUpData] = putEmptyUpdatesAndCleanUpData(
-      null,
-      [],
-      1,
-    );
-
-    const expected = [
-      [[testExperience, ...updateData]],
-      [[testExperience.id, ...cleanUpData]],
-    ];
-
-    expect(received).toEqual(expected);
-  });
-
-  test("all success", () => {
-    const received = extractDataForUpdatingAndCleanUp([
-      [
-        testExperience,
-        {
-          updatedDefinitions: [
-            {
-              __typename: "DefinitionSuccess",
-              definition: {
-                id: "b",
+      const received = applyUpdatesAndGetCleanUpData([
+        [
+          {
+            ...testExperience,
+            entries: {
+              edges: [],
+            } as any,
+          },
+          {
+            newEntries: [
+              {
+                __typename: "CreateEntrySuccess",
+                entry: newEntry,
               },
-            },
-          ],
-        } as UpdateExperienceFragment,
-      ],
-    ]);
-
-    const [updateData, cleanUpData] = putEmptyUpdatesAndCleanUpData(
-      {
-        b: {
-          id: "b",
-        },
-      },
-      ["b"],
-      1,
-    );
-
-    const expected = [
-      [[testExperience, ...updateData]],
-      [[testExperience.id, ...cleanUpData]],
-    ];
-
-    expect(received).toEqual(expected);
-  });
-
-  test("success and failure", () => {
-    const received = extractDataForUpdatingAndCleanUp([
-      [
-        testExperience,
-        {
-          updatedDefinitions: [
-            {
-              __typename: "DefinitionSuccess",
-              definition: {
-                id: "a",
-              },
-            },
-            {
-              __typename: "DefinitionErrors",
-            },
-          ],
-        } as UpdateExperienceFragment,
-      ],
-    ]);
-
-    const [updateData, cleanUpData] = putEmptyUpdatesAndCleanUpData(
-      {
-        a: {
-          id: "a",
-        },
-      },
-      ["a"],
-      1,
-    );
-
-    const expected = [
-      [[testExperience, ...updateData]],
-      [[testExperience.id, ...cleanUpData]],
-    ];
-
-    expect(received).toEqual(expected);
-  });
-});
-
-describe("get changes and clean up data - new entries", () => {
-  test("brand new error, no success", () => {
-    const received = extractDataForUpdatingAndCleanUp([
-      [
-        testExperience,
-        {
-          newEntries: [
-            {
-              __typename: "CreateEntryErrors",
-            },
-          ],
-        } as UpdateExperienceFragment,
-      ],
-    ]);
-
-    const [updateData, cleanUpData] = putEmptyUpdatesAndCleanUpData(
-      null,
-      StateValues.newEntriesNoCleanUp,
-      2,
-    );
-
-    const expected = [
-      [[testExperience, ...updateData]],
-      [[testExperience.id, ...cleanUpData]],
-    ];
-
-    expect(received).toEqual(expected);
-  });
-
-  test("offline synced success - no error,", () => {
-    const received = extractDataForUpdatingAndCleanUp([
-      [
-        testExperience,
-        {
-          newEntries: [
-            {
-              __typename: "CreateEntrySuccess",
-              entry: {
-                clientId: "b",
-              },
-            },
-          ],
-        } as UpdateExperienceFragment,
-      ],
-    ]);
-
-    const brandNewEntries = [] as any;
-
-    const offlineSyncedEntries = {
-      b: {
-        clientId: "b",
-      },
-    } as any;
-
-    const newEntriesUpdates = [brandNewEntries, offlineSyncedEntries];
-
-    const [updateData, cleanUpData] = putEmptyUpdatesAndCleanUpData(
-      newEntriesUpdates,
-      StateValues.newEntriesCleanUp,
-      2,
-    );
-
-    const expected = [
-      [[testExperience, ...updateData]],
-      [[testExperience.id, ...cleanUpData]],
-    ];
-
-    expect(received).toEqual(expected);
-  });
-
-  test("brand new success - no error, offline synced error - no success", () => {
-    const received = extractDataForUpdatingAndCleanUp([
-      [
-        testExperience,
-        {
-          newEntries: [
-            {
-              __typename: "CreateEntrySuccess",
-              entry: {
-                id: "b",
-              },
-            },
-            {
-              __typename: "CreateEntryErrors",
-              errors: {
-                meta: {
-                  clientId: "c",
+              {
+                __typename: "CreateEntryErrors",
+                errors: {
+                  meta: {
+                    clientId: "c",
+                  },
                 },
               },
+            ],
+          } as UpdateExperienceFragment,
+        ],
+      ]);
+
+      const cleanUpData = putEmptyCleanUpData(
+        StateValues.newEntriesNoCleanUp,
+        2,
+      );
+
+      const expected = [
+        [
+          {
+            ...testExperience,
+            entries: {
+              edges: [entryToEdge(newEntry as any)],
             },
-          ],
-        } as UpdateExperienceFragment,
-      ],
-    ]);
+          },
+        ],
+        [[testExperience.id, ...cleanUpData]],
+      ];
 
-    const brandNewEntries = [
-      {
-        id: "b",
-      },
-    ];
+      expect(received).toEqual(expected);
+    });
 
-    const offlineSyncedEntries = null;
-
-    const [updateData, cleanUpData] = putEmptyUpdatesAndCleanUpData(
-      [brandNewEntries, offlineSyncedEntries],
-      StateValues.newEntriesNoCleanUp,
-      2,
-    );
-
-    const expected = [
-      [[testExperience, ...updateData]],
-      [[testExperience.id, ...cleanUpData]],
-    ];
-
-    expect(received).toEqual(expected);
-  });
-
-  test("offline synced success, brand new success, brand new error", () => {
-    const received = extractDataForUpdatingAndCleanUp([
-      [
-        testExperience,
-        {
-          newEntries: [
-            {
-              __typename: "CreateEntryErrors",
-            },
-            {
-              __typename: "CreateEntrySuccess",
-              entry: {
-                clientId: "b",
-              },
-            },
-            {
-              __typename: "CreateEntrySuccess",
-              entry: {
-                id: "c",
-              },
-            },
-          ],
-        } as UpdateExperienceFragment,
-      ],
-    ]);
-
-    const brandNewEntries = [
-      {
-        id: "c",
-      },
-    ];
-
-    const offlineSyncedEntries = {
-      b: {
+    test("offline synced success, brand new success, brand new error", () => {
+      const offlineEntrySynced = {
+        id: "a",
         clientId: "b",
-      },
-    };
+      };
 
-    const [updateData, cleanUpData] = putEmptyUpdatesAndCleanUpData(
-      [brandNewEntries, offlineSyncedEntries],
-      StateValues.newEntriesCleanUp,
-      2,
-    );
+      const brandNewEntry = {
+        id: "c",
+      };
 
-    const expected = [
-      [[testExperience, ...updateData]],
-      [[testExperience.id, ...cleanUpData]],
-    ];
-
-    expect(received).toEqual(expected);
-  });
-});
-
-describe("get changes and clean up data - updated entries", () => {
-  const updateSuccess = {
-    __typename: "UpdateEntrySomeSuccess",
-    entry: {
-      entryId: "1",
-      dataObjects: [
-        {
-          __typename: "DataObjectSuccess",
-          dataObject: {
-            id: "2",
-          },
-        },
-      ],
-    },
-  };
-
-  test("no entry success", () => {
-    const received = extractDataForUpdatingAndCleanUp([
-      [
-        testExperience,
-        {
-          updatedEntries: [
-            {
-              __typename: "UpdateEntryErrors",
-            },
-          ],
-        } as UpdateExperienceFragment,
-      ],
-    ]);
-
-    const [updateData, cleanUpData] = putEmptyUpdatesAndCleanUpData(
-      null,
-      [],
-      3,
-    );
-
-    const expected = [
-      [[testExperience, ...updateData]],
-      [[testExperience.id, ...cleanUpData]],
-    ];
-
-    expect(received).toEqual(expected);
-  });
-
-  test("no entry.dataObjects success", () => {
-    const received = extractDataForUpdatingAndCleanUp([
-      [
-        testExperience,
-        {
-          updatedEntries: [
-            {
-              __typename: "UpdateEntrySomeSuccess",
-              entry: {
-                dataObjects: [
-                  {
-                    __typename: "DataObjectErrors",
+      const received = applyUpdatesAndGetCleanUpData([
+        [
+          {
+            ...testExperience,
+            entries: {
+              edges: [
+                {
+                  node: {
+                    id: offlineEntrySynced.clientId,
                   },
-                ],
-              },
-            },
-          ],
-        } as UpdateExperienceFragment,
-      ],
-    ]);
-
-    const [updateData, cleanUpData] = putEmptyUpdatesAndCleanUpData(
-      null,
-      [],
-      3,
-    );
-
-    const expected = [
-      [[testExperience, ...updateData]],
-      [[testExperience.id, ...cleanUpData]],
-    ];
-
-    expect(received).toEqual(expected);
-  });
-
-  test("entry.dataObjects all success", () => {
-    const received = extractDataForUpdatingAndCleanUp([
-      [
-        testExperience,
-        {
-          updatedEntries: [updateSuccess],
-        } as UpdateExperienceFragment,
-      ],
-    ]);
-
-    const [updateData, cleanUpData] = putEmptyUpdatesAndCleanUpData(
-      {
-        "1": {
-          "2": { id: "2" },
-        },
-      },
-      [["1", "2"]],
-      3,
-    );
-
-    const expected = [
-      [[testExperience, ...updateData]],
-      [[testExperience.id, ...cleanUpData]],
-    ];
-
-    expect(received).toEqual(expected);
-  });
-
-  test("entry.dataObjects success and failure", () => {
-    const received = extractDataForUpdatingAndCleanUp([
-      [
-        testExperience,
-        {
-          updatedEntries: [
-            {
-              __typename: "UpdateEntryErrors",
-            },
-            updateSuccess,
-          ],
-        } as UpdateExperienceFragment,
-      ],
-    ]);
-
-    const [updateData, cleanUpData] = putEmptyUpdatesAndCleanUpData(
-      {
-        "1": {
-          "2": { id: "2" },
-        },
-      },
-      [["1", "2"]],
-      3,
-    );
-
-    const expected = [
-      [[testExperience, ...updateData]],
-      [[testExperience.id, ...cleanUpData]],
-    ];
-
-    expect(received).toEqual(expected);
-  });
-});
-
-describe("apply changes to experiences", () => {
-  test("ownFields - no success, has errors", () => {
-    const received = applyUpdatesToExperiences([
-      [
-        {
-          id: "1",
-        } as ExperienceFragment,
-        ...putEmptyUpdates(null, 0),
-      ],
-    ] as UpdatesData);
-
-    const expected = [
-      {
-        id: "1",
-      },
-    ];
-
-    expect(received).toEqual(expected);
-  });
-
-  test("ownFields - has success, no error", () => {
-    const updateData = {
-      title: "a",
-      description: "b",
-    };
-
-    const received = applyUpdatesToExperiences([
-      [
-        {
-          id: "z",
-          title: "1",
-          description: "2",
-        } as ExperienceFragment,
-        ...putEmptyUpdates(updateData, 0),
-      ],
-    ] as UpdatesData);
-
-    const expected = [
-      {
-        id: "z",
-        ...updateData,
-      },
-    ];
-
-    expect(received).toEqual(expected);
-  });
-
-  test("data definitions - has success, no error", () => {
-    const received = applyUpdatesToExperiences([
-      [
-        {
-          id: "z",
-          dataDefinitions: [
-            {
-              id: "1",
-              name: "a",
-            },
-          ],
-        } as ExperienceFragment,
-        ...putEmptyUpdates(
-          {
-            "1": {
-              id: "1",
-              name: "b",
-            } as DataDefinitionFragment,
+                },
+              ],
+            } as any,
           },
-          1,
-        ),
-      ],
-    ] as UpdatesData);
-
-    const expected = [
-      {
-        id: "z",
-        dataDefinitions: [
           {
-            id: "1",
-            name: "b",
+            newEntries: [
+              {
+                __typename: "CreateEntryErrors",
+              },
+              {
+                __typename: "CreateEntrySuccess",
+                entry: offlineEntrySynced,
+              },
+              {
+                __typename: "CreateEntrySuccess",
+                entry: brandNewEntry,
+              },
+            ],
+          } as UpdateExperienceFragment,
+        ],
+      ]);
+
+      const cleanUpData = putEmptyCleanUpData(StateValues.newEntriesCleanUp, 2);
+
+      const expected = [
+        [
+          {
+            ...testExperience,
+            entries: {
+              edges: [
+                entryToEdge(brandNewEntry as any),
+                {
+                  node: offlineEntrySynced,
+                },
+              ],
+            },
           },
         ],
-      },
-    ];
+        [[testExperience.id, ...cleanUpData]],
+      ];
 
-    expect(received).toEqual(expected);
+      expect(received).toEqual(expected);
+    });
   });
 
-  test("data definitions - has error, has success", () => {
-    const received = applyUpdatesToExperiences([
-      [
-        {
-          id: "z",
-          dataDefinitions: [
-            {
-              id: "1",
-              name: "a",
-            },
-            {
-              id: "2",
-            },
-          ],
-        } as ExperienceFragment,
-        ...putEmptyUpdates(
+  describe("updated entries", () => {
+    test("no entry success", () => {
+      const received = applyUpdatesAndGetCleanUpData([
+        [
+          testExperience,
           {
-            "1": {
-              id: "1",
-              name: "b",
-            } as DataDefinitionFragment,
-          },
-          1,
-        ),
-      ],
-    ] as UpdatesData);
+            updatedEntries: [
+              {
+                __typename: "UpdateEntryErrors",
+              },
+            ],
+          } as UpdateExperienceFragment,
+        ],
+      ]);
 
-    const expected = [
-      {
-        id: "z",
-        dataDefinitions: [
+      const cleanUpData = putEmptyCleanUpData([], 3);
+
+      const expected = [
+        [testExperience],
+        [[testExperience.id, ...cleanUpData]],
+      ];
+
+      expect(received).toEqual(expected);
+    });
+
+    test("no entry.dataObjects success, entry.dataObject error", () => {
+      const received = applyUpdatesAndGetCleanUpData([
+        [
+          testExperience,
           {
-            id: "1",
-            name: "b",
+            updatedEntries: [
+              {
+                __typename: "UpdateEntrySomeSuccess",
+                entry: {
+                  dataObjects: [
+                    {
+                      __typename: "DataObjectErrors",
+                    },
+                  ],
+                },
+              },
+            ],
+          } as UpdateExperienceFragment,
+        ],
+      ]);
+
+      const cleanUpData = putEmptyCleanUpData([], 3);
+
+      const expected = [
+        [testExperience],
+        [[testExperience.id, ...cleanUpData]],
+      ];
+
+      expect(received).toEqual(expected);
+    });
+
+    test("entry.dataObjects all success", () => {
+      const updatedDataObject = {
+        id: "2",
+        data: "d",
+      };
+
+      const entryId = "w";
+
+      const received = applyUpdatesAndGetCleanUpData([
+        [
+          {
+            ...testExperience,
+            entries: {
+              edges: [
+                {
+                  node: {
+                    id: entryId,
+                    dataObjects: [
+                      {
+                        id: updatedDataObject.id,
+                      },
+                    ],
+                  },
+                },
+                {
+                  node: {
+                    id: "`",
+                  },
+                },
+              ],
+            } as any,
           },
           {
-            id: "2",
+            updatedEntries: [
+              {
+                __typename: "UpdateEntrySomeSuccess",
+                entry: {
+                  entryId,
+                  dataObjects: [
+                    {
+                      __typename: "DataObjectSuccess",
+                      dataObject: updatedDataObject,
+                    },
+                  ],
+                },
+              },
+            ],
+          } as UpdateExperienceFragment,
+        ],
+      ]);
+
+      const cleanUpData = putEmptyCleanUpData(
+        [[entryId, updatedDataObject.id]],
+        3,
+      );
+
+      const expected = [
+        [
+          {
+            ...testExperience,
+            entries: {
+              edges: [
+                {
+                  node: {
+                    id: entryId,
+                    dataObjects: [updatedDataObject],
+                  },
+                },
+                {
+                  node: {
+                    id: "`",
+                  },
+                },
+              ],
+            },
           },
         ],
-      },
-    ];
+        [[testExperience.id, ...cleanUpData]],
+      ];
 
-    expect(received).toEqual(expected);
-  });
-
-  test("offlineSyncedEntries success, no brandNewEntries, no error", () => {
-    const offlineClientId = "z";
-
-    const offlineEntry = {
-      id: offlineClientId,
-      clientId: "2", // diff from server's
-    };
-
-    const brandNewEntries = [] as any;
-
-    const syncedOfflineEntry = {
-      id: "3",
-      clientId: "4",
-      dataObjects: [{}],
-    } as EntryFragment;
-
-    const offlineSyncedEntries = {
-      [offlineClientId]: syncedOfflineEntry,
-    };
-
-    const received = applyUpdatesToExperiences([
-      [
-        {
-          id: "1",
-          entries: {
-            edges: [
-              {
-                node: offlineEntry,
-              },
-            ],
-          },
-        } as ExperienceFragment,
-        ...putEmptyUpdates([brandNewEntries, offlineSyncedEntries], 2),
-      ],
-    ] as UpdatesData);
-
-    const expected = [
-      {
-        id: "1",
-        entries: {
-          edges: [
-            {
-              node: syncedOfflineEntry,
-            },
-          ],
-        },
-      },
-    ];
-
-    expect(received).toEqual(expected);
-  });
-
-  test("no offlineSyncedEntries, brandNewEntries, no error", () => {
-    const brandNewEntry = {
-      id: "a",
-    } as EntryFragment;
-    const brandNewEntries = [brandNewEntry] as any;
-    const offlineSyncedEntries = null;
-
-    const received = applyUpdatesToExperiences([
-      [
-        {
-          id: "1",
-          entries: {
-            edges: [{}],
-          },
-        } as ExperienceFragment,
-        ...putEmptyUpdates([brandNewEntries, offlineSyncedEntries], 2),
-      ],
-    ] as UpdatesData);
-
-    const expected = [
-      {
-        id: "1",
-        entries: {
-          edges: [entryToEdge(brandNewEntry), {}],
-        },
-      },
-    ];
-
-    expect(received).toEqual(expected);
-  });
-
-  test("offlineSyncedEntries success and error", () => {
-    const offlineClientId = "t";
-    const offlineEntryBeforeSync = {
-      id: offlineClientId,
-    };
-
-    const offlineEntryNotSynced = {
-      id: "m",
-    };
-
-    const syncedOfflineEntry = {
-      id: "k",
-      dataObjects: [{}],
-    } as EntryFragment;
-
-    const offlineSyncedEntries = {
-      [offlineClientId]: syncedOfflineEntry,
-    };
-
-    const brandNewEntries = [] as any;
-
-    const received = applyUpdatesToExperiences([
-      [
-        {
-          id: "1",
-          entries: {
-            edges: [
-              {
-                node: offlineEntryBeforeSync,
-              },
-              {
-                node: offlineEntryNotSynced,
-              },
-            ],
-          },
-        } as ExperienceFragment,
-        ...putEmptyUpdates([brandNewEntries, offlineSyncedEntries], 2),
-      ],
-    ] as UpdatesData);
-
-    const expected = [
-      {
-        id: "1",
-        entries: {
-          edges: [
-            {
-              node: syncedOfflineEntry,
-            },
-            {
-              node: offlineEntryNotSynced,
-            },
-          ],
-        },
-      },
-    ];
-
-    expect(received).toEqual(expected);
-  });
-
-  test("updated entries - no updated entry found", () => {
-    const entry = {
-      id: "k",
-    };
-
-    const received = applyUpdatesToExperiences([
-      [
-        {
-          id: "1",
-          entries: {
-            edges: [
-              {
-                node: entry,
-              },
-            ],
-          },
-        } as ExperienceFragment,
-        ...putEmptyUpdates(
-          {
-            "1": {},
-          },
-          3,
-        ),
-      ],
-    ] as UpdatesData);
-
-    const expected = [
-      {
-        id: "1",
-        entries: {
-          edges: [
-            {
-              node: entry,
-            },
-          ],
-        },
-      },
-    ];
-
-    expect(received).toEqual(expected);
-  });
-
-  test("updated entries - success", () => {
-    const entry = {
-      id: "1",
-      dataObjects: [
-        {
-          id: "1",
-        },
-        {
-          id: "2",
-        },
-      ],
-    };
-
-    const received = applyUpdatesToExperiences([
-      [
-        {
-          id: "1",
-          entries: {
-            edges: [
-              {
-                node: entry,
-              },
-            ],
-          },
-        } as ExperienceFragment,
-        ...putEmptyUpdates(
-          {
-            "1": {
-              "1": {
-                id: "1",
-                data: "1",
-              } as DataObjectFragment,
-            },
-          },
-          3,
-        ),
-      ],
-    ] as UpdatesData);
-
-    const expected = [
-      {
-        id: "1",
-        entries: {
-          edges: [
-            {
-              node: {
-                id: "1",
-                dataObjects: [
-                  {
-                    id: "1",
-                    data: "1",
-                  },
-                  {
-                    id: "2",
-                  },
-                ],
-              },
-            },
-          ],
-        },
-      },
-    ];
-
-    expect(received).toEqual(expected);
+      expect(received).toEqual(expected);
+    });
   });
 });
 
@@ -1489,31 +1105,12 @@ test("integration", () => {
   expect(mockOnDone).toHaveBeenCalled();
 });
 
-const emptyUpdates = [null, null, null, null];
-
 const emptyCleanUps = [
   StateValues.ownFieldsNoCleanUp,
   [],
   StateValues.newEntriesNoCleanUp,
   [],
 ];
-
-function putEmptyUpdates(updatedData: any, index: number) {
-  const x = [...emptyUpdates];
-  x.splice(index, 1, updatedData);
-  return x;
-}
-
-function putEmptyUpdatesAndCleanUpData(
-  updatedData: any,
-  cleanUpData: any,
-  index: number,
-) {
-  return [
-    putEmptyUpdates(updatedData, index),
-    putEmptyCleanUpData(cleanUpData, index),
-  ];
-}
 
 function putEmptyCleanUpData(cleanUpData: any, index: number): CleanUpData {
   const y = [...emptyCleanUps];
