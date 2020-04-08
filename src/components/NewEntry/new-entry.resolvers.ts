@@ -8,7 +8,7 @@ import {
   LocalResolverFn,
   MUTATION_NAME_createOfflineEntry,
 } from "../../state/resolvers";
-import { makeOfflineId, isOfflineId } from "../../constants";
+import { isOfflineId } from "../../constants";
 import { CreateDataObject } from "../../graphql/apollo-types/globalTypes";
 import gql from "graphql-tag";
 import { upsertExperienceWithEntry } from "./new-entry.injectables";
@@ -56,10 +56,10 @@ const createOfflineEntryMutationResolver: LocalResolverFn<
   const today = new Date();
   const timestamps = today.toJSON();
 
-  const id = makeOfflineId(today.getTime());
+  const id = experienceId + "e";
 
   const dataObjects = variables.dataObjects.map((dataObject, index) => {
-    const dataObjectId = `${id}--data-object-${index}`;
+    const dataObjectId = `${id}--dd-${index}`;
 
     return {
       ...dataObject,
@@ -106,6 +106,7 @@ export const newEntryResolvers = {
 };
 
 function updateUnsynced(experienceId: string) {
+  // istanbul ignore next:
   if (isOfflineId(experienceId)) {
     return;
   }

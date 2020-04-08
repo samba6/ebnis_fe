@@ -6,20 +6,11 @@ import {
 import {
   GetExperienceConnectionMini,
   GetExperienceConnectionMiniVariables,
+  GetExperienceConnectionMini_getExperiences,
 } from "../graphql/apollo-types/GetExperienceConnectionMini";
 import immer from "immer";
-import {
-  ExperienceConnectionFragment_edges,
-  ExperienceConnectionFragment_edges_node,
-} from "../graphql/apollo-types/ExperienceConnectionFragment";
-import { readExperienceFragment } from "./read-experience-fragment";
-import {
-  ExperienceFragment,
-  ExperienceFragment_entries_edges,
-} from "../graphql/apollo-types/ExperienceFragment";
-import { DataDefinitionFragment } from "../graphql/apollo-types/DataDefinitionFragment";
-import { EntryFragment } from "../graphql/apollo-types/EntryFragment";
-import { DataObjectFragment } from "../graphql/apollo-types/DataObjectFragment";
+import { ExperienceConnectionFragment_edges } from "../graphql/apollo-types/ExperienceConnectionFragment";
+import { ExperienceFragment } from "../graphql/apollo-types/ExperienceFragment";
 import {
   wipeReferencesFromCache,
   removeQueriesAndMutationsFromCache,
@@ -27,6 +18,8 @@ import {
 import { InMemoryCache } from "apollo-cache-inmemory";
 import { removeUnsyncedExperiences } from "./unsynced.resolvers";
 import { AppPersistor } from "../context";
+
+export const GET_EXPERIENCES_MINI_ROOT_QUERY_KEY_PREFIX = `ROOT_QUERY\\.getExperiences\\(\\{"input"\\:\\{"pagination"\\:\\{"first"\\:20000\\}\\}\\}\\)\\.edges\\.`;
 
 export async function deleteExperiencesFromCache(
   dataProxy: DataProxy,
@@ -39,93 +32,115 @@ export async function deleteExperiencesFromCache(
     return;
   }
 
-  const idMap = ids.reduce((acc, id) => {
-    acc[id] = true;
-    return acc;
-  }, {} as { [k: string]: true });
+  const result = getOpsData(ids, experienceConnection);
 
-  const toDeletes: string[] = [];
-  let was_deleted = false;
-  let len = 0;
-  let totalRemoved = 0;
-
-  const updatedExperienceConnection = immer(experienceConnection, proxy => {
-    const edges = proxy.edges as ExperienceConnectionFragment_edges[];
-    const newEdges: ExperienceConnectionFragment_edges[] = [];
-
-    edges.forEach(e => {
-      const { id } = (e as ExperienceConnectionFragment_edges)
-        .node as ExperienceConnectionFragment_edges_node;
-
-      if (idMap[id]) {
-        ++totalRemoved;
-        toDeletes.push(id);
-
-        deleteExperienceOffsprings(dataProxy, id, toDeletes);
-        was_deleted = true;
-      } else {
-        newEdges.push(e);
-      }
-    });
-
-    proxy.edges = newEdges;
-    len = newEdges.length;
-  });
-
-  if (!was_deleted) {
+  // istanbul ignore next:
+  if (!result) {
     return;
   }
 
-  dataProxy.writeQuery<
-    GetExperienceConnectionMini,
-    GetExperienceConnectionMiniVariables
-  >({
-    ...readOptions,
-    data: { getExperiences: updatedExperienceConnection },
-  });
-  await persistor.persist();
+  const [
+    newEdges,
+    referencesToWipe,
+    unsyncedLedgerIdsToRemove,
+    getExperiencesEdgesKeyToRemove,
+  ] = result;
 
-  if (len === 0) {
+
+  if (newEdges.length) {
+    const updatedExperienceConnection = immer(experienceConnection, proxy => {
+      proxy.edges = newEdges;
+    });
+
+    dataProxy.writeQuery<
+      GetExperienceConnectionMini,
+      GetExperienceConnectionMiniVariables
+    >({
+      ...readOptions,
+      data: { getExperiences: updatedExperienceConnection },
+    });
+
+    await persistor.persist();
+  } else {
     removeQueriesAndMutationsFromCache(dataProxy as InMemoryCache, [
       "getExperiences",
     ]);
-  } else {
-    const end = len + totalRemoved;
-
-    for (; len < end; len++) {
-      const c = `ROOT_QUERY\\.getExperiences\\(\\{"input"\\:\\{"pagination"\\:\\{"first"\\:20000\\}\\}\\}\\)\\.edges\\.${len}`;
-
-      toDeletes.push(c);
-    }
   }
 
-  wipeReferencesFromCache(dataProxy as InMemoryCache, toDeletes);
+  wipeReferencesFromCache(
+    dataProxy as InMemoryCache,
+    referencesToWipe.concat(getExperiencesEdgesKeyToRemove),
+  );
 
-  removeUnsyncedExperiences(ids);
-
+  removeUnsyncedExperiences(unsyncedLedgerIdsToRemove);
   await persistor.persist();
 }
 
-function deleteExperienceOffsprings(
-  dataProxy: DataProxy,
-  id: string,
-  toDeletes: string[],
-) {
-  const { dataDefinitions, entries } = readExperienceFragment(
-    dataProxy,
-    id,
-  ) as ExperienceFragment;
+export function getOpsData(
+  ids: string[],
+  experienceConnection: GetExperienceConnectionMini_getExperiences,
+): GetOpsReturn | null {
+  const newEdges: ExperienceConnectionFragment_edges[] = [];
+  const referencesToWipe: ExperienceIdsToWipe = [];
+  const unsyncedLedgerIdsToRemove: UnsyncedLedgerIdsToRemove = [];
+  const getExperiencesEdgesKeyToRemove: GetExperiencesEdgesKeyToRemove = [];
 
-  dataDefinitions.forEach(d => {
-    toDeletes.push((d as DataDefinitionFragment).id);
+  const idsMap = ids.reduce(
+    (acc, id) => {
+      acc[id] = true;
+      return acc;
+    },
+    {} as {
+      [experienceId: string]: true;
+    },
+  );
+
+  const edges = experienceConnection.edges as ExperienceConnectionFragment_edges[];
+
+  edges.forEach(e => {
+    const edge = e as ExperienceConnectionFragment_edges;
+    const node = edge.node as ExperienceFragment;
+    const { id } = node;
+
+    if (idsMap[id]) {
+      unsyncedLedgerIdsToRemove.push(id);
+      referencesToWipe.push(id);
+    } else {
+      newEdges.push(edge);
+    }
   });
 
-  (entries.edges as ExperienceFragment_entries_edges[]).forEach(e => {
-    const entry = (e as ExperienceFragment_entries_edges).node as EntryFragment;
-    toDeletes.push(entry.id);
+  const newEdgesLen = newEdges.length;
+  const edgesLen = edges.length;
 
-    (entry.dataObjects as DataObjectFragment[]).forEach(d => {
-      toDeletes.push((d as DataObjectFragment).id);
-    });
-  });
+  if (newEdgesLen === edgesLen) {
+    return null;
+  }
+
+  if (newEdgesLen && newEdgesLen < edgesLen) {
+    for (let index = newEdgesLen; index < edgesLen; index++) {
+      getExperiencesEdgesKeyToRemove.push(
+        GET_EXPERIENCES_MINI_ROOT_QUERY_KEY_PREFIX + index,
+      );
+    }
+  }
+
+  return [
+    newEdges,
+    referencesToWipe,
+    unsyncedLedgerIdsToRemove,
+    getExperiencesEdgesKeyToRemove,
+  ];
 }
+
+type ExperienceIdsToWipe = string[];
+type UnsyncedLedgerIdsToRemove = string[];
+type GetExperiencesEdgesKeyToRemove = string[];
+
+type GetOpsReturn = [
+  ExperienceConnectionFragment_edges[],
+  ExperienceIdsToWipe,
+  UnsyncedLedgerIdsToRemove,
+  GetExperiencesEdgesKeyToRemove,
+];
+

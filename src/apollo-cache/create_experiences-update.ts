@@ -20,6 +20,7 @@ export function createExperiencesManualUpdate(
   }
 
   const toBeInserted = validResponses.reduce((acc, response) => {
+    // istanbul ignore next:
     if (!response) {
       return acc;
     }

@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { newEntryResolvers } from "../components/NewEntry/new-entry.resolvers";
 import { CacheContext } from "../state/resolvers";
-import { isOfflineId } from "../constants";
 import { makeTestCache } from "./test_utils";
 import { ExperienceFragment } from "../graphql/apollo-types/ExperienceFragment";
 
@@ -10,7 +9,7 @@ jest.mock("../components/NewEntry/new-entry.injectables");
 
 const { createOfflineEntry } = newEntryResolvers.Mutation;
 
-it("updates unsaved experience successfully", async () => {
+it("updates experience with new entry", () => {
   const { mockContext } = setUp();
 
   const experienceId = "exp-1";
@@ -26,13 +25,12 @@ it("updates unsaved experience successfully", async () => {
     definitionId: "3",
   };
 
-  const { __typename, id, entry } = await createOfflineEntry(
+  const { __typename, id, entry } = createOfflineEntry(
     {},
     { experienceId: experience.id, dataObjects: [dataObject] },
     mockContext,
   );
 
-  expect(isOfflineId(entry.id)).toBe(true);
   expect(entry.id).toBe(entry.clientId);
   expect(entry.id).toBe(id);
   expect(__typename).toEqual("Entry");
