@@ -1249,7 +1249,7 @@ test("integration", () => {
             dataObjects: [
               {
                 id: "4ddo1", // diff from cache'
-                data: "4ddod1", // diff from cache'
+                data: "41dod1", // diff from cache'
               },
             ],
           },
@@ -1279,7 +1279,7 @@ test("integration", () => {
                 __typename: "DataObjectSuccess",
                 dataObject: {
                   id: "4do1",
-                  data: "4ddod1", // diff from cache'
+                  data: "41dod1", // diff from cache'
                 },
               },
             ],
@@ -1426,7 +1426,7 @@ test("integration", () => {
               dataObjects: [
                 {
                   id: "4ddo1",
-                  data: "4ddod1",
+                  data: "41dod1",
                 },
               ],
             },
@@ -1439,7 +1439,7 @@ test("integration", () => {
                 {
                   // update success
                   id: "4do1",
-                  data: "4ddod1",
+                  data: "41dod1",
                 },
                 {
                   // update failed
