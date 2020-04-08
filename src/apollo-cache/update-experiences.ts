@@ -6,7 +6,7 @@ import { writeExperienceFragmentToCache } from "./write-experience-fragment";
 import { UpdateExperienceFragment } from "../graphql/apollo-types/UpdateExperienceFragment";
 import { ExperienceFragment } from "../graphql/apollo-types/ExperienceFragment";
 import { DataDefinitionFragment } from "../graphql/apollo-types/DataDefinitionFragment";
-import { floatExperiencesToTheTopInGetExperiencesMiniQuery } from "./update-get-experiences-mini-query";
+import { floatExperiencesToTopInGetExperiencesMiniQuery } from "./update-get-experiences-mini-query";
 import { EntryConnectionFragment_edges } from "../graphql/apollo-types/EntryConnectionFragment";
 import { EntryFragment } from "../graphql/apollo-types/EntryFragment";
 import {
@@ -23,17 +23,56 @@ export const StateValues = {
   ownFieldsNoCleanUp: "no-clean-up-own-fields" as OwnFieldsNoCleanUp,
   newEntriesCleanUp: "clean-up-new-entries" as NewEntriesCleanUp,
   newEntriesNoCleanUp: "no-clean-up-new-entries" as NewEntriesNoCleanUp,
-  ownFieldsHasErrors: "has-own-fields-errors" as OwnFieldsHasErrors,
-  ownFieldsNoErrors: "no-own-fields-errors" as OwnFieldsNoErrors,
-  dataDefinitionsHasErrors: "data-definitions-has-errors" as DataDefinitionsHasErrors,
-  dataDefinitionsNoErrors: "data-definitions-no-errors" as DataDefinitionsNoErrors,
-  newEntriesHasErrors: "new-entries-has-errors" as NewEntriesHasErrors,
-  newEntriesNoErrors: "new-entries-no-errors" as NewEntriesNoErrors,
-  updatedEntriesHasErrors: "updated-entries-has-errors" as UpdatedEntriesHasErrors,
-  updatedEntriesNoErrors: "updated-entries-no-errors" as UpdatedEntriesNoErrors,
 };
 
-export function getSuccessfulResults(
+export function updateExperiencesInCache(onDone?: () => void) {
+  return function updateExperiencesInCacheInner(
+    dataProxy: DataProxy,
+    result: UpdateExperiencesOnlineMutationResult,
+  ) {
+    const successfulResults = filterSuccessfulUpdates(result);
+    const cachedExperienceToUpdateDataList = mapUpdatedDataToCachedExperience(
+      dataProxy,
+      successfulResults,
+    );
+
+    const [updatesList, cleanUpDataList] = extractDataForUpdatingAndCleanUp(
+      cachedExperienceToUpdateDataList,
+    );
+
+    const updatedExperiences = applyUpdatesToExperiences(updatesList);
+
+    const updatedIds: { [experienceId: string]: 1 } = {};
+
+    updatedExperiences.forEach(experience => {
+      writeExperienceFragmentToCache(dataProxy, experience);
+      updatedIds[experience.id] = 1;
+    });
+
+    cleanUpDataList.forEach(([experienceId, ...data]) => {
+      const unsynced = getUnsyncedExperience(experienceId);
+
+      if (unsynced) {
+        const updatedUnsynced = updateUnSyncedLedger(unsynced, data);
+
+        if (!Object.keys(updatedUnsynced).length) {
+          removeUnsyncedExperience(experienceId);
+        } else {
+          writeUnsyncedExperience(experienceId, updatedUnsynced);
+        }
+      }
+    });
+
+    floatExperiencesToTopInGetExperiencesMiniQuery(dataProxy, updatedIds);
+
+    // istanbul ignore next:
+    if (onDone) {
+      onDone();
+    }
+  };
+}
+
+export function filterSuccessfulUpdates(
   result: UpdateExperiencesOnlineMutationResult,
 ) {
   const updateExperiences =
@@ -56,7 +95,7 @@ export function getSuccessfulResults(
   }
 }
 
-export function getUpdatesAndCleanUpData(
+export function extractDataForUpdatingAndCleanUp(
   results: [ExperienceFragment, UpdateExperienceFragment][],
 ): UpdatesDataAndCleanUp {
   const [updatesData, cleanUpData] = [[], []] as UpdatesDataAndCleanUp;
@@ -419,53 +458,6 @@ export function updateUnSyncedLedger(
   return unsynced;
 }
 
-export function updateExperiencesInCache(onDone?: () => void) {
-  return function updateExperiencesInCacheInner(
-    dataProxy: DataProxy,
-    result: UpdateExperiencesOnlineMutationResult,
-  ) {
-    const successfulResults = getSuccessfulResults(result);
-    const cachedExperienceToUpdateDataList = mapUpdatedDataToCachedExperience(
-      dataProxy,
-      successfulResults,
-    );
-
-    const [updatesList, cleanUpDataList] = getUpdatesAndCleanUpData(
-      cachedExperienceToUpdateDataList,
-    );
-
-    const updatedExperiences = applyUpdatesToExperiences(updatesList);
-
-    const updatedIds: { [experienceId: string]: 1 } = {};
-
-    updatedExperiences.forEach(experience => {
-      writeExperienceFragmentToCache(dataProxy, experience);
-      updatedIds[experience.id] = 1;
-    });
-
-    cleanUpDataList.forEach(([experienceId, ...data]) => {
-      const unsynced = getUnsyncedExperience(experienceId);
-
-      if (unsynced) {
-        const updatedUnsynced = updateUnSyncedLedger(unsynced, data);
-
-        if (!Object.keys(updatedUnsynced).length) {
-          removeUnsyncedExperience(experienceId);
-        } else {
-          writeUnsyncedExperience(experienceId, updatedUnsynced);
-        }
-      }
-    });
-
-    floatExperiencesToTheTopInGetExperiencesMiniQuery(dataProxy, updatedIds);
-
-    // istanbul ignore next:
-    if (onDone) {
-      onDone();
-    }
-  };
-}
-
 type DraftState = Draft<ExperienceFragment>;
 
 type UpdatedEntriesIdsToDelete = [string, string[]][];
@@ -552,11 +544,3 @@ type OwnFieldsCleanUp = "clean-up-own-fields";
 type OwnFieldsNoCleanUp = "no-clean-up-own-fields";
 type NewEntriesCleanUp = "clean-up-new-entries";
 type NewEntriesNoCleanUp = "no-clean-up=new-entries";
-type OwnFieldsHasErrors = "has-own-fields-errors";
-type OwnFieldsNoErrors = "no-own-fields-errors";
-type DataDefinitionsHasErrors = "data-definitions-has-errors";
-type DataDefinitionsNoErrors = "data-definitions-no-errors";
-type NewEntriesHasErrors = "new-entries-has-errors";
-type NewEntriesNoErrors = "new-entries-no-errors";
-type UpdatedEntriesHasErrors = "updated-entries-has-errors";
-type UpdatedEntriesNoErrors = "updated-entries-no-errors";

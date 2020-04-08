@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { DataProxy } from "apollo-cache";
 import {
-  getSuccessfulResults,
-  getUpdatesAndCleanUpData,
+  filterSuccessfulUpdates,
+  extractDataForUpdatingAndCleanUp,
   UpdatesData,
   applyUpdatesToExperiences,
   updateExperiencesInCache,
@@ -10,7 +10,7 @@ import {
   StateValues,
   updateUnSyncedLedger,
 } from "../apollo-cache/update-experiences";
-import { floatExperiencesToTheTopInGetExperiencesMiniQuery } from "../apollo-cache/update-get-experiences-mini-query";
+import { floatExperiencesToTopInGetExperiencesMiniQuery } from "../apollo-cache/update-get-experiences-mini-query";
 import { readExperienceFragment } from "../apollo-cache/read-experience-fragment";
 import { writeExperienceFragmentToCache } from "../apollo-cache/write-experience-fragment";
 import { UpdateExperiencesOnlineMutationResult } from "../graphql/experiences.gql";
@@ -34,7 +34,7 @@ const mockWriteUnsyncedExperience = writeUnsyncedExperience as jest.Mock;
 const mockRemoveUnsyncedExperience = removeUnsyncedExperience as jest.Mock;
 
 jest.mock("../apollo-cache/update-get-experiences-mini-query");
-const mockFloatExperiencesToTheTopInGetExperiencesMiniQuery = floatExperiencesToTheTopInGetExperiencesMiniQuery as jest.Mock;
+const mockFloatExperiencesToTopInGetExperiencesMiniQuery = floatExperiencesToTopInGetExperiencesMiniQuery as jest.Mock;
 
 jest.mock("../apollo-cache/read-experience-fragment");
 const mockReadExperienceFragment = readExperienceFragment as jest.Mock;
@@ -51,7 +51,7 @@ const dataProxy = {} as DataProxy;
 describe("filter successfully updated experiences", () => {
   test("result is empty", () => {
     expect(
-      getSuccessfulResults({
+      filterSuccessfulUpdates({
         data: {},
       } as UpdateExperiencesOnlineMutationResult),
     ).toEqual([]);
@@ -59,7 +59,7 @@ describe("filter successfully updated experiences", () => {
 
   test("all fail", () => {
     expect(
-      getSuccessfulResults({
+      filterSuccessfulUpdates({
         data: {
           updateExperiences: {
             __typename: "UpdateExperiencesAllFail",
@@ -71,7 +71,7 @@ describe("filter successfully updated experiences", () => {
 
   test("successes and failures", () => {
     expect(
-      getSuccessfulResults({
+      filterSuccessfulUpdates({
         data: {
           updateExperiences: {
             __typename: "UpdateExperiencesSomeSuccess",
@@ -102,7 +102,7 @@ const testExperience = {
 
 describe("get changes and clean up data - ownFields", () => {
   test("ownFields: failed", () => {
-    const received = getUpdatesAndCleanUpData([
+    const received = extractDataForUpdatingAndCleanUp([
       [
         testExperience,
         {
@@ -128,7 +128,7 @@ describe("get changes and clean up data - ownFields", () => {
   });
 
   test("ownFields: success", () => {
-    const received = getUpdatesAndCleanUpData([
+    const received = extractDataForUpdatingAndCleanUp([
       [
         testExperience,
         {
@@ -165,7 +165,7 @@ describe("get changes and clean up data - ownFields", () => {
 
 describe("get changes and clean up data - definitions", () => {
   test("all failed", () => {
-    const received = getUpdatesAndCleanUpData([
+    const received = extractDataForUpdatingAndCleanUp([
       [
         testExperience,
         {
@@ -193,7 +193,7 @@ describe("get changes and clean up data - definitions", () => {
   });
 
   test("all success", () => {
-    const received = getUpdatesAndCleanUpData([
+    const received = extractDataForUpdatingAndCleanUp([
       [
         testExperience,
         {
@@ -228,7 +228,7 @@ describe("get changes and clean up data - definitions", () => {
   });
 
   test("success and failure", () => {
-    const received = getUpdatesAndCleanUpData([
+    const received = extractDataForUpdatingAndCleanUp([
       [
         testExperience,
         {
@@ -268,7 +268,7 @@ describe("get changes and clean up data - definitions", () => {
 
 describe("get changes and clean up data - new entries", () => {
   test("brand new error, no success", () => {
-    const received = getUpdatesAndCleanUpData([
+    const received = extractDataForUpdatingAndCleanUp([
       [
         testExperience,
         {
@@ -296,7 +296,7 @@ describe("get changes and clean up data - new entries", () => {
   });
 
   test("offline synced success - no error,", () => {
-    const received = getUpdatesAndCleanUpData([
+    const received = extractDataForUpdatingAndCleanUp([
       [
         testExperience,
         {
@@ -337,7 +337,7 @@ describe("get changes and clean up data - new entries", () => {
   });
 
   test("brand new success - no error, offline synced error - no success", () => {
-    const received = getUpdatesAndCleanUpData([
+    const received = extractDataForUpdatingAndCleanUp([
       [
         testExperience,
         {
@@ -384,7 +384,7 @@ describe("get changes and clean up data - new entries", () => {
   });
 
   test("offline synced success, brand new success, brand new error", () => {
-    const received = getUpdatesAndCleanUpData([
+    const received = extractDataForUpdatingAndCleanUp([
       [
         testExperience,
         {
@@ -453,7 +453,7 @@ describe("get changes and clean up data - updated entries", () => {
   };
 
   test("no entry success", () => {
-    const received = getUpdatesAndCleanUpData([
+    const received = extractDataForUpdatingAndCleanUp([
       [
         testExperience,
         {
@@ -481,7 +481,7 @@ describe("get changes and clean up data - updated entries", () => {
   });
 
   test("no entry.dataObjects success", () => {
-    const received = getUpdatesAndCleanUpData([
+    const received = extractDataForUpdatingAndCleanUp([
       [
         testExperience,
         {
@@ -516,7 +516,7 @@ describe("get changes and clean up data - updated entries", () => {
   });
 
   test("entry.dataObjects all success", () => {
-    const received = getUpdatesAndCleanUpData([
+    const received = extractDataForUpdatingAndCleanUp([
       [
         testExperience,
         {
@@ -544,7 +544,7 @@ describe("get changes and clean up data - updated entries", () => {
   });
 
   test("entry.dataObjects success and failure", () => {
-    const received = getUpdatesAndCleanUpData([
+    const received = extractDataForUpdatingAndCleanUp([
       [
         testExperience,
         {
@@ -1379,7 +1379,7 @@ test("integration", () => {
   updateExperiencesInCache(mockOnDone)(dataProxy, serverResult);
 
   expect(
-    mockFloatExperiencesToTheTopInGetExperiencesMiniQuery.mock.calls[0][1],
+    mockFloatExperiencesToTopInGetExperiencesMiniQuery.mock.calls[0][1],
   ).toEqual({
     "2": 1,
     "3": 1,

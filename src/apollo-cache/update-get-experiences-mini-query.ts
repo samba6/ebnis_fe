@@ -137,7 +137,7 @@ export function floatExperienceToTheTopInGetExperiencesMiniQuery(
   });
 }
 
-export function floatExperiencesToTheTopInGetExperiencesMiniQuery(
+export function floatExperiencesToTopInGetExperiencesMiniQuery(
   dataProxy: DataProxy,
   ids: { [k: string]: number },
 ) {

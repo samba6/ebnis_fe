@@ -4,7 +4,7 @@ import {
   insertExperienceInGetExperiencesMiniQuery,
   floatExperienceToTheTopInGetExperiencesMiniQuery,
   replaceExperiencesInGetExperiencesMiniQuery,
-  floatExperiencesToTheTopInGetExperiencesMiniQuery,
+  floatExperiencesToTopInGetExperiencesMiniQuery,
   insertExperiencesInGetExperiencesMiniQuery,
 } from "../apollo-cache/update-get-experiences-mini-query";
 import { getExperiencesMiniQuery } from "../apollo-cache/get-experiences-mini-query";
@@ -158,16 +158,16 @@ describe("replaceExperiencesInGetExperiencesMiniQuery", () => {
   });
 });
 
-describe("floatExperiencesToTheTopInGetExperiencesMiniQuery", () => {
+describe("floatExperiencesToTopInGetExperiencesMiniQuery", () => {
   test("no updates", () => {
     mockGetExperiencesMiniQuery
       .mockReturnValueOnce(null)
       .mockReturnValueOnce({});
 
-    floatExperiencesToTheTopInGetExperiencesMiniQuery(dataProxy, {});
+    floatExperiencesToTopInGetExperiencesMiniQuery(dataProxy, {});
     expect(mockWriteQuery).not.toHaveBeenCalled();
 
-    floatExperiencesToTheTopInGetExperiencesMiniQuery(dataProxy, {});
+    floatExperiencesToTopInGetExperiencesMiniQuery(dataProxy, {});
     expect(mockWriteQuery.mock.calls[0][0].data.getExperiences).toEqual({
       edges: [],
     });
@@ -194,7 +194,7 @@ describe("floatExperiencesToTheTopInGetExperiencesMiniQuery", () => {
       ],
     });
 
-    floatExperiencesToTheTopInGetExperiencesMiniQuery(dataProxy, { "2": 1 });
+    floatExperiencesToTopInGetExperiencesMiniQuery(dataProxy, { "2": 1 });
 
     expect(mockWriteQuery.mock.calls[0][0].data.getExperiences).toEqual({
       edges: [
