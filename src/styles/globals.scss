@@ -13,6 +13,7 @@
   --minimum-radius: 3px;
   --btn-border-neutral-color: #afafaf;
   --light-blue-border: #d0e6ef;
+  --close-width: 50px;
 }
 
 html,
@@ -92,7 +93,6 @@ li {
 }
 
 .notification {
-  --close-width: 50px;
   border: 1px solid;
   border-radius: 4px;
   padding: 10px 10px 10px 20px;

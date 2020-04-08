@@ -1,4 +1,17 @@
 .ebnis-modal {
+  background: rgba(255, 255, 255, 0.90);
+
+  .modal {
+    &__inner {
+      background: white;
+      border-radius: 3px;
+      box-shadow: 1px 3px 10px 2px #ccc8c8;
+      z-index: 1001;
+      width: 95%;
+      max-width: var(--modal-content-width);
+    }
+  }
+
   & .close {
     width: 56px;
     height: 56px;

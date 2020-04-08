@@ -1,5 +1,5 @@
 import React, { PropsWithChildren } from "react";
-import "./modal-styles.css";
+import "./modal-styles.scss";
 import { EbnisComponentProps } from "../../types";
 
 interface Props extends EbnisComponentProps {
@@ -23,13 +23,11 @@ export function Modal({ children, ...props }: PropsWithChildren<Props>) {
             w-screen
             h-screen
             overflow-hidden
-            opacity-75
-            bg-white
             ebnis-modal
           `}
       {...props}
     >
-      <div className="w-11/12 p-2 modal-inner">{children}</div>
+      <div className="p-2 modal__inner">{children}</div>
 
       <div className="absolute top-0 right-0 close">
         <button
