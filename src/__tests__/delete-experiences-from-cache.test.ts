@@ -48,7 +48,7 @@ describe("unit test", () => {
     expect(received).toBeNull();
   });
 
-  test("getOpsData: all removed, nothing to write", () => {
+  test("all removed, nothing to write", () => {
     const ids: string[] = [
       "1", // found
       "2", // not found
@@ -76,7 +76,7 @@ describe("unit test", () => {
     expect(received).toEqual(expected);
   });
 
-  test("getOpsData: not all removed, something to write", () => {
+  test("not all removed, something to write", () => {
     const ids: string[] = [
       // found
       "2",
