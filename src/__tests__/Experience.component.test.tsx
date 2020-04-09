@@ -91,6 +91,8 @@ const mockCreateExperiences = jest.fn();
 const mockPersistFunc = jest.fn();
 const persistor = { persist: mockPersistFunc };
 const mockDeleteExperiences = jest.fn();
+const mockLocationReplace = jest.fn();
+const originalWindowLocation = window.location;
 
 beforeEach(() => {
   jest.useFakeTimers();
@@ -105,6 +107,12 @@ beforeEach(() => {
   mockWriteDeletedExperienceTitle.mockReset();
   mockRemoveQueriesAndMutationsFromCache.mockReset();
   mockConfirmShouldDeleteExperience.mockReset();
+  delete window.location;
+  window.location = { replace: mockLocationReplace } as any;
+});
+
+afterEach(() => {
+  window.location = originalWindowLocation;
 });
 
 describe("component", () => {
@@ -1105,7 +1113,7 @@ describe("component", () => {
   test("delete offline experience", async () => {
     const experienceId = makeOfflineId(1);
 
-    const { ui, mockNavigate } = makeComp({
+    const { ui } = makeComp({
       experience: {
         id: experienceId,
         title: "t1",
@@ -1172,7 +1180,7 @@ describe("component", () => {
 
     expect(mockWriteDeletedExperienceTitle.mock.calls[0][0]).toBe("t1");
     expect(mockPersistFunc.mock.calls).toHaveLength(1);
-    expect(mockNavigate).toHaveBeenCalled();
+    expect(mockLocationReplace).toHaveBeenCalled();
   });
 
   test("delete online experience when there is connection", async () => {
@@ -1219,7 +1227,7 @@ describe("component", () => {
 
     const experienceId = "ex";
 
-    const { ui, mockNavigate } = makeComp({
+    const { ui } = makeComp({
       experience: {
         id: experienceId,
         title: "t1",
@@ -1378,7 +1386,7 @@ describe("component", () => {
     expect(mockRemoveQueriesAndMutationsFromCache).toHaveBeenCalled();
     expect(mockWriteDeletedExperienceTitle.mock.calls[0][0]).toBe("t1");
     expect(mockPersistFunc.mock.calls).toHaveLength(1);
-    expect(mockNavigate).toHaveBeenCalled();
+    expect(mockLocationReplace).toHaveBeenCalled();
   });
 });
 

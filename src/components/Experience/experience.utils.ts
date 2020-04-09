@@ -397,7 +397,7 @@ const deleteExperienceEffect: DeleteExperienceEffectDefinition["func"] = async (
   props,
   effectArgs,
 ) => {
-  const { experience, persistor, cache, deleteExperiences, navigate } = props;
+  const { experience, persistor, cache, deleteExperiences } = props;
   const { id, title } = experience;
   const input = [id];
   const { dispatch } = effectArgs;
@@ -406,7 +406,7 @@ const deleteExperienceEffect: DeleteExperienceEffectDefinition["func"] = async (
     deleteExperiencesFromCache(cache, persistor, input);
     await persistor.persist();
     writeDeletedExperienceTitle(title);
-    navigate(EXPERIENCES_URL);
+    window.location.replace(EXPERIENCES_URL);
 
     return;
   }
@@ -448,7 +448,7 @@ const deleteExperienceEffect: DeleteExperienceEffectDefinition["func"] = async (
         removeQueriesAndMutationsFromCache(cache, ["deleteExperiences"]);
         writeDeletedExperienceTitle(title);
         await persistor.persist();
-        navigate(EXPERIENCES_URL);
+        window.location.replace(EXPERIENCES_URL);
       }
     }
   } catch (error) {
