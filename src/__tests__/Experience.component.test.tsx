@@ -36,7 +36,7 @@ import {
   onlineExperienceSyncedNotificationSuccessDom,
   onOnlineExperienceSyncedNotificationErrorDom,
   cancelDeleteExperienceDomId,
-  makeDeleteMenuDomId,
+  deleteExperienceTriggerSelector,
   okDeleteExperienceDomId,
   experienceNoEntriesDomId,
 } from "../components/Experience/experience.dom";
@@ -113,6 +113,7 @@ beforeEach(() => {
 
 afterEach(() => {
   window.location = originalWindowLocation;
+  jest.clearAllTimers();
 });
 
 describe("component", () => {
@@ -1136,11 +1137,7 @@ describe("component", () => {
     /**
      * When delete experience menu is clicked
      */
-    const deleteExperienceMenuDom = document.getElementById(
-      makeDeleteMenuDomId(experienceId),
-    ) as HTMLElement;
-
-    deleteExperienceMenuDom.click();
+    triggerDeleteExperience();
 
     /**
      * Then delete prompt should be visible
@@ -1163,7 +1160,7 @@ describe("component", () => {
     /**
      * When delete experience menu is clicked
      */
-    deleteExperienceMenuDom.click();
+    triggerDeleteExperience();
 
     /**
      * Then delete experience should be visible, and when clicked
@@ -1278,9 +1275,7 @@ describe("component", () => {
     /**
      * When delete experience menu is clicked - 2
      */
-    (document.getElementById(
-      makeDeleteMenuDomId(experienceId),
-    ) as HTMLElement).click();
+    triggerDeleteExperience();
 
     (document.getElementById(okDeleteExperienceDomId) as HTMLElement).click();
     await wait(() => true);
@@ -1308,9 +1303,7 @@ describe("component", () => {
     /**
      * When delete experience menu is clicked - 3
      */
-    (document.getElementById(
-      makeDeleteMenuDomId(experienceId),
-    ) as HTMLElement).click();
+    triggerDeleteExperience();
 
     (document.getElementById(okDeleteExperienceDomId) as HTMLElement).click();
     await wait(() => true);
@@ -1337,9 +1330,7 @@ describe("component", () => {
     /**
      * When delete experience menu is clicked - 4
      */
-    (document.getElementById(
-      makeDeleteMenuDomId(experienceId),
-    ) as HTMLElement).click();
+    triggerDeleteExperience();
 
     (document.getElementById(okDeleteExperienceDomId) as HTMLElement).click();
     await wait(() => true);
@@ -1366,9 +1357,7 @@ describe("component", () => {
     /**
      * When delete experience menu is clicked - 5
      */
-    (document.getElementById(
-      makeDeleteMenuDomId(experienceId),
-    ) as HTMLElement).click();
+    triggerDeleteExperience();
 
     (document.getElementById(okDeleteExperienceDomId) as HTMLElement).click();
     await wait(() => true);
@@ -1566,4 +1555,10 @@ function makeComp(props: Partial<Props> = {}) {
     ),
     mockNavigate,
   };
+}
+
+function triggerDeleteExperience() {
+  (document
+    .getElementsByClassName(deleteExperienceTriggerSelector)
+    .item(0) as HTMLElement).click();
 }

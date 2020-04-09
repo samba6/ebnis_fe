@@ -49,9 +49,9 @@ import {
   onlineExperienceSyncedNotificationSuccessDom,
   okDeleteExperienceDomId,
   cancelDeleteExperienceDomId,
-  makeDeleteMenuDomId,
   experienceNoEntriesDomId,
   experienceOptionsMenuTriggerSelector,
+  deleteExperienceTriggerSelector,
 } from "./experience.dom";
 import { Loading } from "../Loading/loading";
 import { EbnisAppContext } from "../../context";
@@ -438,8 +438,10 @@ function OptionsMenuComponent({
           <hr className="dropdown-divider" />
 
           <div
-            className="font-bold dropdown-item js-edit-menu"
-            id={makeDeleteMenuDomId(id)}
+            className={
+              "font-bold dropdown-item js-edit-menu " +
+              deleteExperienceTriggerSelector
+            }
             onClick={() => {
               dispatch({
                 type: ActionType.PROMPT_DELETE_EXPERIENCE,

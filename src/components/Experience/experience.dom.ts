@@ -11,9 +11,6 @@ export const okDeleteExperienceDomId = `${domPrefix}-ok-delete-experience`;
 export const cancelDeleteExperienceDomId = `${domPrefix}-cancel-delete-experience`;
 export const experienceNoEntriesDomId = `${domPrefix}-experience-no-entries`;
 export const experienceOptionsMenuTriggerSelector = `js-${domPrefix}-options-menu-trigger`;
-
-export function makeDeleteMenuDomId(id: Id) {
-  return `${domPrefix}-delete-menu-${id}`;
-}
+export const deleteExperienceTriggerSelector = `${domPrefix}-delete-trigger`;
 
 type Id = string | number;

@@ -448,6 +448,7 @@ const deleteExperienceEffect: DeleteExperienceEffectDefinition["func"] = async (
         removeQueriesAndMutationsFromCache(cache, ["deleteExperiences"]);
         writeDeletedExperienceTitle(title);
         await persistor.persist();
+
         window.location.replace(EXPERIENCES_URL);
       }
     }
