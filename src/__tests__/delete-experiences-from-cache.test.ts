@@ -4,6 +4,8 @@ import {
   deleteExperiencesFromCache,
   GET_EXPERIENCES_MINI_ROOT_QUERY_KEY_PREFIX,
   getOpsData,
+  GetOpsReturn,
+  getDescendantId,
 } from "../apollo-cache/delete-experiences-from-cache";
 import { AppPersistor } from "../context";
 import {
@@ -14,6 +16,12 @@ import { removeUnsyncedExperiences } from "../apollo-cache/unsynced.resolvers";
 import { getExperiencesMiniQuery } from "../apollo-cache/get-experiences-mini-query";
 import { ExperienceConnectionFragment } from "../graphql/apollo-types/ExperienceConnectionFragment";
 import { GetExperienceConnectionMini_getExperiences } from "../graphql/apollo-types/GetExperienceConnectionMini";
+import { makeOfflineId } from "../constants";
+import { readExperienceFragment } from "../apollo-cache/read-experience-fragment";
+import { ExperienceFragment } from "../graphql/apollo-types/ExperienceFragment";
+
+jest.mock("../apollo-cache/read-experience-fragment");
+const mockReadExperienceFragment = readExperienceFragment as jest.Mock;
 
 jest.mock("../apollo-cache/get-experiences-mini-query");
 const mockGetExperiencesMiniQuery = getExperiencesMiniQuery as jest.Mock;
@@ -39,6 +47,27 @@ afterEach(() => {
   jest.resetAllMocks();
 });
 
+const dd = {
+  dataDefinitions: [
+    {
+      id: "3",
+    },
+  ],
+  entries: {
+    edges: [
+      {
+        node: {
+          id: "4",
+          dataObjects: [
+            {
+              id: "5",
+            },
+          ],
+        },
+      },
+    ],
+  },
+} as ExperienceFragment;
 describe("unit test", () => {
   test("nothing to remove", () => {
     const received = getOpsData([], {
@@ -49,16 +78,24 @@ describe("unit test", () => {
   });
 
   test("all removed, nothing to write", () => {
+    const id1 = makeOfflineId(1);
+
     const ids: string[] = [
-      "1", // found
+      id1, // found
       "2", // not found
+      "3", // found
     ];
 
     const experiencesConnection = {
       edges: [
         {
           node: {
-            id: "1",
+            id: id1,
+          },
+        },
+        {
+          node: {
+            id: "3",
           },
         },
       ],
@@ -66,10 +103,11 @@ describe("unit test", () => {
 
     const received = getOpsData(ids, experiencesConnection);
 
-    const expected = [
+    const expected: GetOpsReturn = [
       [], // edges to write
-      ["1"],
-      ["1"],
+      [id1],
+      ["3"],
+      [id1, "3"],
       [],
     ];
 
@@ -103,6 +141,7 @@ describe("unit test", () => {
     const expected = [
       // expected
       newEdges,
+      [],
       ["2", "3"],
       ["2", "3"],
       [2, 3].map(index => {
@@ -111,6 +150,11 @@ describe("unit test", () => {
     ];
 
     expect(received).toEqual(expected);
+  });
+
+  test("get descendants", () => {
+    const received = getDescendantId(dd);
+    expect(received).toEqual(["3", "4", "5"]);
   });
 });
 
@@ -127,17 +171,16 @@ describe("integration", () => {
     expect(mockRemoveUnsyncedExperiences).not.toHaveBeenCalled();
   });
 
-  test("experiences mini query found in cache: modified", async () => {
-    const ids: string[] = [
-      "1", // not found in cache
-      "2", // found deleted
-    ];
+  test("experiences mini query found in cache: query modified", async () => {
+    const id = makeOfflineId("2");
+
+    const ids: string[] = [id];
 
     mockGetExperiencesMiniQuery.mockReturnValue({
       edges: [
         {
           node: {
-            id: "2",
+            id,
           },
         },
         {
@@ -161,36 +204,56 @@ describe("integration", () => {
     });
 
     expect(mockWipeReferencesFromCache.mock.calls[0][1]).toEqual([
-      "2",
+      id,
       `${GET_EXPERIENCES_MINI_ROOT_QUERY_KEY_PREFIX}1`,
     ]);
 
     expect(mockRemoveQueriesAndMutationsFromCache).not.toHaveBeenCalled();
-    expect(mockRemoveUnsyncedExperiences.mock.calls[0][0]).toEqual(["2"]);
+    expect(mockRemoveUnsyncedExperiences.mock.calls[0][0]).toEqual([id]);
   });
 
-  test("experiences mini query found in cache: deleted", async () => {
-    const ids: string[] = [
-      "2", // found deleted
-    ];
+  test("experiences mini query found in cache: query deleted", async () => {
+    const id1 = "1";
+    const experience1 = null;
+
+    const id2 = "2";
+    const experience2 = {
+      id: id2,
+      ...dd,
+    } as ExperienceFragment;
 
     mockGetExperiencesMiniQuery.mockReturnValue({
       edges: [
         {
           node: {
-            id: "2",
+            id: id1,
+          },
+        },
+        {
+          node: {
+            id: id2,
           },
         },
       ],
     } as ExperienceConnectionFragment);
 
-    await deleteExperiencesFromCache(dataProxy, persistor, ids);
+    mockReadExperienceFragment
+      .mockReturnValueOnce(experience1)
+      .mockReturnValueOnce(experience2);
+
+    await deleteExperiencesFromCache(dataProxy, persistor, [id1, id2]);
 
     expect(mockWriteQuery).not.toHaveBeenCalled();
 
-    expect(mockWipeReferencesFromCache.mock.calls[0][1]).toEqual(["2"]);
+    expect(mockWipeReferencesFromCache.mock.calls[0][1]).toEqual([
+      id1,
+      id2,
+      "3",
+      "4",
+      "5",
+    ]);
 
     expect(mockRemoveQueriesAndMutationsFromCache).toHaveBeenCalled();
-    expect(mockRemoveUnsyncedExperiences.mock.calls[0][0]).toEqual(["2"]);
+    expect(mockRemoveUnsyncedExperiences.mock.calls[0][0]).toEqual([id1, id2]);
   });
 });

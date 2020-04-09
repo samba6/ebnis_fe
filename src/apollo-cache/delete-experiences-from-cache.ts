@@ -18,6 +18,12 @@ import {
 import { InMemoryCache } from "apollo-cache-inmemory";
 import { removeUnsyncedExperiences } from "./unsynced.resolvers";
 import { AppPersistor } from "../context";
+import { isOfflineId } from "../constants";
+import { DataDefinitionFragment } from "../graphql/apollo-types/DataDefinitionFragment";
+import { EntryConnectionFragment_edges } from "../graphql/apollo-types/EntryConnectionFragment";
+import { EntryFragment } from "../graphql/apollo-types/EntryFragment";
+import { DataObjectFragment } from "../graphql/apollo-types/DataObjectFragment";
+import { readExperienceFragment } from "./read-experience-fragment";
 
 export const GET_EXPERIENCES_MINI_ROOT_QUERY_KEY_PREFIX = `ROOT_QUERY\\.getExperiences\\(\\{"input"\\:\\{"pagination"\\:\\{"first"\\:20000\\}\\}\\}\\)\\.edges\\.`;
 
@@ -41,11 +47,11 @@ export async function deleteExperiencesFromCache(
 
   const [
     newEdges,
-    referencesToWipe,
+    offlineExperiencesReferencesToWipe,
+    onlineExperiencesReferencesToWipe,
     unsyncedLedgerIdsToRemove,
     getExperiencesEdgesKeyToRemove,
   ] = result;
-
 
   if (newEdges.length) {
     const updatedExperienceConnection = immer(experienceConnection, proxy => {
@@ -69,7 +75,10 @@ export async function deleteExperiencesFromCache(
 
   wipeReferencesFromCache(
     dataProxy as InMemoryCache,
-    referencesToWipe.concat(getExperiencesEdgesKeyToRemove),
+    onlineExperiencesReferencesToWipe
+      .concat(getDescendantsIds(dataProxy, onlineExperiencesReferencesToWipe))
+      .concat(offlineExperiencesReferencesToWipe)
+      .concat(getExperiencesEdgesKeyToRemove),
   );
 
   removeUnsyncedExperiences(unsyncedLedgerIdsToRemove);
@@ -81,7 +90,8 @@ export function getOpsData(
   experienceConnection: GetExperienceConnectionMini_getExperiences,
 ): GetOpsReturn | null {
   const newEdges: ExperienceConnectionFragment_edges[] = [];
-  const referencesToWipe: ExperienceIdsToWipe = [];
+  const offlineExperiencesReferencesToWipe: OfflineExperienceIdsToWipe = [];
+  const onlineExperiencesReferencesToWipe: OfflineExperienceIdsToWipe = [];
   const unsyncedLedgerIdsToRemove: UnsyncedLedgerIdsToRemove = [];
   const getExperiencesEdgesKeyToRemove: GetExperiencesEdgesKeyToRemove = [];
 
@@ -104,7 +114,11 @@ export function getOpsData(
 
     if (idsMap[id]) {
       unsyncedLedgerIdsToRemove.push(id);
-      referencesToWipe.push(id);
+      if (isOfflineId(id)) {
+        offlineExperiencesReferencesToWipe.push(id);
+      } else {
+        onlineExperiencesReferencesToWipe.push(id);
+      }
     } else {
       newEdges.push(edge);
     }
@@ -127,20 +141,55 @@ export function getOpsData(
 
   return [
     newEdges,
-    referencesToWipe,
+    offlineExperiencesReferencesToWipe,
+    onlineExperiencesReferencesToWipe,
     unsyncedLedgerIdsToRemove,
     getExperiencesEdgesKeyToRemove,
   ];
 }
 
-type ExperienceIdsToWipe = string[];
+function getDescendantsIds(dataProxy: DataProxy, ids: string[]) {
+  return ids.reduce((acc, id) => {
+    const experience = readExperienceFragment(dataProxy, id);
+
+    if (experience) {
+      acc.push(...getDescendantId(experience));
+    }
+
+    return acc;
+  }, [] as string[]);
+}
+
+export function getDescendantId(experience: ExperienceFragment) {
+  const ids: string[] = [];
+
+  const { entries, dataDefinitions } = experience;
+
+  dataDefinitions.forEach(d => {
+    ids.push((d as DataDefinitionFragment).id);
+  });
+
+  (entries.edges as EntryConnectionFragment_edges[]).forEach(e => {
+    const entry = (e as EntryConnectionFragment_edges).node as EntryFragment;
+    ids.push(entry.id);
+
+    entry.dataObjects.forEach(d => {
+      ids.push((d as DataObjectFragment).id);
+    });
+  });
+
+  return ids;
+}
+
+type OfflineExperienceIdsToWipe = string[];
+type OnlineExperienceIdsToWipe = string[];
 type UnsyncedLedgerIdsToRemove = string[];
 type GetExperiencesEdgesKeyToRemove = string[];
 
-type GetOpsReturn = [
+export type GetOpsReturn = [
   ExperienceConnectionFragment_edges[],
-  ExperienceIdsToWipe,
+  OfflineExperienceIdsToWipe,
+  OnlineExperienceIdsToWipe,
   UnsyncedLedgerIdsToRemove,
   GetExperiencesEdgesKeyToRemove,
 ];
-
