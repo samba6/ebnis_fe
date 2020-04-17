@@ -4,10 +4,10 @@
 importScripts(`idb-keyval-iife.min.js`);
 
 const offlineShell = `%pathPrefix%/offline-plugin-app-shell-fallback/index.html`;
-const appPageDataUrl = "%pathPrefix%/page-data/app/page-data.json";
 
 const { NavigationRoute } = workbox.routing;
 
+// for non /app/** routes, fetch the route plus its resources stored in KV store
 const navigationRoute = new NavigationRoute(
   async ({ event }) => {
     let { pathname } = new URL(event.request.url);
@@ -44,6 +44,7 @@ const navigationRoute = new NavigationRoute(
 
 workbox.routing.registerRoute(navigationRoute);
 
+// for all requests to /app/**, respond with /app/index.html == SPA
 workbox.routing.registerNavigationRoute(
   workbox.precaching.getCacheKeyForURL("/app/index.html"),
   {
@@ -51,6 +52,8 @@ workbox.routing.registerNavigationRoute(
   },
 );
 
+// always response with content of this url for all requests for app page data
+const appPageDataUrl = "%pathPrefix%/page-data/app/page-data.json";
 workbox.routing.registerRoute(
   new RegExp("/page-data/app/.+?/page-data\\.json"),
 

@@ -55,22 +55,18 @@ export function buildClientCache(
     return globalVars;
   }
 
-  if (!cache) {
-    const fragmentMatcher = new IntrospectionFragmentMatcher({
-      introspectionQueryResultData: possibleTypes,
-    });
+  const fragmentMatcher = new IntrospectionFragmentMatcher({
+    introspectionQueryResultData: possibleTypes,
+  });
 
-    cache = new InMemoryCache({
-      addTypename: true,
-
-      cacheRedirects: {
-        ...CUSTOM_QUERY_RESOLVERS,
-      },
-
-      freezeResults: true,
-      fragmentMatcher,
-    }) as InMemoryCache;
-  }
+  cache = new InMemoryCache({
+    addTypename: true,
+    cacheRedirects: {
+      ...CUSTOM_QUERY_RESOLVERS,
+    },
+    freezeResults: true,
+    fragmentMatcher,
+  }) as InMemoryCache;
 
   persistor = makePersistor(cache, persistor);
 

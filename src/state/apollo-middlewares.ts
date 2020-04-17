@@ -11,13 +11,16 @@ export type MakeSocketLinkFn = (arg: {
 export function middlewareAuthLink(makeSocketLink: MakeSocketLinkFn) {
   let previousToken = getToken();
   let socketLink = makeSocketLink({ token: previousToken });
-  const headers: { [k: string]: string } = {};
+  const headers: {
+    [k: string]: string;
+  } = {};
 
   return new ApolloLink((operation, forward) => {
     const token = getToken();
 
     if (token !== previousToken) {
       previousToken = token;
+      // if token has changed, reconnect socket with new token
       socketLink = makeSocketLink({ token, forceReconnect: true });
     }
 

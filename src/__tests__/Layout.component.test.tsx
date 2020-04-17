@@ -308,7 +308,7 @@ describe("reducer", () => {
     expect(effectKeys).toContain(StateValue.prefetchExperiences);
   });
 
-  test("CACHE_PERSISTED: has connection but already pre-fetched experiencess", () => {
+  test("CACHE_PERSISTED: has connection but already pre-fetched experiences", () => {
     const state = initState({
       connectionStatus: { isConnected: false },
       user: {},

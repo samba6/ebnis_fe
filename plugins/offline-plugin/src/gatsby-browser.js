@@ -33,7 +33,7 @@ function setPathResources(path, getResourceURLsForPathname) {
   // memory which we don't want to be whitelisted
   if (window.___swUpdated) return;
 
-  if (`serviceWorker` in navigator) {
+  if ("serviceWorker" in navigator) {
     const { serviceWorker } = navigator;
 
     if (serviceWorker.controller === null) {
