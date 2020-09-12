@@ -122,7 +122,7 @@
     "jest-resolve": "24.9.0",
     "jest-watch-typeahead": "0.4.2",
     "less": "3.10.3",
-    "node-fetch": "2.6.0",
+    "node-fetch": "2.6.1",
     "postcss-advanced-variables": "3.0.1",
     "postcss-custom-properties": "9.0.2",
     "postcss-extend-rule": "3.0.0",
