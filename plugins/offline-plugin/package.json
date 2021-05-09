@@ -7,7 +7,7 @@
     "@babel/runtime": "7.6.0",
     "core-js": "3.2.1",
     "idb-keyval": "3.2.0",
-    "lodash": "4.17.13",
+    "lodash": "4.17.21",
     "workbox-build": "4.3.1"
   },
   "devDependencies": {
